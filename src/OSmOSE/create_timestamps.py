@@ -88,7 +88,7 @@ def write_timestamp(dataset_path: str, date_template: str, offsets: tuple = None
     df = pd.DataFrame({'filename':filename_rawaudio,'timestamp':timestamp})
     df.sort_values(by=['timestamp'], inplace=True)
     df.to_csv(os.path.join(dataset_path,'timestamp.csv'), index=False,na_rep='NaN',header=None)
-
+    
 
 if __name__ == "__main__":
 
