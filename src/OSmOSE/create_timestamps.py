@@ -8,7 +8,7 @@ import argparse
 from dateutil import parser
 import sys
 
-converter = {
+__converter = {
         "%Y": r"[12][0-9]{3}",
         "%y": r"[0-9]{2}",
         "%m": r"(0[1-9]|1[0-2])",
@@ -33,8 +33,8 @@ def convert_template_to_re(date_template: str) -> str:
     res = ""
     i = 0
     while i < len(date_template):
-        if date_template[i:i + 2] in converter:
-            res += converter[date_template[i:i+2]]
+        if date_template[i:i + 2] in __converter:
+            res += __converter[date_template[i:i+2]]
             i += 1
         else:
             res += date_template[i]
