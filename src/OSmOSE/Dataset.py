@@ -14,13 +14,18 @@ from warnings import warn
 
 class Dataset():
     def __init__(self, config) -> None:
-        self.__config = self.read_config(config)
+        config = self.read_config(config)
         
+        self.__name = config.dataset_name
+        self.__path = os.path.join(config.dataset_folder_path, self.__name)
+        self.__group = config.osmose_group_name
+
+
         """gps: The GPS coordinates of the listening location. It can be a list of 2 elements [latitude, longitude], or the 
                 name of a csv file located in the `raw/auxiliary/` folder containing two columns: `lat` and `lon` with those informations."""
         if isinstance(self.__config.gps, str):
             csvFileArray = pd.read_csv(os.path.join(self.Path,'raw' ,'auxiliary' ,self.__config.gps))
-            self.__config.gps = [(np.min(csvFileArray['lat']) , np.max(csvFileArray['lat'])) , (np.min(csvFileArray['lon']) , np.max(csvFileArray['lon']))]
+            self.__coords = [(np.min(csvFileArray['lat']) , np.max(csvFileArray['lat'])) , (np.min(csvFileArray['lon']) , np.max(csvFileArray['lon']))]
         elif not isinstance(self.__config.gps, list):
             raise TypeError(f"GPS coordinates must be either a list of coordinates or the name of csv containing the coordinates, but {type(self.__config.gps)} found.")
 
@@ -28,21 +33,28 @@ class Dataset():
 
     @property
     def Name(self):
-        return self.__config.dataset_name
+        """The Dataset name."""
+        return self.__name
 
     @property
     def Path(self):
-        return os.path.join(self.__config.dataset_folder_path, self.Name)
+        """The Dataset path."""
+        return os.path.join(self.__path, self.Name)
     
     @property
-    def Coords(self):
-        return self.__config.gps
+    def Coords(self) -> Union[Tuple[float,float], Tuple[Tuple[float,float],Tuple[float,float]]] :
+        """The GPS coordinates of the dataset. First element is latitude, second is longitude."""
+        return self.__coords
 
     @property
     def Owner_Group(self):
-        return self.__config.osmose_group_name
+        """The Unix group able to interact with the dataset."""
+        return self.__group
     
-
+    @property
+    def is_built(self):
+        """Checks if self.Path/raw/audio contains at least one folder and none called "original"."""
+        return len(os.listdir(os.path.join(self.Path, "raw","audio"))) > 0 and not os.path.exists(os.path.join(self.Path, "raw","audio","original"))
 
     def read_config(raw_config: Union[str, dict]) -> NamedTuple:
         """Read the given configuration file or dict and converts it to a namedtuple. Only TOML and JSON formats are accepted for now.
@@ -185,7 +197,7 @@ class Dataset():
                 ,'orig_fileVolume' :pd.DataFrame(list_size).values.flatten().mean()
                 ,'orig_totalVolume' :round(pd.DataFrame(list_size).values.flatten().mean() * len(filename_csv) /1000, 1),
                 'orig_totalDurationMins': round(pd.DataFrame(list_duration).values.flatten().mean() * len(filename_csv) / 60, 2),
-                'lat':gps[0],'lon':gps[1]}
+                'lat':self.Coords[0],'lon':self.Coords[1]}
         df = pd.DataFrame.from_records([data])
         df.to_csv( os.path.join(self.Path,'raw' ,'metadata.csv') , index=False)  
         
