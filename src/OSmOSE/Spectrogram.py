@@ -1,12 +1,17 @@
 from math import log10
 import shutil
 from typing import Union, List
+
+from matplotlib import pyplot as plt
 from Dataset import Dataset
 import pandas as pd
 import os
 import sys
 from glob import glob
 from audio_reshaper import reshape
+import soundfile as sf
+from scipy import signal
+import numpy as np
 
 class Spectrogram(Dataset):
 
@@ -322,7 +327,158 @@ class Spectrogram(Dataset):
         df = pd.DataFrame.from_records([data])
         df.to_csv(filename , index=False)  
 
-    
 
-    def process_file(self):
-        pass
+
+    def process_file(self, audio_file: str) -> None:
+        if audio_file not in os.listdir(self.__audio_path):
+            raise FileNotFoundError(f"The file {audio_file} must be in {self.__audio_path} in order to be processed.")
+
+        if self.Zscore_duration and self.Zscore_duration != "original" and self.Data_normalization=="zscore":
+            self.__zscore_mean = self.SummStats[self.SummStats['filename'] == audio_file]['mean_avg'].values[0]
+            self.__zscore_std = self.SummStats[self.SummStats['filename'] == audio_file]['std_avg'].values[0]
+
+        data, sample_rate = sf.read(os.path.join(self.__audio_path, audio_file))        
+
+        if self.Data_normalization=='instrument':
+            data =(data*self.Peak_voltage)/self.Sensitivity / 10**(self.Gain_dB/20)
+        
+        bpcoef = signal.butter(20, np.array([self.Fmin_HighPassFilter, sample_rate / 2 - 1]), fs=sample_rate, output='sos',
+                               btype='bandpass')
+        data = signal.sosfilt(bpcoef, data)
+
+        if not os.path.exists(os.path.join(self.__path_output_spectrograms, self.__spectro_foldername, os.path.splitext(audio_file)[0])):
+            os.makedirs(os.path.join(self.__path_output_spectrograms, self.__spectro_foldername, os.path.splitext(audio_file)[0]))
+
+        output_file = os.path.join(self.__path_output_spectrograms, self.__spectro_foldername, os.path.splitext(audio_file)[0], audio_file)
+
+        self.gen_tiles(data=data, sample_rate=sample_rate, output_file=output_file)
+
+
+
+    def gen_tiles(self, data: list, sample_rate: int, output_file: str):
+        if self.Data_normalization=='zscore':
+            if (len(self.Zscore_duration)>0) and (self.Zscore_duration != 'original'):
+                data = (data - self.__zscore_mean) / self.__zscore_std
+            elif self.Zscore_duration == 'original':
+                data = (data - np.mean(data)) / np.std(data)
+            
+        duration = len(data) / int(sample_rate)
+        max_w = 0
+
+        nber_tiles_lowest_zoom_level = 2 ** (self.Zoom_levels - 1)
+        tile_duration = duration / nber_tiles_lowest_zoom_level
+
+        Sxx_2 = np.empty((int(self.Nfft / 2) + 1, 1))
+        for tile in range(0, nber_tiles_lowest_zoom_level):
+            start = tile * tile_duration
+            end = start + tile_duration
+            
+            sample_data = data[int(start * sample_rate):int((end + 1) * sample_rate)]
+            
+            output_file = f"{os.path.splitext(output_file)[0]}_{str(nber_tiles_lowest_zoom_level)}_{str(tile)}.png"
+
+        Sxx, Freq = self.gen_spectro(max_w, sample_data, sample_rate, output_file)
+        
+        Sxx_2 = np.hstack((Sxx_2, Sxx))
+
+        Sxx_lowest_level = Sxx_2[:, 1:]
+
+        segment_times = np.linspace(0, len(data) / sample_rate, Sxx_lowest_level.shape[1])[np.newaxis, :]
+
+        # loop over the zoom levels from the second lowest to the highest one 
+        for zoom_level in range(self.Zoom_levels)[::-1]:
+
+            nberspec = Sxx_lowest_level.shape[1] // (2 ** zoom_level)
+
+            # loop over the tiles at each zoom level
+            for tile in range(2 ** zoom_level):
+                
+                Sxx_int = Sxx_lowest_level[:, tile * nberspec: (tile + 1) * nberspec][:, ::2 ** (self.Zoom_levels - zoom_level)]
+
+                segment_times_int = segment_times[:, tile * nberspec: (tile + 1) * nberspec][:, ::2 ** (self.Zoom_levels - zoom_level)]
+
+                if self.Spectro_normalization == 'density':
+                    log_spectro = 10 * np.log10(Sxx_int/(1e-12))
+                if self.Spectro_normalization == 'spectrum':
+                    log_spectro = 10 * np.log10(Sxx_int)
+                
+                self.generate_and_save_figures(segment_times_int, Freq, log_spectro, f"{os.path.splitext(output_file)[0]}_{str(2 ** zoom_level)}_{str(tile)}.png")
+
+    def gen_spectro(self, data, sample_rate, output_file):
+        Noverlap = int(self.Window_size * self.Overlap / 100)
+
+        win = np.hamming(self.Window_size)
+        if self.Nfft < (0.5 * self.Window_size):
+            if self.Spectro_normalization == 'density':
+                scale_psd = 2.0 
+            if self.Spectro_normalization == 'spectrum':
+                scale_psd = 2.0 *sample_rate
+        else:
+            if self.Spectro_normalization == 'density':
+                scale_psd = 2.0 / (((win * win).sum())*sample_rate)
+            if self.Spectro_normalization == 'spectrum':
+                scale_psd = 2.0 / ((win * win).sum())
+            
+        Nbech = np.size(data)
+        Noffset = self.Window_size - Noverlap
+        Nbwin = int((Nbech - self.Window_size) / Noffset)
+        Freq = np.fft.rfftfreq(self.Nfft, d=1 / sample_rate)
+
+        Sxx = np.zeros([np.size(Freq), Nbwin])
+        Time = np.linspace(0, Nbech / sample_rate, Nbwin)
+        for idwin in range(Nbwin):
+            if self.Nfft < (0.5 * self.Window_size):
+                x_win = data[idwin * Noffset:idwin * Noffset + self.Window_size]
+                _, Sxx[:, idwin] = signal.welch(x_win, fs=sample_rate, window='hamming', nperseg=int(self.Nfft),
+                                                noverlap=int(self.Nfft / 2) , scaling='density')
+            else:
+                x_win = data[idwin * Noffset:idwin * Noffset + self.Window_size] * win
+                Sxx[:, idwin] = (np.abs(np.fft.rfft(x_win, n=self.Nfft)) ** 2)
+            Sxx[:, idwin] *= scale_psd
+            
+        if self.Spectro_normalization == 'density':
+            log_spectro = 10 * np.log10(Sxx/(1e-12))
+        if self.Spectro_normalization == 'spectrum':
+            log_spectro = 10 * np.log10(Sxx)
+
+        # save spectrogram as a png image
+        self.generate_and_save_figures( Time, Freq, log_spectro, output_file)
+        
+        # save spectrogram matrices (intensity, time and freq) in a npz file
+        if not os.path.exists( os.path.dirname(output_file.replace('.png','.npz').replace('spectrograms','spectrograms_mat')) ):
+            os.makedirs( os.path.dirname(output_file.replace('.png','.npz').replace('spectrograms','spectrograms_mat')) )
+        np.savez(output_file.replace('.png','.npz').replace('spectrograms','spectrograms_mat'), Sxx=Sxx,log_spectro=log_spectro , Freq=Freq, Time=Time)
+
+        return Sxx, Freq
+
+    def generate_and_save_figures(self, time, freq, log_spectro, output_file):
+        # Ploting spectrogram
+        my_dpi = 100
+        fact_x = 1.3
+        fact_y = 1.3
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi), dpi=my_dpi)
+        color_map = plt.cm.get_cmap(self.Colmap)  # .reversed()
+        plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
+        plt.clim(vmin=self.Min_color_val, vmax=self.Max_color_val)
+        #plt.colorbar()
+        
+        # If generate all
+        fig.axes[0].get_xaxis().set_visible(True)
+        fig.axes[0].get_yaxis().set_visible(True)
+        ax.set_frame_on(True)
+        
+        ax.spines['right'].set_visible(True)
+        ax.spines['left'].set_visible(True)
+        ax.spines['bottom'].set_visible(True)
+        ax.spines['top'].set_visible(True)        
+        
+        # For test
+        fig.axes[0].get_xaxis().set_visible(True)
+        fig.axes[0].get_yaxis().set_visible(True)
+        ax.set_ylabel('Frequency (Hz)')
+        ax.set_xlabel('Time (s)')
+        plt.colorbar()
+
+        # Saving spectrogram plot to file
+        plt.savefig(output_file, bbox_inches='tight', pad_inches=0)
+        plt.close()
