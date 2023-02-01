@@ -30,7 +30,7 @@ class Spectrogram(Dataset):
         self.__min_color_val : int = analysis_sheet['min_color_val'][0]
         self.__max_color_val : int = analysis_sheet['max_color_val'][0]
         self.__nberAdjustSpectros : int = analysis_sheet['nberAdjustSpectros'][0] #???
-        self.__maxtime_display_spectro : int = analysis_sheet['maxtime_display_spectro'][0]
+        self.__maxtime_display_spectro : int = analysis_sheet['max_time_display_spectro'][0]
 
         self.__zscore_duration : Union[float, str] = analysis_sheet['zscore_duration'][0] if isinstance(analysis_sheet['zscore_duration'][0], float) else None
 
@@ -204,7 +204,8 @@ class Spectrogram(Dataset):
 
     #endregion
 
-    def initialize(self, analysis_fs: float, ind_min: int, ind_max: int, auto_reshape: bool = False):
+    # TODO: some cleaning
+    def initialize(self, analysis_fs: float, ind_min: int, ind_max: int, auto_reshape: bool = False) -> None:
         
         # Load variables from raw metadata
         metadata = pd.read_csv(os.path.join(self.Path, "raw","metadata.csv"))
@@ -212,49 +213,39 @@ class Spectrogram(Dataset):
         orig_fs = metadata['orig_fs'][0]
         total_nber_audio_files = metadata['nberWavFiles'][0]
 
+        input_audio_foldername = str(orig_fileDuration)+'_'+str(int(orig_fs))
 
-        audio_foldername = str(orig_fileDuration)+'_'+str(int(orig_fs))
+        path_input_audio_file = os.path.join(self.Path, "raw", "audio", input_audio_foldername)
 
-        self.__path_audio_file = os.path.join(self.Path, "raw", "audio", audio_foldername)
+        # Reshape audio files to fit the maximum spectrogram size, whether it is greater or smaller.
+        #? Quite I/O intensive and monothread, might need to rework to allow qsub.
+        if self.Max_time_display_spectro != int(orig_fileDuration):
+            # We might reshape the files and create the folder. Note: reshape function might be memory-heavy and deserve a proper qsub job. 
+            if self.Max_time_display_spectro > int(orig_fileDuration) and not auto_reshape:
+                raise ValueError("Spectrogram size cannot be greater than file duration. If you want to automatically reshape your audio files to fit the spectrogram size, consider adding auto_reshape=True as parameter.")
+            
+            reshaped_path = os.path.join(self.Path , 'raw', 'audio', str(self.Max_time_display_spectro)+'_'+str(analysis_fs))
+            print(f"Automatically reshaping audio files to fit the Maxtime display spectro value. Files will be {self.Max_time_display_spectro} seconds long.")
 
-        # TODO: reshape also if self.Maxtime_display_spectro < orig_fileDuration ?
-        if int(self.Maxtime_display_spectro)>int(orig_fileDuration):
-            print("Spectrogram size is greater than file duration. Looking for an alternative metadata.csv...")
+            reshaped_files = reshape(self.Max_time_display_spectro, path_input_audio_file, reshaped_path)
+            metadata["dataset_totalDuration"] = len(reshaped_files) * self.Max_time_display_spectro
 
-            reshaped_path = os.path.join(self.Path , 'raw', 'audio', str(self.Maxtime_display_spectro)+'_'+str(int(orig_fs)))
+        metadata["dataset_fileDuration"] = self.Max_time_display_spectro
+        metadata["dataset_fs"] = analysis_fs
+        new_meta_path = os.path.join(self.Path , 'raw', 'audio', str(int(self.Max_time_display_spectro))+'_'+str(analysis_fs), "metadata.csv")
+        metadata.to_csv(new_meta_path)
 
-            # If a folder corresponding to the reshaped files already exists, switch to its metadata.csv
-            if os.path.exists(os.path.join(reshaped_path, "metadata.csv")):
-                metadata = pd.read_csv(os.path.join(reshaped_path,"metadata.csv"))
-                orig_fileDuration = metadata['orig_fileDuration'][0]
-                orig_fs = metadata['orig_fs'][0]
-                total_nber_audio_files = metadata['nberWavFiles'][0]
+        audio_foldername = str(self.Max_time_display_spectro)+'_'+str(analysis_fs)
+        self.__audio_path = os.path.join(self.Path, "raw", "audio", audio_foldername)
+        analysis_path = os.path.join(analysis_path)
 
-            # Else we might reshape the files and create the folder. Note: reshape function might be memory-heavy and deserve a proper qsub job. 
-            else:
-                if not auto_reshape:
-                    raise ValueError("Spectrogram size cannot be greater than file duration. If you want to automatically reshape your audio files to fit the spectrogram size, consider adding auto_reshape=True as parameter.")
-
-                print(f"Automatically reshaping audio files to fit the Maxtime display spectro value. Files will be {self.Maxtime_display_spectro} seconds long.")
-
-                reshaped_files = reshape(self.Maxtime_display_spectro, self.__path_audio_file, reshaped_path)
-                metadata.at[0, "orig_fileDuration"] = self.Maxtime_display_spectro
-                metadata.at[0, "orig_totalDuration"] = len(reshaped_files) * self.Maxtime_display_spectro
-                metadata.at[0, "orig_totalDurationMins"] = metadata["orig_totalDuration"][0] // 60
-                new_meta_path = os.path.join(self.Path , 'raw', 'audio', str(int(self.Maxtime_display_spectro))+'_'+str(int(orig_fs)), "metadata.csv")
-                metadata.to_csv(new_meta_path)
-
-        audio_foldername = str(orig_fileDuration)+'_'+str(int(orig_fs))
-
-        self.__path_audio_file = os.path.join(self.Path, "raw", "audio", audio_foldername)
-
-        self.__path_output_spectrograms = os.path.join(self.Path, "analysis", "spectrograms", audio_foldername)
-        self.__path_summstats = os.path.join(self.Path, "analysis", "normaParams", audio_foldername)
+        self.__path_output_spectrograms = os.path.join(analysis_path, "spectrograms", audio_foldername)
+        self.__path_summstats = os.path.join(analysis_path, "normaParams", audio_foldername)
 
         self.__spectro_foldername = f"nfft={str(self.Nfft)}_winsize={str(self.Window_size)}_overlap={str(self.Overlap)} \
                                 _cvr={str(self.Min_color_value)}-{str(self.Max_color_value)}"
 
-        self.__path_output_spectrogram_matrices = os.path.join(self.Path, "analysis", "spectrograms_mat", audio_foldername, self.__spectro_foldername)
+        self.__path_output_spectrogram_matrices = os.path.join(analysis_path, "spectrograms_mat", audio_foldername, self.__spectro_foldername)
 
 
         if self.Data_normalization == "zscore" and self.Zscore_duration != "original" and self.Zscore_duration:
@@ -270,18 +261,18 @@ class Spectrogram(Dataset):
             self.__summStats = df
 
 
-        list_wav_withEvent_comp = glob.glob(os.path.join(self.__path_audio_file , '*wav'))
+        list_wav_withEvent_comp = glob.glob(os.path.join(path_input_audio_file , '*wav'))
         list_wav_withEvent = list_wav_withEvent_comp[ind_min:ind_max]
         
         list_wav_withEvent = [os.path.basename(x) for x in list_wav_withEvent]
 
-        if os.path.isfile(os.path.join(self.Path, "analysis","subset_files.csv")):
+        if os.path.isfile(os.path.join(analysis_path,"subset_files.csv")):
             subset = pd.read_csv(os.path.join(self.Path , 'analysis', 'subset_files.csv'),header=None)[0].values
             list_wav_withEvent = list(set(subset).intersection(set(list_wav_withEvent)))
 
         #? Useful or deprecated?
         #region Maybe deprecated
-            # if int(maxtime_display_spectro) != int(orig_fileDuration):
+            # if int(max_time_display_spectro) != int(orig_fileDuration):
             #     tt=pd.read_csv(os.path.join(path_osmose_dataset, dataset_ID, 'raw','audio', str(int(orig_fileDuration))+'_'+str(int(orig_fs)) ,'metadata_file.csv'),delimiter=' ',header=None)
 
             #     # quite complicated stuff, but we intersect audio files from the subset_files, recovering the indices of this intersection to filter the list of file durations
@@ -292,10 +283,10 @@ class Spectrogram(Dataset):
             #         list_files_subset=np.intersect1d(dd , pp )
             #         for file_in_subset in list_files_subset:
             #             ind=np.where(tt[0].values==file_in_subset)[0][0]
-            #             nber_audioFiles_after_segmentation += np.ceil(tt[1][ind]/maxtime_display_spectro)
+            #             nber_audioFiles_after_segmentation += np.ceil(tt[1][ind]/max_time_display_spectro)
             #         nber_audioFiles_after_segmentation=int(nber_audioFiles_after_segmentation)
             #     else:
-            #         nber_audioFiles_after_segmentation = int(sum(np.ceil(tt[1].values/maxtime_display_spectro)))
+            #         nber_audioFiles_after_segmentation = int(sum(np.ceil(tt[1].values/max_time_display_spectro)))
                                 
             # else:        
             #     nber_audioFiles_after_segmentation = orig_total_nber_audio_files
@@ -312,12 +303,12 @@ class Spectrogram(Dataset):
             data = {'dataset_ID' : self.Name,'analysis_fs' :float(analysis_fs),'fileScale_nfft' : self.Nfft,
                 'fileScale_winsize' : self.Window_size,'fileScale_overlap' : self.Overlap,'colmapspectros' : self.Colmap,
                 'nber_zoom_levels' : self.Zoom_levels,'nberAdjustSpectros':self.Number_adjustment_spectrograms,
-                'min_color_val':self.Min_color_value,'max_color_val':self.Max_color_value,'maxtime_display_spectro':self.Max_time_display_spectro, 
+                'min_color_val':self.Min_color_value,'max_color_val':self.Max_color_value,'max_time_display_spectro':self.Max_time_display_spectro, 
                 'folderName_audioFiles':audio_foldername, 'data_normalization':self.Data_normalization,'fmin_HighPassFilter':self.Fmin_HighPassFilter,
                 'sensitivity_dB':20 * log10(self.Sensitivity / 1e6), 'peak_voltage':self.Peak_voltage,'spectro_normalization':self.Spectro_normalization,
                 'gain_dB':self.Gain_dB,'zscore_duration':self.Zscore_duration}
             analysis_sheet = pd.DataFrame.from_records([data])
-            analysis_sheet.to_csv( os.path.join(self.Path, "analysis" ,'analysis_sheet.csv') )
+            analysis_sheet.to_csv( os.path.join(analysis_path ,'analysis_sheet.csv') )
 
     def to_csv(self, filename: str) -> None:
         """Outputs the characteristics of the spectrogram the specified file in csv format.
@@ -330,6 +321,8 @@ class Spectrogram(Dataset):
              'overlap' : self.Overlap /100 , 'zoom_level': 2**(self.Zoom_levels-1) , 'cvr_max':self.Max_color_value, 'cvr_min':self.Min_color_value}
         df = pd.DataFrame.from_records([data])
         df.to_csv(filename , index=False)  
+
+    
 
     def process_file(self):
         pass
