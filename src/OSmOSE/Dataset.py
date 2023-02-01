@@ -1,9 +1,5 @@
-from distutils.errors import UnknownFileError
-from typing import NamedTuple, Union, List, Tuple
-from collections import namedtuple
+from typing import Union, List, Tuple
 import os
-import tomllib
-import json
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
@@ -11,10 +7,11 @@ from datetime import datetime
 import wave
 import grp
 from warnings import warn
+from utils import read_config
 
 class Dataset():
-    def __init__(self, config) -> None:
-        config = self.read_config(config)
+    def __init__(self, config: Union[str, dict]) -> None:
+        self.__config = read_config(config)
         
         self.__name = config.dataset_name
         self.__path = os.path.join(config.dataset_folder_path, self.__name)
@@ -52,35 +49,14 @@ class Dataset():
         return self.__group
     
     @property
+    def Info_dict(self):
+        """The information of configuration of the Dataset as a dict"""
+        return self.__config
+
+    @property
     def is_built(self):
         """Checks if self.Path/raw/audio contains at least one folder and none called "original"."""
         return len(os.listdir(os.path.join(self.Path, "raw","audio"))) > 0 and not os.path.exists(os.path.join(self.Path, "raw","audio","original"))
-
-    def read_config(raw_config: Union[str, dict]) -> NamedTuple:
-        """Read the given configuration file or dict and converts it to a namedtuple. Only TOML and JSON formats are accepted for now.
-        
-            Parameter:
-                raw_config: the path of the configuration file, or the dict object containing the configuration.
-                
-            Returns:
-                The configuration as a NamedTuple object."""
-                
-        if isinstance(raw_config, str):
-            if not os.path.isfile(raw_config):
-                raise FileNotFoundError(f"The configuration file {raw_config} does not exist.")
-            
-            with open(raw_config, "rb") as input_config:
-                match os.path.splitext(raw_config)[1]:
-                    case "toml":
-                        pre_config = tomllib.load(input_config)
-                    case "json":
-                        pre_config = json.load(input_config)
-                    case "yaml":
-                        raise NotImplementedError("YAML support will eventually get there (unfortunately)")
-                    case _:
-                        raise UnknownFileError(f"The provided configuration file extension (.{os.path.splitext(raw_config)[1]} is not a valid extension. Please use .toml or .json files.")
-
-        return namedtuple('GenericDict', pre_config.keys())(**pre_config)
 
     def build(self, osmose_group_name:str = None, force_upload: bool = False) -> Tuple[list, list]:
         """
