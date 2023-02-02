@@ -9,25 +9,42 @@ import numpy as np
 from tqdm import tqdm
 from datetime import datetime
 import wave
-import grp
+try:
+    import grp
+    skip_perms = False
+except ModuleNotFoundError:
+    print("It seems you are on a non-Unix operating system (probably Windows). The build_dataset() method will not work as intended and permission might be uncorrectly set.")
+    skip_perms = True
 from warnings import warn
 
 class Dataset():
-    def __init__(self, config) -> None:
-        config = self.read_config(config)
+    def __init__(self, config: Union[str, dict]) -> None:
+        config = self.read_config(raw_config=config)
         
         self.__name = config.dataset_name
         self.__path = os.path.join(config.dataset_folder_path, self.__name)
         self.__group = config.osmose_group_name
 
+        metadf = pd.read_csv(os.path.join(self.__path, "raw","metadata.csv"))
+        
+        self.__metadata = {
+            "orig_fs": int(metadf["orig_fs"][0]),
+            "start_date": metadf['start_date'][0][:16],
+            "end_date" : metadf['end_date'][0][:16],
+            "cumul_days": (pd.to_datetime(metadf['end_date'][0], utc=True) - pd.to_datetime(metadf['start_date'][0], utc=True)).days,
+            "orig_fileDuration": int(metadf["orig_fileDuration"][0]),
+            "file_number": int(metadf["nberWavFiles"][0]),
+            "total_volume": int(metadf["orig_totalVolume"][0])
+        }
+
 
         """gps: The GPS coordinates of the listening location. It can be a list of 2 elements [latitude, longitude], or the 
                 name of a csv file located in the `raw/auxiliary/` folder containing two columns: `lat` and `lon` with those informations."""
-        if isinstance(self.__config.gps, str):
-            csvFileArray = pd.read_csv(os.path.join(self.Path,'raw' ,'auxiliary' ,self.__config.gps))
+        if isinstance(config.gps, str):
+            csvFileArray = pd.read_csv(os.path.join(self.Path,'raw' ,'auxiliary' ,config.gps))
             self.__coords = [(np.min(csvFileArray['lat']) , np.max(csvFileArray['lat'])) , (np.min(csvFileArray['lon']) , np.max(csvFileArray['lon']))]
-        elif not isinstance(self.__config.gps, list):
-            raise TypeError(f"GPS coordinates must be either a list of coordinates or the name of csv containing the coordinates, but {type(self.__config.gps)} found.")
+        elif not isinstance(config.gps, list) and not isinstance(config.gps, tuple):
+            raise TypeError(f"GPS coordinates must be either a list of coordinates or the name of csv containing the coordinates, but {type(config.gps)} found.")
 
         pd.set_option('display.float_format', lambda x: '%.0f' % x)
 
@@ -39,7 +56,7 @@ class Dataset():
     @property
     def Path(self):
         """The Dataset path."""
-        return os.path.join(self.__path, self.Name)
+        return self.__path
     
     @property
     def Coords(self) -> Union[Tuple[float,float], Tuple[Tuple[float,float],Tuple[float,float]]] :
@@ -56,7 +73,26 @@ class Dataset():
         """Checks if self.Path/raw/audio contains at least one folder and none called "original"."""
         return len(os.listdir(os.path.join(self.Path, "raw","audio"))) > 0 and not os.path.exists(os.path.join(self.Path, "raw","audio","original"))
 
-    def read_config(raw_config: Union[str, dict]) -> NamedTuple:
+    @property
+    def Metadata(self):
+        """The dataset's metadata as a dict."""
+        return self.__metadata
+
+    def __str__(self):
+        return f"""
+        Original sample frequency (Hz): {self.Metadata["orig_fs"]}
+        {self.Metadata["start_date"]} → {self.Metadata["end_date"]}
+        Cumulated number of days: {self.Metadata["cumul_days"]}
+        Original audio file duration (s): {self.Metadata["orig_fileDuration"]}
+        Total number of files: {self.Metadata["file_number"]}
+        Total volume (GB): {self.Metadata["total_volume"]}
+        Auxiliary files: kesako\n
+        {"*"*20}
+        Existing analysis parameters (fileDuration_sampleFrequency): {"; ".join(sorted(os.listdir(os.path.join(self.Path, "raw", "audio"))))}
+        """
+
+
+    def read_config(self, raw_config: Union[str, dict]) -> NamedTuple:
         """Read the given configuration file or dict and converts it to a namedtuple. Only TOML and JSON formats are accepted for now.
         
             Parameter:
@@ -79,7 +115,8 @@ class Dataset():
                         raise NotImplementedError("YAML support will eventually get there (unfortunately)")
                     case _:
                         raise UnknownFileError(f"The provided configuration file extension (.{os.path.splitext(raw_config)[1]} is not a valid extension. Please use .toml or .json files.")
-
+        elif isinstance(raw_config, dict):
+            pre_config = raw_config
         return namedtuple('GenericDict', pre_config.keys())(**pre_config)
 
     def build(self, osmose_group_name:str = None, force_upload: bool = False) -> Tuple[list, list]:
@@ -104,7 +141,9 @@ class Dataset():
         path_timestamp_formatted = os.path.join(self.Path,'raw' ,'audio' ,'original','timestamp.csv')
         path_raw_audio = os.path.join(self.Path,'raw' ,'audio','original')
         
-        
+        if not os.path.exists(path_raw_audio):
+            raise FileNotFoundError(f"No audio folder to be built has been found. Looking for {path_raw_audio}")
+
         csvFileArray = pd.read_csv(path_timestamp_formatted, header=None)
 
         timestamp_csv = csvFileArray[1].values
@@ -255,17 +294,19 @@ class Dataset():
             # change permission on the dataset
             if force_upload:
                 print('\n Well you have anomalies but you choose to FORCE UPLOAD')
-            print('\n Now setting OSmOSE permissions ; wait a bit ...')
-            gid = grp.getgrnam(osmose_group_name).gr_gid
+            if not skip_perms:
+                print('\n Now setting OSmOSE permissions ; wait a bit ...')
+                gid = grp.getgrnam(osmose_group_name).gr_gid
 
-            os.chown(self.Path, -1, gid)
-            os.chmod(self.Path, 0o770)
-            for dirpath, dirnames, filenames in os.walk(self.Path):
-                for filename in filenames:
-                    os.chown(os.path.join(dirpath, filename), -1, gid)
-                    os.chmod(os.path.join(dirpath, filename), 0o770)
-            print('\n DONE ! your dataset is on OSmOSE platform !')
-
+                os.chown(self.Path, -1, gid)
+                os.chmod(self.Path, 0o770)
+                for dirpath, dirnames, filenames in os.walk(self.Path):
+                    for filename in filenames:
+                        os.chown(os.path.join(dirpath, filename), -1, gid)
+                        os.chmod(os.path.join(dirpath, filename), 0o770)
+                print('\n DONE ! your dataset is on OSmOSE platform !')
+            else:
+                print("Unable to set OSmOSE permissions. The dataset is still built but file permissions might be incorrect.")
 
         return list_duration
 
