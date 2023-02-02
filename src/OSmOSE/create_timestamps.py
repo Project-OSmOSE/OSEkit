@@ -5,8 +5,6 @@ import re
 import os
 import datetime
 import argparse
-from dateutil import parser
-import sys
 
 __converter = {
         "%Y": r"[12][0-9]{3}",
@@ -42,7 +40,7 @@ def convert_template_to_re(date_template: str) -> str:
     
     return res
 
-def write_timestamp(dataset_path: str, date_template: str, offsets: tuple = None):
+def write_timestamp(*, dataset_path: str, date_template: str, offsets: tuple = None):
     """Read the dates in the filenames of audio files in the `dataset_path` folder, 
     according to the date template in strftime format or the offsets from the beginning and end of the date.
     
@@ -102,4 +100,4 @@ if __name__ == "__main__":
     #     offset = [int(off) for off in args.offset.split("-")]
     # else:
     #     offset = [int(args.offset), 0]
-    write_timestamp(args.dataset_name, args.date_template)
+    write_timestamp(dataset_path=args.dataset_name, date_template=args.date_template)

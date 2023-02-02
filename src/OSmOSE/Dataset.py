@@ -28,6 +28,7 @@ class Dataset():
 
         pd.set_option('display.float_format', lambda x: '%.0f' % x)
 
+    #region Properties
     @property
     def Name(self):
         """The Dataset name."""
@@ -57,8 +58,9 @@ class Dataset():
     def is_built(self):
         """Checks if self.Path/raw/audio contains at least one folder and none called "original"."""
         return len(os.listdir(os.path.join(self.Path, "raw","audio"))) > 0 and not os.path.exists(os.path.join(self.Path, "raw","audio","original"))
+    #endregion
 
-    def build(self, osmose_group_name:str = None, force_upload: bool = False) -> Tuple[list, list]:
+    def build(self, *, osmose_group_name:str = None, force_upload: bool = False) -> Tuple[list, list]:
         """
         
         Parameters:

@@ -210,7 +210,7 @@ class Spectrogram(Dataset):
     #endregion
 
     # TODO: some cleaning
-    def initialize(self, analysis_fs: float, ind_min: int, ind_max: int, auto_reshape: bool = False) -> None:
+    def initialize(self, *, analysis_fs: float, ind_min: int, ind_max: int, auto_reshape: bool = False) -> None:
         
         # Load variables from raw metadata
         metadata = pd.read_csv(os.path.join(self.Path, "raw","metadata.csv"))
@@ -355,7 +355,7 @@ class Spectrogram(Dataset):
 
 
 
-    def gen_tiles(self, data: list, sample_rate: int, output_file: str):
+    def gen_tiles(self, *, data: list, sample_rate: int, output_file: str):
         if self.Data_normalization=='zscore':
             if (len(self.Zscore_duration)>0) and (self.Zscore_duration != 'original'):
                 data = (data - self.__zscore_mean) / self.__zscore_std
@@ -402,7 +402,7 @@ class Spectrogram(Dataset):
                 if self.Spectro_normalization == 'spectrum':
                     log_spectro = 10 * np.log10(Sxx_int)
                 
-                self.generate_and_save_figures(segment_times_int, Freq, log_spectro, f"{os.path.splitext(output_file)[0]}_{str(2 ** zoom_level)}_{str(tile)}.png")
+                self.generate_and_save_figures(time=segment_times_int, freq=Freq, log_spectro=log_spectro, output_file=f"{os.path.splitext(output_file)[0]}_{str(2 ** zoom_level)}_{str(tile)}.png")
 
     def gen_spectro(self, data, sample_rate, output_file):
         Noverlap = int(self.Window_size * self.Overlap / 100)
@@ -442,7 +442,7 @@ class Spectrogram(Dataset):
             log_spectro = 10 * np.log10(Sxx)
 
         # save spectrogram as a png image
-        self.generate_and_save_figures( Time, Freq, log_spectro, output_file)
+        self.generate_and_save_figures( time=Time, freq=Freq, log_spectro=log_spectro, output_file=output_file)
         
         # save spectrogram matrices (intensity, time and freq) in a npz file
         if not os.path.exists( os.path.dirname(output_file.replace('.png','.npz').replace('spectrograms','spectrograms_mat')) ):
@@ -451,7 +451,7 @@ class Spectrogram(Dataset):
 
         return Sxx, Freq
 
-    def generate_and_save_figures(self, time, freq, log_spectro, output_file):
+    def generate_and_save_figures(self, *, time, freq, log_spectro, output_file):
         # Ploting spectrogram
         my_dpi = 100
         fact_x = 1.3
