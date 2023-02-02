@@ -48,6 +48,18 @@ class Spectrogram(Dataset):
         self.__data_normalization : str = analysis_sheet['data_normalization'][0]
         self.__gain_dB : float = analysis_sheet['gain_dB'][0]
 
+        plt.switch_backend('agg')
+
+        fontsize = 16
+        ticksize = 12
+        plt.rc('font', size=fontsize)  # controls default text sizes
+        plt.rc('axes', titlesize=fontsize)  # fontsize of the axes title
+        plt.rc('axes', labelsize=fontsize)  # fontsize of the x and y labels
+        plt.rc('xtick', labelsize=ticksize)  # fontsize of the tick labels
+        plt.rc('ytick', labelsize=ticksize)  # fontsize of the tick labels
+        plt.rc('legend', fontsize=ticksize)  # legend fontsize
+        plt.rc('figure', titlesize=ticksize)  # fontsize of the figure title
+
 
     #region Spectrogram properties
 
