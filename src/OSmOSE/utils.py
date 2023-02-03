@@ -2,9 +2,10 @@ from collections import namedtuple
 from distutils.errors import UnknownFileError
 import shutil
 import os
-from typing import Union, NamedTuple
+from typing import Union, NamedTuple, Tuple
 import json
 import tomllib
+import struct
 
 def display_folder_storage_infos(dir_path: str) -> None:
 
@@ -60,3 +61,20 @@ def read_config(raw_config: Union[str, dict]) -> NamedTuple:
                         raise UnknownFileError(f"The provided configuration file extension (.{os.path.splitext(raw_config)[1]} is not a valid extension. Please use .toml or .json files.")
 
         return namedtuple('GenericDict', pre_config.keys())(**pre_config)
+
+        
+def read_header(file:str) -> Tuple[int, int, int, int]:
+    with open(file, "rb") as fh:
+        _, size, _ = struct.unpack('<4sI4s', fh.read(12))
+
+        chunk_header = fh.read(8)
+        subchunkid, _ = struct.unpack('<4sI', chunk_header)
+
+        if (subchunkid == b'fmt '):
+            _, channels, samplerate, _, _, sampwidth = struct.unpack('HHIIHH', fh.read(16))
+
+        sampwidth = (sampwidth + 7) // 8
+        framesize = channels * sampwidth
+        frames = size // framesize
+
+        return sampwidth, frames, samplerate, channels
