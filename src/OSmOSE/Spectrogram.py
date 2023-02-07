@@ -1,6 +1,6 @@
 from math import log10
 import shutil
-from typing import Union, List
+from typing import Union, List, Literal
 
 from matplotlib import pyplot as plt
 from Dataset import Dataset
@@ -222,7 +222,7 @@ class Spectrogram(Dataset):
     #endregion
 
     # TODO: some cleaning
-    def initialize(self, *, analysis_fs: float, ind_min: int, ind_max: int, auto_reshape: bool = False) -> None:
+    def initialize(self, *, analysis_fs: float, ind_min: int, ind_max: int, reshape_method: Literal["resample","reshape","none"] = "none") -> None:
         
         # Load variables from raw metadata
         metadata = pd.read_csv(os.path.join(self.Path, "raw","metadata.csv"))
@@ -238,14 +238,20 @@ class Spectrogram(Dataset):
         #? Quite I/O intensive and monothread, might need to rework to allow qsub.
         if self.Max_time_display_spectro != int(orig_fileDuration):
             # We might reshape the files and create the folder. Note: reshape function might be memory-heavy and deserve a proper qsub job. 
-            if self.Max_time_display_spectro > int(orig_fileDuration) and not auto_reshape:
+            if self.Max_time_display_spectro > int(orig_fileDuration) and reshape_method == "none":
                 raise ValueError("Spectrogram size cannot be greater than file duration. If you want to automatically reshape your audio files to fit the spectrogram size, consider adding auto_reshape=True as parameter.")
             
             reshaped_path = os.path.join(self.Path , 'raw', 'audio', str(self.Max_time_display_spectro)+'_'+str(analysis_fs))
             print(f"Automatically reshaping audio files to fit the Maxtime display spectro value. Files will be {self.Max_time_display_spectro} seconds long.")
 
-            reshaped_files = reshape(self.Max_time_display_spectro, path_input_audio_file, reshaped_path)
-            metadata["dataset_totalDuration"] = len(reshaped_files) * self.Max_time_display_spectro
+            #TODO
+            if reshape_method == "reshape":
+                # build job, qsub, stuff
+                reshaped_files = reshape(self.Max_time_display_spectro, path_input_audio_file, reshaped_path)
+                metadata["dataset_totalDuration"] = len(reshaped_files) * self.Max_time_display_spectro
+            elif reshape_method == "resample":
+                #same as above, using bash
+                pass
 
         metadata["dataset_fileDuration"] = self.Max_time_display_spectro
         metadata["dataset_fs"] = analysis_fs
@@ -310,7 +316,7 @@ class Spectrogram(Dataset):
         #endregion
 
         for path in [self.__path_output_spectrograms, self.__path_output_spectrogram_matrices]:
-            if os.path.exists(path): shutil.remtree(path)
+            if os.path.exists(path): shutil.rmtree(path)
             os.makedirs(path)
 
         self.to_csv(os.path.join(self.__path_output_spectrograms, "spectrograms.csv"))
