@@ -30,7 +30,7 @@ def substract_timestamps(input_timestamp: pd.DataFrame, files: List[str], index:
 
     return cur_timestamp - prev_timestamp
 
-def reshape(chunk_size: int, input_dir_path: str, *, output_dir_path: str = None, verbose : bool = False) -> List[str]:
+def reshape(chunk_size: int, input_dir_path: str, *, output_dir_path: str = None, verbose : bool = False, overwrite : bool = False) -> List[str]:
     """Reshape all audio files in the folder to be of the specified duration. If chunk_size is superior to the base duration of the files, they will be fused according to their order in the timestamp.csv file in the same folder.
     
         Parameters:
@@ -215,7 +215,7 @@ if __name__ == "__main__":
 
     input_files = args.input_files.split(" ") if not os.path.isdir(args.input_files) else args.input_files
 
-    files = reshape(input_files, args.chunk_size, args.output_dir, args.verbose, args.overwrite)
+    files = reshape(chunk_size=args.chunk_size, input_dir_path=input_files, output_dir_path=args.output_dir, verbose=args.verbose, overwrite=args.overwrite)
 
     if args.verbose:
         print(f"All {len(files)} reshaped audio files written in {os.path.dirname(files[0])}.")
