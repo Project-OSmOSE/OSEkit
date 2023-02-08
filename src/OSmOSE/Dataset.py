@@ -4,10 +4,9 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from datetime import datetime
-import wave
 import grp
 from warnings import warn
-from utils import read_config
+from utils import read_config, read_header
 
 class Dataset():
     def __init__(self, config: Union[str, dict]) -> None:
@@ -112,11 +111,7 @@ class Dataset():
             list_filename.append(filename_csv[ind_dt])
 
             try:
-                with wave.open(filewav, "rb") as wave_file:
-                    params = wave_file.getparams()
-                    sr = params.framerate
-                    frames = params.nframes
-                    sampwidth = params.sampwidth
+                sr, frames, sampwidth, channels = read_header(filewav)
             
             except Exception as e:
                 list_file_problem.append(filewav)
@@ -169,7 +164,7 @@ class Dataset():
         # write raw/metadata.csv
         data = {'orig_fs' :float(pd.DataFrame(list_samplingRate).values.flatten().mean())
                 ,'sound_sample_size_in_bits' :int( 8 *pd.DataFrame(list_sampwidth).values.flatten().mean())
-                ,'nchannels' :int(params.nchannels) ,'nberWavFiles': len(filename_csv) ,'start_date' :timestamp_csv[0]
+                ,'nchannels' :int(channels) ,'nberWavFiles': len(filename_csv) ,'start_date' :timestamp_csv[0]
                 ,'end_date' :timestamp_csv[-1] ,'dutyCycle_percent' :dutyCycle_percent
                 ,'orig_fileDuration' :round(pd.DataFrame(list_duration).values.flatten().mean() ,2)
                 ,'orig_fileVolume' :pd.DataFrame(list_size).values.flatten().mean()
