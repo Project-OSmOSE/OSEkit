@@ -226,7 +226,7 @@ class Job_builder():
         return os.path.join(jobdir, outfilename)
 
     # TODO support multiple dependecies and job chaining (?)
-    def submit_job(self, jobfile: str = None, dependency: str = None) -> List[str]:
+    def submit_job(self, jobfile: str = None, dependency: str | List[str] = None) -> List[str]:
         """Submits the job file to the cluster using the job scheduler written in the file name or in the configuration file.
         
         Parameters:
@@ -243,6 +243,8 @@ class Job_builder():
         jobfile_list = [jobfile] if jobfile else self.Prepared_jobs
         
         jobid_list = []
+
+        # TODO: Think about the issue when a job have too many dependencies and workaround.
 
         for jobfile in jobfile_list:
             if "torque" in jobfile.lower():

@@ -247,20 +247,38 @@ class Spectrogram(Dataset):
             list_wav_withEvent = list(set(subset).intersection(set(list_wav_withEvent)))
         
         batch_size = min(len(list_wav_withEvent) // self.Batch_number, 20)
-        
+
+        #! RESAMPLING
         resample_job_id_list = []
 
-        if analysis_fs != orig_fs and not os.path.exists(os.path.join(analysis_audio_foldername)):
+        if analysis_fs != orig_fs and not os.listdir(analysis_audio_foldername):
             for batch in range(self.Batch_number):
                 i_min = batch * batch_size
                 i_max = (i_min + batch_size if batch < self.Batch_number - 1 else len(list_wav_withEvent)) # If it is the last batch, take all files
-                jobfile = jb.build_job_file(script_path=os.path.join(os.dirname(__file__), "resample.py"), \
+                jobfile = jb.build_job_file(script_path=os.path.join(os.dirname(__file__), "cluster", "resample.py"), \
                             script_args=f"--input-dir {path_input_audio_file} --target-fs {analysis_fs} --ind-min {i_min} --ind-max {i_max} --output-dir {analysis_audio_foldername}", \
                             jobname="OSmOSE_resample", preset="medium")
 
                 job_id = jb.submit_job(jobfile)
                 resample_job_id_list.append(job_id)
 
+        #! ZSCORE NORMALIZATION
+        isnorma = any([cc in self.Zscore_duration for cc in ['D','M','H','S','W']]) 
+        normaDir = os.path.join(analysis_audio_foldername, "normaParams", audio_foldername)
+        if os.listdir(normaDir) and self.Data_normalization == "zscore" and isnorma:
+            norma_job_id_list = []
+
+            for batch in range(self.Batch_number):
+                i_min = batch * batch_size
+                i_max = (i_min + batch_size if batch < self.Batch_number - 1 else len(list_wav_withEvent)) # If it is the last batch, take all files
+                jobfile = jb.build_job_file(script_path=os.path.join(os.dirname(__file__), "cluster", "get_zscore_params.py"), \
+                            script_args=f"--input-dir {path_input_audio_file} --fmin-highpassfilter {self.Fmin_HighPassFilter} --ind-min {i_min} --ind-max {i_max} --output-file {os.path.join(normaDir, 'SummaryStats_' + str(i_min) + '.csv')}", \
+                            jobname="OSmOSE_get_zscore_params", preset="low")
+
+                job_id = jb.submit_job(jobfile, dependency=resample_job_id_list)
+                resample_job_id_list.append(job_id)
+
+        #! RESHAPING
         # Reshape audio files to fit the maximum spectrogram size, whether it is greater or smaller.
         #? Quite I/O intensive and monothread, might need to rework to allow qsub.
         if self.Max_time_display_spectro != int(orig_fileDuration):
@@ -295,19 +313,6 @@ class Spectrogram(Dataset):
                                 _cvr={str(self.Min_color_value)}-{str(self.Max_color_value)}"
 
         self.__path_output_spectrogram_matrices = os.path.join(analysis_path, "spectrograms_mat", audio_foldername, self.__spectro_foldername)
-
-
-        if self.Data_normalization == "zscore" and self.Zscore_duration != "original" and self.Zscore_duration:
-            average_over_H = int(round(pd.to_timedelta(self.Zscore_duration).total_seconds() / self.Max_time_display_spectro))
-
-            df=pd.DataFrame()
-            for dd in glob(os.path.join(self.__path_summstats,'summaryStats*')):        
-                df = pd.concat([ df , pd.read_csv(dd,header=0) ])
-                
-            df['mean_avg'] = df['mean'].rolling(average_over_H, min_periods=1).mean()
-            df['std_avg'] = df['std'].rolling(average_over_H, min_periods=1).std()
-
-            self.__summStats = df
 
         #? Useful or deprecated?
         #region Maybe deprecated
@@ -364,13 +369,29 @@ class Spectrogram(Dataset):
 
 
     def process_file(self, audio_file: str) -> None:
+
+        #! Determination of zscore normalization parameters
+        if self.Data_normalization == "zscore" and self.Zscore_duration != "original" and self.Zscore_duration:
+            average_over_H = int(round(pd.to_timedelta(self.Zscore_duration).total_seconds() / self.Max_time_display_spectro))
+
+            df=pd.DataFrame()
+            for dd in glob(os.path.join(self.__path_summstats,'summaryStats*')):        
+                df = pd.concat([ df , pd.read_csv(dd,header=0) ])
+                
+            df['mean_avg'] = df['mean'].rolling(average_over_H, min_periods=1).mean()
+            df['std_avg'] = df['std'].rolling(average_over_H, min_periods=1).std()
+
+            self.__summStats = df
+
         if audio_file not in os.listdir(self.__audio_path):
             raise FileNotFoundError(f"The file {audio_file} must be in {self.__audio_path} in order to be processed.")
 
         if self.Zscore_duration and self.Zscore_duration != "original" and self.Data_normalization=="zscore":
-            self.__zscore_mean = self.SummStats[self.SummStats['filename'] == audio_file]['mean_avg'].values[0]
-            self.__zscore_std = self.SummStats[self.SummStats['filename'] == audio_file]['std_avg'].values[0]
+            self.__zscore_mean = self.__summStats[self.__summStats['filename'] == audio_file]['mean_avg'].values[0]
+            self.__zscore_std = self.__summStats[self.__summStats['filename'] == audio_file]['std_avg'].values[0]
 
+
+        #! File processing
         data, sample_rate = sf.read(os.path.join(self.__audio_path, audio_file))        
 
         if self.Data_normalization=='instrument':
