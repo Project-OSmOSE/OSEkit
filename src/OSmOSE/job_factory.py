@@ -141,7 +141,7 @@ class Job_builder():
                 json.dumps(self.__config)
         
         
-    def build_job_file(self, *, script_path: str, script_args:str, jobname: str = None, job_scheduler: Literal["Torque","Slurm"] = None,
+    def build_job_file(self, *, script_path: str, script_args:str, jobname: str = None, preset: Literal["low","medium","high"]= None, job_scheduler: Literal["Torque","Slurm"] = None,
      env_name = None, env_script = None, queue = None, nodes = None, walltime = None, ncpus = None, mem = None, outfile = None, errfile = None) -> str:
         """Build a job file corresponding to your job scheduler."""
 

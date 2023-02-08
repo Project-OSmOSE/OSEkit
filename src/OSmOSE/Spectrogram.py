@@ -1,7 +1,7 @@
 from math import log10
 import shutil
 from typing import Union, List, Literal
-
+from job_factory import Job_builder
 from matplotlib import pyplot as plt
 from Dataset import Dataset
 import pandas as pd
@@ -15,7 +15,7 @@ import numpy as np
 
 class Spectrogram(Dataset):
 
-    def __init__(self, config: str, analysis_params: dict = None, audio_files: List[str] = None) -> None:
+    def __init__(self, config: str, analysis_params: dict = None, audio_files: List[str] = None, batch_number : int = 10) -> None:
         super().__init__(config)
 
         if os.path.exists(os.path.join(self.Path, "analysis", "analysis_sheet.csv")):
@@ -26,6 +26,8 @@ class Spectrogram(Dataset):
             analysis_sheet = {key: [value] for (key, value) in analysis_params.items()}
         else:
             raise ValueError("You need to either have a valid analysis/analysis_sheet.csv file or provide the analysis metadatas as a dict.")
+
+        self.Batch_number : int = batch_number
 
         self.__fileScale_nfft : int = analysis_sheet['fileScale_nfft'][0]
         self.__fileScale_winsize : int = analysis_sheet['fileScale_winsize'][0]
@@ -224,6 +226,7 @@ class Spectrogram(Dataset):
     # TODO: some cleaning
     def initialize(self, *, analysis_fs: float, ind_min: int, ind_max: int, reshape_method: Literal["resample","reshape","none"] = "none") -> None:
         
+        jb = Job_builder()
         # Load variables from raw metadata
         metadata = pd.read_csv(os.path.join(self.Path, "raw","metadata.csv"))
         orig_fileDuration = metadata['orig_fileDuration'][0]
@@ -231,8 +234,32 @@ class Spectrogram(Dataset):
         total_nber_audio_files = metadata['nberWavFiles'][0]
 
         input_audio_foldername = str(orig_fileDuration)+'_'+str(int(orig_fs))
-
+        analysis_audio_foldername = os.path.join(self.Path , 'raw', 'audio', str(self.Max_time_display_spectro)+'_'+str(analysis_fs))
         path_input_audio_file = os.path.join(self.Path, "raw", "audio", input_audio_foldername)
+
+        list_wav_withEvent_comp = sorted(glob.glob(os.path.join(path_input_audio_file , '*wav')))
+        list_wav_withEvent = list_wav_withEvent_comp[ind_min:ind_max]
+        
+        list_wav_withEvent = [os.path.basename(x) for x in list_wav_withEvent]
+
+        if os.path.isfile(os.path.join(analysis_path,"subset_files.csv")):
+            subset = pd.read_csv(os.path.join(self.Path , 'analysis', 'subset_files.csv'),header=None)[0].values
+            list_wav_withEvent = list(set(subset).intersection(set(list_wav_withEvent)))
+        
+        batch_size = min(len(list_wav_withEvent) // self.Batch_number, 20)
+        
+        resample_job_id_list = []
+
+        if analysis_fs != orig_fs and not os.path.exists(os.path.join(analysis_audio_foldername)):
+            for batch in range(self.Batch_number):
+                i_min = batch * batch_size
+                i_max = (i_min + batch_size if batch < self.Batch_number - 1 else len(list_wav_withEvent)) # If it is the last batch, take all files
+                jobfile = jb.build_job_file(script_path=os.path.join(os.dirname(__file__), "resample.py"), \
+                            script_args=f"--input-dir {path_input_audio_file} --target-fs {analysis_fs} --ind-min {i_min} --ind-max {i_max} --output-dir {analysis_audio_foldername}", \
+                            jobname="OSmOSE_resample", preset="medium")
+
+                job_id = jb.submit_job(jobfile)
+                resample_job_id_list.append(job_id)
 
         # Reshape audio files to fit the maximum spectrogram size, whether it is greater or smaller.
         #? Quite I/O intensive and monothread, might need to rework to allow qsub.
@@ -241,13 +268,12 @@ class Spectrogram(Dataset):
             if self.Max_time_display_spectro > int(orig_fileDuration) and reshape_method == "none":
                 raise ValueError("Spectrogram size cannot be greater than file duration. If you want to automatically reshape your audio files to fit the spectrogram size, consider adding auto_reshape=True as parameter.")
             
-            reshaped_path = os.path.join(self.Path , 'raw', 'audio', str(self.Max_time_display_spectro)+'_'+str(analysis_fs))
             print(f"Automatically reshaping audio files to fit the Maxtime display spectro value. Files will be {self.Max_time_display_spectro} seconds long.")
 
             #TODO
             if reshape_method == "reshape":
                 # build job, qsub, stuff
-                reshaped_files = reshape(self.Max_time_display_spectro, path_input_audio_file, reshaped_path)
+                reshaped_files = reshape(self.Max_time_display_spectro, list_wav_withEvent, analysis_audio_foldername)
                 metadata["dataset_totalDuration"] = len(reshaped_files) * self.Max_time_display_spectro
             elif reshape_method == "resample":
                 #same as above, using bash
@@ -282,16 +308,6 @@ class Spectrogram(Dataset):
             df['std_avg'] = df['std'].rolling(average_over_H, min_periods=1).std()
 
             self.__summStats = df
-
-
-        list_wav_withEvent_comp = glob.glob(os.path.join(path_input_audio_file , '*wav'))
-        list_wav_withEvent = list_wav_withEvent_comp[ind_min:ind_max]
-        
-        list_wav_withEvent = [os.path.basename(x) for x in list_wav_withEvent]
-
-        if os.path.isfile(os.path.join(analysis_path,"subset_files.csv")):
-            subset = pd.read_csv(os.path.join(self.Path , 'analysis', 'subset_files.csv'),header=None)[0].values
-            list_wav_withEvent = list(set(subset).intersection(set(list_wav_withEvent)))
 
         #? Useful or deprecated?
         #region Maybe deprecated
