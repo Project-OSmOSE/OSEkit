@@ -265,8 +265,8 @@ class Spectrogram(Dataset):
         #! ZSCORE NORMALIZATION
         isnorma = any([cc in self.Zscore_duration for cc in ['D','M','H','S','W']]) 
         normaDir = os.path.join(analysis_audio_foldername, "normaParams", audio_foldername)
+        norma_job_id_list = []
         if os.listdir(normaDir) and self.Data_normalization == "zscore" and isnorma:
-            norma_job_id_list = []
 
             for batch in range(self.Batch_number):
                 i_min = batch * batch_size
@@ -276,11 +276,13 @@ class Spectrogram(Dataset):
                             jobname="OSmOSE_get_zscore_params", preset="low")
 
                 job_id = jb.submit_job(jobfile, dependency=resample_job_id_list)
-                resample_job_id_list.append(job_id)
+                norma_job_id_list.append(job_id)
 
         #! RESHAPING
         # Reshape audio files to fit the maximum spectrogram size, whether it is greater or smaller.
         #? Quite I/O intensive and monothread, might need to rework to allow qsub.
+        reshape_job_id_list = []
+
         if self.Max_time_display_spectro != int(orig_fileDuration):
             # We might reshape the files and create the folder. Note: reshape function might be memory-heavy and deserve a proper qsub job. 
             if self.Max_time_display_spectro > int(orig_fileDuration) and reshape_method == "none":
@@ -288,9 +290,39 @@ class Spectrogram(Dataset):
             
             print(f"Automatically reshaping audio files to fit the Maxtime display spectro value. Files will be {self.Max_time_display_spectro} seconds long.")
 
-            #TODO
+            #TODO finish
             if reshape_method == "reshape":
                 # build job, qsub, stuff
+                nb_reshaped_files = (orig_fileDuration * total_nber_audio_files) / self.Max_time_display_spectro
+                files_for_one_reshape = total_nber_audio_files / nb_reshaped_files
+                next_offset_beginning = 0
+                offset_end = 0
+                i_max = -1
+                for batch in range(self.Batch_number):
+                    if i_max >= len(list_wav_withEvent) -1: continue
+
+                    offset_beginning = next_offset_beginning
+                    next_offset_beginning = 0
+
+                    i_min = i_max + 1
+                    i_max = (i_min + batch_size if batch < self.Batch_number - 1 and i_min + batch_size < len(list_wav_withEvent) else len(list_wav_withEvent)) # If it is the last batch, take all files
+                    
+                    while (i_max - i_min + offset_end) % files_for_one_reshape > 1 and i_max < len(list_wav_withEvent):
+                        i_max += 1
+
+                    offset_end = (i_max - i_min + offset_end) % files_for_one_reshape
+                    if offset_end:
+                        next_offset_beginning = orig_fileDuration - offset_end
+                    else: offset_end = 0 #? ack
+
+                    jobfile = jb.build_job_file(script_path=os.path.join(os.dirname(__file__), "cluster", "audio_reshaper.py"), \
+                                script_args=f"--input-files {path_input_audio_file} --chunk-size {self.Max_time_display_spectro} --ind-min {i_min}\
+                                     --ind-max {i_max} --output-dir {analysis_audio_foldername} --offset-beginning {offset_beginning} --offset-end {offset_end}", \
+                                jobname="OSmOSE_reshape", preset="medium")
+
+                    job_id = jb.submit_job(jobfile, dependency=norma_job_id_list)
+                    reshape_job_id_list.append(job_id)
+                
                 reshaped_files = reshape(self.Max_time_display_spectro, list_wav_withEvent, analysis_audio_foldername)
                 metadata["dataset_totalDuration"] = len(reshaped_files) * self.Max_time_display_spectro
             elif reshape_method == "resample":
