@@ -4,14 +4,18 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from datetime import datetime
-import grp
+try:
+    import grp
+    skip_perms = False
+except ModuleNotFoundError:
+    print("It seems you are on a non-Unix operating system (probably Windows). The build_dataset() method will not work as intended and permission might be uncorrectly set.")
+    skip_perms = True
 from warnings import warn
 from utils import read_config, read_header
 
 class Dataset():
     def __init__(self, config: Union[str, dict]) -> None:
-        self.__config = read_config(config)
-        
+        config = read_config(config)
         self.__name = config.dataset_name
         self.__path = os.path.join(config.dataset_folder_path, self.__name)
         self.__group = config.osmose_group_name
@@ -19,11 +23,11 @@ class Dataset():
 
         """gps: The GPS coordinates of the listening location. It can be a list of 2 elements [latitude, longitude], or the 
                 name of a csv file located in the `raw/auxiliary/` folder containing two columns: `lat` and `lon` with those informations."""
-        if isinstance(self.__config.gps, str):
-            csvFileArray = pd.read_csv(os.path.join(self.Path,'raw' ,'auxiliary' ,self.__config.gps))
+        if isinstance(config.gps, str):
+            csvFileArray = pd.read_csv(os.path.join(self.Path,'raw' ,'auxiliary' ,config.gps))
             self.__coords = [(np.min(csvFileArray['lat']) , np.max(csvFileArray['lat'])) , (np.min(csvFileArray['lon']) , np.max(csvFileArray['lon']))]
-        elif not isinstance(self.__config.gps, list):
-            raise TypeError(f"GPS coordinates must be either a list of coordinates or the name of csv containing the coordinates, but {type(self.__config.gps)} found.")
+        elif not isinstance(config.gps, list):
+            raise TypeError(f"GPS coordinates must be either a list of coordinates or the name of csv containing the coordinates, but {type(config.gps)} found.")
 
         pd.set_option('display.float_format', lambda x: '%.0f' % x)
 
@@ -36,7 +40,7 @@ class Dataset():
     @property
     def Path(self):
         """The Dataset path."""
-        return os.path.join(self.__path, self.Name)
+        return self.__path
     
     @property
     def Coords(self) -> Union[Tuple[float,float], Tuple[Tuple[float,float],Tuple[float,float]]] :
