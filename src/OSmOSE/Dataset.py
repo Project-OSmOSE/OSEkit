@@ -20,12 +20,25 @@ class Dataset():
         self.__path = os.path.join(config.dataset_folder_path, self.__name)
         self.__group = config.osmose_group_name
 
+        metadf = pd.read_csv(os.path.join(self.__path, "raw","metadata.csv"))
+        
+        self.__metadata = {
+            "orig_fs": int(metadf["orig_fs"][0]),
+            "start_date": metadf['start_date'][0][:16],
+            "end_date" : metadf['end_date'][0][:16],
+            "cumul_days": (pd.to_datetime(metadf['end_date'][0], utc=True) - pd.to_datetime(metadf['start_date'][0], utc=True)).days,
+            "orig_fileDuration": int(metadf["orig_fileDuration"][0]),
+            "file_number": int(metadf["nberWavFiles"][0]),
+            "total_volume": int(metadf["orig_totalVolume"][0])
+        }
+
 
         """gps: The GPS coordinates of the listening location. It can be a list of 2 elements [latitude, longitude], or the 
                 name of a csv file located in the `raw/auxiliary/` folder containing two columns: `lat` and `lon` with those informations."""
         if isinstance(config.gps, str):
             csvFileArray = pd.read_csv(os.path.join(self.Path,'raw' ,'auxiliary' ,config.gps))
             self.__coords = [(np.min(csvFileArray['lat']) , np.max(csvFileArray['lat'])) , (np.min(csvFileArray['lon']) , np.max(csvFileArray['lon']))]
+
         elif not isinstance(config.gps, list):
             raise TypeError(f"GPS coordinates must be either a list of coordinates or the name of csv containing the coordinates, but {type(config.gps)} found.")
 
@@ -85,7 +98,9 @@ class Dataset():
         path_timestamp_formatted = os.path.join(self.Path,'raw' ,'audio' ,'original','timestamp.csv')
         path_raw_audio = os.path.join(self.Path,'raw' ,'audio','original')
         
-        
+        if not os.path.exists(path_raw_audio):
+            raise FileNotFoundError(f"No audio folder to be built has been found. Looking for {path_raw_audio}")
+
         csvFileArray = pd.read_csv(path_timestamp_formatted, header=None)
 
         timestamp_csv = csvFileArray[1].values
@@ -232,17 +247,19 @@ class Dataset():
             # change permission on the dataset
             if force_upload:
                 print('\n Well you have anomalies but you choose to FORCE UPLOAD')
-            print('\n Now setting OSmOSE permissions ; wait a bit ...')
-            gid = grp.getgrnam(osmose_group_name).gr_gid
+            if not skip_perms:
+                print('\n Now setting OSmOSE permissions ; wait a bit ...')
+                gid = grp.getgrnam(osmose_group_name).gr_gid
 
-            os.chown(self.Path, -1, gid)
-            os.chmod(self.Path, 0o770)
-            for dirpath, dirnames, filenames in os.walk(self.Path):
-                for filename in filenames:
-                    os.chown(os.path.join(dirpath, filename), -1, gid)
-                    os.chmod(os.path.join(dirpath, filename), 0o770)
-            print('\n DONE ! your dataset is on OSmOSE platform !')
-
+                os.chown(self.Path, -1, gid)
+                os.chmod(self.Path, 0o770)
+                for dirpath, dirnames, filenames in os.walk(self.Path):
+                    for filename in filenames:
+                        os.chown(os.path.join(dirpath, filename), -1, gid)
+                        os.chmod(os.path.join(dirpath, filename), 0o770)
+                print('\n DONE ! your dataset is on OSmOSE platform !')
+            else:
+                print("Unable to set OSmOSE permissions. The dataset is still built but file permissions might be incorrect.")
 
         return list_duration
 
