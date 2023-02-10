@@ -114,13 +114,11 @@ def reshape(chunk_size: int, input_files: Union[str, list], *, output_dir_path: 
     proceed = force_reshape #Default is False
 
     while i < len(files):
-        print("read file ", i)
         data, sample_rate = sf.read(os.path.join(input_dir_path, files[i]))
 
 
         if i == 0:
             timestamp = input_timestamp[input_timestamp["filename"] == files[i]]["timestamp"].values[0]
-            print(f"First timestamp: {timestamp}")
             timestamp = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%fZ")
             data = data[offset_beginning * sample_rate:]
         elif i == len(files) - 1 and offset_end != 0:
@@ -134,9 +132,7 @@ def reshape(chunk_size: int, input_files: Union[str, list], *, output_dir_path: 
         # While the duration of the audio is longer than the target chunk, we segment it into small files
         # This means to account for the creation of 10s long files from big one and not overload data.
         if len(data) > chunk_size * sample_rate:
-            print("data is longer")
             while len(data) > chunk_size * sample_rate:
-                print(f"{len(data) > chunk_size * sample_rate}. Preuve : data is {len(data)}, chunk is {chunk_size * sample_rate}")
                 output = data[:chunk_size * sample_rate]
                 prevdata = data[chunk_size * sample_rate:]
 
@@ -161,6 +157,8 @@ def reshape(chunk_size: int, input_files: Union[str, list], *, output_dir_path: 
                 i += 1
                 continue
 
+            
+
         # Else if data is already in the desired duration, output it
         if len(data) == chunk_size * sample_rate:
             output = data
@@ -168,29 +166,34 @@ def reshape(chunk_size: int, input_files: Union[str, list], *, output_dir_path: 
 
         # Else it is shorter, then while the duration is shorter than the desired chunk,
         # we read the next file and append it to the current one.
-        elif len(data) < chunk_size * sample_rate and i+1 < len(files):
-            print("data is shorter than the desired chunk, let's read the next file !")
+        elif len(data) < chunk_size * sample_rate:
 
-            # Check if the timestamps can safely be merged
-            if not (len(data) - max_delta_interval < substract_timestamps(input_timestamp, files, i).seconds < len(data) + max_delta_interval):
-                print(f"Warning: You are trying to merge two audio files that are not chronologically consecutive.\n{files[i-1]} starts at {input_timestamp[input_timestamp['filename'] == files[i-1]]['timestamp'].values[0]} and {files[i]} starts at {input_timestamp[input_timestamp['filename'] == files[i]]['timestamp'].values[0]}.")
-                if not proceed and sys.__stdin__.isatty(): #check if the script runs in an interactive shell. Otherwise will fail if proceed = False
-                    res = input("If you proceed, some timestamps will be lost in the reshaping. Proceed anyway? This message won't show up again if you choose to proceed. ([yes]/no)")
-                    if "yes" in res.lower() or res == "":
-                        proceed = True
-                    else:
-                        sys.exit()
-                elif not proceed and not sys.__stdin__.isatty():
-                    print("Error: Cannot merge non-continuous audio files if force_reshape is false.")
-                    sys.exit(1)
+            # If it is the last file but the data is shorter than the desired chunk, then fill the remaining space with silence.
+            if i == len(files) - 1:
+                fill = np.zeros((chunk_size*sample_rate) - len(data))
+                output = np.concatenate((data, fill))
+                prevdata = np.empty(1)
+            else:
+                # Check if the timestamps can safely be merged
+                if not (len(data) - max_delta_interval < substract_timestamps(input_timestamp, files, i).seconds < len(data) + max_delta_interval):
+                    print(f"Warning: You are trying to merge two audio files that are not chronologically consecutive.\n{files[i-1]} starts at {input_timestamp[input_timestamp['filename'] == files[i-1]]['timestamp'].values[0]} and {files[i]} starts at {input_timestamp[input_timestamp['filename'] == files[i]]['timestamp'].values[0]}.")
+                    if not proceed and sys.__stdin__.isatty(): #check if the script runs in an interactive shell. Otherwise will fail if proceed = False
+                        res = input("If you proceed, some timestamps will be lost in the reshaping. Proceed anyway? This message won't show up again if you choose to proceed. ([yes]/no)")
+                        if "yes" in res.lower() or res == "":
+                            proceed = True
+                        else:
+                            sys.exit()
+                    elif not proceed and not sys.__stdin__.isatty():
+                        print("Error: Cannot merge non-continuous audio files if force_reshape is false.")
+                        sys.exit(1)
 
-            while len(data) < chunk_size * sample_rate and i+1 < len(files):
-                nextdata, next_sample_rate = sf.read(os.path.join(input_dir_path, files[i+1]))
-                rest = (chunk_size * next_sample_rate) - len(data)
-                data = np.concatenate((data, nextdata[:rest] if rest <= len(nextdata) else nextdata))
-                i+=1
-            output = data
-            prevdata = nextdata[rest:]
+                while len(data) < chunk_size * sample_rate and i+1 < len(files):
+                    nextdata, next_sample_rate = sf.read(os.path.join(input_dir_path, files[i+1]))
+                    rest = (chunk_size * next_sample_rate) - len(data)
+                    data = np.concatenate((data, nextdata[:rest] if rest <= len(nextdata) else nextdata))
+                    i+=1
+                output = data
+                prevdata = nextdata[rest:]
 
         end_time = (t + 1) * chunk_size if chunk_size * sample_rate <= len(output) else t * chunk_size + len(output)//sample_rate
 
