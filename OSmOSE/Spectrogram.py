@@ -53,6 +53,8 @@ class Spectrogram(Dataset):
         self.__data_normalization : str = analysis_sheet['data_normalization'][0]
         self.__gain_dB : float = analysis_sheet['gain_dB'][0]
 
+        self.Jb = Job_builder()
+
         plt.switch_backend('agg')
 
         fontsize = 16
@@ -288,7 +290,6 @@ class Spectrogram(Dataset):
         if analysis_fs:
             self.Analysis_fs = analysis_fs
 
-        jb = Job_builder()
         self.__build_path()
 
         audio_foldername = str(self.Max_time_display_spectro)+'_'+str(self.Analysis_fs)
@@ -323,11 +324,11 @@ class Spectrogram(Dataset):
             for batch in range(self.Batch_number):
                 i_min = batch * batch_size
                 i_max = (i_min + batch_size if batch < self.Batch_number - 1 else len(self.list_wav_to_process)) # If it is the last batch, take all files
-                jobfile = jb.build_job_file(script_path=os.path.join(os.dirname(__file__), "cluster", "resample.py"), \
+                jobfile = self.Jb.build_job_file(script_path=os.path.join(os.dirname(__file__), "cluster", "resample.py"), \
                             script_args=f"--input-dir {self.path_input_audio_file} --target-fs {self.Analysis_fs} --ind-min {i_min} --ind-max {i_max} --output-dir {self.audio_path}", \
                             jobname="OSmOSE_resample", preset="medium")
 
-                job_id = jb.submit_job(jobfile)
+                job_id = self.Jb.submit_job(jobfile)
                 resample_job_id_list.append(job_id)
 
         #! ZSCORE NORMALIZATION
@@ -339,11 +340,11 @@ class Spectrogram(Dataset):
             for batch in range(self.Batch_number):
                 i_min = batch * batch_size
                 i_max = (i_min + batch_size if batch < self.Batch_number - 1 else len(self.list_wav_to_process)) # If it is the last batch, take all files
-                jobfile = jb.build_job_file(script_path=os.path.join(os.dirname(__file__), "cluster", "get_zscore_params.py"), \
+                jobfile = self.Jb.build_job_file(script_path=os.path.join(os.dirname(__file__), "cluster", "get_zscore_params.py"), \
                             script_args=f"--input-dir {self.path_input_audio_file} --fmin-highpassfilter {self.Fmin_HighPassFilter} --ind-min {i_min} --ind-max {i_max} --output-file {os.path.join(normaDir, 'SummaryStats_' + str(i_min) + '.csv')}", \
                             jobname="OSmOSE_get_zscore_params", preset="low")
 
-                job_id = jb.submit_job(jobfile, dependency=resample_job_id_list)
+                job_id = self.Jb.submit_job(jobfile, dependency=resample_job_id_list)
                 norma_job_id_list.append(job_id)
 
         #! RESHAPING
@@ -383,12 +384,12 @@ class Spectrogram(Dataset):
                         next_offset_beginning = orig_fileDuration - offset_end
                     else: offset_end = 0 #? ack
 
-                    jobfile = jb.build_job_file(script_path=os.path.join(os.dirname(__file__), "cluster", "audio_reshaper.py"), \
+                    jobfile = self.Jb.build_job_file(script_path=os.path.join(os.dirname(__file__), "cluster", "audio_reshaper.py"), \
                                 script_args=f"--input-files {self.path_input_audio_file} --chunk-size {self.Max_time_display_spectro} --ind-min {i_min}\
                                      --ind-max {i_max} --output-dir {self.audio_path} --offset-beginning {offset_beginning} --offset-end {offset_end}", \
                                 jobname="OSmOSE_reshape", preset="medium")
 
-                    job_id = jb.submit_job(jobfile, dependency=norma_job_id_list)
+                    job_id = self.Jb.submit_job(jobfile, dependency=norma_job_id_list)
                     reshape_job_id_list.append(job_id)
                 
                 reshaped_files = reshape(self.Max_time_display_spectro, self.list_wav_to_process, self.audio_path)
@@ -451,7 +452,8 @@ class Spectrogram(Dataset):
             filename: The name of the file to be written."""
 
         data = {'name' :self.__spectro_foldername , 'nfft':self.Nfft , 'window_size' : self.Window_size , \
-             'overlap' : self.Overlap /100 , 'zoom_level': 2**(self.Zoom_levels-1) , 'cvr_max':self.Max_color_value, 'cvr_min':self.Min_color_value}
+             'overlap' : self.Overlap /100 , 'zoom_level': 2**(self.Zoom_levels-1)}
+            #TODO: readd `, 'cvr_max':self.Max_color_value, 'cvr_min':self.Min_color_value` above when ok with Aplose
         df = pd.DataFrame.from_records([data])
         df.to_csv(filename , index=False)  
 

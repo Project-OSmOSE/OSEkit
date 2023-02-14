@@ -43,6 +43,7 @@ class Job_builder():
     
     @property
     def Ongoing_jobs(self):
+        self.update_job_status()
         return self.__ongoing_jobs
 
     @property
@@ -258,7 +259,7 @@ class Job_builder():
 
             if jobfile in self.Prepared_jobs:
                 self.__prepared_jobs.remove(jobfile)
-                self.__ongoing_jobs.append(jobfile)
+            self.__ongoing_jobs.append(jobfile)
 
         return jobid_list
 
