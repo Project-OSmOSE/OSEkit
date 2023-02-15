@@ -18,8 +18,8 @@ class Dataset():
         self.__name = os.path.basename(dataset_path)
         self.__path = dataset_path
         self.__group = osmose_group_name
-
-        self.__coords = self.Coords(coordinates)
+        self.__coords = []
+        self.Coords = coordinates
 
         self.list_abnormal_filenames = []
 
@@ -51,7 +51,7 @@ class Dataset():
         if isinstance(coordinates, str):
             csvFileArray = pd.read_csv(os.path.join(self.Path,'raw' ,'auxiliary' ,coordinates))
             self.__coords = [(np.min(csvFileArray['lat']) , np.max(csvFileArray['lat'])) , (np.min(csvFileArray['lon']) , np.max(csvFileArray['lon']))]
-        elif not isinstance(coordinates, list):
+        elif not isinstance(coordinates, list) and coordinates is not None:
             raise TypeError(f"GPS coordinates must be either a list of coordinates or the name of csv containing the coordinates, but {type(coordinates)} found.")
         else:
             self.__coords = coordinates

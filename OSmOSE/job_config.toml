@@ -3,11 +3,12 @@ env_script = "/appli/hibd/rdma-hadoop-2.x-1.3.5-x86/sbin/quick-hadoop-get-env.sh
 outfile = "Job_{}_%j.out"
 errfile = "Job_{}_%j.err"
 
-# Defaykt parameters
+# Default parameters
 queue = "omp"
 walltime = "12:00:00"
 ncpus = 6
 mem = "40g"
+nodes = 1
 
 [Params.Low]
     queue = "omp"

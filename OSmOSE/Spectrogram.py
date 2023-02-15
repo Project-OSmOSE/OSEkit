@@ -503,7 +503,7 @@ class Spectrogram(Dataset):
         self.gen_tiles(data=data, sample_rate=sample_rate, output_file=output_file)
 
     def gen_tiles(self, *, data: list, sample_rate: int, output_file: str):
-        if self.Data_normalization=='zscore':
+        if self.Data_normalization=='zscore' and self.Zscore_duration:
             if (len(self.Zscore_duration)>0) and (self.Zscore_duration != 'original'):
                 data = (data - self.__zscore_mean) / self.__zscore_std
             elif self.Zscore_duration == 'original':

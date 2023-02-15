@@ -25,7 +25,7 @@ class Job_builder():
 
         required_properties = ["job_scheduler","env_script","queue","nodes","walltime","ncpus","mem","outfile","errfile"]
 
-        if not all(prop in self.config._fields for prop in required_properties):
+        if not all(prop in self.__config._fields for prop in required_properties):
             raise ValueError(f"The provided configuration file is missing the following attributes: {'; '.join(list(set(required_properties).difference(set(self.__config._fields))))}")
 
     def edit(self, attribute: str, value: any):
