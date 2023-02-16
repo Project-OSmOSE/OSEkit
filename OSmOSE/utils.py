@@ -78,7 +78,3 @@ def read_header(file:str) -> Tuple[int, int, int, int]:
         frames = size // framesize
 
         return sampwidth, frames, samplerate, channels
-
-if __name__ == "__main__":
-    conf = read_config("C:\\Users\\loirebe\\Documents\\osmose_package\\src\\OSmOSE\\job_config.toml")
-    print(conf._fields)
