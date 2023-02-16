@@ -51,14 +51,14 @@ def read_config(raw_config: Union[str, dict]) -> NamedTuple:
         
         with open(raw_config, "rb") as input_config:
             match os.path.splitext(raw_config)[1]:
-                case "toml":
+                case ".toml":
                     raw_config = tomllib.load(input_config)
-                case "json":
+                case ".json":
                     raw_config = json.load(input_config)
-                case "yaml":
+                case ".yaml":
                     raise NotImplementedError("YAML support will eventually get there (unfortunately)")
                 case _:
-                    raise UnknownFileError(f"The provided configuration file extension (.{os.path.splitext(raw_config)[1]} is not a valid extension. Please use .toml or .json files.")
+                    raise UnknownFileError(f"The provided configuration file extension ({os.path.splitext(raw_config)[1]} is not a valid extension. Please use .toml or .json files.")
 
     return namedtuple('GenericDict', raw_config.keys())(**raw_config)
 

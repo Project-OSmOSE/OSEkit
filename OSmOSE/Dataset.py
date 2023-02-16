@@ -11,23 +11,20 @@ except ModuleNotFoundError:
     print("It seems you are on a non-Unix operating system (probably Windows). The build_dataset() method will not work as intended and permission might be uncorrectly set.")
     skip_perms = True
 from warnings import warn
-from utils import read_config, read_header
+from utils import read_header
 
 class Dataset():
-    def __init__(self, config: Union[str, dict]) -> None:
-        config = read_config(config)
-        self.__name = config.dataset_name
-        self.__path = os.path.join(config.dataset_folder_path, self.__name)
-        self.__group = config.osmose_group_name
+    def __init__(self, dataset_path: str, *, coordinates: Union[str, list] = None, osmose_group_name: str = None) -> None:
+        self.__name = os.path.basename(dataset_path)
+        self.__path = dataset_path
+        self.__group = osmose_group_name
+        self.__coords = []
+        self.Coords = coordinates
 
+        self.list_abnormal_filenames = []
 
         """gps: The GPS coordinates of the listening location. It can be a list of 2 elements [latitude, longitude], or the 
                 name of a csv file located in the `raw/auxiliary/` folder containing two columns: `lat` and `lon` with those informations."""
-        if isinstance(config.gps, str):
-            csvFileArray = pd.read_csv(os.path.join(self.Path,'raw' ,'auxiliary' ,config.gps))
-            self.__coords = [(np.min(csvFileArray['lat']) , np.max(csvFileArray['lat'])) , (np.min(csvFileArray['lon']) , np.max(csvFileArray['lon']))]
-        elif not isinstance(config.gps, list):
-            raise TypeError(f"GPS coordinates must be either a list of coordinates or the name of csv containing the coordinates, but {type(config.gps)} found.")
 
         pd.set_option('display.float_format', lambda x: '%.0f' % x)
 
@@ -45,17 +42,27 @@ class Dataset():
     @property
     def Coords(self) -> Union[Tuple[float,float], Tuple[Tuple[float,float],Tuple[float,float]]] :
         """The GPS coordinates of the dataset. First element is latitude, second is longitude."""
+        if not self.__coords:
+            print("This dataset has no GPS coordinates.")
         return self.__coords
+
+    @Coords.setter
+    def Coords(self, coordinates: Union[str, list]):
+        if isinstance(coordinates, str):
+            csvFileArray = pd.read_csv(os.path.join(self.Path,'raw' ,'auxiliary' ,coordinates))
+            self.__coords = [(np.min(csvFileArray['lat']) , np.max(csvFileArray['lat'])) , (np.min(csvFileArray['lon']) , np.max(csvFileArray['lon']))]
+        elif not isinstance(coordinates, list) and coordinates is not None:
+            raise TypeError(f"GPS coordinates must be either a list of coordinates or the name of csv containing the coordinates, but {type(coordinates)} found.")
+        else:
+            self.__coords = coordinates
+
 
     @property
     def Owner_Group(self):
         """The Unix group able to interact with the dataset."""
+        if self.__group is None:
+            print("The OSmOSE group name is not defined. Please specify the group name before trying to build the dataset.")
         return self.__group
-    
-    @property
-    def Info_dict(self):
-        """The information of configuration of the Dataset as a dict"""
-        return self.__config
 
     @property
     def is_built(self):
@@ -191,18 +198,18 @@ class Dataset():
         print(dd_duration[0].to_string())
         # go through the duration and check whether abnormal files
         ct_abnormal_duration=0
-        self.list_abnormalFilename_name = []
+        self.list_abnormal_filenames = []
         list_abnormalFilename_duration = []
         for name,duration in zip(list_filename,list_duration):
             if int(duration) < int(nominalVal_duration):
                 ct_abnormal_duration+=1
-                self.list_abnormalFilename_name.append(name)            
+                self.list_abnormal_filenames.append(name)            
                 list_abnormalFilename_duration.append(duration)            
 
             
         
         if ct_abnormal_duration > 0 and not force_upload:
-            print('\n \n SORRY but your dataset contains files with different durations, especially',str(len(self.list_abnormalFilename_name)),'files that have durations smaller than the 10th percentile of all your file durations.. \n')
+            print('\n \n SORRY but your dataset contains files with different durations, especially',str(len(self.list_abnormal_filenames)),'files that have durations smaller than the 10th percentile of all your file durations.. \n')
             
             print('Here are their summary stats:',pd.DataFrame(list_abnormalFilename_duration).describe()[0].to_string(),'\n')
             
@@ -249,7 +256,7 @@ class Dataset():
     def delete_abnormal_files(self) -> None:
         """Delete all files with abnormal durations in the dataset, and rewrite the timestamps.csv file to reflect the changes."""
         
-        if not self.list_abnormalFilename_name:
+        if not self.list_abnormal_filenames:
             warn("No abnormal file detected. You need to run the Dataset.build() method in order to detect abnormal files before using this method.")
             return
 
@@ -257,7 +264,7 @@ class Dataset():
 
         csvFileArray = pd.read_csv(os.path.join(path_raw_audio,'timestamp.csv'), header=None)
 
-        for abnormal_file in self.list_abnormalFilename_name:
+        for abnormal_file in self.list_abnormal_filenames:
 
             filewav = os.path.join(path_raw_audio, abnormal_file)
 
@@ -269,4 +276,4 @@ class Dataset():
         csvFileArray.sort_values(by=[1], inplace=True)
         csvFileArray.to_csv(os.path.join(path_raw_audio,'timestamp.csv'), index=False,na_rep='NaN',header=None)
 
-        print('\n ALL AbNORMAL FILES REMOVED ! you can now re-run the previous file to finish importing it on OSmOSE platform')
+        print('\n ALL ABNORMAL FILES REMOVED ! you can now re-run the build() method to finish importing it on OSmOSE platform')
