@@ -5,8 +5,6 @@ import re
 import os
 import datetime
 import argparse
-from dateutil import parser
-import sys
 
 __converter = {
         "%Y": r"[12][0-9]{3}",
@@ -42,7 +40,7 @@ def convert_template_to_re(date_template: str) -> str:
     
     return res
 
-def write_timestamp(dataset_path: str, date_template: str, offsets: tuple = None):
+def write_timestamp(*, dataset_path: str, date_template: str, timezone:str = "UTC", offsets: tuple = None):
     """Read the dates in the filenames of audio files in the `dataset_path` folder, 
     according to the date template in strftime format or the offsets from the beginning and end of the date.
     
@@ -58,6 +56,12 @@ def write_timestamp(dataset_path: str, date_template: str, offsets: tuple = None
             
             offsets: a tuple containing the beginning and end offset of the date. 
             The first element is the first character of the date, and the second is the last."""
+
+    if offsets and "-" in offsets:
+        offset = [int(off) for off in offsets.split("-")]
+    else:
+        offset = [int(offsets), 0]
+
     list_wav_file = sorted([file for file in glob.glob(os.path.join(dataset_path, '*.wav'))])
 
     timestamp=[]
@@ -67,10 +71,11 @@ def write_timestamp(dataset_path: str, date_template: str, offsets: tuple = None
     for filename in list_wav_file:
         
         if offsets:
-            date_extracted = os.path.splitext(os.path.basename(filename))[0][offsets[0]:offsets[1]+1]
+            date_extracted = os.path.splitext(os.path.basename(filename))[0][offset[0]:offset[1]+1]
         else:
-            date_extracted = re.search(converted, filename)[0]
-            if date_extracted is None:
+            try:
+                date_extracted = re.search(converted, filename)[0]
+            except TypeError:
                 raise ValueError(f"The date template does not match any set of character in the file name {filename}\nMake sure you are not forgetting separator characters, or use the offsets parameter.")
           
         date_obj = datetime.datetime.strptime(date_extracted, date_template)
@@ -85,7 +90,7 @@ def write_timestamp(dataset_path: str, date_template: str, offsets: tuple = None
         
         filename_rawaudio.append(os.path.basename(filename))    
         
-    df = pd.DataFrame({'filename':filename_rawaudio,'timestamp':timestamp})
+    df = pd.DataFrame({'filename':filename_rawaudio,'timestamp':timestamp, 'timezone':timezone})
     df.sort_values(by=['timestamp'], inplace=True)
     df.to_csv(os.path.join(dataset_path,'timestamp.csv'), index=False,na_rep='NaN',header=None)
     
@@ -93,13 +98,10 @@ def write_timestamp(dataset_path: str, date_template: str, offsets: tuple = None
 if __name__ == "__main__":
 
     argparser = argparse.ArgumentParser()
-    argparser.add_argument("--dataset-name", "-d", help="Name of the dataset.")
+    argparser.add_argument("--dataset-name", "-n", help="Name of the dataset.")
     argparser.add_argument("--offset", "-s", help="Offset of the first date character in the dataset names. If the date is not immediately followed by the extension, please provide the offset between the end of the date and the extension of the file, separated by a hyphen (-).")
-    argparser.add_argument("--date-template", "-f", help="The date template in strftime format. If not sure, input the whole file name.")
+    argparser.add_argument("--date-template", "-d", help="The date template in strftime format. If not sure, input the whole file name.")
+    argparser.add_argument("--timezone","-t", default="UTC", help="The timezone the date was recorded in. Default is UTC.")
     args = argparser.parse_args()
     
-    # if "-" in args.offset:
-    #     offset = [int(off) for off in args.offset.split("-")]
-    # else:
-    #     offset = [int(args.offset), 0]
-    write_timestamp(args.dataset_name, args.date_template)
+    write_timestamp(dataset_path=args.dataset_name, date_template=args.date_template, timezone=args.timezone, offsets=args.offset)
