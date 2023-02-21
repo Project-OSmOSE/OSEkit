@@ -1,4 +1,4 @@
-from create_timestamps import *
+from osmose_package.OScreate_timestamps import *
 import re
 
 def test_convert_template_to_re():

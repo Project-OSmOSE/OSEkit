@@ -4,7 +4,10 @@ import shutil
 import os
 from typing import Union, NamedTuple, Tuple
 import json
-import tomllib
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
 import struct
 
 def display_folder_storage_infos(dir_path: str) -> None:
