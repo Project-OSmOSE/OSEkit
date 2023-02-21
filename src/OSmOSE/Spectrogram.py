@@ -28,31 +28,32 @@ class Spectrogram(Dataset):
             self.__analysis_file = False
             analysis_sheet = {key: [value] for (key, value) in analysis_params.items()}
         else:
-            raise ValueError("You need to either have a valid analysis/analysis_sheet.csv file or provide the analysis metadatas as a dict.")
+            analysis_sheet = None;
+            print("No valid analysis/analysis_sheet.csv found and no parameters provided. All attributes will be None.")
 
         self.Batch_number : int = batch_number
         self.__analysis_fs : int = analysis_fs
 
-        self.__fileScale_nfft : int = analysis_sheet['fileScale_nfft'][0]
-        self.__fileScale_winsize : int = analysis_sheet['fileScale_winsize'][0]
-        self.__fileScale_overlap : int = analysis_sheet['fileScale_overlap'][0]
-        self.__colmapspectros : str = analysis_sheet['colmapspectros'][0]
-        self.__nber_zoom_levels : int = analysis_sheet['nber_zoom_levels'][0]
-        self.__min_color_val : int = analysis_sheet['min_color_val'][0]
-        self.__max_color_val : int = analysis_sheet['max_color_val'][0]
-        self.__nberAdjustSpectros : int = analysis_sheet['nberAdjustSpectros'][0] #???
-        self.__maxtime_display_spectro : int = analysis_sheet['max_time_display_spectro'][0] if "max_time_display_spectro" in analysis_sheet else -1
+        self.__fileScale_nfft : int = analysis_sheet['fileScale_nfft'][0] if analysis_sheet else None
+        self.__fileScale_winsize : int = analysis_sheet['fileScale_winsize'][0] if analysis_sheet else None
+        self.__fileScale_overlap : int = analysis_sheet['fileScale_overlap'][0] if analysis_sheet else None
+        self.__colmapspectros : str = analysis_sheet['colmapspectros'][0] if analysis_sheet else None
+        self.__nber_zoom_levels : int = analysis_sheet['nber_zoom_levels'][0] if analysis_sheet else None
+        self.__min_color_val : int = analysis_sheet['min_color_val'][0] if analysis_sheet else None
+        self.__max_color_val : int = analysis_sheet['max_color_val'][0] if analysis_sheet else None
+        self.__nberAdjustSpectros : int = analysis_sheet['nberAdjustSpectros'][0] if analysis_sheet else None
+        self.__maxtime_display_spectro : int = analysis_sheet['max_time_display_spectro'][0] if analysis_sheet and "max_time_display_spectro" in analysis_sheet else -1
 
-        self.__zscore_duration : Union[float, str] = analysis_sheet['zscore_duration'][0] if isinstance(analysis_sheet['zscore_duration'][0], float) else None
+        self.__zscore_duration : Union[float, str] = analysis_sheet['zscore_duration'][0] if analysis_sheet and isinstance(analysis_sheet['zscore_duration'][0], float) else None
 
         # fmin cannot be 0 in butterworth. If that is the case, it takes the smallest value possible, epsilon
-        self.__fmin_HighPassFilter : int = analysis_sheet['fmin_HighPassFilter'][0] if analysis_sheet['fmin_HighPassFilter'][0] != 0 else sys.float_info.epsilon
-        sensitivity_dB : int = analysis_sheet['sensitivity_dB'][0]
-        self.__sensitivity : float = 10**(sensitivity_dB/20) * 1e6
-        self.__peak_voltage : float  = analysis_sheet['peak_voltage'][0]
-        self.__spectro_normalization : str = analysis_sheet['spectro_normalization'][0]
-        self.__data_normalization : str = analysis_sheet['data_normalization'][0]
-        self.__gain_dB : float = analysis_sheet['gain_dB'][0]
+        self.__fmin_HighPassFilter : int = analysis_sheet['fmin_HighPassFilter'][0] if analysis_sheet and analysis_sheet['fmin_HighPassFilter'][0] != 0 else sys.float_info.epsilon
+        sensitivity_dB : int = analysis_sheet['sensitivity_dB'][0] if analysis_sheet else None
+        self.__sensitivity : float = 10**(sensitivity_dB/20) * 1e6 if analysis_sheet else None
+        self.__peak_voltage : float  = analysis_sheet['peak_voltage'][0] if analysis_sheet else None
+        self.__spectro_normalization : str = analysis_sheet['spectro_normalization'][0] if analysis_sheet else None
+        self.__data_normalization : str = analysis_sheet['data_normalization'][0] if analysis_sheet else None
+        self.__gain_dB : float = analysis_sheet['gain_dB'][0] if analysis_sheet else None
 
         self.Jb = Job_builder()
 
@@ -185,8 +186,9 @@ class Spectrogram(Dataset):
 
     @Sensitivity.setter
     def Sensitivity(self, value):
+        """Always assume the sensitivity is given in dB"""
         if self.__analysis_file:
-            self.__sensitivity = value
+            self.__sensitivity = 10**(value/20) * 1e6
         else:
             raise ValueError("Cannot change attribute as analysis_path is not empty.")
 

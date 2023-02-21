@@ -28,8 +28,7 @@ def list_not_built_datasets(datasets_folder_path: str) -> None:
         ----------
         dataset_folder_path: The path to the directory containing the datasets"""
 
-    dataset_list = [directory for directory in sorted(os.listdir(datasets_folder_path)) if os.path.isdir(directory) ]
-
+    dataset_list = [directory for directory in sorted(os.listdir(datasets_folder_path)) if os.path.isdir(os.path.join(datasets_folder_path,directory)) ]
     list_not_built_datasets = []
 
     for dataset_directory in dataset_list:
