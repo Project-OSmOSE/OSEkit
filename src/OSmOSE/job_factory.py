@@ -1,13 +1,12 @@
-from typing import Literal
 import os
 import json
 import tomlkit
-from typing import NamedTuple, List
+import subprocess
+from typing import NamedTuple, List, Literal
 from warnings import warn
 from datetime import datetime
-import subprocess
-from OSmOSE.utils import read_config
 from importlib import resources
+from OSmOSE.utils import read_config
 
 class Job_builder():
     def __init__(self, config_file: str = None):

@@ -1,17 +1,17 @@
-from typing import Union, Tuple
 import os
-import pandas as pd
-import numpy as np
-from tqdm import tqdm
+from typing import Union, Tuple
 from datetime import datetime
+from warnings import warn
 try:
     import grp
     skip_perms = False
 except ModuleNotFoundError:
-    print("It seems you are on a non-Unix operating system (probably Windows). The build_dataset() method will not work as intended and permission might be uncorrectly set.")
     skip_perms = True
-from warnings import warn
-from utils import read_header
+    
+import pandas as pd
+import numpy as np
+from tqdm import tqdm
+from OSmOSE.utils import read_header
 
 class Dataset():
     def __init__(self, dataset_path: str, *, coordinates: Union[str, list] = None, osmose_group_name: str = None) -> None:
@@ -22,6 +22,9 @@ class Dataset():
         self.Coords = coordinates
 
         self.list_abnormal_filenames = []
+
+        if skip_perms:
+            print("It seems you are on a non-Unix operating system (probably Windows). The build_dataset() method will not work as intended and permission might be uncorrectly set.")
 
         """gps: The GPS coordinates of the listening location. It can be a list of 2 elements [latitude, longitude], or the 
                 name of a csv file located in the `raw/auxiliary/` folder containing two columns: `lat` and `lon` with those informations."""

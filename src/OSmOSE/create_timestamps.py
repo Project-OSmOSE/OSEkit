@@ -1,10 +1,9 @@
-import numpy as np
 import glob
-import pandas as pd
 import re
 import os
 import datetime
 import argparse
+import pandas as pd
 
 __converter = {
         "%Y": r"[12][0-9]{3}",

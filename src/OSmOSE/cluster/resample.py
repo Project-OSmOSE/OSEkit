@@ -1,7 +1,8 @@
-import argparse
-import sox
 import os
+import argparse
 import glob
+
+import sox
 
 def resample(*, input_dir: str, output_dir: str, target_fs: int, ind_min: int = 0, ind_max: int = -1):
     all_files = sorted(glob.glob(os.path.join(input_dir , '*wav')))

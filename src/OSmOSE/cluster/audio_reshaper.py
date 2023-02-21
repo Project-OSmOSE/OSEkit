@@ -1,12 +1,13 @@
 import os
-import shutil
 import sys
-import soundfile as sf
-import numpy as np
-import pandas as pd
+import shutil
 from datetime import datetime, timedelta
 from typing import List, Union
 from argparse import ArgumentParser
+
+import soundfile as sf
+import numpy as np
+import pandas as pd
 
 def substract_timestamps(input_timestamp: pd.DataFrame, files: List[str], index: int) -> timedelta:
     """Substracts two timestamps from the "timestamp" column of a dataframe at the indexes of files[i] and files[i-1] and returns the time delta between them

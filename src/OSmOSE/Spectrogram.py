@@ -1,18 +1,19 @@
-from math import log10
-import shutil
-from typing import Union, List, Literal
-from matplotlib import pyplot as plt
-from Dataset import Dataset
-import pandas as pd
 import os
 import sys
+import shutil
+from typing import Union, Literal
+from math import log10
 from glob import glob
+
+import pandas as pd
+import numpy as np
 import soundfile as sf
 from scipy import signal
-import numpy as np
 from termcolor import colored
+from matplotlib import pyplot as plt
 from OSmOSE.job_factory import Job_builder
-from OSmOSE.cluster.audio_reshaper import reshape
+from OSmOSE.cluster.audio_reshaper import reshape # Not used for now; will be when local execution will be a thing.
+from OSmOSE.Dataset import Dataset
 
 class Spectrogram(Dataset):
 
