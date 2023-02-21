@@ -235,7 +235,7 @@ class Spectrogram(Dataset):
 
     #endregion
 
-    def __build_path(self):
+    def __build_path(self, adjust:bool = False):
         analysis_path = os.path.join(self.Path, "analysis")
         audio_foldername = str(self.Max_time_display_spectro)+'_'+str(self.Analysis_fs)
         self.audio_path = os.path.join(self.Path, "raw", "audio", audio_foldername)
@@ -243,7 +243,10 @@ class Spectrogram(Dataset):
         self.__path_output_spectrograms = os.path.join(analysis_path, "spectrograms", audio_foldername)
         self.__path_summstats = os.path.join(analysis_path, "normaParams", audio_foldername)
 
-        self.__spectro_foldername = f"nfft={str(self.Nfft)}_winsize={str(self.Window_size)}_overlap={str(self.Overlap)} \
+        if adjust:
+            self.__spectro_foldername = "spectro_adjustParams"
+        else:
+            self.__spectro_foldername = f"nfft={str(self.Nfft)}_winsize={str(self.Window_size)}_overlap={str(self.Overlap)} \
                                 _cvr={str(self.Min_color_value)}-{str(self.Max_color_value)}"
 
         self.__path_output_spectrogram_matrices = os.path.join(analysis_path, "spectrograms_mat", audio_foldername, self.__spectro_foldername)
@@ -285,7 +288,7 @@ class Spectrogram(Dataset):
 
 
     # TODO: some cleaning
-    def initialize(self, *, ind_min: int = 0, ind_max: int = -1, analysis_fs: int = None, reshape_method: Literal["resample","reshape","none"] = "none") -> None:
+    def initialize(self, *, ind_min: int = 0, ind_max: int = -1, analysis_fs: int = None, reshape_method: Literal["resample","reshape","none"] = "none", pad_silence: bool = True) -> None:
         
         if analysis_fs:
             self.Analysis_fs = analysis_fs
@@ -349,17 +352,15 @@ class Spectrogram(Dataset):
 
         #! RESHAPING
         # Reshape audio files to fit the maximum spectrogram size, whether it is greater or smaller.
-        #? Quite I/O intensive and monothread, might need to rework to allow qsub.
         reshape_job_id_list = []
 
         if self.Max_time_display_spectro != int(orig_fileDuration):
             # We might reshape the files and create the folder. Note: reshape function might be memory-heavy and deserve a proper qsub job. 
-            if self.Max_time_display_spectro > int(orig_fileDuration) and reshape_method == "none":
-                raise ValueError("Spectrogram size cannot be greater than file duration. If you want to automatically reshape your audio files to fit the spectrogram size, consider adding auto_reshape=True as parameter.")
+            if self.Max_time_display_spectro > int(orig_fileDuration) and reshape_method in ["none", "resample"]:
+                raise ValueError("Spectrogram size cannot be greater than file duration. If you want to automatically reshape your audio files to fit the spectrogram size, consider setting the reshape method to 'reshape'.")
             
             print(f"Automatically reshaping audio files to fit the Maxtime display spectro value. Files will be {self.Max_time_display_spectro} seconds long.")
 
-            #TODO finish
             if reshape_method == "reshape":
                 # build job, qsub, stuff
                 nb_reshaped_files = (orig_fileDuration * total_nber_audio_files) / self.Max_time_display_spectro
@@ -387,16 +388,24 @@ class Spectrogram(Dataset):
                     jobfile = self.Jb.build_job_file(script_path=os.path.join(os.dirname(__file__), "cluster", "audio_reshaper.py"), \
                                 script_args=f"--input-files {self.path_input_audio_file} --chunk-size {self.Max_time_display_spectro} --ind-min {i_min}\
                                      --ind-max {i_max} --output-dir {self.audio_path} --offset-beginning {offset_beginning} --offset-end {offset_end}", \
-                                jobname="OSmOSE_reshape", preset="medium")
+                                jobname="OSmOSE_reshape_py", preset="medium")
 
                     job_id = self.Jb.submit_job(jobfile, dependency=norma_job_id_list)
                     reshape_job_id_list.append(job_id)
                 
-                reshaped_files = reshape(self.Max_time_display_spectro, self.list_wav_to_process, self.audio_path)
-                metadata["dataset_totalDuration"] = len(reshaped_files) * self.Max_time_display_spectro
             elif reshape_method == "resample":
-                #same as above, using bash
-                pass
+                silence_arg = "-s" if pad_silence else ""
+                for batch in range(self.Batch_number):
+                    i_min = batch * batch_size
+                    i_max = (i_min + batch_size if batch < self.Batch_number - 1 else len(self.list_wav_to_process)) # If it is the last batch, take all files
+                    jobfile = self.Jb.build_job_file(script_path=os.path.join(os.dirname(__file__), "cluster", "reshaper.sh"), \
+                                script_args=f"-d {self.Path} -i {os.path.basename(self.path_input_audio_file)} -t {analysis_fs} \
+                                    -m {i_min} -x {i_max} -o {self.audio_path} -n {self.Max_time_display_spectro} {silence_arg}", \
+                                jobname="OSmOSE_reshape_bash", preset="medium")
+
+                    job_id = self.Jb.submit_job(jobfile, dependency=resample_job_id_list)
+                    reshape_job_id_list.append(job_id)
+
 
         metadata["dataset_fileDuration"] = self.Max_time_display_spectro
         metadata["dataset_fs"] = self.Analysis_fs
@@ -460,13 +469,15 @@ class Spectrogram(Dataset):
 
     #region On cluster
 
-    def process_file(self, audio_file: str) -> None:
+    def process_file(self, audio_file: str, *, adjust: bool = False) -> None:
 
-        self.__build_path()
+        self.__build_path(adjust)
+
+        Zscore = self.Zscore_duration if not adjust else "original"
 
         #! Determination of zscore normalization parameters
-        if self.Data_normalization == "zscore" and self.Zscore_duration != "original" and self.Zscore_duration:
-            average_over_H = int(round(pd.to_timedelta(self.Zscore_duration).total_seconds() / self.Max_time_display_spectro))
+        if Zscore and self.Data_normalization == "zscore" and Zscore != "original":
+            average_over_H = int(round(pd.to_timedelta(Zscore).total_seconds() / self.Max_time_display_spectro))
 
             df=pd.DataFrame()
             for dd in glob(os.path.join(self.__path_summstats,'summaryStats*')):        
@@ -480,7 +491,7 @@ class Spectrogram(Dataset):
         if audio_file not in os.listdir(self.audio_path):
             raise FileNotFoundError(f"The file {audio_file} must be in {self.audio_path} in order to be processed.")
 
-        if self.Zscore_duration and self.Zscore_duration != "original" and self.Data_normalization=="zscore":
+        if Zscore and Zscore != "original" and self.Data_normalization=="zscore":
             self.__zscore_mean = self.__summStats[self.__summStats['filename'] == audio_file]['mean_avg'].values[0]
             self.__zscore_std = self.__summStats[self.__summStats['filename'] == audio_file]['std_avg'].values[0]
 
@@ -496,6 +507,9 @@ class Spectrogram(Dataset):
         data = signal.sosfilt(bpcoef, data)
 
         if not os.path.exists(os.path.join(self.__path_output_spectrograms, self.__spectro_foldername, os.path.splitext(audio_file)[0])):
+            os.makedirs(os.path.join(self.__path_output_spectrograms, self.__spectro_foldername, os.path.splitext(audio_file)[0]))
+        elif adjust:
+            shutil.rmtree(os.path.join(self.__path_output_spectrograms, self.__spectro_foldername))
             os.makedirs(os.path.join(self.__path_output_spectrograms, self.__spectro_foldername, os.path.splitext(audio_file)[0]))
 
         output_file = os.path.join(self.__path_output_spectrograms, self.__spectro_foldername, os.path.splitext(audio_file)[0], audio_file)
