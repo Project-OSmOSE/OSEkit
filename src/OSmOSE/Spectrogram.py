@@ -1,18 +1,18 @@
 from math import log10
 import shutil
 from typing import Union, List, Literal
-from job_factory import Job_builder
 from matplotlib import pyplot as plt
 from Dataset import Dataset
 import pandas as pd
 import os
 import sys
 from glob import glob
-from cluster.audio_reshaper import reshape
 import soundfile as sf
 from scipy import signal
 import numpy as np
 from termcolor import colored
+from OSmOSE.job_factory import Job_builder
+from OSmOSE.cluster.audio_reshaper import reshape
 
 class Spectrogram(Dataset):
 

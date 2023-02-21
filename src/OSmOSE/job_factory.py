@@ -1,21 +1,21 @@
 from typing import Literal
 import os
-from utils import read_config
 import json
 import tomlkit
 from typing import NamedTuple, List
 from warnings import warn
 from datetime import datetime
 import subprocess
+from OSmOSE.utils import read_config
+from importlib import resources
 
 class Job_builder():
     def __init__(self, config_file: str = None):
         if config_file is None:
-            self.__cwd = os.path.dirname(__file__)
             self.__configfile = "job_config.toml"
-            self.__config: NamedTuple = read_config(os.path.join(self.__cwd, self.__configfile))
+            self.__config: NamedTuple = read_config(resources.files("OSmOSE.job_config.toml"))
+            print(self.__config)
         else:
-            self.__cwd = os.path.dirname(config_file)
             self.__configfile = config_file
             self.__config: NamedTuple = read_config(config_file)
 
