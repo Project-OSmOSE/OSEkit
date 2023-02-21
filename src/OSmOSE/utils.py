@@ -1,3 +1,5 @@
+from pathlib import PurePath
+from importlib.resources import as_file
 import os
 import shutil
 import struct
@@ -40,7 +42,7 @@ def list_not_built_datasets(datasets_folder_path: str) -> None:
     for dataset in list_not_built_datasets:
         print("  - {}".format(dataset))    
     
-def read_config(raw_config: Union[str, dict]) -> NamedTuple:
+def read_config(raw_config: Union[str, dict, PurePath]) -> NamedTuple:
     """Read the given configuration file or dict and converts it to a namedtuple. Only TOML and JSON formats are accepted for now.
     
         Parameter:
@@ -48,11 +50,22 @@ def read_config(raw_config: Union[str, dict]) -> NamedTuple:
             
         Returns:
             The configuration as a NamedTuple object."""
-            
-    if isinstance(raw_config, str):
-        if not os.path.isfile(raw_config):
-            raise FileNotFoundError(f"The configuration file {raw_config} does not exist.")
-        
+
+    match raw_config:
+        case PurePath():
+            with as_file(raw_config) as input_config:
+                raw_config = input_config
+
+        case str():
+            if not os.path.isfile(raw_config):
+                raise FileNotFoundError(f"The configuration file {raw_config} does not exist.")
+
+        case dict():
+            pass
+        case _:
+            raise TypeError("The raw_config must be either of type str, dict or Traversable.")
+
+    if not isinstance(raw_config, dict):
         with open(raw_config, "rb") as input_config:
             match os.path.splitext(raw_config)[1]:
                 case ".toml":

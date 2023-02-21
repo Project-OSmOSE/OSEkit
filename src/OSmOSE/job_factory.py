@@ -12,7 +12,7 @@ class Job_builder():
     def __init__(self, config_file: str = None):
         if config_file is None:
             self.__configfile = "job_config.toml"
-            self.__config: NamedTuple = read_config(resources.files("OSmOSE.job_config.toml"))
+            self.__config: NamedTuple = read_config(resources.files("OSmOSE").joinpath(self.__configfile))
             print(self.__config)
         else:
             self.__configfile = config_file
