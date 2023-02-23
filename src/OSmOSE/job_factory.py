@@ -211,6 +211,7 @@ class Job_builder():
         job_file.append(f"{prefix} {errfile_param}{errfile}")
         #endregion
 
+        #TODO: use conda activate to load env
         job_file.append(f"\nsource {env_script if env_script else self.Env_script } --conda-env {env_name}")
         job_file.append(f"python {script_path} {script_args}")
 
@@ -222,7 +223,7 @@ class Job_builder():
         with open(os.path.join(jobdir, outfilename), "w") as jobfile:
             jobfile.write("\n".join(job_file))
 
-        self.__prepared_jobs.append(outfilename)
+        self.__prepared_jobs.append(os.path.join(jobdir, outfilename))
 
         return os.path.join(jobdir, outfilename)
 
@@ -249,8 +250,8 @@ class Job_builder():
 
         for jobfile in jobfile_list:
             if "torque" in jobfile.lower():
-                dep = f"-W depend=afterok:{dependency}" if dependency else ""
-                jobid = subprocess.run(["qsub", dep, jobfile],stdout=subprocess.PIPE).stdout.decode('utf-8').rstrip('\n')
+                dep = f" -W depend=afterok:{dependency}" if dependency else ""
+                jobid = subprocess.run([f"qsub{dep}", jobfile],stdout=subprocess.PIPE).stdout.decode('utf-8').rstrip('\n')
                 jobid_list.append(jobid)
             elif "slurm" in jobfile.lower():
                 dep = f"-d afterok:{dependency}" if dependency else ""

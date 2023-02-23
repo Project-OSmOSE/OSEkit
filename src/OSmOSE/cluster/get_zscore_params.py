@@ -22,7 +22,7 @@ def get_zscore_norma_params(*, input_dir: str, output_file: str, fmin_HighPassFi
         bpcoef=signal.butter(20, np.array([max(fmin_HighPassFilter,sys.float_info.epsilon), sample_rate/2-1]), fs=sample_rate, output='sos', btype='bandpass')
         data = signal.sosfilt(bpcoef, data)   
                 
-        list_summaryStats.append(np.mean(data), np.std(data))
+        list_summaryStats.append([wav, np.mean(data), np.std(data)])
 
     with open(output_file, 'w') as f:
         write = csv.writer(f)
@@ -41,4 +41,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    get_zscore_norma_params(input_dir=args.input_dir, output_file=args.output_file, fmin_HighPassFilter=args.fmin_HighPassFilter, ind_min=args.ind_min, ind_max=args.ind_max)
+    get_zscore_norma_params(input_dir=args.input_dir, output_file=args.output_file, fmin_HighPassFilter=args.fmin_highpassfilter, ind_min=args.ind_min, ind_max=args.ind_max)
