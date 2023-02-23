@@ -8,8 +8,30 @@ import soundfile as sf
 import numpy as np
 from scipy import signal
 
-def get_zscore_norma_params(*, input_dir: str, output_file: str, fmin_HighPassFilter: int, ind_min: int = 0, ind_max: int = -1):
+def Write_zscore_norma_params(*, input_dir: str, output_file: str, fmin_HighPassFilter: int, ind_min: int = 0, ind_max: int = -1):
+    """Computes the normalization parameters for the Zscore normalisation of the dataset and writes it to a csv.
     
+    This function can also be called from the command line. Type `get_zscore_params.py -h` to see the list of arguments.
+    Will write the mean and standard deviation for each file in a .csv. To get the parameters, you need to read the csv and 
+    compute the means of each columns.
+    
+    Parameters
+    ----------
+    input_dir: `str`
+        The absolute path to the input directory. All audio files within this directory will be used.
+    
+    output_file: `str`
+        The absolute path of the output csv file.
+    
+    fmin_HighPassFilter: `int`
+        The minimum audio frequency under which data will be filtrated. If set to 0, then `sys.float_info.epsilon` will be used.
+            
+    ind_min: `int`
+        The first file of the list to be processed. Default is 0.
+
+    ind_max: `int`
+        The last file of the list to be processed. Default is -1, meaning the entire list is processed.
+        """
     all_files = sorted(glob.glob(os.path.join(input_dir , '*wav')))
     # If ind_max is -1, we go to the end of the list.
     wav_list = all_files[ind_min:ind_max if ind_max != -1 else len(all_files)]
@@ -41,4 +63,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    get_zscore_norma_params(input_dir=args.input_dir, output_file=args.output_file, fmin_HighPassFilter=args.fmin_highpassfilter, ind_min=args.ind_min, ind_max=args.ind_max)
+    Write_zscore_norma_params(input_dir=args.input_dir, output_file=args.output_file, fmin_HighPassFilter=args.fmin_highpassfilter, ind_min=args.ind_min, ind_max=args.ind_max)

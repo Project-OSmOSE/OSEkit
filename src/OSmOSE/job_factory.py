@@ -2,6 +2,7 @@ import os
 import json
 import tomlkit
 import subprocess
+from string import Template
 from typing import NamedTuple, List, Literal
 from warnings import warn
 from datetime import datetime
@@ -189,6 +190,8 @@ class Job_builder():
                 mem_param = "-mem "
                 outfile_param = "-o "
                 errfile_param = "-e "
+                outfile = outfile.format(jobname)
+                errfile = errfile.format(jobname)
             case _:
                 prefix = "#"
                 name_param = ""
@@ -211,13 +214,14 @@ class Job_builder():
         job_file.append(f"{prefix} {errfile_param}{errfile}")
         #endregion
 
-        #TODO: use conda activate to load env
-        job_file.append(f"\nsource {env_script if env_script else self.Env_script } --conda-env {env_name}")
+        # The env_script should contain all the command(s) needed to load the script, with the $env_name template where the environment name should be.
+        job_file.append(Template(f"\n{env_script if env_script else self.Env_script}").substitute(env_name=env_name))
         job_file.append(f"python {script_path} {script_args}")
 
 
         outfilename = f"{jobname}_{datetime.now().strftime('%H-%M-%S')}_{job_scheduler}_{len(os.listdir(jobdir))}.pbs"
 
+        job_file.append(f"\nchmod 770 {outfile} {errfile}")
         job_file.append(f"\nrm {os.path.join(jobdir, outfilename)}")
 
         with open(os.path.join(jobdir, outfilename), "w") as jobfile:
@@ -227,7 +231,7 @@ class Job_builder():
 
         return os.path.join(jobdir, outfilename)
 
-    # TODO support multiple dependecies and job chaining (?)
+    # TODO support multiple dependencies and job chaining (?)
     def submit_job(self, jobfile: str = None, dependency: str | List[str] = None) -> List[str]:
         """Submits the job file to the cluster using the job scheduler written in the file name or in the configuration file.
         

@@ -28,12 +28,14 @@ class Dataset():
         
         Parameters
         ----------
-        dataset_path: str
+        dataset_path : `str`
             The absolute path to the dataset folder. The last folder in the path will be considered as the name of the dataset.
-        coordinates: str or list or Tuple, optional
+        
+        coordinates : `str` or `list` or `Tuple`, optional
             GPS coordinates of the listening location. If it is a string, it must be the name of a csv file located in `raw/auxiliary`.
             Else, the first element is the latitude, and second the longitude.
-        osmose_group_name: str, optional
+        
+        osmose_group_name : `str`, optional
             The name of the group using the OsmOSE package. All files created using this dataset will be accessible by the osmose group. 
             Will not work on Windows.
             
