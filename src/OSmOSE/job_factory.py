@@ -77,12 +77,12 @@ class Job_builder():
         self.edit("queue", value)
 
     @property
-    def Node(self):
-        return self.__config.node
+    def Nodes(self):
+        return self.__config.nodes
     
-    @Node.setter
-    def Node(self, value):
-        self.edit("node",value)
+    @Nodes.setter
+    def Nodes(self, value):
+        self.edit("nodes",value)
         
     @property
     def Walltime(self):
@@ -159,7 +159,7 @@ class Job_builder():
         if not jobname: jobname = self.Job_name
         if not env_name: env_name = self.env_name
         if not queue: queue = self.Queue
-        if not nodes: node = self.Node
+        if not nodes: nodes = self.Nodes
         if not walltime: walltime = self.Walltime
         if not ncpus: ncpus = self.Ncpus
         if not mem: mem = self.Mem
