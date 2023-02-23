@@ -34,26 +34,26 @@ class Spectrogram(Dataset):
         self.Batch_number : int = batch_number
         self.__analysis_fs : int = analysis_fs
 
-        self.__fileScale_nfft : int = analysis_sheet['fileScale_nfft'][0] if analysis_sheet else None
-        self.__fileScale_winsize : int = analysis_sheet['fileScale_winsize'][0] if analysis_sheet else None
-        self.__fileScale_overlap : int = analysis_sheet['fileScale_overlap'][0] if analysis_sheet else None
-        self.__colmapspectros : str = analysis_sheet['colmapspectros'][0] if analysis_sheet else None
-        self.__nber_zoom_levels : int = analysis_sheet['nber_zoom_levels'][0] if analysis_sheet else None
-        self.__min_color_val : int = analysis_sheet['min_color_val'][0] if analysis_sheet else None
-        self.__max_color_val : int = analysis_sheet['max_color_val'][0] if analysis_sheet else None
-        self.__nberAdjustSpectros : int = analysis_sheet['nberAdjustSpectros'][0] if analysis_sheet else None
-        self.__maxtime_display_spectro : int = analysis_sheet['max_time_display_spectro'][0] if analysis_sheet and "max_time_display_spectro" in analysis_sheet else -1
+        self.__fileScale_nfft : int = analysis_sheet['fileScale_nfft'][0] if analysis_sheet is not None else None
+        self.__fileScale_winsize : int = analysis_sheet['fileScale_winsize'][0] if analysis_sheet is not None else None
+        self.__fileScale_overlap : int = analysis_sheet['fileScale_overlap'][0] if analysis_sheet is not None else None
+        self.__colmapspectros : str = analysis_sheet['colmapspectros'][0] if analysis_sheet is not None else None
+        self.__nber_zoom_levels : int = analysis_sheet['nber_zoom_levels'][0] if analysis_sheet is not None else None
+        self.__min_color_val : int = analysis_sheet['min_color_val'][0] if analysis_sheet is not None else None
+        self.__max_color_val : int = analysis_sheet['max_color_val'][0] if analysis_sheet is not None else None
+        self.__nberAdjustSpectros : int = analysis_sheet['nberAdjustSpectros'][0] if analysis_sheet is not None else None
+        self.__maxtime_display_spectro : int = analysis_sheet['max_time_display_spectro'][0] if analysis_sheet is not None and "max_time_display_spectro" in analysis_sheet else -1
 
-        self.__zscore_duration : Union[float, str] = analysis_sheet['zscore_duration'][0] if analysis_sheet and isinstance(analysis_sheet['zscore_duration'][0], float) else None
+        self.__zscore_duration : Union[float, str] = analysis_sheet['zscore_duration'][0] if analysis_sheet is not None and isinstance(analysis_sheet['zscore_duration'][0], float) else None
 
         # fmin cannot be 0 in butterworth. If that is the case, it takes the smallest value possible, epsilon
-        self.__fmin_HighPassFilter : int = analysis_sheet['fmin_HighPassFilter'][0] if analysis_sheet and analysis_sheet['fmin_HighPassFilter'][0] != 0 else sys.float_info.epsilon
-        sensitivity_dB : int = analysis_sheet['sensitivity_dB'][0] if analysis_sheet else None
-        self.__sensitivity : float = 10**(sensitivity_dB/20) * 1e6 if analysis_sheet else None
-        self.__peak_voltage : float  = analysis_sheet['peak_voltage'][0] if analysis_sheet else None
-        self.__spectro_normalization : str = analysis_sheet['spectro_normalization'][0] if analysis_sheet else None
-        self.__data_normalization : str = analysis_sheet['data_normalization'][0] if analysis_sheet else None
-        self.__gain_dB : float = analysis_sheet['gain_dB'][0] if analysis_sheet else None
+        self.__fmin_HighPassFilter : int = analysis_sheet['fmin_HighPassFilter'][0] if analysis_sheet is not None and analysis_sheet['fmin_HighPassFilter'][0] != 0 else sys.float_info.epsilon
+        sensitivity_dB : int = analysis_sheet['sensitivity_dB'][0] if analysis_sheet is not None else None
+        self.__sensitivity : float = 10**(sensitivity_dB/20) * 1e6 if analysis_sheet is not None else None
+        self.__peak_voltage : float  = analysis_sheet['peak_voltage'][0] if analysis_sheet is not None else None
+        self.__spectro_normalization : str = analysis_sheet['spectro_normalization'][0] if analysis_sheet is not None else None
+        self.__data_normalization : str = analysis_sheet['data_normalization'][0] if analysis_sheet is not None else None
+        self.__gain_dB : float = analysis_sheet['gain_dB'][0] if analysis_sheet is not None else None
 
         self.Jb = Job_builder()
 
@@ -333,7 +333,8 @@ class Spectrogram(Dataset):
                 jobfile = self.Jb.build_job_file(script_path=os.path.join(os.dirname(__file__), "cluster", "resample.py"), \
                             script_args=f"--input-dir {self.path_input_audio_file} --target-fs {self.Analysis_fs} --ind-min {i_min} --ind-max {i_max} --output-dir {self.audio_path}", \
                             jobname="OSmOSE_resample", preset="medium")
-
+                            #TODO: use importlib.resources
+                            
                 job_id = self.Jb.submit_job(jobfile)
                 resample_job_id_list.append(job_id)
 
@@ -347,7 +348,8 @@ class Spectrogram(Dataset):
                 i_min = batch * batch_size
                 i_max = (i_min + batch_size if batch < self.Batch_number - 1 else len(self.list_wav_to_process)) # If it is the last batch, take all files
                 jobfile = self.Jb.build_job_file(script_path=os.path.join(os.dirname(__file__), "cluster", "get_zscore_params.py"), \
-                            script_args=f"--input-dir {self.path_input_audio_file} --fmin-highpassfilter {self.Fmin_HighPassFilter} --ind-min {i_min} --ind-max {i_max} --output-file {os.path.join(normaDir, 'SummaryStats_' + str(i_min) + '.csv')}", \
+                            script_args=f"--input-dir {self.path_input_audio_file} --fmin-highpassfilter {self.Fmin_HighPassFilter} \
+                                --ind-min {i_min} --ind-max {i_max} --output-file {os.path.join(normaDir, 'SummaryStats_' + str(i_min) + '.csv')}", \
                             jobname="OSmOSE_get_zscore_params", preset="low")
 
                 job_id = self.Jb.submit_job(jobfile, dependency=resample_job_id_list)
@@ -483,16 +485,17 @@ class Spectrogram(Dataset):
             average_over_H = int(round(pd.to_timedelta(Zscore).total_seconds() / self.Max_time_display_spectro))
 
             df=pd.DataFrame()
-            for dd in glob(os.path.join(self.__path_summstats,'summaryStats*')):        
-                df = pd.concat([ df , pd.read_csv(dd,header=0) ])
+            df = pd.read_csv(r"C:\Users\loirebe\Documents\mayobs\analysis\results.csv", header=0)
+            # for dd in glob(os.path.join(self.__path_summstats,'summaryStats*')):        
+            #     df = pd.concat([ df , pd.read_csv(dd,header=0) ])
                 
             df['mean_avg'] = df['mean'].rolling(average_over_H, min_periods=1).mean()
             df['std_avg'] = df['std'].rolling(average_over_H, min_periods=1).std()
 
             self.__summStats = df
 
-        if audio_file not in os.listdir(self.audio_path):
-            raise FileNotFoundError(f"The file {audio_file} must be in {self.audio_path} in order to be processed.")
+        # if audio_file not in os.listdir(self.audio_path):
+        #     raise FileNotFoundError(f"The file {audio_file} must be in {self.audio_path} in order to be processed.")
 
         if Zscore and Zscore != "original" and self.Data_normalization=="zscore":
             self.__zscore_mean = self.__summStats[self.__summStats['filename'] == audio_file]['mean_avg'].values[0]
@@ -511,9 +514,9 @@ class Spectrogram(Dataset):
 
         if not os.path.exists(os.path.join(self.__path_output_spectrograms, self.__spectro_foldername, os.path.splitext(audio_file)[0])):
             os.makedirs(os.path.join(self.__path_output_spectrograms, self.__spectro_foldername, os.path.splitext(audio_file)[0]))
-        elif adjust:
-            shutil.rmtree(os.path.join(self.__path_output_spectrograms, self.__spectro_foldername))
-            os.makedirs(os.path.join(self.__path_output_spectrograms, self.__spectro_foldername, os.path.splitext(audio_file)[0]))
+        # elif adjust:
+        #     shutil.rmtree(os.path.join(self.__path_output_spectrograms, self.__spectro_foldername))
+        #     os.makedirs(os.path.join(self.__path_output_spectrograms, self.__spectro_foldername, os.path.splitext(audio_file)[0]))
 
         output_file = os.path.join(self.__path_output_spectrograms, self.__spectro_foldername, os.path.splitext(audio_file)[0], audio_file)
 

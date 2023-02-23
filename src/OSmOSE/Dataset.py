@@ -1,5 +1,5 @@
 import os
-from typing import Union, Tuple
+from typing import Union, Tuple, List
 from datetime import datetime
 from warnings import warn
 try:
@@ -14,58 +14,119 @@ from tqdm import tqdm
 from OSmOSE.utils import read_header
 
 class Dataset():
-    def __init__(self, dataset_path: str, *, coordinates: Union[str, list] = None, osmose_group_name: str = None) -> None:
+    """Super class used to create dataset compatible with the rest of the package.
+        
+        A dataset is a set of audio files located in a folder whose name is the dataset name. 
+        The files must be in the `raw/audio/original`subfolder. and be alongside a `timestamp.csv` file, which includes 
+        the name of the file and the associated timestamp, in the `%Y-%m-%dT%H:%M:%S.%fZ` strftime format. 
+
+        This file can be created using the `OSmOSE.write_timestamp` function.
+        """
+
+    def __init__(self, dataset_path: str, *, coordinates: Union[str, list, Tuple] = None, osmose_group_name: str = None) -> None:
+        """Instanciate the dataset with at least its path.
+        
+        Parameters
+        ----------
+        dataset_path: str
+            The absolute path to the dataset folder. The last folder in the path will be considered as the name of the dataset.
+        coordinates: str or list or Tuple, optional
+            GPS coordinates of the listening location. If it is a string, it must be the name of a csv file located in `raw/auxiliary`.
+            Else, the first element is the latitude, and second the longitude.
+        osmose_group_name: str, optional
+            The name of the group using the OsmOSE package. All files created using this dataset will be accessible by the osmose group. 
+            Will not work on Windows.
+            
+        Example
+        -------
+        >>> from OSmOSE import Dataset
+        >>> dataset = Dataset(os.path.join("home","user","my_dataset"), coordinates = [49.2, -5], osmose_group_name = "gosmose")
+            """
         self.__name = os.path.basename(dataset_path)
         self.__path = dataset_path
         self.__group = osmose_group_name
         self.__coords = []
-        self.Coords = coordinates
+        if coordinates is not None:
+            self.Coords = coordinates
 
         self.list_abnormal_filenames = []
 
         if skip_perms:
             print("It seems you are on a non-Unix operating system (probably Windows). The build_dataset() method will not work as intended and permission might be uncorrectly set.")
 
-        """gps: The GPS coordinates of the listening location. It can be a list of 2 elements [latitude, longitude], or the 
-                name of a csv file located in the `raw/auxiliary/` folder containing two columns: `lat` and `lon` with those informations."""
-
         pd.set_option('display.float_format', lambda x: '%.0f' % x)
 
     #region Properties
     @property
     def Name(self):
-        """The Dataset name."""
+        """str: The Dataset name. It is readonly."""
         return self.__name
 
     @property
     def Path(self):
-        """The Dataset path."""
+        """str: The Dataset path. It is readonly."""
         return self.__path
     
     @property
     def Coords(self) -> Union[Tuple[float,float], Tuple[Tuple[float,float],Tuple[float,float]]] :
-        """The GPS coordinates of the dataset. First element is latitude, second is longitude."""
+        """Tuple: The GPS coordinates of the listening location. First element is latitude, second is longitude.
+        
+        GPS coordinates are used to localize the dataset and required for some utilities, like the 
+        weather and environment utility.
+
+        Parameter
+        ---------
+        coordinates: str or list or tuple
+            If the coordinates are a string, it must be the name of a csv file located in `raw/auxiliary/`, containing two columns: 'lat' and 'long'
+            Else, they can be either a list or a tuple of two float, the first being the latitude and second the longitude; or a 
+            list or a tuple containing two lists or tuples respectively of floats. In this case, the coordinates are not treated as a point but
+            as an area.
+
+        Returns
+        -------
+        The GPS coordinates as a tuple.
+        """
         if not self.__coords:
             print("This dataset has no GPS coordinates.")
         return self.__coords
 
     @Coords.setter
-    def Coords(self, coordinates: Union[str, list]):
-        if isinstance(coordinates, str):
-            csvFileArray = pd.read_csv(os.path.join(self.Path,'raw' ,'auxiliary' ,coordinates))
-            self.__coords = [(np.min(csvFileArray['lat']) , np.max(csvFileArray['lat'])) , (np.min(csvFileArray['lon']) , np.max(csvFileArray['lon']))]
-        elif not isinstance(coordinates, list) and coordinates is not None:
-            raise TypeError(f"GPS coordinates must be either a list of coordinates or the name of csv containing the coordinates, but {type(coordinates)} found.")
-        else:
-            self.__coords = coordinates
+    def Coords(self, coordinates: Union[str, List[float], List[List[float]], Tuple[float,float], Tuple[Tuple[float,float],Tuple[float,float]]]):
+        match type(coordinates):
+            case str():
+                csvFileArray = pd.read_csv(os.path.join(self.Path,'raw' ,'auxiliary' ,coordinates))
+                self.__coords = [(np.min(csvFileArray['lat']) , np.max(csvFileArray['lat'])) , (np.min(csvFileArray['lon']) , np.max(csvFileArray['lon']))]
+            case tuple():
+                self.__coords = coordinates
+            case list():
+                if all(isinstance(coord, list) for coord in coordinates):
+                    self.__coords = ((coordinates[0][0], coordinates[0][1]), (coordinates[1][0], coordinates[1][1]))
+                elif all(isinstance(coord, float) for coord in coordinates):
+                    self.__coords = (coordinates[0], coordinates[1])
+                else:
+                    raise ValueError(f"The coordinates list must contain either only floats or only sublists of two elements.")
+            case _:
+                raise TypeError(f"GPS coordinates must be either a list of coordinates or the name of csv containing the coordinates, but {type(coordinates)} found.")
 
 
     @property
     def Owner_Group(self):
-        """The Unix group able to interact with the dataset."""
+        """str: The Unix group able to interact with the dataset."""
         if self.__group is None:
             print("The OSmOSE group name is not defined. Please specify the group name before trying to build the dataset.")
         return self.__group
+
+    @Owner_Group.setter
+    def Owner_Group(self, value):
+        if skip_perms: 
+            print("Cannot set osmose group on a non-Unix operating system.")
+            return
+        try:
+            grp.getgrnam(value)
+        except KeyError as e:
+            raise KeyError(f"The group {value} does not exist on the system. Full error trace: {e}")
+            
+        self.__group = value
 
     @property
     def is_built(self):
@@ -73,22 +134,35 @@ class Dataset():
         return len(os.listdir(os.path.join(self.Path, "raw","audio"))) > 0 and not os.path.exists(os.path.join(self.Path, "raw","audio","original"))
     #endregion
 
-    def build(self, *, osmose_group_name:str = None, force_upload: bool = False) -> Tuple[list, list]:
+    def build(self, *, osmose_group_name:str = None, force_upload: bool = False) -> None:
         """
-        
-        Parameters:
-        -----------
+        Set up the architecture of the dataset.
+
+        The following operations will be performed on the dataset. None of them are destructive:
+            - open and read the header of audio files located in `raw/audio/original/`.
+            - rename files containing illegal characters.
+            - generate some stastics regarding the files and dataset durations.
+            - write the raw/metadata.csv file.
+            - Identify and record files with anomalies (short duration, unreadable header...).
+            - Set the permission of the dataset to the osmose group.
+
+        Parameters
+        ----------
             dataset_ID: the name of the dataset folder
                 
             osmose_group_name: The name of the group using the osmose dataset. It will have all permissions over the dataset.
             
             force_upload: If true, ignore the file anomalies and build the dataset anyway.
-            
-        Returns:
-        --------
-            A tuple containing a list of the abnormal filenames and the duration of good files."""
 
-        
+        Example
+        -------
+            >>> from OSmOSE import Dataset
+            >>> dataset = Dataset(os.path.join("home","user","my_dataset"))
+            >>> dataset.build()
+
+            DONE ! your dataset is on OSmOSE platform !
+        """
+
         if osmose_group_name is None:
             osmose_group_name = self.Owner_Group        
 
@@ -254,10 +328,9 @@ class Dataset():
             print('\n DONE ! your dataset is on OSmOSE platform !')
 
 
-        return list_duration
-
     def delete_abnormal_files(self) -> None:
-        """Delete all files with abnormal durations in the dataset, and rewrite the timestamps.csv file to reflect the changes."""
+        """Delete all files with abnormal durations in the dataset, and rewrite the timestamps.csv file to reflect the changes.
+        If no abnormal file is detected, then it does nothing."""
         
         if not self.list_abnormal_filenames:
             warn("No abnormal file detected. You need to run the Dataset.build() method in order to detect abnormal files before using this method.")

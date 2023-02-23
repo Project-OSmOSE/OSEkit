@@ -57,7 +57,12 @@ On the command line, run this line just once:
 echo "alias osmose_activate='cd /home/datawork-osmose/osmose_package; git checkout main; git pull origin main; . /appli/anaconda/latest/etc/profile.d/conda.sh; conda activate /home/datawork-osmose/conda-env/osmose_dev/; poetry install; cd -'" >> .bashrc
 ```
 
-Then reload the shell, and typing `osmose_activate` will:
+Then reload the shell. From now on, typing 
+```bash
+bash
+osmose_activate
+``` 
+will:
 
 - Update the local package to the latest version.
 
