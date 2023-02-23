@@ -4,6 +4,9 @@ version = "0.1.0"
 description = "Ocean acoustic studies toolkit."
 authors = ["Rumengol"]
 readme = "README.md"
+packages = [
+    { include = "OSmOSE", from = "src" },
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"
