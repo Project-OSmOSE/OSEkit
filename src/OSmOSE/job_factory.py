@@ -169,24 +169,26 @@ class Job_builder():
         match job_scheduler:
             case "Torque":
                 prefix = "#PBS"
-                name_param = "-N"
-                queue_param = "-q"
+                name_param = "-N "
+                queue_param = "-q "
                 node_param = "-l nodes="
                 cpu_param = "-l ncpus="
                 time_param = "-l walltime="
                 mem_param = "-l mem="
-                outfile_param = "-o"
-                errfile_param = "-e"
+                outfile_param = "-o "
+                errfile_param = "-e "
+                outfile = outfile.replace("_%j","").format(jobname)
+                errfile = errfile.replace("_%j","").format(jobname)
             case "Slurm":
                 prefix = "#SBATCH"
-                name_param = "-J"
-                queue_param = "-p"
+                name_param = "-J "
+                queue_param = "-p "
                 node_param = "-n "
                 cpu_param = "-c "
                 time_param = "-time "
                 mem_param = "-mem "
-                outfile_param = "-o"
-                errfile_param = "-e"
+                outfile_param = "-o "
+                errfile_param = "-e "
             case _:
                 prefix = "#"
                 name_param = ""
@@ -199,29 +201,28 @@ class Job_builder():
                 errfile_param = ""
                 warn("Unrecognized job scheduler. Please review the PBS file and or specify a job scheduler between Torque or Slurm")
         
-        job_file.append(f"{prefix} {name_param} {jobname}")
-        job_file.append(f"{prefix} {queue_param} {queue}")
-        job_file.append(f"{prefix} {queue_param} {queue}")
-        job_file.append(f"{prefix} {node_param} {nodes}")
-        job_file.append(f"{prefix} {cpu_param} {ncpus}")
-        job_file.append(f"{prefix} {time_param} {walltime}")
-        job_file.append(f"{prefix} {mem_param} {mem}")
-        job_file.append(f"{prefix} {outfile_param} {outfile}")
-        job_file.append(f"{prefix} {errfile_param} {errfile}")
+        job_file.append(f"{prefix} {name_param}{jobname}")
+        job_file.append(f"{prefix} {queue_param}{queue}")
+        job_file.append(f"{prefix} {node_param}{nodes}")
+        job_file.append(f"{prefix} {cpu_param}{ncpus}")
+        job_file.append(f"{prefix} {time_param}{walltime}")
+        job_file.append(f"{prefix} {mem_param}{mem}")
+        job_file.append(f"{prefix} {outfile_param}{outfile}")
+        job_file.append(f"{prefix} {errfile_param}{errfile}")
         #endregion
 
-        job_file.append(f"\n{env_script} {env_name}")
+        job_file.append(f"\nsource {env_script if env_script else self.Env_script } {env_name}")
         job_file.append(f"python {script_path} {script_args}")
 
 
         outfilename = f"{jobname}_{datetime.now().strftime('%H-%M-%S')}_{job_scheduler}_{len(os.listdir(jobdir))}.pbs"
 
-        job_file.append(f"\n rm {os.path.join(jobdir, outfilename)}")
+        job_file.append(f"\nrm {os.path.join(jobdir, outfilename)}")
 
         with open(os.path.join(jobdir, outfilename), "w") as jobfile:
             jobfile.write("\n".join(job_file))
 
-        self.__prepared_jobs.append(outfilename)
+        self.__prepared_jobs.append(os.path.join(jobdir, outfilename))
 
         return os.path.join(jobdir, outfilename)
 
@@ -248,8 +249,8 @@ class Job_builder():
 
         for jobfile in jobfile_list:
             if "torque" in jobfile.lower():
-                dep = f"-W depend=afterok:{dependency}" if dependency else ""
-                jobid = subprocess.run(["qsub", dep, jobfile],stdout=subprocess.PIPE).stdout.decode('utf-8').rstrip('\n')
+                dep = f" -W depend=afterok:{dependency}" if dependency else ""
+                jobid = subprocess.run([f"qsub{dep}", jobfile],stdout=subprocess.PIPE).stdout.decode('utf-8').rstrip('\n')
                 jobid_list.append(jobid)
             elif "slurm" in jobfile.lower():
                 dep = f"-d afterok:{dependency}" if dependency else ""
@@ -263,7 +264,7 @@ class Job_builder():
         return jobid_list
 
     def update_job_status(self):
-        for file in self.Ongoing_jobs:
+        for file in self.__ongoing_jobs:
             if not os.path.exists(file):
                 self.__ongoing_jobs.remove(file)
                 self.__finished_jobs.append(file)
