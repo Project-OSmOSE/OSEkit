@@ -53,7 +53,18 @@ def read_config(raw_config: Union[str, dict, PurePath]) -> NamedTuple:
         Returns
         -------
         config : `namedtuple`
-            The configuration as a `namedtuple` object."""
+            The configuration as a `namedtuple` object.
+            
+        Raises
+        ------
+        FileNotFoundError
+            Raised if the raw_config is a string that does not correspond to a valid path.
+        TypeError
+            Raised if the raw_config is anything else than a string, a PurePath or a dict.
+        NotImplementedError
+            Raised if the raw_config file is in YAML format
+        UnknownFileError
+            Raised if the raw_config file is not in TOML, JSON or YAML formats."""
 
     match raw_config:
         case PurePath():

@@ -16,8 +16,56 @@ from OSmOSE.cluster.audio_reshaper import reshape # Not used for now; will be wh
 from OSmOSE.Dataset import Dataset
 
 class Spectrogram(Dataset):
+    """Main class for spectrogram-related computations. Can resample, reshape and normalize audio files before generating spectrograms."""
 
-    def __init__(self, dataset_path: str, *, analysis_fs: int, coordinates: Union[str, list] = None, osmose_group_name: str = None, analysis_params: dict = None, batch_number : int = 10) -> None:
+    def __init__(self, dataset_path: str, *, analysis_fs: int, coordinates: Union[str, list, tuple] = None, osmose_group_name: str = None, analysis_params: dict = None, batch_number : int = 10) -> None:
+        """Instanciates a spectrogram object.
+        
+        The characteristics of the dataset are essential to input for the generation of the spectrograms. There is three ways to input them:
+            - Use the existing `analysis/analysis_sheet.csv` file. If one exist, it will take priority over the other methods. Note that 
+            when using this file, some attributes will be locked in read-only mode.
+            - Fill the `analysis_params` argument. More info on the expected value below.
+            - Don't initialize the attributes in the constructor, and assign their values manually.
+
+        In any case, all attributes must have a value for the spectrograms to be generated. If it does not exist, `analysis/analysis_sheet.csv`
+        will be written at the end of the `Spectrogram.initialize()` method.
+
+        Parameters
+        ----------
+        dataset_path : `str`
+            The absolute path to the dataset folder. The last folder in the path will be considered as the name of the dataset.
+        analysis_fs : `int`, keyword-only
+            The sampling frequency used for the generation of the spectrograms.
+        coordinates : `str` or `list` or `tuple`, optional, keyword-only
+            The GPS coordinates of the listening location. If it is of type `str`, it must be the name of a csv file located in `raw/auxiliary`,
+            otherwise a list or a tuple with the first element being the latitude coordinates and second the longitude coordinates.
+        osmose_group_name : `str`, optional, keyword-only
+            The name of the group using the OsmOSE package. All files created using this dataset will be accessible by the osmose group. 
+            Will not work on Windows.
+        analysis_params : `dict`, optional, keyword-only
+            If `analysis/analysis_sheet.csv` does not exist, the analysis parameters can be submitted in the form of a dict,
+            with keys matching what is expected:
+                - fileScale_nfft : `int`
+                - fileScale_winsize : `int`
+                - fileScale_overlap : `int`
+                - colmapspectros : `str`
+                - nber_zoom_levels : `int`
+                - min_color_val : `int`
+                - max_color_val : `int`
+                - nberAdjustSpectros : `int`
+                - max_time_display_spectro : `int`
+                - zscore_duration : `float` or `str`
+                - fmin_HighPassFilter : `int`
+                - sensitivity_dB : `int`
+                - peak_voltage : `float`
+                - spectro_normalization : `str`
+                - data_normalization : `str`
+                - gain_dB : `int`
+            If additional information is given, it will be ignored. Note that if there is an `analysis/analysis_sheet.csv` file, it will
+            always have the priority.
+        batch_number : `int`, optional
+            The number of batches the dataset files will be split into when submitting parallel jobs (the default is 10).
+"""
         super().__init__(dataset_path, coordinates=coordinates, osmose_group_name=osmose_group_name)
 
         analysis_path = os.path.join(self.Path, "analysis", "analysis_sheet.csv")
@@ -28,7 +76,8 @@ class Spectrogram(Dataset):
             self.__analysis_file = False
             analysis_sheet = {key: [value] for (key, value) in analysis_params.items()}
         else:
-            analysis_sheet = None;
+            analysis_sheet = None
+            self.__analysis_file = False
             print("No valid analysis/analysis_sheet.csv found and no parameters provided. All attributes will be None.")
 
         self.Batch_number : int = batch_number
@@ -74,6 +123,7 @@ class Spectrogram(Dataset):
 
     @property
     def Analysis_fs(self):
+        """The sampling frequency of the dataset."""
         return self.__analysis_fs
 
     @Analysis_fs.setter
@@ -82,25 +132,27 @@ class Spectrogram(Dataset):
 
     @property
     def Nfft(self):
+        """The Nonequispaced Fast Fourier Transform of the dataset."""
         return self.__fileScale_nfft
     
     @Nfft.setter
     def Nfft(self, value):
-        if self.__analysis_file:
+        if not self.__analysis_file:
             self.__fileScale_nfft = value
         else:
-            raise ValueError("This parameter cannot be changed since it has been initialized with the analysis sheet.")
+            raise ValueError("This parameter cannot be changed since it has been initialized using the analysis sheet.")
 
     @property
     def Window_size(self):
+        """The window size """
         return self.__fileScale_winsize
     
     @Window_size.setter
     def Window_size(self, value):
-        if self.__analysis_file:
+        if not self.__analysis_file:
             self.__fileScale_winsize = value
         else:
-            raise ValueError("This parameter cannot be changed since it has been initialized with the analysis sheet.")
+            raise ValueError("This parameter cannot be changed since it has been initialized using the analysis sheet.")
 
     @property
     def Overlap(self):
@@ -108,10 +160,10 @@ class Spectrogram(Dataset):
     
     @Overlap.setter
     def Overlap(self, value):
-        if self.__analysis_file:
+        if not self.__analysis_file:
             self.__fileScale_overlap = value
         else:
-            raise ValueError("This parameter cannot be changed since it has been initialized with the analysis sheet.")
+            raise ValueError("This parameter cannot be changed since it has been initialized using the analysis sheet.")
 
     @property
     def Colmap(self):
@@ -175,10 +227,10 @@ class Spectrogram(Dataset):
 
     @Fmin_HighPassFilter.setter
     def Fmin_HighPassFilter(self, value):
-        if self.__analysis_file:
+        if not self.__analysis_file:
             self.__fmin_HighPassFilter = value
         else:
-            raise ValueError("This parameter cannot be changed since it has been initialized with the analysis sheet.")
+            raise ValueError("This parameter cannot be changed since it has been initialized using the analysis sheet.")
 
     @property
     def Sensitivity(self):
@@ -187,10 +239,10 @@ class Spectrogram(Dataset):
     @Sensitivity.setter
     def Sensitivity(self, value):
         """Always assume the sensitivity is given in dB"""
-        if self.__analysis_file:
+        if not self.__analysis_file:
             self.__sensitivity = 10**(value/20) * 1e6
         else:
-            raise ValueError("Cannot change attribute as analysis_path is not empty.")
+            raise ValueError("This parameter cannot be changed since it has been initialized using the analysis sheet.")
 
     @property
     def Peak_voltage(self):
@@ -198,10 +250,10 @@ class Spectrogram(Dataset):
 
     @Peak_voltage.setter
     def Peak_voltage(self, value):
-        if self.__analysis_file:
+        if not self.__analysis_file:
             self.__peak_voltage = value
         else:
-            raise ValueError("Cannot change attribute as analysis_path is not empty.")
+            raise ValueError("This parameter cannot be changed since it has been initialized using the analysis sheet.")
 
     @property
     def Spectro_normalization(self):
@@ -209,10 +261,10 @@ class Spectrogram(Dataset):
 
     @Spectro_normalization.setter
     def Spectro_normalization(self, value):
-        if self.__analysis_file:
+        if not self.__analysis_file:
             self.__spectro_normalization = value
         else:
-            raise ValueError("Cannot change attribute as analysis_path is not empty.")
+            raise ValueError("This parameter cannot be changed since it has been initialized using the analysis sheet.")
 
     @property
     def Data_normalization(self):
@@ -220,10 +272,10 @@ class Spectrogram(Dataset):
     
     @Data_normalization.setter
     def Data_normalization(self, value):
-        if self.__analysis_file:
+        if not self.__analysis_file:
             self.__data_normalization = value
         else:
-            raise ValueError("Cannot change attribute as analysis_path is not empty.")
+            raise ValueError("This parameter cannot be changed since it has been initialized using the analysis sheet.")
 
     @property
     def Gain_dB(self):
@@ -231,14 +283,20 @@ class Spectrogram(Dataset):
 
     @Gain_dB.setter
     def Gain_dB(self, value):
-        if self.__analysis_file:
+        if not self.__analysis_file:
             self.__gain_dB = value
         else:
-            raise ValueError("Cannot change attribute as analysis_path is not empty.")
+            raise ValueError("This parameter cannot be changed since it has been initialized using the analysis sheet.")
 
     #endregion
 
     def __build_path(self, adjust:bool = False):
+        """Build some internal paths according to the expected architecture. Not path is created.
+        
+        Parameter
+        ---------
+            adjust : `bool`
+                Whether or not the paths are used to adjust spectrogram parameters."""
         analysis_path = os.path.join(self.Path, "analysis")
         audio_foldername = str(self.Max_time_display_spectro)+'_'+str(self.Analysis_fs)
         self.audio_path = os.path.join(self.Path, "raw", "audio", audio_foldername)
@@ -256,6 +314,7 @@ class Spectrogram(Dataset):
 
 
     def check_spectro_size(self):
+        """Verify if the parameters will generate a spectrogram that can fit one screen properly"""
         if self.Nfft > 2048:
             print('your nfft is :',self.Nfft)
             print( colored('PLEASE REDUCE IT UNLESS YOU HAVE A VERY HD SCREEN WITH MORE THAN 1k pixels vertically !!!! ', 'red') )           
@@ -290,9 +349,32 @@ class Spectrogram(Dataset):
         print('your resolutions : time = ',round(Time[1]-Time[0],3),'(s) / frequency = ', round(Freq[1]-Freq[0],3) ,'(Hz)' )    
 
 
-    # TODO: some cleaning
-    def initialize(self, *, ind_min: int = 0, ind_max: int = -1, analysis_fs: int = None, reshape_method: Literal["resample","reshape","none"] = "none", pad_silence: bool = True) -> None:
+    # TODO: some cleaning | Rename available reshape methods ? (something like legacy, classic)
+    def initialize(self, *, analysis_fs: int = None, reshape_method: Literal["resample","reshape","none"] = "none", 
+    ind_min: int = 0, ind_max: int = -1, pad_silence: bool = False) -> None:
+        """Prepares everything (path, variables, files) for spectrogram generation. This needs to be run only once per dataset.
         
+        Parameters
+        ----------
+        analysis_fs : `int`, optional, keyword-only
+            The sampling frequency of the audio files used to generate the spectrograms. If set, will overwrite the Spectrogram.Analysis_fs attribute.
+        reshape_method : {"resample", "reshape", "none"}, optional
+            Which method to use if the desired size of the spectrogram is different from the audio file duration.
+            - resample : Legacy method, use bash and sox software to trim the audio files and fill the empty space with nothing.
+            Unpractical when the audio file duration is longer than the desired spectrogram size.
+            - reshape : Classic method, use python and sox library to cut and concatenate the audio files to fit the desired duration.
+            Will rewrite the `timestamp.csv` file, thus timestamps may have unexpected behavior if the concatenated files are not chronologically
+            subsequent.
+            - none : Don't reshape, will throw an error if the file duration is different than the desired spectrogram size. (It is the default behavior)
+
+        ind_min : `int`, optional
+            The index of the first file to consider. Both this parameter and `ind_max` are not commonly used and are 
+            for very specific use cases. Most of the time, you want to initialize the whole dataset (the default is 0).
+        ind_max : `int`, optional
+            The index of the last file to consider (the default is -1, meaning consider every file).
+        pad_silence : `bool`, optinoal
+            When using the legacy reshaping method, whether there should be a silence padding or not (default is False).
+            """
         if analysis_fs:
             self.Analysis_fs = analysis_fs
 
@@ -461,9 +543,10 @@ class Spectrogram(Dataset):
     def to_csv(self, filename: str) -> None:
         """Outputs the characteristics of the spectrogram the specified file in csv format.
         
-        Parameter:
-        ----------
-            filename: The name of the file to be written."""
+        Parameter
+        ---------
+        filename: str
+            The name of the file to be written."""
 
         data = {'name' :self.__spectro_foldername , 'nfft':self.Nfft , 'window_size' : self.Window_size , \
              'overlap' : self.Overlap /100 , 'zoom_level': 2**(self.Zoom_levels-1)}
@@ -475,7 +558,14 @@ class Spectrogram(Dataset):
     #region On cluster
 
     def process_file(self, audio_file: str, *, adjust: bool = False) -> None:
-
+        """Read an audio file and generate the associated spectrogram.
+        
+        Parameters
+        ----------
+        audio_file : `str`
+            The name of the audio file to be processed
+        adjust : `bool`, optional
+            Indicates whether the file should be processed alone to adjust the spectrogram parameters (the default is False)"""
         self.__build_path(adjust)
 
         Zscore = self.Zscore_duration if not adjust else "original"
@@ -485,17 +575,16 @@ class Spectrogram(Dataset):
             average_over_H = int(round(pd.to_timedelta(Zscore).total_seconds() / self.Max_time_display_spectro))
 
             df=pd.DataFrame()
-            df = pd.read_csv(r"C:\Users\loirebe\Documents\mayobs\analysis\results.csv", header=0)
-            # for dd in glob(os.path.join(self.__path_summstats,'summaryStats*')):        
-            #     df = pd.concat([ df , pd.read_csv(dd,header=0) ])
+            for dd in glob(os.path.join(self.__path_summstats,'summaryStats*')):        
+                df = pd.concat([ df , pd.read_csv(dd,header=0) ])
                 
             df['mean_avg'] = df['mean'].rolling(average_over_H, min_periods=1).mean()
             df['std_avg'] = df['std'].rolling(average_over_H, min_periods=1).std()
 
             self.__summStats = df
 
-        # if audio_file not in os.listdir(self.audio_path):
-        #     raise FileNotFoundError(f"The file {audio_file} must be in {self.audio_path} in order to be processed.")
+        if audio_file not in os.listdir(self.audio_path):
+            raise FileNotFoundError(f"The file {audio_file} must be in {self.audio_path} in order to be processed.")
 
         if Zscore and Zscore != "original" and self.Data_normalization=="zscore":
             self.__zscore_mean = self.__summStats[self.__summStats['filename'] == audio_file]['mean_avg'].values[0]
@@ -514,9 +603,9 @@ class Spectrogram(Dataset):
 
         if not os.path.exists(os.path.join(self.__path_output_spectrograms, self.__spectro_foldername, os.path.splitext(audio_file)[0])):
             os.makedirs(os.path.join(self.__path_output_spectrograms, self.__spectro_foldername, os.path.splitext(audio_file)[0]))
-        # elif adjust:
-        #     shutil.rmtree(os.path.join(self.__path_output_spectrograms, self.__spectro_foldername))
-        #     os.makedirs(os.path.join(self.__path_output_spectrograms, self.__spectro_foldername, os.path.splitext(audio_file)[0]))
+        elif adjust:
+            shutil.rmtree(os.path.join(self.__path_output_spectrograms, self.__spectro_foldername))
+            os.makedirs(os.path.join(self.__path_output_spectrograms, self.__spectro_foldername, os.path.splitext(audio_file)[0]))
 
         output_file = os.path.join(self.__path_output_spectrograms, self.__spectro_foldername, os.path.splitext(audio_file)[0], audio_file)
 

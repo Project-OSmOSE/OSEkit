@@ -31,11 +31,11 @@ class Dataset():
         dataset_path : `str`
             The absolute path to the dataset folder. The last folder in the path will be considered as the name of the dataset.
         
-        coordinates : `str` or `list` or `Tuple`, optional
-            GPS coordinates of the listening location. If it is a string, it must be the name of a csv file located in `raw/auxiliary`.
-            Else, the first element is the latitude, and second the longitude.
+        coordinates : `str` or `list` or `Tuple`, optional, keyword-only
+            The GPS coordinates of the listening location. If it is of type `str`, it must be the name of a csv file located in `raw/auxiliary`,
+            otherwise a list or a tuple with the first element being the latitude coordinates and second the longitude coordinates.
         
-        osmose_group_name : `str`, optional
+        osmose_group_name : `str`, optional, keyword-only
             The name of the group using the OsmOSE package. All files created using this dataset will be accessible by the osmose group. 
             Will not work on Windows.
             
@@ -71,7 +71,7 @@ class Dataset():
     
     @property
     def Coords(self) -> Union[Tuple[float,float], Tuple[Tuple[float,float],Tuple[float,float]]] :
-        """Tuple: The GPS coordinates of the listening location. First element is latitude, second is longitude.
+        """The GPS coordinates of the listening location. First element is latitude, second is longitude.
         
         GPS coordinates are used to localize the dataset and required for some utilities, like the 
         weather and environment utility.
@@ -94,6 +94,7 @@ class Dataset():
 
     @Coords.setter
     def Coords(self, coordinates: Union[str, List[float], List[List[float]], Tuple[float,float], Tuple[Tuple[float,float],Tuple[float,float]]]):
+        #TODO: Allow any iterator?
         match type(coordinates):
             case str():
                 csvFileArray = pd.read_csv(os.path.join(self.Path,'raw' ,'auxiliary' ,coordinates))
