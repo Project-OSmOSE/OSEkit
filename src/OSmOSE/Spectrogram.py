@@ -11,7 +11,7 @@ import soundfile as sf
 from scipy import signal
 from termcolor import colored
 from matplotlib import pyplot as plt
-from OSmOSE.job_factory import Job_builder
+from OSmOSE.job import Job_builder
 from OSmOSE.cluster.audio_reshaper import reshape # Not used for now; will be when local execution will be a thing.
 from OSmOSE.Dataset import Dataset
 
@@ -325,12 +325,6 @@ class Spectrogram(Dataset):
 
         Noverlap = int(self.Window_size * self.Overlap / 100)
         
-        win = np.hamming(self.Window_size)
-        if self.Nfft < (0.5*self.Window_size):
-            #? What is scale_psd ?
-            scale_psd = 2.0 * self.Window_size / (self.Nfft * ((win * win).sum() / self.Window_size))
-        else:
-            scale_psd = 2.0 / ( (win * win).sum())
         Nbech = np.size(data)
         Noffset = self.Window_size-Noverlap
         Nbwin = int((Nbech-self.Window_size) / Noffset)
@@ -716,7 +710,7 @@ class Spectrogram(Dataset):
             else:
                 x_win = data[idwin * Noffset:idwin * Noffset + self.Window_size] * win
                 Sxx[:, idwin] = (np.abs(np.fft.rfft(x_win, n=self.Nfft)) ** 2)
-            Sxx[:, idwin] *= scale_psd
+        Sxx[:, idwin] *= scale_psd
             
         if self.Spectro_normalization == 'density':
             log_spectro = 10 * np.log10(Sxx/(1e-12))

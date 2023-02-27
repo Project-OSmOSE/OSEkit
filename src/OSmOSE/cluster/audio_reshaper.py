@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 def substract_timestamps(input_timestamp: pd.DataFrame, files: List[str], index: int) -> timedelta:
-    """Substracts two timestamps from the "timestamp" column of a dataframe at the indexes of files[i] and files[i-1] and returns the time delta between them
+    """Substracts two timestamp_list from the "timestamp" column of a dataframe at the indexes of files[i] and files[i-1] and returns the time delta between them
     
         Parameters:
         -----------
@@ -22,7 +22,7 @@ def substract_timestamps(input_timestamp: pd.DataFrame, files: List[str], index:
             
         Returns:
         --------
-            The time between the two timestamps as a datetime.timedelta object"""
+            The time between the two timestamp_list as a datetime.timedelta object"""
 
     cur_timestamp: str = input_timestamp[input_timestamp["filename"] == files[index]]["timestamp"].values[0]
     cur_timestamp: datetime = datetime.strptime(cur_timestamp, "%Y-%m-%dT%H:%M:%S.%fZ")
@@ -33,7 +33,7 @@ def substract_timestamps(input_timestamp: pd.DataFrame, files: List[str], index:
 
 # TODO: what to do with overlapping last file ? Del or incomplete ?
 def reshape(chunk_size: int, input_files: Union[str, list], *, output_dir_path: str = None, ind_min: int = 0, ind_max: int = -1, 
-        offset_beginning: int = 0, offset_end: int = 0, max_delta_interval: int = 5, verbose : bool = False, overwrite : bool = False,
+        max_delta_interval: int = 5, offset_beginning: int = 0, offset_end: int = 0, verbose : bool = False, overwrite : bool = False,
         force_reshape: bool = False) -> List[str]:
     """Reshape all audio files in the folder to be of the specified duration. If chunk_size is superior to the base duration of the files, they will be fused according to their order in the timestamp.csv file in the same folder.
     
@@ -50,13 +50,13 @@ def reshape(chunk_size: int, input_files: Union[str, list], *, output_dir_path: 
 
             `ind_max`: The last file of the list to be processed. Default is -1, meaning the entire list is processed.
 
+            `max_delta_interval`: The maximum number of second allowed for a delta between two timestamp_list to still be considered the same. Default is 5s up and down.
+
             `offset_beginning`: The number of seconds that should be skipped in the first input file. When parallelising the reshaping,
              it would mean that the beginning of the file is being processed by another job. Default is 0.
 
             `offset_end`: The number of seconds that should be ignored in the last input file. When parallelising the reshaping, it would mean that the end of this file is processed by another job.
             Default is 0, meaning that nothing is ignored.
-
-            `max_delta_interval`: The maximum number of second allowed for a delta between two timestamps to still be considered the same. Default is 5s up and down.
 
             `verbose`: Display informative messages or not
 
@@ -106,80 +106,80 @@ def reshape(chunk_size: int, input_files: Union[str, list], *, output_dir_path: 
         print(f"Files to be reshaped: {','.join(files)}")
         
     result = []
-    timestamps = []
+    timestamp_list = []
     timestamp: datetime = None
-    prevdata = np.empty(1)
+    previous_audio_data = np.empty(1)
     sample_rate = 0
     i = 0
     t = 0
     proceed = force_reshape #Default is False
 
     while i < len(files):
-        data, sample_rate = sf.read(os.path.join(input_dir_path, files[i]))
+        audio_data, sample_rate = sf.read(os.path.join(input_dir_path, files[i]))
 
 
         if i == 0:
             timestamp = input_timestamp[input_timestamp["filename"] == files[i]]["timestamp"].values[0]
             timestamp = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%fZ")
-            data = data[offset_beginning * sample_rate:]
+            audio_data = audio_data[offset_beginning * sample_rate:]
         elif i == len(files) - 1 and offset_end != 0:
-            data = data[:offset_end * sample_rate]
+            audio_data = audio_data[:offset_end * sample_rate]
 
         # Need to check if size > 1 because numpy arrays are never empty urgh
-        if prevdata.size > 1:
-            data = np.concatenate((prevdata,data))
-            prevdata = np.empty(1)
+        if previous_audio_data.size > 1:
+            audio_data = np.concatenate((previous_audio_data,audio_data))
+            previous_audio_data = np.empty(1)
 
         # While the duration of the audio is longer than the target chunk, we segment it into small files
-        # This means to account for the creation of 10s long files from big one and not overload data.
-        if len(data) > chunk_size * sample_rate:
-            while len(data) > chunk_size * sample_rate:
-                output = data[:chunk_size * sample_rate]
-                prevdata = data[chunk_size * sample_rate:]
+        # This means to account for the creation of 10s long files from big one and not overload audio_data.
+        if len(audio_data) > chunk_size * sample_rate:
+            while len(audio_data) > chunk_size * sample_rate:
+                output = audio_data[:chunk_size * sample_rate]
+                previous_audio_data = audio_data[chunk_size * sample_rate:]
 
                 end_time = (t + 1) * chunk_size if chunk_size * sample_rate <= len(output) else t * chunk_size + len(output)//sample_rate
 
                 outfilename = os.path.join(output_dir_path, f"reshaped_from_{t * chunk_size}_to_{end_time}_sec.wav")
                 result.append(os.path.basename(outfilename))
 
-                timestamps.append(datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')[:-3] + "Z")
+                timestamp_list.append(datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')[:-3] + "Z")
                 timestamp += timedelta(seconds=chunk_size)
 
                 sf.write(outfilename, output, sample_rate)
 
                 if verbose:
-                    print(f"{outfilename} written! File is {(len(output)/sample_rate)/60} minutes long. {(len(prevdata)/sample_rate)/(60)} minutes left from slicing.")
+                    print(f"{outfilename} written! File is {(len(output)/sample_rate)/60} minutes long. {(len(previous_audio_data)/sample_rate)/(60)} minutes left from slicing.")
 
                 t += 1
-                data = prevdata
+                audio_data = previous_audio_data
 
-            # If after we get out of the previous while loop we don't have any data left, then we look at the next file.
-            if (len(data)/sample_rate)/(60) == 0.0:
+            # If after we get out of the previous while loop we don't have any audio_data left, then we look at the next file.
+            if (len(audio_data)/sample_rate)/(60) == 0.0:
                 i += 1
                 continue
 
             
 
-        # Else if data is already in the desired duration, output it
-        if len(data) == chunk_size * sample_rate:
-            output = data
-            prevdata = np.empty(1)
+        # Else if audio_data is already in the desired duration, output it
+        if len(audio_data) == chunk_size * sample_rate:
+            output = audio_data
+            previous_audio_data = np.empty(1)
 
         # Else it is shorter, then while the duration is shorter than the desired chunk,
         # we read the next file and append it to the current one.
-        elif len(data) < chunk_size * sample_rate:
+        elif len(audio_data) < chunk_size * sample_rate:
 
-            # If it is the last file but the data is shorter than the desired chunk, then fill the remaining space with silence.
+            # If it is the last file but the audio_data is shorter than the desired chunk, then fill the remaining space with silence.
             if i == len(files) - 1:
-                fill = np.zeros((chunk_size*sample_rate) - len(data))
-                output = np.concatenate((data, fill))
-                prevdata = np.empty(1)
+                fill = np.zeros((chunk_size*sample_rate) - len(audio_data))
+                output = np.concatenate((audio_data, fill))
+                previous_audio_data = np.empty(1)
             else:
-                # Check if the timestamps can safely be merged
-                if not (len(data) - max_delta_interval < substract_timestamps(input_timestamp, files, i).seconds < len(data) + max_delta_interval):
+                # Check if the timestamp_list can safely be merged
+                if not (len(audio_data) - max_delta_interval < substract_timestamps(input_timestamp, files, i).seconds < len(audio_data) + max_delta_interval):
                     print(f"Warning: You are trying to merge two audio files that are not chronologically consecutive.\n{files[i-1]} starts at {input_timestamp[input_timestamp['filename'] == files[i-1]]['timestamp'].values[0]} and {files[i]} starts at {input_timestamp[input_timestamp['filename'] == files[i]]['timestamp'].values[0]}.")
                     if not proceed and sys.__stdin__.isatty(): #check if the script runs in an interactive shell. Otherwise will fail if proceed = False
-                        res = input("If you proceed, some timestamps will be lost in the reshaping. Proceed anyway? This message won't show up again if you choose to proceed. ([yes]/no)")
+                        res = input("If you proceed, some timestamp_list will be lost in the reshaping. Proceed anyway? This message won't show up again if you choose to proceed. ([yes]/no)")
                         if "yes" in res.lower() or res == "":
                             proceed = True
                         else:
@@ -188,48 +188,48 @@ def reshape(chunk_size: int, input_files: Union[str, list], *, output_dir_path: 
                         print("Error: Cannot merge non-continuous audio files if force_reshape is false.")
                         sys.exit(1)
 
-                while len(data) < chunk_size * sample_rate and i+1 < len(files):
+                while len(audio_data) < chunk_size * sample_rate and i+1 < len(files):
                     nextdata, next_sample_rate = sf.read(os.path.join(input_dir_path, files[i+1]))
-                    rest = (chunk_size * next_sample_rate) - len(data)
-                    data = np.concatenate((data, nextdata[:rest] if rest <= len(nextdata) else nextdata))
+                    rest = (chunk_size * next_sample_rate) - len(audio_data)
+                    audio_data = np.concatenate((audio_data, nextdata[:rest] if rest <= len(nextdata) else nextdata))
                     i+=1
-                output = data
-                prevdata = nextdata[rest:]
+                output = audio_data
+                previous_audio_data = nextdata[rest:]
 
         end_time = (t + 1) * chunk_size if chunk_size * sample_rate <= len(output) else t * chunk_size + len(output)//sample_rate
 
         outfilename = os.path.join(output_dir_path, f"reshaped_from_{t * chunk_size}_to_{end_time}_sec.wav")
         result.append(os.path.basename(outfilename))
 
-        timestamps.append(datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')[:-3] + "Z")
+        timestamp_list.append(datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')[:-3] + "Z")
         timestamp += timedelta(seconds=chunk_size)
 
         sf.write(outfilename, output, sample_rate)
 
         if verbose:
-            print(f"{outfilename} written! File is {(len(output)//sample_rate)/60} minutes long. {(len(prevdata)//sample_rate)/(60)} minutes left from slicing.")
+            print(f"{outfilename} written! File is {(len(output)//sample_rate)/60} minutes long. {(len(previous_audio_data)//sample_rate)/(60)} minutes left from slicing.")
         i +=1
         t += 1
 
-    while len(prevdata) >= chunk_size * sample_rate:
-        output = prevdata[:chunk_size * sample_rate]
-        prevdata = prevdata[chunk_size * sample_rate:]
+    while len(previous_audio_data) >= chunk_size * sample_rate:
+        output = previous_audio_data[:chunk_size * sample_rate]
+        previous_audio_data = previous_audio_data[chunk_size * sample_rate:]
 
         end_time = (i + 1) * chunk_size if chunk_size * sample_rate <= len(output) else i * chunk_size + len(output)//sample_rate
 
         outfilename = os.path.join(output_dir_path, f"reshaped_from_{i * chunk_size}_to_{end_time}_sec.wav")
         result.append(os.path.basename(outfilename))
 
-        timestamps.append(datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')[:-3] + "Z")
+        timestamp_list.append(datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')[:-3] + "Z")
         timestamp += timedelta(seconds=chunk_size)
 
         sf.write(outfilename, output, sample_rate)
         
-        print(f"{outfilename} written! File is {((len(output)//sample_rate)/60)} minutes long. {(len(prevdata)//sample_rate)/(60)} minutes left from slicing.")
+        print(f"{outfilename} written! File is {((len(output)//sample_rate)/60)} minutes long. {(len(previous_audio_data)//sample_rate)/(60)} minutes left from slicing.")
         i += 1
 
 
-    input_timestamp = pd.DataFrame({'filename':result,'timestamp':timestamps})
+    input_timestamp = pd.DataFrame({'filename':result,'timestamp':timestamp_list})
     input_timestamp.sort_values(by=['timestamp'], inplace=True)
     input_timestamp.to_csv(os.path.join(output_dir_path,'timestamp.csv'), index=False,na_rep='NaN',header=None)
 
@@ -246,7 +246,7 @@ if __name__ == "__main__":
     parser.add_argument("--ind-max", "-max", type=int, default=-1, help="The last file of the list to be processed. Default is -1, meaning the entire list is processed.")
     parser.add_argument("--offset-beginning",type=int, default=0, help="number of seconds that should be skipped in the first input file. When parallelising the reshaping, it would mean that the beginning of the file is being processed by another job. Default is 0.")
     parser.add_argument("--offset-end", type=int, default=0, help="The number of seconds that should be ignored in the last input file. When parallelising the reshaping, it would mean that the end of this file is processed by another job. Default is 0, meaning that nothing is ignored.")
-    parser.add_argument("--max-delta-interval", type=int, default=5, help="The maximum number of second allowed for a delta between two timestamps to still be considered the same. Default is 5s up and down.")
+    parser.add_argument("--max-delta-interval", type=int, default=5, help="The maximum number of second allowed for a delta between two timestamp_list to still be considered the same. Default is 5s up and down.")
     parser.add_argument("--verbose", "-v", action="store_true", default=True, help="Whether the script prints informative messages. Default is true.")
     parser.add_argument("--overwrite", action="store_true", default=False, help="If set, deletes all content in --output-dir before writing the output. Default false, deactivated if the --output-dir is the same as --input-file dir.")
     parser.add_argument("--force", "-f", action="store_true", default=False, help="Ignore all warnings and non-fatal errors while reshaping.")

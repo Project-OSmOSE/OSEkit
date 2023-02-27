@@ -47,27 +47,32 @@ def write_timestamp(*, dataset_path: str, date_template: str, timezone:str = "UT
     
     The result is written in a file named `timestamp.csv` with no header and two columns in this format : [filename],[timestamp]. 
     The output date is in the template `'%Y-%m-%dT%H:%M:%S.%fZ'.
-        Parameters:
-            dataset_path: the path of the folder containing audio files
-            
-            date_template: the date template in strftime format. For example, `2017/02/24` has the template `%Y/%m/%d`
+    
+    Parameters
+    ----------
+        dataset_path: `str`
+            the path of the folder containing audio files
+        date_template: `str`
+            the date template in strftime format. For example, `2017/02/24` has the template `%Y/%m/%d`
             For more information on strftime template, see https://strftime.org/
-            
-            offsets: a tuple containing the beginning and end offset of the date. 
+        timezone: `str`, optional
+            The timezone this timestamp was originally recorded in (the default is UTC).
+        offsets: `tuple(int,int)`, optional
+            a tuple containing the beginning and end offset of the date. 
             The first element is the first character of the date, and the second is the last."""
 
     if offsets and "-" in offsets:
         offset = [int(off) for off in offsets.split("-")]
     else:
         offset = [int(offsets), 0]
-
-    list_wav_file = sorted([file for file in glob.glob(os.path.join(dataset_path, '*.wav'))])
+    #TODO: extension-agnostic
+    list_audio_file = sorted([file for file in glob.glob(os.path.join(dataset_path, '*.wav'))])
 
     timestamp=[]
-    filename_rawaudio=[]
+    filename_raw_audio=[]
 
     converted = convert_template_to_re(date_template)
-    for filename in list_wav_file:
+    for filename in list_audio_file:
         
         if offsets:
             date_extracted = os.path.splitext(os.path.basename(filename))[0][offset[0]:offset[1]+1]
@@ -87,9 +92,9 @@ def write_timestamp(*, dataset_path: str, date_template: str, timezone:str = "UT
         
         timestamp.append(dates_final)
         
-        filename_rawaudio.append(os.path.basename(filename))    
+        filename_raw_audio.append(os.path.basename(filename))    
         
-    df = pd.DataFrame({'filename':filename_rawaudio,'timestamp':timestamp, 'timezone':timezone})
+    df = pd.DataFrame({'filename':filename_raw_audio,'timestamp':timestamp, 'timezone':timezone})
     df.sort_values(by=['timestamp'], inplace=True)
     df.to_csv(os.path.join(dataset_path,'timestamp.csv'), index=False,na_rep='NaN',header=None)
     

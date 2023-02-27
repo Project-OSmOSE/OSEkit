@@ -8,15 +8,15 @@ def resample(*, input_dir: str, output_dir: str, target_fs: int, ind_min: int = 
     all_files = sorted(glob.glob(os.path.join(input_dir , '*wav')))
     
     # If ind_max is -1, we go to the end of the list.
-    wav_list = all_files[ind_min:ind_max if ind_max != -1 else len(all_files)]
+    audio_files_list = all_files[ind_min:ind_max if ind_max != -1 else len(all_files)]
 
     tfm = sox.Transformer()
     tfm.set_output_format(rate=target_fs)
 
-    for wav in wav_list:
-        tfm.build_file(input_filepath=wav, output_filepath=os.path.join(output_dir, os.path.basename(wav)))
+    for audio_file in audio_files_list:
+        tfm.build_file(input_filepath=audio_file, output_filepath=os.path.join(output_dir, os.path.basename(audio_file)))
 
-        print(f"{os.path.basename(wav)} resampled to {target_fs}!")
+        print(f"{os.path.basename(audio_file)} resampled to {target_fs}!")
 
 
 if __name__ == "__main__":

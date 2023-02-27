@@ -23,7 +23,7 @@ class Dataset():
         This file can be created using the `OSmOSE.write_timestamp` function.
         """
 
-    def __init__(self, dataset_path: str, *, coordinates: Union[str, list, Tuple] = None, osmose_group_name: str = None) -> None:
+    def __init__(self, dataset_path: str, *, gps_coordinates: Union[str, list, Tuple] = None, owner_group: str = None) -> None:
         """Instanciate the dataset with at least its path.
         
         Parameters
@@ -31,25 +31,25 @@ class Dataset():
         dataset_path : `str`
             The absolute path to the dataset folder. The last folder in the path will be considered as the name of the dataset.
         
-        coordinates : `str` or `list` or `Tuple`, optional, keyword-only
+        gps_coordinates : `str` or `list` or `Tuple`, optional, keyword-only
             The GPS coordinates of the listening location. If it is of type `str`, it must be the name of a csv file located in `raw/auxiliary`,
             otherwise a list or a tuple with the first element being the latitude coordinates and second the longitude coordinates.
         
-        osmose_group_name : `str`, optional, keyword-only
+        owner_group : `str`, optional, keyword-only
             The name of the group using the OsmOSE package. All files created using this dataset will be accessible by the osmose group. 
             Will not work on Windows.
             
         Example
         -------
         >>> from OSmOSE import Dataset
-        >>> dataset = Dataset(os.path.join("home","user","my_dataset"), coordinates = [49.2, -5], osmose_group_name = "gosmose")
+        >>> dataset = Dataset(os.path.join("home","user","my_dataset"), coordinates = [49.2, -5], owner_group = "gosmose")
             """
         self.__name = os.path.basename(dataset_path)
         self.__path = dataset_path
-        self.__group = osmose_group_name
-        self.__coords = []
-        if coordinates is not None:
-            self.Coords = coordinates
+        self.__group = owner_group
+        self.__gps_coordinates = []
+        if gps_coordinates is not None:
+            self.gps_coordinates = gps_coordinates
 
         self.list_abnormal_filenames = []
 
@@ -70,7 +70,7 @@ class Dataset():
         return self.__path
     
     @property
-    def Coords(self) -> Union[Tuple[float,float], Tuple[Tuple[float,float],Tuple[float,float]]] :
+    def gps_coordinates(self) -> Union[Tuple[float,float], Tuple[Tuple[float,float],Tuple[float,float]]] :
         """The GPS coordinates of the listening location. First element is latitude, second is longitude.
         
         GPS coordinates are used to localize the dataset and required for some utilities, like the 
@@ -78,7 +78,7 @@ class Dataset():
 
         Parameter
         ---------
-        coordinates: str or list or tuple
+        coordinates: `str` or `list` or `tuple`
             If the coordinates are a string, it must be the name of a csv file located in `raw/auxiliary/`, containing two columns: 'lat' and 'long'
             Else, they can be either a list or a tuple of two float, the first being the latitude and second the longitude; or a 
             list or a tuple containing two lists or tuples respectively of floats. In this case, the coordinates are not treated as a point but
@@ -88,24 +88,24 @@ class Dataset():
         -------
         The GPS coordinates as a tuple.
         """
-        if not self.__coords:
+        if not self.__gps_coordinates:
             print("This dataset has no GPS coordinates.")
-        return self.__coords
+        return self.__gps_coordinates
 
-    @Coords.setter
-    def Coords(self, coordinates: Union[str, List[float], List[List[float]], Tuple[float,float], Tuple[Tuple[float,float],Tuple[float,float]]]):
+    @gps_coordinates.setter
+    def gps_coordinates(self, coordinates: Union[str, List[float], List[List[float]], Tuple[float,float], Tuple[Tuple[float,float],Tuple[float,float]]]):
         #TODO: Allow any iterator?
         match type(coordinates):
             case str():
                 csvFileArray = pd.read_csv(os.path.join(self.Path,'raw' ,'auxiliary' ,coordinates))
-                self.__coords = [(np.min(csvFileArray['lat']) , np.max(csvFileArray['lat'])) , (np.min(csvFileArray['lon']) , np.max(csvFileArray['lon']))]
+                self.__gps_coordinates = [(np.min(csvFileArray['lat']) , np.max(csvFileArray['lat'])) , (np.min(csvFileArray['lon']) , np.max(csvFileArray['lon']))]
             case tuple():
-                self.__coords = coordinates
+                self.__gps_coordinates = coordinates
             case list():
                 if all(isinstance(coord, list) for coord in coordinates):
-                    self.__coords = ((coordinates[0][0], coordinates[0][1]), (coordinates[1][0], coordinates[1][1]))
+                    self.__gps_coordinates = ((coordinates[0][0], coordinates[0][1]), (coordinates[1][0], coordinates[1][1]))
                 elif all(isinstance(coord, float) for coord in coordinates):
-                    self.__coords = (coordinates[0], coordinates[1])
+                    self.__gps_coordinates = (coordinates[0], coordinates[1])
                 else:
                     raise ValueError(f"The coordinates list must contain either only floats or only sublists of two elements.")
             case _:
@@ -137,7 +137,7 @@ class Dataset():
         return len(os.listdir(os.path.join(self.Path, "raw","audio"))) > 0 and not os.path.exists(os.path.join(self.Path, "raw","audio","original"))
     #endregion
 
-    def build(self, *, osmose_group_name:str = None, force_upload: bool = False) -> None:
+    def build(self, *, owner_group:str = None, force_upload: bool = False) -> None:
         """
         Set up the architecture of the dataset.
 
@@ -151,11 +151,10 @@ class Dataset():
 
         Parameters
         ----------
-            dataset_ID: the name of the dataset folder
-                
-            osmose_group_name: The name of the group using the osmose dataset. It will have all permissions over the dataset.
-            
-            force_upload: If true, ignore the file anomalies and build the dataset anyway.
+            owner_group: `str`, optional
+                The name of the group using the osmose dataset. It will have all permissions over the dataset.
+            force_upload: `bool`, optional
+                If true, ignore the file anomalies and build the dataset anyway.
 
         Example
         -------
@@ -166,8 +165,8 @@ class Dataset():
             DONE ! your dataset is on OSmOSE platform !
         """
 
-        if osmose_group_name is None:
-            osmose_group_name = self.Owner_Group        
+        if owner_group is None:
+            owner_group = self.Owner_Group        
 
         path_timestamp_formatted = os.path.join(self.Path,'raw' ,'audio' ,'original','timestamp.csv')
         path_raw_audio = os.path.join(self.Path,'raw' ,'audio','original')
@@ -197,19 +196,19 @@ class Dataset():
                     (timestamp_csv[ind_dt], '%Y-%m-%dT%H:%M:%S.%fZ')
                 list_interWavInterval.append(diff.total_seconds())
 
-            filewav = os.path.join(path_raw_audio ,filename_csv[ind_dt])
+            audio_file = os.path.join(path_raw_audio ,filename_csv[ind_dt])
             
             list_filename.append(filename_csv[ind_dt])
 
             try:
-                sr, frames, sampwidth, channels = read_header(filewav)
+                sr, frames, sampwidth, channels = read_header(audio_file)
             
             except Exception as e:
-                list_file_problem.append(filewav)
-                print(f'The audio file {filewav} could not be loaded, its importation has been canceled.\nDescription of the error: {e}')
-                list_filename_abnormal_duration.append(filewav)
+                list_file_problem.append(audio_file)
+                print(f'The audio file {audio_file} could not be loaded, its importation has been canceled.\nDescription of the error: {e}')
+                list_filename_abnormal_duration.append(audio_file)
 
-            list_size.append(os.path.getsize(filewav) / 1e6)
+            list_size.append(os.path.getsize(audio_file) / 1e6)
 
             list_duration.append(frames / float(sr))
             #     list_volumeFile.append( np.round(sr * params.nchannels * (sampwidth) * frames / float(sr) /1024 /1000))
@@ -261,7 +260,7 @@ class Dataset():
                 ,'orig_fileVolume' :pd.DataFrame(list_size).values.flatten().mean()
                 ,'orig_totalVolume' :round(pd.DataFrame(list_size).values.flatten().mean() * len(filename_csv) /1000, 1),
                 'orig_totalDurationMins': round(pd.DataFrame(list_duration).values.flatten().mean() * len(filename_csv) / 60, 2),
-                'lat':self.Coords[0],'lon':self.Coords[1]}
+                'lat':self.gps_coordinates[0],'lon':self.gps_coordinates[1]}
         df = pd.DataFrame.from_records([data])
         df.to_csv( os.path.join(self.Path,'raw' ,'metadata.csv') , index=False)  
         
@@ -320,7 +319,7 @@ class Dataset():
             if force_upload:
                 print('\n Well you have anomalies but you choose to FORCE UPLOAD')
             print('\n Now setting OSmOSE permissions ; wait a bit ...')
-            gid = grp.getgrnam(osmose_group_name).gr_gid
+            gid = grp.getgrnam(owner_group).gr_gid
 
             os.chown(self.Path, -1, gid)
             os.chmod(self.Path, 0o770)
@@ -345,12 +344,12 @@ class Dataset():
 
         for abnormal_file in self.list_abnormal_filenames:
 
-            filewav = os.path.join(path_raw_audio, abnormal_file)
+            audio_file = os.path.join(path_raw_audio, abnormal_file)
 
             csvFileArray=csvFileArray.drop(csvFileArray[csvFileArray[0].values == os.path.basename(abnormal_file)].index)    
 
             print(f'removing : {os.path.basename(abnormal_file)}')
-            os.remove(filewav)
+            os.remove(audio_file)
 
         csvFileArray.sort_values(by=[1], inplace=True)
         csvFileArray.to_csv(os.path.join(path_raw_audio,'timestamp.csv'), index=False,na_rep='NaN',header=None)

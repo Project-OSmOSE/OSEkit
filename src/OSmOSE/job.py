@@ -34,95 +34,95 @@ class Job_builder():
     #region Properties
     # READ-ONLY properties
     @property
-    def Config(self) -> dict:
+    def config(self) -> dict:
         return self.__config
 
     @property
-    def Prepared_jobs(self):
+    def prepared_jobs(self):
         return self.__prepared_jobs
     
     @property
-    def Ongoing_jobs(self):
+    def ongoing_jobs(self):
         self.update_job_status()
         return self.__ongoing_jobs
 
     @property
-    def Finished_jobs(self):
+    def finished_jobs(self):
         self.update_job_status()
         return self.__finished_jobs
 
 
     # READ-WRITE properties
     @property
-    def Job_scheduler(self):
+    def job_scheduler(self):
         return self.__config.job_scheduler
     
-    @Job_scheduler.setter
-    def Job_Scheduler(self, value: Literal["Torque","Slurm"]):
+    @job_scheduler.setter
+    def job_Scheduler(self, value: Literal["Torque","Slurm"]):
         self.edit("job_scheduler",value)
 
     @property
-    def Env_script(self):
+    def env_script(self):
         return self.__config.env_script
     
-    @Env_script.setter
-    def Env_script(self, value):
+    @env_script.setter
+    def env_script(self, value):
         self.edit("env_script", value)
 
     @property
-    def Queue(self):
+    def queue(self):
         return self.__config.queue
     
-    @Queue.setter
-    def Queue(self, value):
+    @queue.setter
+    def queue(self, value):
         self.edit("queue", value)
 
     @property
-    def Nodes(self):
+    def nodes(self):
         return self.__config.nodes
     
-    @Nodes.setter
-    def Nodes(self, value):
+    @nodes.setter
+    def nodes(self, value):
         self.edit("nodes",value)
         
     @property
-    def Walltime(self):
+    def walltime(self):
         return self.__config.walltime
     
-    @Walltime.setter
-    def Walltime(self, value):
+    @walltime.setter
+    def walltime(self, value):
         self.edit("walltime", value)
         
     @property
-    def Ncpus(self):
+    def ncpus(self):
         return self.__config.ncpus
     
-    @Ncpus.setter
-    def Ncpus(self, value):
+    @ncpus.setter
+    def ncpus(self, value):
         self.edit("ncpus", value)
         
     @property
-    def Mem(self):
+    def mem(self):
         return self.__config.mem
     
-    @Mem.setter
-    def Mem(self, value):
+    @mem.setter
+    def mem(self, value):
         self.edit("mem", value)
         
     @property
-    def Outfile(self):
+    def outfile(self):
         return self.__config.outfile
     
-    @Outfile.setter
-    def Outfile(self, value):
+    @outfile.setter
+    def outfile(self, value):
         self.edit("outfile", value)
         
     @property
-    def Errfile(self):
+    def errfile(self):
         return self.__config.errfile
     
-    @Errfile.setter
-    def Errfile(self, value):
+    @errfile.setter
+    def errfile(self, value):
         self.edit("errfile", value)
     #endregion
 
@@ -156,7 +156,7 @@ class Job_builder():
             The name of the job as seen on the job list (qstat, squeue, ...)"""
 
         pwd = os.path.dirname(__file__)
-        jobdir = os.path.join(pwd, "Ongoing_jobs")
+        jobdir = os.path.join(pwd, "ongoing_jobs")
 
         if not os.path.exists(jobdir):
             os.makedirs(jobdir)
@@ -165,16 +165,16 @@ class Job_builder():
 
         #region Build header
         #Getting all header variables from the parameters or the configuration defaults
-        if not job_scheduler: job_scheduler = self.Job_scheduler
+        if not job_scheduler: job_scheduler = self.job_scheduler
         if not jobname: jobname = self.Job_name
         if not env_name: env_name = self.env_name
-        if not queue: queue = self.Queue
-        if not nodes: nodes = self.Nodes
-        if not walltime: walltime = self.Walltime
-        if not ncpus: ncpus = self.Ncpus
-        if not mem: mem = self.Mem
-        if not outfile: outfile = self.Outfile
-        if not errfile: errfile = self.Errfile
+        if not queue: queue = self.queue
+        if not nodes: nodes = self.nodes
+        if not walltime: walltime = self.walltime
+        if not ncpus: ncpus = self.ncpus
+        if not mem: mem = self.mem
+        if not outfile: outfile = self.outfile
+        if not errfile: errfile = self.errfile
 
         match job_scheduler:
             case "Torque":
@@ -224,7 +224,7 @@ class Job_builder():
         #endregion
 
         # The env_script should contain all the command(s) needed to load the script, with the $env_name template where the environment name should be.
-        job_file.append(Template(f"\n{env_script if env_script else self.Env_script}").substitute(env_name=env_name))
+        job_file.append(Template(f"\n{env_script if env_script else self.env_script}").substitute(env_name=env_name))
         job_file.append(f"python {script_path} {script_args}")
 
 
@@ -255,7 +255,7 @@ class Job_builder():
             A list containing the job ids of the submitted jobs.
             """
 
-        jobfile_list = [jobfile] if jobfile else self.Prepared_jobs
+        jobfile_list = [jobfile] if jobfile else self.prepared_jobs
         
         jobid_list = []
 
@@ -271,7 +271,7 @@ class Job_builder():
                 jobid = subprocess.run(["sbatch", dep, jobfile],stdout=subprocess.PIPE).stdout.decode('utf-8').rstrip('\n')
                 jobid_list.append(jobid)
 
-            if jobfile in self.Prepared_jobs:
+            if jobfile in self.prepared_jobs:
                 self.__prepared_jobs.remove(jobfile)
             self.__ongoing_jobs.append(jobfile)
 
