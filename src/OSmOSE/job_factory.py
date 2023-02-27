@@ -129,8 +129,8 @@ class Job_builder():
     def write_configuration(self, output_file:str = None):
         """Writes the configuration to the original configuration file, or a new file if specified.
         
-        Parameter:
-        ----------
+        Parameter
+        ---------
             `output_file`: the path to the new configuration file (in TOML or JSON format)."""
 
         output_format = os.path.splitext(output_file)[1] if output_file else os.path.splitext(self.__configfile)[1]
@@ -144,7 +144,16 @@ class Job_builder():
         
     def build_job_file(self, *, script_path: str, script_args:str, jobname: str = None, preset: Literal["low","medium","high"]= None, job_scheduler: Literal["Torque","Slurm"] = None,
      env_name = None, env_script = None, queue = None, nodes = None, walltime = None, ncpus = None, mem = None, outfile = None, errfile = None) -> str:
-        """Build a job file corresponding to your job scheduler."""
+        """Build a job file corresponding to your job scheduler.
+        
+        Parameters
+        ----------
+        script_path : `str`, keyword-only
+            The path to the script that will be executed in the cluster job
+        script_args : `str`, keyword-only
+            All the arguments required by the script, as one string.
+        jobname : `str`, keyword-only
+            The name of the job as seen on the job list (qstat, squeue, ...)"""
 
         pwd = os.path.dirname(__file__)
         jobdir = os.path.join(pwd, "Ongoing_jobs")

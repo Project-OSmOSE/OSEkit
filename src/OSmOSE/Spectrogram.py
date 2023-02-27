@@ -1,7 +1,7 @@
 import os
 import sys
 import shutil
-from typing import Union, Literal
+from typing import Tuple, Union, Literal
 from math import log10
 from glob import glob
 
@@ -564,7 +564,7 @@ class Spectrogram(Dataset):
         ----------
         audio_file : `str`
             The name of the audio file to be processed
-        adjust : `bool`, optional
+        adjust : `bool`, optional, keyword-only
             Indicates whether the file should be processed alone to adjust the spectrogram parameters (the default is False)"""
         self.__build_path(adjust)
 
@@ -611,7 +611,17 @@ class Spectrogram(Dataset):
 
         self.gen_tiles(data=data, sample_rate=sample_rate, output_file=output_file)
 
-    def gen_tiles(self, *, data: list, sample_rate: int, output_file: str):
+    def gen_tiles(self, *, data: np.ndarray, sample_rate: int, output_file: str):
+        """Generate spectrogram tiles corresponding to the zoom levels.
+        
+        Parameters
+        ----------
+        data : `np.ndarray`
+            The audio data from which the tiles will be generated.
+        sample_rate : `int`
+            The sample rate of the audio data.
+        output_file : `str`
+            The name of the output spectrogram."""
         if self.Data_normalization=='zscore' and self.Zscore_duration:
             if (len(self.Zscore_duration)>0) and (self.Zscore_duration != 'original'):
                 data = (data - self.__zscore_mean) / self.__zscore_std
@@ -660,7 +670,23 @@ class Spectrogram(Dataset):
                 
                 self.generate_and_save_figures(time=segment_times_int, freq=Freq, log_spectro=log_spectro, output_file=f"{os.path.splitext(output_file)[0]}_{str(2 ** zoom_level)}_{str(tile)}.png")
 
-    def gen_spectro(self, *, data, sample_rate, output_file):
+    def gen_spectro(self, *, data: np.ndarray, sample_rate: int, output_file: str) -> Tuple[np.ndarray, np.ndarray[float]]:
+        """Generate the spectrograms
+        
+        Parameters
+        ----------
+        data : `np.ndarray`
+            The audio data from which the tiles will be generated.
+        sample_rate : `int`
+            The sample rate of the audio data.
+        output_file : `str`
+            The name of the output spectrogram.
+
+        Returns
+        -------
+        Sxx : `np.NDArray[float64]`
+        Freq : `np.NDArray[float]`
+        """
         Noverlap = int(self.Window_size * self.Overlap / 100)
 
         win = np.hamming(self.Window_size)
@@ -707,8 +733,17 @@ class Spectrogram(Dataset):
 
         return Sxx, Freq
 
-    def generate_and_save_figures(self, *, time, freq, log_spectro, output_file):
-        # Ploting spectrogram
+    def generate_and_save_figures(self, *, time: np.ndarray[float], freq: np.ndarray[float], log_spectro: np.ndarray[int], output_file: str):
+        """Write the spectrogram figures to the output file.
+        
+        Parameters
+        ----------
+        time : `np.NDArray[floating]`
+        freq : `np.NDArray[floating]`
+        log_spectro : `np.NDArray[signed int]`
+        output_file : `str`
+            The name of the spectrogram file."""
+        # Plotting spectrogram
         my_dpi = 100
         fact_x = 1.3
         fact_y = 1.3
