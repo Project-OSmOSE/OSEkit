@@ -14,6 +14,9 @@ try:
 except ModuleNotFoundError:
     import tomli as tomllib
 
+import soundfile as sf
+import numpy as np
+
 
 def display_folder_storage_infos(dir_path: str) -> None:
     usage = shutil.disk_usage(dir_path)
@@ -175,3 +178,20 @@ def read_header(file: str) -> Tuple[int, float, int, int]:
             )
 
         return samplerate, frames, channels, sampwidth
+
+
+def safe_read(
+    file_path: str, *, nan: float = 0.0, posinf: any = None, neginf: any = None
+) -> Tuple[np.ndarray, any]:
+    audio_data, sample_rate = sf.read(file_path)
+
+    nan_nb = sum(np.isnan(audio_data))
+
+    if nan_nb > 0:
+        print(
+            f"{nan_nb} NaN detected in file {os.path.basename(file_path)}. They will be replaced with {nan}."
+        )
+
+        np.nan_to_num(audio_data, copy=False, nan=nan, posinf=posinf, neginf=neginf)
+
+    return audio_data, sample_rate

@@ -16,6 +16,7 @@ from OSmOSE.cluster.audio_reshaper import (
     reshape,
 )  # Not used for now; will be when local execution will be a thing.
 from OSmOSE.Dataset import Dataset
+from OSmOSE.utils import safe_read
 
 
 class Spectrogram(Dataset):
@@ -805,7 +806,7 @@ class Spectrogram(Dataset):
             ]["std_avg"].values[0]
 
         #! File processing
-        data, sample_rate = sf.read(os.path.join(self.audio_path, audio_file))
+        data, sample_rate = safe_read(os.path.join(self.audio_path, audio_file))
 
         if self.Data_normalization == "instrument":
             data = (
@@ -985,9 +986,9 @@ class Spectrogram(Dataset):
         Sxx[:, idwin] *= scale_psd
 
         if self.Spectro_normalization == "density":
-            log_spectro = 10 * np.log10(Sxx / (1e-12))
+            log_spectro = 10 * np.log10((Sxx / (1e-12)) + (1e-20))
         if self.Spectro_normalization == "spectrum":
-            log_spectro = 10 * np.log10(Sxx)
+            log_spectro = 10 * np.log10(Sxx + (1e-20))
 
         # save spectrogram as a png image
         self.generate_and_save_figures(

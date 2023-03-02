@@ -1,4 +1,6 @@
+import glob
 import os
+import random
 from typing import Union, Tuple, List
 from datetime import datetime
 from warnings import warn
@@ -13,7 +15,8 @@ except ModuleNotFoundError:
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
-from OSmOSE.utils import read_header
+from OSmOSE.utils import read_header, safe_read
+import soundfile as sf
 
 
 class Dataset:
@@ -179,7 +182,14 @@ class Dataset:
 
     # endregion
 
-    def build(self, *, owner_group: str = None, force_upload: bool = False) -> None:
+    def build(
+        self,
+        *,
+        owner_group: str = None,
+        bare_check: bool = False,
+        auto_normalization: bool = False,
+        force_upload: bool = False,
+    ) -> None:
         """
         Set up the architecture of the dataset.
 
@@ -193,10 +203,15 @@ class Dataset:
 
         Parameters
         ----------
-            owner_group: `str`, optional
+            owner_group: `str`, optional, keyword_only
                 The name of the group using the osmose dataset. It will have all permissions over the dataset.
-            force_upload: `bool`, optional
-                If true, ignore the file anomalies and build the dataset anyway.
+            bare_check : `bool`, optional, keyword_only
+                Only do the checks and build steps that requires low resource usage. If you build the dataset on a login node or
+                if you are sure it is already good to use, set to True. Otherwise, it should be inside a job. Default is False.
+            auto_normalization: `bool`, optional, keyword_only
+                If true, automatically normalize audio files if the data would cause issues downstream. The default is False.
+            force_upload: `bool`, optional, keyword_only
+                If true, ignore the file anomalies and build the dataset anyway. The default is False.
 
         Example
         -------
@@ -206,13 +221,12 @@ class Dataset:
 
             DONE ! your dataset is on OSmOSE platform !
         """
-
         if owner_group is None:
             owner_group = self.Owner_Group
 
         path_timestamp_formatted = os.path.join(
             self.Path, "raw", "audio", "original", "timestamp.csv"
-        )
+        )  # TODO: turn original into wildcard
         path_raw_audio = os.path.join(self.Path, "raw", "audio", "original")
 
         csvFileArray = pd.read_csv(path_timestamp_formatted, header=None)
@@ -231,6 +245,16 @@ class Dataset:
         list_size = []
         list_sampwidth = []
         list_filename = []
+        lost_levels = False
+
+        audio_file_list = [
+            os.path.join(path_raw_audio, indiv) for indiv in filename_csv
+        ]
+
+        if not bare_check:
+            lost_levels = self.check_n_files(
+                audio_file_list, 10, auto_normalization=auto_normalization
+            )
 
         for ind_dt in tqdm(range(len(timestamp_csv))):
             if ind_dt < len(timestamp_csv) - 1:
@@ -239,7 +263,7 @@ class Dataset:
                 ) - datetime.strptime(timestamp_csv[ind_dt], "%Y-%m-%dT%H:%M:%S.%fZ")
                 list_interWavInterval.append(diff.total_seconds())
 
-            audio_file = os.path.join(path_raw_audio, filename_csv[ind_dt])
+            audio_file = audio_file_list[ind_dt]
 
             list_filename.append(filename_csv[ind_dt])
 
@@ -310,21 +334,21 @@ class Dataset:
                 8 * pd.DataFrame(list_sampwidth).values.flatten().mean()
             ),
             "nchannels": int(channels),
-            "nberWavFiles": len(filename_csv),
+            "audio_file_number": len(filename_csv),
             "start_date": timestamp_csv[0],
             "end_date": timestamp_csv[-1],
             "dutyCycle_percent": dutyCycle_percent,
-            "orig_fileDuration": round(
+            "origin_audio_file_duration": round(
                 pd.DataFrame(list_duration).values.flatten().mean(), 2
             ),
-            "orig_fileVolume": pd.DataFrame(list_size).values.flatten().mean(),
-            "orig_totalVolume": round(
+            "origin_audio_file_volume": pd.DataFrame(list_size).values.flatten().mean(),
+            "origin_dataset_volume": round(
                 pd.DataFrame(list_size).values.flatten().mean()
                 * len(filename_csv)
                 / 1000,
                 1,
             ),
-            "orig_totalDurationMins": round(
+            "origin_dataset_duration": round(
                 pd.DataFrame(list_duration).values.flatten().mean()
                 * len(filename_csv)
                 / 60,
@@ -332,6 +356,7 @@ class Dataset:
             ),
             "lat": self.gps_coordinates[0],
             "lon": self.gps_coordinates[1],
+            "lost_levels_in_normalization": lost_levels,
         }
         df = pd.DataFrame.from_records([data])
         df.to_csv(os.path.join(self.Path, "raw", "metadata.csv"), index=False)
@@ -437,6 +462,60 @@ class Dataset:
                     os.chown(os.path.join(dirpath, filename), -1, gid)
                     os.chmod(os.path.join(dirpath, filename), 0o770)
             print("\n DONE ! your dataset is on OSmOSE platform !")
+
+    def check_n_files(
+        self, n, *, threshold_percent: int = 0.1, auto_normalization: bool = False
+    ) -> bool:
+        """Check files at random"""
+        # ((data - mean(data))/std(data)) * 0.063
+        # if PCM is of type float
+        # get random files
+        all_files = glob.glob(
+            os.path.join(self.Path, "raw", "audio", "original", "*.wav")
+        )
+
+        if "float" in sf.info(all_files[0]).subtype:
+            threshold = max(threshold_percent * n, 1)
+            bad_files = []
+            for audio_file in random.sample(all_files, n):
+                data, sr = safe_read(audio_file)
+                if not (np.max(data) < 1.0 and np.min(data) > 0.0):
+                    bad_files.append(audio_file)
+
+                    if len(bad_files) > threshold:
+                        print(
+                            "The treshold has been exceeded, too many files unadequately recorded."
+                        )
+                        if not auto_normalization:
+                            raise ValueError(
+                                "You need to set auto_normalization to True to normalize your dataset automatically."
+                            )
+
+                        for audio_file in all_files:
+                            data, sr = safe_read(audio_file)
+                            data = (
+                                (data - np.mean(data)) / np.std(data)
+                            ) * 0.063  # = -24dB
+                            data[data > 1] = 1
+                            data[data < -1] = -1
+
+                            sf.write(
+                                os.path.join(
+                                    self.Path,
+                                    "raw",
+                                    "audio",
+                                    "normalized_original",
+                                    os.path.basename(audio_file),
+                                ),
+                                data=data,
+                                samplerate=sr,
+                            )
+                            # TODO: lock in spectrum mode
+                        print(
+                            "All files have been normalized. Spectrograms created from them will be locked in spectrum mode."
+                        )
+                        return True
+        return False
 
     def delete_abnormal_files(self) -> None:
         """Delete all files with abnormal durations in the dataset, and rewrite the timestamps.csv file to reflect the changes.
