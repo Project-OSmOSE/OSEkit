@@ -464,20 +464,42 @@ class Dataset:
             print("\n DONE ! your dataset is on OSmOSE platform !")
 
     def check_n_files(
-        self, n, *, threshold_percent: int = 0.1, auto_normalization: bool = False
+        self,
+        file_list: list,
+        n: int,
+        *,
+        threshold_percent: float = 0.1,
+        auto_normalization: bool = False,
     ) -> bool:
-        """Check files at random"""
-        # ((data - mean(data))/std(data)) * 0.063
-        # if PCM is of type float
-        # get random files
-        all_files = glob.glob(
-            os.path.join(self.Path, "raw", "audio", "original", "*.wav")
-        )
+        """Check n files at random for anomalies and may normalize them.
 
-        if "float" in sf.info(all_files[0]).subtype:
+        Currently, check if the data for wav in PCM float format are between -1.0 and 1.0. If the number of files that
+        fail the test is higher than the threshold (which is 10% of n by default, with an absolute minimum of 1), all the
+        dataset will be normalized and written in another file.
+
+        Parameters
+        ----------
+            file_list: `list`
+                The list of files to be evaluated. It must be equal or longer than n.
+            n: `int`
+                The number of files to evaluate. To lower resource consumption, it is advised to check only a subset of the dataset.
+                10 files taken at random should provide an acceptable idea of the whole dataset.
+            threshold_percent: `float`, optional, keyword-only
+                The maximum acceptable percentage of evaluated files that can contain anomalies. Understands fraction and whole numbers. Default is 0.1, or 10%
+            auto_normalization: `bool`, optional, keyword_only
+                Whether the normalization should proceed automatically or not if the threshold is reached. As a safeguard, the default is False.
+        Returns
+        -------
+            normalized: `bool`
+                Indicates whether or not the dataset has been normalized.
+        """
+        if threshold_percent > 1:
+            threshold_percent = threshold_percent / 100
+
+        if "float" in sf.info(file_list[0]).subtype:
             threshold = max(threshold_percent * n, 1)
             bad_files = []
-            for audio_file in random.sample(all_files, n):
+            for audio_file in random.sample(file_list, n):
                 data, sr = safe_read(audio_file)
                 if not (np.max(data) < 1.0 and np.min(data) > 0.0):
                     bad_files.append(audio_file)
@@ -491,7 +513,7 @@ class Dataset:
                                 "You need to set auto_normalization to True to normalize your dataset automatically."
                             )
 
-                        for audio_file in all_files:
+                        for audio_file in file_list:
                             data, sr = safe_read(audio_file)
                             data = (
                                 (data - np.mean(data)) / np.std(data)

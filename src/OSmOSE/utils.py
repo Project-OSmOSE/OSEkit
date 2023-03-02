@@ -1,3 +1,4 @@
+from logging import warn
 from pathlib import PurePath
 from importlib.resources import as_file
 import os
@@ -182,16 +183,38 @@ def read_header(file: str) -> Tuple[int, float, int, int]:
 
 def safe_read(
     file_path: str, *, nan: float = 0.0, posinf: any = None, neginf: any = None
-) -> Tuple[np.ndarray, any]:
+) -> Tuple[np.ndarray, int]:
+    """Open a file using Soundfile and clean up the data to be used safely
+
+    Currently, only checks for `NaN`, `inf` and `-inf` presence. The default behavior is the same as `np.nan_to_num`:
+    `NaNs` are transformed into 0.0, `inf` and `-inf` are transformed into the maximum and minimum values of their dtype.
+
+    Parameters
+    ----------
+        file_path: `str`
+            The path to the audio file to safely read.
+        nan: `float`, optional, keyword_only
+            The value that will replace `NaNs`. Default is 0.0
+        posinf: `any`, optional, keyword_only
+            The value that will replace `inf`. Default behavior is the maximum value of the data type.
+        neginf: `any`, optional, keyword_only
+            The value that will replace `-inf`. Default behavior is the minimum value of the data type.
+
+    Returns
+    -------
+        audio_data: `NDArray`
+            The cleaned audio data as a numpy array.
+        sample_rate: `int`
+            The sample rate of the data."""
     audio_data, sample_rate = sf.read(file_path)
 
     nan_nb = sum(np.isnan(audio_data))
 
     if nan_nb > 0:
-        print(
+        warn(
             f"{nan_nb} NaN detected in file {os.path.basename(file_path)}. They will be replaced with {nan}."
         )
 
-        np.nan_to_num(audio_data, copy=False, nan=nan, posinf=posinf, neginf=neginf)
+    np.nan_to_num(audio_data, copy=False, nan=nan, posinf=posinf, neginf=neginf)
 
     return audio_data, sample_rate
