@@ -2,7 +2,7 @@ import os
 import sys
 import shutil
 from datetime import datetime, timedelta
-from typing import List, Union
+from typing import List, Union, Literal
 from argparse import ArgumentParser
 
 import soundfile as sf
@@ -27,6 +27,9 @@ def substract_timestamps(
     --------
         The time between the two timestamp_list as a datetime.timedelta object"""
 
+    if index == 0:
+        return timedelta(seconds=0)
+
     cur_timestamp: str = input_timestamp[input_timestamp["filename"] == files[index]][
         "timestamp"
     ].values[0]
@@ -43,13 +46,14 @@ def substract_timestamps(
 
 # TODO: what to do with overlapping last file ? Del or incomplete ?
 def reshape(
-    chunk_size: int,
     input_files: Union[str, list],
+    chunk_size: int,
     *,
     output_dir_path: str = None,
     ind_min: int = 0,
     ind_max: int = -1,
     max_delta_interval: int = 5,
+    last_file_behavior: Literal["truncate", "pad", "discard"] = "pad",
     offset_beginning: int = 0,
     offset_end: int = 0,
     verbose: bool = False,
@@ -60,36 +64,62 @@ def reshape(
 
     Parameters:
     -----------
-        `input_files`: Either the directory containing the audio files and the timestamp.csv file, in which case all audio files will be considered,
-                        OR a list of audio files all located in the same directory alongside a timestamp.csv, in which case only they will be used.
+        input_files: `str` or `list(str)`
+            Either the directory containing the audio files and the timestamp.csv file, in which case all audio files will be considered,
+            OR a list of audio files all located in the same directory alongside a timestamp.csv, in which case only they will be used.
 
-        `chunk_size`: The target duration for all the files.
+        chunk_size: `int`
+            The target duration for all the reshaped files, in seconds.
 
-        `output_dir_path`: The directory where the newly created audio files will be created. If none is provided it will be the same as the input directory. This is not recommended.
+        output_dir_path: `str`, optional, keyword-only
+            The directory where the newly created audio files will be created. If none is provided,
+            it will be the same as the input directory. This is not recommended.
 
-        `ind_min`: The first file of the list to be processed. Default is 0.
+        ind_min: `int`, optional, keyword-only
+            The first file of the list to be processed. Default is 0.
 
-        `ind_max`: The last file of the list to be processed. Default is -1, meaning the entire list is processed.
+        ind_max: `int`, optional, keyword-only
+            The last file of the list to be processed. Default is -1, meaning the entire list is processed.
 
-        `max_delta_interval`: The maximum number of second allowed for a delta between two timestamp_list to still be considered the same. Default is 5s up and down.
+        max_delta_interval: `int`, optional, keyword-only
+            The maximum number of second allowed for a delta between two timestamp_list to still be considered the same.
+            Default is 5s up and down.
 
-        `offset_beginning`: The number of seconds that should be skipped in the first input file. When parallelising the reshaping,
-         it would mean that the beginning of the file is being processed by another job. Default is 0.
+        last_file_behavior: `{"truncate","pad","discard"}, optional, keyword-only
+            Tells the reshaper what to do with if the last data of the last file is too small to fill a whole file.
+            This parameter is only active if `ind_max` is `-1`
+            - `truncate` creates a truncated file with the remaining data, which will have a different duration than the others.
+            - `pad` creates a file of the same duration than the others, where the missing data is filled with 0.
+            - `discard` ignores the remaining data. The last seconds/minutes/hours of audio will be lost in the reshaping.
+        The default methodd is `pad`.
 
-        `offset_end`: The number of seconds that should be ignored in the last input file. When parallelising the reshaping, it would mean that the end of this file is processed by another job.
-        Default is 0, meaning that nothing is ignored.
+        offset_beginning: `int`, optional, keyword-only
+            The number of seconds that should be skipped in the first input file. When parallelising the reshaping,
+            it would mean that the beginning of the file is being processed by another job. Default is 0.
 
-        `verbose`: Display informative messages or not
+        offset_end: `int`, optional, keyword-only
+            The number of seconds that should be ignored in the last input file. When parallelising the reshaping, it would mean that the end of this file is processed by another job.
+            Default is 0, meaning that nothing is ignored.
 
-        `overwrite`: Deletes the content of `output_dir_path` before writing the results. If it is implicitly the `input_files` directory,
-         nothing happens. WARNING: If `output_dir_path` is explicitly set to be the same as `input_files`, then it will be overwritten!
+        verbose: `bool`, optional, keyword-only
+            Whether to display informative messages or not.
 
-         `force_reshape`: Ignore all warnings and non-fatal errors while reshaping.
+        overwrite: `bool`, optional, keyword-only
+            Deletes the content of `output_dir_path` before writing the results. If it is implicitly the `input_files` directory,
+            nothing happens. WARNING: If `output_dir_path` is explicitly set to be the same as `input_files`, then it will be overwritten!
+
+        force_reshape: `bool`, optional, keyword-only
+            Ignore all warnings and non-fatal errors while reshaping.
     Returns:
     --------
         The list of the path of newly created audio files.
     """
     files = []
+
+    if last_file_behavior not in ["truncate", "pad", "discard"]:
+        raise ValueError(
+            f"Bad value {last_file_behavior} for last_file_behavior parameters. Must be one of truncate, pad or discard."
+        )
 
     if isinstance(input_files, list):
         input_dir_path = os.path.dirname(input_files[0])
@@ -311,6 +341,37 @@ def reshape(
             f"{outfilename} written! File is {((len(output)//sample_rate)/60)} minutes long. {(len(previous_audio_data)//sample_rate)/(60)} minutes left from slicing."
         )
         i += 1
+
+    if len(previous_audio_data) > 0:
+        match last_file_behavior:
+            case "trunacte":
+                pass
+            case "pad":
+                pass
+            case "discard":
+                pass
+
+        end_time = (
+            (i + 1) * len(last_data)
+            if len(last_data) * sample_rate <= len(output)
+            else i * len(last_data) + len(output) // sample_rate
+        )
+
+        outfilename = os.path.join(
+            output_dir_path, f"reshaped_from_{i * chunk_size}_to_{end_time}_sec.wav"
+        )
+        result.append(os.path.basename(outfilename))
+
+        timestamp_list.append(
+            datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+        )
+        timestamp += timedelta(seconds=len(last_data))
+
+        sf.write(outfilename, output, sample_rate)
+
+        print(
+            f"{outfilename} written! File is {((len(output)//sample_rate)/60)} minutes long. {(len(previous_audio_data)//sample_rate)/(60)} minutes left from slicing."
+        )
 
     input_timestamp = pd.DataFrame({"filename": result, "timestamp": timestamp_list})
     input_timestamp.sort_values(by=["timestamp"], inplace=True)

@@ -1,3 +1,4 @@
 .pytest-cache
 __pycache__
 *.git
+dist

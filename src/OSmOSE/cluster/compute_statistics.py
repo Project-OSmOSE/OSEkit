@@ -62,7 +62,7 @@ def Write_zscore_norma_params(
 
         list_summaryStats.append([wav, np.mean(data), np.std(data)])
 
-    with open(output_file, "w") as f:
+    with open(output_file, "w", newline="") as f:
         write = csv.writer(f)
         write.writerow(["filename", "mean", "std"])
         write.writerows(list_summaryStats)

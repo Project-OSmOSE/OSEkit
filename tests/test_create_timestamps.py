@@ -1,23 +1,29 @@
-from osmose_package.OScreate_timestamps import *
+import OSmOSE.timestamps as tm
 import re
+import importlib
+import os
 
 
 def test_convert_template_to_re():
-    raw_all = "".join(converter.keys())
+    raw_all = "".join(tm.__converter.keys())
     simple_template = "%Y/%m/%d"
     simple_text = "sample_file_2017/02/24.txt"
     invalid_simple_text = "sample_file_2049/25/01"
     complex_template = "y_%Y-m_%m, %I%p."
     complex_text = " y_2017-m_02, 11AM%"
 
-    assert convert_template_to_re(raw_all) == "".join(converter.values())
-    simple_res = convert_template_to_re(simple_template)
+    assert tm.convert_template_to_re(raw_all) == "".join(tm.__converter.values())
+    simple_res = tm.convert_template_to_re(simple_template)
     assert re.search(simple_res, simple_text)[0] == "2017/02/24"
     assert re.search(simple_res, invalid_simple_text) == None
-    complex_res = convert_template_to_re(complex_template)
-    assert re.serach(complex_res, complex_text)[0] == "y_2017-m_02, 11AM"
+    complex_res = tm.convert_template_to_re(complex_template)
+    assert re.search(complex_res, complex_text)[0] == "y_2017-m_02, 11AM%"
 
 
 # a monkeypatch
 def test_write_timestamp():
-    pass
+    path = os.path.join(os.path.dirname(__file__), "sample_dataset")
+    true_template = "%d%m%y_%H%M%S"
+    true_offsets = (8, 4)
+
+    # TODO
