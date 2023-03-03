@@ -116,6 +116,7 @@ def reshape(
     """
     files = []
 
+    #! Validation
     if last_file_behavior not in ["truncate", "pad", "discard"]:
         raise ValueError(
             f"Bad value {last_file_behavior} for last_file_behavior parameters. Must be one of truncate, pad or discard."
@@ -126,14 +127,13 @@ def reshape(
         files = [os.path.basename(file) for file in input_files]
         if verbose:
             print(f"Input directory detected as {input_dir_path}")
-
-    elif not os.path.isdir(input_files):
-        raise ValueError(
-            "The input files must either be a folder path or a list of file path."
-        )
-
     else:
         input_dir_path = input_files
+
+    if not os.path.isdir(input_dir_path):
+        raise ValueError(
+            f"The input files must either be a valid folder path or a list of file path, not {str(input_dir_path)}."
+        )
 
     if not os.path.exists(os.path.join(input_dir_path, "timestamp.csv")):
         raise FileNotFoundError(
@@ -247,7 +247,7 @@ def reshape(
             # If it is the last file but the audio_data is shorter than the desired chunk, then fill the remaining space with silence.
             if i == len(files) - 1:
                 fill = np.zeros((chunk_size * sample_rate) - len(audio_data))
-                output = np.concatenate((audio_data, fill))
+                audio_data = np.concatenate((audio_data, fill))
                 previous_audio_data = np.empty(1)
             else:
                 # Check if the timestamp_list can safely be merged
@@ -263,7 +263,7 @@ def reshape(
                         not proceed and sys.__stdin__.isatty()
                     ):  # check if the script runs in an interactive shell. Otherwise will fail if proceed = False
                         res = input(
-                            "If you proceed, some timestamp_list will be lost in the reshaping. Proceed anyway? This message won't show up again if you choose to proceed. ([yes]/no)"
+                            "If you proceed, some timestamps will be lost in the reshaping. Proceed anyway? This message won't show up again if you choose to proceed. ([yes]/no)"
                         )
                         if "yes" in res.lower() or res == "":
                             proceed = True
