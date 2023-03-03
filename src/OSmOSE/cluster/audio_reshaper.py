@@ -343,35 +343,34 @@ def reshape(
         i += 1
 
     if len(previous_audio_data) > 0:
+        skip_last = False
         match last_file_behavior:
             case "trunacte":
-                pass
+                output = previous_audio_data
             case "pad":
-                pass
+                fill = np.zeros((chunk_size * sample_rate) - len(previous_audio_data))
+                output = np.concatenate(previous_audio_data, fill)
             case "discard":
-                pass
+                skip_last = True
 
-        end_time = (
-            (i + 1) * len(last_data)
-            if len(last_data) * sample_rate <= len(output)
-            else i * len(last_data) + len(output) // sample_rate
-        )
+        if not skip_last:
+            end_time = i * len(output) + len(output) // sample_rate
 
-        outfilename = os.path.join(
-            output_dir_path, f"reshaped_from_{i * chunk_size}_to_{end_time}_sec.wav"
-        )
-        result.append(os.path.basename(outfilename))
+            outfilename = os.path.join(
+                output_dir_path, f"reshaped_from_{i * chunk_size}_to_{end_time}_sec.wav"
+            )
+            result.append(os.path.basename(outfilename))
 
-        timestamp_list.append(
-            datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
-        )
-        timestamp += timedelta(seconds=len(last_data))
+            timestamp_list.append(
+                datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+            )
+            timestamp += timedelta(seconds=len(output))
 
-        sf.write(outfilename, output, sample_rate)
+            sf.write(outfilename, output, sample_rate)
 
-        print(
-            f"{outfilename} written! File is {((len(output)//sample_rate)/60)} minutes long. {(len(previous_audio_data)//sample_rate)/(60)} minutes left from slicing."
-        )
+            print(
+                f"{outfilename} written! File is {((len(output)//sample_rate)/60)} minutes long. {(len(previous_audio_data)//sample_rate)/(60)} minutes left from slicing."
+            )
 
     input_timestamp = pd.DataFrame({"filename": result, "timestamp": timestamp_list})
     input_timestamp.sort_values(by=["timestamp"], inplace=True)
