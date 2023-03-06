@@ -326,7 +326,7 @@ class Job_builder:
         #! FOOTER
         outfilename = f"{jobname}_{datetime.now().strftime('%H-%M-%S')}_{job_scheduler}_{len(os.listdir(jobdir))}.pbs"
 
-        job_file.append(f"\nchmod 770 {outfile} {errfile}")
+        job_file.append(f"\nchmod 444 {outfile} {errfile}")
         job_file.append(f"\nrm {os.path.join(jobdir, outfilename)}")
 
         #! BUILD DONE => WRITING

@@ -15,10 +15,10 @@ def input_dir(tmp_path):
     input_dir = tmp_path / "input"
     input_dir.mkdir()
     rate = 44100  # samples per second
-
+    duration = 3
     rng = np.random.default_rng()
 
-    data = rng.standard_normal(1000)
+    data = rng.standard_normal(duration * rate)
 
     wav_file = input_dir / "test.wav"
     sf.write(wav_file, data, rate)

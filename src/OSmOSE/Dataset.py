@@ -496,12 +496,12 @@ class Dataset:
         if threshold_percent > 1:
             threshold_percent = threshold_percent / 100
 
-        if "float" in sf.info(file_list[0]).subtype:
+        if "float" in str(sf.info(file_list[0])):
             threshold = max(threshold_percent * n, 1)
             bad_files = []
             for audio_file in random.sample(file_list, n):
                 data, sr = safe_read(audio_file)
-                if not (np.max(data) < 1.0 and np.min(data) > 0.0):
+                if not (np.max(data) < 1.0 and np.min(data) > -1.0):
                     bad_files.append(audio_file)
 
                     if len(bad_files) > threshold:
@@ -512,7 +512,16 @@ class Dataset:
                             raise ValueError(
                                 "You need to set auto_normalization to True to normalize your dataset automatically."
                             )
-
+                        if not os.path.exists(
+                            os.path.join(
+                                self.Path, "raw", "audio", "normalized_original"
+                            )
+                        ):
+                            os.makedirs(
+                                os.path.join(
+                                    self.Path, "raw", "audio", "normalized_original"
+                                )
+                            )
                         for audio_file in file_list:
                             data, sr = safe_read(audio_file)
                             data = (
