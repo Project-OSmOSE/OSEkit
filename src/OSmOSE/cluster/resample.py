@@ -10,13 +10,13 @@ def resample(
     input_dir: str,
     output_dir: str,
     target_fs: int,
-    ind_min: int = 0,
-    ind_max: int = -1,
+    batch_ind_min: int = 0,
+    batch_ind_max: int = -1,
 ):
     all_files = sorted(glob.glob(os.path.join(input_dir, "*wav")))
 
-    # If ind_max is -1, we go to the end of the list.
-    audio_files_list = all_files[ind_min : ind_max if ind_max != -1 else len(all_files)]
+    # If batch_ind_max is -1, we go to the end of the list.
+    audio_files_list = all_files[batch_ind_min : batch_ind_max if batch_ind_max != -1 else len(all_files)]
 
     tfm = sox.Transformer()
     tfm.set_output_format(rate=target_fs)
@@ -71,6 +71,6 @@ if __name__ == "__main__":
         input_dir=args.input_dir,
         output_dir=args.output_dir,
         target_fs=args.targets_fs,
-        ind_min=args.ind_min,
-        ind_max=args.ind_max,
+        batch_ind_min=args.batch_ind_min,
+        batch_ind_max=args.batch_ind_max,
     )

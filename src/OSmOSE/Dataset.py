@@ -74,12 +74,12 @@ class Dataset:
 
     # region Properties
     @property
-    def Name(self):
+    def name(self):
         """str: The Dataset name. It is readonly."""
         return self.__name
 
     @property
-    def Path(self):
+    def path(self):
         """str: The Dataset path. It is readonly."""
         return self.__path
 
@@ -111,7 +111,7 @@ class Dataset:
     @gps_coordinates.setter
     def gps_coordinates(
         self,
-        coordinates: Union[
+        new_coordinates: Union[
             str,
             List[float],
             List[List[float]],
@@ -120,36 +120,36 @@ class Dataset:
         ],
     ):
         # TODO: Allow any iterator?
-        match type(coordinates):
+        match type(new_coordinates):
             case str():
                 csvFileArray = pd.read_csv(
-                    os.path.join(self.Path, "raw", "auxiliary", coordinates)
+                    os.path.join(self.path, "raw", "auxiliary", new_coordinates)
                 )
                 self.__gps_coordinates = [
                     (np.min(csvFileArray["lat"]), np.max(csvFileArray["lat"])),
                     (np.min(csvFileArray["lon"]), np.max(csvFileArray["lon"])),
                 ]
             case tuple():
-                self.__gps_coordinates = coordinates
+                self.__gps_coordinates = new_coordinates
             case list():
-                if all(isinstance(coord, list) for coord in coordinates):
+                if all(isinstance(coord, list) for coord in new_coordinates):
                     self.__gps_coordinates = (
-                        (coordinates[0][0], coordinates[0][1]),
-                        (coordinates[1][0], coordinates[1][1]),
+                        (new_coordinates[0][0], new_coordinates[0][1]),
+                        (new_coordinates[1][0], new_coordinates[1][1]),
                     )
-                elif all(isinstance(coord, float) for coord in coordinates):
-                    self.__gps_coordinates = (coordinates[0], coordinates[1])
+                elif all(isinstance(coord, float) for coord in new_coordinates):
+                    self.__gps_coordinates = (new_coordinates[0], new_coordinates[1])
                 else:
                     raise ValueError(
                         f"The coordinates list must contain either only floats or only sublists of two elements."
                     )
             case _:
                 raise TypeError(
-                    f"GPS coordinates must be either a list of coordinates or the name of csv containing the coordinates, but {type(coordinates)} found."
+                    f"GPS coordinates must be either a list of coordinates or the name of csv containing the coordinates, but {type(new_coordinates)} found."
                 )
 
     @property
-    def Owner_Group(self):
+    def owner_group(self):
         """str: The Unix group able to interact with the dataset."""
         if self.__group is None:
             print(
@@ -157,8 +157,8 @@ class Dataset:
             )
         return self.__group
 
-    @Owner_Group.setter
-    def Owner_Group(self, value):
+    @owner_group.setter
+    def owner_group(self, value):
         if skip_perms:
             print("Cannot set osmose group on a non-Unix operating system.")
             return
@@ -173,11 +173,11 @@ class Dataset:
 
     @property
     def is_built(self):
-        """Checks if self.Path/raw/audio contains at least one folder and none called "original"."""
+        """Checks if self.path/raw/audio contains at least one folder and none called "original"."""
         return len(
-            os.listdir(os.path.join(self.Path, "raw", "audio"))
+            os.listdir(os.path.join(self.path, "raw", "audio"))
         ) > 0 and not os.path.exists(
-            os.path.join(self.Path, "raw", "audio", "original")
+            os.path.join(self.path, "raw", "audio", "original")
         )
 
     # endregion
@@ -222,12 +222,12 @@ class Dataset:
             DONE ! your dataset is on OSmOSE platform !
         """
         if owner_group is None:
-            owner_group = self.Owner_Group
+            owner_group = self.owner_group
 
         path_timestamp_formatted = os.path.join(
-            self.Path, "raw", "audio", "original", "timestamp.csv"
+            self.path, "raw", "audio", "original", "timestamp.csv"
         )  # TODO: turn original into wildcard
-        path_raw_audio = os.path.join(self.Path, "raw", "audio", "original")
+        path_raw_audio = os.path.join(self.path, "raw", "audio", "original")
 
         csvFileArray = pd.read_csv(path_timestamp_formatted, header=None)
 
@@ -308,7 +308,7 @@ class Dataset:
             )
 
             with open(
-                os.path.join(self.Path, "raw", "audio", "files_not_loaded.csv"), "w"
+                os.path.join(self.path, "raw", "audio", "files_not_loaded.csv"), "w"
             ) as fp:
                 fp.write("\n".join(list_filename_abnormal_duration))
 
@@ -329,26 +329,26 @@ class Dataset:
 
         # write raw/metadata.csv
         data = {
-            "orig_fs": float(pd.DataFrame(list_samplingRate).values.flatten().mean()),
-            "sound_sample_size_in_bits": int(
+            "sr_origin": float(pd.DataFrame(list_samplingRate).values.flatten().mean()),
+            "sample_bits": int(
                 8 * pd.DataFrame(list_sampwidth).values.flatten().mean()
             ),
             "nchannels": int(channels),
             "audio_file_number": len(filename_csv),
             "start_date": timestamp_csv[0],
             "end_date": timestamp_csv[-1],
-            "dutyCycle_percent": dutyCycle_percent,
-            "origin_audio_file_duration": round(
+            "duty_cycle": dutyCycle_percent,
+            "audio_file_origin_duration": round(
                 pd.DataFrame(list_duration).values.flatten().mean(), 2
             ),
-            "origin_audio_file_volume": pd.DataFrame(list_size).values.flatten().mean(),
-            "origin_dataset_volume": round(
+            "audio_file_origin_volume": pd.DataFrame(list_size).values.flatten().mean(),
+            "dataset_origin_volume": round(
                 pd.DataFrame(list_size).values.flatten().mean()
                 * len(filename_csv)
                 / 1000,
                 1,
             ),
-            "origin_dataset_duration": round(
+            "dataset_origin_duration": round(
                 pd.DataFrame(list_duration).values.flatten().mean()
                 * len(filename_csv)
                 / 60,
@@ -359,17 +359,17 @@ class Dataset:
             "lost_levels_in_normalization": lost_levels,
         }
         df = pd.DataFrame.from_records([data])
-        df.to_csv(os.path.join(self.Path, "raw", "metadata.csv"), index=False)
+        df.to_csv(os.path.join(self.path, "raw", "metadata.csv"), index=False)
 
         # write raw/audio/original/metadata.csv
-        df["dataset_fs"] = float(
+        df["dataset_sr"] = float(
             pd.DataFrame(list_samplingRate).values.flatten().mean()
         )
         df["dataset_fileDuration"] = round(
             pd.DataFrame(list_duration).values.flatten().mean(), 2
         )
         df.to_csv(
-            os.path.join(self.Path, "raw", "audio", "original", "metadata.csv"),
+            os.path.join(self.path, "raw", "audio", "original", "metadata.csv"),
             index=False,
         )
 
@@ -409,7 +409,7 @@ class Dataset:
             df = pd.DataFrame({"filename": filename_rawaudio, "timestamp": timestamp})
             df.sort_values(by=["timestamp"], inplace=True)
             df.to_csv(
-                os.path.join(self.Path, "raw", "audio", "original", "timestamp.csv"),
+                os.path.join(self.path, "raw", "audio", "original", "timestamp.csv"),
                 index=False,
                 na_rep="NaN",
                 header=None,
@@ -417,7 +417,7 @@ class Dataset:
 
             # change name of the original wav folder
             new_folder_name = os.path.join(
-                self.Path,
+                self.path,
                 "raw",
                 "audio",
                 str(int(pd.DataFrame(list_duration).values.flatten().mean()))
@@ -427,16 +427,16 @@ class Dataset:
                 ),
             )
             os.rename(
-                os.path.join(self.Path, "raw", "audio", "original"), new_folder_name
+                os.path.join(self.path, "raw", "audio", "original"), new_folder_name
             )
 
             # rename filenames in the subset_files.csv if any to replace -' by '_'
-            if os.path.isfile(os.path.join(self.Path, "analysis/subset_files.csv")):
+            if os.path.isfile(os.path.join(self.path, "analysis/subset_files.csv")):
                 xx = pd.read_csv(
-                    os.path.join(self.Path, "analysis/subset_files.csv"), header=None
+                    os.path.join(self.path, "analysis/subset_files.csv"), header=None
                 ).values
                 pd.DataFrame([ff[0].replace("-", "_") for ff in xx]).to_csv(
-                    os.path.join(self.Path, "analysis/subset_files.csv"),
+                    os.path.join(self.path, "analysis/subset_files.csv"),
                     index=False,
                     header=None,
                 )
@@ -455,9 +455,9 @@ class Dataset:
             print("\n Now setting OSmOSE permissions ; wait a bit ...")
             gid = grp.getgrnam(owner_group).gr_gid
 
-            os.chown(self.Path, -1, gid)
-            os.chmod(self.Path, 0o770)
-            for dirpath, dirnames, filenames in os.walk(self.Path):
+            os.chown(self.path, -1, gid)
+            os.chmod(self.path, 0o770)
+            for dirpath, dirnames, filenames in os.walk(self.path):
                 for filename in filenames:
                     os.chown(os.path.join(dirpath, filename), -1, gid)
                     os.chmod(os.path.join(dirpath, filename), 0o770)
@@ -514,12 +514,12 @@ class Dataset:
                             )
                         if not os.path.exists(
                             os.path.join(
-                                self.Path, "raw", "audio", "normalized_original"
+                                self.path, "raw", "audio", "normalized_original"
                             )
                         ):
                             os.makedirs(
                                 os.path.join(
-                                    self.Path, "raw", "audio", "normalized_original"
+                                    self.path, "raw", "audio", "normalized_original"
                                 )
                             )
                         for audio_file in file_list:
@@ -532,7 +532,7 @@ class Dataset:
 
                             sf.write(
                                 os.path.join(
-                                    self.Path,
+                                    self.path,
                                     "raw",
                                     "audio",
                                     "normalized_original",
@@ -558,7 +558,7 @@ class Dataset:
             )
             return
 
-        path_raw_audio = os.path.join(self.Path, "raw", "audio", "original")
+        path_raw_audio = os.path.join(self.path, "raw", "audio", "original")
 
         csvFileArray = pd.read_csv(
             os.path.join(path_raw_audio, "timestamp.csv"), header=None

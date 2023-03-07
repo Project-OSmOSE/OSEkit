@@ -50,8 +50,8 @@ def reshape(
     chunk_size: int,
     *,
     output_dir_path: str = None,
-    ind_min: int = 0,
-    ind_max: int = -1,
+    batch_ind_min: int = 0,
+    batch_ind_max: int = -1,
     max_delta_interval: int = 5,
     last_file_behavior: Literal["truncate", "pad", "discard"] = "pad",
     offset_beginning: int = 0,
@@ -75,10 +75,10 @@ def reshape(
             The directory where the newly created audio files will be created. If none is provided,
             it will be the same as the input directory. This is not recommended.
 
-        ind_min: `int`, optional, keyword-only
+        batch_ind_min: `int`, optional, keyword-only
             The first file of the list to be processed. Default is 0.
 
-        ind_max: `int`, optional, keyword-only
+        batch_ind_max: `int`, optional, keyword-only
             The last file of the list to be processed. Default is -1, meaning the entire list is processed.
 
         max_delta_interval: `int`, optional, keyword-only
@@ -87,7 +87,7 @@ def reshape(
 
         last_file_behavior: `{"truncate","pad","discard"}, optional, keyword-only
             Tells the reshaper what to do with if the last data of the last file is too small to fill a whole file.
-            This parameter is only active if `ind_max` is `-1`
+            This parameter is only active if `batch_ind_max` is `-1`
             - `truncate` creates a truncated file with the remaining data, which will have a different duration than the others.
             - `pad` creates a file of the same duration than the others, where the missing data is filled with 0.
             - `discard` ignores the remaining data. The last seconds/minutes/hours of audio will be lost in the reshaping.
@@ -164,7 +164,7 @@ def reshape(
     if not files:
         files = list(
             input_timestamp["filename"][
-                ind_min : ind_max if ind_max > 0 else input_timestamp.size
+                batch_ind_min : batch_ind_max if batch_ind_max > 0 else input_timestamp.size
             ]
         )
 
@@ -470,8 +470,8 @@ if __name__ == "__main__":
         chunk_size=args.chunk_size,
         input_files=input_files,
         output_dir_path=args.output_dir,
-        ind_min=args.ind_min,
-        ind_max=args.ind_max,
+        batch_ind_min=args.batch_ind_min,
+        batch_ind_max=args.batch_ind_max,
         offset_beginning=args.offset_beginning,
         offset_end=args.offset_end,
         max_delta_interval=args.max_delta_interval,

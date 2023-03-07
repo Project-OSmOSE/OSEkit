@@ -14,8 +14,8 @@ def Write_zscore_norma_params(
     input_dir: str,
     output_file: str,
     fmin_HighPassFilter: int,
-    ind_min: int = 0,
-    ind_max: int = -1
+    batch_ind_min: int = 0,
+    batch_ind_max: int = -1
 ):
     """Computes the normalization parameters for the Zscore normalisation of the dataset and writes it to a csv.
 
@@ -34,15 +34,15 @@ def Write_zscore_norma_params(
     fmin_HighPassFilter: `int`
         The minimum audio frequency under which data will be filtrated. If set to 0, then `sys.float_info.epsilon` will be used.
 
-    ind_min: `int`
+    batch_ind_min: `int`
         The first file of the list to be processed. Default is 0.
 
-    ind_max: `int`
+    batch_ind_max: `int`
         The last file of the list to be processed. Default is -1, meaning the entire list is processed.
     """
     all_files = sorted(glob.glob(os.path.join(input_dir, "*wav")))
-    # If ind_max is -1, we go to the end of the list.
-    wav_list = all_files[ind_min : ind_max if ind_max != -1 else len(all_files)]
+    # If batch_ind_max is -1, we go to the end of the list.
+    wav_list = all_files[batch_ind_min : batch_ind_max if batch_ind_max != -1 else len(all_files)]
 
     list_summaryStats = []
 
@@ -113,6 +113,6 @@ if __name__ == "__main__":
         input_dir=args.input_dir,
         output_file=args.output_file,
         fmin_HighPassFilter=args.fmin_highpassfilter,
-        ind_min=args.ind_min,
-        ind_max=args.ind_max,
+        batch_ind_min=args.batch_ind_min,
+        batch_ind_max=args.batch_ind_max,
     )

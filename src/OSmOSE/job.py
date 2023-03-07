@@ -43,9 +43,6 @@ class Job_builder:
                 f"The provided configuration file is missing the following attributes: {'; '.join(list(set(required_properties).difference(set(self.__config._fields))))}"
             )
 
-    def edit(self, attribute: str, value: any):
-        self.__config._replace(attribute=value)
-
     # region Properties
     # READ-ONLY properties
     @property
@@ -73,7 +70,7 @@ class Job_builder:
 
     @job_scheduler.setter
     def job_Scheduler(self, value: Literal["Torque", "Slurm"]):
-        self.edit("job_scheduler", value)
+        self.__config = self.__config._replace(job_scheduler=value)
 
     @property
     def env_script(self):
@@ -81,7 +78,7 @@ class Job_builder:
 
     @env_script.setter
     def env_script(self, value):
-        self.edit("env_script", value)
+        self.__config = self.__config._replace(env_script=value)
 
     @property
     def queue(self):
@@ -89,7 +86,7 @@ class Job_builder:
 
     @queue.setter
     def queue(self, value):
-        self.edit("queue", value)
+        self.__config = self.__config._replace(queue=value)
 
     @property
     def nodes(self):
@@ -97,7 +94,7 @@ class Job_builder:
 
     @nodes.setter
     def nodes(self, value):
-        self.edit("nodes", value)
+        self.__config = self.__config._replace(nodes=value)
 
     @property
     def walltime(self):
@@ -105,7 +102,7 @@ class Job_builder:
 
     @walltime.setter
     def walltime(self, value):
-        self.edit("walltime", value)
+        self.__config = self.__config._replace(walltime=value)
 
     @property
     def ncpus(self):
@@ -113,7 +110,7 @@ class Job_builder:
 
     @ncpus.setter
     def ncpus(self, value):
-        self.edit("ncpus", value)
+        self.__config = self.__config._replace(ncpus=value)
 
     @property
     def mem(self):
@@ -121,7 +118,7 @@ class Job_builder:
 
     @mem.setter
     def mem(self, value):
-        self.edit("mem", value)
+        self.__config = self.__config._replace(mem=value)
 
     @property
     def outfile(self):
@@ -129,7 +126,7 @@ class Job_builder:
 
     @outfile.setter
     def outfile(self, value):
-        self.edit("outfile", value)
+        self.__config = self.__config._replace(outfile=value)
 
     @property
     def errfile(self):
@@ -137,7 +134,7 @@ class Job_builder:
 
     @errfile.setter
     def errfile(self, value):
-        self.edit("errfile", value)
+        self.__config = self.__config._replace(errfile=value)
 
     # endregion
 
