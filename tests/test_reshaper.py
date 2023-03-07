@@ -95,8 +95,7 @@ def test_reshape_smaller(input_reshape, output_dir):
         [x for x in Path(output_dir).iterdir() if not str(x).endswith(".csv")],
         key=os.path.getmtime,
     )
-    print(reshaped_files)
-    print(sum(sf.info(file).duration for file in reshaped_files))
+    
     assert len(reshaped_files) == 15
     assert sf.info(reshaped_files[0]).duration == 2.0
     assert sf.info(reshaped_files[0]).samplerate == 44100
@@ -197,8 +196,7 @@ def test_reshape_offsets(input_reshape, output_dir):
         [x for x in Path(output_dir).iterdir() if not str(x).endswith(".csv")],
         key=os.path.getmtime,
     )
-    for file in reshaped_files:
-        print(file, sf.info(file).duration)
+
     assert len(reshaped_files) == 5
     assert sf.info(reshaped_files[0]).duration == 6.0
     assert sf.info(reshaped_files[0]).samplerate == 44100
@@ -216,7 +214,4 @@ def test_reshape_offsets(input_reshape, output_dir):
         input_content_beginning[2 * 44100 :], output_content_beginning[:44100]
     )
 
-    print(input_content_end[2 * 44100 :], len(input_content_end[2 * 44100 :]))
-    print(output_content_end[:44100], len(output_content_end[:44100]))
-    print(np.setdiff1d(input_content_end[:44100], output_content_end[2 * 44100 :]))
-    assert np.array_equal(input_content_end[:44100], output_content_end[2 * 44100 :])
+    assert np.array_equal(input_content_end[:2*44100], output_content_end[-2 * 44100 :])

@@ -8,6 +8,13 @@ import shutil
 def capture_csv(monkeypatch):
     pass
 
+@pytest.fixture
+def input_dataset(tmp_path):
+    input_dir = tmp_path / "sample_dataset"
+    main_audio_dir = input_dir / "raw" / "audio"
+    orig_audio_dir = main_audio_dir / "original"
+    analysis_dir = input_dir / "analysis"
+
 
 @pytest.fixture
 def input_dir(tmp_path):

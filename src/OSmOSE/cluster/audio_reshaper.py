@@ -30,8 +30,6 @@ def substract_timestamps(
     if index == 0:
         return timedelta(seconds=0)
 
-    print("looking at files", files[index], "and", files[index + 1])
-
     cur_timestamp: str = input_timestamp[input_timestamp["filename"] == files[index]][
         "timestamp"
     ].values[0]
@@ -117,7 +115,6 @@ def reshape(
         The list of the path of newly created audio files.
     """
     files = []
-    verbose = True
 
     #! Validation
     if last_file_behavior not in ["truncate", "pad", "discard"]:
@@ -228,7 +225,7 @@ def reshape(
 
                 if verbose:
                     print(
-                        f"IN INFERIOR {outfilename} written! File is {(len(output)/sample_rate)} seconds long. {(len(previous_audio_data)/sample_rate)} seconds left from slicing."
+                        f"{outfilename} written! File is {(len(output)/sample_rate)} seconds long. {(len(previous_audio_data)/sample_rate)} seconds left from slicing."
                     )
 
                 t += 1
@@ -236,7 +233,6 @@ def reshape(
 
             # If after we get out of the previous while loop we don't have any audio_data left, then we look at the next file.
             if len(audio_data) == 0:
-                print("NO MORE AUDIO DATA")
                 i += 1
                 continue
         #! AUDIO DURATION == CHUNK SIZE
@@ -315,7 +311,7 @@ def reshape(
 
         if verbose:
             print(
-                f"IN SUPERIOR {outfilename} written! File is {(len(output)/sample_rate)} seconds long. {(len(previous_audio_data)/sample_rate)} seconds left from slicing."
+                f"{outfilename} written! File is {(len(output)/sample_rate)} seconds long. {(len(previous_audio_data)/sample_rate)} seconds left from slicing."
             )
         i += 1
         t += 1
@@ -343,12 +339,11 @@ def reshape(
         sf.write(outfilename, output, sample_rate)
 
         print(
-            f"IN LAST {outfilename} written! File is {(len(output)/sample_rate)} seconds long. {(len(previous_audio_data)/sample_rate)} seconds left from slicing."
+            f"{outfilename} written! File is {(len(output)/sample_rate)} seconds long. {(len(previous_audio_data)/sample_rate)} seconds left from slicing."
         )
         i += 1
         t += 1
 
-    print(len(previous_audio_data))
     if len(previous_audio_data) > 1:
         skip_last = False
         match last_file_behavior:
@@ -376,7 +371,7 @@ def reshape(
             sf.write(outfilename, output, sample_rate)
 
             print(
-                f"{outfilename} written! File is {((len(output)//sample_rate)/60)} minutes long. {(len(previous_audio_data)//sample_rate)/(60)} minutes left from slicing."
+                f"{outfilename} written! File is {(len(output)//sample_rate)} minutes long. {len(previous_audio_data)/sample_rate} minutes left from slicing."
             )
 
     input_timestamp = pd.DataFrame({"filename": result, "timestamp": timestamp_list})
