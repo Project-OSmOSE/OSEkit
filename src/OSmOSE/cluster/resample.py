@@ -1,7 +1,5 @@
-import os
 import argparse
-import glob
-
+from pathlib import Path
 import sox
 
 
@@ -13,10 +11,12 @@ def resample(
     batch_ind_min: int = 0,
     batch_ind_max: int = -1,
 ):
-    all_files = sorted(glob.glob(os.path.join(input_dir, "*wav")))
+    all_files = sorted(Path(input_dir).glob("*wav"))
 
     # If batch_ind_max is -1, we go to the end of the list.
-    audio_files_list = all_files[batch_ind_min : batch_ind_max if batch_ind_max != -1 else len(all_files)]
+    audio_files_list = all_files[
+        batch_ind_min : batch_ind_max if batch_ind_max != -1 else len(all_files)
+    ]
 
     tfm = sox.Transformer()
     tfm.set_output_format(rate=target_fs)
@@ -24,10 +24,10 @@ def resample(
     for audio_file in audio_files_list:
         tfm.build_file(
             input_filepath=audio_file,
-            output_filepath=os.path.join(output_dir, os.path.basename(audio_file)),
+            output_filepath=Path(output_dir, audio_file.name),
         )
 
-        print(f"{os.path.basename(audio_file)} resampled to {target_fs}!")
+        print(f"{audio_file.name} resampled to {target_fs}!")
 
 
 if __name__ == "__main__":

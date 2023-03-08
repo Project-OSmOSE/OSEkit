@@ -1,6 +1,5 @@
-import os
+from pathlib import Path
 import sys
-import glob
 import csv
 import argparse
 
@@ -40,9 +39,11 @@ def Write_zscore_norma_params(
     batch_ind_max: `int`
         The last file of the list to be processed. Default is -1, meaning the entire list is processed.
     """
-    all_files = sorted(glob.glob(os.path.join(input_dir, "*wav")))
+    all_files = sorted(Path(input_dir).glob("*wav"))
     # If batch_ind_max is -1, we go to the end of the list.
-    wav_list = all_files[batch_ind_min : batch_ind_max if batch_ind_max != -1 else len(all_files)]
+    wav_list = all_files[
+        batch_ind_min : batch_ind_max if batch_ind_max != -1 else len(all_files)
+    ]
 
     list_summaryStats = []
 

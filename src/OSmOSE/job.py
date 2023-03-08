@@ -5,6 +5,7 @@ import subprocess
 from string import Template
 from typing import NamedTuple, List, Literal
 from warnings import warn
+from pathlib import Path
 from datetime import datetime
 from importlib import resources
 from OSmOSE.utils import read_config
@@ -148,9 +149,7 @@ class Job_builder:
         """
 
         output_format = (
-            os.path.splitext(output_file)[1]
-            if output_file
-            else os.path.splitext(self.__configfile)[1]
+            Path(output_file).suffix if output_file else Path(self.__configfile).suffix
         )
 
         match output_format:
@@ -228,11 +227,10 @@ class Job_builder:
             The path to the created job file.
         """
 
-        pwd = os.path.dirname(__file__)
-        jobdir = os.path.join(pwd, "ongoing_jobs")
+        pwd = Path(__file__).parent
+        jobdir = pwd.joinpath("ongoing_jobs")
 
-        if not os.path.exists(jobdir):
-            os.makedirs(jobdir)
+        jobdir.mkdir(mode=770, exist_ok=True)
 
         job_file = ["#!/bin/bash"]
 
@@ -242,7 +240,7 @@ class Job_builder:
         if not job_scheduler:
             job_scheduler = self.job_scheduler
         if not jobname:
-            jobname = os.path.basename(script_path)
+            jobname = Path(script_path).name
         if not env_name:
             env_name = self.env_name
         if not queue:
@@ -323,16 +321,18 @@ class Job_builder:
         #! FOOTER
         outfilename = f"{jobname}_{datetime.now().strftime('%H-%M-%S')}_{job_scheduler}_{len(os.listdir(jobdir))}.pbs"
 
+        job_file_path = jobdir.joinpath(outfilename)
+
         job_file.append(f"\nchmod 444 {outfile} {errfile}")
-        job_file.append(f"\nrm {os.path.join(jobdir, outfilename)}")
+        job_file.append(f"\nrm {job_file_path}")
 
         #! BUILD DONE => WRITING
-        with open(os.path.join(jobdir, outfilename), "w") as jobfile:
+        with open(job_file_path, "w") as jobfile:
             jobfile.write("\n".join(job_file))
 
-        self.__prepared_jobs.append(os.path.join(jobdir, outfilename))
+        self.__prepared_jobs.append(job_file_path)
 
-        return os.path.join(jobdir, outfilename)
+        return job_file_path
 
     # TODO support multiple dependencies and job chaining (?)
     def submit_job(
@@ -386,6 +386,6 @@ class Job_builder:
     def update_job_status(self):
         """Iterates over the list of ongoing jobs and mark them as finished if the job file does not exist."""
         for file in self.__ongoing_jobs:
-            if not os.path.exists(file):
+            if not file.exists():
                 self.__ongoing_jobs.remove(file)
                 self.__finished_jobs.append(file)

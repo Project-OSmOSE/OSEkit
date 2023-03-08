@@ -1,11 +1,13 @@
 from logging import warn
-from pathlib import PurePath
+from pathlib import Path
 from importlib.resources import as_file
 import os
+import random
 import shutil
 import struct
 from collections import namedtuple
 from distutils.errors import UnknownFileError
+import sys
 from typing import Union, NamedTuple, Tuple
 
 import json
@@ -17,6 +19,7 @@ except ModuleNotFoundError:
 
 import soundfile as sf
 import numpy as np
+from OSmOSE import _osmose_path_nt as osm_path
 
 
 def display_folder_storage_infos(dir_path: str) -> None:
@@ -35,17 +38,17 @@ def list_not_built_datasets(datasets_folder_path: str) -> None:
     dataset_folder_path: str
         The path to the directory containing the datasets"""
 
+    ds_folder = Path(datasets_folder_path)
+
     dataset_list = [
-        directory
-        for directory in sorted(os.listdir(datasets_folder_path))
-        if os.path.isdir(os.path.join(datasets_folder_path, directory))
+        directory for directory in ds_folder.iterdir() if ds_folder.joinpath(directory)
     ]
     list_not_built_datasets = []
 
     for dataset_directory in dataset_list:
-        if os.path.exists(
-            os.path.join(datasets_folder_path, dataset_directory, "raw/audio/original/")
-        ):
+        if ds_folder.joinpath(
+            dataset_directory, osm_path.raw_audio, "original"
+        ).exists():
             list_not_built_datasets.append(dataset_directory)
 
     print("List of the datasets not built yet:")
@@ -54,12 +57,12 @@ def list_not_built_datasets(datasets_folder_path: str) -> None:
         print("  - {}".format(dataset))
 
 
-def read_config(raw_config: Union[str, dict, PurePath]) -> NamedTuple:
+def read_config(raw_config: Union[str, dict, Path]) -> NamedTuple:
     """Read the given configuration file or dict and converts it to a namedtuple. Only TOML and JSON formats are accepted for now.
 
     Parameter
     ---------
-    raw_config : `str` or `PurePath` or `dict`
+    raw_config : `str` or `Path` or `dict`
         The path of the configuration file, or the dict object containing the configuration.
 
     Returns
@@ -79,12 +82,12 @@ def read_config(raw_config: Union[str, dict, PurePath]) -> NamedTuple:
         Raised if the raw_config file is not in TOML, JSON or YAML formats."""
 
     match raw_config:
-        case PurePath():
+        case Path():
             with as_file(raw_config) as input_config:
                 raw_config = input_config
 
         case str():
-            if not os.path.isfile(raw_config):
+            if not Path(raw_config).is_file:
                 raise FileNotFoundError(
                     f"The configuration file {raw_config} does not exist."
                 )
@@ -98,7 +101,7 @@ def read_config(raw_config: Union[str, dict, PurePath]) -> NamedTuple:
 
     if not isinstance(raw_config, dict):
         with open(raw_config, "rb") as input_config:
-            match os.path.splitext(raw_config)[1]:
+            match Path(raw_config).suffix:
                 case ".toml":
                     raw_config = tomllib.load(input_config)
                 case ".json":
@@ -109,7 +112,7 @@ def read_config(raw_config: Union[str, dict, PurePath]) -> NamedTuple:
                     )
                 case _:
                     raise UnknownFileError(
-                        f"The provided configuration file extension ({os.path.splitext(raw_config)[1]} is not a valid extension. Please use .toml or .json files."
+                        f"The provided configuration file extension ({Path(raw_config).suffix} is not a valid extension. Please use .toml or .json files."
                     )
 
     return namedtuple("GenericDict", raw_config.keys())(**raw_config)
@@ -212,9 +215,102 @@ def safe_read(
 
     if nan_nb > 0:
         warn(
-            f"{nan_nb} NaN detected in file {os.path.basename(file_path)}. They will be replaced with {nan}."
+            f"{nan_nb} NaN detected in file {Path(file_path).name}. They will be replaced with {nan}."
         )
 
     np.nan_to_num(audio_data, copy=False, nan=nan, posinf=posinf, neginf=neginf)
 
     return audio_data, sample_rate
+
+
+def check_n_files(
+    file_list: list,
+    n: int,
+    *,
+    output_path: str = None,
+    threshold_percent: float = 0.1,
+    auto_normalization: bool = False,
+) -> bool:
+    """Check n files at random for anomalies and may normalize them.
+
+    Currently, check if the data for wav in PCM float format are between -1.0 and 1.0. If the number of files that
+    fail the test is higher than the threshold (which is 10% of n by default, with an absolute minimum of 1), all the
+    dataset will be normalized and written in another file.
+
+    Parameters
+    ----------
+        file_list: `list`
+            The list of files to be evaluated. It must be equal or longer than n.
+        n: `int`
+            The number of files to evaluate. To lower resource consumption, it is advised to check only a subset of the dataset.
+            10 files taken at random should provide an acceptable idea of the whole dataset.
+        output_path: `str`, optional, keyword-only
+            The path to the folder where the normalized files will be written. If auto_normalization is set to True, then
+            it must have a value.
+        threshold_percent: `float`, optional, keyword-only
+            The maximum acceptable percentage of evaluated files that can contain anomalies. Understands fraction and whole numbers. Default is 0.1, or 10%
+        auto_normalization: `bool`, optional, keyword_only
+            Whether the normalization should proceed automatically or not if the threshold is reached. As a safeguard, the default is False.
+    Returns
+    -------
+        normalized: `bool`
+            Indicates whether or not the dataset has been normalized.
+    """
+    if auto_normalization and not output_path:
+        raise ValueError(
+            "When auto_normalization is set to True, an output path must be specified."
+        )
+
+    if threshold_percent > 1:
+        threshold_percent = threshold_percent / 100
+
+    if "float" in str(sf.info(file_list[0])):
+        threshold = max(threshold_percent * n, 1)
+        bad_files = []
+        for audio_file in random.sample(file_list, n):
+            data, sr = safe_read(audio_file)
+            if not (np.max(data) < 1.0 and np.min(data) > -1.0):
+                bad_files.append(audio_file)
+
+                if len(bad_files) > threshold:
+                    print(
+                        "The treshold has been exceeded, too many files unadequately recorded."
+                    )
+                    if not auto_normalization:
+                        normalize = False
+                        if sys.__stdin__.isatty():
+                            res = input(
+                                "Do you want to automatically normalize your dataset? [Y]/n"
+                            )
+                            if res.lower() in ["y", "yes", ""]:
+                                if not output_path:
+                                    output_path = input(
+                                        "Please specify the path to the output folder:"
+                                    )
+                                normalize = True
+                        if not normalize:
+                            raise ValueError(
+                                "You need to set auto_normalization to True to normalize your dataset automatically."
+                            )
+
+                    Path(output_path).mkdir(mode=770, parents=True, exist_ok=True)
+
+                    for audio_file in file_list:
+                        data, sr = safe_read(audio_file)
+                        data = (
+                            (data - np.mean(data)) / np.std(data)
+                        ) * 0.063  # = -24dB
+                        data[data > 1] = 1
+                        data[data < -1] = -1
+
+                        sf.write(
+                            Path(output_path, Path(audio_file).name),
+                            data=data,
+                            samplerate=sr,
+                        )
+                        # TODO: lock in spectrum mode
+                    print(
+                        "All files have been normalized. Spectrograms created from them will be locked in spectrum mode."
+                    )
+                    return True
+    return False
