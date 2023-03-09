@@ -282,7 +282,7 @@ class Dataset:
 
             audio_file = audio_file_list[ind_dt]
 
-            list_filename.append(filename_csv[ind_dt])
+            list_filename.append(audio_file)
 
             try:
                 sr, frames, sampwidth, channels = read_header(audio_file)
@@ -339,12 +339,12 @@ class Dataset:
         else:
             dutyCycle_percent = np.nan
 
-        # write raw/metadata.csv
+        # write metadata.csv
         data = {
             "sr_origin": mean(list_samplingRate),
             "sample_bits": int(8 * mean(list_sampwidth)),
             "nchannels": int(channels),
-            "audio_file_number": len(filename_csv),
+            "audio_file_count": len(filename_csv),
             "start_date": timestamp_csv[0],
             "end_date": timestamp_csv[-1],
             "duty_cycle": dutyCycle_percent,
@@ -462,27 +462,21 @@ class Dataset:
             )
             return
 
-        path_raw_audio = os.path.join(self.path, "raw", "audio", "original")
+        timestamp_path = self.list_abnormal_filenames.parent.joinpath("timestamp.csv")
 
-        csvFileArray = pd.read_csv(
-            os.path.join(path_raw_audio, "timestamp.csv"), header=None
-        )
+        csvFileArray = pd.read_csv(timestamp_path, header=None)
 
         for abnormal_file in self.list_abnormal_filenames:
-            audio_file = os.path.join(path_raw_audio, abnormal_file)
-
             csvFileArray = csvFileArray.drop(
-                csvFileArray[
-                    csvFileArray[0].values == os.path.basename(abnormal_file)
-                ].index
+                csvFileArray[csvFileArray[0].values == abnormal_file.name].index
             )
 
-            print(f"removing : {os.path.basename(abnormal_file)}")
-            os.remove(audio_file)
+            print(f"removing : {abnormal_file.name}")
+            abnormal_file.unlink()
 
         csvFileArray.sort_values(by=[1], inplace=True)
         csvFileArray.to_csv(
-            os.path.join(path_raw_audio, "timestamp.csv"),
+            timestamp_path,
             index=False,
             na_rep="NaN",
             header=None,

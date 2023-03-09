@@ -1,7 +1,6 @@
 from logging import warn
 from pathlib import Path
 from importlib.resources import as_file
-import os
 import random
 import shutil
 import struct

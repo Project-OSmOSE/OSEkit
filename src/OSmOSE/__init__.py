@@ -16,7 +16,7 @@ _osmose_path_dict = {
     "instrument": Path("data", "auxiliary", "instrument"),
     "environment": Path("data", "auxiliary", "instrument"),
     "processed": Path("processed"),
-    "spectrograms": Path("processed", "spectrogram"),
+    "spectrogram": Path("processed", "spectrogram"),
 }
 
 _osmose_path_nt = namedtuple("path_list", _osmose_path_dict.keys())(**_osmose_path_dict)
