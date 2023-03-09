@@ -1,7 +1,6 @@
 import OSmOSE.timestamps as tm
 import re
 import importlib
-import os
 
 
 def test_convert_template_to_re():
@@ -22,7 +21,6 @@ def test_convert_template_to_re():
 
 # a monkeypatch
 def test_write_timestamp():
-    path = os.path.join(os.path.dirname(__file__), "sample_dataset")
     true_template = "%d%m%y_%H%M%S"
     true_offsets = (8, 4)
 

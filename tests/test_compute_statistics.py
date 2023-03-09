@@ -1,26 +1,25 @@
-import os
 import csv
 import numpy as np
 import soundfile as sf
-import pytest
-from OSmOSE.cluster import write_stats
+from pathlib import Path
+from OSmOSE.cluster import compute_stats
 
 
-def test_output_file_written(input_dir, output_dir):
-    output_file = output_dir / "output.csv"
+def test_output_file_written(input_dir: Path, output_dir: Path):
+    output_file = output_dir.joinpath("output.csv")
 
-    write_stats(
+    compute_stats(
         input_dir=str(input_dir), output_file=str(output_file), fmin_HighPassFilter=100
     )
 
-    assert os.path.exists(str(output_file))
-    assert os.path.getsize(str(output_file)) > 0
+    assert output_file.exists()
+    assert output_file.stat().st_size > 0
 
 
-def test_output_file_columns(input_dir, output_dir):
-    output_file = output_dir / "output.csv"
+def test_output_file_columns(input_dir, output_dir: Path):
+    output_file = output_dir.joinpath("output.csv")
     # Call the function to write normalization parameters
-    write_stats(
+    compute_stats(
         input_dir=str(input_dir), output_file=str(output_file), fmin_HighPassFilter=100
     )
     # Check that the output file has the correct columns
@@ -40,7 +39,7 @@ def test_output_file_content(input_dir, output_dir):
     data2 = np.random.randn(1000) * 2
     sf.write(wav_file2, data2, 44100)
     # Call the function to write normalization parameters
-    write_stats(
+    compute_stats(
         input_dir=str(input_dir), output_file=str(output_file), fmin_HighPassFilter=0
     )
     # Check that the output file has the correct content

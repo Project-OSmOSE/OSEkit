@@ -11,14 +11,13 @@ from scipy import signal
 from termcolor import colored
 from matplotlib import pyplot as plt
 from OSmOSE.job import Job_builder
-from OSmOSE.cluster.audio_reshaper import (
+from OSmOSE.cluster import (
     reshape,
     resample,
     compute_stats,
 )  # Not used for now; will be when local execution will be a thing.
 from OSmOSE.Dataset import Dataset
 from OSmOSE.utils import safe_read
-from OSmOSE import _osmose_path_nt as osm_path
 
 
 class Spectrogram(Dataset):
@@ -87,7 +86,7 @@ class Spectrogram(Dataset):
             osmose_group_name=osmose_group_name,
         )
 
-        processed_path = Path(self.path, osm_path.spectrogram)
+        processed_path = Path(self.path, _OSMOSE_PATH.spectrogram)
         metadata_path = processed_path.joinpath("adjust_metadata.csv")
         if metadata_path.exists():
             self.__analysis_file = True
@@ -389,11 +388,11 @@ class Spectrogram(Dataset):
         ---------
             adjust : `bool`
                 Whether or not the paths are used to adjust spectrogram parameters."""
-        analysis_path = self.path.joinpath(osm_path.spectrogram)
+        analysis_path = self.path.joinpath(_OSMOSE_PATH.spectrogram)
         audio_foldername = (
             str(self.Max_time_display_spectro) + "_" + str(self.sr_analysis)
         )
-        self.audio_path = Path(self.path, osm_path.raw_audio, audio_foldername)
+        self.audio_path = Path(self.path, _OSMOSE_PATH.raw_audio, audio_foldername)
 
         if adjust:
             self.__spectro_foldername = "adjustment_spectros"
@@ -500,7 +499,9 @@ class Spectrogram(Dataset):
             str(self.Max_time_display_spectro) + "_" + str(self.sr_analysis)
         )
         # Load variables from raw metadata
-        metadata = pd.read_csv(self.path.joinpath(osm_path.raw_audio), "metadata.csv")
+        metadata = pd.read_csv(
+            self.path.joinpath(_OSMOSE_PATH.raw_audio), "metadata.csv"
+        )
         audio_file_origin_duration = metadata["audio_file_origin_duration"][0]
         sr_origin = metadata["sr_origin"][0]
         audio_file_count = metadata["audio_file_count"][0]
@@ -508,9 +509,9 @@ class Spectrogram(Dataset):
         input_audio_foldername = (
             str(audio_file_origin_duration) + "_" + str(int(sr_origin))
         )
-        analysis_path = self.path.joinpath(osm_path.spectrogram)
+        analysis_path = self.path.joinpath(_OSMOSE_PATH.spectrogram)
         self.path_input_audio_file = self.path.joinpath(
-            osm_path.raw_audio, input_audio_foldername
+            _OSMOSE_PATH.raw_audio, input_audio_foldername
         )
 
         list_wav_withEvent_comp = sorted(self.path_input_audio_file.glob("*wav"))
@@ -521,9 +522,9 @@ class Spectrogram(Dataset):
 
         self.list_wav_to_process = [file.name for file in list_wav_withEvent]
 
-        if osm_path.processed.joinpath("subset_files.csv").is_file():
+        if _OSMOSE_PATH.processed.joinpath("subset_files.csv").is_file():
             subset = pd.read_csv(
-                osm_path.processed.joinpath("subset_files.csv"), header=None
+                _OSMOSE_PATH.processed.joinpath("subset_files.csv"), header=None
             )[0].values
             self.list_wav_to_process = list(
                 set(subset).intersection(set(self.list_wav_to_process))

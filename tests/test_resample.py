@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import platform
 import soundfile as sf
 import shutil
@@ -7,18 +8,18 @@ import pytest
 
 
 @pytest.mark.skipif(platform.system() == "Windows", reason="Sox is linux only")
-def test_resample(input_dir, output_dir):
+def test_resample(input_dir: Path, output_dir: Path):
     for i in range(3):
-        wav_file = os.path.join(input_dir, f"test{i}.wav")
-        shutil.copyfile(os.path.join(input_dir, "test.wav"), wav_file)
+        wav_file = input_dir.joinpath(f"test{i}.wav")
+        shutil.copyfile(input_dir.joinpath("test.wav"), wav_file)
 
     for sr in [100, 500, 8000]:
         resample(input_dir=input_dir, output_dir=output_dir, target_fs=sr)
 
         # check that all resampled files exist and have the correct properties
         for i in range(3):
-            output_file = os.path.join(output_dir, f"test{i}.wav")
-            assert os.path.isfile(output_file)
+            output_file = output_dir.joinpath(f"test{i}.wav")
+            assert output_file.is_file()
             assert sf.info(output_file).sample_rate == sr
             assert sf.info(output_file).channels == 1
             assert sf.info(output_file).frames == 900
@@ -27,5 +28,5 @@ def test_resample(input_dir, output_dir):
         assert len(os.listdir(output_dir)) == 4
         # check that the original files were not modified
         for i in range(3):
-            input_file = os.path.join(input_dir, f"test{i}.wav")
+            input_file = input_dir.joinpath(f"test{i}.wav")
             assert sf.info(input_file).sample_rate == 300

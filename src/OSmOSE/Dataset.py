@@ -16,7 +16,6 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from OSmOSE.utils import read_header, check_n_files
-from OSmOSE import _osmose_path_nt as osm_path
 
 
 class Dataset:
@@ -124,7 +123,7 @@ class Dataset:
         match type(new_coordinates):
             case str():
                 csvFileArray = pd.read_csv(
-                    Path(self.path, osm_path.auxiliary, new_coordinates)
+                    Path(self.path, _OSMOSE_PATH.auxiliary, new_coordinates)
                 )
                 self.__gps_coordinates = [
                     (np.min(csvFileArray["lat"]), np.max(csvFileArray["lat"])),
@@ -176,8 +175,8 @@ class Dataset:
     def is_built(self):
         """Checks if self.path/raw/audio contains at least one folder and none called "original"."""
         return (
-            len(Path(self.path, osm_path.raw_audio).iterdir()) > 0
-            and not Path(self.path, osm_path, "original").exists()
+            len(Path(self.path, _OSMOSE_PATH.raw_audio).iterdir()) > 0
+            and not Path(self.path, _OSMOSE_PATH, "original").exists()
         )
 
     # endregion
@@ -231,14 +230,14 @@ class Dataset:
             owner_group = self.owner_group
 
         if original_folder:
-            path_raw_audio = Path(self.path, osm_path.raw_audio, original_folder)
-        elif Path(self.path, osm_path.raw_audio, "original").is_dir():
-            path_raw_audio = Path(self.path, osm_path.raw_audio, "original")
-        elif len(list(Path(self.path, osm_path.raw_audio).iterdir())) == 1:
+            path_raw_audio = Path(self.path, _OSMOSE_PATH.raw_audio, original_folder)
+        elif Path(self.path, _OSMOSE_PATH.raw_audio, "original").is_dir():
+            path_raw_audio = Path(self.path, _OSMOSE_PATH.raw_audio, "original")
+        elif len(list(Path(self.path, _OSMOSE_PATH.raw_audio).iterdir())) == 1:
             path_raw_audio = Path(
                 self.path,
-                osm_path.raw_audio,
-                next(Path(self.path, osm_path.raw_audio).iterdir()),
+                _OSMOSE_PATH.raw_audio,
+                next(Path(self.path, _OSMOSE_PATH.raw_audio).iterdir()),
             )
 
         path_timestamp_formatted = Path(original_folder, "timestamp.csv")
@@ -268,7 +267,7 @@ class Dataset:
                 audio_file_list,
                 10,
                 output_folder=self.path.joinpath(
-                    osm_path.raw_audio, "normalized_original"
+                    _OSMOSE_PATH.raw_audio, "normalized_original"
                 ),
                 auto_normalization=auto_normalization,
             )
@@ -422,7 +421,7 @@ class Dataset:
             path_raw_audio = path_raw_audio.rename(new_folder_name)
 
             # rename filenames in the subset_files.csv if any to replace -' by '_'
-            subset_path = osm_path.processed.joinpath("subset_files.csv")
+            subset_path = _OSMOSE_PATH.processed.joinpath("subset_files.csv")
             if subset_path.is_file():
                 xx = pd.read_csv(subset_path, header=None).values
                 pd.DataFrame([ff[0].replace("-", "_") for ff in xx]).to_csv(
