@@ -1,9 +1,8 @@
-import glob
 import re
-import os
 import datetime
 import argparse
 import pandas as pd
+from pathlib import Path
 
 __converter = {
     "%Y": r"[12][0-9]{3}",
@@ -75,9 +74,7 @@ def write_timestamp(
     else:
         offset = [int(offsets), 0]
     # TODO: extension-agnostic
-    list_audio_file = sorted(
-        [file for file in glob.glob(os.path.join(dataset_path, "*.wav"))]
-    )
+    list_audio_file = sorted([file for file in Path(dataset_path).glob("*.wav")])
 
     timestamp = []
     filename_raw_audio = []
@@ -85,9 +82,7 @@ def write_timestamp(
     converted = convert_template_to_re(date_template)
     for filename in list_audio_file:
         if offsets:
-            date_extracted = os.path.splitext(os.path.basename(filename))[0][
-                offset[0] : offset[1] + 1
-            ]
+            date_extracted = filename.stem[offset[0] : offset[1] + 1]
         else:
             try:
                 date_extracted = re.search(converted, filename)[0]
@@ -106,14 +101,14 @@ def write_timestamp(
 
         timestamp.append(dates_final)
 
-        filename_raw_audio.append(os.path.basename(filename))
+        filename_raw_audio.append(filename.name)
 
     df = pd.DataFrame(
         {"filename": filename_raw_audio, "timestamp": timestamp, "timezone": timezone}
     )
     df.sort_values(by=["timestamp"], inplace=True)
     df.to_csv(
-        os.path.join(dataset_path, "timestamp.csv"),
+        Path(dataset_path, "timestamp.csv"),
         index=False,
         na_rep="NaN",
         header=None,

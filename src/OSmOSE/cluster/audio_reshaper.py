@@ -1,9 +1,9 @@
-import os
 import sys
 import shutil
 from datetime import datetime, timedelta
 from typing import List, Union, Literal
 from argparse import ArgumentParser
+from pathlib import Path
 
 import soundfile as sf
 import numpy as np
@@ -123,19 +123,19 @@ def reshape(
         )
 
     if isinstance(input_files, list):
-        input_dir_path = os.path.dirname(input_files[0])
-        files = [os.path.basename(file) for file in input_files]
+        input_dir_path = Path(input_files[0]).parent
+        files = [Path(file).stem for file in input_files]
         if verbose:
             print(f"Input directory detected as {input_dir_path}")
     else:
-        input_dir_path = input_files
+        input_dir_path = Path(input_files)
 
-    if not os.path.isdir(input_dir_path):
+    if not input_dir_path.is_dir():
         raise ValueError(
             f"The input files must either be a valid folder path or a list of file path, not {str(input_dir_path)}."
         )
 
-    if not os.path.exists(os.path.join(input_dir_path, "timestamp.csv")):
+    if not input_dir_path.joinpath("timestamp.csv").exists():
         raise FileNotFoundError(
             f"The timestamp.csv file must be present in the directory {input_dir_path} and correspond to the audio files in the same location."
         )
@@ -150,12 +150,13 @@ def reshape(
             print(
                 "Cannot overwrite input directory when the output directory is implicit! Choose a different output directory instead."
             )
+    else:
+        output_dir_path = Path(output_dir_path)
 
-    if not os.path.exists(output_dir_path):
-        os.makedirs(output_dir_path)
+    output_dir_path.mkdir(mode=770, parents=True, exists_ok=True)
 
     input_timestamp = pd.read_csv(
-        os.path.join(input_dir_path, "timestamp.csv"),
+        input_dir_path.joinpath("timestamp.csv"),
         header=None,
         names=["filename", "timestamp", "timezone"],
     )
@@ -164,7 +165,9 @@ def reshape(
     if not files:
         files = list(
             input_timestamp["filename"][
-                batch_ind_min : batch_ind_max if batch_ind_max > 0 else input_timestamp.size
+                batch_ind_min : batch_ind_max
+                if batch_ind_max > 0
+                else input_timestamp.size
             ]
         )
 
@@ -181,7 +184,7 @@ def reshape(
     proceed = force_reshape  # Default is False
 
     while i < len(files):
-        audio_data, sample_rate = sf.read(os.path.join(input_dir_path, files[i]))
+        audio_data, sample_rate = sf.read(input_dir_path.joinpath(files[i]))
         if i == 0:
             timestamp = input_timestamp[input_timestamp["filename"] == files[i]][
                 "timestamp"
@@ -210,11 +213,13 @@ def reshape(
                     else t * chunk_size + len(output) // sample_rate
                 )
 
-                outfilename = os.path.join(
-                    output_dir_path,
-                    f"reshaped_from_{t * chunk_size}_to_{end_time}_sec.wav",
+                outfilename = (
+                    output_dir_path.joinpath(
+                        f"reshaped_from_{t * chunk_size}_to_{end_time}_sec.wav"
+                    ),
                 )
-                result.append(os.path.basename(outfilename))
+
+                result.append(outfilename.stem)
 
                 timestamp_list.append(
                     datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
@@ -278,7 +283,7 @@ def reshape(
 
                 while len(audio_data) < chunk_size * sample_rate and i + 1 < len(files):
                     nextdata, next_sample_rate = sf.read(
-                        os.path.join(input_dir_path, files[i + 1])
+                        input_dir_path.joinpath(files[i + 1])
                     )
                     rest = (chunk_size * next_sample_rate) - len(audio_data)
                     audio_data = np.concatenate(
@@ -297,10 +302,10 @@ def reshape(
             else t * chunk_size + len(output) // sample_rate
         )
 
-        outfilename = os.path.join(
-            output_dir_path, f"reshaped_from_{t * chunk_size}_to_{end_time}_sec.wav"
+        outfilename = output_dir_path.joinpath(
+            f"reshaped_from_{t * chunk_size}_to_{end_time}_sec.wav"
         )
-        result.append(os.path.basename(outfilename))
+        result.append(outfilename.stem)
 
         timestamp_list.append(
             datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
@@ -326,10 +331,10 @@ def reshape(
             else t * chunk_size + len(output) // sample_rate
         )
 
-        outfilename = os.path.join(
-            output_dir_path, f"reshaped_from_{t * chunk_size}_to_{end_time}_sec.wav"
+        outfilename = output_dir_path.joinpath(
+            f"reshaped_from_{t * chunk_size}_to_{end_time}_sec.wav"
         )
-        result.append(os.path.basename(outfilename))
+        result.append(outfilename.stem)
 
         timestamp_list.append(
             datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
@@ -358,10 +363,10 @@ def reshape(
         if not skip_last:
             end_time = t * len(output) // sample_rate
 
-            outfilename = os.path.join(
-                output_dir_path, f"reshaped_from_{t * chunk_size}_to_{end_time}_sec.wav"
+            outfilename = output_dir_path.joinpath(
+                f"reshaped_from_{t * chunk_size}_to_{end_time}_sec.wav"
             )
-            result.append(os.path.basename(outfilename))
+            result.append(outfilename.stem)
 
             timestamp_list.append(
                 datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
@@ -377,13 +382,13 @@ def reshape(
     input_timestamp = pd.DataFrame({"filename": result, "timestamp": timestamp_list})
     input_timestamp.sort_values(by=["timestamp"], inplace=True)
     input_timestamp.to_csv(
-        os.path.join(output_dir_path, "timestamp.csv"),
+        output_dir_path.joinpath("timestamp.csv"),
         index=False,
         na_rep="NaN",
         header=None,
     )
 
-    return [os.path.join(output_dir_path, res) for res in result]
+    return [output_dir_path.joinpath(res) for res in result]
 
 
 if __name__ == "__main__":
@@ -462,7 +467,7 @@ if __name__ == "__main__":
 
     input_files = (
         args.input_files.split(" ")
-        if not os.path.isdir(args.input_files)
+        if not Path(args.input_files).is_dir()
         else args.input_files
     )
 
@@ -481,6 +486,4 @@ if __name__ == "__main__":
     )
 
     if args.verbose:
-        print(
-            f"All {len(files)} reshaped audio files written in {os.path.dirname(files[0])}."
-        )
+        print(f"All {len(files)} reshaped audio files written in {files[0].parent}.")

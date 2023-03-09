@@ -1,9 +1,9 @@
-import glob
 import os
-import random
+from pathlib import Path
 from typing import Union, Tuple, List
 from datetime import datetime
 from warnings import warn
+from statistics import fmean as mean
 
 try:
     import grp
@@ -15,8 +15,8 @@ except ModuleNotFoundError:
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
-from OSmOSE.utils import read_header, safe_read
-import soundfile as sf
+from OSmOSE.utils import read_header, check_n_files
+from OSmOSE import _osmose_path_nt as osm_path
 
 
 class Dataset:
@@ -53,11 +53,12 @@ class Dataset:
 
         Example
         -------
+        >>> from pathlib import Path
         >>> from OSmOSE import Dataset
-        >>> dataset = Dataset(os.path.join("home","user","my_dataset"), coordinates = [49.2, -5], owner_group = "gosmose")
+        >>> dataset = Dataset(Path("home","user","my_dataset"), coordinates = [49.2, -5], owner_group = "gosmose")
         """
-        self.__name = os.path.basename(dataset_path)
-        self.__path = dataset_path
+        self.__path = Path(dataset_path)
+        self.__name = self.__path.stem
         self.__group = owner_group
         self.__gps_coordinates = []
         if gps_coordinates is not None:
@@ -123,7 +124,7 @@ class Dataset:
         match type(new_coordinates):
             case str():
                 csvFileArray = pd.read_csv(
-                    os.path.join(self.path, "raw", "auxiliary", new_coordinates)
+                    Path(self.path, osm_path.auxiliary, new_coordinates)
                 )
                 self.__gps_coordinates = [
                     (np.min(csvFileArray["lat"]), np.max(csvFileArray["lat"])),
@@ -174,10 +175,9 @@ class Dataset:
     @property
     def is_built(self):
         """Checks if self.path/raw/audio contains at least one folder and none called "original"."""
-        return len(
-            os.listdir(os.path.join(self.path, "raw", "audio"))
-        ) > 0 and not os.path.exists(
-            os.path.join(self.path, "raw", "audio", "original")
+        return (
+            len(Path(self.path, osm_path.raw_audio).iterdir()) > 0
+            and not Path(self.path, osm_path, "original").exists()
         )
 
     # endregion
@@ -185,6 +185,7 @@ class Dataset:
     def build(
         self,
         *,
+        original_folder: str = None,
         owner_group: str = None,
         bare_check: bool = False,
         auto_normalization: bool = False,
@@ -203,6 +204,10 @@ class Dataset:
 
         Parameters
         ----------
+            original_folder: `str`, optional, keyword-only
+                The name of the folder containing the original audio file. It is named "original" by convention.
+                If none is passed, the program expects to find either only one folder in the dataset audio folder, or
+                a folder named `original`
             owner_group: `str`, optional, keyword_only
                 The name of the group using the osmose dataset. It will have all permissions over the dataset.
             bare_check : `bool`, optional, keyword_only
@@ -215,8 +220,9 @@ class Dataset:
 
         Example
         -------
+            >>> from pathlib import Path
             >>> from OSmOSE import Dataset
-            >>> dataset = Dataset(os.path.join("home","user","my_dataset"))
+            >>> dataset = Dataset(Path("home","user","my_dataset"))
             >>> dataset.build()
 
             DONE ! your dataset is on OSmOSE platform !
@@ -224,10 +230,18 @@ class Dataset:
         if owner_group is None:
             owner_group = self.owner_group
 
-        path_timestamp_formatted = os.path.join(
-            self.path, "raw", "audio", "original", "timestamp.csv"
-        )  # TODO: turn original into wildcard
-        path_raw_audio = os.path.join(self.path, "raw", "audio", "original")
+        if original_folder:
+            path_raw_audio = Path(self.path, osm_path.raw_audio, original_folder)
+        elif Path(self.path, osm_path.raw_audio, "original").is_dir():
+            path_raw_audio = Path(self.path, osm_path.raw_audio, "original")
+        elif len(list(Path(self.path, osm_path.raw_audio).iterdir())) == 1:
+            path_raw_audio = Path(
+                self.path,
+                osm_path.raw_audio,
+                next(Path(self.path, osm_path.raw_audio).iterdir()),
+            )
+
+        path_timestamp_formatted = Path(original_folder, "timestamp.csv")
 
         csvFileArray = pd.read_csv(path_timestamp_formatted, header=None)
 
@@ -247,13 +261,16 @@ class Dataset:
         list_filename = []
         lost_levels = False
 
-        audio_file_list = [
-            os.path.join(path_raw_audio, indiv) for indiv in filename_csv
-        ]
+        audio_file_list = [Path(path_raw_audio, indiv) for indiv in filename_csv]
 
         if not bare_check:
-            lost_levels = self.check_n_files(
-                audio_file_list, 10, auto_normalization=auto_normalization
+            lost_levels = check_n_files(
+                audio_file_list,
+                10,
+                output_folder=self.path.joinpath(
+                    osm_path.raw_audio, "normalized_original"
+                ),
+                auto_normalization=auto_normalization,
             )
 
         for ind_dt in tqdm(range(len(timestamp_csv))):
@@ -277,7 +294,7 @@ class Dataset:
                 )
                 list_filename_abnormal_duration.append(audio_file)
 
-            list_size.append(os.path.getsize(audio_file) / 1e6)
+            list_size.append(audio_file.stat().st_size / 1e6)
 
             list_duration.append(frames / float(sr))
             #     list_volumeFile.append( np.round(sr * params.nchannels * (sampwidth) * frames / float(sr) /1024 /1000))
@@ -294,9 +311,8 @@ class Dataset:
             # we remove the sign '-' in filenames (because of our qsub_resample.sh)
             if "-" in filename_csv[ind_dt]:
                 cur_filename = filename_csv[ind_dt].replace("-", "_")
-                os.rename(
-                    os.path.join(path_raw_audio, filename_csv[ind_dt]),
-                    os.path.join(path_raw_audio, cur_filename),
+                Path(path_raw_audio, filename_csv[ind_dt]).rename(
+                    path_raw_audio.joinpath(cur_filename)
                 )
             else:
                 cur_filename = filename_csv[ind_dt]
@@ -307,9 +323,7 @@ class Dataset:
                 "Please see list of audio files above that canceled your dataset importation (maybe corrupted files with OkB volume ?). You can also find it in the list list_filename_abnormal_duration, and execute following cell to directly delete them. Those filenames have been written in the file ./raw/audio/files_not_loaded.csv"
             )
 
-            with open(
-                os.path.join(self.path, "raw", "audio", "files_not_loaded.csv"), "w"
-            ) as fp:
+            with open(path_raw_audio.joinpath("files_not_loaded.csv"), "w") as fp:
                 fp.write("\n".join(list_filename_abnormal_duration))
 
             return list_filename_abnormal_duration
@@ -319,9 +333,7 @@ class Dataset:
         print(dd[0].to_string())
         if dd[0]["std"] < 1e-10:
             dutyCycle_percent = round(
-                100
-                * pd.DataFrame(list_duration).values.flatten().mean()
-                / pd.DataFrame(list_interWavInterval).values.flatten().mean(),
+                100 * mean(list_duration) / mean(list_interWavInterval),
                 1,
             )
         else:
@@ -329,29 +341,21 @@ class Dataset:
 
         # write raw/metadata.csv
         data = {
-            "sr_origin": float(pd.DataFrame(list_samplingRate).values.flatten().mean()),
-            "sample_bits": int(
-                8 * pd.DataFrame(list_sampwidth).values.flatten().mean()
-            ),
+            "sr_origin": mean(list_samplingRate),
+            "sample_bits": int(8 * mean(list_sampwidth)),
             "nchannels": int(channels),
             "audio_file_number": len(filename_csv),
             "start_date": timestamp_csv[0],
             "end_date": timestamp_csv[-1],
             "duty_cycle": dutyCycle_percent,
-            "audio_file_origin_duration": round(
-                pd.DataFrame(list_duration).values.flatten().mean(), 2
-            ),
-            "audio_file_origin_volume": pd.DataFrame(list_size).values.flatten().mean(),
+            "audio_file_origin_duration": round(mean(list_duration), 2),
+            "audio_file_origin_volume": mean(list_size),
             "dataset_origin_volume": round(
-                pd.DataFrame(list_size).values.flatten().mean()
-                * len(filename_csv)
-                / 1000,
+                sum(list_size) / 1000,
                 1,
             ),
             "dataset_origin_duration": round(
-                pd.DataFrame(list_duration).values.flatten().mean()
-                * len(filename_csv)
-                / 60,
+                sum(list_duration) / 60,  # miiiiight break smth. We'll see.
                 2,
             ),
             "lat": self.gps_coordinates[0],
@@ -359,17 +363,11 @@ class Dataset:
             "lost_levels_in_normalization": lost_levels,
         }
         df = pd.DataFrame.from_records([data])
-        df.to_csv(os.path.join(self.path, "raw", "metadata.csv"), index=False)
 
-        # write raw/audio/original/metadata.csv
-        df["dataset_sr"] = float(
-            pd.DataFrame(list_samplingRate).values.flatten().mean()
-        )
-        df["dataset_fileDuration"] = round(
-            pd.DataFrame(list_duration).values.flatten().mean(), 2
-        )
+        df["dataset_sr"] = float(mean(list_samplingRate))
+        df["dataset_fileDuration"] = round(mean(list_duration), 2)
         df.to_csv(
-            os.path.join(self.path, "raw", "audio", "original", "metadata.csv"),
+            path_raw_audio.joinpath("metadata.csv"),
             index=False,
         )
 
@@ -382,6 +380,7 @@ class Dataset:
         ct_abnormal_duration = 0
         self.list_abnormal_filenames = []
         list_abnormalFilename_duration = []
+
         for name, duration in zip(list_filename, list_duration):
             if int(duration) < int(nominalVal_duration):
                 ct_abnormal_duration += 1
@@ -409,40 +408,31 @@ class Dataset:
             df = pd.DataFrame({"filename": filename_rawaudio, "timestamp": timestamp})
             df.sort_values(by=["timestamp"], inplace=True)
             df.to_csv(
-                os.path.join(self.path, "raw", "audio", "original", "timestamp.csv"),
+                path_raw_audio.joinpath("timestamp.csv"),
                 index=False,
                 na_rep="NaN",
                 header=None,
             )
 
             # change name of the original wav folder
-            new_folder_name = os.path.join(
-                self.path,
-                "raw",
-                "audio",
-                str(int(pd.DataFrame(list_duration).values.flatten().mean()))
-                + "_"
-                + str(
-                    int(float(pd.DataFrame(list_samplingRate).values.flatten().mean()))
-                ),
-            )
-            os.rename(
-                os.path.join(self.path, "raw", "audio", "original"), new_folder_name
+            new_folder_name = path_raw_audio.joinpath(
+                str(int(mean(list_duration))) + "_" + str(int(mean(list_samplingRate)))
             )
 
+            path_raw_audio = path_raw_audio.rename(new_folder_name)
+
             # rename filenames in the subset_files.csv if any to replace -' by '_'
-            if os.path.isfile(os.path.join(self.path, "analysis/subset_files.csv")):
-                xx = pd.read_csv(
-                    os.path.join(self.path, "analysis/subset_files.csv"), header=None
-                ).values
+            subset_path = osm_path.processed.joinpath("subset_files.csv")
+            if subset_path.is_file():
+                xx = pd.read_csv(subset_path, header=None).values
                 pd.DataFrame([ff[0].replace("-", "_") for ff in xx]).to_csv(
-                    os.path.join(self.path, "analysis/subset_files.csv"),
+                    subset_path,
                     index=False,
                     header=None,
                 )
 
             # save lists of metadata in metadata_file
-            f = open(os.path.join(new_folder_name, "metadata_file.csv"), "w")
+            f = open(path_raw_audio.joinpath("metadata.csv"), "w")
             for i in range(len(list_duration)):
                 f.write(
                     f"{filename_rawaudio[i]} {list_duration[i]} {list_samplingRate[i]}\n"
@@ -457,96 +447,10 @@ class Dataset:
 
             os.chown(self.path, -1, gid)
             os.chmod(self.path, 0o770)
-            for dirpath, dirnames, filenames in os.walk(self.path):
-                for filename in filenames:
-                    os.chown(os.path.join(dirpath, filename), -1, gid)
-                    os.chmod(os.path.join(dirpath, filename), 0o770)
+            for path in self.path.rglob("*"):
+                os.chown(path, -1, gid)
+                os.chmod(path, 0o770)
             print("\n DONE ! your dataset is on OSmOSE platform !")
-
-    def check_n_files(
-        self,
-        file_list: list,
-        n: int,
-        *,
-        threshold_percent: float = 0.1,
-        auto_normalization: bool = False,
-    ) -> bool:
-        """Check n files at random for anomalies and may normalize them.
-
-        Currently, check if the data for wav in PCM float format are between -1.0 and 1.0. If the number of files that
-        fail the test is higher than the threshold (which is 10% of n by default, with an absolute minimum of 1), all the
-        dataset will be normalized and written in another file.
-
-        Parameters
-        ----------
-            file_list: `list`
-                The list of files to be evaluated. It must be equal or longer than n.
-            n: `int`
-                The number of files to evaluate. To lower resource consumption, it is advised to check only a subset of the dataset.
-                10 files taken at random should provide an acceptable idea of the whole dataset.
-            threshold_percent: `float`, optional, keyword-only
-                The maximum acceptable percentage of evaluated files that can contain anomalies. Understands fraction and whole numbers. Default is 0.1, or 10%
-            auto_normalization: `bool`, optional, keyword_only
-                Whether the normalization should proceed automatically or not if the threshold is reached. As a safeguard, the default is False.
-        Returns
-        -------
-            normalized: `bool`
-                Indicates whether or not the dataset has been normalized.
-        """
-        if threshold_percent > 1:
-            threshold_percent = threshold_percent / 100
-
-        if "float" in str(sf.info(file_list[0])):
-            threshold = max(threshold_percent * n, 1)
-            bad_files = []
-            for audio_file in random.sample(file_list, n):
-                data, sr = safe_read(audio_file)
-                if not (np.max(data) < 1.0 and np.min(data) > -1.0):
-                    bad_files.append(audio_file)
-
-                    if len(bad_files) > threshold:
-                        print(
-                            "The treshold has been exceeded, too many files unadequately recorded."
-                        )
-                        if not auto_normalization:
-                            raise ValueError(
-                                "You need to set auto_normalization to True to normalize your dataset automatically."
-                            )
-                        if not os.path.exists(
-                            os.path.join(
-                                self.path, "raw", "audio", "normalized_original"
-                            )
-                        ):
-                            os.makedirs(
-                                os.path.join(
-                                    self.path, "raw", "audio", "normalized_original"
-                                )
-                            )
-                        for audio_file in file_list:
-                            data, sr = safe_read(audio_file)
-                            data = (
-                                (data - np.mean(data)) / np.std(data)
-                            ) * 0.063  # = -24dB
-                            data[data > 1] = 1
-                            data[data < -1] = -1
-
-                            sf.write(
-                                os.path.join(
-                                    self.path,
-                                    "raw",
-                                    "audio",
-                                    "normalized_original",
-                                    os.path.basename(audio_file),
-                                ),
-                                data=data,
-                                samplerate=sr,
-                            )
-                            # TODO: lock in spectrum mode
-                        print(
-                            "All files have been normalized. Spectrograms created from them will be locked in spectrum mode."
-                        )
-                        return True
-        return False
 
     def delete_abnormal_files(self) -> None:
         """Delete all files with abnormal durations in the dataset, and rewrite the timestamps.csv file to reflect the changes.
