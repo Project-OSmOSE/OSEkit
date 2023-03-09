@@ -58,13 +58,13 @@ class Spectrogram(Dataset):
         analysis_params : `dict`, optional, keyword-only
             If `analysis/analysis_sheet.csv` does not exist, the analysis parameters can be submitted in the form of a dict,
             with keys matching what is expected:
-                - fileScale_nfft : `int`
-                - fileScale_winsize : `int`
-                - fileScale_overlap : `int`
-                - colmapspectros : `str`
+                - nfft : `int`
+                - winsize : `int`
+                - overlap : `int`
+                - spectro_colormap : `str`
                 - nber_zoom_levels : `int`
-                - min_color_val : `int`
-                - max_color_val : `int`
+                - dynamic_min : `int`
+                - dynamic_max : `int`
                 - nberAdjustSpectros : `int`
                 - max_time_display_spectro : `int`
                 - zscore_duration : `float` or `str`
