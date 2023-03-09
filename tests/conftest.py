@@ -4,6 +4,7 @@ import numpy as np
 import soundfile as sf
 import shutil
 import csv
+from OSmOSE.config import OSMOSE_PATH
 
 
 def capture_csv(monkeypatch):
@@ -13,14 +14,14 @@ def capture_csv(monkeypatch):
 @pytest.fixture
 def input_dataset(tmp_path: Path):
     main_dir = tmp_path.joinpath("sample_dataset")
-    main_audio_dir = main_dir.joinpath("raw", "audio")
+    main_audio_dir = main_dir.joinpath(OSMOSE_PATH.raw_audio)
     orig_audio_dir = main_audio_dir.joinpath("original")
-    process_dir = main_dir.joinpath("processed", "spectrogram")
+    process_dir = main_dir.joinpath(OSMOSE_PATH.spectrogram)
 
     folders_to_create = [main_dir, main_audio_dir, orig_audio_dir, process_dir]
 
     for folder in folders_to_create:
-        folder.mkdir()
+        folder.mkdir(parents=True)
 
     rate = 44100  # samples per second
     duration = 3
@@ -71,7 +72,7 @@ def input_dir(tmp_path):
 @pytest.fixture
 def output_dir(tmp_path: Path):
     output_dir = tmp_path.joinpath("output")
-    if output_dir.is_dir:
+    if output_dir.is_dir():
         shutil.rmtree(output_dir)
     output_dir.mkdir()
     yield output_dir

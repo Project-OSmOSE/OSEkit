@@ -18,6 +18,7 @@ except ModuleNotFoundError:
 
 import soundfile as sf
 import numpy as np
+from OSmOSE.config import OSMOSE_PATH
 
 
 def display_folder_storage_infos(dir_path: str) -> None:
@@ -45,7 +46,7 @@ def list_not_built_datasets(datasets_folder_path: str) -> None:
 
     for dataset_directory in dataset_list:
         if ds_folder.joinpath(
-            dataset_directory, _OSMOSE_PATH.raw_audio, "original"
+            dataset_directory, OSMOSE_PATH.raw_audio, "original"
         ).exists():
             list_not_built_datasets.append(dataset_directory)
 

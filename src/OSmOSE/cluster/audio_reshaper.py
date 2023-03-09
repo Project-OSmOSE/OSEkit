@@ -153,7 +153,7 @@ def reshape(
     else:
         output_dir_path = Path(output_dir_path)
 
-    output_dir_path.mkdir(mode=770, parents=True, exists_ok=True)
+    output_dir_path.mkdir(mode=770, parents=True, exist_ok=True)
 
     input_timestamp = pd.read_csv(
         input_dir_path.joinpath("timestamp.csv"),
@@ -213,10 +213,8 @@ def reshape(
                     else t * chunk_size + len(output) // sample_rate
                 )
 
-                outfilename = (
-                    output_dir_path.joinpath(
-                        f"reshaped_from_{t * chunk_size}_to_{end_time}_sec.wav"
-                    ),
+                outfilename = output_dir_path.joinpath(
+                    f"reshaped_from_{t * chunk_size}_to_{end_time}_sec.wav"
                 )
 
                 result.append(outfilename.stem)

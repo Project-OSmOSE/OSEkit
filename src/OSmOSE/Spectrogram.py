@@ -18,6 +18,7 @@ from OSmOSE.cluster import (
 )  # Not used for now; will be when local execution will be a thing.
 from OSmOSE.Dataset import Dataset
 from OSmOSE.utils import safe_read
+from OSmOSE.config import OSMOSE_PATH
 
 
 class Spectrogram(Dataset):
@@ -66,8 +67,8 @@ class Spectrogram(Dataset):
                 - nber_zoom_levels : `int`
                 - dynamic_min : `int`
                 - dynamic_max : `int`
-                - nberAdjustSpectros : `int`
-                - max_time_display_spectro : `int`
+                - number_adjustment_spectrograms : `int`
+                - spectro_duration : `int`
                 - zscore_duration : `float` or `str`
                 - HPfilter_min_freq : `int`
                 - sensitivity_dB : `int`
@@ -86,7 +87,7 @@ class Spectrogram(Dataset):
             osmose_group_name=osmose_group_name,
         )
 
-        processed_path = Path(self.path, _OSMOSE_PATH.spectrogram)
+        processed_path = self.path.joinpath(OSMOSE_PATH.spectrogram)
         metadata_path = processed_path.joinpath("adjust_metadata.csv")
         if metadata_path.exists():
             self.__analysis_file = True
@@ -129,15 +130,14 @@ class Spectrogram(Dataset):
         self.__dynamic_max: int = (
             analysis_sheet["max_color_val"][0] if analysis_sheet is not None else None
         )
-        self.__nberAdjustSpectros: int = (
-            analysis_sheet["nberAdjustSpectros"][0]
+        self.__number_adjustment_spectrograms: int = (
+            analysis_sheet["number_adjustment_spectrograms"][0]
             if analysis_sheet is not None
             else None
         )
-        self.__maxtime_display_spectro: int = (
-            analysis_sheet["max_time_display_spectro"][0]
-            if analysis_sheet is not None
-            and "max_time_display_spectro" in analysis_sheet
+        self.__spectro_duration: int = (
+            analysis_sheet["spectro_duration"][0]
+            if analysis_sheet is not None and "spectro_duration" in analysis_sheet
             else -1
         )
 
@@ -253,11 +253,11 @@ class Spectrogram(Dataset):
         self.__spectro_colormap = value
 
     @property
-    def Zoom_levels(self):
+    def zoom_levels(self):
         return self.__nber_zoom_levels
 
-    @Zoom_levels.setter
-    def Zoom_levels(self, value):
+    @zoom_levels.setter
+    def zoom_levels(self, value):
         self.__nber_zoom_levels = value
 
     @property
@@ -277,20 +277,20 @@ class Spectrogram(Dataset):
         self.__dynamic_max = value
 
     @property
-    def Number_adjustment_spectrograms(self):
-        return self.__nberAdjustSpectros
+    def number_adjustment_spectrograms(self):
+        return self.__number_adjustment_spectrograms
 
-    @Number_adjustment_spectrograms.setter
-    def Number_adjustment_spectrograms(self, value):
-        self.__nberAdjustSpectros = value
+    @number_adjustment_spectrograms.setter
+    def number_adjustment_spectrograms(self, value):
+        self.__number_adjustment_spectrograms = value
 
     @property
-    def Max_time_display_spectro(self):
-        return self.__maxtime_display_spectro
+    def spectro_duration(self):
+        return self.__spectro_duration
 
-    @Max_time_display_spectro.setter
-    def Max_time_display_spectro(self, value):
-        self.__maxtime_display_spectro = value
+    @spectro_duration.setter
+    def spectro_duration(self, value):
+        self.__spectro_duration = value
 
     @property
     def zscore_duration(self):
@@ -388,11 +388,9 @@ class Spectrogram(Dataset):
         ---------
             adjust : `bool`
                 Whether or not the paths are used to adjust spectrogram parameters."""
-        analysis_path = self.path.joinpath(_OSMOSE_PATH.spectrogram)
-        audio_foldername = (
-            str(self.Max_time_display_spectro) + "_" + str(self.sr_analysis)
-        )
-        self.audio_path = Path(self.path, _OSMOSE_PATH.raw_audio, audio_foldername)
+        processed_path = self.path.joinpath(OSMOSE_PATH.spectrogram)
+        audio_foldername = str(self.spectro_duration) + "_" + str(self.sr_analysis)
+        self.audio_path = self.path.joinpath(OSMOSE_PATH.raw_audio, audio_foldername)
 
         if adjust:
             self.__spectro_foldername = "adjustment_spectros"
@@ -401,14 +399,14 @@ class Spectrogram(Dataset):
                 f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}"
             )
 
-        self.__path_output_spectrogram = analysis_path.joinpath(
+        self.__path_output_spectrogram = processed_path.joinpath(
             audio_foldername, self.__spectro_foldername, "image"
         )
-        self.__path_summstats = analysis_path.joinpath(
+        self.__path_summstats = processed_path.joinpath(
             audio_foldername, "normalization_parameters"
         )
 
-        self.__path_output_spectrogram_matrix = analysis_path.joinpath(
+        self.__path_output_spectrogram_matrix = processed_path.joinpath(
             audio_foldername, self.__spectro_foldername, "matrix"
         )
 
@@ -423,7 +421,7 @@ class Spectrogram(Dataset):
                 )
             )
 
-        tile_duration = self.Max_time_display_spectro / 2 ** (self.Zoom_levels - 1)
+        tile_duration = self.spectro_duration / 2 ** (self.zoom_levels - 1)
 
         data = np.zeros([int(tile_duration * self.sr_analysis), 1])
 
@@ -495,12 +493,10 @@ class Spectrogram(Dataset):
 
         self.__build_path()
 
-        audio_foldername = (
-            str(self.Max_time_display_spectro) + "_" + str(self.sr_analysis)
-        )
+        audio_foldername = str(self.spectro_duration) + "_" + str(self.sr_analysis)
         # Load variables from raw metadata
         metadata = pd.read_csv(
-            self.path.joinpath(_OSMOSE_PATH.raw_audio), "metadata.csv"
+            self.path.joinpath(OSMOSE_PATH.raw_audio), "metadata.csv"
         )
         audio_file_origin_duration = metadata["audio_file_origin_duration"][0]
         sr_origin = metadata["sr_origin"][0]
@@ -509,9 +505,9 @@ class Spectrogram(Dataset):
         input_audio_foldername = (
             str(audio_file_origin_duration) + "_" + str(int(sr_origin))
         )
-        analysis_path = self.path.joinpath(_OSMOSE_PATH.spectrogram)
+        processed_path = self.path.joinpath(OSMOSE_PATH.spectrogram)
         self.path_input_audio_file = self.path.joinpath(
-            _OSMOSE_PATH.raw_audio, input_audio_foldername
+            OSMOSE_PATH.raw_audio, input_audio_foldername
         )
 
         list_wav_withEvent_comp = sorted(self.path_input_audio_file.glob("*wav"))
@@ -522,9 +518,10 @@ class Spectrogram(Dataset):
 
         self.list_wav_to_process = [file.name for file in list_wav_withEvent]
 
-        if _OSMOSE_PATH.processed.joinpath("subset_files.csv").is_file():
+        if self.path.joinpath(OSMOSE_PATH.processed, "subset_files.csv").is_file():
             subset = pd.read_csv(
-                _OSMOSE_PATH.processed.joinpath("subset_files.csv"), header=None
+                self.path.joinpath(OSMOSE_PATH.processed, "subset_files.csv"),
+                header=None,
             )[0].values
             self.list_wav_to_process = list(
                 set(subset).intersection(set(self.list_wav_to_process))
@@ -585,9 +582,9 @@ class Spectrogram(Dataset):
         # Reshape audio files to fit the maximum spectrogram size, whether it is greater or smaller.
         reshape_job_id_list = []
 
-        if self.Max_time_display_spectro != int(audio_file_origin_duration):
+        if self.spectro_duration != int(audio_file_origin_duration):
             # We might reshape the files and create the folder. Note: reshape function might be memory-heavy and deserve a proper qsub job.
-            if self.Max_time_display_spectro > int(
+            if self.spectro_duration > int(
                 audio_file_origin_duration
             ) and reshape_method in ["none", "resample"]:
                 raise ValueError(
@@ -595,14 +592,14 @@ class Spectrogram(Dataset):
                 )
 
             print(
-                f"Automatically reshaping audio files to fit the Maxtime display spectro value. Files will be {self.Max_time_display_spectro} seconds long."
+                f"Automatically reshaping audio files to fit the Maxtime display spectro value. Files will be {self.spectro_duration} seconds long."
             )
 
             if reshape_method == "reshape":
                 # build job, qsub, stuff
                 nb_reshaped_files = (
                     audio_file_origin_duration * audio_file_count
-                ) / self.Max_time_display_spectro
+                ) / self.spectro_duration
                 files_for_one_reshape = audio_file_count / nb_reshaped_files
                 next_offset_beginning = 0
                 offset_end = 0
@@ -637,7 +634,7 @@ class Spectrogram(Dataset):
 
                     jobfile = self.Jb.build_job_file(
                         script_path=Path(reshape.__file__).resolve(),
-                        script_args=f"--input-files {self.path_input_audio_file} --chunk-size {self.Max_time_display_spectro} --ind-min {i_min}\
+                        script_args=f"--input-files {self.path_input_audio_file} --chunk-size {self.spectro_duration} --ind-min {i_min}\
                                      --ind-max {i_max} --output-dir {self.audio_path} --offset-beginning {offset_beginning} --offset-end {offset_end}",
                         jobname="OSmOSE_reshape_py",
                         preset="medium",
@@ -658,7 +655,7 @@ class Spectrogram(Dataset):
                     jobfile = self.Jb.build_job_file(
                         script_path=Path(__file__.parent, "cluster", "reshaper.sh"),
                         script_args=f"-d {self.path} -i {self.path_input_audio_file.name} -t {sr_analysis} \
-                                    -m {i_min} -x {i_max} -o {self.audio_path} -n {self.Max_time_display_spectro} {silence_arg}",
+                                    -m {i_min} -x {i_max} -o {self.audio_path} -n {self.spectro_duration} {silence_arg}",
                         jobname="OSmOSE_reshape_bash",
                         preset="medium",
                     )
@@ -668,7 +665,7 @@ class Spectrogram(Dataset):
                     )
                     reshape_job_id_list.append(job_id)
 
-        metadata["dataset_fileDuration"] = self.Max_time_display_spectro
+        metadata["dataset_fileDuration"] = self.spectro_duration
         metadata["dataset_fs"] = self.sr_analysis
         new_meta_path = self.audio_path.joinpath("metadata.csv")
         metadata.to_csv(new_meta_path)
@@ -690,11 +687,11 @@ class Spectrogram(Dataset):
                 "winsize": self.window_size,
                 "overlap": self.overlap,
                 "spectro_colormap": self.spectro_colormap,
-                "nber_zoom_levels": self.Zoom_levels,
-                "nberAdjustSpectros": self.Number_adjustment_spectrograms,
+                "nber_zoom_levels": self.zoom_levels,
+                "number_adjustment_spectrograms": self.number_adjustment_spectrograms,
                 "dynamic_min": self.dynamic_min,
                 "dynamic_max": self.dynamic_max,
-                "max_time_display_spectro": self.Max_time_display_spectro,
+                "spectro_duration": self.spectro_duration,
                 "folderName_audioFiles": self.audio_path.name,
                 "data_normalization": self.data_normalization,
                 "HPfilter_min_freq": self.HPfilter_min_freq,
@@ -722,7 +719,7 @@ class Spectrogram(Dataset):
             "nfft": self.nfft,
             "window_size": self.window_size,
             "overlap": self.overlap / 100,
-            "zoom_level": 2 ** (self.Zoom_levels - 1),
+            "zoom_level": 2 ** (self.zoom_levels - 1),
         }
         # TODO: readd `, 'cvr_max':self.dynamic_max, 'cvr_min':self.Min_color_value` above when ok with Aplose
         df = pd.DataFrame.from_records([data])
@@ -750,10 +747,7 @@ class Spectrogram(Dataset):
         #! Determination of zscore normalization parameters
         if Zscore and self.data_normalization == "zscore" and Zscore != "original":
             average_over_H = int(
-                round(
-                    pd.to_timedelta(Zscore).total_seconds()
-                    / self.Max_time_display_spectro
-                )
+                round(pd.to_timedelta(Zscore).total_seconds() / self.spectro_duration)
             )
 
             df = pd.DataFrame()
@@ -824,7 +818,7 @@ class Spectrogram(Dataset):
         duration = len(data) / int(sample_rate)
         max_w = 0
 
-        nber_tiles_lowest_zoom_level = 2 ** (self.Zoom_levels - 1)
+        nber_tiles_lowest_zoom_level = 2 ** (self.zoom_levels - 1)
         tile_duration = duration / nber_tiles_lowest_zoom_level
 
         Sxx_2 = np.empty((int(self.nfft / 2) + 1, 1))
@@ -849,18 +843,18 @@ class Spectrogram(Dataset):
         )[np.newaxis, :]
 
         # loop over the zoom levels from the second lowest to the highest one
-        for zoom_level in range(self.Zoom_levels)[::-1]:
+        for zoom_level in range(self.zoom_levels)[::-1]:
             nberspec = Sxx_lowest_level.shape[1] // (2**zoom_level)
 
             # loop over the tiles at each zoom level
             for tile in range(2**zoom_level):
                 Sxx_int = Sxx_lowest_level[:, tile * nberspec : (tile + 1) * nberspec][
-                    :, :: 2 ** (self.Zoom_levels - zoom_level)
+                    :, :: 2 ** (self.zoom_levels - zoom_level)
                 ]
 
                 segment_times_int = segment_times[
                     :, tile * nberspec : (tile + 1) * nberspec
-                ][:, :: 2 ** (self.Zoom_levels - zoom_level)]
+                ][:, :: 2 ** (self.zoom_levels - zoom_level)]
 
                 if self.spectro_normalization == "density":
                     log_spectro = 10 * np.log10(Sxx_int / (1e-12))

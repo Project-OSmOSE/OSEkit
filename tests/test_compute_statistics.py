@@ -7,10 +7,8 @@ from OSmOSE.cluster import compute_stats
 
 def test_output_file_written(input_dir: Path, output_dir: Path):
     output_file = output_dir.joinpath("output.csv")
-
-    compute_stats(
-        input_dir=str(input_dir), output_file=str(output_file), fmin_HighPassFilter=100
-    )
+    print(output_file)
+    compute_stats(input_dir=input_dir, output_file=output_file, fmin_HighPassFilter=100)
 
     assert output_file.exists()
     assert output_file.stat().st_size > 0

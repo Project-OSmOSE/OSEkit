@@ -49,7 +49,7 @@ def test_reshape_errors(input_dir):
 
     assert (
         str(e.value)
-        == "The input files must either be a valid folder path or a list of file path, not /not/a/path."
+        == f"The input files must either be a valid folder path or a list of file path, not {str(Path('/not/a/path'))}."
     )
 
     with pytest.raises(ValueError) as e:
@@ -89,7 +89,7 @@ def input_reshape(input_dir: Path):
     return input_dir
 
 
-def test_reshape_smaller(input_reshape: Path, output_dir):
+def test_reshape_smaller(input_reshape: Path, output_dir: Path):
     reshape(input_files=input_reshape, chunk_size=2, output_dir_path=output_dir)
 
     reshaped_files = sorted(
