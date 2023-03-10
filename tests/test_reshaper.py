@@ -96,7 +96,6 @@ def test_reshape_smaller(input_reshape: Path, output_dir: Path):
         [x for x in Path(output_dir).iterdir() if not str(x).endswith(".csv")],
         key=os.path.getmtime,
     )
-
     assert len(reshaped_files) == 15
     assert sf.info(reshaped_files[0]).duration == 2.0
     assert sf.info(reshaped_files[0]).samplerate == 44100

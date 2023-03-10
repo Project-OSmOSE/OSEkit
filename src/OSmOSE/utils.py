@@ -174,7 +174,7 @@ def read_header(file: str) -> Tuple[int, float, int, int]:
         framesize = channels * sampwidth
         frames = subchunk2size / framesize
 
-        if (size - 36) != subchunk2size:
+        if (size - 72) > subchunk2size:
             print(
                 f"Warning : the size indicated in the header is not the same as the actual file size. This might mean that the file is truncated or otherwise corrupt.\
                 \nSupposed size: {size} bytes \nActual size: {subchunk2size} bytes."

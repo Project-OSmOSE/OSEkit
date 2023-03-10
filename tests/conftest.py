@@ -27,20 +27,20 @@ def input_dataset(tmp_path: Path):
     duration = 3
     rng = np.random.default_rng()
 
-    for i in range(3):
+    for i in range(10):
         data = rng.standard_normal(duration * rate)
         data[data > 1] = 1
         data[data < -1] = -1
-        wav_file = orig_audio_dir / f"test{i}.wav"
+        wav_file = orig_audio_dir.joinpath(f"test-{i}.wav")
         sf.write(wav_file, data, rate, format="WAV", subtype="DOUBLE")
 
         with open(
-            orig_audio_dir.joinpath("timestamp.csv"), "w", newline=""
+            orig_audio_dir.joinpath("timestamp.csv"), "a", newline=""
         ) as timestampf:
             writer = csv.writer(timestampf)
             writer.writerow(
                 [
-                    str(main_dir.joinpath(f"test{i}.wav")),
+                    str(wav_file),
                     f"2022-01-01T12:00:{str(3*i).zfill(2)}.000Z",
                     "UTC",
                 ]
@@ -66,7 +66,6 @@ def input_dir(tmp_path):
     data = rng.standard_normal(duration * rate)
     data[data > 1] = 1
     data[data < -1] = -1
-    print(data.dtype)
     wav_file = input_dir / "test.wav"
     sf.write(wav_file, data, rate, format="WAV", subtype="DOUBLE")
 

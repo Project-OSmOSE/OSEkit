@@ -232,7 +232,7 @@ class Dataset:
 
         path_raw_audio = self._get_original_folder(original_folder)
 
-        path_timestamp_formatted = Path(original_folder, "timestamp.csv")
+        path_timestamp_formatted = path_raw_audio.joinpath("timestamp.csv")
 
         csvFileArray = pd.read_csv(path_timestamp_formatted, header=None)
 
@@ -258,7 +258,7 @@ class Dataset:
             lost_levels = check_n_files(
                 audio_file_list,
                 10,
-                output_folder=self.path.joinpath(
+                output_path=self.path.joinpath(
                     OSMOSE_PATH.raw_audio, "normalized_original"
                 ),
                 auto_normalization=auto_normalization,
@@ -302,8 +302,9 @@ class Dataset:
             # we remove the sign '-' in filenames (because of our qsub_resample.sh)
             if "-" in filename_csv[ind_dt]:
                 cur_filename = filename_csv[ind_dt].replace("-", "_")
-                Path(path_raw_audio, filename_csv[ind_dt]).rename(
-                    path_raw_audio.joinpath(cur_filename)
+                os.renames(
+                    path_raw_audio.joinpath(filename_csv[ind_dt]),
+                    path_raw_audio.joinpath(cur_filename),
                 )
             else:
                 cur_filename = filename_csv[ind_dt]
@@ -311,7 +312,7 @@ class Dataset:
 
         if list_filename_abnormal_duration:
             print(
-                "Please see list of audio files above that canceled your dataset importation (maybe corrupted files with OkB volume ?). You can also find it in the list list_filename_abnormal_duration, and execute following cell to directly delete them. Those filenames have been written in the file ./raw/audio/files_not_loaded.csv"
+                "Please see list of audio files above that canceled your dataset importation (maybe corrupted files with 0kb volume ?). You can also find it in the list list_filename_abnormal_duration, and execute following cell to directly delete them. Those filenames have been written in the file ./raw/audio/files_not_loaded.csv"
             )
 
             with open(path_raw_audio.joinpath("files_not_loaded.csv"), "w") as fp:
@@ -349,11 +350,13 @@ class Dataset:
                 sum(list_duration) / 60,  # miiiiight break smth. We'll see.
                 2,
             ),
-            "lat": self.gps_coordinates[0],
-            "lon": self.gps_coordinates[1],
             "lost_levels_in_normalization": lost_levels,
         }
         df = pd.DataFrame.from_records([data])
+
+        if self.gps_coordinates:
+            df["lat"] = self.gps_coordinates[0]
+            df["lon"] = self.gps_coordinates[1]
 
         df["dataset_sr"] = float(mean(list_samplingRate))
         df["dataset_fileDuration"] = round(mean(list_duration), 2)
@@ -433,14 +436,15 @@ class Dataset:
             # change permission on the dataset
             if force_upload:
                 print("\n Well you have anomalies but you choose to FORCE UPLOAD")
-            print("\n Now setting OSmOSE permissions ; wait a bit ...")
-            gid = grp.getgrnam(owner_group).gr_gid
+            if not skip_perms:
+                print("\n Now setting OSmOSE permissions ; wait a bit ...")
+                gid = grp.getgrnam(owner_group).gr_gid
 
-            os.chown(self.path, -1, gid)
-            os.chmod(self.path, 0o770)
-            for path in self.path.rglob("*"):
-                os.chown(path, -1, gid)
-                os.chmod(path, 0o770)
+                os.chown(self.path, -1, gid)
+                os.chmod(self.path, 0o770)
+                for path in self.path.rglob("*"):
+                    os.chown(path, -1, gid)
+                    os.chmod(path, 0o770)
             print("\n DONE ! your dataset is on OSmOSE platform !")
 
     def delete_abnormal_files(self) -> None:
@@ -477,7 +481,7 @@ class Dataset:
             "\n ALL ABNORMAL FILES REMOVED ! you can now re-run the build() method to finish importing it on OSmOSE platform"
         )
 
-    def _get_original_folder(self, original_folder: str = None):
+    def _get_original_folder(self, original_folder: str = None) -> Path:
         if original_folder:
             return self.path.joinpath(OSMOSE_PATH.raw_audio, original_folder)
         elif self.path.joinpath(OSMOSE_PATH.raw_audio, "original").is_dir():
@@ -486,4 +490,8 @@ class Dataset:
             return self.path.joinpath(
                 OSMOSE_PATH.raw_audio,
                 next(self.path.joinpath(OSMOSE_PATH.raw_audio).iterdir()),
+            )
+        else:
+            raise ValueError(
+                f"No folder has been found in {self.path.joinpath(OSMOSE_PATH.raw_audio)}. Please create the raw audio file folder and try again."
             )
