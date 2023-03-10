@@ -29,8 +29,10 @@ def input_dataset(tmp_path: Path):
 
     for i in range(3):
         data = rng.standard_normal(duration * rate)
+        data[data > 1] = 1
+        data[data < -1] = -1
         wav_file = orig_audio_dir / f"test{i}.wav"
-        sf.write(wav_file, data, rate)
+        sf.write(wav_file, data, rate, format="WAV", subtype="DOUBLE")
 
         with open(
             orig_audio_dir.joinpath("timestamp.csv"), "w", newline=""
@@ -62,9 +64,11 @@ def input_dir(tmp_path):
     rng = np.random.default_rng()
 
     data = rng.standard_normal(duration * rate)
-
+    data[data > 1] = 1
+    data[data < -1] = -1
+    print(data.dtype)
     wav_file = input_dir / "test.wav"
-    sf.write(wav_file, data, rate)
+    sf.write(wav_file, data, rate, format="WAV", subtype="DOUBLE")
 
     yield input_dir
 

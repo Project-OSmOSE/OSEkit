@@ -1,4 +1,4 @@
-from logging import warn
+from warnings import warn
 from pathlib import Path
 from importlib.resources import as_file
 import random
@@ -211,6 +211,8 @@ def safe_read(
     audio_data, sample_rate = sf.read(file_path)
 
     nan_nb = sum(np.isnan(audio_data))
+    if hasattr(nan_nb, "__iter__"):
+        nan_nb = sum(nan_nb)  # Double sum to account for multiple channels
 
     if nan_nb > 0:
         warn(
@@ -268,7 +270,7 @@ def check_n_files(
         bad_files = []
         for audio_file in random.sample(file_list, n):
             data, sr = safe_read(audio_file)
-            if not (np.max(data) < 1.0 and np.min(data) > -1.0):
+            if not (np.max(data) <= 1.0 and np.min(data) >= -1.0):
                 bad_files.append(audio_file)
 
                 if len(bad_files) > threshold:

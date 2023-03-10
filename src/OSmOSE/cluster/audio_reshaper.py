@@ -224,7 +224,9 @@ def reshape(
                 )
                 timestamp += timedelta(seconds=chunk_size)
 
-                sf.write(outfilename, output, sample_rate)
+                sf.write(
+                    outfilename, output, sample_rate, format="WAV", subtype="DOUBLE"
+                )
 
                 if verbose:
                     print(
@@ -310,7 +312,7 @@ def reshape(
         )
         timestamp += timedelta(seconds=chunk_size)
 
-        sf.write(outfilename, output, sample_rate)
+        sf.write(outfilename, output, sample_rate, format="WAV", subtype="DOUBLE")
 
         if verbose:
             print(
@@ -339,7 +341,7 @@ def reshape(
         )
         timestamp += timedelta(seconds=chunk_size)
 
-        sf.write(outfilename, output, sample_rate)
+        sf.write(outfilename, output, sample_rate, format="WAV", subtype="DOUBLE")
 
         print(
             f"{outfilename} written! File is {(len(output)/sample_rate)} seconds long. {(len(previous_audio_data)/sample_rate)} seconds left from slicing."
@@ -371,7 +373,7 @@ def reshape(
             )
             timestamp += timedelta(seconds=len(output))
 
-            sf.write(outfilename, output, sample_rate)
+            sf.write(outfilename, output, sample_rate, format="WAV", subtype="DOUBLE")
 
             print(
                 f"{outfilename} written! File is {(len(output)//sample_rate)} minutes long. {len(previous_audio_data)/sample_rate} minutes left from slicing."
