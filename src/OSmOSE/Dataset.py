@@ -35,6 +35,7 @@ class Dataset:
         *,
         gps_coordinates: Union[str, list, Tuple] = None,
         owner_group: str = None,
+        original_folder: str = None,
     ) -> None:
         """Instanciate the dataset with at least its path.
 
@@ -51,6 +52,9 @@ class Dataset:
             The name of the group using the OsmOSE package. All files created using this dataset will be accessible by the osmose group.
             Will not work on Windows.
 
+        original_folder : `str`, optional, keyword-only
+            The path to the folder containing the original audio files. It can be set right away, passed in the build() function or automatically detected.
+
         Example
         -------
         >>> from pathlib import Path
@@ -63,6 +67,8 @@ class Dataset:
         self.__gps_coordinates = []
         if gps_coordinates is not None:
             self.gps_coordinates = gps_coordinates
+
+        self.__original_folder = original_folder
 
         self.list_abnormal_filenames = []
 
@@ -83,6 +89,10 @@ class Dataset:
     def path(self):
         """str: The Dataset path. It is readonly."""
         return self.__path
+
+    @property
+    def original_folder(self):
+        return self.__original_folder
 
     @property
     def gps_coordinates(
@@ -176,8 +186,8 @@ class Dataset:
     def is_built(self):
         """Checks if self.path/raw/audio contains at least one folder and none called "original"."""
         return (
-            len(self.path.joinpath(OSMOSE_PATH.raw_audio).iterdir()) > 0
-            and not self.path.joinpath(OSMOSE_PATH, "original").exists()
+            len(os.listdir(self.path.joinpath(OSMOSE_PATH.raw_audio))) > 0
+            and not self.path.joinpath(OSMOSE_PATH.raw_audio, "original").exists()
         )
 
     # endregion
@@ -190,7 +200,7 @@ class Dataset:
         bare_check: bool = False,
         auto_normalization: bool = False,
         force_upload: bool = False,
-    ):
+    ) -> Path:
         """
         Set up the architecture of the dataset.
 
@@ -418,7 +428,7 @@ class Dataset:
             )
 
             path_raw_audio = path_raw_audio.rename(new_folder_name)
-
+            self.original_folder = path_raw_audio
             # rename filenames in the subset_files.csv if any to replace -' by '_'
             subset_path = OSMOSE_PATH.processed.joinpath("subset_files.csv")
             if subset_path.is_file():

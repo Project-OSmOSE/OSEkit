@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 from OSmOSE import Spectrogram
 from OSmOSE.config import OSMOSE_PATH
+import soundfile as sf
 
 PARAMS = {
     "nfft": 512,
@@ -27,7 +28,10 @@ PARAMS = {
 
 def test_build_path(input_dataset):
     dataset = Spectrogram(
-        dataset_path=input_dataset["main_dir"], sr_analysis=240, analysis_params=PARAMS
+        dataset_path=input_dataset["main_dir"],
+        sr_analysis=240,
+        analysis_params=PARAMS,
+        local=True,
     )
     dataset.build()
     dataset._Spectrogram__build_path(adjust=True)
@@ -57,3 +61,30 @@ def test_build_path(input_dataset):
             OSMOSE_PATH.spectrogram, "5_240", "512_512_97", "matrix"
         )
     )
+
+
+def test_initialize(input_dataset):
+    dataset = Spectrogram(
+        dataset_path=input_dataset["main_dir"],
+        sr_analysis=240,
+        analysis_params=PARAMS,
+        local=True,
+    )
+
+    dataset.initialize(reshape_method="reshape")
+
+    spectro_paths = [
+        OSMOSE_PATH.spectrogram.joinpath("5_240", "512_512_97", "image"),
+        OSMOSE_PATH.spectrogram.joinpath("5_240", "512_512_97", "matrix"),
+        OSMOSE_PATH.spectrogram.joinpath("5_240", "normalization_parameters"),
+        OSMOSE_PATH.spectrogram.joinpath("5_240", "512_512_97", "metadata.csv"),
+        OSMOSE_PATH.raw_audio.joinpath("5_240"),
+    ]
+
+    for path in spectro_paths:
+        assert path.exists()
+
+    all_audio_files = dataset.audio_path.glob(".wav")
+
+    assert sf.info(next(all_audio_files)).samplerate == 240
+    assert sf.info(next(all_audio_files)).duration == 5

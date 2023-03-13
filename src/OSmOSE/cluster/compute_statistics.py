@@ -12,7 +12,7 @@ def Write_zscore_norma_params(
     *,
     input_dir: str,
     output_file: str,
-    fmin_HighPassFilter: int,
+    HPfilter_min_freq: int,
     batch_ind_min: int = 0,
     batch_ind_max: int = -1
 ):
@@ -30,7 +30,7 @@ def Write_zscore_norma_params(
     output_file: `str`
         The absolute path of the output csv file.
 
-    fmin_HighPassFilter: `int`
+    HPfilter_min_freq: `int`
         The minimum audio frequency under which data will be filtrated. If set to 0, then `sys.float_info.epsilon` will be used.
 
     batch_ind_min: `int`
@@ -53,7 +53,7 @@ def Write_zscore_norma_params(
         bpcoef = signal.butter(
             20,
             np.array(
-                [max(fmin_HighPassFilter, sys.float_info.epsilon), sample_rate / 2 - 1]
+                [max(HPfilter_min_freq, sys.float_info.epsilon), sample_rate / 2 - 1]
             ),
             fs=sample_rate,
             output="sos",
@@ -87,7 +87,7 @@ if __name__ == "__main__":
         help="The csv file where the results will be written.",
     )
     required.add_argument(
-        "--fmin-highpassfilter",
+        "--hpfilter-min-freq",
         "-fmin",
         required=True,
         type=int,
@@ -113,7 +113,7 @@ if __name__ == "__main__":
     Write_zscore_norma_params(
         input_dir=args.input_dir,
         output_file=args.output_file,
-        fmin_HighPassFilter=args.fmin_highpassfilter,
+        HPfilter_min_freq=args.HPfilter_min_freq,
         batch_ind_min=args.batch_ind_min,
         batch_ind_max=args.batch_ind_max,
     )

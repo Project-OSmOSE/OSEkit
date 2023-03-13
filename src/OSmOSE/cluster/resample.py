@@ -7,7 +7,7 @@ def resample(
     *,
     input_dir: str,
     output_dir: str,
-    target_fs: int,
+    target_sr: int,
     batch_ind_min: int = 0,
     batch_ind_max: int = -1,
 ):
@@ -19,7 +19,7 @@ def resample(
     ]
 
     tfm = sox.Transformer()
-    tfm.set_output_format(rate=target_fs)
+    tfm.set_output_format(rate=target_sr)
 
     for audio_file in audio_files_list:
         tfm.build_file(
@@ -27,7 +27,7 @@ def resample(
             output_filepath=Path(output_dir, audio_file.name),
         )
 
-        print(f"{audio_file.name} resampled to {target_fs}!")
+        print(f"{audio_file.name} resampled to {target_sr}!")
 
 
 if __name__ == "__main__":
@@ -48,7 +48,7 @@ if __name__ == "__main__":
         help="The output folder of the resampled files.",
     )
     required.add_argument(
-        "--target-fs", "-fs", required=True, type=int, help="The target samplerate."
+        "--target-sr", "-sr", required=True, type=int, help="The target samplerate."
     )
     parser.add_argument(
         "--ind-min",
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     resample(
         input_dir=args.input_dir,
         output_dir=args.output_dir,
-        target_fs=args.targets_fs,
+        target_sr=args.targets_sr,
         batch_ind_min=args.batch_ind_min,
         batch_ind_max=args.batch_ind_max,
     )

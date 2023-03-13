@@ -1,8 +1,10 @@
+from functools import partial
 import os
 import sys
 from typing import Tuple, Union, Literal
 from math import log10
 from pathlib import Path
+import multiprocessing as mp
 
 import pandas as pd
 import numpy as np
@@ -90,6 +92,8 @@ class Spectrogram(Dataset):
             gps_coordinates=gps_coordinates,
             owner_group=owner_group,
         )
+
+        self.__local = local
 
         processed_path = self.path.joinpath(OSMOSE_PATH.spectrogram)
         metadata_path = processed_path.joinpath("adjust_metadata.csv")
@@ -467,7 +471,8 @@ class Spectrogram(Dataset):
         batch_ind_max: int = -1,
         pad_silence: bool = False,
     ) -> None:
-        """Prepares everything (path, variables, files) for spectrogram generation. This needs to be run only once per dataset.
+        """Prepares everything (path, variables, files) for spectrogram generation. This needs to be run only once per dataset. If the dataset
+        has not yet been build, it is before the rest of the functions are initialized.
 
         Parameters
         ----------
@@ -490,16 +495,16 @@ class Spectrogram(Dataset):
         pad_silence : `bool`, optinoal
             When using the legacy reshaping method, whether there should be a silence padding or not (default is False).
         """
+        if not self.is_built:
+            self.build()
+
         if sr_analysis:
             self.sr_analysis = sr_analysis
 
         self.__build_path()
 
-        audio_foldername = str(self.spectro_duration) + "_" + str(self.sr_analysis)
         # Load variables from raw metadata
-        metadata = pd.read_csv(
-            self.path.joinpath(OSMOSE_PATH.raw_audio), "metadata.csv"
-        )
+        metadata = pd.read_csv(self.__path_input_audio_file, "metadata.csv")
         audio_file_origin_duration = metadata["audio_file_origin_duration"][0]
         sr_origin = metadata["sr_origin"][0]
         audio_file_count = metadata["audio_file_count"][0]
@@ -507,7 +512,7 @@ class Spectrogram(Dataset):
         input_audio_foldername = (
             str(audio_file_origin_duration) + "_" + str(int(sr_origin))
         )
-        processed_path = self.path.joinpath(OSMOSE_PATH.spectrogram)
+
         self.path_input_audio_file = self.path.joinpath(
             OSMOSE_PATH.raw_audio, input_audio_foldername
         )
@@ -533,6 +538,7 @@ class Spectrogram(Dataset):
 
         #! RESAMPLING
         resample_job_id_list = []
+        processes = []
 
         if self.sr_analysis != sr_origin and not os.listdir(self.audio_path):
             for batch in range(self.Batch_number):
@@ -542,16 +548,35 @@ class Spectrogram(Dataset):
                     if batch < self.Batch_number - 1
                     else len(self.list_wav_to_process)
                 )  # If it is the last batch, take all files
-                jobfile = self.Jb.build_job_file(
-                    script_path=Path(resample.__file__).resolve(),
-                    script_args=f"--input-dir {self.path_input_audio_file} --target-fs {self.sr_analysis} --ind-min {i_min} --ind-max {i_max} --output-dir {self.audio_path}",
-                    jobname="OSmOSE_resample",
-                    preset="medium",
-                )
-                # TODO: use importlib.resources
 
-                job_id = self.Jb.submit_job(jobfile)
-                resample_job_id_list.append(job_id)
+                if self.__local:
+                    process = mp.Process(
+                        target=resample,
+                        kwargs={
+                            "input_dir": self.path_input_audio_file,
+                            "output_dir": self.audio_path,
+                            "target_sr": self.sr_analysis,
+                            "batch_ind_min": i_min,
+                            "batch_ind_max": i_max,
+                        },
+                    )
+
+                    process.start()
+                    processes.append(process)
+                else:
+                    jobfile = self.Jb.build_job_file(
+                        script_path=Path(resample.__file__).resolve(),
+                        script_args=f"--input-dir {self.path_input_audio_file} --target-sr {self.sr_analysis} --ind-min {i_min} --ind-max {i_max} --output-dir {self.audio_path}",
+                        jobname="OSmOSE_resample",
+                        preset="medium",
+                    )
+                    # TODO: use importlib.resources
+
+                    job_id = self.Jb.submit_job(jobfile)
+                    resample_job_id_list.append(job_id)
+
+            for process in processes:
+                process.join()
 
         #! ZSCORE NORMALIZATION
         isnorma = any([cc in self.Zscore_duration for cc in ["D", "M", "H", "S", "W"]])
@@ -569,16 +594,38 @@ class Spectrogram(Dataset):
                     if batch < self.Batch_number - 1
                     else len(self.list_wav_to_process)
                 )  # If it is the last batch, take all files
-                jobfile = self.Jb.build_job_file(
-                    script_path=Path(compute_stats.__file__).resolve(),
-                    script_args=f"--input-dir {self.path_input_audio_file} --fmin-highpassfilter {self.HPfilter_min_freq} \
-                                --ind-min {i_min} --ind-max {i_max} --output-file {self.__path_summstats.joinpath('SummaryStats_' + str(i_min) + '.csv')}",
-                    jobname="OSmOSE_get_zscore_params",
-                    preset="low",
-                )
+                if self.__local:
+                    process = mp.Process(
+                        target=compute_stats,
+                        kwargs={
+                            "input_dir": self.path_input_audio_file,
+                            "output_file": self.__path_summstats.joinpath(
+                                "SummaryStats_" + str(i_min) + ".csv"
+                            ),
+                            "target_sr": self.sr_analysis,
+                            "batch_ind_min": i_min,
+                            "batch_ind_max": i_max,
+                        },
+                    )
 
-                job_id = self.Jb.submit_job(jobfile, dependency=resample_job_id_list)
-                norma_job_id_list.append(job_id)
+                    process.start()
+                    processes.append(process)
+                else:
+                    jobfile = self.Jb.build_job_file(
+                        script_path=Path(compute_stats.__file__).resolve(),
+                        script_args=f"--input-dir {self.path_input_audio_file} --hpfilter-min-freq {self.HPfilter_min_freq} \
+                                    --ind-min {i_min} --ind-max {i_max} --output-file {self.__path_summstats.joinpath('SummaryStats_' + str(i_min) + '.csv')}",
+                        jobname="OSmOSE_get_zscore_params",
+                        preset="low",
+                    )
+
+                    job_id = self.Jb.submit_job(
+                        jobfile, dependency=resample_job_id_list
+                    )
+                    norma_job_id_list.append(job_id)
+
+            for process in processes:
+                process.join()
 
         #! RESHAPING
         # Reshape audio files to fit the maximum spectrogram size, whether it is greater or smaller.
@@ -634,16 +681,38 @@ class Spectrogram(Dataset):
                     else:
                         offset_end = 0  # ? ack
 
-                    jobfile = self.Jb.build_job_file(
-                        script_path=Path(reshape.__file__).resolve(),
-                        script_args=f"--input-files {self.path_input_audio_file} --chunk-size {self.spectro_duration} --ind-min {i_min}\
-                                     --ind-max {i_max} --output-dir {self.audio_path} --offset-beginning {offset_beginning} --offset-end {offset_end}",
-                        jobname="OSmOSE_reshape_py",
-                        preset="medium",
-                    )
+                    if self.__local:
+                        process = mp.Process(
+                            target=reshape,
+                            kwargs={
+                                "input_files": self.path_input_audio_file,
+                                "chunk_size": self.spectro_duration,
+                                "output_dir": self.audio_path,
+                                "offset_beginning": offset_beginning,
+                                "offset_end": offset_end,
+                                "batch_ind_min": i_min,
+                                "batch_ind_max": i_max,
+                            },
+                        )
 
-                    job_id = self.Jb.submit_job(jobfile, dependency=norma_job_id_list)
-                    reshape_job_id_list.append(job_id)
+                        process.start()
+                        processes.append(process)
+                    else:
+                        jobfile = self.Jb.build_job_file(
+                            script_path=Path(reshape.__file__).resolve(),
+                            script_args=f"--input-files {self.path_input_audio_file} --chunk-size {self.spectro_duration} --ind-min {i_min}\
+                                        --ind-max {i_max} --output-dir {self.audio_path} --offset-beginning {offset_beginning} --offset-end {offset_end}",
+                            jobname="OSmOSE_reshape_py",
+                            preset="medium",
+                        )
+
+                        job_id = self.Jb.submit_job(
+                            jobfile, dependency=norma_job_id_list
+                        )
+                        reshape_job_id_list.append(job_id)
+
+                for process in processes:
+                    process.join()
 
             elif reshape_method == "resample":
                 silence_arg = "-s" if pad_silence else ""
@@ -1009,3 +1078,15 @@ class Spectrogram(Dataset):
         plt.close()
 
     # endregion
+
+    def process_all_files(self, *, save_matrix: bool = False):
+        """Process all the files in the dataset and generates the spectrograms. It uses the python multiprocessing library
+        to parallelise the computation, so it is less efficient to use this method rather than the job scheduler if run on a cluster.
+        """
+
+        kwargs = {"save_matrix": save_matrix}
+
+        map_process_file = partial(self.process_file, **kwargs)
+
+        with mp.Pool(processes=min(self.Batch_number, mp.cpu_count())) as pool:
+            pool.map(map_process_file, self.list_wav_to_process)
