@@ -79,3 +79,27 @@ def output_dir(tmp_path: Path):
         shutil.rmtree(output_dir)
     output_dir.mkdir()
     yield output_dir
+
+
+@pytest.fixture
+def input_spectrogram(input_dataset):
+    analysis_params = {
+        "nfft": 512,
+        "winsize": 512,
+        "overlap": 97,
+        "spectro_colormap": "viridis",
+        "zoom_levels": 2,
+        "number_adjustment_spectrograms": 2,
+        "dynamic_min": 0,
+        "dynamic_max": 150,
+        "spectro_duration": 5,
+        "data_normalization": "instrument",
+        "HPfilter_min_freq": 0,
+        "sensitivity_dB": -164,
+        "peak_voltage": 2.5,
+        "spectro_normalization": "density",
+        "gain_dB": 14.7,
+        "zscore_duration": "original",
+    }
+
+    yield input_dataset, analysis_params

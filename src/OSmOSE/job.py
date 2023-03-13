@@ -18,7 +18,6 @@ class Job_builder:
             self.__config: NamedTuple = read_config(
                 resources.files("OSmOSE").joinpath(self.__configfile)
             )
-            print(self.__config)
         else:
             self.__configfile = config_file
             self.__config: NamedTuple = read_config(config_file)

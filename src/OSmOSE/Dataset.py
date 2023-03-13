@@ -190,7 +190,7 @@ class Dataset:
         bare_check: bool = False,
         auto_normalization: bool = False,
         force_upload: bool = False,
-    ) -> None:
+    ):
         """
         Set up the architecture of the dataset.
 
@@ -217,6 +217,11 @@ class Dataset:
                 If true, automatically normalize audio files if the data would cause issues downstream. The default is False.
             force_upload: `bool`, optional, keyword_only
                 If true, ignore the file anomalies and build the dataset anyway. The default is False.
+
+        Returns
+        -------
+            dataset: `Dataset`
+                The dataset object.
 
         Example
         -------
@@ -272,7 +277,6 @@ class Dataset:
                 list_interWavInterval.append(diff.total_seconds())
 
             audio_file = audio_file_list[ind_dt]
-
             list_filename.append(audio_file)
 
             try:
@@ -300,14 +304,14 @@ class Dataset:
             timestamp.append(dates_final)
 
             # we remove the sign '-' in filenames (because of our qsub_resample.sh)
-            if "-" in filename_csv[ind_dt]:
-                cur_filename = filename_csv[ind_dt].replace("-", "_")
-                os.renames(
-                    path_raw_audio.joinpath(filename_csv[ind_dt]),
-                    path_raw_audio.joinpath(cur_filename),
+
+            if "-" in audio_file.name:
+                cur_filename = audio_file.name.replace("-", "_")
+                path_raw_audio.joinpath(audio_file.name).rename(
+                    path_raw_audio.joinpath(cur_filename)
                 )
             else:
-                cur_filename = filename_csv[ind_dt]
+                cur_filename = audio_file.name
             filename_rawaudio.append(cur_filename)
 
         if list_filename_abnormal_duration:
@@ -409,7 +413,7 @@ class Dataset:
             )
 
             # change name of the original wav folder
-            new_folder_name = path_raw_audio.joinpath(
+            new_folder_name = path_raw_audio.parent.joinpath(
                 str(int(mean(list_duration))) + "_" + str(int(mean(list_samplingRate)))
             )
 
@@ -446,6 +450,8 @@ class Dataset:
                     os.chown(path, -1, gid)
                     os.chmod(path, 0o770)
             print("\n DONE ! your dataset is on OSmOSE platform !")
+
+        return self
 
     def delete_abnormal_files(self) -> None:
         """Delete all files with abnormal durations in the dataset, and rewrite the timestamps.csv file to reflect the changes.

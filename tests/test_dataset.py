@@ -50,10 +50,12 @@ def test_build(input_dataset):
 
     new_expected_path = dataset.path.joinpath("data", "audio", "3_44100")
 
-    assert not input_dataset["main_dir"].exists()
+    assert not input_dataset["orig_audio_dir"].exists()
     assert new_expected_path.exists()
 
-    assert all(
-        os.listdir(new_expected_path)
-        == ["metadata.csv", "timestamp.csv"] + [f"test_{i}.wav" for i in range(10)]
+    assert sorted(os.listdir(new_expected_path)) == sorted(
+        ["metadata.csv", "timestamp.csv"] + [f"test_{i}.wav" for i in range(10)]
     )
+
+
+# TODO : test with broken files

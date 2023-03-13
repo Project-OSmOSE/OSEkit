@@ -29,10 +29,11 @@ class Spectrogram(Dataset):
         dataset_path: str,
         *,
         sr_analysis: int,
-        coordinates: Union[str, list, tuple] = None,
-        osmose_group_name: str = None,
+        gps_coordinates: Union[str, list, tuple] = None,
+        owner_group: str = None,
         analysis_params: dict = None,
         batch_number: int = 10,
+        local: bool = False,
     ) -> None:
         """Instanciates a spectrogram object.
 
@@ -64,7 +65,7 @@ class Spectrogram(Dataset):
                 - winsize : `int`
                 - overlap : `int`
                 - spectro_colormap : `str`
-                - nber_zoom_levels : `int`
+                - zoom_levels : `int`
                 - dynamic_min : `int`
                 - dynamic_max : `int`
                 - number_adjustment_spectrograms : `int`
@@ -78,13 +79,16 @@ class Spectrogram(Dataset):
                 - gain_dB : `int`
             If additional information is given, it will be ignored. Note that if there is an `analysis/analysis_sheet.csv` file, it will
             always have the priority.
-        batch_number : `int`, optional
+        batch_number : `int`, optional, keyword_only
             The number of batches the dataset files will be split into when submitting parallel jobs (the default is 10).
+        local : `bool`, optional, keyword_only
+            Indicates whether or not the program is run locally. If it is the case, it will not create jobs and will handle the paralelisation
+            alone. The default is False.
         """
         super().__init__(
             dataset_path=dataset_path,
-            coordinates=coordinates,
-            osmose_group_name=osmose_group_name,
+            gps_coordinates=gps_coordinates,
+            owner_group=owner_group,
         )
 
         processed_path = self.path.joinpath(OSMOSE_PATH.spectrogram)
@@ -119,16 +123,14 @@ class Spectrogram(Dataset):
             if analysis_sheet is not None
             else None
         )
-        self.__nber_zoom_levels: int = (
-            analysis_sheet["nber_zoom_levels"][0]
-            if analysis_sheet is not None
-            else None
+        self.__zoom_levels: int = (
+            analysis_sheet["zoom_levels"][0] if analysis_sheet is not None else None
         )
         self.__dynamic_min: int = (
-            analysis_sheet["min_color_val"][0] if analysis_sheet is not None else None
+            analysis_sheet["dynamic_min"][0] if analysis_sheet is not None else None
         )
         self.__dynamic_max: int = (
-            analysis_sheet["max_color_val"][0] if analysis_sheet is not None else None
+            analysis_sheet["dynamic_max"][0] if analysis_sheet is not None else None
         )
         self.__number_adjustment_spectrograms: int = (
             analysis_sheet["number_adjustment_spectrograms"][0]
@@ -254,11 +256,11 @@ class Spectrogram(Dataset):
 
     @property
     def zoom_levels(self):
-        return self.__nber_zoom_levels
+        return self.__zoom_levels
 
     @zoom_levels.setter
     def zoom_levels(self, value):
-        self.__nber_zoom_levels = value
+        self.__zoom_levels = value
 
     @property
     def dynamic_min(self):
@@ -687,7 +689,7 @@ class Spectrogram(Dataset):
                 "winsize": self.window_size,
                 "overlap": self.overlap,
                 "spectro_colormap": self.spectro_colormap,
-                "nber_zoom_levels": self.zoom_levels,
+                "zoom_levels": self.zoom_levels,
                 "number_adjustment_spectrograms": self.number_adjustment_spectrograms,
                 "dynamic_min": self.dynamic_min,
                 "dynamic_max": self.dynamic_max,
@@ -721,7 +723,7 @@ class Spectrogram(Dataset):
             "overlap": self.overlap / 100,
             "zoom_level": 2 ** (self.zoom_levels - 1),
         }
-        # TODO: readd `, 'cvr_max':self.dynamic_max, 'cvr_min':self.Min_color_value` above when ok with Aplose
+        # TODO: readd `, 'cvr_max':self.dynamic_max, 'cvr_min':self.dynamic_min` above when ok with Aplose
         df = pd.DataFrame.from_records([data])
         df.to_csv(filename, index=False)
 
@@ -982,7 +984,7 @@ class Spectrogram(Dataset):
         )
         color_map = plt.cm.get_cmap(self.Colmap)  # .reversed()
         plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
-        plt.clim(vmin=self.Min_color_value, vmax=self.dynamic_max)
+        plt.clim(vmin=self.dynamic_min, vmax=self.dynamic_max)
         # plt.colorbar()
 
         # If generate all
