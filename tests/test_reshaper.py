@@ -188,8 +188,9 @@ def test_reshape_offsets(input_reshape: Path, output_dir):
         chunk_size=6,
         output_dir_path=output_dir,
         offset_beginning=2,
-        offset_end=2,
-        last_file_behavior="pad",
+        offset_end=1,
+        last_file_behavior="truncate",
+        verbose=True,
     )
 
     reshaped_files = sorted(
@@ -214,6 +215,7 @@ def test_reshape_offsets(input_reshape: Path, output_dir):
         input_content_beginning[2 * 44100 :], output_content_beginning[:44100]
     )
 
+    assert len(input_content_end[: 2 * 44100]) == len(output_content_end[-2 * 44100 :])
     assert np.array_equal(
         input_content_end[: 2 * 44100], output_content_end[-2 * 44100 :]
     )

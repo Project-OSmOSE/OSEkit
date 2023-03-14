@@ -11,6 +11,7 @@ def resample(
     batch_ind_min: int = 0,
     batch_ind_max: int = -1,
 ):
+    return
     all_files = sorted(Path(input_dir).glob("*wav"))
 
     # If batch_ind_max is -1, we go to the end of the list.

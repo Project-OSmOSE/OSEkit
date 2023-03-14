@@ -16,9 +16,9 @@ def test_init(input_dataset, capsys):
     assert "This dataset has no GPS coordinates." in captured.out
 
 
-def test_get_original_folder(input_dataset):
+def test_find_original_folder(input_dataset):
     dataset = Dataset(input_dataset["main_dir"])
-    folder = dataset._get_original_folder()
+    folder = dataset._find_original_folder()
 
     assert folder == input_dataset["orig_audio_dir"]
 
@@ -26,7 +26,7 @@ def test_get_original_folder(input_dataset):
         input_dataset["orig_audio_dir"].with_name("unconventional_name")
     )
 
-    folder2 = dataset._get_original_folder()
+    folder2 = dataset._find_original_folder()
 
     assert folder2 == input_dataset["orig_audio_dir"].with_name("unconventional_name")
 

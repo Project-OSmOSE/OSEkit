@@ -1,4 +1,5 @@
 from functools import partial
+import math
 import os
 import sys
 from typing import Tuple, Union, Literal
@@ -216,12 +217,7 @@ class Spectrogram(Dataset):
 
     @nfft.setter
     def nfft(self, value):
-        if not self.__analysis_file:
-            self.__nfft = value
-        else:
-            raise ValueError(
-                "This parameter cannot be changed since it has been initialized using the analysis sheet."
-            )
+        self.__nfft = value
 
     @property
     def window_size(self):
@@ -230,12 +226,7 @@ class Spectrogram(Dataset):
 
     @window_size.setter
     def window_size(self, value):
-        if not self.__analysis_file:
-            self.__winsize = value
-        else:
-            raise ValueError(
-                "This parameter cannot be changed since it has been initialized using the analysis sheet."
-            )
+        self.__winsize = value
 
     @property
     def overlap(self):
@@ -243,12 +234,7 @@ class Spectrogram(Dataset):
 
     @overlap.setter
     def overlap(self, value):
-        if not self.__analysis_file:
-            self.__overlap = value
-        else:
-            raise ValueError(
-                "This parameter cannot be changed since it has been initialized using the analysis sheet."
-            )
+        self.__overlap = value
 
     @property
     def spectro_colormap(self):
@@ -312,12 +298,7 @@ class Spectrogram(Dataset):
 
     @HPfilter_min_freq.setter
     def HPfilter_min_freq(self, value):
-        if not self.__analysis_file:
-            self.__hpfilter_min_freq = value
-        else:
-            raise ValueError(
-                "This parameter cannot be changed since it has been initialized using the analysis sheet."
-            )
+        self.__hpfilter_min_freq = value
 
     @property
     def sensitivity(self):
@@ -326,12 +307,7 @@ class Spectrogram(Dataset):
     @sensitivity.setter
     def sensitivity(self, value):
         """Always assume the sensitivity is given in dB"""
-        if not self.__analysis_file:
-            self.__sensitivity = 10 ** (value / 20) * 1e6
-        else:
-            raise ValueError(
-                "This parameter cannot be changed since it has been initialized using the analysis sheet."
-            )
+        self.__sensitivity = 10 ** (value / 20) * 1e6
 
     @property
     def peak_voltage(self):
@@ -339,12 +315,7 @@ class Spectrogram(Dataset):
 
     @peak_voltage.setter
     def peak_voltage(self, value):
-        if not self.__analysis_file:
-            self.__peak_voltage = value
-        else:
-            raise ValueError(
-                "This parameter cannot be changed since it has been initialized using the analysis sheet."
-            )
+        self.__peak_voltage = value
 
     @property
     def spectro_normalization(self):
@@ -352,12 +323,7 @@ class Spectrogram(Dataset):
 
     @spectro_normalization.setter
     def spectro_normalization(self, value):
-        if not self.__analysis_file:
-            self.__spectro_normalization = value
-        else:
-            raise ValueError(
-                "This parameter cannot be changed since it has been initialized using the analysis sheet."
-            )
+        self.__spectro_normalization = value
 
     @property
     def data_normalization(self):
@@ -365,12 +331,7 @@ class Spectrogram(Dataset):
 
     @data_normalization.setter
     def data_normalization(self, value):
-        if not self.__analysis_file:
-            self.__data_normalization = value
-        else:
-            raise ValueError(
-                "This parameter cannot be changed since it has been initialized using the analysis sheet."
-            )
+        self.__data_normalization = value
 
     @property
     def gain_dB(self):
@@ -378,12 +339,7 @@ class Spectrogram(Dataset):
 
     @gain_dB.setter
     def gain_dB(self, value):
-        if not self.__analysis_file:
-            self.__gain_dB = value
-        else:
-            raise ValueError(
-                "This parameter cannot be changed since it has been initialized using the analysis sheet."
-            )
+        self.__gain_dB = value
 
     # endregion
 
@@ -397,6 +353,7 @@ class Spectrogram(Dataset):
         processed_path = self.path.joinpath(OSMOSE_PATH.spectrogram)
         audio_foldername = str(self.spectro_duration) + "_" + str(self.sr_analysis)
         self.audio_path = self.path.joinpath(OSMOSE_PATH.raw_audio, audio_foldername)
+        self.audio_path.mkdir(mode=770, parents=True, exist_ok=True)
 
         if adjust:
             self.__spectro_foldername = "adjustment_spectros"
@@ -408,12 +365,18 @@ class Spectrogram(Dataset):
         self.__path_output_spectrogram = processed_path.joinpath(
             audio_foldername, self.__spectro_foldername, "image"
         )
+        self.__path_output_spectrogram.mkdir(mode=770, parents=True, exist_ok=True)
+
         self.__path_summstats = processed_path.joinpath(
             audio_foldername, "normalization_parameters"
         )
+        self.__path_summstats.mkdir(mode=770, parents=True, exist_ok=True)
 
         self.__path_output_spectrogram_matrix = processed_path.joinpath(
             audio_foldername, self.__spectro_foldername, "matrix"
+        )
+        self.__path_output_spectrogram_matrix.mkdir(
+            mode=770, parents=True, exist_ok=True
         )
 
     def check_spectro_size(self):
@@ -471,8 +434,8 @@ class Spectrogram(Dataset):
         batch_ind_max: int = -1,
         pad_silence: bool = False,
     ) -> None:
-        """Prepares everything (path, variables, files) for spectrogram generation. This needs to be run only once per dataset. If the dataset
-        has not yet been build, it is before the rest of the functions are initialized.
+        """Prepares everything (path, variables, files) for spectrogram generation. This needs to be run before the spectrograms are generated.
+        If the dataset has not yet been build, it is before the rest of the functions are initialized.
 
         Parameters
         ----------
@@ -503,19 +466,12 @@ class Spectrogram(Dataset):
 
         self.__build_path()
 
+        self.path_input_audio_file = self._get_original_after_build()
         # Load variables from raw metadata
-        metadata = pd.read_csv(self.__path_input_audio_file, "metadata.csv")
+        metadata = pd.read_csv(self.path_input_audio_file.joinpath("metadata.csv"))
         audio_file_origin_duration = metadata["audio_file_origin_duration"][0]
         sr_origin = metadata["sr_origin"][0]
         audio_file_count = metadata["audio_file_count"][0]
-
-        input_audio_foldername = (
-            str(audio_file_origin_duration) + "_" + str(int(sr_origin))
-        )
-
-        self.path_input_audio_file = self.path.joinpath(
-            OSMOSE_PATH.raw_audio, input_audio_foldername
-        )
 
         list_wav_withEvent_comp = sorted(self.path_input_audio_file.glob("*wav"))
 
@@ -579,7 +535,11 @@ class Spectrogram(Dataset):
                 process.join()
 
         #! ZSCORE NORMALIZATION
-        isnorma = any([cc in self.Zscore_duration for cc in ["D", "M", "H", "S", "W"]])
+        isnorma = (
+            any([cc in self.zscore_duration for cc in ["D", "M", "H", "S", "W"]])
+            if self.zscore_duration
+            else False
+        )
 
         norma_job_id_list = []
         if (
@@ -660,26 +620,40 @@ class Spectrogram(Dataset):
                     offset_beginning = next_offset_beginning
                     next_offset_beginning = 0
 
-                    i_min = i_max + 1
+                    i_min = i_max + (1 if not offset_beginning else 0)
                     i_max = (
                         i_min + batch_size
                         if batch < self.Batch_number - 1
                         and i_min + batch_size < len(self.list_wav_to_process)
-                        else len(self.list_wav_to_process)
+                        else len(self.list_wav_to_process) - 1
                     )  # If it is the last batch, take all files
 
                     while (
-                        i_max - i_min + offset_end
+                        i_max
+                        - i_min
+                        - offset_end  # Determines if the offset would require more than one file
                     ) % files_for_one_reshape > 1 and i_max < len(
                         self.list_wav_to_process
                     ):
                         i_max += 1
 
-                    offset_end = (i_max - i_min + offset_end) % files_for_one_reshape
+                    last_file_behavior = (
+                        "pad"
+                        if batch == self.Batch_number - 1
+                        or i_max == len(self.list_wav_to_process) - 1
+                        else "discard"
+                    )
+
+                    offset_end = (
+                        i_max - i_min - offset_end + 1
+                    ) % files_for_one_reshape
                     if offset_end:
-                        next_offset_beginning = audio_file_origin_duration - offset_end
+                        next_offset_beginning = offset_end
                     else:
                         offset_end = 0  # ? ack
+                    print(
+                        i_min, i_max, last_file_behavior, offset_beginning, offset_end
+                    )
 
                     if self.__local:
                         process = mp.Process(
@@ -687,11 +661,16 @@ class Spectrogram(Dataset):
                             kwargs={
                                 "input_files": self.path_input_audio_file,
                                 "chunk_size": self.spectro_duration,
-                                "output_dir": self.audio_path,
-                                "offset_beginning": offset_beginning,
-                                "offset_end": offset_end,
+                                "output_dir_path": self.audio_path,
+                                "offset_beginning": round(
+                                    offset_beginning * audio_file_origin_duration
+                                ),
+                                "offset_end": round(
+                                    offset_end * audio_file_origin_duration
+                                ),
                                 "batch_ind_min": i_min,
                                 "batch_ind_max": i_max,
+                                "last_file_behavior": last_file_behavior,
                             },
                         )
 
@@ -701,7 +680,8 @@ class Spectrogram(Dataset):
                         jobfile = self.Jb.build_job_file(
                             script_path=Path(reshape.__file__).resolve(),
                             script_args=f"--input-files {self.path_input_audio_file} --chunk-size {self.spectro_duration} --ind-min {i_min}\
-                                        --ind-max {i_max} --output-dir {self.audio_path} --offset-beginning {offset_beginning} --offset-end {offset_end}",
+                                        --ind-max {i_max} --output-dir {self.audio_path} --offset-beginning {offset_beginning} --offset-end {offset_end}\
+                                        --last-file-behavior {last_file_behavior}",
                             jobname="OSmOSE_reshape_py",
                             preset="medium",
                         )
@@ -813,7 +793,7 @@ class Spectrogram(Dataset):
         """
         self.__build_path(adjust)
         self.save_matrix = save_matrix
-        Zscore = self.Zscore_duration if not adjust else "original"
+        Zscore = self.zscore_duration if not adjust else "original"
 
         #! Determination of zscore normalization parameters
         if Zscore and self.data_normalization == "zscore" and Zscore != "original":
@@ -880,10 +860,10 @@ class Spectrogram(Dataset):
             The sample rate of the audio data.
         output_file : `str`
             The name of the output spectrogram."""
-        if self.data_normalization == "zscore" and self.Zscore_duration:
-            if (len(self.Zscore_duration) > 0) and (self.Zscore_duration != "original"):
+        if self.data_normalization == "zscore" and self.zscore_duration:
+            if (len(self.zscore_duration) > 0) and (self.zscore_duration != "original"):
                 data = (data - self.__zscore_mean) / self.__zscore_std
-            elif self.Zscore_duration == "original":
+            elif self.zscore_duration == "original":
                 data = (data - np.mean(data)) / np.std(data)
 
         duration = len(data) / int(sample_rate)

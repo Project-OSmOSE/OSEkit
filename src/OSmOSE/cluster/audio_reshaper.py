@@ -114,6 +114,18 @@ def reshape(
     --------
         The list of the path of newly created audio files.
     """
+    print(
+        input_files,
+        chunk_size,
+        output_dir_path,
+        batch_ind_min,
+        batch_ind_max,
+        max_delta_interval,
+        last_file_behavior,
+        offset_beginning,
+        offset_end,
+    )
+    verbose = True
     files = []
 
     #! Validation
@@ -140,8 +152,10 @@ def reshape(
             f"The timestamp.csv file must be present in the directory {input_dir_path} and correspond to the audio files in the same location."
         )
 
-    if overwrite and output_dir_path:
+    if overwrite and output_dir_path and not list(output_dir_path.glob("flag_*")):
         shutil.rmtree(output_dir_path)
+    flag = output_dir_path.joinpath(f"flag_{batch_ind_max}")
+    open(flag, "w").close()
 
     if not output_dir_path:
         print("No output directory provided. Will use the input directory instead.")
@@ -165,7 +179,7 @@ def reshape(
     if not files:
         files = list(
             input_timestamp["filename"][
-                batch_ind_min : batch_ind_max
+                batch_ind_min : batch_ind_max + 1
                 if batch_ind_max > 0
                 else input_timestamp.size
             ]
@@ -177,27 +191,30 @@ def reshape(
     result = []
     timestamp_list = []
     timestamp: datetime = None
-    previous_audio_data = np.empty(1)
+    previous_audio_data = np.empty(0)
     sample_rate = 0
     i = 0
-    t = 0
+    t = batch_ind_min
     proceed = force_reshape  # Default is False
 
     while i < len(files):
         audio_data, sample_rate = sf.read(input_dir_path.joinpath(files[i]))
+
         if i == 0:
             timestamp = input_timestamp[input_timestamp["filename"] == files[i]][
                 "timestamp"
             ].values[0]
             timestamp = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%fZ")
-            audio_data = audio_data[offset_beginning * sample_rate :]
-        elif i == len(files) - 1 and offset_end != 0:
-            audio_data = audio_data[: len(audio_data) - (offset_end * sample_rate)]
+            audio_data = audio_data[int(offset_beginning * sample_rate) :]
+        elif (
+            i == len(files) - 1 and offset_end != 0 and not last_file_behavior == "pad"
+        ):
+            audio_data = audio_data[: int(len(audio_data) - (offset_end * sample_rate))]
 
         # Need to check if size > 1 because numpy arrays are never empty urgh
         if previous_audio_data.size > 1:
             audio_data = np.concatenate((previous_audio_data, audio_data))
-            previous_audio_data = np.empty(1)
+            previous_audio_data = np.empty(0)
 
         #! AUDIO DURATION > CHUNK SIZE
         # While the duration of the audio is longer than the target chunk, we segment it into small files
@@ -217,7 +234,7 @@ def reshape(
                     f"reshaped_from_{t * chunk_size}_to_{end_time}_sec.wav"
                 )
 
-                result.append(outfilename.stem)
+                result.append(outfilename.name)
 
                 timestamp_list.append(
                     datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
@@ -244,7 +261,7 @@ def reshape(
         # Else if audio_data is already in the desired duration, output it
         if len(audio_data) == chunk_size * sample_rate:
             output = audio_data
-            previous_audio_data = np.empty(1)
+            previous_audio_data = np.empty(0)
 
         #! AUDIO DURATION < CHUNK_SIZE
         # Else it is shorter, then while the duration is shorter than the desired chunk,
@@ -252,9 +269,11 @@ def reshape(
         elif len(audio_data) < chunk_size * sample_rate:
             # If it is the last file but the audio_data is shorter than the desired chunk, then fill the remaining space with silence.
             if i == len(files) - 1:
+                previous_audio_data = audio_data
+                break
                 fill = np.zeros((chunk_size * sample_rate) - len(audio_data))
-                audio_data = np.concatenate((audio_data, fill))
-                previous_audio_data = np.empty(1)
+                output = np.concatenate((audio_data, fill))
+                previous_audio_data = np.empty(0)
             else:
                 # Check if the timestamp_list can safely be merged
                 if not (
@@ -305,7 +324,7 @@ def reshape(
         outfilename = output_dir_path.joinpath(
             f"reshaped_from_{t * chunk_size}_to_{end_time}_sec.wav"
         )
-        result.append(outfilename.stem)
+        result.append(outfilename.name)
 
         timestamp_list.append(
             datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
@@ -334,7 +353,7 @@ def reshape(
         outfilename = output_dir_path.joinpath(
             f"reshaped_from_{t * chunk_size}_to_{end_time}_sec.wav"
         )
-        result.append(outfilename.stem)
+        result.append(outfilename.name)
 
         timestamp_list.append(
             datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
@@ -343,9 +362,10 @@ def reshape(
 
         sf.write(outfilename, output, sample_rate, format="WAV", subtype="DOUBLE")
 
-        print(
-            f"{outfilename} written! File is {(len(output)/sample_rate)} seconds long. {(len(previous_audio_data)/sample_rate)} seconds left from slicing."
-        )
+        if verbose:
+            print(
+                f"{outfilename} written! File is {(len(output)/sample_rate)} seconds long. {(len(previous_audio_data)/sample_rate)} seconds left from slicing."
+            )
         i += 1
         t += 1
 
@@ -354,19 +374,21 @@ def reshape(
         match last_file_behavior:
             case "truncate":
                 output = previous_audio_data
+                previous_audio_data = np.empty(0)
             case "pad":
                 fill = np.zeros((chunk_size * sample_rate) - len(previous_audio_data))
                 output = np.concatenate((previous_audio_data, fill))
+                previous_audio_data = np.empty(0)
             case "discard":
                 skip_last = True
 
         if not skip_last:
-            end_time = t * len(output) // sample_rate
+            end_time = t * chunk_size + len(output) // sample_rate
 
             outfilename = output_dir_path.joinpath(
                 f"reshaped_from_{t * chunk_size}_to_{end_time}_sec.wav"
             )
-            result.append(outfilename.stem)
+            result.append(outfilename.name)
 
             timestamp_list.append(
                 datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
@@ -375,14 +397,29 @@ def reshape(
 
             sf.write(outfilename, output, sample_rate, format="WAV", subtype="DOUBLE")
 
-            print(
-                f"{outfilename} written! File is {(len(output)//sample_rate)} minutes long. {len(previous_audio_data)/sample_rate} minutes left from slicing."
-            )
+            if verbose:
+                print(
+                    f"{outfilename} written! File is {(len(output)/sample_rate)} seconds long. {len(previous_audio_data)/sample_rate} seconds left from slicing."
+                )
 
-    input_timestamp = pd.DataFrame({"filename": result, "timestamp": timestamp_list})
+    timestamp_csv_name = f"timestamp_{batch_ind_max}.csv"
+
+    flag.unlink()
+
+    if not list(output_dir_path.glob("flag_")):
+        for path_csv in output_dir_path.glob("timestamp*.csv"):
+            tmp_timestamp = pd.read_csv(path_csv, header=None)
+            result += list(tmp_timestamp[0].values)
+            timestamp_list += list(tmp_timestamp[1].values)
+            path_csv.unlink()
+        timestamp_csv_name = "timestamp.csv"
+
+    input_timestamp = pd.DataFrame(
+        {"filename": result, "timestamp": timestamp_list, "timezone": "UTC"}
+    )
     input_timestamp.sort_values(by=["timestamp"], inplace=True)
     input_timestamp.to_csv(
-        output_dir_path.joinpath("timestamp.csv"),
+        output_dir_path.joinpath(timestamp_csv_name),
         index=False,
         na_rep="NaN",
         header=None,
@@ -462,6 +499,11 @@ if __name__ == "__main__":
         default=False,
         help="Ignore all warnings and non-fatal errors while reshaping.",
     )
+    parser.add_argument(
+        "--last-file-behavior",
+        default="pad",
+        help="Tells the program what to do with the remaining data that are shorter than the chunk size. Possible arguments are pad (the default), which pads with silence until the last file has the same length as the others; truncate to create a shorter file with only the leftover data; discard to not do anything with the last data and throw it away.",
+    )
 
     args = parser.parse_args()
 
@@ -480,6 +522,7 @@ if __name__ == "__main__":
         offset_beginning=args.offset_beginning,
         offset_end=args.offset_end,
         max_delta_interval=args.max_delta_interval,
+        last_file_behavior=args.last_file_behavior,
         verbose=args.verbose,
         overwrite=args.overwrite,
         force_reshape=args.force,

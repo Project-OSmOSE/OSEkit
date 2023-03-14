@@ -245,7 +245,7 @@ class Dataset:
         if owner_group is None:
             owner_group = self.owner_group
 
-        path_raw_audio = self._get_original_folder(original_folder)
+        path_raw_audio = self._find_original_folder(original_folder)
 
         path_timestamp_formatted = path_raw_audio.joinpath("timestamp.csv")
 
@@ -428,7 +428,7 @@ class Dataset:
             )
 
             path_raw_audio = path_raw_audio.rename(new_folder_name)
-            self.original_folder = path_raw_audio
+            self.__original_folder = path_raw_audio
             # rename filenames in the subset_files.csv if any to replace -' by '_'
             subset_path = OSMOSE_PATH.processed.joinpath("subset_files.csv")
             if subset_path.is_file():
@@ -440,12 +440,12 @@ class Dataset:
                 )
 
             # save lists of metadata in metadata_file
-            f = open(path_raw_audio.joinpath("metadata.csv"), "w")
-            for i in range(len(list_duration)):
-                f.write(
-                    f"{filename_rawaudio[i]} {list_duration[i]} {list_samplingRate[i]}\n"
-                )
-            f.close()
+            # f = open(path_raw_audio.joinpath("metadata.csv"), "w")
+            # for i in range(len(list_duration)):
+            #     f.write(
+            #         f"{filename_rawaudio[i]} {list_duration[i]} {list_samplingRate[i]}\n"
+            #     )
+            # f.close()
 
             # change permission on the dataset
             if force_upload:
@@ -497,7 +497,7 @@ class Dataset:
             "\n ALL ABNORMAL FILES REMOVED ! you can now re-run the build() method to finish importing it on OSmOSE platform"
         )
 
-    def _get_original_folder(self, original_folder: str = None) -> Path:
+    def _find_original_folder(self, original_folder: str = None) -> Path:
         if original_folder:
             return self.path.joinpath(OSMOSE_PATH.raw_audio, original_folder)
         elif self.path.joinpath(OSMOSE_PATH.raw_audio, "original").is_dir():
@@ -511,3 +511,18 @@ class Dataset:
             raise ValueError(
                 f"No folder has been found in {self.path.joinpath(OSMOSE_PATH.raw_audio)}. Please create the raw audio file folder and try again."
             )
+
+    def _get_original_after_build(self):
+        # First, grab any metadata.csv
+        metadata = pd.read_csv(
+            next(self.path.joinpath(OSMOSE_PATH.raw_audio).iterdir())
+            .resolve()
+            .joinpath("metadata.csv")
+        )
+        # Catch the parameters inscribed in the original folder name
+        audio_file_origin_duration = int(metadata["audio_file_origin_duration"][0])
+        sr_origin = int(metadata["sr_origin"][0])
+
+        return self.path.joinpath(
+            OSMOSE_PATH.raw_audio, f"{audio_file_origin_duration}_{sr_origin}"
+        )
