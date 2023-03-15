@@ -629,12 +629,17 @@ class Spectrogram(Dataset):
                     )  # If it is the last batch, take all files
 
                     while (
-                        i_max
-                        - i_min
-                        - offset_end  # Determines if the offset would require more than one file
-                    ) % files_for_one_reshape > 1 and i_max < len(
-                        self.list_wav_to_process
-                    ):
+                        (
+                            (i_max - i_min + 1) * audio_file_origin_duration
+                            - offset_end
+                            - offset_beginning  # Determines if the offset would require more than one file
+                        )
+                        % self.spectro_duration
+                        > audio_file_origin_duration
+                        and i_max < len(self.list_wav_to_process)
+                    ) or (
+                        i_max - i_min + offset_end - offset_beginning + 1
+                    ) * audio_file_origin_duration < self.spectro_duration:
                         i_max += 1
 
                     last_file_behavior = (
@@ -645,10 +650,11 @@ class Spectrogram(Dataset):
                     )
 
                     offset_end = (
-                        i_max - i_min - offset_end + 1
-                    ) % files_for_one_reshape
+                        (i_max - i_min + 1) * audio_file_origin_duration
+                        - offset_beginning
+                    ) % self.spectro_duration
                     if offset_end:
-                        next_offset_beginning = offset_end
+                        next_offset_beginning = audio_file_origin_duration - offset_end
                     else:
                         offset_end = 0  # ? ack
                     print(
@@ -662,12 +668,8 @@ class Spectrogram(Dataset):
                                 "input_files": self.path_input_audio_file,
                                 "chunk_size": self.spectro_duration,
                                 "output_dir_path": self.audio_path,
-                                "offset_beginning": round(
-                                    offset_beginning * audio_file_origin_duration
-                                ),
-                                "offset_end": round(
-                                    offset_end * audio_file_origin_duration
-                                ),
+                                "offset_beginning": int(offset_beginning),
+                                "offset_end": int(offset_end),
                                 "batch_ind_min": i_min,
                                 "batch_ind_max": i_max,
                                 "last_file_behavior": last_file_behavior,

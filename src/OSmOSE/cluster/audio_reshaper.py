@@ -1,6 +1,8 @@
+import random
 import sys
 import shutil
 from datetime import datetime, timedelta
+from time import sleep
 from typing import List, Union, Literal
 from argparse import ArgumentParser
 from pathlib import Path
@@ -154,6 +156,7 @@ def reshape(
 
     if overwrite and output_dir_path and not list(output_dir_path.glob("flag_*")):
         shutil.rmtree(output_dir_path)
+
     flag = output_dir_path.joinpath(f"flag_{batch_ind_max}")
     open(flag, "w").close()
 
@@ -301,6 +304,10 @@ def reshape(
                         sys.exit(1)
 
                 while len(audio_data) < chunk_size * sample_rate and i + 1 < len(files):
+                    print(
+                        "Grabbing next file, current audio data:",
+                        len(audio_data) / sample_rate,
+                    )
                     nextdata, next_sample_rate = sf.read(
                         input_dir_path.joinpath(files[i + 1])
                     )
@@ -312,6 +319,7 @@ def reshape(
                         )
                     )
                     i += 1
+                    print("New audio data len:", len(audio_data) / sample_rate)
                 output = audio_data
                 previous_audio_data = nextdata[rest:]
 
@@ -404,16 +412,25 @@ def reshape(
 
     timestamp_csv_name = f"timestamp_{batch_ind_max}.csv"
 
-    flag.unlink()
+    sleep(random.randint(1, 5))
 
-    if not list(output_dir_path.glob("flag_")):
+    with open(flag, "a") as f:
+        f.write("finished!")
+
+    if all(
+        [
+            flag_file.stat().st_size > 1
+            for flag_file in list(output_dir_path.glob("flag_*"))
+        ]
+    ):
+        print(list(output_dir_path.glob("flag_*")))
+        print("Now concatenating timestamp.csv")
         for path_csv in output_dir_path.glob("timestamp*.csv"):
             tmp_timestamp = pd.read_csv(path_csv, header=None)
             result += list(tmp_timestamp[0].values)
             timestamp_list += list(tmp_timestamp[1].values)
             path_csv.unlink()
         timestamp_csv_name = "timestamp.csv"
-
     input_timestamp = pd.DataFrame(
         {"filename": result, "timestamp": timestamp_list, "timezone": "UTC"}
     )

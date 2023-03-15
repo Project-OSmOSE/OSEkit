@@ -96,7 +96,7 @@ def test_initialize(input_dataset):
 
     print(all_audio_files)
 
-    assert len(all_audio_files) == 7
+    assert len(all_audio_files) == 6
     for file in all_audio_files:
         if not platform.system() == "Windows":
             assert sf.info(file).samplerate == 240
@@ -111,7 +111,7 @@ def test_initialize(input_dataset):
                             OSMOSE_PATH.raw_audio, "3_44100", f"test_{i}.wav"
                         )
                     )[0]
-                    for i in range(9)
+                    for i in range(10)
                 ]
             )
         )
@@ -122,7 +122,10 @@ def test_initialize(input_dataset):
     filename_csv = csvFileArray[0].values
 
     full_output = np.concatenate(
-        ([sf.read(dataset.audio_path.joinpath(file))[0] for file in filename_csv[:-1]])
+        tuple([sf.read(dataset.audio_path.joinpath(file))[0] for file in filename_csv])
     )
 
-    assert np.allclose(full_input == full_output)
+    print(full_input.size / 44100)
+    print(full_output.size / 44100)
+
+    assert np.allclose(full_input, full_output)

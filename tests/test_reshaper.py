@@ -93,7 +93,7 @@ def test_reshape_smaller(input_reshape: Path, output_dir: Path):
     reshape(input_files=input_reshape, chunk_size=2, output_dir_path=output_dir)
 
     reshaped_files = sorted(
-        [x for x in Path(output_dir).iterdir() if not str(x).endswith(".csv")],
+        [x for x in Path(output_dir).iterdir() if str(x).endswith(".wav")],
         key=os.path.getmtime,
     )
     assert len(reshaped_files) == 15
@@ -119,7 +119,7 @@ def test_reshape_larger(input_reshape: Path, output_dir):
     reshape(input_files=input_reshape, chunk_size=5, output_dir_path=output_dir)
 
     reshaped_files = sorted(
-        [x for x in Path(output_dir).iterdir() if not str(x).endswith(".csv")],
+        [x for x in Path(output_dir).iterdir() if str(x).endswith(".wav")],
         key=os.path.getmtime,
     )
     assert len(reshaped_files) == 6
@@ -136,7 +136,7 @@ def test_reshape_pad_last(input_reshape: Path, output_dir):
     )
 
     reshaped_files = sorted(
-        [x for x in Path(output_dir).iterdir() if not str(x).endswith(".csv")],
+        [x for x in Path(output_dir).iterdir() if str(x).endswith(".wav")],
         key=os.path.getmtime,
     )
     assert len(reshaped_files) == 8
@@ -154,7 +154,7 @@ def test_reshape_truncate_last(input_reshape: Path, output_dir):
     )
 
     reshaped_files = sorted(
-        [x for x in Path(output_dir).iterdir() if not str(x).endswith(".csv")],
+        [x for x in Path(output_dir).iterdir() if str(x).endswith(".wav")],
         key=os.path.getmtime,
     )
 
@@ -173,7 +173,7 @@ def test_reshape_discard_last(input_reshape: Path, output_dir):
     )
 
     reshaped_files = sorted(
-        [x for x in Path(output_dir).iterdir() if not str(x).endswith(".csv")],
+        [x for x in Path(output_dir).iterdir() if str(x).endswith(".wav")],
         key=os.path.getmtime,
     )
     assert len(reshaped_files) == 7
@@ -194,7 +194,7 @@ def test_reshape_offsets(input_reshape: Path, output_dir):
     )
 
     reshaped_files = sorted(
-        [x for x in Path(output_dir).iterdir() if not str(x).endswith(".csv")],
+        [x for x in Path(output_dir).iterdir() if str(x).endswith(".wav")],
         key=os.path.getmtime,
     )
 
