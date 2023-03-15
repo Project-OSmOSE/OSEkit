@@ -601,7 +601,7 @@ class Spectrogram(Dataset):
                 )
 
             print(
-                f"Automatically reshaping audio files to fit the Maxtime display spectro value. Files will be {self.spectro_duration} seconds long."
+                f"Automatically reshaping audio files to fit the spectro duration value. Files will be {self.spectro_duration} seconds long."
             )
 
             if reshape_method == "reshape":
@@ -657,9 +657,6 @@ class Spectrogram(Dataset):
                         next_offset_beginning = audio_file_origin_duration - offset_end
                     else:
                         offset_end = 0  # ? ack
-                    print(
-                        i_min, i_max, last_file_behavior, offset_beginning, offset_end
-                    )
 
                     if self.__local:
                         process = mp.Process(

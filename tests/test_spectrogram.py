@@ -65,7 +65,7 @@ def test_build_path(input_dataset):
     )
 
 
-def test_initialize(input_dataset):
+def test_initialize_5s(input_dataset):
     dataset = Spectrogram(
         dataset_path=input_dataset["main_dir"],
         sr_analysis=240,
@@ -94,8 +94,6 @@ def test_initialize(input_dataset):
 
     all_audio_files = list(dataset.audio_path.glob("*wav"))
 
-    print(all_audio_files)
-
     assert len(all_audio_files) == 6
     for file in all_audio_files:
         if not platform.system() == "Windows":
@@ -118,14 +116,73 @@ def test_initialize(input_dataset):
     )
 
     csvFileArray = pd.read_csv(timestamp_path, header=None)
-    print(csvFileArray)
+
     filename_csv = csvFileArray[0].values
 
     full_output = np.concatenate(
         tuple([sf.read(dataset.audio_path.joinpath(file))[0] for file in filename_csv])
     )
 
-    print(full_input.size / 44100)
-    print(full_output.size / 44100)
+    assert np.allclose(full_input, full_output)
+
+
+def test_initialize_2s(input_dataset):
+    PARAMS["spectro_duration"] = 2
+    dataset = Spectrogram(
+        dataset_path=input_dataset["main_dir"],
+        sr_analysis=240,
+        analysis_params=PARAMS,
+        local=True,
+    )
+
+    dataset.initialize(reshape_method="reshape")
+
+    timestamp_path = dataset.path.joinpath(
+        OSMOSE_PATH.raw_audio.joinpath("2_240", "timestamp.csv")
+    )
+
+    spectro_paths = [
+        OSMOSE_PATH.spectrogram.joinpath("2_240", "512_512_97", "image"),
+        OSMOSE_PATH.spectrogram.joinpath("2_240", "512_512_97", "matrix"),
+        OSMOSE_PATH.spectrogram.joinpath("2_240", "normalization_parameters"),
+        OSMOSE_PATH.spectrogram.joinpath("2_240", "512_512_97", "metadata.csv"),
+        OSMOSE_PATH.raw_audio.joinpath("2_240"),
+        OSMOSE_PATH.raw_audio.joinpath("2_240", "metadata.csv"),
+        timestamp_path,
+    ]
+
+    for path in spectro_paths:
+        assert dataset.path.joinpath(path).resolve().exists()
+
+    all_audio_files = list(dataset.audio_path.glob("*wav"))
+
+    assert len(all_audio_files) == 15
+    for file in all_audio_files:
+        if not platform.system() == "Windows":
+            assert sf.info(file).samplerate == 240
+        assert sf.info(file).duration == 2.0
+
+    full_input = np.concatenate(
+        (
+            tuple(
+                [
+                    sf.read(
+                        dataset.path.joinpath(
+                            OSMOSE_PATH.raw_audio, "3_44100", f"test_{i}.wav"
+                        )
+                    )[0]
+                    for i in range(10)
+                ]
+            )
+        )
+    )
+
+    csvFileArray = pd.read_csv(timestamp_path, header=None)
+
+    filename_csv = csvFileArray[0].values
+
+    full_output = np.concatenate(
+        tuple([sf.read(dataset.audio_path.joinpath(file))[0] for file in filename_csv])
+    )
 
     assert np.allclose(full_input, full_output)

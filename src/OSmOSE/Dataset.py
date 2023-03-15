@@ -184,7 +184,7 @@ class Dataset:
 
     @property
     def is_built(self):
-        """Checks if self.path/raw/audio contains at least one folder and none called "original"."""
+        """Checks if self.path/data/audio contains at least one folder and none called "original"."""
         return (
             len(os.listdir(self.path.joinpath(OSMOSE_PATH.raw_audio))) > 0
             and not self.path.joinpath(OSMOSE_PATH.raw_audio, "original").exists()
@@ -514,11 +514,18 @@ class Dataset:
 
     def _get_original_after_build(self):
         # First, grab any metadata.csv
-        metadata = pd.read_csv(
-            next(self.path.joinpath(OSMOSE_PATH.raw_audio).iterdir())
-            .resolve()
-            .joinpath("metadata.csv")
-        )
+        all_datasets = self.path.joinpath(OSMOSE_PATH.raw_audio).iterdir()
+        while True:
+            try:
+                metadata_path = next(all_datasets).resolve().joinpath("metadata.csv")
+            except StopIteration:
+                raise ValueError(
+                    f"No metadata file found in {self.path.joinpath(OSMOSE_PATH.raw_audio)}"
+                )
+            if metadata_path.exists():
+                break
+
+        metadata = pd.read_csv(metadata_path)
         # Catch the parameters inscribed in the original folder name
         audio_file_origin_duration = int(metadata["audio_file_origin_duration"][0])
         sr_origin = int(metadata["sr_origin"][0])

@@ -1,3 +1,4 @@
+import math
 import random
 import sys
 import shutil
@@ -116,17 +117,6 @@ def reshape(
     --------
         The list of the path of newly created audio files.
     """
-    print(
-        input_files,
-        chunk_size,
-        output_dir_path,
-        batch_ind_min,
-        batch_ind_max,
-        max_delta_interval,
-        last_file_behavior,
-        offset_beginning,
-        offset_end,
-    )
     verbose = True
     files = []
 
@@ -197,7 +187,11 @@ def reshape(
     previous_audio_data = np.empty(0)
     sample_rate = 0
     i = 0
-    t = batch_ind_min
+    t = math.ceil(
+        sf.info(input_dir_path.joinpath(files[i])).duration
+        * (batch_ind_min)
+        / chunk_size
+    )
     proceed = force_reshape  # Default is False
 
     while i < len(files):
@@ -207,7 +201,9 @@ def reshape(
             timestamp = input_timestamp[input_timestamp["filename"] == files[i]][
                 "timestamp"
             ].values[0]
-            timestamp = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%fZ")
+            timestamp = datetime.strptime(
+                timestamp, "%Y-%m-%dT%H:%M:%S.%fZ"
+            ) + timedelta(seconds=offset_beginning)
             audio_data = audio_data[int(offset_beginning * sample_rate) :]
         elif (
             i == len(files) - 1 and offset_end != 0 and not last_file_behavior == "pad"
@@ -304,10 +300,6 @@ def reshape(
                         sys.exit(1)
 
                 while len(audio_data) < chunk_size * sample_rate and i + 1 < len(files):
-                    print(
-                        "Grabbing next file, current audio data:",
-                        len(audio_data) / sample_rate,
-                    )
                     nextdata, next_sample_rate = sf.read(
                         input_dir_path.joinpath(files[i + 1])
                     )
@@ -319,7 +311,7 @@ def reshape(
                         )
                     )
                     i += 1
-                    print("New audio data len:", len(audio_data) / sample_rate)
+
                 output = audio_data
                 previous_audio_data = nextdata[rest:]
 
@@ -423,14 +415,20 @@ def reshape(
             for flag_file in list(output_dir_path.glob("flag_*"))
         ]
     ):
-        print(list(output_dir_path.glob("flag_*")))
-        print("Now concatenating timestamp.csv")
         for path_csv in output_dir_path.glob("timestamp*.csv"):
-            tmp_timestamp = pd.read_csv(path_csv, header=None)
+            tmp_timestamp = __try_read(path_csv)
             result += list(tmp_timestamp[0].values)
             timestamp_list += list(tmp_timestamp[1].values)
-            path_csv.unlink()
+            try:
+                path_csv.unlink()
+            except:
+                print("Cannot remove", path_csv)
+
         timestamp_csv_name = "timestamp.csv"
+
+        for flag_file in list(output_dir_path.glob("flag_*")):
+            flag_file.unlink()
+
     input_timestamp = pd.DataFrame(
         {"filename": result, "timestamp": timestamp_list, "timezone": "UTC"}
     )
@@ -443,6 +441,15 @@ def reshape(
     )
 
     return [output_dir_path.joinpath(res) for res in result]
+
+
+def __try_read(path_csv: Path):
+    try:
+        path_csv.rename(path_csv)
+        return pd.read_csv(path_csv, header=None)
+    except PermissionError:
+        sleep(1)
+        return __try_read(path_csv)
 
 
 if __name__ == "__main__":
