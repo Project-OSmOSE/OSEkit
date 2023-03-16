@@ -272,7 +272,7 @@ class Dataset:
         if not bare_check:
             lost_levels = check_n_files(
                 audio_file_list,
-                10,
+                20,
                 output_path=self.path.joinpath(
                     OSMOSE_PATH.raw_audio, "normalized_original"
                 ),

@@ -111,7 +111,7 @@ class Spectrogram(Dataset):
                 "No valid analysis/analysis_sheet.csv found and no parameters provided. All attributes will be None."
             )
 
-        self.Batch_number: int = batch_number
+        self.batch_number: int = batch_number
         self.__sr_analysis: int = sr_analysis
 
         self.__nfft: int = (
@@ -362,22 +362,20 @@ class Spectrogram(Dataset):
                 f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}"
             )
 
-        self.__path_output_spectrogram = processed_path.joinpath(
+        self.path_output_spectrogram = processed_path.joinpath(
             audio_foldername, self.__spectro_foldername, "image"
         )
-        self.__path_output_spectrogram.mkdir(mode=770, parents=True, exist_ok=True)
+        self.path_output_spectrogram.mkdir(mode=770, parents=True, exist_ok=True)
 
         self.__path_summstats = processed_path.joinpath(
             audio_foldername, "normalization_parameters"
         )
         self.__path_summstats.mkdir(mode=770, parents=True, exist_ok=True)
 
-        self.__path_output_spectrogram_matrix = processed_path.joinpath(
+        self.path_output_spectrogram_matrix = processed_path.joinpath(
             audio_foldername, self.__spectro_foldername, "matrix"
         )
-        self.__path_output_spectrogram_matrix.mkdir(
-            mode=770, parents=True, exist_ok=True
-        )
+        self.path_output_spectrogram_matrix.mkdir(mode=770, parents=True, exist_ok=True)
 
     def check_spectro_size(self):
         """Verify if the parameters will generate a spectrogram that can fit one screen properly"""
@@ -429,7 +427,7 @@ class Spectrogram(Dataset):
         self,
         *,
         sr_analysis: int = None,
-        reshape_method: Literal["resample", "reshape", "none"] = "none",
+        reshape_method: Literal["legacy", "classic", "none"] = "none",
         batch_ind_min: int = 0,
         batch_ind_max: int = -1,
         pad_silence: bool = False,
@@ -441,11 +439,11 @@ class Spectrogram(Dataset):
         ----------
         sr_analysis : `int`, optional, keyword-only
             The sampling frequency of the audio files used to generate the spectrograms. If set, will overwrite the Spectrogram.sr_analysis attribute.
-        reshape_method : {"resample", "reshape", "none"}, optional
+        reshape_method : {"legacy", "classic", "none"}, optional
             Which method to use if the desired size of the spectrogram is different from the audio file duration.
-            - resample : Legacy method, use bash and sox software to trim the audio files and fill the empty space with nothing.
+            - legacy : Legacy method, use bash and sox software to trim the audio files and fill the empty space with nothing.
             Unpractical when the audio file duration is longer than the desired spectrogram size.
-            - reshape : Classic method, use python and sox library to cut and concatenate the audio files to fit the desired duration.
+            - classic : Classic method, use python and sox library to cut and concatenate the audio files to fit the desired duration.
             Will rewrite the `timestamp.csv` file, thus timestamps may have unexpected behavior if the concatenated files are not chronologically
             subsequent.
             - none : Don't reshape, will throw an error if the file duration is different than the desired spectrogram size. (It is the default behavior)
@@ -493,18 +491,18 @@ class Spectrogram(Dataset):
                 set(subset).intersection(set(self.list_wav_to_process))
             )
 
-        batch_size = len(self.list_wav_to_process) // self.Batch_number
+        batch_size = len(self.list_wav_to_process) // self.batch_number
 
         #! RESAMPLING
         resample_job_id_list = []
         processes = []
 
         if self.sr_analysis != sr_origin and not os.listdir(self.audio_path):
-            for batch in range(self.Batch_number):
+            for batch in range(self.batch_number):
                 i_min = batch * batch_size
                 i_max = (
                     i_min + batch_size
-                    if batch < self.Batch_number - 1
+                    if batch < self.batch_number - 1
                     else len(self.list_wav_to_process)
                 )  # If it is the last batch, take all files
 
@@ -550,11 +548,11 @@ class Spectrogram(Dataset):
             and self.data_normalization == "zscore"
             and isnorma
         ):
-            for batch in range(self.Batch_number):
+            for batch in range(self.batch_number):
                 i_min = batch * batch_size
                 i_max = (
                     i_min + batch_size
-                    if batch < self.Batch_number - 1
+                    if batch < self.batch_number - 1
                     else len(self.list_wav_to_process)
                 )  # If it is the last batch, take all files
                 if self.__local:
@@ -598,7 +596,7 @@ class Spectrogram(Dataset):
             # We might reshape the files and create the folder. Note: reshape function might be memory-heavy and deserve a proper qsub job.
             if self.spectro_duration > int(
                 audio_file_origin_duration
-            ) and reshape_method in ["none", "resample"]:
+            ) and reshape_method in ["none", "legacy"]:
                 raise ValueError(
                     "Spectrogram size cannot be greater than file duration. If you want to automatically reshape your audio files to fit the spectrogram size, consider setting the reshape method to 'reshape'."
                 )
@@ -607,7 +605,7 @@ class Spectrogram(Dataset):
                 f"Automatically reshaping audio files to fit the spectro duration value. Files will be {self.spectro_duration} seconds long."
             )
 
-            if reshape_method == "reshape":
+            if reshape_method == "classic":
                 # build job, qsub, stuff
                 nb_reshaped_files = (
                     audio_file_origin_duration * audio_file_count
@@ -616,7 +614,7 @@ class Spectrogram(Dataset):
                 next_offset_beginning = 0
                 offset_end = 0
                 i_max = -1
-                for batch in range(self.Batch_number):
+                for batch in range(self.batch_number):
                     if i_max >= len(self.list_wav_to_process) - 1:
                         continue
 
@@ -626,7 +624,7 @@ class Spectrogram(Dataset):
                     i_min = i_max + (1 if not offset_beginning else 0)
                     i_max = (
                         i_min + batch_size
-                        if batch < self.Batch_number - 1
+                        if batch < self.batch_number - 1
                         and i_min + batch_size < len(self.list_wav_to_process)
                         else len(self.list_wav_to_process) - 1
                     )  # If it is the last batch, take all files
@@ -647,7 +645,7 @@ class Spectrogram(Dataset):
 
                     last_file_behavior = (
                         "pad"
-                        if batch == self.Batch_number - 1
+                        if batch == self.batch_number - 1
                         or i_max == len(self.list_wav_to_process) - 1
                         else "discard"
                     )
@@ -697,13 +695,13 @@ class Spectrogram(Dataset):
                 for process in processes:
                     process.join()
 
-            elif reshape_method == "resample":
+            elif reshape_method == "legacy":
                 silence_arg = "-s" if pad_silence else ""
-                for batch in range(self.Batch_number):
+                for batch in range(self.batch_number):
                     i_min = batch * batch_size
                     i_max = (
                         i_min + batch_size
-                        if batch < self.Batch_number - 1
+                        if batch < self.batch_number - 1
                         else len(self.list_wav_to_process)
                     )  # If it is the last batch, take all files
                     jobfile = self.Jb.build_job_file(
@@ -725,12 +723,12 @@ class Spectrogram(Dataset):
         metadata.to_csv(new_meta_path)
 
         for path in [
-            self.__path_output_spectrogram,
-            self.__path_output_spectrogram_matrix,
+            self.path_output_spectrogram,
+            self.path_output_spectrogram_matrix,
         ]:
             path.mkdir(mode=770, parents=True, exist_ok=True)
 
-        # self.to_csv(os.path.join(self.__path_output_spectrograms, "spectrograms.csv"))
+        # self.to_csv(os.path.join(self.path_output_spectrograms, "spectrograms.csv"))
 
         if not self.__analysis_file:
             # ? Standalone method?
@@ -757,7 +755,7 @@ class Spectrogram(Dataset):
             }
             analysis_sheet = pd.DataFrame.from_records([data])
             analysis_sheet.to_csv(
-                self.__path_output_spectrogram.parent.joinpath("metadata.csv")
+                self.path_output_spectrogram.parent.joinpath("metadata.csv")
             )
 
     def to_csv(self, filename: str) -> None:
@@ -846,9 +844,9 @@ class Spectrogram(Dataset):
         data = signal.sosfilt(bpcoef, data)
 
         if adjust:
-            self.__path_output_spectrogram.mkdir(mode=770, parents=True, exist_ok=True)
+            self.path_output_spectrogram.mkdir(mode=770, parents=True, exist_ok=True)
 
-        output_file = self.__path_output_spectrogram.joinpath(audio_file)
+        output_file = self.path_output_spectrogram.joinpath(audio_file)
 
         self.gen_tiles(data=data, sample_rate=sample_rate, output_file=output_file)
 
@@ -990,10 +988,10 @@ class Spectrogram(Dataset):
 
         # save spectrogram matrices (intensity, time and freq) in a npz file
         if self.save_matrix:
-            self.__path_output_spectrogram_matrix.mkdir(
+            self.path_output_spectrogram_matrix.mkdir(
                 mode=770, parents=True, exist_ok=True
             )
-            output_matrix = self.__path_output_spectrogram_matrix.joinpath(
+            output_matrix = self.path_output_spectrogram_matrix.joinpath(
                 output_file.name
             ).with_suffix(".npz")
 
@@ -1071,5 +1069,5 @@ class Spectrogram(Dataset):
 
         map_process_file = partial(self.process_file, **kwargs)
 
-        with mp.Pool(processes=min(self.Batch_number, mp.cpu_count())) as pool:
+        with mp.Pool(processes=min(self.batch_number, mp.cpu_count())) as pool:
             pool.map(map_process_file, self.list_wav_to_process)
