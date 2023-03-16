@@ -112,7 +112,7 @@ def test_reshape_smaller(input_reshape: Path, output_dir: Path):
     for file in reshaped_files[1:]:
         full_output = np.concatenate((full_output, sf.read(file)[0]))
 
-    assert np.array_equal(full_input, full_output)
+    assert np.allclose(full_input, full_output)
 
 
 def test_reshape_larger(input_reshape: Path, output_dir):

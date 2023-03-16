@@ -7,6 +7,7 @@ from time import sleep
 from typing import List, Union, Literal
 from argparse import ArgumentParser
 from pathlib import Path
+from multiprocessing import Lock
 
 import soundfile as sf
 import numpy as np
@@ -62,6 +63,7 @@ def reshape(
     verbose: bool = False,
     overwrite: bool = False,
     force_reshape: bool = False,
+    lock=None,
 ) -> List[str]:
     """Reshape all audio files in the folder to be of the specified duration. If chunk_size is superior to the base duration of the files, they will be fused according to their order in the timestamp.csv file in the same folder.
 
@@ -113,6 +115,9 @@ def reshape(
 
         force_reshape: `bool`, optional, keyword-only
             Ignore all warnings and non-fatal errors while reshaping.
+
+        lock: `multiprocessing.lock`, optional, keyword-only
+            An optional lock when the reshaping is done locally in parallel.
     Returns:
     --------
         The list of the path of newly created audio files.
@@ -404,7 +409,8 @@ def reshape(
 
     timestamp_csv_name = f"timestamp_{batch_ind_max}.csv"
 
-    sleep(random.randint(1, 5))
+    if lock:
+        lock.acquire()
 
     with open(flag, "a") as f:
         f.write("finished!")
@@ -413,16 +419,14 @@ def reshape(
         [
             flag_file.stat().st_size > 1
             for flag_file in list(output_dir_path.glob("flag_*"))
+            if flag_file != flag
         ]
     ):
         for path_csv in output_dir_path.glob("timestamp*.csv"):
-            tmp_timestamp = __try_read(path_csv)
+            tmp_timestamp = pd.read_csv(path_csv, header=None)
             result += list(tmp_timestamp[0].values)
             timestamp_list += list(tmp_timestamp[1].values)
-            try:
-                path_csv.unlink()
-            except:
-                print("Cannot remove", path_csv)
+            path_csv.unlink()
 
         timestamp_csv_name = "timestamp.csv"
 
@@ -440,16 +444,10 @@ def reshape(
         header=None,
     )
 
+    if lock:
+        lock.release()
+
     return [output_dir_path.joinpath(res) for res in result]
-
-
-def __try_read(path_csv: Path):
-    try:
-        path_csv.rename(path_csv)
-        return pd.read_csv(path_csv, header=None)
-    except PermissionError:
-        sleep(1)
-        return __try_read(path_csv)
 
 
 if __name__ == "__main__":

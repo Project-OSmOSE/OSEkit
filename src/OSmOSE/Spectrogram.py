@@ -464,6 +464,9 @@ class Spectrogram(Dataset):
         if sr_analysis:
             self.sr_analysis = sr_analysis
 
+        if self.__local:
+            lock = mp.Lock()
+
         self.__build_path()
 
         self.path_input_audio_file = self._get_original_after_build()
@@ -670,6 +673,7 @@ class Spectrogram(Dataset):
                                 "batch_ind_min": i_min,
                                 "batch_ind_max": i_max,
                                 "last_file_behavior": last_file_behavior,
+                                "lock": lock,
                             },
                         )
 
