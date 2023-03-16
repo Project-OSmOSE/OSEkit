@@ -43,25 +43,19 @@ def test_build_path(input_dataset):
     assert dataset._Spectrogram__path_summstats == dataset.path.joinpath(
         OSMOSE_PATH.spectrogram, "5_240", "normalization_parameters"
     )
-    assert dataset._Spectrogram__path_output_spectrogram == dataset.path.joinpath(
+    assert dataset.path_output_spectrogram == dataset.path.joinpath(
         OSMOSE_PATH.spectrogram, "5_240", "adjustment_spectros", "image"
     )
-    assert (
-        dataset._Spectrogram__path_output_spectrogram_matrix
-        == dataset.path.joinpath(
-            OSMOSE_PATH.spectrogram, "5_240", "adjustment_spectros", "matrix"
-        )
+    assert dataset.path_output_spectrogram_matrix == dataset.path.joinpath(
+        OSMOSE_PATH.spectrogram, "5_240", "adjustment_spectros", "matrix"
     )
 
     dataset._Spectrogram__build_path(adjust=False)
-    assert dataset._Spectrogram__path_output_spectrogram == dataset.path.joinpath(
+    assert dataset.path_output_spectrogram == dataset.path.joinpath(
         OSMOSE_PATH.spectrogram, "5_240", "512_512_97", "image"
     )
-    assert (
-        dataset._Spectrogram__path_output_spectrogram_matrix
-        == dataset.path.joinpath(
-            OSMOSE_PATH.spectrogram, "5_240", "512_512_97", "matrix"
-        )
+    assert dataset.path_output_spectrogram_matrix == dataset.path.joinpath(
+        OSMOSE_PATH.spectrogram, "5_240", "512_512_97", "matrix"
     )
 
 
@@ -73,7 +67,7 @@ def test_initialize_5s(input_dataset):
         local=True,
     )
 
-    dataset.initialize(reshape_method="reshape")
+    dataset.initialize(reshape_method="classic")
 
     timestamp_path = dataset.path.joinpath(
         OSMOSE_PATH.raw_audio.joinpath("5_240", "timestamp.csv")
@@ -88,6 +82,8 @@ def test_initialize_5s(input_dataset):
         OSMOSE_PATH.raw_audio.joinpath("5_240", "metadata.csv"),
         timestamp_path,
     ]
+
+    print(os.listdir(dataset.path.joinpath(OSMOSE_PATH.raw_audio, "5_240")))
 
     for path in spectro_paths:
         assert dataset.path.joinpath(path).resolve().exists()
@@ -135,7 +131,7 @@ def test_initialize_2s(input_dataset):
         local=True,
     )
 
-    dataset.initialize(reshape_method="reshape")
+    dataset.initialize(reshape_method="classic")
 
     timestamp_path = dataset.path.joinpath(
         OSMOSE_PATH.raw_audio.joinpath("2_240", "timestamp.csv")

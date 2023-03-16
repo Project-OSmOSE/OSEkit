@@ -265,6 +265,9 @@ def check_n_files(
     if threshold_percent > 1:
         threshold_percent = threshold_percent / 100
 
+    if n > len(file_list):
+        n = len(file_list)
+
     if "float" in str(sf.info(file_list[0])):
         threshold = max(threshold_percent * n, 1)
         bad_files = []
