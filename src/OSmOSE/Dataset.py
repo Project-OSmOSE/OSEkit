@@ -445,6 +445,12 @@ class Dataset:
 
             path_raw_audio = path_raw_audio.rename(new_folder_name)
             self.__original_folder = path_raw_audio
+
+            for subpath in OSMOSE_PATH:
+                if "data" in subpath:
+                    self.path.joinpath(subpath).mkdir(
+                        mode=0o770, parents=True, exist_ok=True
+                    )
             # rename filenames in the subset_files.csv if any to replace -' by '_'
             subset_path = OSMOSE_PATH.processed.joinpath("subset_files.csv")
             if subset_path.is_file():

@@ -42,12 +42,12 @@ def convert_template_to_re(date_template: str) -> str:
 
 def write_timestamp(
     *,
-    dataset_path: str,
+    audio_path: str,
     date_template: str,
     timezone: str = "UTC",
     offsets: tuple = None,
 ):
-    """Read the dates in the filenames of audio files in the `dataset_path` folder,
+    """Read the dates in the filenames of audio files in the `audio_path` folder,
     according to the date template in strftime format or the offsets from the beginning and end of the date.
 
     If both `date_template` and `offsets` are provided, the latter has priority and `date_template` is ignored.
@@ -57,7 +57,7 @@ def write_timestamp(
 
     Parameters
     ----------
-        dataset_path: `str`
+        audio_path: `str`
             the path of the folder containing audio files
         date_template: `str`
             the date template in strftime format. For example, `2017/02/24` has the template `%Y/%m/%d`
@@ -68,13 +68,18 @@ def write_timestamp(
             a tuple containing the beginning and end offset of the date.
             The first element is the first character of the date, and the second is the last.
     """
-
-    if offsets and "-" in offsets:
-        offset = [int(off) for off in offsets.split("-")]
-    else:
-        offset = [int(offsets), 0]
+    if offsets:
+        if "-" in offsets:
+            offset = [int(off) for off in offsets.split("-")]
+        else:
+            offset = [int(offsets), 0]
     # TODO: extension-agnostic
-    list_audio_file = sorted([file for file in Path(dataset_path).glob("*.wav")])
+    list_audio_file = sorted([file for file in Path(audio_path).glob("*.wav")])
+
+    if len(list_audio_file) == 0:
+        print(
+            f"No audio file found in the {audio_path} directory. An empty timestamp.csv will be created."
+        )
 
     timestamp = []
     filename_raw_audio = []
@@ -108,7 +113,7 @@ def write_timestamp(
     )
     df.sort_values(by=["timestamp"], inplace=True)
     df.to_csv(
-        Path(dataset_path, "timestamp.csv"),
+        Path(audio_path, "timestamp.csv"),
         index=False,
         na_rep="NaN",
         header=None,
@@ -137,7 +142,7 @@ if __name__ == "__main__":
     args = argparser.parse_args()
 
     write_timestamp(
-        dataset_path=args.dataset_name,
+        audio_path=args.dataset_name,
         date_template=args.date_template,
         timezone=args.timezone,
         offsets=args.offset,
