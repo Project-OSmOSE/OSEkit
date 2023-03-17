@@ -498,18 +498,22 @@ class Dataset:
         )
 
     def _find_original_folder(self, original_folder: str = None) -> Path:
-        if original_folder:
-            return self.path.joinpath(OSMOSE_PATH.raw_audio, original_folder)
-        elif self.path.joinpath(OSMOSE_PATH.raw_audio, "original").is_dir():
-            return self.path.joinpath(OSMOSE_PATH.raw_audio, "original")
-        elif len(list(self.path.joinpath(OSMOSE_PATH.raw_audio).iterdir())) == 1:
-            return self.path.joinpath(
-                OSMOSE_PATH.raw_audio,
-                next(self.path.joinpath(OSMOSE_PATH.raw_audio).iterdir()),
-            )
+        path_raw_audio = self.path.joinpath(OSMOSE_PATH.raw_audio)
+        if not path_raw_audio.exists() and len(next(os.walk(self.path))[1]) == 1:
+            path_raw_audio.mkdir(mode=770, parents=True, exist_ok=True)
+            orig_folder = self.path.joinpath(next(os.walk(self.path))[1][0])
+            new_path = orig_folder.rename(path_raw_audio.joinpath(orig_folder.name))
+            return new_path
+
+        elif original_folder:
+            return path_raw_audio.joinpath(original_folder)
+        elif path_raw_audio.joinpath("original").is_dir():
+            return path_raw_audio.joinpath("original")
+        elif len(list(path_raw_audio.iterdir())) == 1:
+            return path_raw_audio.joinpath(next(path_raw_audio.iterdir()))
         else:
             raise ValueError(
-                f"No folder has been found in {self.path.joinpath(OSMOSE_PATH.raw_audio)}. Please create the raw audio file folder and try again."
+                f"No folder has been found in {path_raw_audio}. Please create the raw audio file folder and try again."
             )
 
     def _get_original_after_build(self):
