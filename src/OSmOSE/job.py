@@ -14,13 +14,16 @@ from OSmOSE.utils import read_config
 class Job_builder:
     def __init__(self, config_file: str = None):
         if config_file is None:
-            self.__configfile = "job_config.toml"
-            self.__config: NamedTuple = read_config(
+            self.__configfile = "config.toml"
+            self.__full_config: NamedTuple = read_config(
                 resources.files("OSmOSE").joinpath(self.__configfile)
             )
+
         else:
             self.__configfile = config_file
-            self.__config: NamedTuple = read_config(config_file)
+            self.__full_config: NamedTuple = read_config(config_file)
+
+        self.__config = self.__full_config.Job
 
         self.__prepared_jobs = []
         self.__ongoing_jobs = []
@@ -29,6 +32,7 @@ class Job_builder:
         required_properties = [
             "job_scheduler",
             "env_script",
+            "env_name",
             "queue",
             "nodes",
             "walltime",
@@ -79,6 +83,14 @@ class Job_builder:
     @env_script.setter
     def env_script(self, value):
         self.__config = self.__config._replace(env_script=value)
+
+    @property
+    def env_name(self):
+        return self.__config.env_name
+
+    @env_name.setter
+    def env_name(self, value):
+        self.__config = self.__config._replace(env_name=value)
 
     @property
     def queue(self):
@@ -153,9 +165,11 @@ class Job_builder:
 
         match output_format:
             case "toml":
-                tomlkit.dumps(self.__config)
+                with open(self.__configfile, "w") as outfile:
+                    outfile.write(tomlkit.dumps(self.__full_config))
             case "json":
-                json.dumps(self.__config)
+                with open(self.__configfile, "w") as outfile:
+                    outfile.write(json.dumps(self.__full_config))
 
     def build_job_file(
         self,
@@ -225,6 +239,10 @@ class Job_builder:
         job_path : `str`
             The path to the created job file.
         """
+        if preset.lower() not in self.__config.Presets:
+            raise ValueError(
+                f"Unrecognized preset {preset}. Valid presets are: {', '.join(self.__config.Presets.keys())}"
+            )
 
         pwd = Path(__file__).parent
         jobdir = pwd.joinpath("ongoing_jobs")
@@ -242,20 +260,38 @@ class Job_builder:
             jobname = Path(script_path).name
         if not env_name:
             env_name = self.env_name
-        if not queue:
-            queue = self.queue
-        if not nodes:
-            nodes = self.nodes
-        if not walltime:
-            walltime = self.walltime
-        if not ncpus:
-            ncpus = self.ncpus
-        if not mem:
-            mem = self.mem
+
         if not outfile:
             outfile = self.outfile
         if not errfile:
             errfile = self.errfile
+
+        if not queue:
+            queue = (
+                self.queue
+                if not preset
+                else self.__config.Presets.gettatr(preset).queue
+            )
+        if not nodes:
+            nodes = (
+                self.nodes
+                if not preset
+                else self.__config.Presets.gettatr(preset).nodes
+            )
+        if not walltime:
+            walltime = (
+                self.walltime
+                if not preset
+                else self.__config.Presets.gettatr(preset).walltime
+            )
+        if not ncpus:
+            ncpus = (
+                self.ncpus
+                if not preset
+                else self.__config.Presets.gettatr(preset).ncpus
+            )
+        if not mem:
+            mem = self.mem if not preset else self.__config.Presets.gettatr(preset).mem
 
         match job_scheduler:
             case "Torque":

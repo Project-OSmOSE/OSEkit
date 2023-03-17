@@ -1,0 +1,35 @@
+[Job]
+    job_scheduler = "Torque"
+    # env_script should contain everything but the environment name, with ${env_name} being where it will go
+    env_script = "/appli/anaconda/latest/etc/profile.d/conda.sh; conda activate /home/datawork-osmose/conda-env/${env_name}/"
+    env_name = "osmose_dev"
+    outfile = "Job_{}_%j.out"
+    errfile = "Job_{}_%j.err"
+
+    # Default parameters
+    queue = "omp"
+    walltime = "12:00:00"
+    ncpus = 6
+    mem = "40g"
+    nodes = 1
+
+    [Presets.low]
+        queue = "sequentiel"
+        walltime = "12:00:00"
+        ncpus = 1
+        mem = "10g"
+        nodes = 1
+
+    [Presets.medium]
+    queue = "omp"
+    walltime = "12:00:00"
+    ncpus = 6
+    mem = "40g"
+    nodes = 1
+
+    [Presets.high]
+        queue = "omp"
+        walltime = "12:00:00"
+        ncpus = 28
+        mem = "120g"
+        nodes = 1
