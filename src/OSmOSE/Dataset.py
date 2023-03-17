@@ -16,7 +16,7 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from OSmOSE.utils import read_header, check_n_files
-from OSmOSE import write_timestamp
+from OSmOSE.timestamps import write_timestamp
 from OSmOSE.config import OSMOSE_PATH
 
 
@@ -132,7 +132,7 @@ class Dataset:
         ],
     ):
         # TODO: Allow any iterator?
-        match type(new_coordinates):
+        match new_coordinates:
             case str():
                 csvFileArray = pd.read_csv(
                     self.path.joinpath(OSMOSE_PATH.auxiliary, new_coordinates)
@@ -149,12 +149,12 @@ class Dataset:
                         (new_coordinates[0][0], new_coordinates[0][1]),
                         (new_coordinates[1][0], new_coordinates[1][1]),
                     )
-                elif all(isinstance(coord, float) for coord in new_coordinates):
-                    self.__gps_coordinates = (new_coordinates[0], new_coordinates[1])
                 else:
-                    raise ValueError(
-                        f"The coordinates list must contain either only floats or only sublists of two elements."
-                    )
+                    self.__gps_coordinates = (new_coordinates[0], new_coordinates[1])
+                #else:
+                 #   raise ValueError(
+                  #      f"The coordinates list must contain either only floats or only sublists of two elements."
+                   # )
             case _:
                 raise TypeError(
                     f"GPS coordinates must be either a list of coordinates or the name of csv containing the coordinates, but {type(new_coordinates)} found."
