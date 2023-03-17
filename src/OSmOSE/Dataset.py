@@ -263,7 +263,7 @@ class Dataset:
                     f"The timestamp.csv file has not been found in {path_raw_audio}. You can create it automatically by setting the date template as argument."
                 )
             else:
-                write_timestamp(dataset_path=self.path, date_template=date_template)
+                write_timestamp(audio_path=path_raw_audio, date_template=date_template)
 
         csvFileArray = pd.read_csv(path_timestamp_formatted, header=None)
 
@@ -447,7 +447,7 @@ class Dataset:
             self.__original_folder = path_raw_audio
 
             for subpath in OSMOSE_PATH:
-                if "data" in subpath:
+                if "data" in str(subpath):
                     self.path.joinpath(subpath).mkdir(
                         mode=0o770, parents=True, exist_ok=True
                     )
@@ -482,8 +482,6 @@ class Dataset:
                     os.chown(path, -1, gid)
                     os.chmod(path, 0o770)
             print("\n DONE ! your dataset is on OSmOSE platform !")
-
-        return self
 
     def delete_abnormal_files(self) -> None:
         """Delete all files with abnormal durations in the dataset, and rewrite the timestamps.csv file to reflect the changes.

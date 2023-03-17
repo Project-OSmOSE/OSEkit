@@ -1,5 +1,5 @@
 from functools import partial
-import math
+import inspect
 import os
 import sys
 from typing import Tuple, Union, Literal
@@ -524,7 +524,7 @@ class Spectrogram(Dataset):
                     processes.append(process)
                 else:
                     jobfile = self.Jb.build_job_file(
-                        script_path=Path(resample.__file__).resolve(),
+                        script_path=Path(inspect.getfile(resample)).resolve(),
                         script_args=f"--input-dir {self.path_input_audio_file} --target-sr {self.sr_analysis} --ind-min {i_min} --ind-max {i_max} --output-dir {self.audio_path}",
                         jobname="OSmOSE_resample",
                         preset="medium",
@@ -575,7 +575,7 @@ class Spectrogram(Dataset):
                     processes.append(process)
                 else:
                     jobfile = self.Jb.build_job_file(
-                        script_path=Path(compute_stats.__file__).resolve(),
+                        script_path=Path(inspect.getfile(compute_stats)).resolve(),
                         script_args=f"--input-dir {self.path_input_audio_file} --hpfilter-min-freq {self.HPfilter_min_freq} \
                                     --ind-min {i_min} --ind-max {i_max} --output-file {self.__path_summstats.joinpath('SummaryStats_' + str(i_min) + '.csv')}",
                         jobname="OSmOSE_get_zscore_params",
@@ -681,7 +681,7 @@ class Spectrogram(Dataset):
                         processes.append(process)
                     else:
                         jobfile = self.Jb.build_job_file(
-                            script_path=Path(reshape.__file__).resolve(),
+                            script_path=Path(inspect.getfile(reshape)).resolve(),
                             script_args=f"--input-files {self.path_input_audio_file} --chunk-size {self.spectro_duration} --ind-min {i_min}\
                                         --ind-max {i_max} --output-dir {self.audio_path} --offset-beginning {offset_beginning} --offset-end {offset_end}\
                                         --last-file-behavior {last_file_behavior}",

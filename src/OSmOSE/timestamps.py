@@ -90,7 +90,7 @@ def write_timestamp(
             date_extracted = filename.stem[offset[0] : offset[1] + 1]
         else:
             try:
-                date_extracted = re.search(converted, filename)[0]
+                date_extracted = re.search(converted, str(filename))[0]
             except TypeError:
                 raise ValueError(
                     f"The date template does not match any set of character in the file name {filename}\nMake sure you are not forgetting separator characters, or use the offsets parameter."
