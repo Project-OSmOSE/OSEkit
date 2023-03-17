@@ -16,6 +16,7 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from OSmOSE.utils import read_header, check_n_files
+from OSmOSE import write_timestamp
 from OSmOSE.config import OSMOSE_PATH
 
 
@@ -197,6 +198,7 @@ class Dataset:
         *,
         original_folder: str = None,
         owner_group: str = None,
+        date_template: str = None,
         bare_check: bool = False,
         auto_normalization: bool = False,
         force_upload: bool = False,
@@ -220,6 +222,11 @@ class Dataset:
                 a folder named `original`
             owner_group: `str`, optional, keyword_only
                 The name of the group using the osmose dataset. It will have all permissions over the dataset.
+            date_template: `str`, optional, keyword_only
+                the date template in strftime format. For example, `2017/02/24` has the template `%Y/%m/%d`.
+                It is used to generate automatically the timestamp.csv file. Alternatively, you can call the script to create the timestamp file first.
+                If no template is provided, will assume that the file already exists. In future versions, the template will be guessed automatically.
+                For more information on strftime template, see https://strftime.org/.
             bare_check : `bool`, optional, keyword_only
                 Only do the checks and build steps that requires low resource usage. If you build the dataset on a login node or
                 if you are sure it is already good to use, set to True. Otherwise, it should be inside a job. Default is False.
@@ -248,6 +255,14 @@ class Dataset:
         path_raw_audio = self._find_original_folder(original_folder)
 
         path_timestamp_formatted = path_raw_audio.joinpath("timestamp.csv")
+
+        if not path_timestamp_formatted.exists():
+            if not date_template:
+                raise FileNotFoundError(
+                    f"The timestamp.csv file has not been found in {path_raw_audio}. You can create it automatically by setting the date template as argument."
+                )
+            else:
+                write_timestamp(dataset_path=self.path, date_template=date_template)
 
         csvFileArray = pd.read_csv(path_timestamp_formatted, header=None)
 
