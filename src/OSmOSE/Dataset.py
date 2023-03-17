@@ -519,11 +519,17 @@ class Dataset:
 
     def _find_original_folder(self, original_folder: str = None) -> Path:
         path_raw_audio = self.path.joinpath(OSMOSE_PATH.raw_audio)
-        if not path_raw_audio.exists() and len(next(os.walk(self.path))[1]) == 1:
-            path_raw_audio.mkdir(mode=0o770, parents=True, exist_ok=True)
-            orig_folder = self.path.joinpath(next(os.walk(self.path))[1][0])
-            new_path = orig_folder.rename(path_raw_audio.joinpath(orig_folder.name))
-            return new_path
+        if not path_raw_audio.exists():
+            if len(next(os.walk(self.path))[1]) == 1:
+                path_raw_audio.mkdir(mode=0o770, parents=True, exist_ok=True)
+                orig_folder = self.path.joinpath(next(os.walk(self.path))[1][0])
+                new_path = orig_folder.rename(path_raw_audio.joinpath(orig_folder.name))
+                return new_path
+            elif any(file.endswith(".wav") for file in os.listdir(self.path)):
+                path_raw_audio.joinpath("original").mkdir(mode=0o770, parents=True, exist_ok=True)
+                for audiofile in os.listdir(self.path):
+                    if audiofile.endswith(".wav"):
+                        audiofile.rename(path_raw_audio.joinpath("original", audiofile))
 
         elif original_folder:
             return path_raw_audio.joinpath(original_folder)
