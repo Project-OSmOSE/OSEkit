@@ -229,7 +229,7 @@ class Job_builder:
         pwd = Path(__file__).parent
         jobdir = pwd.joinpath("ongoing_jobs")
 
-        jobdir.mkdir(mode=770, exist_ok=True)
+        jobdir.mkdir(mode=0o770, exist_ok=True)
 
         job_file = ["#!/bin/bash"]
 

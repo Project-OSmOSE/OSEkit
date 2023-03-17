@@ -165,7 +165,7 @@ def reshape(
     else:
         output_dir_path = Path(output_dir_path)
 
-    output_dir_path.mkdir(mode=770, parents=True, exist_ok=True)
+    output_dir_path.mkdir(mode=0o770, parents=True, exist_ok=True)
 
     input_timestamp = pd.read_csv(
         input_dir_path.joinpath("timestamp.csv"),

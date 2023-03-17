@@ -151,10 +151,11 @@ class Dataset:
                     )
                 else:
                     self.__gps_coordinates = (new_coordinates[0], new_coordinates[1])
-                #else:
-                 #   raise ValueError(
-                  #      f"The coordinates list must contain either only floats or only sublists of two elements."
-                   # )
+                # TODO : set a standard type for coordinates
+                # else:
+                #     raise ValueError(
+                #         f"The coordinates list must contain either only floats or only sublists of two elements."
+                #     )
             case _:
                 raise TypeError(
                     f"GPS coordinates must be either a list of coordinates or the name of csv containing the coordinates, but {type(new_coordinates)} found."
@@ -515,7 +516,7 @@ class Dataset:
     def _find_original_folder(self, original_folder: str = None) -> Path:
         path_raw_audio = self.path.joinpath(OSMOSE_PATH.raw_audio)
         if not path_raw_audio.exists() and len(next(os.walk(self.path))[1]) == 1:
-            path_raw_audio.mkdir(mode=770, parents=True, exist_ok=True)
+            path_raw_audio.mkdir(mode=0o770, parents=True, exist_ok=True)
             orig_folder = self.path.joinpath(next(os.walk(self.path))[1][0])
             new_path = orig_folder.rename(path_raw_audio.joinpath(orig_folder.name))
             return new_path
