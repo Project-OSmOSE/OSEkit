@@ -297,7 +297,7 @@ def check_n_files(
                                 "You need to set auto_normalization to True to normalize your dataset automatically."
                             )
 
-                    Path(output_path).mkdir(mode=770, parents=True, exist_ok=True)
+                    Path(output_path).mkdir(mode=0o770, parents=True, exist_ok=True)
 
                     for audio_file in file_list:
                         data, sr = safe_read(audio_file)

@@ -353,7 +353,7 @@ class Spectrogram(Dataset):
         processed_path = self.path.joinpath(OSMOSE_PATH.spectrogram)
         audio_foldername = str(self.spectro_duration) + "_" + str(self.sr_analysis)
         self.audio_path = self.path.joinpath(OSMOSE_PATH.raw_audio, audio_foldername)
-        self.audio_path.mkdir(mode=770, parents=True, exist_ok=True)
+        self.audio_path.mkdir(mode=0o770, parents=True, exist_ok=True)
 
         if adjust:
             self.__spectro_foldername = "adjustment_spectros"
@@ -365,17 +365,19 @@ class Spectrogram(Dataset):
         self.path_output_spectrogram = processed_path.joinpath(
             audio_foldername, self.__spectro_foldername, "image"
         )
-        self.path_output_spectrogram.mkdir(mode=770, parents=True, exist_ok=True)
+        self.path_output_spectrogram.mkdir(mode=0o770, parents=True, exist_ok=True)
 
         self.__path_summstats = processed_path.joinpath(
             audio_foldername, "normalization_parameters"
         )
-        self.__path_summstats.mkdir(mode=770, parents=True, exist_ok=True)
+        self.__path_summstats.mkdir(mode=0o770, parents=True, exist_ok=True)
 
         self.path_output_spectrogram_matrix = processed_path.joinpath(
             audio_foldername, self.__spectro_foldername, "matrix"
         )
-        self.path_output_spectrogram_matrix.mkdir(mode=770, parents=True, exist_ok=True)
+        self.path_output_spectrogram_matrix.mkdir(
+            mode=0o770, parents=True, exist_ok=True
+        )
 
     def check_spectro_size(self):
         """Verify if the parameters will generate a spectrogram that can fit one screen properly"""
@@ -726,7 +728,7 @@ class Spectrogram(Dataset):
             self.path_output_spectrogram,
             self.path_output_spectrogram_matrix,
         ]:
-            path.mkdir(mode=770, parents=True, exist_ok=True)
+            path.mkdir(mode=0o770, parents=True, exist_ok=True)
 
         # self.to_csv(os.path.join(self.path_output_spectrograms, "spectrograms.csv"))
 
@@ -844,7 +846,7 @@ class Spectrogram(Dataset):
         data = signal.sosfilt(bpcoef, data)
 
         if adjust:
-            self.path_output_spectrogram.mkdir(mode=770, parents=True, exist_ok=True)
+            self.path_output_spectrogram.mkdir(mode=0o770, parents=True, exist_ok=True)
 
         output_file = self.path_output_spectrogram.joinpath(audio_file)
 
@@ -989,7 +991,7 @@ class Spectrogram(Dataset):
         # save spectrogram matrices (intensity, time and freq) in a npz file
         if self.save_matrix:
             self.path_output_spectrogram_matrix.mkdir(
-                mode=770, parents=True, exist_ok=True
+                mode=0o770, parents=True, exist_ok=True
             )
             output_matrix = self.path_output_spectrogram_matrix.joinpath(
                 output_file.name

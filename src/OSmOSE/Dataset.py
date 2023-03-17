@@ -16,7 +16,7 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from OSmOSE.utils import read_header, check_n_files
-from OSmOSE import write_timestamp
+from OSmOSE.timestamps import write_timestamp
 from OSmOSE.config import OSMOSE_PATH
 
 
@@ -132,7 +132,7 @@ class Dataset:
         ],
     ):
         # TODO: Allow any iterator?
-        match type(new_coordinates):
+        match new_coordinates:
             case str():
                 csvFileArray = pd.read_csv(
                     self.path.joinpath(OSMOSE_PATH.auxiliary, new_coordinates)
@@ -149,12 +149,13 @@ class Dataset:
                         (new_coordinates[0][0], new_coordinates[0][1]),
                         (new_coordinates[1][0], new_coordinates[1][1]),
                     )
-                elif all(isinstance(coord, float) for coord in new_coordinates):
-                    self.__gps_coordinates = (new_coordinates[0], new_coordinates[1])
                 else:
-                    raise ValueError(
-                        f"The coordinates list must contain either only floats or only sublists of two elements."
-                    )
+                    self.__gps_coordinates = (new_coordinates[0], new_coordinates[1])
+                # TODO : set a standard type for coordinates
+                # else:
+                #     raise ValueError(
+                #         f"The coordinates list must contain either only floats or only sublists of two elements."
+                #     )
             case _:
                 raise TypeError(
                     f"GPS coordinates must be either a list of coordinates or the name of csv containing the coordinates, but {type(new_coordinates)} found."
@@ -515,7 +516,7 @@ class Dataset:
     def _find_original_folder(self, original_folder: str = None) -> Path:
         path_raw_audio = self.path.joinpath(OSMOSE_PATH.raw_audio)
         if not path_raw_audio.exists() and len(next(os.walk(self.path))[1]) == 1:
-            path_raw_audio.mkdir(mode=770, parents=True, exist_ok=True)
+            path_raw_audio.mkdir(mode=0o770, parents=True, exist_ok=True)
             orig_folder = self.path.joinpath(next(os.walk(self.path))[1][0])
             new_path = orig_folder.rename(path_raw_audio.joinpath(orig_folder.name))
             return new_path
