@@ -135,7 +135,11 @@ class Job_builder:
     @property
     def outfile(self):
         if not Path(self.__config.outfile).is_absolute():
-            return Path(__file__.parent, "job_log", self.__config.outfile).resolve()
+            return (
+                Path(__file__)
+                .parent.joinpath("log_job", self.__config.outfile)
+                .resolve()
+            )
         return self.__config.outfile
 
     @outfile.setter
@@ -145,7 +149,11 @@ class Job_builder:
     @property
     def errfile(self):
         if not Path(self.__config.errfile).is_absolute():
-            return Path(__file__.parent, "job_log", self.__config.errfile).resolve()
+            return (
+                Path(__file__)
+                .parent.joinpath("log_job", self.__config.errfile)
+                .resolve()
+            )
         return self.__config.errfile
 
     @errfile.setter
@@ -252,8 +260,9 @@ class Job_builder:
 
         pwd = Path(__file__).parent
         jobdir = pwd.joinpath("ongoing_jobs")
-
+        logdir = pwd.joinpath("log_job")
         jobdir.mkdir(mode=0o770, exist_ok=True)
+        logdir.mkdir(mode=0o770, exist_ok=True)
 
         job_file = ["#!/bin/bash"]
 
@@ -294,8 +303,8 @@ class Job_builder:
                 mem_param = "-l mem="
                 outfile_param = "-o "
                 errfile_param = "-e "
-                outfile = outfile.replace("_%j", "").format(jobname)
-                errfile = errfile.replace("_%j", "").format(jobname)
+                outfile = str(outfile).replace("_%j", "").format(jobname)
+                errfile = str(errfile).replace("_%j", "").format(jobname)
             case "Slurm":
                 prefix = "#SBATCH"
                 name_param = "-J "
@@ -306,8 +315,8 @@ class Job_builder:
                 mem_param = "-mem "
                 outfile_param = "-o "
                 errfile_param = "-e "
-                outfile = outfile.format(jobname)
-                errfile = errfile.format(jobname)
+                outfile = str(outfile).format(jobname)
+                errfile = str(errfile).format(jobname)
             case _:
                 prefix = "#"
                 name_param = ""

@@ -424,7 +424,7 @@ class Spectrogram(Dataset):
             "(Hz)",
         )
 
-    # TODO: some cleaning | Rename available reshape methods ? (something like legacy, classic)
+    # TODO: some cleaning
     def initialize(
         self,
         *,
@@ -433,6 +433,7 @@ class Spectrogram(Dataset):
         batch_ind_min: int = 0,
         batch_ind_max: int = -1,
         pad_silence: bool = False,
+        force_init: bool = False,
     ) -> None:
         """Prepares everything (path, variables, files) for spectrogram generation. This needs to be run before the spectrograms are generated.
         If the dataset has not yet been build, it is before the rest of the functions are initialized.
@@ -441,7 +442,7 @@ class Spectrogram(Dataset):
         ----------
         sr_analysis : `int`, optional, keyword-only
             The sampling frequency of the audio files used to generate the spectrograms. If set, will overwrite the Spectrogram.sr_analysis attribute.
-        reshape_method : {"legacy", "classic", "none"}, optional
+        reshape_method : {"legacy", "classic", "none"}, optional, keyword-only
             Which method to use if the desired size of the spectrogram is different from the audio file duration.
             - legacy : Legacy method, use bash and sox software to trim the audio files and fill the empty space with nothing.
             Unpractical when the audio file duration is longer than the desired spectrogram size.
@@ -450,14 +451,33 @@ class Spectrogram(Dataset):
             subsequent.
             - none : Don't reshape, will throw an error if the file duration is different than the desired spectrogram size. (It is the default behavior)
 
-        batch_ind_min : `int`, optional
+        batch_ind_min : `int`, optional, keyword-only
             The index of the first file to consider. Both this parameter and `batch_ind_max` are not commonly used and are
             for very specific use cases. Most of the time, you want to initialize the whole dataset (the default is 0).
-        batch_ind_max : `int`, optional
+        batch_ind_max : `int`, optional, keyword-only
             The index of the last file to consider (the default is -1, meaning consider every file).
-        pad_silence : `bool`, optinoal
+        pad_silence : `bool`, optional, keyword-only
             When using the legacy reshaping method, whether there should be a silence padding or not (default is False).
+        force_init : `bool`, optional, keyword-only
         """
+        final_path = self.path.joinpath(
+            OSMOSE_PATH.spectrogram,
+            f"{str(self.spectro_duration)}_{str(self.sr_analysis)}",
+            f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",
+            "metadata.csv",
+        )
+        audio_metadata_path = self.path.joinpath(
+            OSMOSE_PATH.raw_audio,
+            f"{str(self.spectro_duration)}_{str(self.sr_analysis)}",
+            "metadata.csv",
+        )
+        if final_path.exists() and audio_metadata_path.exists() and not force_init:
+            audio_file_count = pd.read_csv(audio_metadata_path)["audio_file_count"][0]
+            if len(list(audio_metadata_path.parent.glob("*.wav")) == audio_file_count):
+                print(
+                    "It seems these spectrogram parameters are already initialized. If it is an error or you want to rerun the initialization, add the `force_init` argument."
+                )
+
         if not self.is_built:
             self.build()
 
@@ -612,7 +632,7 @@ class Spectrogram(Dataset):
                 nb_reshaped_files = (
                     audio_file_origin_duration * audio_file_count
                 ) / self.spectro_duration
-                files_for_one_reshape = audio_file_count / nb_reshaped_files
+                metadata["audio_file_count"] = nb_reshaped_files
                 next_offset_beginning = 0
                 offset_end = 0
                 i_max = -1
