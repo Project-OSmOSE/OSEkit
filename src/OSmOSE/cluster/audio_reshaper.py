@@ -125,12 +125,6 @@ def reshape(
     verbose = True
     files = []
 
-    #! Validation
-    if last_file_behavior not in ["truncate", "pad", "discard"]:
-        raise ValueError(
-            f"Bad value {last_file_behavior} for last_file_behavior parameters. Must be one of truncate, pad or discard."
-        )
-
     if isinstance(input_files, list):
         input_dir_path = Path(input_files[0]).parent
         files = [Path(file).stem for file in input_files]
@@ -138,6 +132,22 @@ def reshape(
             print(f"Input directory detected as {input_dir_path}")
     else:
         input_dir_path = Path(input_files)
+
+    #! Validation
+    if last_file_behavior not in ["truncate", "pad", "discard"]:
+        raise ValueError(
+            f"Bad value {last_file_behavior} for last_file_behavior parameters. Must be one of truncate, pad or discard."
+        )
+
+    if not output_dir_path:
+        print("No output directory provided. Will use the input directory instead.")
+        output_dir_path = input_dir_path
+        if overwrite:
+            print(
+                "Cannot overwrite input directory when the output directory is implicit! Choose a different output directory instead."
+            )
+
+    output_dir_path = Path(output_dir_path)
 
     if not input_dir_path.is_dir():
         raise ValueError(
@@ -154,16 +164,6 @@ def reshape(
 
     flag = output_dir_path.joinpath(f"flag_{batch_ind_max}")
     open(flag, "w").close()
-
-    if not output_dir_path:
-        print("No output directory provided. Will use the input directory instead.")
-        output_dir_path = input_dir_path
-        if overwrite:
-            print(
-                "Cannot overwrite input directory when the output directory is implicit! Choose a different output directory instead."
-            )
-    else:
-        output_dir_path = Path(output_dir_path)
 
     output_dir_path.mkdir(mode=0o770, parents=True, exist_ok=True)
 
@@ -539,8 +539,8 @@ if __name__ == "__main__":
         chunk_size=args.chunk_size,
         input_files=input_files,
         output_dir_path=args.output_dir,
-        batch_ind_min=args.batch_ind_min,
-        batch_ind_max=args.batch_ind_max,
+        batch_ind_min=args.ind_min,
+        batch_ind_max=args.ind_max,
         offset_beginning=args.offset_beginning,
         offset_end=args.offset_end,
         max_delta_interval=args.max_delta_interval,

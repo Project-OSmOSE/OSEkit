@@ -459,6 +459,7 @@ class Spectrogram(Dataset):
         pad_silence : `bool`, optional, keyword-only
             When using the legacy reshaping method, whether there should be a silence padding or not (default is False).
         force_init : `bool`, optional, keyword-only
+            Force every parameter of the initialization.
         """
         final_path = self.path.joinpath(
             OSMOSE_PATH.spectrogram,
@@ -477,6 +478,7 @@ class Spectrogram(Dataset):
                 print(
                     "It seems these spectrogram parameters are already initialized. If it is an error or you want to rerun the initialization, add the `force_init` argument."
                 )
+                return
 
         if not self.is_built:
             self.build()
@@ -704,7 +706,7 @@ class Spectrogram(Dataset):
                             script_path=Path(inspect.getfile(reshape)).resolve(),
                             script_args=f"--input-files {self.path_input_audio_file} --chunk-size {self.spectro_duration} --ind-min {i_min}\
                                         --ind-max {i_max} --output-dir {self.audio_path} --offset-beginning {int(offset_beginning)} --offset-end {int(offset_end)}\
-                                        --last-file-behavior {last_file_behavior}",
+                                        --last-file-behavior {last_file_behavior} {'--force' if force_init else ''}",
                             jobname="OSmOSE_reshape_py",
                             preset="low",
                         )
