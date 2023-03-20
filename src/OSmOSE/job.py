@@ -385,7 +385,7 @@ class Job_builder:
         # TODO: Think about the issue when a job have too many dependencies and workaround.
 
         for jobfile in jobfile_list:
-            if "torque" in jobfile.lower():
+            if "torque" in str(jobfile).lower():
                 dep = f" -W depend=afterok:{dependency}" if dependency else ""
                 jobid = (
                     subprocess.run([f"qsub{dep}", jobfile], stdout=subprocess.PIPE)
@@ -393,7 +393,7 @@ class Job_builder:
                     .rstrip("\n")
                 )
                 jobid_list.append(jobid)
-            elif "slurm" in jobfile.lower():
+            elif "slurm" in str(jobfile).lower():
                 dep = f"-d afterok:{dependency}" if dependency else ""
                 jobid = (
                     subprocess.run(["sbatch", dep, jobfile], stdout=subprocess.PIPE)
