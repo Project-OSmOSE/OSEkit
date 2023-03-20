@@ -114,7 +114,14 @@ def read_config(raw_config: Union[str, dict, Path]) -> NamedTuple:
                         f"The provided configuration file extension ({Path(raw_config).suffix} is not a valid extension. Please use .toml or .json files."
                     )
 
-    return namedtuple("GenericDict", raw_config.keys())(**raw_config)
+    return convert(raw_config)
+
+
+def convert(dictionary):
+    for key, value in dictionary.items():
+        if isinstance(value, dict):
+            dictionary[key] = convert(value)
+    return namedtuple("GenericDict", dictionary.keys())(**dictionary)
 
 
 def read_header(file: str) -> Tuple[int, float, int, int]:
