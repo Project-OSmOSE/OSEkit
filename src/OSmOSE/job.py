@@ -244,7 +244,7 @@ class Job_builder:
                 f"Unrecognized preset {preset}. Valid presets are: {', '.join(self.__config.Presets._fields)}"
             )
 
-        job_preset = gettatr(self.__config.Presets, preset)
+        job_preset = getattr(self.__config.Presets, preset)
 
         pwd = Path(__file__).parent
         jobdir = pwd.joinpath("ongoing_jobs")
