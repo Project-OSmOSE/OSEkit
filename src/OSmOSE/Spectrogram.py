@@ -703,7 +703,7 @@ class Spectrogram(Dataset):
                         jobfile = self.Jb.build_job_file(
                             script_path=Path(inspect.getfile(reshape)).resolve(),
                             script_args=f"--input-files {self.path_input_audio_file} --chunk-size {self.spectro_duration} --ind-min {i_min}\
-                                        --ind-max {i_max} --output-dir {self.audio_path} --offset-beginning {offset_beginning} --offset-end {offset_end}\
+                                        --ind-max {i_max} --output-dir {self.audio_path} --offset-beginning {int(offset_beginning)} --offset-end {int(offset_end)}\
                                         --last-file-behavior {last_file_behavior}",
                             jobname="OSmOSE_reshape_py",
                             preset="low",

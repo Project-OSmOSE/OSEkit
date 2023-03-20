@@ -341,6 +341,8 @@ class Job_builder:
         job_file.append(f"{prefix} {errfile_param}{errfile}")
         # endregion
 
+        job_file.append(f"rm -f {outfile} {errfile}")
+
         #! ENV
         # The env_script should contain all the command(s) needed to load the script, with the $env_name template where the environment name should be.
         job_file.append(
@@ -357,7 +359,7 @@ class Job_builder:
 
         job_file_path = jobdir.joinpath(outfilename)
 
-        job_file.append(f"\nchmod 444 {outfile} {errfile}")
+        # job_file.append(f"\nchmod 444 {outfile} {errfile}")
         job_file.append(f"\nrm {job_file_path}")
 
         #! BUILD DONE => WRITING
