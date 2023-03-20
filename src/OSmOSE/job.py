@@ -134,6 +134,8 @@ class Job_builder:
 
     @property
     def outfile(self):
+        if not Path(self.__config.outfile).is_absolute():
+            return Path(__file__.parent, "job_log", self.__config.outfile).resolve()
         return self.__config.outfile
 
     @outfile.setter
@@ -142,6 +144,8 @@ class Job_builder:
 
     @property
     def errfile(self):
+        if not Path(self.__config.errfile).is_absolute():
+            return Path(__file__.parent, "job_log", self.__config.errfile).resolve()
         return self.__config.errfile
 
     @errfile.setter

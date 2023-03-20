@@ -527,7 +527,7 @@ class Spectrogram(Dataset):
                         script_path=Path(inspect.getfile(resample)).resolve(),
                         script_args=f"--input-dir {self.path_input_audio_file} --target-sr {self.sr_analysis} --ind-min {i_min} --ind-max {i_max} --output-dir {self.audio_path}",
                         jobname="OSmOSE_resample",
-                        preset="medium",
+                        preset="low",
                     )
                     # TODO: use importlib.resources
 
@@ -686,7 +686,7 @@ class Spectrogram(Dataset):
                                         --ind-max {i_max} --output-dir {self.audio_path} --offset-beginning {offset_beginning} --offset-end {offset_end}\
                                         --last-file-behavior {last_file_behavior}",
                             jobname="OSmOSE_reshape_py",
-                            preset="medium",
+                            preset="low",
                         )
 
                         job_id = self.Jb.submit_job(
@@ -711,7 +711,7 @@ class Spectrogram(Dataset):
                         script_args=f"-d {self.path} -i {self.path_input_audio_file.name} -t {sr_analysis} \
                                     -m {i_min} -x {i_max} -o {self.audio_path} -n {self.spectro_duration} {silence_arg}",
                         jobname="OSmOSE_reshape_bash",
-                        preset="medium",
+                        preset="low",
                     )
 
                     job_id = self.Jb.submit_job(
