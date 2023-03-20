@@ -22,7 +22,7 @@ class Job_builder:
         else:
             self.__configfile = config_file
             self.__full_config: NamedTuple = read_config(config_file)
-
+        print(self.__full_config)
         self.__config = self.__full_config.Job
 
         self.__prepared_jobs = []
@@ -239,10 +239,12 @@ class Job_builder:
         job_path : `str`
             The path to the created job file.
         """
-        if preset.lower() not in self.__config.Presets:
+        if preset and preset.lower() not in self.__config.Presets._fields:
             raise ValueError(
-                f"Unrecognized preset {preset}. Valid presets are: {', '.join(self.__config.Presets.keys())}"
+                f"Unrecognized preset {preset}. Valid presets are: {', '.join(self.__config.Presets._fields)}"
             )
+
+        job_preset = gettatr(self.__config.Presets, preset)
 
         pwd = Path(__file__).parent
         jobdir = pwd.joinpath("ongoing_jobs")
@@ -267,31 +269,15 @@ class Job_builder:
             errfile = self.errfile
 
         if not queue:
-            queue = (
-                self.queue
-                if not preset
-                else self.__config.Presets.gettatr(preset).queue
-            )
+            queue = self.queue if not preset else job_preset.queue
         if not nodes:
-            nodes = (
-                self.nodes
-                if not preset
-                else self.__config.Presets.gettatr(preset).nodes
-            )
+            nodes = self.nodes if not preset else job_preset.nodes
         if not walltime:
-            walltime = (
-                self.walltime
-                if not preset
-                else self.__config.Presets.gettatr(preset).walltime
-            )
+            walltime = self.walltime if not preset else job_preset.walltime
         if not ncpus:
-            ncpus = (
-                self.ncpus
-                if not preset
-                else self.__config.Presets.gettatr(preset).ncpus
-            )
+            ncpus = self.ncpus if not preset else job_preset.ncpus
         if not mem:
-            mem = self.mem if not preset else self.__config.Presets.gettatr(preset).mem
+            mem = self.mem if not preset else job_preset.mem
 
         match job_scheduler:
             case "Torque":

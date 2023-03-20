@@ -13,21 +13,21 @@
     mem = "40g"
     nodes = 1
 
-    [Presets.low]
+    [Job.Presets.low]
         queue = "sequentiel"
         walltime = "12:00:00"
         ncpus = 1
         mem = "10g"
         nodes = 1
 
-    [Presets.medium]
+    [Job.Presets.medium]
     queue = "omp"
     walltime = "12:00:00"
     ncpus = 6
     mem = "40g"
     nodes = 1
 
-    [Presets.high]
+    [Job.Presets.high]
         queue = "omp"
         walltime = "12:00:00"
         ncpus = 28
