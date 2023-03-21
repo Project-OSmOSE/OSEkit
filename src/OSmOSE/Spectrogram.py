@@ -108,7 +108,7 @@ class Spectrogram(Dataset):
             analysis_sheet = None
             self.__analysis_file = False
             print(
-                "No valid analysis/analysis_sheet.csv found and no parameters provided. All attributes will be None."
+                "No valid processed/adjust_metadata.csv found and no parameters provided. All attributes will be None."
             )
 
         self.batch_number: int = batch_number
@@ -351,7 +351,7 @@ class Spectrogram(Dataset):
             adjust : `bool`
                 Whether or not the paths are used to adjust spectrogram parameters."""
         processed_path = self.path.joinpath(OSMOSE_PATH.spectrogram)
-        audio_foldername = str(self.spectro_duration) + "_" + str(self.sr_analysis)
+        audio_foldername = f"{str(self.spectro_duration)}_{str(self.sr_analysis)}"
         self.audio_path = self.path.joinpath(OSMOSE_PATH.raw_audio, audio_foldername)
         self.audio_path.mkdir(mode=0o770, parents=True, exist_ok=True)
 
@@ -434,6 +434,7 @@ class Spectrogram(Dataset):
         batch_ind_max: int = -1,
         pad_silence: bool = False,
         force_init: bool = False,
+        date_template: str = None,
     ) -> None:
         """Prepares everything (path, variables, files) for spectrogram generation. This needs to be run before the spectrograms are generated.
         If the dataset has not yet been build, it is before the rest of the functions are initialized.
@@ -460,7 +461,39 @@ class Spectrogram(Dataset):
             When using the legacy reshaping method, whether there should be a silence padding or not (default is False).
         force_init : `bool`, optional, keyword-only
             Force every parameter of the initialization.
+        date_template : `str`, optiona, keyword-only
+            When initializing a spectrogram of a dataset that has not been built, providing a date_template will generate the timestamp.csv.
         """
+        # Mandatory init
+        if not self.is_built:
+            print("Building dataset...")
+            try:
+                self.build(date_template=date_template)
+            except Exception as e:
+                print(
+                    f"Unhandled error during dataset building. They may be resolved by building the dataset separately first. Description of the error: {str(e)}"
+                )
+
+        self.__build_path()
+
+        if sr_analysis:
+            self.sr_analysis = sr_analysis
+
+        if self.__local:
+            lock = mp.Lock()
+
+        self.path_input_audio_file = self._get_original_after_build()
+        list_wav_withEvent_comp = sorted(self.path_input_audio_file.glob("*wav"))
+
+        if batch_ind_max == -1:
+            batch_ind_max = len(list_wav_withEvent_comp)
+        list_wav_withEvent = list_wav_withEvent_comp[batch_ind_min:batch_ind_max]
+
+        self.list_wav_to_process = [
+            audio_file.name for audio_file in list_wav_withEvent
+        ]
+
+        # Stop initialization if already done
         final_path = self.path.joinpath(
             OSMOSE_PATH.spectrogram,
             f"{str(self.spectro_duration)}_{str(self.sr_analysis)}",
@@ -480,31 +513,11 @@ class Spectrogram(Dataset):
                 )
                 return
 
-        if not self.is_built:
-            self.build()
-
-        if sr_analysis:
-            self.sr_analysis = sr_analysis
-
-        if self.__local:
-            lock = mp.Lock()
-
-        self.__build_path()
-
-        self.path_input_audio_file = self._get_original_after_build()
         # Load variables from raw metadata
         metadata = pd.read_csv(self.path_input_audio_file.joinpath("metadata.csv"))
         audio_file_origin_duration = metadata["audio_file_origin_duration"][0]
         sr_origin = metadata["sr_origin"][0]
         audio_file_count = metadata["audio_file_count"][0]
-
-        list_wav_withEvent_comp = sorted(self.path_input_audio_file.glob("*wav"))
-
-        if batch_ind_max == -1:
-            batch_ind_max = len(list_wav_withEvent_comp)
-        list_wav_withEvent = list_wav_withEvent_comp[batch_ind_min:batch_ind_max]
-
-        self.list_wav_to_process = [file.name for file in list_wav_withEvent]
 
         if self.path.joinpath(OSMOSE_PATH.processed, "subset_files.csv").is_file():
             subset = pd.read_csv(
@@ -755,7 +768,6 @@ class Spectrogram(Dataset):
         # self.to_csv(os.path.join(self.path_output_spectrograms, "spectrograms.csv"))
 
         if not self.__analysis_file:
-            # ? Standalone method?
             data = {
                 "dataset_name": self.name,
                 "sr_analysis": float(self.sr_analysis),
@@ -779,7 +791,7 @@ class Spectrogram(Dataset):
             }
             analysis_sheet = pd.DataFrame.from_records([data])
             analysis_sheet.to_csv(
-                self.path_output_spectrogram.parent.joinpath("metadata.csv")
+                self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv")
             )
 
     def to_csv(self, filename: str) -> None:
@@ -796,6 +808,17 @@ class Spectrogram(Dataset):
             "window_size": self.window_size,
             "overlap": self.overlap / 100,
             "zoom_level": 2 ** (self.zoom_levels - 1),
+            # "dynamic_min": self.dynamic_min,
+            # "dynamic_max": self.dynamic_max,
+            # "number_adjustment_spectrograms": self.number_adjustment_spectrograms,
+            # "spectro_duration": self.spectro_duration,
+            # "zscore_duration": self.zscore_duration,
+            # "HPfilter_min_freq": self.HPfilter_min_freq,
+            # "sensitivity_dB": 20 * log10(self.sensitivity / 1e6),
+            # "peak_voltage": self.peak_voltage,
+            # "spectro_normalization": self.spectro_normalization,
+            # "data_normalization": self.data_normalization,
+            # "gain_dB": self.gain_dB
         }
         # TODO: readd `, 'cvr_max':self.dynamic_max, 'cvr_min':self.dynamic_min` above when ok with Aplose
         df = pd.DataFrame.from_records([data])
@@ -814,7 +837,8 @@ class Spectrogram(Dataset):
             The name of the audio file to be processed
         adjust : `bool`, optional, keyword-only
             Indicates whether the file should be processed alone to adjust the spectrogram parameters (the default is False)
-        save_matrix : `save_matrix`
+        save_matrix : `save_matrix`, optional, keyword-only
+            Whether to save the spectrogram matrices or not. Note that activating this parameter might increase greatly the volume of the project. (the default is False)
         """
         self.__build_path(adjust)
         self.save_matrix = save_matrix
@@ -835,6 +859,7 @@ class Spectrogram(Dataset):
 
             self.__summStats = df
 
+        audio_file = Path(audio_file).name
         if audio_file not in os.listdir(self.audio_path):
             raise FileNotFoundError(
                 f"The file {audio_file} must be in {self.audio_path} in order to be processed."
@@ -874,7 +899,7 @@ class Spectrogram(Dataset):
 
         self.gen_tiles(data=data, sample_rate=sample_rate, output_file=output_file)
 
-    def gen_tiles(self, *, data: np.ndarray, sample_rate: int, output_file: str):
+    def gen_tiles(self, *, data: np.ndarray, sample_rate: int, output_file: Path):
         """Generate spectrogram tiles corresponding to the zoom levels.
 
         Parameters
@@ -892,7 +917,6 @@ class Spectrogram(Dataset):
                 data = (data - np.mean(data)) / np.std(data)
 
         duration = len(data) / int(sample_rate)
-        max_w = 0
 
         nber_tiles_lowest_zoom_level = 2 ** (self.zoom_levels - 1)
         tile_duration = duration / nber_tiles_lowest_zoom_level
@@ -904,7 +928,9 @@ class Spectrogram(Dataset):
 
             sample_data = data[int(start * sample_rate) : int((end + 1) * sample_rate)]
 
-            output_file = f"{output_file.stem}_{str(nber_tiles_lowest_zoom_level)}_{str(tile)}.png"
+            output_file = output_file.parent.joinpath(
+                f"{output_file.stem}_{str(nber_tiles_lowest_zoom_level)}_{str(tile)}.png"
+            )
 
         Sxx, Freq = self.gen_spectro(
             data=sample_data, sample_rate=sample_rate, output_file=output_file
@@ -941,7 +967,9 @@ class Spectrogram(Dataset):
                     time=segment_times_int,
                     freq=Freq,
                     log_spectro=log_spectro,
-                    output_file=f"{output_file.stem}_{str(2 ** zoom_level)}_{str(tile)}.png",
+                    output_file=output_file.parent.joinpath(
+                        f"{output_file.stem}_{str(2 ** zoom_level)}_{str(tile)}.png"
+                    ),
                 )
 
     def gen_spectro(
@@ -1035,7 +1063,7 @@ class Spectrogram(Dataset):
         time: np.ndarray[float],
         freq: np.ndarray[float],
         log_spectro: np.ndarray[int],
-        output_file: str,
+        output_file: Path,
     ):
         """Write the spectrogram figures to the output file.
 
@@ -1056,7 +1084,7 @@ class Spectrogram(Dataset):
             figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi),
             dpi=my_dpi,
         )
-        color_map = plt.cm.get_cmap(self.Colmap)  # .reversed()
+        color_map = plt.cm.get_cmap(self.spectro_colormap)  # .reversed()
         plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
         plt.clim(vmin=self.dynamic_min, vmax=self.dynamic_max)
         # plt.colorbar()

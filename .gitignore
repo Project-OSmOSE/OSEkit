@@ -3,3 +3,5 @@ __pycache__
 *.git
 dist
 .vscode
+ongoing_jobs
+log_job

@@ -187,10 +187,8 @@ class Dataset:
     @property
     def is_built(self):
         """Checks if self.path/data/audio contains at least one folder and none called "original"."""
-        return (
-            len(os.listdir(self.path.joinpath(OSMOSE_PATH.raw_audio))) > 0
-            and not self.path.joinpath(OSMOSE_PATH.raw_audio, "original").exists()
-        )
+        metadata_path = self.path.joinpath(OSMOSE_PATH.raw_audio, "metadata.csv")
+        return metadata_path.exists() and pd.read_csv(metadata_path)["is_built"][0]
 
     # endregion
 
@@ -361,40 +359,6 @@ class Dataset:
         else:
             dutyCycle_percent = np.nan
 
-        # write metadata.csv
-        data = {
-            "sr_origin": mean(list_samplingRate),
-            "sample_bits": int(8 * mean(list_sampwidth)),
-            "channel_count": int(channel_count),
-            "audio_file_count": len(filename_csv),
-            "start_date": timestamp_csv[0],
-            "end_date": timestamp_csv[-1],
-            "duty_cycle": dutyCycle_percent,
-            "audio_file_origin_duration": round(mean(list_duration), 2),
-            "audio_file_origin_volume": mean(list_size),
-            "dataset_origin_volume": round(
-                sum(list_size) / 1000,
-                1,
-            ),
-            "dataset_origin_duration": round(
-                sum(list_duration) / 60,  # miiiiight break smth. We'll see.
-                2,
-            ),
-            "lost_levels_in_normalization": lost_levels,
-        }
-        df = pd.DataFrame.from_records([data])
-
-        if self.gps_coordinates:
-            df["lat"] = self.gps_coordinates[0]
-            df["lon"] = self.gps_coordinates[1]
-
-        df["dataset_sr"] = float(mean(list_samplingRate))
-        df["dataset_fileDuration"] = round(mean(list_duration), 2)
-        df.to_csv(
-            path_raw_audio.joinpath("metadata.csv"),
-            index=False,
-        )
-
         # get files with too small duration
         nominalVal_duration = int(np.percentile(list_duration, 10))
         print("\n Summary statistics on your file DURATION")
@@ -481,7 +445,43 @@ class Dataset:
                 for path in self.path.rglob("*"):
                     os.chown(path, -1, gid)
                     os.chmod(path, 0o770)
-            print("\n DONE ! your dataset is on OSmOSE platform !")
+
+        # write metadata.csv
+        data = {
+            "sr_origin": mean(list_samplingRate),
+            "sample_bits": int(8 * mean(list_sampwidth)),
+            "channel_count": int(channel_count),
+            "audio_file_count": len(filename_csv),
+            "start_date": timestamp_csv[0],
+            "end_date": timestamp_csv[-1],
+            "duty_cycle": dutyCycle_percent,
+            "audio_file_origin_duration": round(mean(list_duration), 2),
+            "audio_file_origin_volume": mean(list_size),
+            "dataset_origin_volume": round(
+                sum(list_size) / 1000,
+                1,
+            ),
+            "dataset_origin_duration": round(
+                sum(list_duration) / 60,  # miiiiight break smth. We'll see.
+                2,
+            ),
+            "lost_levels_in_normalization": lost_levels,
+            "is_built": True,
+        }
+        df = pd.DataFrame.from_records([data])
+
+        if self.gps_coordinates:
+            df["lat"] = self.gps_coordinates[0]
+            df["lon"] = self.gps_coordinates[1]
+
+        df["dataset_sr"] = float(mean(list_samplingRate))
+        df["dataset_fileDuration"] = round(mean(list_duration), 2)
+        df.to_csv(
+            path_raw_audio.joinpath("metadata.csv"),
+            index=False,
+        )
+
+        print("\n DONE ! your dataset is on OSmOSE platform !")
 
     def delete_abnormal_files(self) -> None:
         """Delete all files with abnormal durations in the dataset, and rewrite the timestamps.csv file to reflect the changes.
@@ -520,16 +520,24 @@ class Dataset:
     def _find_original_folder(self, original_folder: str = None) -> Path:
         path_raw_audio = self.path.joinpath(OSMOSE_PATH.raw_audio)
         if not path_raw_audio.exists():
-            if len(next(os.walk(self.path))[1]) == 1:
+            if (
+                len(next(os.walk(self.path))[1]) == 1
+            ):  # If there is exactly one folder in the dataset folder
                 path_raw_audio.mkdir(mode=0o770, parents=True, exist_ok=True)
                 orig_folder = self.path.joinpath(next(os.walk(self.path))[1][0])
                 new_path = orig_folder.rename(path_raw_audio.joinpath(orig_folder.name))
                 return new_path
-            elif any(file.endswith(".wav") for file in os.listdir(self.path)):
-                path_raw_audio.joinpath("original").mkdir(mode=0o770, parents=True, exist_ok=True)
+            elif any(
+                file.endswith(".wav") for file in os.listdir(self.path)
+            ):  # If there are audio files in the dataset folder
+                path_raw_audio.joinpath("original").mkdir(
+                    mode=0o770, parents=True, exist_ok=True
+                )
                 for audiofile in os.listdir(self.path):
                     if audiofile.endswith(".wav"):
-                        audiofile.rename(path_raw_audio.joinpath("original", audiofile))
+                        Path(audiofile).rename(
+                            path_raw_audio.joinpath("original", audiofile)
+                        )
 
         elif original_folder:
             return path_raw_audio.joinpath(original_folder)
@@ -546,11 +554,13 @@ class Dataset:
         # First, grab any metadata.csv
         all_datasets = self.path.joinpath(OSMOSE_PATH.raw_audio).iterdir()
         while True:
+            audio_dir = next(all_datasets)
             try:
-                metadata_path = next(all_datasets).resolve().joinpath("metadata.csv")
+                metadata_path = audio_dir.resolve().joinpath("metadata.csv")
             except StopIteration:
+                # If we get to the end of the generator, it means that no metadata file has been found, so we raise a more explicit error.
                 raise ValueError(
-                    f"No metadata file found in {self.path.joinpath(OSMOSE_PATH.raw_audio)}"
+                    f"No metadata file found in {self.path.joinpath(OSMOSE_PATH.raw_audio, audio_dir)}"
                 )
             if metadata_path.exists():
                 break
