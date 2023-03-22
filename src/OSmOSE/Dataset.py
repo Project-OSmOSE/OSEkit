@@ -88,7 +88,7 @@ class Dataset:
 
     @property
     def path(self):
-        """str: The Dataset path. It is readonly."""
+        """Path: The Dataset path. It is readonly."""
         return self.__path
 
     @property
@@ -187,8 +187,14 @@ class Dataset:
     @property
     def is_built(self):
         """Checks if self.path/data/audio contains at least one folder and none called "original"."""
-        metadata_path = self.path.joinpath(OSMOSE_PATH.raw_audio, "metadata.csv")
-        return metadata_path.exists() and pd.read_csv(metadata_path)["is_built"][0]
+        metadata_path = next(
+            self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("metadata.csv"), None
+        )
+        return (
+            metadata_path
+            and metadata_path.exists()
+            and pd.read_csv(metadata_path)["is_built"][0]
+        )
 
     # endregion
 
@@ -250,7 +256,6 @@ class Dataset:
         """
         if owner_group is None:
             owner_group = self.owner_group
-
         path_raw_audio = self._find_original_folder(original_folder)
 
         path_timestamp_formatted = path_raw_audio.joinpath("timestamp.csv")
@@ -519,25 +524,25 @@ class Dataset:
 
     def _find_original_folder(self, original_folder: str = None) -> Path:
         path_raw_audio = self.path.joinpath(OSMOSE_PATH.raw_audio)
-        if not path_raw_audio.exists():
-            if (
-                len(next(os.walk(self.path))[1]) == 1
-            ):  # If there is exactly one folder in the dataset folder
-                path_raw_audio.mkdir(mode=0o770, parents=True, exist_ok=True)
-                orig_folder = self.path.joinpath(next(os.walk(self.path))[1][0])
-                new_path = orig_folder.rename(path_raw_audio.joinpath(orig_folder.name))
-                return new_path
-            elif any(
-                file.endswith(".wav") for file in os.listdir(self.path)
-            ):  # If there are audio files in the dataset folder
-                path_raw_audio.joinpath("original").mkdir(
-                    mode=0o770, parents=True, exist_ok=True
-                )
-                for audiofile in os.listdir(self.path):
-                    if audiofile.endswith(".wav"):
-                        Path(audiofile).rename(
-                            path_raw_audio.joinpath("original", audiofile)
-                        )
+        if any(
+            file.endswith(".wav") for file in os.listdir(self.path)
+        ):  # If there are audio files in the dataset folder
+            path_raw_audio.joinpath("original").mkdir(
+                mode=0o770, parents=True, exist_ok=True
+            )
+            for audiofile in os.listdir(self.path):
+                if audiofile.endswith(".wav"):
+                    self.path.joinpath(audiofile).rename(
+                        path_raw_audio.joinpath("original", audiofile)
+                    )
+            return path_raw_audio.joinpath("original")
+        elif (
+            len(next(os.walk(self.path))[1]) == 1
+        ):  # If there is exactly one folder in the dataset folder
+            path_raw_audio.mkdir(mode=0o770, parents=True, exist_ok=True)
+            orig_folder = self.path.joinpath(next(os.walk(self.path))[1][0])
+            new_path = orig_folder.rename(path_raw_audio.joinpath(orig_folder.name))
+            return new_path
 
         elif original_folder:
             return path_raw_audio.joinpath(original_folder)

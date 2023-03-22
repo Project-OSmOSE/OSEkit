@@ -22,7 +22,7 @@ class Job_builder:
         else:
             self.__configfile = config_file
             self.__full_config: NamedTuple = read_config(config_file)
-        print(self.__full_config)
+
         self.__config = self.__full_config.Job
 
         self.__prepared_jobs = []
@@ -425,3 +425,8 @@ class Job_builder:
             if not file.exists():
                 self.__ongoing_jobs.remove(file)
                 self.__finished_jobs.append(file)
+
+    def read_output_file(
+        self, *, type: Literal["out", "err"] = "out", job_id: str = None
+    ):
+        pass

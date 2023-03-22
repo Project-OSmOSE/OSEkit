@@ -466,13 +466,13 @@ class Spectrogram(Dataset):
         """
         # Mandatory init
         if not self.is_built:
-            print("Building dataset...")
             try:
                 self.build(date_template=date_template)
             except Exception as e:
                 print(
                     f"Unhandled error during dataset building. They may be resolved by building the dataset separately first. Description of the error: {str(e)}"
                 )
+                print(str(e.__traceback__))
 
         self.__build_path()
 
@@ -500,12 +500,18 @@ class Spectrogram(Dataset):
             f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",
             "metadata.csv",
         )
+        temp_path = self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv")
         audio_metadata_path = self.path.joinpath(
             OSMOSE_PATH.raw_audio,
             f"{str(self.spectro_duration)}_{str(self.sr_analysis)}",
             "metadata.csv",
         )
-        if final_path.exists() and audio_metadata_path.exists() and not force_init:
+
+        if (
+            (final_path.exists() or temp_path.exists())
+            and audio_metadata_path.exists()
+            and not force_init
+        ):
             audio_file_count = pd.read_csv(audio_metadata_path)["audio_file_count"][0]
             if len(list(audio_metadata_path.parent.glob("*.wav")) == audio_file_count):
                 print(
@@ -755,7 +761,6 @@ class Spectrogram(Dataset):
                     reshape_job_id_list.append(job_id)
 
         metadata["dataset_fileDuration"] = self.spectro_duration
-        metadata["dataset_fs"] = self.sr_analysis
         new_meta_path = self.audio_path.joinpath("metadata.csv")
         metadata.to_csv(new_meta_path)
 
@@ -842,6 +847,7 @@ class Spectrogram(Dataset):
         """
         self.__build_path(adjust)
         self.save_matrix = save_matrix
+        self.adjust = adjust
         Zscore = self.zscore_duration if not adjust else "original"
 
         #! Determination of zscore normalization parameters
@@ -1109,6 +1115,19 @@ class Spectrogram(Dataset):
         # Saving spectrogram plot to file
         plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
         plt.close()
+
+        metadata_input = self.path.joinpath(
+            OSMOSE_PATH.spectrogram, "adjust_metadata.csv"
+        )
+        metadata_output = self.path.joinpath(
+            OSMOSE_PATH.spectrogram,
+            f"{str(self.spectro_duration)}_{str(self.sr_analysis)}",
+            f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",
+            "metadata.csv",
+        )
+        print()
+        if not self.adjust and metadata_input.exists() and not metadata_output.exists():
+            metadata_input.rename(metadata_output)
 
     # endregion
 
