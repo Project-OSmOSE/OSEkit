@@ -93,7 +93,11 @@ class Dataset:
 
     @property
     def original_folder(self):
-        return self.__original_folder
+        return (
+            self.__original_folder
+            if self.__original_folder
+            else self._get_original_after_build()
+        )
 
     @property
     def gps_coordinates(
@@ -453,7 +457,7 @@ class Dataset:
 
         # write metadata.csv
         data = {
-            "sr_origin": mean(list_samplingRate),
+            "sr_origin": int(mean(list_samplingRate)),
             "sample_bits": int(8 * mean(list_sampwidth)),
             "channel_count": int(channel_count),
             "audio_file_count": len(filename_csv),
@@ -479,7 +483,7 @@ class Dataset:
             df["lat"] = self.gps_coordinates[0]
             df["lon"] = self.gps_coordinates[1]
 
-        df["dataset_sr"] = float(mean(list_samplingRate))
+        df["dataset_sr"] = int(mean(list_samplingRate))
         df["dataset_fileDuration"] = round(mean(list_duration), 2)
         df.to_csv(
             path_raw_audio.joinpath("metadata.csv"),
@@ -575,6 +579,19 @@ class Dataset:
         audio_file_origin_duration = int(metadata["audio_file_origin_duration"][0])
         sr_origin = int(metadata["sr_origin"][0])
 
-        return self.path.joinpath(
+        self.__original_folder = self.path.joinpath(
             OSMOSE_PATH.raw_audio, f"{audio_file_origin_duration}_{sr_origin}"
+        )
+
+        return self.original_folder
+
+    def print_metadata(self):
+        metadata = pd.read_csv(self.original_folder.joinpath("metadata.csv"))
+        print(
+            "\n".join(
+                [
+                    f"{key}: {value}"
+                    for key, value in zip(metadata.keys(), metadata.values[0])
+                ]
+            )
         )

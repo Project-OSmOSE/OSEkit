@@ -339,11 +339,11 @@ class Job_builder:
         job_file.append(f"{prefix} {cpu_param}{ncpus}")
         job_file.append(f"{prefix} {time_param}{walltime}")
         job_file.append(f"{prefix} {mem_param}{mem}")
-        while outfile.exists():
-            outfile = Path(f"{outfile.stem}0{outfile.suffix}")
+        while Path(outfile).exists():
+            outfile = Path(f"{Path(outfile).stem}0{Path(outfile).suffix}")
         job_file.append(f"{prefix} {outfile_param}{outfile}")
-        while errfile.exists():
-            errfile = Path(f"{errfile.stem}0{errfile.suffix}")
+        while Path(errfile).exists():
+            errfile = Path(f"{Path(errfile).stem}0{Path(errfile).suffix}")
         job_file.append(f"{prefix} {errfile_param}{errfile}")
         # endregion
 

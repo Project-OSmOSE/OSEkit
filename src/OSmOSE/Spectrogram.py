@@ -64,13 +64,13 @@ class Spectrogram(Dataset):
             If `analysis/analysis_sheet.csv` does not exist, the analysis parameters can be submitted in the form of a dict,
             with keys matching what is expected:
                 - nfft : `int`
-                - winsize : `int`
+                - window_size : `int`
                 - overlap : `int`
-                - spectro_colormap : `str`
-                - zoom_levels : `int`
+                - colormap : `str`
+                - zoom_level : `int`
                 - dynamic_min : `int`
                 - dynamic_max : `int`
-                - number_adjustment_spectrograms : `int`
+                - number_adjustment_spectrogram : `int`
                 - spectro_duration : `int`
                 - zscore_duration : `float` or `str`
                 - HPfilter_min_freq : `int`
@@ -102,6 +102,7 @@ class Spectrogram(Dataset):
             analysis_sheet = pd.read_csv(metadata_path, header=0)
         elif analysis_params:
             self.__analysis_file = False
+            # We put the value in a list so that value[0] returns the right value below.
             analysis_sheet = {key: [value] for (key, value) in analysis_params.items()}
         else:
             analysis_sheet = None
@@ -116,19 +117,17 @@ class Spectrogram(Dataset):
         self.__nfft: int = (
             analysis_sheet["nfft"][0] if analysis_sheet is not None else None
         )
-        self.__winsize: int = (
-            analysis_sheet["winsize"][0] if analysis_sheet is not None else None
+        self.__window_size: int = (
+            analysis_sheet["window_size"][0] if analysis_sheet is not None else None
         )
         self.__overlap: int = (
             analysis_sheet["overlap"][0] if analysis_sheet is not None else None
         )
-        self.__spectro_colormap: str = (
-            analysis_sheet["spectro_colormap"][0]
-            if analysis_sheet is not None
-            else None
+        self.colormap: str = (
+            analysis_sheet["colormap"][0] if analysis_sheet is not None else None
         )
-        self.__zoom_levels: int = (
-            analysis_sheet["zoom_levels"][0] if analysis_sheet is not None else None
+        self.__zoom_level: int = (
+            analysis_sheet["zoom_level"][0] if analysis_sheet is not None else None
         )
         self.__dynamic_min: int = (
             analysis_sheet["dynamic_min"][0] if analysis_sheet is not None else None
@@ -136,8 +135,8 @@ class Spectrogram(Dataset):
         self.__dynamic_max: int = (
             analysis_sheet["dynamic_max"][0] if analysis_sheet is not None else None
         )
-        self.__number_adjustment_spectrograms: int = (
-            analysis_sheet["number_adjustment_spectrograms"][0]
+        self.__number_adjustment_spectrogram: int = (
+            analysis_sheet["number_adjustment_spectrogram"][0]
             if analysis_sheet is not None
             else None
         )
@@ -184,6 +183,26 @@ class Spectrogram(Dataset):
             analysis_sheet["gain_dB"][0] if analysis_sheet is not None else None
         )
 
+        self.__window_type: str = (
+            analysis_sheet["window_type"][0] if analysis_sheet is not None else None
+        )
+
+        self.__frequency_resolution: int = (
+            analysis_sheet["frequency_resolution"][0]
+            if analysis_sheet is not None
+            else None
+        )
+
+        self.__time_resolution = (
+            [
+                analysis_sheet[col][0]
+                for col in analysis_sheet
+                if "time_resolution" in col
+            ]
+            if analysis_sheet is not None
+            else None
+        )
+
         self.Jb = Job_builder()
 
         plt.switch_backend("agg")
@@ -197,6 +216,8 @@ class Spectrogram(Dataset):
         plt.rc("ytick", labelsize=ticksize)  # fontsize of the tick labels
         plt.rc("legend", fontsize=ticksize)  # legend fontsize
         plt.rc("figure", titlesize=ticksize)  # fontsize of the figure title
+
+        self.__build_path(transparent=True)
 
     # region Spectrogram properties
 
@@ -221,11 +242,11 @@ class Spectrogram(Dataset):
     @property
     def window_size(self):
         """The window size"""
-        return self.__winsize
+        return self.__window_size
 
     @window_size.setter
     def window_size(self, value):
-        self.__winsize = value
+        self.__window_size = value
 
     @property
     def overlap(self):
@@ -236,20 +257,20 @@ class Spectrogram(Dataset):
         self.__overlap = value
 
     @property
-    def spectro_colormap(self):
-        return self.__spectro_colormap
+    def colormap(self):
+        return self.colormap
 
-    @spectro_colormap.setter
-    def spectro_colormap(self, value):
-        self.__spectro_colormap = value
+    @colormap.setter
+    def colormap(self, value):
+        self.colormap = value
 
     @property
-    def zoom_levels(self):
-        return self.__zoom_levels
+    def zoom_level(self):
+        return self.__zoom_level
 
-    @zoom_levels.setter
-    def zoom_levels(self, value):
-        self.__zoom_levels = value
+    @zoom_level.setter
+    def zoom_level(self, value):
+        self.__zoom_level = value
 
     @property
     def dynamic_min(self):
@@ -268,12 +289,12 @@ class Spectrogram(Dataset):
         self.__dynamic_max = value
 
     @property
-    def number_adjustment_spectrograms(self):
-        return self.__number_adjustment_spectrograms
+    def number_adjustment_spectrogram(self):
+        return self.__number_adjustment_spectrogram
 
-    @number_adjustment_spectrograms.setter
-    def number_adjustment_spectrograms(self, value):
-        self.__number_adjustment_spectrograms = value
+    @number_adjustment_spectrogram.setter
+    def number_adjustment_spectrogram(self, value):
+        self.__number_adjustment_spectrogram = value
 
     @property
     def spectro_duration(self):
@@ -340,19 +361,47 @@ class Spectrogram(Dataset):
     def gain_dB(self, value):
         self.__gain_dB = value
 
+    @property
+    def window_type(self):
+        return self.__window_type
+
+    @window_type.setter
+    def window_type(self, value):
+        self.__window_type = value
+
+    @property
+    def frequency_resolution(self):
+        return self.__frequency_resolution
+
+    @frequency_resolution.setter
+    def frequency_resolution(self, value):
+        self.__frequency_resolution = value
+
+    @property
+    def time_resolution(self):
+        return self.__time_resolution
+
+    @time_resolution.setter
+    def time_resolution(self, value):
+        self.__time_resolution = value
+
     # endregion
 
-    def __build_path(self, adjust: bool = False):
+    def __build_path(self, adjust: bool = False, transparent: bool = False):
         """Build some internal paths according to the expected architecture. Not path is created.
 
         Parameter
         ---------
-            adjust : `bool`
-                Whether or not the paths are used to adjust spectrogram parameters."""
+            adjust : `bool`, optional
+                Whether or not the paths are used to adjust spectrogram parameters.
+            transparent: `bool`, optional
+                If set to True, will not create the folders and just return the file path.
+        """
         processed_path = self.path.joinpath(OSMOSE_PATH.spectrogram)
         audio_foldername = f"{str(self.spectro_duration)}_{str(self.sr_analysis)}"
         self.audio_path = self.path.joinpath(OSMOSE_PATH.raw_audio, audio_foldername)
-        self.audio_path.mkdir(mode=0o770, parents=True, exist_ok=True)
+        if not transparent:
+            self.audio_path.mkdir(mode=0o770, parents=True, exist_ok=True)
 
         if adjust:
             self.__spectro_foldername = "adjustment_spectros"
@@ -369,14 +418,18 @@ class Spectrogram(Dataset):
         self.__path_summstats = processed_path.joinpath(
             audio_foldername, "normalization_parameters"
         )
-        self.__path_summstats.mkdir(mode=0o770, parents=True, exist_ok=True)
+
+        if not transparent:
+            self.__path_summstats.mkdir(mode=0o770, parents=True, exist_ok=True)
 
         self.path_output_spectrogram_matrix = processed_path.joinpath(
             audio_foldername, self.__spectro_foldername, "matrix"
         )
-        self.path_output_spectrogram_matrix.mkdir(
-            mode=0o770, parents=True, exist_ok=True
-        )
+
+        if not transparent:
+            self.path_output_spectrogram_matrix.mkdir(
+                mode=0o770, parents=True, exist_ok=True
+            )
 
     def check_spectro_size(self):
         """Verify if the parameters will generate a spectrogram that can fit one screen properly"""
@@ -389,7 +442,7 @@ class Spectrogram(Dataset):
                 )
             )
 
-        tile_duration = self.spectro_duration / 2 ** (self.zoom_levels - 1)
+        tile_duration = self.spectro_duration / 2 ** (self.zoom_level - 1)
 
         data = np.zeros([int(tile_duration * self.sr_analysis), 1])
 
@@ -471,7 +524,6 @@ class Spectrogram(Dataset):
                 print(
                     f"Unhandled error during dataset building. They may be resolved by building the dataset separately first. Description of the error: {str(e)}"
                 )
-                print(str(e.__traceback__))
 
         self.__build_path()
 
@@ -772,11 +824,11 @@ class Spectrogram(Dataset):
                 "dataset_name": self.name,
                 "sr_analysis": float(self.sr_analysis),
                 "nfft": self.nfft,
-                "winsize": self.window_size,
+                "window_size": self.window_size,
                 "overlap": self.overlap,
-                "spectro_colormap": self.spectro_colormap,
-                "zoom_levels": self.zoom_levels,
-                "number_adjustment_spectrograms": self.number_adjustment_spectrograms,
+                "colormap": self.colormap,
+                "zoom_level": self.zoom_level,
+                "number_adjustment_spectrogram": self.number_adjustment_spectrogram,
                 "dynamic_min": self.dynamic_min,
                 "dynamic_max": self.dynamic_max,
                 "spectro_duration": self.spectro_duration,
@@ -807,10 +859,10 @@ class Spectrogram(Dataset):
             "nfft": self.nfft,
             "window_size": self.window_size,
             "overlap": self.overlap / 100,
-            "zoom_level": 2 ** (self.zoom_levels - 1),
+            "zoom_level": 2 ** (self.zoom_level - 1),
             # "dynamic_min": self.dynamic_min,
             # "dynamic_max": self.dynamic_max,
-            # "number_adjustment_spectrograms": self.number_adjustment_spectrograms,
+            # "number_adjustment_spectrogram": self.number_adjustment_spectrogram,
             # "spectro_duration": self.spectro_duration,
             # "zscore_duration": self.zscore_duration,
             # "HPfilter_min_freq": self.HPfilter_min_freq,
@@ -919,7 +971,7 @@ class Spectrogram(Dataset):
 
         duration = len(data) / int(sample_rate)
 
-        nber_tiles_lowest_zoom_level = 2 ** (self.zoom_levels - 1)
+        nber_tiles_lowest_zoom_level = 2 ** (self.zoom_level - 1)
         tile_duration = duration / nber_tiles_lowest_zoom_level
 
         Sxx_2 = np.empty((int(self.nfft / 2) + 1, 1))
@@ -946,18 +998,18 @@ class Spectrogram(Dataset):
         )[np.newaxis, :]
 
         # loop over the zoom levels from the second lowest to the highest one
-        for zoom_level in range(self.zoom_levels)[::-1]:
+        for zoom_level in range(self.zoom_level)[::-1]:
             nberspec = Sxx_lowest_level.shape[1] // (2**zoom_level)
 
             # loop over the tiles at each zoom level
             for tile in range(2**zoom_level):
                 Sxx_int = Sxx_lowest_level[:, tile * nberspec : (tile + 1) * nberspec][
-                    :, :: 2 ** (self.zoom_levels - zoom_level)
+                    :, :: 2 ** (self.zoom_level - zoom_level)
                 ]
 
                 segment_times_int = segment_times[
                     :, tile * nberspec : (tile + 1) * nberspec
-                ][:, :: 2 ** (self.zoom_levels - zoom_level)]
+                ][:, :: 2 ** (self.zoom_level - zoom_level)]
 
                 if self.spectro_normalization == "density":
                     log_spectro = 10 * np.log10(Sxx_int / (1e-12))
@@ -1085,7 +1137,7 @@ class Spectrogram(Dataset):
             figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi),
             dpi=my_dpi,
         )
-        color_map = plt.cm.get_cmap(self.spectro_colormap)  # .reversed()
+        color_map = plt.cm.get_cmap(self.colormap)  # .reversed()
         plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
         plt.clim(vmin=self.dynamic_min, vmax=self.dynamic_max)
         # plt.colorbar()
