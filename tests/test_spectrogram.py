@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 import platform
 import pandas as pd
 import numpy as np
@@ -77,7 +76,7 @@ def test_initialize_5s(input_dataset):
         OSMOSE_PATH.spectrogram.joinpath("5_240", "512_512_97", "image"),
         OSMOSE_PATH.spectrogram.joinpath("5_240", "512_512_97", "matrix"),
         OSMOSE_PATH.spectrogram.joinpath("5_240", "normalization_parameters"),
-        OSMOSE_PATH.spectrogram.joinpath("5_240", "512_512_97", "metadata.csv"),
+        OSMOSE_PATH.spectrogram.joinpath("adjust_metadata.csv"),
         OSMOSE_PATH.raw_audio.joinpath("5_240"),
         OSMOSE_PATH.raw_audio.joinpath("5_240", "metadata.csv"),
         timestamp_path,
@@ -141,7 +140,7 @@ def test_initialize_2s(input_dataset):
         OSMOSE_PATH.spectrogram.joinpath("2_240", "512_512_97", "image"),
         OSMOSE_PATH.spectrogram.joinpath("2_240", "512_512_97", "matrix"),
         OSMOSE_PATH.spectrogram.joinpath("2_240", "normalization_parameters"),
-        OSMOSE_PATH.spectrogram.joinpath("2_240", "512_512_97", "metadata.csv"),
+        OSMOSE_PATH.spectrogram.joinpath("adjust_metadata.csv"),
         OSMOSE_PATH.raw_audio.joinpath("2_240"),
         OSMOSE_PATH.raw_audio.joinpath("2_240", "metadata.csv"),
         timestamp_path,

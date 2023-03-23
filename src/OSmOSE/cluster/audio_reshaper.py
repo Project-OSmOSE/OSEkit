@@ -1,13 +1,11 @@
 import math
-import random
 import sys
 import shutil
 from datetime import datetime, timedelta
-from time import sleep
 from typing import List, Union, Literal
 from argparse import ArgumentParser
 from pathlib import Path
-from multiprocessing import Lock
+from filelock import FileLock
 
 import soundfile as sf
 import numpy as np
@@ -63,7 +61,6 @@ def reshape(
     verbose: bool = False,
     overwrite: bool = False,
     force_reshape: bool = False,
-    lock=None,
 ) -> List[str]:
     """Reshape all audio files in the folder to be of the specified duration. If chunk_size is superior to the base duration of the files, they will be fused according to their order in the timestamp.csv file in the same folder.
 
@@ -159,11 +156,8 @@ def reshape(
             f"The timestamp.csv file must be present in the directory {input_dir_path} and correspond to the audio files in the same location."
         )
 
-    if overwrite and output_dir_path and not list(output_dir_path.glob("flag_*")):
+    if overwrite and output_dir_path:
         shutil.rmtree(output_dir_path)
-
-    flag = output_dir_path.joinpath(f"flag_{batch_ind_max}")
-    open(flag, "w").close()
 
     output_dir_path.mkdir(mode=0o770, parents=True, exist_ok=True)
 
@@ -407,45 +401,26 @@ def reshape(
                     f"{outfilename} written! File is {(len(output)/sample_rate)} seconds long. {len(previous_audio_data)/sample_rate} seconds left from slicing."
                 )
 
-    timestamp_csv_name = f"timestamp_{batch_ind_max}.csv"
+    path_csv = output_dir_path.joinpath("timestamp.csv")
 
-    if lock:
-        lock.acquire()
+    lock = FileLock(str(path_csv) + ".lock")
 
-    with open(flag, "a") as f:
-        f.write("finished!")
-
-    if all(
-        [
-            flag_file.stat().st_size > 1
-            for flag_file in list(output_dir_path.glob("flag_*"))
-            if flag_file != flag
-        ]
-    ):
-        for path_csv in output_dir_path.glob("timestamp*.csv"):
+    with lock:
+        if path_csv.exists():
             tmp_timestamp = pd.read_csv(path_csv, header=None)
             result += list(tmp_timestamp[0].values)
             timestamp_list += list(tmp_timestamp[1].values)
-            path_csv.unlink()
 
-        timestamp_csv_name = "timestamp.csv"
-
-        for flag_file in list(output_dir_path.glob("flag_*")):
-            flag_file.unlink()
-
-    input_timestamp = pd.DataFrame(
-        {"filename": result, "timestamp": timestamp_list, "timezone": "UTC"}
-    )
-    input_timestamp.sort_values(by=["timestamp"], inplace=True)
-    input_timestamp.to_csv(
-        output_dir_path.joinpath(timestamp_csv_name),
-        index=False,
-        na_rep="NaN",
-        header=None,
-    )
-
-    if lock:
-        lock.release()
+        input_timestamp = pd.DataFrame(
+            {"filename": result, "timestamp": timestamp_list, "timezone": "UTC"}
+        )
+        input_timestamp.sort_values(by=["timestamp"], inplace=True)
+        input_timestamp.to_csv(
+            path_csv,
+            index=False,
+            na_rep="NaN",
+            header=None,
+        )
 
     return [output_dir_path.joinpath(res) for res in result]
 

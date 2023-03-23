@@ -9,7 +9,6 @@ import multiprocessing as mp
 
 import pandas as pd
 import numpy as np
-import soundfile as sf
 from scipy import signal
 from termcolor import colored
 from matplotlib import pyplot as plt
@@ -479,9 +478,6 @@ class Spectrogram(Dataset):
         if sr_analysis:
             self.sr_analysis = sr_analysis
 
-        if self.__local:
-            lock = mp.Lock()
-
         self.path_input_audio_file = self._get_original_after_build()
         list_wav_withEvent_comp = sorted(self.path_input_audio_file.glob("*wav"))
 
@@ -714,7 +710,6 @@ class Spectrogram(Dataset):
                                 "batch_ind_min": i_min,
                                 "batch_ind_max": i_max,
                                 "last_file_behavior": last_file_behavior,
-                                "lock": lock,
                             },
                         )
 

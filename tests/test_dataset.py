@@ -3,7 +3,6 @@ from pathlib import Path
 
 import pytest
 from OSmOSE import Dataset
-from OSmOSE.config import OSMOSE_PATH
 
 
 def test_init(input_dataset, capsys):
@@ -35,11 +34,11 @@ def test_error_build(input_dir: Path):
     input_dir.joinpath("data", "audio").mkdir(parents=True)
     dataset = Dataset(input_dir)
 
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(FileNotFoundError) as e:
         dataset.build()
     assert (
         str(e.value)
-        == f"""No folder has been found in {input_dir.joinpath("data","audio")}. Please create the raw audio file folder and try again."""
+        == f"""The timestamp.csv file has not been found in {input_dir.joinpath("data","audio","original")}. You can create it automatically by setting the date template as argument."""
     )
 
 

@@ -278,8 +278,10 @@ class Job_builder:
 
         if not outfile:
             outfile = self.outfile
+        outfile = Path(outfile).resolve()
         if not errfile:
             errfile = self.errfile
+        errfile = Path(errfile).resolve()
 
         if not queue:
             queue = self.queue if not preset else job_preset.queue
@@ -337,7 +339,11 @@ class Job_builder:
         job_file.append(f"{prefix} {cpu_param}{ncpus}")
         job_file.append(f"{prefix} {time_param}{walltime}")
         job_file.append(f"{prefix} {mem_param}{mem}")
+        while outfile.exists():
+            outfile = Path(f"{outfile.stem}0{outfile.suffix}")
         job_file.append(f"{prefix} {outfile_param}{outfile}")
+        while errfile.exists():
+            errfile = Path(f"{errfile.stem}0{errfile.suffix}")
         job_file.append(f"{prefix} {errfile_param}{errfile}")
         # endregion
 
@@ -366,7 +372,9 @@ class Job_builder:
         with open(job_file_path, "w") as jobfile:
             jobfile.write("\n".join(job_file))
 
-        self.__prepared_jobs.append(job_file_path)
+        job_info = {"path": job_file_path, "outfile": outfile, "errfile": errfile}
+
+        self.__prepared_jobs.append(job_info)
 
         return job_file_path
 
@@ -389,44 +397,75 @@ class Job_builder:
             A list containing the job ids of the submitted jobs.
         """
 
-        jobfile_list = [jobfile] if jobfile else self.prepared_jobs
+        jobinfo_list = [{"path": jobfile}] if jobfile else self.prepared_jobs
 
         jobid_list = []
 
         # TODO: Think about the issue when a job have too many dependencies and workaround.
 
-        for jobfile in jobfile_list:
-            if "torque" in str(jobfile).lower():
+        for jobinfo in jobinfo_list:
+            if "torque" in str(jobinfo["path"]).lower():
                 dep = f" -W depend=afterok:{dependency}" if dependency else ""
                 jobid = (
-                    subprocess.run([f"qsub{dep}", jobfile], stdout=subprocess.PIPE)
+                    subprocess.run(
+                        [f"qsub{dep}", jobinfo["path"]], stdout=subprocess.PIPE
+                    )
                     .stdout.decode("utf-8")
                     .rstrip("\n")
                 )
                 jobid_list.append(jobid)
-            elif "slurm" in str(jobfile).lower():
+            elif "slurm" in str(jobinfo["path"]).lower():
                 dep = f"-d afterok:{dependency}" if dependency else ""
                 jobid = (
-                    subprocess.run(["sbatch", dep, jobfile], stdout=subprocess.PIPE)
+                    subprocess.run(
+                        ["sbatch", dep, jobinfo["path"]], stdout=subprocess.PIPE
+                    )
                     .stdout.decode("utf-8")
                     .rstrip("\n")
                 )
                 jobid_list.append(jobid)
 
-            if jobfile in self.prepared_jobs:
-                self.__prepared_jobs.remove(jobfile)
-            self.__ongoing_jobs.append(jobfile)
+            if jobinfo in self.prepared_jobs:
+                self.__prepared_jobs.remove(jobinfo)
+            self.__ongoing_jobs.append(jobinfo)
 
         return jobid_list
 
     def update_job_status(self):
         """Iterates over the list of ongoing jobs and mark them as finished if the job file does not exist."""
-        for file in self.__ongoing_jobs:
-            if not file.exists():
-                self.__ongoing_jobs.remove(file)
-                self.__finished_jobs.append(file)
+        for jobinfo in self.__ongoing_jobs:
+            if not jobinfo["path"].exists():
+                self.__ongoing_jobs.remove(jobinfo)
+                self.__finished_jobs.append(jobinfo)
 
     def read_output_file(
-        self, *, type: Literal["out", "err"] = "out", job_id: str = None
+        self, *, outtype: Literal["out", "err"] = "out", job_file_name: str = None
     ):
-        pass
+        """Read the content of a specific job output file, or the first in the finished list.
+
+        Parameters
+        ----------
+            outtype: `{"out","err"}`, optional, keyword-only
+                The type of the output file to read, whether standard (out) or error (err). The default is out.
+            job_file_name: `str`, optional, keyword-only
+                The path to the job_file to read, which can be retrieved easily from Job_builder.finished_jobs. If not provided, then the first element of the list will be read.
+        """
+        if outtype not in ["out", "err"]:
+            raise ValueError(
+                "The outtype must be either out for standard output file or err for error output file."
+            )
+
+        if not job_file_name:
+            if not len(self.finished_jobs) == 0:
+                print(
+                    f"There are no finished jobs in this context. Wait until the {len(self.ongoing_jobs)} ongoing jobs are done before reading the output. Otherwise, you can specify which file you wish to read."
+                )
+            else:
+                job_file_name = (
+                    self.finished_jobs[0]["outfile"]
+                    if outtype == "out"
+                    else self.finished_jobs[0]["errfile"]
+                )
+
+        with open(job_file_name, "r") as f:
+            print("".join(f.readlines()))
