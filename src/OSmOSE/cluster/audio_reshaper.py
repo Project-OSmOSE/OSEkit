@@ -1,4 +1,5 @@
 import math
+import os
 import sys
 import shutil
 from datetime import datetime, timedelta
@@ -406,6 +407,7 @@ def reshape(
     lock = FileLock(str(path_csv) + ".lock")
 
     with lock:
+        # suppr doublons
         if path_csv.exists():
             tmp_timestamp = pd.read_csv(path_csv, header=None)
             result += list(tmp_timestamp[0].values)
@@ -415,7 +417,7 @@ def reshape(
             {"filename": result, "timestamp": timestamp_list, "timezone": "UTC"}
         )
         input_timestamp.sort_values(by=["timestamp"], inplace=True)
-        input_timestamp.to_csv(
+        input_timestamp.drop_duplicates().to_csv(
             path_csv,
             index=False,
             na_rep="NaN",

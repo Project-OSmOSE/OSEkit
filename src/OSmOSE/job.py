@@ -1,3 +1,4 @@
+import glob
 import os
 import json
 import tomlkit
@@ -279,6 +280,7 @@ class Job_builder:
         if not outfile:
             outfile = self.outfile
         outfile = Path(outfile).resolve()
+
         if not errfile:
             errfile = self.errfile
         errfile = Path(errfile).resolve()
@@ -339,11 +341,17 @@ class Job_builder:
         job_file.append(f"{prefix} {cpu_param}{ncpus}")
         job_file.append(f"{prefix} {time_param}{walltime}")
         job_file.append(f"{prefix} {mem_param}{mem}")
-        while Path(outfile).exists():
-            outfile = Path(f"{Path(outfile).stem}0{Path(outfile).suffix}")
+
+        uid = (
+            len(glob.glob(Path(outfile).stem[:-2] + "*.out"))
+            + len(self.prepared_jobs)
+            + len(self.ongoing_jobs)
+        )
+
+        outfile = Path(outfile).with_stem(f"{Path(outfile).stem}{uid}")
+
         job_file.append(f"{prefix} {outfile_param}{outfile}")
-        while Path(errfile).exists():
-            errfile = Path(f"{Path(errfile).stem}0{Path(errfile).suffix}")
+        errfile = Path(errfile).with_stem(f"{Path(errfile).stem}{uid}")
         job_file.append(f"{prefix} {errfile_param}{errfile}")
         # endregion
 
@@ -397,7 +405,9 @@ class Job_builder:
             A list containing the job ids of the submitted jobs.
         """
 
-        jobinfo_list = [{"path": jobfile}] if jobfile else self.prepared_jobs
+        jobinfo_list = (
+            [{"path": jobfile}] if jobfile is not None else self.prepared_jobs
+        )
 
         jobid_list = []
 
@@ -437,6 +447,18 @@ class Job_builder:
             if not jobinfo["path"].exists():
                 self.__ongoing_jobs.remove(jobinfo)
                 self.__finished_jobs.append(jobinfo)
+
+    def update_job_access(self):
+        """In case the output files are not accessible by anyone but the owner, running this once will update the permissions for anyone to read them."""
+
+        for job_info in self.finished_jobs:
+            try:
+                if job_info["outfile"].exists():
+                    os.chmod(job_info["outfile"], 0o664)
+                if job_info["errfile"].exists():
+                    os.chmod(job_info["errfile"], 0o664)
+            except KeyError:
+                print(f"No outfile or errfile associated with job {job_info['path']}.")
 
     def read_output_file(
         self, *, outtype: Literal["out", "err"] = "out", job_file_name: str = None
