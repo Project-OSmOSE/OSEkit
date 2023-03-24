@@ -194,11 +194,7 @@ class Dataset:
         metadata_path = next(
             self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("metadata.csv"), None
         )
-        return (
-            metadata_path
-            and metadata_path.exists()
-            and pd.read_csv(metadata_path)["is_built"][0]
-        )
+        return metadata_path and metadata_path.exists()
 
     # endregion
 

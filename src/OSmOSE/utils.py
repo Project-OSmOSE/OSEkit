@@ -1,3 +1,4 @@
+import os
 from warnings import warn
 from pathlib import Path
 from importlib.resources import as_file
@@ -40,20 +41,37 @@ def list_not_built_datasets(datasets_folder_path: str) -> None:
     ds_folder = Path(datasets_folder_path)
 
     dataset_list = [
-        directory for directory in ds_folder.iterdir() if ds_folder.joinpath(directory)
+        directory
+        for directory in ds_folder.iterdir()
+        if ds_folder.joinpath(directory).is_dir()
     ]
     list_not_built_datasets = []
+    list_unknown_datasets = []
 
     for dataset_directory in dataset_list:
-        if ds_folder.joinpath(
-            dataset_directory, OSMOSE_PATH.raw_audio, "original"
-        ).exists():
-            list_not_built_datasets.append(dataset_directory)
+        if os.access(ds_folder.joinpath(dataset_directory), os.R_OK):
+            ds_metadata_path = next(
+                ds_folder.joinpath(dataset_directory, OSMOSE_PATH.raw_audio).rglob(
+                    "metadata.csv"
+                ),
+                None,
+            )
+            if not ds_metadata_path:
+                list_not_built_datasets.append(dataset_directory)
+        else:
+            list_unknown_datasets.append(dataset_directory)
 
-    print("List of the datasets not built yet:")
+    not_built_formatted = "\n".join(
+        [f"  - {dataset}" for dataset in list_not_built_datasets]
+    )
+    print(f"""List of the datasets that aren't built yet:\n{not_built_formatted}""")
 
-    for dataset in list_not_built_datasets:
-        print("  - {}".format(dataset))
+    unreachable_formatted = "\n".join(
+        [f"  - {dataset}" for dataset in list_unknown_datasets]
+    )
+    print(
+        f"""List of unreachable datasets (probably due to insufficient permissions:\n{unreachable_formatted}"""
+    )
 
 
 def read_config(raw_config: Union[str, dict, Path]) -> NamedTuple:
