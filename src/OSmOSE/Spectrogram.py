@@ -866,6 +866,10 @@ class Spectrogram(Dataset):
                 self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv")
             )
 
+            self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv").chmod(
+                0o777
+            )
+
     def to_csv(self, filename: str) -> None:
         """Outputs the characteristics of the spectrogram the specified file in csv format.
 

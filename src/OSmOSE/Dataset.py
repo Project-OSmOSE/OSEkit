@@ -467,11 +467,11 @@ class Dataset:
             "audio_file_origin_duration": round(mean(list_duration), 2),
             "audio_file_origin_volume": mean(list_size),
             "dataset_origin_volume": round(
-                sum(list_size) / 1000,
+                sum(list_size),
                 1,
             ),
             "dataset_origin_duration": round(
-                sum(list_duration) / 60,  # miiiiight break smth. We'll see.
+                sum(list_duration),  # miiiiight break smth. We'll see.
                 2,
             ),
             "lost_levels_in_normalization": lost_levels,
@@ -484,7 +484,7 @@ class Dataset:
             df["lon"] = self.gps_coordinates[1]
 
         df["dataset_sr"] = int(mean(list_samplingRate))
-        df["dataset_fileDuration"] = round(mean(list_duration), 2)
+        df["dataset_fileDuration"] = int(round(mean(list_duration), 2))
         df.to_csv(
             path_raw_audio.joinpath("metadata.csv"),
             index=False,
