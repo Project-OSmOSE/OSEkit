@@ -17,7 +17,7 @@ from OSmOSE.cluster import (
     reshape,
     resample,
     compute_stats,
-)  # Not used for now; will be when local execution will be a thing.
+)
 from OSmOSE.Dataset import Dataset
 from OSmOSE.utils import safe_read
 from OSmOSE.config import OSMOSE_PATH
@@ -105,7 +105,7 @@ class Spectrogram(Dataset):
             # We put the value in a list so that value[0] returns the right value below.
             analysis_sheet = {key: [value] for (key, value) in analysis_params.items()}
         else:
-            analysis_sheet = None
+            analysis_sheet = {}
             self.__analysis_file = False
             print(
                 "No valid processed/adjust_metadata.csv found and no parameters provided. All attributes will be None."
@@ -115,29 +115,35 @@ class Spectrogram(Dataset):
         self.__sr_analysis: int = sr_analysis
 
         self.__nfft: int = (
-            analysis_sheet["nfft"][0] if analysis_sheet is not None else None
+            analysis_sheet["nfft"][0] if "nfft" in analysis_sheet else None
         )
         self.__window_size: int = (
-            analysis_sheet["window_size"][0] if analysis_sheet is not None else None
+            analysis_sheet["window_size"][0]
+            if "window_size" in analysis_sheet
+            else None
         )
         self.__overlap: int = (
-            analysis_sheet["overlap"][0] if analysis_sheet is not None else None
+            analysis_sheet["overlap"][0] if "overlap" in analysis_sheet else None
         )
-        self.colormap: str = (
-            analysis_sheet["colormap"][0] if analysis_sheet is not None else None
+        self.__colormap: str = (
+            analysis_sheet["colormap"][0] if "colormap" in analysis_sheet else None
         )
         self.__zoom_level: int = (
-            analysis_sheet["zoom_level"][0] if analysis_sheet is not None else None
+            analysis_sheet["zoom_level"][0] if "zoom_level" in analysis_sheet else None
         )
         self.__dynamic_min: int = (
-            analysis_sheet["dynamic_min"][0] if analysis_sheet is not None else None
+            analysis_sheet["dynamic_min"][0]
+            if "dynamic_min" in analysis_sheet
+            else None
         )
         self.__dynamic_max: int = (
-            analysis_sheet["dynamic_max"][0] if analysis_sheet is not None else None
+            analysis_sheet["dynamic_max"][0]
+            if "dynamic_max" in analysis_sheet
+            else None
         )
         self.__number_adjustment_spectrogram: int = (
             analysis_sheet["number_adjustment_spectrogram"][0]
-            if analysis_sheet is not None
+            if "number_adjustment_spectrogram" in analysis_sheet
             else None
         )
         self.__spectro_duration: int = (
@@ -148,7 +154,7 @@ class Spectrogram(Dataset):
 
         self.__zscore_duration: Union[float, str] = (
             analysis_sheet["zscore_duration"][0]
-            if analysis_sheet is not None
+            if "zscore_duration" in analysis_sheet
             and isinstance(analysis_sheet["zscore_duration"][0], float)
             else None
         )
@@ -156,40 +162,48 @@ class Spectrogram(Dataset):
         # fmin cannot be 0 in butterworth. If that is the case, it takes the smallest value possible, epsilon
         self.__hpfilter_min_freq: int = (
             analysis_sheet["HPfilter_min_freq"][0]
-            if analysis_sheet is not None
+            if "HPfilter_min_freq" in analysis_sheet
             and analysis_sheet["HPfilter_min_freq"][0] != 0
             else sys.float_info.epsilon
         )
         sensitivity_dB: int = (
-            analysis_sheet["sensitivity_dB"][0] if analysis_sheet is not None else None
+            analysis_sheet["sensitivity_dB"][0]
+            if "sensitivity_dB" in analysis_sheet
+            else None
         )
         self.__sensitivity: float = (
-            10 ** (sensitivity_dB / 20) * 1e6 if analysis_sheet is not None else None
+            10 ** (sensitivity_dB / 20) * 1e6 if sensitivity_dB is not None else None
         )
         self.__peak_voltage: float = (
-            analysis_sheet["peak_voltage"][0] if analysis_sheet is not None else None
+            analysis_sheet["peak_voltage"][0]
+            if "peak_voltage" in analysis_sheet
+            else None
         )
         self.__spectro_normalization: str = (
             analysis_sheet["spectro_normalization"][0]
-            if analysis_sheet is not None
+            if "spectro_normalization" in analysis_sheet
             else None
         )
         self.__data_normalization: str = (
             analysis_sheet["data_normalization"][0]
-            if analysis_sheet is not None
+            if "data_normalization" in analysis_sheet
             else None
         )
         self.__gain_dB: float = (
-            analysis_sheet["gain_dB"][0] if analysis_sheet is not None else None
+            analysis_sheet["gain_dB"][0]
+            if "gain_dB" in analysis_sheet is not None
+            else None
         )
 
         self.__window_type: str = (
-            analysis_sheet["window_type"][0] if analysis_sheet is not None else None
+            analysis_sheet["window_type"][0]
+            if "window_type" in analysis_sheet
+            else None
         )
 
         self.__frequency_resolution: int = (
             analysis_sheet["frequency_resolution"][0]
-            if analysis_sheet is not None
+            if "frequency_resolution" in analysis_sheet
             else None
         )
 
@@ -258,11 +272,11 @@ class Spectrogram(Dataset):
 
     @property
     def colormap(self):
-        return self.colormap
+        return self.__colormap
 
     @colormap.setter
     def colormap(self, value):
-        self.colormap = value
+        self.__colormap = value
 
     @property
     def zoom_level(self):
@@ -840,7 +854,13 @@ class Spectrogram(Dataset):
                 "spectro_normalization": self.spectro_normalization,
                 "gain_dB": self.gain_dB,
                 "zscore_duration": self.zscore_duration,
+                "window_type": self.window_type,
+                "frequency_resolution": self.frequency_resolution,
             }
+
+            for i, time_res in enumerate(self.time_resolution):
+                data.update({f"time_resolution_{i}": time_res})
+
             analysis_sheet = pd.DataFrame.from_records([data])
             analysis_sheet.to_csv(
                 self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv")
