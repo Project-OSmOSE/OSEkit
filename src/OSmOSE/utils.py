@@ -32,7 +32,6 @@ def display_folder_storage_infos(dir_path: str) -> None:
 
 def list_not_built_datasets(datasets_folder_path: str) -> None:
     """Prints the available datasets that have not been built by the `Dataset.build()` function.
-
     Parameter
     ---------
     dataset_folder_path: str
@@ -45,6 +44,9 @@ def list_not_built_datasets(datasets_folder_path: str) -> None:
         for directory in ds_folder.iterdir()
         if ds_folder.joinpath(directory).is_dir()
     ]
+    
+    dataset_list = sorted(dataset_list, key=lambda path: str(path).lower()) # case insensitive alphabetical sorting of datasets
+    
     list_not_built_datasets = []
     list_unknown_datasets = []
 
@@ -62,12 +64,12 @@ def list_not_built_datasets(datasets_folder_path: str) -> None:
             list_unknown_datasets.append(dataset_directory)
 
     not_built_formatted = "\n".join(
-        [f"  - {dataset}" for dataset in list_not_built_datasets]
+        [f"  - {os.path.basename(dataset)}" for dataset in list_not_built_datasets]
     )
     print(f"""List of the datasets that aren't built yet:\n{not_built_formatted}""")
 
     unreachable_formatted = "\n".join(
-        [f"  - {dataset}" for dataset in list_unknown_datasets]
+        [f"  - {os.path.basename(dataset)}" for dataset in list_unknown_datasets]
     )
     print(
         f"""List of unreachable datasets (probably due to insufficient permissions:\n{unreachable_formatted}"""
@@ -76,17 +78,14 @@ def list_not_built_datasets(datasets_folder_path: str) -> None:
 
 def read_config(raw_config: Union[str, dict, Path]) -> NamedTuple:
     """Read the given configuration file or dict and converts it to a namedtuple. Only TOML and JSON formats are accepted for now.
-
     Parameter
     ---------
     raw_config : `str` or `Path` or `dict`
         The path of the configuration file, or the dict object containing the configuration.
-
     Returns
     -------
     config : `namedtuple`
         The configuration as a `namedtuple` object.
-
     Raises
     ------
     FileNotFoundError
@@ -144,15 +143,12 @@ def convert(dictionary):
 
 def read_header(file: str) -> Tuple[int, float, int, int]:
     """Read the first bytes of a wav file and extract its characteristics.
-
     At the very least, only the first 44 bytes are read. If the `data` chunk is not right after the header chunk,
     the subsequent chunks will be read until the `data` chunk is found. If there is no `data` chunk, all the file will be read.
-
     Parameter
     ---------
     file: str
         The absolute path of the wav file whose header will be read.
-
     Returns
     -------
     samplerate : `int`
@@ -163,7 +159,6 @@ def read_header(file: str) -> Tuple[int, float, int, int]:
         The number of audio channels.
     sampwidth : `int`
         The sample width.
-
     Note
     ----
     When there is no `data` chunk, the `frames` value will fall back on the size written in the header. This can be incorrect,
@@ -212,10 +207,8 @@ def safe_read(
     file_path: str, *, nan: float = 0.0, posinf: any = None, neginf: any = None
 ) -> Tuple[np.ndarray, int]:
     """Open a file using Soundfile and clean up the data to be used safely
-
     Currently, only checks for `NaN`, `inf` and `-inf` presence. The default behavior is the same as `np.nan_to_num`:
     `NaNs` are transformed into 0.0, `inf` and `-inf` are transformed into the maximum and minimum values of their dtype.
-
     Parameters
     ----------
         file_path: `str`
@@ -226,7 +219,6 @@ def safe_read(
             The value that will replace `inf`. Default behavior is the maximum value of the data type.
         neginf: `any`, optional, keyword_only
             The value that will replace `-inf`. Default behavior is the minimum value of the data type.
-
     Returns
     -------
         audio_data: `NDArray`
@@ -258,11 +250,9 @@ def check_n_files(
     auto_normalization: bool = False,
 ) -> bool:
     """Check n files at random for anomalies and may normalize them.
-
     Currently, check if the data for wav in PCM float format are between -1.0 and 1.0. If the number of files that
     fail the test is higher than the threshold (which is 10% of n by default, with an absolute minimum of 1), all the
     dataset will be normalized and written in another file.
-
     Parameters
     ----------
         file_list: `list`
