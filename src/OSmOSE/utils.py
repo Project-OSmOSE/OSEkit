@@ -44,9 +44,11 @@ def list_not_built_datasets(datasets_folder_path: str) -> None:
         for directory in ds_folder.iterdir()
         if ds_folder.joinpath(directory).is_dir()
     ]
-    
-    dataset_list = sorted(dataset_list, key=lambda path: str(path).lower()) # case insensitive alphabetical sorting of datasets
-    
+
+    dataset_list = sorted(
+        dataset_list, key=lambda path: str(path).lower()
+    )  # case insensitive alphabetical sorting of datasets
+
     list_not_built_datasets = []
     list_unknown_datasets = []
 
