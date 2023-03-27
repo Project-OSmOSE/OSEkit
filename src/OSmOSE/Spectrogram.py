@@ -112,47 +112,45 @@ class Spectrogram(Dataset):
             )
 
         self.batch_number: int = batch_number
-        self.__sr_analysis: int = sr_analysis
+        self.sr_analysis: int = sr_analysis
 
-        self.__nfft: int = (
-            analysis_sheet["nfft"][0] if "nfft" in analysis_sheet else None
-        )
-        self.__window_size: int = (
+        self.nfft: int = analysis_sheet["nfft"][0] if "nfft" in analysis_sheet else None
+        self.window_size: int = (
             analysis_sheet["window_size"][0]
             if "window_size" in analysis_sheet
             else None
         )
-        self.__overlap: int = (
+        self.overlap: int = (
             analysis_sheet["overlap"][0] if "overlap" in analysis_sheet else None
         )
-        self.__colormap: str = (
+        self.colormap: str = (
             analysis_sheet["colormap"][0] if "colormap" in analysis_sheet else None
         )
-        self.__zoom_level: int = (
+        self.zoom_level: int = (
             analysis_sheet["zoom_level"][0] if "zoom_level" in analysis_sheet else None
         )
-        self.__dynamic_min: int = (
+        self.dynamic_min: int = (
             analysis_sheet["dynamic_min"][0]
             if "dynamic_min" in analysis_sheet
             else None
         )
-        self.__dynamic_max: int = (
+        self.dynamic_max: int = (
             analysis_sheet["dynamic_max"][0]
             if "dynamic_max" in analysis_sheet
             else None
         )
-        self.__number_adjustment_spectrogram: int = (
+        self.number_adjustment_spectrogram: int = (
             analysis_sheet["number_adjustment_spectrogram"][0]
             if "number_adjustment_spectrogram" in analysis_sheet
             else None
         )
-        self.__spectro_duration: int = (
+        self.spectro_duration: int = (
             analysis_sheet["spectro_duration"][0]
             if analysis_sheet is not None and "spectro_duration" in analysis_sheet
             else -1
         )
 
-        self.__zscore_duration: Union[float, str] = (
+        self.zscore_duration: Union[float, str] = (
             analysis_sheet["zscore_duration"][0]
             if "zscore_duration" in analysis_sheet
             and isinstance(analysis_sheet["zscore_duration"][0], float)
@@ -160,7 +158,7 @@ class Spectrogram(Dataset):
         )
 
         # fmin cannot be 0 in butterworth. If that is the case, it takes the smallest value possible, epsilon
-        self.__hpfilter_min_freq: int = (
+        self.hpfilter_min_freq: int = (
             analysis_sheet["HPfilter_min_freq"][0]
             if "HPfilter_min_freq" in analysis_sheet
             and analysis_sheet["HPfilter_min_freq"][0] != 0
@@ -171,43 +169,43 @@ class Spectrogram(Dataset):
             if "sensitivity_dB" in analysis_sheet
             else None
         )
-        self.__sensitivity: float = (
+        self.sensitivity: float = (
             10 ** (sensitivity_dB / 20) * 1e6 if sensitivity_dB is not None else None
         )
-        self.__peak_voltage: float = (
+        self.peak_voltage: float = (
             analysis_sheet["peak_voltage"][0]
             if "peak_voltage" in analysis_sheet
             else None
         )
-        self.__spectro_normalization: str = (
+        self.spectro_normalization: str = (
             analysis_sheet["spectro_normalization"][0]
             if "spectro_normalization" in analysis_sheet
             else None
         )
-        self.__data_normalization: str = (
+        self.data_normalization: str = (
             analysis_sheet["data_normalization"][0]
             if "data_normalization" in analysis_sheet
             else None
         )
-        self.__gain_dB: float = (
+        self.gain_dB: float = (
             analysis_sheet["gain_dB"][0]
             if "gain_dB" in analysis_sheet is not None
             else None
         )
 
-        self.__window_type: str = (
+        self.window_type: str = (
             analysis_sheet["window_type"][0]
             if "window_type" in analysis_sheet
             else None
         )
 
-        self.__frequency_resolution: int = (
+        self.frequency_resolution: int = (
             analysis_sheet["frequency_resolution"][0]
             if "frequency_resolution" in analysis_sheet
             else None
         )
 
-        self.__time_resolution = (
+        self.time_resolution = (
             [
                 analysis_sheet[col][0]
                 for col in analysis_sheet
