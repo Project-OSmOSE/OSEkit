@@ -108,7 +108,7 @@ class Spectrogram(Dataset):
             analysis_sheet = {}
             self.__analysis_file = False
             print(
-                "No valid processed/adjust_metadata.csv found and no parameters provided. All attributes will be None."
+                "No valid processed/adjust_metadata.csv found and no parameters provided -> all attributes are initialized to their default values. \n"
             )
 
         self.batch_number: int = batch_number
@@ -126,7 +126,7 @@ class Spectrogram(Dataset):
             analysis_sheet["overlap"][0] if "overlap" in analysis_sheet else None
         )
         self.__colormap: str = (
-            analysis_sheet["colormap"][0] if "colormap" in analysis_sheet else None
+            analysis_sheet["colormap"][0] if "colormap" in analysis_sheet else "viridis"
         )
         self.__zoom_level: int = (
             analysis_sheet["zoom_level"][0] if "zoom_level" in analysis_sheet else None
@@ -198,7 +198,7 @@ class Spectrogram(Dataset):
         self.__window_type: str = (
             analysis_sheet["window_type"][0]
             if "window_type" in analysis_sheet
-            else None
+            else "hamming"
         )
 
         self.__frequency_resolution: int = (
