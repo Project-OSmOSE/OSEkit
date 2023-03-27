@@ -34,4 +34,6 @@ jobs:
         conda install black
         python -m black src/OSmOSE
     - name: Test with pytest
-      run: pytest
+      run: |
+        conda install pytest
+        pytest
