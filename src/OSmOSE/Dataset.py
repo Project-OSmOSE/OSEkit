@@ -585,8 +585,8 @@ class Dataset:
         metadata = pd.read_csv(self.original_folder.joinpath("metadata.csv"))
         list_display_metadata = ['sr_origin','audio_file_count','start_date','end_date','audio_file_origin_duration'] # restrain metadata to a shorter list of fileds to be displayed
         joined_str=''
-        print('Metadata of',self.name,':')
+        print(f"Metadata of {self.name} :")         
         for key, value in zip(metadata.keys(), metadata.values[0]):
             if key in list_display_metadata:
-                joined_str+=("- {} : {} \n".format(key,value))
+                joined_str+=f"- {key} : {value} \n"
         return joined_str
