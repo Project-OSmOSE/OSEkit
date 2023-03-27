@@ -534,8 +534,9 @@ class Spectrogram(Dataset):
                 self.build(date_template=date_template)
             except Exception as e:
                 print(
-                    f"Unhandled error during dataset building. They may be resolved by building the dataset separately first. Description of the error: {str(e)}"
+                    f"Unhandled error during dataset building. The spectrogram initialization will be cancelled. The error may be resolved by building the dataset separately first. Description of the error: {str(e)}"
                 )
+                return
 
         self.__build_path()
 
