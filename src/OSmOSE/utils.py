@@ -64,12 +64,12 @@ def list_not_built_datasets(datasets_folder_path: str) -> None:
             list_unknown_datasets.append(dataset_directory)
 
     not_built_formatted = "\n".join(
-        [f"  - {os.path.basename(dataset)}" for dataset in list_not_built_datasets]
+        [f"  - {dataset.name}" for dataset in list_not_built_datasets]
     )
     print(f"""List of the datasets that aren't built yet:\n{not_built_formatted}""")
 
     unreachable_formatted = "\n".join(
-        [f"  - {os.path.basename(dataset)}" for dataset in list_unknown_datasets]
+        [f"  - {dataset.name}" for dataset in list_unknown_datasets]
     )
     print(
         f"""List of unreachable datasets (probably due to insufficient permissions:\n{unreachable_formatted}"""
