@@ -478,10 +478,11 @@ class Job_builder:
             )
 
         if not job_file_name:
-            if not len(self.finished_jobs) == 0:
+            if len(self.finished_jobs) == 0:
                 print(
                     f"There are no finished jobs in this context. Wait until the {len(self.ongoing_jobs)} ongoing jobs are done before reading the output. Otherwise, you can specify which file you wish to read."
                 )
+                return
             else:
                 job_file_name = (
                     self.finished_jobs[0]["outfile"]

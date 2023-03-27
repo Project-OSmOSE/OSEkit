@@ -256,7 +256,7 @@ class Dataset:
         """
         if owner_group is None:
             owner_group = self.owner_group
-        path_raw_audio = self._find_original_folder(original_folder)
+        path_raw_audio = self._find_or_create_original_folder(original_folder)
 
         path_timestamp_formatted = path_raw_audio.joinpath("timestamp.csv")
 
@@ -522,7 +522,7 @@ class Dataset:
             "\n ALL ABNORMAL FILES REMOVED ! you can now re-run the build() method to finish importing it on OSmOSE platform"
         )
 
-    def _find_original_folder(self, original_folder: str = None) -> Path:
+    def _find_or_create_original_folder(self, original_folder: str = None) -> Path:
         path_raw_audio = self.path.joinpath(OSMOSE_PATH.raw_audio)
         if any(
             file.endswith(".wav") for file in os.listdir(self.path)
