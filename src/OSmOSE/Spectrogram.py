@@ -426,10 +426,6 @@ class Spectrogram(Dataset):
             audio_foldername, self.__spectro_foldername, "image"
         )
 
-        self.__path_summstats = processed_path.joinpath(
-            audio_foldername, "normalization_parameters"
-        )
-
         self.path_output_spectrogram_matrix = processed_path.joinpath(
             audio_foldername, self.__spectro_foldername, "matrix"
         )
@@ -441,7 +437,9 @@ class Spectrogram(Dataset):
             self.path_output_spectrogram_matrix.mkdir(
                 mode=0o774, parents=True, exist_ok=True
             )
-            self.__path_summstats.mkdir(mode=0o774, parents=True, exist_ok=True)
+            self.path.joinpath(OSMOSE_PATH.statistics).mkdir(
+                mode=0o774, parents=True, exist_ok=True
+            )
 
     def check_spectro_size(self):
         """Verify if the parameters will generate a spectrogram that can fit one screen properly"""
@@ -648,7 +646,7 @@ class Spectrogram(Dataset):
 
         norma_job_id_list = []
         if (
-            os.listdir(self.__path_summstats)
+            os.listdir(self.path.joinpath(OSMOSE_PATH.statistics))
             and self.data_normalization == "zscore"
             and isnorma
         ):
@@ -664,8 +662,9 @@ class Spectrogram(Dataset):
                         target=compute_stats,
                         kwargs={
                             "input_dir": self.path_input_audio_file,
-                            "output_file": self.__path_summstats.joinpath(
-                                "SummaryStats_" + str(i_min) + ".csv"
+                            "output_file": self.path.joinpath(
+                                OSMOSE_PATH.statistics,
+                                "SummaryStats_" + str(i_min) + ".csv",
                             ),
                             "target_sr": self.sr_analysis,
                             "batch_ind_min": i_min,
@@ -679,7 +678,7 @@ class Spectrogram(Dataset):
                     jobfile = self.Jb.build_job_file(
                         script_path=Path(inspect.getfile(compute_stats)).resolve(),
                         script_args=f"--input-dir {self.path_input_audio_file} --hpfilter-min-freq {self.HPfilter_min_freq} \
-                                    --ind-min {i_min} --ind-max {i_max} --output-file {self.__path_summstats.joinpath('SummaryStats_' + str(i_min) + '.csv')}",
+                                    --ind-min {i_min} --ind-max {i_max} --output-file {self.path.joinpath(OSMOSE_PATH.statistics, 'SummaryStats_' + str(i_min) + '.csv')}",
                         jobname="OSmOSE_get_zscore_params",
                         preset="low",
                     )
@@ -937,7 +936,7 @@ class Spectrogram(Dataset):
             )
 
             df = pd.DataFrame()
-            for dd in self.__path_summstats.glob("summaryStats*"):
+            for dd in self.path.joinpath(OSMOSE_PATH.statistics).glob("summaryStats*"):
                 df = pd.concat([df, pd.read_csv(dd, header=0)])
 
             df["mean_avg"] = df["mean"].rolling(average_over_H, min_periods=1).mean()
