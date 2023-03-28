@@ -920,6 +920,16 @@ class Spectrogram(Dataset):
         self.adjust = adjust
         Zscore = self.zscore_duration if not adjust else "original"
 
+        if (
+            not adjust
+            and self.path_output_spectrogram.parent.parent.joinpath(
+                "adjustment_spectros"
+            ).exists()
+        ):
+            self.path_output_spectrogram.parent.parent.joinpath(
+                "adjustment_spectros"
+            ).unlink()
+
         #! Determination of zscore normalization parameters
         if Zscore and self.data_normalization == "zscore" and Zscore != "original":
             average_over_H = int(
