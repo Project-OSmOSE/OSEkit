@@ -14,7 +14,7 @@ def test_resample(input_dir: Path, output_dir: Path):
         shutil.copyfile(input_dir.joinpath("test.wav"), wav_file)
 
     for sr in [100, 500, 8000]:
-        resample(input_dir=input_dir, output_dir=output_dir, target_fs=sr)
+        resample(input_dir=input_dir, output_dir=output_dir, sr_analysis=sr)
 
         # check that all resampled files exist and have the correct properties
         for i in range(3):

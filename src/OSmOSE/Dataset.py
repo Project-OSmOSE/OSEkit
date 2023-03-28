@@ -444,12 +444,14 @@ class Dataset:
                 print("\n Well you have anomalies but you choose to FORCE UPLOAD")
             if not skip_perms:
                 print("\n Now setting OSmOSE permissions ; wait a bit ...")
-                gid = grp.getgrnam(owner_group).gr_gid
+                if owner_group:
+                    gid = grp.getgrnam(owner_group).gr_gid
+                    os.chown(self.path, -1, gid)
 
-                os.chown(self.path, -1, gid)
                 os.chmod(self.path, 0o770)
                 for path in self.path.rglob("*"):
-                    os.chown(path, -1, gid)
+                    if owner_group:
+                        os.chown(path, -1, gid)
                     os.chmod(path, 0o770)
 
         # write metadata.csv
