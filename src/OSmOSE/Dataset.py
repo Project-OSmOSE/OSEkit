@@ -180,12 +180,13 @@ class Dataset:
             print("Cannot set osmose group on a non-Unix operating system.")
             self.__group = None
             return
-        try:
-            grp.getgrnam(value)
-        except KeyError as e:
-            raise KeyError(
-                f"The group {value} does not exist on the system. Full error trace: {e}"
-            )
+        if value:
+            try:
+                grp.getgrnam(value)
+            except KeyError as e:
+                raise KeyError(
+                    f"The group {value} does not exist on the system. Full error trace: {e}"
+                )
 
         self.__group = value
 
