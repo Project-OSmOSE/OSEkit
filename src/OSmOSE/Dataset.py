@@ -64,7 +64,7 @@ class Dataset:
         """
         self.__path = Path(dataset_path)
         self.__name = self.__path.stem
-        self.group = owner_group
+        self.owner_group = owner_group
         self.__gps_coordinates = []
         if gps_coordinates is not None:
             self.gps_coordinates = gps_coordinates
@@ -178,6 +178,7 @@ class Dataset:
     def owner_group(self, value):
         if skip_perms:
             print("Cannot set osmose group on a non-Unix operating system.")
+            self.__group = None
             return
         try:
             grp.getgrnam(value)

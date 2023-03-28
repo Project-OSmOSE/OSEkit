@@ -158,7 +158,7 @@ class Spectrogram(Dataset):
         )
 
         # fmin cannot be 0 in butterworth. If that is the case, it takes the smallest value possible, epsilon
-        self.hpfilter_min_freq: int = (
+        self.HPfilter_min_freq: int = (
             analysis_sheet["HPfilter_min_freq"][0]
             if "HPfilter_min_freq" in analysis_sheet
             and analysis_sheet["HPfilter_min_freq"][0] != 0
