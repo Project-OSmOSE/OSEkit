@@ -15,7 +15,7 @@ except ModuleNotFoundError:
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
-from OSmOSE.utils import read_header, check_n_files
+from OSmOSE.utils import read_header, check_n_files, make_path
 from OSmOSE.timestamps import write_timestamp
 from OSmOSE.config import OSMOSE_PATH
 
@@ -418,9 +418,8 @@ class Dataset:
 
             for subpath in OSMOSE_PATH:
                 if "data" in str(subpath):
-                    self.path.joinpath(subpath).mkdir(
-                        mode=0o774, parents=True, exist_ok=True
-                    )
+                    make_path(self.path.joinpath(subpath), mode=0o775)
+
             # rename filenames in the subset_files.csv if any to replace -' by '_'
             subset_path = OSMOSE_PATH.processed.joinpath("subset_files.csv")
             if subset_path.is_file():
@@ -528,9 +527,8 @@ class Dataset:
         if any(
             file.endswith(".wav") for file in os.listdir(self.path)
         ):  # If there are audio files in the dataset folder
-            path_raw_audio.joinpath("original").mkdir(
-                mode=0o774, parents=True, exist_ok=True
-            )
+            make_path(path_raw_audio.joinpath("original"), mode=0o775)
+
             for audiofile in os.listdir(self.path):
                 if audiofile.endswith(".wav"):
                     self.path.joinpath(audiofile).rename(
@@ -540,7 +538,7 @@ class Dataset:
         elif (
             len(next(os.walk(self.path))[1]) == 1
         ):  # If there is exactly one folder in the dataset folder
-            path_raw_audio.mkdir(mode=0o774, parents=True, exist_ok=True)
+            make_path(path_raw_audio, mode=0o775)
             orig_folder = self.path.joinpath(next(os.walk(self.path))[1][0])
             new_path = orig_folder.rename(path_raw_audio.joinpath(orig_folder.name))
             return new_path
