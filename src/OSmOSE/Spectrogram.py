@@ -1014,7 +1014,11 @@ class Spectrogram(Dataset):
             sample_data = data[int(start * sample_rate) : int((end + 1) * sample_rate)]
 
         Sxx, Freq = self.gen_spectro(
-            data=sample_data, sample_rate=sample_rate, output_file=output_file
+            data=sample_data,
+            sample_rate=sample_rate,
+            output_file=output_file.parent.joinpath(
+                f"{output_file.stem}_{nber_tiles_lowest_zoom_level}_{str(tile)}.png"
+            ),
         )
 
         Sxx_2 = np.hstack((Sxx_2, Sxx))
@@ -1114,10 +1118,10 @@ class Spectrogram(Dataset):
         if self.spectro_normalization == "spectrum":
             log_spectro = 10 * np.log10(Sxx + (1e-20))
 
-        # save spectrogram as a png image
-        self.generate_and_save_figures(
-            time=Time, freq=Freq, log_spectro=log_spectro, output_file=output_file
-        )
+        # save spectrogram as a png image - disabled because it might create duplicates
+        # self.generate_and_save_figures(
+        #     time=Time, freq=Freq, log_spectro=log_spectro, output_file=output_file
+        # )
 
         # save spectrogram matrices (intensity, time and freq) in a npz file
         if self.save_matrix:
