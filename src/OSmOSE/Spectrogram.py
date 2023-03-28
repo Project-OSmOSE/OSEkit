@@ -436,12 +436,12 @@ class Spectrogram(Dataset):
 
         # Create paths
         if not transparent:
-            self.audio_path.mkdir(mode=0o770, parents=True, exist_ok=True)
-            self.path_output_spectrogram.mkdir(mode=0o770, parents=True, exist_ok=True)
+            self.audio_path.mkdir(mode=0o774, parents=True, exist_ok=True)
+            self.path_output_spectrogram.mkdir(mode=0o774, parents=True, exist_ok=True)
             self.path_output_spectrogram_matrix.mkdir(
-                mode=0o770, parents=True, exist_ok=True
+                mode=0o774, parents=True, exist_ok=True
             )
-            self.__path_summstats.mkdir(mode=0o770, parents=True, exist_ok=True)
+            self.__path_summstats.mkdir(mode=0o774, parents=True, exist_ok=True)
 
     def check_spectro_size(self):
         """Verify if the parameters will generate a spectrogram that can fit one screen properly"""
@@ -828,7 +828,7 @@ class Spectrogram(Dataset):
             self.path_output_spectrogram,
             self.path_output_spectrogram_matrix,
         ]:
-            path.mkdir(mode=0o770, parents=True, exist_ok=True)
+            path.mkdir(mode=0o774, parents=True, exist_ok=True)
 
         # self.to_csv(os.path.join(self.path_output_spectrograms, "spectrograms.csv"))
 
@@ -845,7 +845,7 @@ class Spectrogram(Dataset):
                 "dynamic_min": self.dynamic_min,
                 "dynamic_max": self.dynamic_max,
                 "spectro_duration": self.spectro_duration,
-                "folderName_audioFiles": self.audio_path.name,
+                "audio_file_folder_name": self.audio_path.name,
                 "data_normalization": self.data_normalization,
                 "HPfilter_min_freq": self.HPfilter_min_freq,
                 "sensitivity_dB": 20 * log10(self.sensitivity / 1e6),
@@ -969,7 +969,7 @@ class Spectrogram(Dataset):
         data = signal.sosfilt(bpcoef, data)
 
         if adjust:
-            self.path_output_spectrogram.mkdir(mode=0o770, parents=True, exist_ok=True)
+            self.path_output_spectrogram.mkdir(mode=0o774, parents=True, exist_ok=True)
 
         output_file = self.path_output_spectrogram.joinpath(audio_file)
 
@@ -1004,10 +1004,6 @@ class Spectrogram(Dataset):
 
             sample_data = data[int(start * sample_rate) : int((end + 1) * sample_rate)]
 
-            output_file = output_file.parent.joinpath(
-                f"{output_file.stem}_{str(nber_tiles_lowest_zoom_level)}_{str(tile)}.png"
-            )
-
         Sxx, Freq = self.gen_spectro(
             data=sample_data, sample_rate=sample_rate, output_file=output_file
         )
@@ -1021,7 +1017,7 @@ class Spectrogram(Dataset):
         )[np.newaxis, :]
 
         # loop over the zoom levels from the second lowest to the highest one
-        for zoom_level in range(self.zoom_level)[::-1]:
+        for zoom_level in range(self.zoom_level + 1)[::-1]:
             nberspec = Sxx_lowest_level.shape[1] // (2**zoom_level)
 
             # loop over the tiles at each zoom level
@@ -1117,7 +1113,7 @@ class Spectrogram(Dataset):
         # save spectrogram matrices (intensity, time and freq) in a npz file
         if self.save_matrix:
             self.path_output_spectrogram_matrix.mkdir(
-                mode=0o770, parents=True, exist_ok=True
+                mode=0o774, parents=True, exist_ok=True
             )
             output_matrix = self.path_output_spectrogram_matrix.joinpath(
                 output_file.name
