@@ -580,13 +580,12 @@ class Dataset:
 
         return self.original_folder
 
-    def print_metadata(self):
+    def __str__(self):
         metadata = pd.read_csv(self.original_folder.joinpath("metadata.csv"))
-        print(
-            "\n".join(
-                [
-                    f"{key}: {value}"
-                    for key, value in zip(metadata.keys(), metadata.values[0])
-                ]
-            )
-        )
+        list_display_metadata = ['sr_origin','audio_file_count','start_date','end_date','audio_file_origin_duration'] # restrain metadata to a shorter list of fileds to be displayed
+        joined_str=''
+        print(f"Metadata of {self.name} :")         
+        for key, value in zip(metadata.keys(), metadata.values[0]):
+            if key in list_display_metadata:
+                joined_str+=f"- {key} : {value} \n"
+        return joined_str
