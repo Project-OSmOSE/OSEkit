@@ -1,6 +1,7 @@
 from functools import partial
 import inspect
 import os
+import shutil
 import sys
 from typing import Tuple, Union, Literal
 from math import log10
@@ -19,7 +20,7 @@ from OSmOSE.cluster import (
     compute_stats,
 )
 from OSmOSE.Dataset import Dataset
-from OSmOSE.utils import safe_read
+from OSmOSE.utils import safe_read, make_path
 from OSmOSE.config import OSMOSE_PATH
 
 
@@ -108,7 +109,7 @@ class Spectrogram(Dataset):
             analysis_sheet = {}
             self.__analysis_file = False
             print(
-                "No valid processed/adjust_metadata.csv found and no parameters provided. All attributes will be None."
+                "No valid processed/adjust_metadata.csv found and no parameters provided. All attributes will be initialized to default values.."
             )
 
         self.batch_number: int = batch_number
@@ -123,8 +124,9 @@ class Spectrogram(Dataset):
         self.overlap: int = (
             analysis_sheet["overlap"][0] if "overlap" in analysis_sheet else None
         )
-        self.colormap: str = (
-            analysis_sheet["colormap"][0] if "colormap" in analysis_sheet else None
+        self.__colormap: str = (
+            analysis_sheet["colormap"][0] if "colormap" in analysis_sheet else "viridis"
+
         )
         self.zoom_level: int = (
             analysis_sheet["zoom_level"][0] if "zoom_level" in analysis_sheet else None
@@ -196,7 +198,7 @@ class Spectrogram(Dataset):
         self.window_type: str = (
             analysis_sheet["window_type"][0]
             if "window_type" in analysis_sheet
-            else None
+            else "hamming"
         )
 
         self.frequency_resolution: int = (
@@ -215,7 +217,7 @@ class Spectrogram(Dataset):
             else None
         )
 
-        self.Jb = Job_builder()
+        self.jb = Job_builder()
 
         plt.switch_backend("agg")
 
@@ -229,7 +231,7 @@ class Spectrogram(Dataset):
         plt.rc("legend", fontsize=ticksize)  # legend fontsize
         plt.rc("figure", titlesize=ticksize)  # fontsize of the figure title
 
-        self.__build_path(transparent=True)
+        self.__build_path(dry=True)
 
     # region Spectrogram properties
 
@@ -399,14 +401,14 @@ class Spectrogram(Dataset):
 
     # endregion
 
-    def __build_path(self, adjust: bool = False, transparent: bool = False):
+    def __build_path(self, adjust: bool = False, dry: bool = False):
         """Build some internal paths according to the expected architecture. Not path is created.
 
         Parameter
         ---------
             adjust : `bool`, optional
                 Whether or not the paths are used to adjust spectrogram parameters.
-            transparent: `bool`, optional
+            dry: `bool`, optional
                 If set to True, will not create the folders and just return the file path.
         """
         processed_path = self.path.joinpath(OSMOSE_PATH.spectrogram)
@@ -424,22 +426,16 @@ class Spectrogram(Dataset):
             audio_foldername, self.__spectro_foldername, "image"
         )
 
-        self.__path_summstats = processed_path.joinpath(
-            audio_foldername, "normalization_parameters"
-        )
-
         self.path_output_spectrogram_matrix = processed_path.joinpath(
             audio_foldername, self.__spectro_foldername, "matrix"
         )
 
         # Create paths
-        if not transparent:
-            self.audio_path.mkdir(mode=0o770, parents=True, exist_ok=True)
-            self.path_output_spectrogram.mkdir(mode=0o770, parents=True, exist_ok=True)
-            self.path_output_spectrogram_matrix.mkdir(
-                mode=0o770, parents=True, exist_ok=True
-            )
-            self.__path_summstats.mkdir(mode=0o770, parents=True, exist_ok=True)
+        if not dry:
+            make_path(self.audio_path, mode=0o775)
+            make_path(self.path_output_spectrogram, mode=0o775)
+            make_path(self.path_output_spectrogram_matrix, mode=0o775)
+            make_path(self.path.joinpath(OSMOSE_PATH.statistics), mode=0o775)
 
     def check_spectro_size(self):
         """Verify if the parameters will generate a spectrogram that can fit one screen properly"""
@@ -623,7 +619,7 @@ class Spectrogram(Dataset):
                     process.start()
                     processes.append(process)
                 else:
-                    jobfile = self.Jb.build_job_file(
+                    self.jb.build_job_file(
                         script_path=Path(inspect.getfile(resample)).resolve(),
                         script_args=f"--input-dir {self.path_input_audio_file} --target-sr {self.sr_analysis} --ind-min {i_min} --ind-max {i_max} --output-dir {self.audio_path}",
                         jobname="OSmOSE_resample",
@@ -631,7 +627,7 @@ class Spectrogram(Dataset):
                     )
                     # TODO: use importlib.resources
 
-                    job_id = self.Jb.submit_job(jobfile)
+                    job_id = self.jb.submit_job()
                     resample_job_id_list.append(job_id)
 
             for process in processes:
@@ -646,7 +642,7 @@ class Spectrogram(Dataset):
 
         norma_job_id_list = []
         if (
-            os.listdir(self.__path_summstats)
+            os.listdir(self.path.joinpath(OSMOSE_PATH.statistics))
             and self.data_normalization == "zscore"
             and isnorma
         ):
@@ -662,8 +658,9 @@ class Spectrogram(Dataset):
                         target=compute_stats,
                         kwargs={
                             "input_dir": self.path_input_audio_file,
-                            "output_file": self.__path_summstats.joinpath(
-                                "SummaryStats_" + str(i_min) + ".csv"
+                            "output_file": self.path.joinpath(
+                                OSMOSE_PATH.statistics,
+                                "SummaryStats_" + str(i_min) + ".csv",
                             ),
                             "target_sr": self.sr_analysis,
                             "batch_ind_min": i_min,
@@ -674,17 +671,15 @@ class Spectrogram(Dataset):
                     process.start()
                     processes.append(process)
                 else:
-                    jobfile = self.Jb.build_job_file(
+                    jobfile = self.jb.build_job_file(
                         script_path=Path(inspect.getfile(compute_stats)).resolve(),
                         script_args=f"--input-dir {self.path_input_audio_file} --hpfilter-min-freq {self.HPfilter_min_freq} \
-                                    --ind-min {i_min} --ind-max {i_max} --output-file {self.__path_summstats.joinpath('SummaryStats_' + str(i_min) + '.csv')}",
+                                    --ind-min {i_min} --ind-max {i_max} --output-file {self.path.joinpath(OSMOSE_PATH.statistics, 'SummaryStats_' + str(i_min) + '.csv')}",
                         jobname="OSmOSE_get_zscore_params",
                         preset="low",
                     )
 
-                    job_id = self.Jb.submit_job(
-                        jobfile, dependency=resample_job_id_list
-                    )
+                    job_id = self.jb.submit_job(dependency=resample_job_id_list)
                     norma_job_id_list.append(job_id)
 
             for process in processes:
@@ -779,7 +774,7 @@ class Spectrogram(Dataset):
                         process.start()
                         processes.append(process)
                     else:
-                        jobfile = self.Jb.build_job_file(
+                        self.jb.build_job_file(
                             script_path=Path(inspect.getfile(reshape)).resolve(),
                             script_args=f"--input-files {self.path_input_audio_file} --chunk-size {self.spectro_duration} --ind-min {i_min}\
                                         --ind-max {i_max} --output-dir {self.audio_path} --offset-beginning {int(offset_beginning)} --offset-end {int(offset_end)}\
@@ -788,9 +783,7 @@ class Spectrogram(Dataset):
                             preset="low",
                         )
 
-                        job_id = self.Jb.submit_job(
-                            jobfile, dependency=norma_job_id_list
-                        )
+                        job_id = self.jb.submit_job(dependency=norma_job_id_list)
                         reshape_job_id_list.append(job_id)
 
                 for process in processes:
@@ -805,7 +798,7 @@ class Spectrogram(Dataset):
                         if batch < self.batch_number - 1
                         else len(self.list_wav_to_process)
                     )  # If it is the last batch, take all files
-                    jobfile = self.Jb.build_job_file(
+                    self.jb.build_job_file(
                         script_path=Path(__file__.parent, "cluster", "reshaper.sh"),
                         script_args=f"-d {self.path} -i {self.path_input_audio_file.name} -t {sr_analysis} \
                                     -m {i_min} -x {i_max} -o {self.audio_path} -n {self.spectro_duration} {silence_arg}",
@@ -813,22 +806,12 @@ class Spectrogram(Dataset):
                         preset="low",
                     )
 
-                    job_id = self.Jb.submit_job(
-                        jobfile, dependency=resample_job_id_list
-                    )
+                    job_id = self.jb.submit_job(dependency=resample_job_id_list)
                     reshape_job_id_list.append(job_id)
 
         metadata["dataset_fileDuration"] = self.spectro_duration
         new_meta_path = self.audio_path.joinpath("metadata.csv")
         metadata.to_csv(new_meta_path)
-
-        for path in [
-            self.path_output_spectrogram,
-            self.path_output_spectrogram_matrix,
-        ]:
-            path.mkdir(mode=0o770, parents=True, exist_ok=True)
-
-        # self.to_csv(os.path.join(self.path_output_spectrograms, "spectrograms.csv"))
 
         if not self.__analysis_file:
             data = {
@@ -843,7 +826,7 @@ class Spectrogram(Dataset):
                 "dynamic_min": self.dynamic_min,
                 "dynamic_max": self.dynamic_max,
                 "spectro_duration": self.spectro_duration,
-                "folderName_audioFiles": self.audio_path.name,
+                "audio_file_folder_name": self.audio_path.name,
                 "data_normalization": self.data_normalization,
                 "HPfilter_min_freq": self.HPfilter_min_freq,
                 "sensitivity_dB": 20 * log10(self.sensitivity / 1e6),
@@ -866,6 +849,11 @@ class Spectrogram(Dataset):
             self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv").chmod(
                 0o777
             )
+
+            if not self.path.joinpath(
+                OSMOSE_PATH.spectrogram, "adjust_metadata.csv"
+            ).exists():
+                print("Failed to write adjust_metadata.csv")
 
     def to_csv(self, filename: str) -> None:
         """Outputs the characteristics of the spectrogram the specified file in csv format.
@@ -918,6 +906,18 @@ class Spectrogram(Dataset):
         self.adjust = adjust
         Zscore = self.zscore_duration if not adjust else "original"
 
+        if (
+            not adjust
+            and self.path_output_spectrogram.parent.parent.joinpath(
+                "adjustment_spectros"
+            ).exists()
+        ):
+            shutil.rmtree(
+                self.path_output_spectrogram.parent.parent.joinpath(
+                    "adjustment_spectros"
+                )
+            )
+
         #! Determination of zscore normalization parameters
         if Zscore and self.data_normalization == "zscore" and Zscore != "original":
             average_over_H = int(
@@ -925,7 +925,7 @@ class Spectrogram(Dataset):
             )
 
             df = pd.DataFrame()
-            for dd in self.__path_summstats.glob("summaryStats*"):
+            for dd in self.path.joinpath(OSMOSE_PATH.statistics).glob("summaryStats*"):
                 df = pd.concat([df, pd.read_csv(dd, header=0)])
 
             df["mean_avg"] = df["mean"].rolling(average_over_H, min_periods=1).mean()
@@ -967,7 +967,7 @@ class Spectrogram(Dataset):
         data = signal.sosfilt(bpcoef, data)
 
         if adjust:
-            self.path_output_spectrogram.mkdir(mode=0o770, parents=True, exist_ok=True)
+            make_path(self.path_output_spectrogram, mode=0o775)
 
         output_file = self.path_output_spectrogram.joinpath(audio_file)
 
@@ -992,7 +992,7 @@ class Spectrogram(Dataset):
 
         duration = len(data) / int(sample_rate)
 
-        nber_tiles_lowest_zoom_level = 2 ** (self.zoom_level - 1)
+        nber_tiles_lowest_zoom_level = 2 ** (self.zoom_level)
         tile_duration = duration / nber_tiles_lowest_zoom_level
 
         Sxx_2 = np.empty((int(self.nfft / 2) + 1, 1))
@@ -1002,12 +1002,12 @@ class Spectrogram(Dataset):
 
             sample_data = data[int(start * sample_rate) : int((end + 1) * sample_rate)]
 
-            output_file = output_file.parent.joinpath(
-                f"{output_file.stem}_{str(nber_tiles_lowest_zoom_level)}_{str(tile)}.png"
-            )
-
         Sxx, Freq = self.gen_spectro(
-            data=sample_data, sample_rate=sample_rate, output_file=output_file
+            data=sample_data,
+            sample_rate=sample_rate,
+            output_file=output_file.parent.joinpath(
+                f"{output_file.stem}_{nber_tiles_lowest_zoom_level}_{str(tile)}.png"
+            ),
         )
 
         Sxx_2 = np.hstack((Sxx_2, Sxx))
@@ -1019,7 +1019,7 @@ class Spectrogram(Dataset):
         )[np.newaxis, :]
 
         # loop over the zoom levels from the second lowest to the highest one
-        for zoom_level in range(self.zoom_level)[::-1]:
+        for zoom_level in range(self.zoom_level + 1)[::-1]:
             nberspec = Sxx_lowest_level.shape[1] // (2**zoom_level)
 
             # loop over the tiles at each zoom level
@@ -1107,16 +1107,15 @@ class Spectrogram(Dataset):
         if self.spectro_normalization == "spectrum":
             log_spectro = 10 * np.log10(Sxx + (1e-20))
 
-        # save spectrogram as a png image
-        self.generate_and_save_figures(
-            time=Time, freq=Freq, log_spectro=log_spectro, output_file=output_file
-        )
+        # save spectrogram as a png image - disabled because it might create duplicates
+        # self.generate_and_save_figures(
+        #     time=Time, freq=Freq, log_spectro=log_spectro, output_file=output_file
+        # )
 
         # save spectrogram matrices (intensity, time and freq) in a npz file
         if self.save_matrix:
-            self.path_output_spectrogram_matrix.mkdir(
-                mode=0o770, parents=True, exist_ok=True
-            )
+            make_path(self.path_output_spectrogram_matrix, mode=0o775)
+
             output_matrix = self.path_output_spectrogram_matrix.joinpath(
                 output_file.name
             ).with_suffix(".npz")
