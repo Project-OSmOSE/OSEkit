@@ -15,7 +15,7 @@ except ModuleNotFoundError:
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
-from OSmOSE.utils import read_header, check_n_files
+from OSmOSE.utils import read_header, check_n_files, make_path
 from OSmOSE.timestamps import write_timestamp
 from OSmOSE.config import OSMOSE_PATH
 
@@ -182,11 +182,12 @@ class Dataset:
             return
         if value:
             try:
-                grp.getgrnam(value)
+              gid = grp.getgrnam(value).gr_gid
+              os.setegid(gid)
             except KeyError as e:
-                raise KeyError(
-                    f"The group {value} does not exist on the system. Full error trace: {e}"
-                )
+              raise KeyError(
+                f"The group {value} does not exist on the system. Full error trace: {e}"
+            )
 
         self.__group = value
 
@@ -419,9 +420,8 @@ class Dataset:
 
             for subpath in OSMOSE_PATH:
                 if "data" in str(subpath):
-                    self.path.joinpath(subpath).mkdir(
-                        mode=0o770, parents=True, exist_ok=True
-                    )
+                    make_path(self.path.joinpath(subpath), mode=0o775)
+
             # rename filenames in the subset_files.csv if any to replace -' by '_'
             subset_path = OSMOSE_PATH.processed.joinpath("subset_files.csv")
             if subset_path.is_file():
@@ -449,11 +449,11 @@ class Dataset:
                     gid = grp.getgrnam(owner_group).gr_gid
                     os.chown(self.path, -1, gid)
 
-                os.chmod(self.path, 0o770)
+                os.chmod(self.path, 0o775)
                 for path in self.path.rglob("*"):
                     if owner_group:
                         os.chown(path, -1, gid)
-                    os.chmod(path, 0o770)
+                    os.chmod(path, 0o775)
 
         # write metadata.csv
         data = {
@@ -531,9 +531,8 @@ class Dataset:
         if any(
             file.endswith(".wav") for file in os.listdir(self.path)
         ):  # If there are audio files in the dataset folder
-            path_raw_audio.joinpath("original").mkdir(
-                mode=0o770, parents=True, exist_ok=True
-            )
+            make_path(path_raw_audio.joinpath("original"), mode=0o775)
+
             for audiofile in os.listdir(self.path):
                 if audiofile.endswith(".wav"):
                     self.path.joinpath(audiofile).rename(
@@ -543,7 +542,7 @@ class Dataset:
         elif (
             len(next(os.walk(self.path))[1]) == 1
         ):  # If there is exactly one folder in the dataset folder
-            path_raw_audio.mkdir(mode=0o770, parents=True, exist_ok=True)
+            make_path(path_raw_audio, mode=0o775)
             orig_folder = self.path.joinpath(next(os.walk(self.path))[1][0])
             new_path = orig_folder.rename(path_raw_audio.joinpath(orig_folder.name))
             return new_path
@@ -585,13 +584,12 @@ class Dataset:
 
         return self.original_folder
 
-    def print_metadata(self):
+    def __str__(self):
         metadata = pd.read_csv(self.original_folder.joinpath("metadata.csv"))
-        print(
-            "\n".join(
-                [
-                    f"{key}: {value}"
-                    for key, value in zip(metadata.keys(), metadata.values[0])
-                ]
-            )
-        )
+        list_display_metadata = ['sr_origin','audio_file_count','start_date','end_date','audio_file_origin_duration'] # restrain metadata to a shorter list of fileds to be displayed
+        joined_str=''
+        print(f"Metadata of {self.name} :")         
+        for key, value in zip(metadata.keys(), metadata.values[0]):
+            if key in list_display_metadata:
+                joined_str+=f"- {key} : {value} \n"
+        return joined_str

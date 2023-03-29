@@ -12,6 +12,8 @@ import soundfile as sf
 import numpy as np
 import pandas as pd
 
+from OSmOSE.utils import make_path
+
 
 def substract_timestamps(
     input_timestamp: pd.DataFrame, files: List[str], index: int
@@ -160,7 +162,7 @@ def reshape(
     if overwrite and output_dir_path:
         shutil.rmtree(output_dir_path)
 
-    output_dir_path.mkdir(mode=0o770, parents=True, exist_ok=True)
+    make_path(output_dir_path, mode=0o775)
 
     input_timestamp = pd.read_csv(
         input_dir_path.joinpath("timestamp.csv"),
