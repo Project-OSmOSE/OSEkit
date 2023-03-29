@@ -9,11 +9,11 @@ import soundfile as sf
 
 PARAMS = {
     "nfft": 512,
-    "winsize": 512,
+    "window_size": 512,
     "overlap": 97,
     "spectro_colormap": "viridis",
-    "zoom_levels": 2,
-    "number_adjustment_spectrograms": 2,
+    "zoom_level": 2,
+    "number_adjustment_spectrogram": 2,
     "dynamic_min": 0,
     "dynamic_max": 150,
     "spectro_duration": 5,
@@ -35,13 +35,10 @@ def test_build_path(input_dataset):
         local=True,
     )
     dataset.build()
-    dataset._Spectrogram__build_path(adjust=True)
+    dataset._Spectrogram__build_path(adjust=True, dry=True)
 
     assert dataset.audio_path == dataset.path.joinpath(OSMOSE_PATH.raw_audio, "5_240")
     assert dataset._Spectrogram__spectro_foldername == "adjustment_spectros"
-    assert dataset._Spectrogram__path_summstats == dataset.path.joinpath(
-        OSMOSE_PATH.spectrogram, "5_240", "normalization_parameters"
-    )
     assert dataset.path_output_spectrogram == dataset.path.joinpath(
         OSMOSE_PATH.spectrogram, "5_240", "adjustment_spectros", "image"
     )
@@ -49,13 +46,17 @@ def test_build_path(input_dataset):
         OSMOSE_PATH.spectrogram, "5_240", "adjustment_spectros", "matrix"
     )
 
-    dataset._Spectrogram__build_path(adjust=False)
+    assert not dataset.path_output_spectrogram.exists()
+
+    dataset._Spectrogram__build_path(adjust=False, dry=False)
     assert dataset.path_output_spectrogram == dataset.path.joinpath(
         OSMOSE_PATH.spectrogram, "5_240", "512_512_97", "image"
     )
     assert dataset.path_output_spectrogram_matrix == dataset.path.joinpath(
         OSMOSE_PATH.spectrogram, "5_240", "512_512_97", "matrix"
     )
+
+    assert dataset.path.joinpath(OSMOSE_PATH.statistics).exists()
 
 
 def test_initialize_5s(input_dataset):
@@ -75,7 +76,6 @@ def test_initialize_5s(input_dataset):
     spectro_paths = [
         OSMOSE_PATH.spectrogram.joinpath("5_240", "512_512_97", "image"),
         OSMOSE_PATH.spectrogram.joinpath("5_240", "512_512_97", "matrix"),
-        OSMOSE_PATH.spectrogram.joinpath("5_240", "normalization_parameters"),
         OSMOSE_PATH.spectrogram.joinpath("adjust_metadata.csv"),
         OSMOSE_PATH.raw_audio.joinpath("5_240"),
         OSMOSE_PATH.raw_audio.joinpath("5_240", "metadata.csv"),
@@ -139,7 +139,6 @@ def test_initialize_2s(input_dataset):
     spectro_paths = [
         OSMOSE_PATH.spectrogram.joinpath("2_240", "512_512_97", "image"),
         OSMOSE_PATH.spectrogram.joinpath("2_240", "512_512_97", "matrix"),
-        OSMOSE_PATH.spectrogram.joinpath("2_240", "normalization_parameters"),
         OSMOSE_PATH.spectrogram.joinpath("adjust_metadata.csv"),
         OSMOSE_PATH.raw_audio.joinpath("2_240"),
         OSMOSE_PATH.raw_audio.joinpath("2_240", "metadata.csv"),
