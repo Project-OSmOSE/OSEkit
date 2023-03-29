@@ -232,7 +232,7 @@ def reshape(
                 )
 
                 outfilename = output_dir_path.joinpath(
-                    f"reshaped_from_{t * chunk_size}_to_{end_time}_sec.wav"
+                    f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')[:-3].replace(':','-').replace('.','_')}.wav"
                 )
 
                 result.append(outfilename.name)
@@ -324,7 +324,7 @@ def reshape(
         )
 
         outfilename = output_dir_path.joinpath(
-            f"reshaped_from_{t * chunk_size}_to_{end_time}_sec.wav"
+            f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')[:-3].replace(':','-').replace('.','_')}.wav"
         )
         result.append(outfilename.name)
 
@@ -353,7 +353,7 @@ def reshape(
         )
 
         outfilename = output_dir_path.joinpath(
-            f"reshaped_from_{t * chunk_size}_to_{end_time}_sec.wav"
+            f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')[:-3].replace(':','-').replace('.','_')}.wav"
         )
         result.append(outfilename.name)
 
@@ -388,7 +388,7 @@ def reshape(
             end_time = t * chunk_size + len(output) // sample_rate
 
             outfilename = output_dir_path.joinpath(
-                f"reshaped_from_{t * chunk_size}_to_{end_time}_sec.wav"
+                f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')[:-3].replace(':','-').replace('.','_')}.wav"
             )
             result.append(outfilename.name)
 
