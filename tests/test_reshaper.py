@@ -64,31 +64,6 @@ def test_reshape_errors(input_dir):
         reshape(input_dir, 20)  # Supposed to fail because there is no timestamp.csv
 
 
-@pytest.fixture
-def input_reshape(input_dir: Path):
-    for i in range(9):
-        wav_file = input_dir.joinpath(f"test{i}.wav")
-        shutil.copyfile(input_dir.joinpath("test.wav"), wav_file)
-
-    with open(input_dir.joinpath("timestamp.csv"), "w", newline="") as timestampf:
-        writer = csv.writer(timestampf)
-        writer.writerow(
-            [str(input_dir.joinpath("test.wav")), "2022-01-01T11:59:57.000Z", "UTC"]
-        )
-        writer.writerows(
-            [
-                [
-                    str(input_dir.joinpath(f"test{i}.wav")),
-                    f"2022-01-01T12:00:{str(3*i).zfill(2)}.000Z",
-                    "UTC",
-                ]
-                for i in range(9)
-            ]
-        )
-
-    return input_dir
-
-
 def test_reshape_smaller(input_reshape: Path, output_dir: Path):
     reshape(input_files=input_reshape, chunk_size=2, output_dir_path=output_dir)
 
@@ -100,7 +75,7 @@ def test_reshape_smaller(input_reshape: Path, output_dir: Path):
     assert sf.info(reshaped_files[0]).duration == 2.0
     assert sf.info(reshaped_files[0]).samplerate == 44100
     assert sum(sf.info(file).duration for file in reshaped_files) == 30.0
-    assert reshaped_files[1].name == "reshaped_from_2_to_4_sec.wav"
+    assert reshaped_files[1].name == "2022-01-01T11-59-59_000.wav"
 
     full_input = sf.read(input_reshape.joinpath("test.wav"))[0]
 
