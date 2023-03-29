@@ -24,10 +24,10 @@ def Write_zscore_norma_params(
 
     Parameters
     ----------
-    input_dir: `str`
+    input_dir: `Path`
         The absolute path to the input directory. All audio files within this directory will be used.
 
-    output_file: `str`
+    output_file: `Path`
         The absolute path of the output csv file.
 
     HPfilter_min_freq: `int`

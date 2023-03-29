@@ -12,6 +12,21 @@ def resample(
     batch_ind_min: int = 0,
     batch_ind_max: int = -1,
 ):
+    """Resample all audio files in a directory to a target sample rate and write them to a new directory.
+
+    Parameters
+    ----------
+        input_dir: `Path`, keyword-only
+            The input directory containing the input files.
+        output_dir: `Path`, keyword-only
+            The output directory to write the resampled files.
+        target_sr: `int`, keyword-only
+            The target sample rate.
+        batch_ind_min: `int`, keyword-only
+            The index of the first file of the batch. The default is 0.
+        batch_ind_max: `int`, keyword-only
+            The index of the last file of the batch. The default is -1, meaning the last file of the input directory.
+    """
     if platform.system() == "Windows":
         print("Sox is unavailable on Windows")
         return

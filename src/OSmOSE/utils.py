@@ -32,10 +32,11 @@ def display_folder_storage_infos(dir_path: str) -> None:
 
 def list_not_built_datasets(datasets_folder_path: str) -> None:
     """Prints the available datasets that have not been built by the `Dataset.build()` function.
+
     Parameter
     ---------
     dataset_folder_path: str
-        The path to the directory containing the datasets"""
+        The path to the directory containing the datasets."""
 
     ds_folder = Path(datasets_folder_path)
 
@@ -80,14 +81,17 @@ def list_not_built_datasets(datasets_folder_path: str) -> None:
 
 def read_config(raw_config: Union[str, dict, Path]) -> NamedTuple:
     """Read the given configuration file or dict and converts it to a namedtuple. Only TOML and JSON formats are accepted for now.
+
     Parameter
     ---------
     raw_config : `str` or `Path` or `dict`
         The path of the configuration file, or the dict object containing the configuration.
+
     Returns
     -------
     config : `namedtuple`
         The configuration as a `namedtuple` object.
+
     Raises
     ------
     FileNotFoundError
@@ -136,7 +140,8 @@ def read_config(raw_config: Union[str, dict, Path]) -> NamedTuple:
     return convert(raw_config)
 
 
-def convert(dictionary):
+def convert(dictionary: dict) -> NamedTuple:
+    """Convert a dictionary in a Named Tuple"""
     for key, value in dictionary.items():
         if isinstance(value, dict):
             dictionary[key] = convert(value)
@@ -338,7 +343,19 @@ def check_n_files(
 
 
 # Will move to pathutils
-def make_path(path: Path, *, mode=None) -> Path:
+def make_path(path: Path, *, mode=0o755) -> Path:
+    """Create a path folder by folder with correct permissions.
+
+    If a folder in the path already exists, it will not be modified (even if the specified mode differs).
+
+    Parameters
+    ----------
+        path: `Path`
+            The complete path to create.
+        mode: `int`, optional, keyword-only
+            The permission code of the complete path. The default is 0o755, meaning the owner has all permissions over the files of the path,
+            and the owner group and others only have read and execute rights, but not writing.
+    """
     for parent in path.parents[::-1]:
         parent.mkdir(mode=mode, exist_ok=True)
 

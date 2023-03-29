@@ -93,6 +93,7 @@ class Dataset:
 
     @property
     def original_folder(self):
+        """Path: The folder containing the original audio file."""
         return (
             self.__original_folder
             if self.__original_folder
@@ -430,14 +431,6 @@ class Dataset:
                     header=None,
                 )
 
-            # save lists of metadata in metadata_file
-            # f = open(path_raw_audio.joinpath("metadata.csv"), "w")
-            # for i in range(len(list_duration)):
-            #     f.write(
-            #         f"{filename_rawaudio[i]} {list_duration[i]} {list_samplingRate[i]}\n"
-            #     )
-            # f.close()
-
             # change permission on the dataset
             if force_upload:
                 print("\n Well you have anomalies but you choose to FORCE UPLOAD")
@@ -522,7 +515,27 @@ class Dataset:
             "\n ALL ABNORMAL FILES REMOVED ! you can now re-run the build() method to finish importing it on OSmOSE platform"
         )
 
-    def _find_or_create_original_folder(self, original_folder: str = None) -> Path:
+    def _find_or_create_original_folder(self) -> Path:
+        """Search for the original folder or create it from existing files.
+
+        This function do in order:
+        - If there are any audio files in the top directory, consider them all originals and create the data/audio/original/ directory before
+            moving all audio files in
+        - If there is only one folder in the top directory, move it to /data/audio/original.
+        - If there is a folder named "original" in the raw audio path, then return it
+        - If there is only one folder in the raw audio path, then return it as the original.
+        If none of the above is true, then a ValueError is raised as the original folder could not be found nor created.
+
+        Returns
+        -------
+            original_folder: `Path`
+                The path to the folder containing the original files.
+
+        Raises
+        ------
+            ValueError
+                If the original folder is not found and could not be created.
+        """
         path_raw_audio = self.path.joinpath(OSMOSE_PATH.raw_audio)
         if any(
             file.endswith(".wav") for file in os.listdir(self.path)
@@ -543,8 +556,6 @@ class Dataset:
             new_path = orig_folder.rename(path_raw_audio.joinpath(orig_folder.name))
             return new_path
 
-        elif original_folder:
-            return path_raw_audio.joinpath(original_folder)
         elif path_raw_audio.joinpath("original").is_dir():
             return path_raw_audio.joinpath("original")
         elif len(list(path_raw_audio.iterdir())) == 1:
@@ -554,7 +565,19 @@ class Dataset:
                 f"No folder has been found in {path_raw_audio}. Please create the raw audio file folder and try again."
             )
 
-    def _get_original_after_build(self):
+    def _get_original_after_build(self) -> Path:
+        """Find the original folder path after the dataset has been built.
+
+        Returns
+        -------
+            original_folder: `Path`
+                The path to the folder containing the original audio file.
+
+        Raises
+        ------
+            ValueError
+                If no metadata.csv has been found and the original folder is not able to be found.
+        """
         # First, grab any metadata.csv
         all_datasets = self.path.joinpath(OSMOSE_PATH.raw_audio).iterdir()
         while True:
@@ -564,7 +587,7 @@ class Dataset:
             except StopIteration:
                 # If we get to the end of the generator, it means that no metadata file has been found, so we raise a more explicit error.
                 raise ValueError(
-                    f"No metadata file found in {self.path.joinpath(OSMOSE_PATH.raw_audio, audio_dir)}"
+                    f"No metadata file found in {self.path.joinpath(OSMOSE_PATH.raw_audio, audio_dir)}. Impossible to find the original data file."
                 )
             if metadata_path.exists():
                 break
@@ -582,10 +605,16 @@ class Dataset:
 
     def __str__(self):
         metadata = pd.read_csv(self.original_folder.joinpath("metadata.csv"))
-        list_display_metadata = ['sr_origin','audio_file_count','start_date','end_date','audio_file_origin_duration'] # restrain metadata to a shorter list of fileds to be displayed
-        joined_str=''
-        print(f"Metadata of {self.name} :")         
+        list_display_metadata = [
+            "sr_origin",
+            "audio_file_count",
+            "start_date",
+            "end_date",
+            "audio_file_origin_duration",
+        ]  # restrain metadata to a shorter list of fileds to be displayed
+        joined_str = ""
+        print(f"Metadata of {self.name} :")
         for key, value in zip(metadata.keys(), metadata.values[0]):
             if key in list_display_metadata:
-                joined_str+=f"- {key} : {value} \n"
+                joined_str += f"- {key} : {value} \n"
         return joined_str
