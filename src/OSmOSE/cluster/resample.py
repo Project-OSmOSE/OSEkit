@@ -6,8 +6,8 @@ import platform
 
 def resample(
     *,
-    input_dir: str,
-    output_dir: str,
+    input_dir: Path,
+    output_dir: Path,
     target_sr: int,
     batch_ind_min: int = 0,
     batch_ind_max: int = -1,
@@ -30,7 +30,7 @@ def resample(
     if platform.system() == "Windows":
         print("Sox is unavailable on Windows")
         return
-    all_files = sorted(Path(input_dir).glob("*wav"))
+    all_files = sorted(input_dir.glob("*wav"))
 
     # If batch_ind_max is -1, we go to the end of the list.
     audio_files_list = all_files[
@@ -43,7 +43,7 @@ def resample(
     for audio_file in audio_files_list:
         tfm.build_file(
             input_filepath=audio_file,
-            output_filepath=Path(output_dir, audio_file.name),
+            output_filepath=output_dir.joinpath(audio_file.name),
         )
 
         print(f"{audio_file.name} resampled to {target_sr}!")
@@ -87,8 +87,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     resample(
-        input_dir=args.input_dir,
-        output_dir=args.output_dir,
+        input_dir=Path(args.input_dir),
+        output_dir=Path(args.output_dir),
         target_sr=args.targets_sr,
         batch_ind_min=args.batch_ind_min,
         batch_ind_max=args.batch_ind_max,
