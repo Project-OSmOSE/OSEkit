@@ -339,6 +339,8 @@ class Spectrogram(Dataset):
     @sensitivity.setter
     def sensitivity(self, value):
         """Always assume the sensitivity is given in dB"""
+        if not value:
+            value = 0
         self.__sensitivity = 10 ** (value / 20) * 1e6
 
     @property
