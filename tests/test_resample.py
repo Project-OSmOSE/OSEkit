@@ -14,13 +14,13 @@ def test_resample(input_dir: Path, output_dir: Path):
         shutil.copyfile(input_dir.joinpath("test.wav"), wav_file)
 
     for sr in [100, 500, 8000]:
-        resample(input_dir=input_dir, output_dir=output_dir, target_fs=sr)
+        resample(input_dir=input_dir, output_dir=output_dir, target_sr=sr)
 
         # check that all resampled files exist and have the correct properties
         for i in range(3):
             output_file = output_dir.joinpath(f"test{i}.wav")
             assert output_file.is_file()
-            assert sf.info(output_file).sample_rate == sr
+            assert sf.info(output_file).samplerate == sr
             assert sf.info(output_file).channels == 1
             assert sf.info(output_file).frames == 900
             assert sf.info(output_file).duration == 3.0

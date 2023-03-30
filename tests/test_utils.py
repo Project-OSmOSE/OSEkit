@@ -4,7 +4,6 @@ import pytest
 import shutil
 from OSmOSE.utils import *
 from OSmOSE.config import OSMOSE_PATH
-from copy import copy
 
 
 def test_display_folder_storage_infos(monkeypatch):

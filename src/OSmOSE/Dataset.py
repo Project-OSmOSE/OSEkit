@@ -64,7 +64,7 @@ class Dataset:
         """
         self.__path = Path(dataset_path)
         self.__name = self.__path.stem
-        self.__group = owner_group
+        self.owner_group = owner_group
         self.__gps_coordinates = []
         if gps_coordinates is not None:
             self.gps_coordinates = gps_coordinates
@@ -178,12 +178,14 @@ class Dataset:
     def owner_group(self, value):
         if skip_perms:
             print("Cannot set osmose group on a non-Unix operating system.")
+            self.__group = None
             return
-        try:
-            gid = grp.getgrnam(value).gr_gid
-            os.setegid(gid)
-        except KeyError as e:
-            raise KeyError(
+        if value:
+            try:
+              gid = grp.getgrnam(value).gr_gid
+              os.setegid(gid)
+            except KeyError as e:
+              raise KeyError(
                 f"The group {value} does not exist on the system. Full error trace: {e}"
             )
 
@@ -443,13 +445,15 @@ class Dataset:
                 print("\n Well you have anomalies but you choose to FORCE UPLOAD")
             if not skip_perms:
                 print("\n Now setting OSmOSE permissions ; wait a bit ...")
-                gid = grp.getgrnam(owner_group).gr_gid
+                if owner_group:
+                    gid = grp.getgrnam(owner_group).gr_gid
+                    os.chown(self.path, -1, gid)
 
-                os.chown(self.path, -1, gid)
-                os.chmod(self.path, 0o774)
+                os.chmod(self.path, 0o775)
                 for path in self.path.rglob("*"):
-                    os.chown(path, -1, gid)
-                    os.chmod(path, 0o774)
+                    if owner_group:
+                        os.chown(path, -1, gid)
+                    os.chmod(path, 0o775)
 
         # write metadata.csv
         data = {
