@@ -166,14 +166,13 @@ class Spectrogram(Dataset):
             and analysis_sheet["HPfilter_min_freq"][0] != 0
             else sys.float_info.epsilon
         )
-        sensitivity_dB: int = (
+
+        self.sensitivity: float = (
             analysis_sheet["sensitivity_dB"][0]
             if "sensitivity_dB" in analysis_sheet
             else 0
         )
-        self.sensitivity: float = (
-            10 ** (sensitivity_dB / 20) * 1e6
-        )
+
         self.peak_voltage: float = (
             analysis_sheet["peak_voltage"][0]
             if "peak_voltage" in analysis_sheet
@@ -341,8 +340,7 @@ class Spectrogram(Dataset):
     @sensitivity.setter
     def sensitivity(self, value):
         """Always assume the sensitivity is given in dB"""
-        if not isinstance(value, int):
-            raise TypeError(f"Incorrect type for {value}. Expected int, found {type(value)}.")
+        
         self.__sensitivity = 10 ** (value / 20) * 1e6
 
     @property
