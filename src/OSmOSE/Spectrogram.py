@@ -124,7 +124,7 @@ class Spectrogram(Dataset):
         self.overlap: int = (
             analysis_sheet["overlap"][0] if "overlap" in analysis_sheet else None
         )
-        self.__colormap: str = (
+        self.colormap: str = (
             analysis_sheet["colormap"][0] if "colormap" in analysis_sheet else "viridis"
 
         )
