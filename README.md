@@ -54,7 +54,7 @@ If you are on DATARMOR, then the initial setup is already done! The conda enviro
 On the command line, run this line just once:
 
 ```csh
-echo "alias osmose_activate='cd /home/datawork-osmose/osmose_package; git checkout main; git pull origin main; . /appli/anaconda/latest/etc/profile.d/conda.sh; conda activate /home/datawork-osmose/conda-env/osmose_dev/; poetry install; cd -'" >> .bashrc
+echo "alias osmose_activate='cd /home/datawork-osmose/osmose_package; git checkout main; git pull origin main; . /appli/anaconda/latest/etc/profile.d/conda.sh; conda activate /home/datawork-osmose/conda-env/osmose_dev/; cd -'" >> .bashrc
 ```
 
 Then reload the shell. From now on, typing 
