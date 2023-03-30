@@ -169,10 +169,10 @@ class Spectrogram(Dataset):
         sensitivity_dB: int = (
             analysis_sheet["sensitivity_dB"][0]
             if "sensitivity_dB" in analysis_sheet
-            else None
+            else 0
         )
         self.sensitivity: float = (
-            10 ** (sensitivity_dB / 20) * 1e6 if sensitivity_dB is not None else None
+            10 ** (sensitivity_dB / 20) * 1e6
         )
         self.peak_voltage: float = (
             analysis_sheet["peak_voltage"][0]
@@ -341,8 +341,8 @@ class Spectrogram(Dataset):
     @sensitivity.setter
     def sensitivity(self, value):
         """Always assume the sensitivity is given in dB"""
-        if not value:
-            value = 0
+        if not isinstance(value, int):
+            raise TypeError(f"Incorrect type for {value}. Expected int, found {type(value)}.")
         self.__sensitivity = 10 ** (value / 20) * 1e6
 
     @property
