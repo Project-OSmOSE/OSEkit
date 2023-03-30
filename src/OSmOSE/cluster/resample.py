@@ -27,8 +27,8 @@ def resample(
 
     for audio_file in audio_files_list:
         tfm.build_file(
-            input_filepath=audio_file,
-            output_filepath=Path(output_dir, audio_file.name),
+            input_filepath=str(audio_file),
+            output_filepath=str(Path(output_dir, audio_file.name)),
         )
 
         print(f"{audio_file.name} resampled to {target_sr}!")

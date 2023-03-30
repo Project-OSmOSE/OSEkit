@@ -11,7 +11,7 @@ PARAMS = {
     "nfft": 512,
     "window_size": 512,
     "overlap": 97,
-    "spectro_colormap": "viridis",
+    "colormap": "viridis",
     "zoom_level": 2,
     "number_adjustment_spectrogram": 2,
     "dynamic_min": 0,
@@ -37,6 +37,12 @@ def test_build_path(input_dataset):
     dataset.build()
     dataset._Spectrogram__build_path(adjust=True, dry=True)
 
+    print("Values of spectrogram")
+
+    print(
+        "\n".join([f"{attr} : {getattr(dataset, str(attr))}" for attr in dir(dataset)])
+    )
+
     assert dataset.audio_path == dataset.path.joinpath(OSMOSE_PATH.raw_audio, "5_240")
     assert dataset._Spectrogram__spectro_foldername == "adjustment_spectros"
     assert dataset.path_output_spectrogram == dataset.path.joinpath(
@@ -45,7 +51,7 @@ def test_build_path(input_dataset):
     assert dataset.path_output_spectrogram_matrix == dataset.path.joinpath(
         OSMOSE_PATH.spectrogram, "5_240", "adjustment_spectros", "matrix"
     )
-
+    
     assert not dataset.path_output_spectrogram.exists()
 
     dataset._Spectrogram__build_path(adjust=False, dry=False)
