@@ -260,6 +260,16 @@ class Dataset:
         set_umask()
         if owner_group is None:
             owner_group = self.owner_group
+
+        if not skip_perms:
+                print("\nSetting OSmOSE permission to the dataset...")
+                if owner_group:
+                    gid = grp.getgrnam(owner_group).gr_gid
+                    os.chown(self.path, -1, gid)
+
+                # Add the setgid bid to the folder's permissions, in order for subsequent created files to be created by the same user group.
+                os.chmod(self.path, stat.S_ISGID | 0o775)
+
         path_raw_audio = self._find_or_create_original_folder(original_folder)
 
         path_timestamp_formatted = path_raw_audio.joinpath("timestamp.csv")
@@ -444,19 +454,7 @@ class Dataset:
             # change permission on the dataset
             if force_upload:
                 print("\n Well you have anomalies but you choose to FORCE UPLOAD")
-            if not skip_perms:
-                print("\n Now setting OSmOSE permissions ; wait a bit ...")
-                if owner_group:
-                    gid = grp.getgrnam(owner_group).gr_gid
-                    os.chown(self.path, -1, gid)
 
-                # Add the setgid bid to the folder's permissions, in order for subsequent created files to be created by the same user group.
-                os.chmod(self.path, stat.S_ISGID | 0o775)
-                for path in self.path.rglob("*"):
-                    if owner_group:
-                        os.chown(path, -1, gid)
-                    # Same as above, except we only add the setgid bit to folders and make regular files rwxrwxr--.
-                    os.chmod(path, ((stat.S_ISGID | 0o775) if path.is_dir() else 0o774))
 
         # write metadata.csv
         data = {
