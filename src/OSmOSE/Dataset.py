@@ -1,4 +1,5 @@
 import os
+import stat
 from pathlib import Path
 from typing import Union, Tuple, List
 from datetime import datetime
@@ -15,7 +16,7 @@ except ModuleNotFoundError:
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
-from OSmOSE.utils import read_header, check_n_files, make_path
+from OSmOSE.utils import read_header, check_n_files, make_path, set_umask
 from OSmOSE.timestamps import write_timestamp
 from OSmOSE.config import OSMOSE_PATH
 
@@ -256,6 +257,7 @@ class Dataset:
 
             DONE ! your dataset is on OSmOSE platform !
         """
+        set_umask()
         if owner_group is None:
             owner_group = self.owner_group
         path_raw_audio = self._find_or_create_original_folder(original_folder)
@@ -448,11 +450,13 @@ class Dataset:
                     gid = grp.getgrnam(owner_group).gr_gid
                     os.chown(self.path, -1, gid)
 
-                os.chmod(self.path, 0o2775)
+                # Add the setgid bid to the folder's permissions, in order for subsequent created files to be created by the same user group.
+                os.chmod(self.path, stat.S_ISGID | 0o775)
                 for path in self.path.rglob("*"):
                     if owner_group:
                         os.chown(path, -1, gid)
-                    os.chmod(path, 0o2775)
+                    # Same as above, except we only add the setgid bit to folders and make regular files rwxrwxr--.
+                    os.chmod(path, ((stat.S_ISGID | 0o775) if path.is_dir() else 0o774))
 
         # write metadata.csv
         data = {

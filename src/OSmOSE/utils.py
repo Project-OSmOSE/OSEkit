@@ -342,3 +342,6 @@ def make_path(path: Path, *, mode=0o2775) -> Path:
     path.mkdir(mode=mode, exist_ok=True)
 
     return path
+
+def set_umask():
+    os.umask(0o002)
