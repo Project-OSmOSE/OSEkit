@@ -335,7 +335,7 @@ def check_n_files(
 
 
 # Will move to pathutils
-def make_path(path: Path, *, mode=None) -> Path:
+def make_path(path: Path, *, mode=0o2775) -> Path:
     for parent in path.parents[::-1]:
         parent.mkdir(mode=mode, exist_ok=True)
 

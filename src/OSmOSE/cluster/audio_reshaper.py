@@ -162,7 +162,7 @@ def reshape(
     if overwrite and output_dir_path:
         shutil.rmtree(output_dir_path)
 
-    make_path(output_dir_path, mode=0o775)
+    make_path(output_dir_path, mode=0o2775)
 
     input_timestamp = pd.read_csv(
         input_dir_path.joinpath("timestamp.csv"),

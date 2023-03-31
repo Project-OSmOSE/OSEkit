@@ -432,10 +432,10 @@ class Spectrogram(Dataset):
 
         # Create paths
         if not dry:
-            make_path(self.audio_path, mode=0o775)
-            make_path(self.path_output_spectrogram, mode=0o775)
-            make_path(self.path_output_spectrogram_matrix, mode=0o775)
-            make_path(self.path.joinpath(OSMOSE_PATH.statistics), mode=0o775)
+            make_path(self.audio_path, mode=0o2775)
+            make_path(self.path_output_spectrogram, mode=0o2775)
+            make_path(self.path_output_spectrogram_matrix, mode=0o2775)
+            make_path(self.path.joinpath(OSMOSE_PATH.statistics), mode=0o2775)
 
     def check_spectro_size(self):
         """Verify if the parameters will generate a spectrogram that can fit one screen properly"""
@@ -967,7 +967,7 @@ class Spectrogram(Dataset):
         data = signal.sosfilt(bpcoef, data)
 
         if adjust:
-            make_path(self.path_output_spectrogram, mode=0o775)
+            make_path(self.path_output_spectrogram, mode=0o2775)
 
         output_file = self.path_output_spectrogram.joinpath(audio_file)
 
@@ -1114,7 +1114,7 @@ class Spectrogram(Dataset):
 
         # save spectrogram matrices (intensity, time and freq) in a npz file
         if self.save_matrix:
-            make_path(self.path_output_spectrogram_matrix, mode=0o775)
+            make_path(self.path_output_spectrogram_matrix, mode=0o2775)
 
             output_matrix = self.path_output_spectrogram_matrix.joinpath(
                 output_file.name
