@@ -109,7 +109,7 @@ class Spectrogram(Dataset):
             analysis_sheet = {}
             self.__analysis_file = False
             print(
-                "No valid processed/adjust_metadata.csv found and no parameters provided. All attributes will be initialized to default values.."
+                "No valid processed/adjust_metadata.csv found and no parameters provided. All attributes will be initialized to default values..  \n"
             )
 
         self.batch_number: int = batch_number
@@ -448,7 +448,7 @@ class Spectrogram(Dataset):
                 )
             )
 
-        tile_duration = self.spectro_duration / 2 ** (self.zoom_level - 1)
+        tile_duration = self.spectro_duration / 2 ** (self.zoom_level)
 
         data = np.zeros([int(tile_duration * self.sr_analysis), 1])
 
