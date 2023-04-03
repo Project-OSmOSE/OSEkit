@@ -26,7 +26,7 @@ def resample(
     # tfm.set_output_format(rate=target_sr)
 
     for audio_file in audio_files_list:
-        subprocess.run(["sox", str(audio_file), str(Path(output_dir, audio_file.name)), "-r", str(target_sr), "-t", "wavpcm"], shell=True)
+        subprocess.run(f"sox {str(audio_file)} -r {str(target_sr)} -t wavpcm {str(Path(output_dir, audio_file.name))}", shell=True)
 
         print(f"{audio_file.name} resampled to {target_sr}!")
     #     tfm.build_file(
