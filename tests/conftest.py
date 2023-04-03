@@ -5,7 +5,9 @@ import soundfile as sf
 import shutil
 import csv
 from OSmOSE.config import OSMOSE_PATH
+import os
 
+os.environ["sox"] = "/appli/sox/sox-14.4.2_gcc-7.2.0/bin/sox"
 
 def capture_csv(monkeypatch):
     pass
