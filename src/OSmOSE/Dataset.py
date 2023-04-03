@@ -518,13 +518,13 @@ class Dataset:
     def _find_or_create_original_folder(self) -> Path:
         """Search for the original folder or create it from existing files.
 
-        This function do in order:
-        - If there are any audio files in the top directory, consider them all originals and create the data/audio/original/ directory before
-            moving all audio files in
-        - If there is only one folder in the top directory, move it to /data/audio/original.
-        - If there is a folder named "original" in the raw audio path, then return it
-        - If there is only one folder in the raw audio path, then return it as the original.
-        If none of the above is true, then a ValueError is raised as the original folder could not be found nor created.
+        This function does in order:
+    - If there is any audio file in the top directory, consider them all original and create the data/audio/original/ directory before
+        moving all audio files in it.
+    - If there is only one folder in the top directory, move it to /data/audio/original.
+    - If there is a folder named "original" in the raw audio path, then return it
+    - If there is only one folder in the raw audio path, then return it as the original.
+    If none of the above is true, then a ValueError is raised as the original folder could not be found nor created. 
 
         Returns
         -------

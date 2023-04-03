@@ -12,7 +12,7 @@ def resample(
     batch_ind_min: int = 0,
     batch_ind_max: int = -1,
 ):
-    """Resample all audio files in a directory to a target sample rate and write them to a new directory.
+    """Resample all audio files in a given directory to a target sample rate and write them to a new directory.
 
     Parameters
     ----------
