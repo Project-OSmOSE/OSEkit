@@ -43,6 +43,10 @@ def test_build_path(input_dataset):
         "\n".join([f"{attr} : {getattr(dataset, str(attr))}" for attr in dir(dataset)])
     )
 
+    print(dataset._get_original_after_build())
+
+    assert dataset.path.joinpath(OSMOSE_PATH.raw_audio, "3_44100").exists()
+    assert len(list(dataset.path.joinpath(OSMOSE_PATH.raw_audio, "3_44100").glob("*.wav"))) == 10
     assert dataset.audio_path == dataset.path.joinpath(OSMOSE_PATH.raw_audio, "5_240")
     assert dataset._Spectrogram__spectro_foldername == "adjustment_spectros"
     assert dataset.path_output_spectrogram == dataset.path.joinpath(
@@ -93,7 +97,7 @@ def test_initialize_5s(input_dataset):
     for path in spectro_paths:
         assert dataset.path.joinpath(path).resolve().exists()
 
-    all_audio_files = list(dataset.audio_path.glob("*wav"))
+    all_audio_files = list(dataset.audio_path.glob("*.wav"))
 
     assert len(all_audio_files) == 6
     for file in all_audio_files:

@@ -22,7 +22,7 @@ def test_resample(input_dir: Path, output_dir: Path):
             assert output_file.is_file()
             assert sf.info(output_file).samplerate == sr
             assert sf.info(output_file).channels == 1
-            assert sf.info(output_file).frames == 900
+            assert sf.info(output_file).frames == sr * 3
             assert sf.info(output_file).duration == 3.0
 
         assert len(os.listdir(output_dir)) == 4

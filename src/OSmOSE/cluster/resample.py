@@ -72,6 +72,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    print("Parameters :", args)
+
     resample(
         input_dir=args.input_dir,
         output_dir=args.output_dir,

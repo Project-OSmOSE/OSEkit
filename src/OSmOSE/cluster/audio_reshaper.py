@@ -514,6 +514,8 @@ if __name__ == "__main__":
         else args.input_files
     )
 
+    print("Parameters :", args)
+    
     files = reshape(
         chunk_size=args.chunk_size,
         input_files=input_files,
