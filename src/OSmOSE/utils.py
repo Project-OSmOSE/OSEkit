@@ -6,7 +6,6 @@ import random
 import shutil
 import struct
 from collections import namedtuple
-from distutils.errors import UnknownFileError
 import sys
 from typing import Union, NamedTuple, Tuple
 
@@ -95,13 +94,11 @@ def read_config(raw_config: Union[str, dict, Path]) -> NamedTuple:
     Raises
     ------
     FileNotFoundError
-        Raised if the raw_config is a string that does not correspond to a valid path.
+        Raised if the raw_config is a string that does not correspond to a valid path, or the raw_config file is not in TOML, JSON or YAML formats.
     TypeError
         Raised if the raw_config is anything else than a string, a PurePath or a dict.
     NotImplementedError
-        Raised if the raw_config file is in YAML format
-    UnknownFileError
-        Raised if the raw_config file is not in TOML, JSON or YAML formats."""
+        Raised if the raw_config file is in YAML format"""
 
     match raw_config:
         case Path():
@@ -133,7 +130,7 @@ def read_config(raw_config: Union[str, dict, Path]) -> NamedTuple:
                         "YAML support will eventually get there (unfortunately)"
                     )
                 case _:
-                    raise UnknownFileError(
+                    raise FileNotFoundError(
                         f"The provided configuration file extension ({Path(raw_config).suffix} is not a valid extension. Please use .toml or .json files."
                     )
 
@@ -343,7 +340,7 @@ def check_n_files(
 
 
 # Will move to pathutils
-def make_path(path: Path, *, mode=0o755) -> Path:
+def make_path(path: Path, *, mode=0o2755) -> Path:
     """Create a path folder by folder with correct permissions.
 
     If a folder in the path already exists, it will not be modified (even if the specified mode differs).

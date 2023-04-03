@@ -162,7 +162,7 @@ def reshape(
     if overwrite and output_dir_path:
         shutil.rmtree(output_dir_path)
 
-    make_path(output_dir_path, mode=0o775)
+    make_path(output_dir_path, mode=0o2775)
 
     input_timestamp = pd.read_csv(
         input_dir_path.joinpath("timestamp.csv"),
@@ -232,7 +232,7 @@ def reshape(
                 )
 
                 outfilename = output_dir_path.joinpath(
-                    f"reshaped_from_{t * chunk_size}_to_{end_time}_sec.wav"
+                    f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')[:-3].replace(':','-').replace('.','_')}.wav"
                 )
 
                 result.append(outfilename.name)
@@ -324,7 +324,7 @@ def reshape(
         )
 
         outfilename = output_dir_path.joinpath(
-            f"reshaped_from_{t * chunk_size}_to_{end_time}_sec.wav"
+            f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')[:-3].replace(':','-').replace('.','_')}.wav"
         )
         result.append(outfilename.name)
 
@@ -353,7 +353,7 @@ def reshape(
         )
 
         outfilename = output_dir_path.joinpath(
-            f"reshaped_from_{t * chunk_size}_to_{end_time}_sec.wav"
+            f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')[:-3].replace(':','-').replace('.','_')}.wav"
         )
         result.append(outfilename.name)
 
@@ -388,7 +388,7 @@ def reshape(
             end_time = t * chunk_size + len(output) // sample_rate
 
             outfilename = output_dir_path.joinpath(
-                f"reshaped_from_{t * chunk_size}_to_{end_time}_sec.wav"
+                f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')[:-3].replace(':','-').replace('.','_')}.wav"
             )
             result.append(outfilename.name)
 

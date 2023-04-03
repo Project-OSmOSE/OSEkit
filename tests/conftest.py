@@ -103,3 +103,28 @@ def input_spectrogram(input_dataset):
     }
 
     yield input_dataset, analysis_params
+
+
+@pytest.fixture
+def input_reshape(input_dir: Path):
+    for i in range(9):
+        wav_file = input_dir.joinpath(f"test{i}.wav")
+        shutil.copyfile(input_dir.joinpath("test.wav"), wav_file)
+
+    with open(input_dir.joinpath("timestamp.csv"), "w", newline="") as timestampf:
+        writer = csv.writer(timestampf)
+        writer.writerow(
+            [str(input_dir.joinpath("test.wav")), "2022-01-01T11:59:57.000Z", "UTC"]
+        )
+        writer.writerows(
+            [
+                [
+                    str(input_dir.joinpath(f"test{i}.wav")),
+                    f"2022-01-01T12:00:{str(3*i).zfill(2)}.000Z",
+                    "UTC",
+                ]
+                for i in range(9)
+            ]
+        )
+
+    return input_dir
