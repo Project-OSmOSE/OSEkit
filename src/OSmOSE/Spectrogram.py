@@ -594,8 +594,11 @@ class Spectrogram(Dataset):
         #! RESAMPLING
         resample_job_id_list = []
         processes = []
+        resample = False
 
         if self.sr_analysis != sr_origin and not os.listdir(self.audio_path):
+            resample = True
+            shutil.copy(self.path_input_audio_file.joinpath("timestamp.csv"), self.audio_path.joinpath("timestamp.csv"))
             for batch in range(self.batch_number):
                 i_min = batch * batch_size
                 i_max = (
@@ -704,6 +707,9 @@ class Spectrogram(Dataset):
 
             if reshape_method == "classic":
                 # build job, qsub, stuff
+
+                input_files = self.audio_path if resample else self.path_input_audio_file
+
                 nb_reshaped_files = (
                     audio_file_origin_duration * audio_file_count
                 ) / self.spectro_duration
@@ -711,6 +717,7 @@ class Spectrogram(Dataset):
                 next_offset_beginning = 0
                 offset_end = 0
                 i_max = -1
+
                 for batch in range(self.batch_number):
                     if i_max >= len(self.list_wav_to_process) - 1:
                         continue
@@ -760,7 +767,7 @@ class Spectrogram(Dataset):
                         process = mp.Process(
                             target=reshape,
                             kwargs={
-                                "input_files": self.path_input_audio_file,
+                                "input_files": input_files,
                                 "chunk_size": self.spectro_duration,
                                 "output_dir_path": self.audio_path,
                                 "offset_beginning": int(offset_beginning),
@@ -776,9 +783,9 @@ class Spectrogram(Dataset):
                     else:
                         self.jb.build_job_file(
                             script_path=Path(inspect.getfile(reshape)).resolve(),
-                            script_args=f"--input-files {self.path_input_audio_file} --chunk-size {self.spectro_duration} --ind-min {i_min}\
+                            script_args=f"--input-files {input_files} --chunk-size {self.spectro_duration} --ind-min {i_min}\
                                         --ind-max {i_max} --output-dir {self.audio_path} --offset-beginning {int(offset_beginning)} --offset-end {int(offset_end)}\
-                                        --last-file-behavior {last_file_behavior} {'--force' if force_init else ''}",
+                                        --last-file-behavior {last_file_behavior} {'--force' if force_init else ''} {'--overwrite' if resample else ''}",
                             jobname="OSmOSE_reshape_py",
                             preset="low",
                         )
