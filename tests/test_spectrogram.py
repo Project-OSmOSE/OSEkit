@@ -70,9 +70,10 @@ def test_build_path(input_dataset):
 
 
 def test_initialize_5s(input_dataset):
+    sr = 44100 if platform.system() else 240
     dataset = Spectrogram(
         dataset_path=input_dataset["main_dir"],
-        sr_analysis=240,
+        sr_analysis=sr,
         analysis_params=PARAMS,
         local=True,
     )
@@ -80,19 +81,19 @@ def test_initialize_5s(input_dataset):
     dataset.initialize(reshape_method="classic")
 
     timestamp_path = dataset.path.joinpath(
-        OSMOSE_PATH.raw_audio.joinpath("5_240", "timestamp.csv")
+        OSMOSE_PATH.raw_audio.joinpath(f"5_{sr}", "timestamp.csv")
     )
 
     spectro_paths = [
-        OSMOSE_PATH.spectrogram.joinpath("5_240", "512_512_97", "image"),
-        OSMOSE_PATH.spectrogram.joinpath("5_240", "512_512_97", "matrix"),
+        OSMOSE_PATH.spectrogram.joinpath(f"5_{sr}", "512_512_97", "image"),
+        OSMOSE_PATH.spectrogram.joinpath(f"5_{sr}", "512_512_97", "matrix"),
         OSMOSE_PATH.spectrogram.joinpath("adjust_metadata.csv"),
-        OSMOSE_PATH.raw_audio.joinpath("5_240"),
-        OSMOSE_PATH.raw_audio.joinpath("5_240", "metadata.csv"),
+        OSMOSE_PATH.raw_audio.joinpath(f"5_{sr}"),
+        OSMOSE_PATH.raw_audio.joinpath(f"5_{sr}", "metadata.csv"),
         timestamp_path,
     ]
 
-    print(os.listdir(dataset.path.joinpath(OSMOSE_PATH.raw_audio, "5_240")))
+    print(os.listdir(dataset.path.joinpath(OSMOSE_PATH.raw_audio, f"5_{sr}")))
 
     for path in spectro_paths:
         assert dataset.path.joinpath(path).resolve().exists()
@@ -101,8 +102,7 @@ def test_initialize_5s(input_dataset):
 
     assert len(all_audio_files) == 6
     for file in all_audio_files:
-        if not platform.system() == "Windows":
-            assert sf.info(file).samplerate == 240
+        assert sf.info(file).samplerate == sr
         assert sf.info(file).duration == 5.0
 
     full_input = np.concatenate(
@@ -133,9 +133,10 @@ def test_initialize_5s(input_dataset):
 
 def test_initialize_2s(input_dataset):
     PARAMS["spectro_duration"] = 2
+    sr = 44100 if platform.system() else 240
     dataset = Spectrogram(
         dataset_path=input_dataset["main_dir"],
-        sr_analysis=240,
+        sr_analysis=sr,
         analysis_params=PARAMS,
         local=True,
     )
@@ -143,15 +144,15 @@ def test_initialize_2s(input_dataset):
     dataset.initialize(reshape_method="classic")
 
     timestamp_path = dataset.path.joinpath(
-        OSMOSE_PATH.raw_audio.joinpath("2_240", "timestamp.csv")
+        OSMOSE_PATH.raw_audio.joinpath(f"2_{sr}", "timestamp.csv")
     )
 
     spectro_paths = [
-        OSMOSE_PATH.spectrogram.joinpath("2_240", "512_512_97", "image"),
-        OSMOSE_PATH.spectrogram.joinpath("2_240", "512_512_97", "matrix"),
+        OSMOSE_PATH.spectrogram.joinpath(f"2_{sr}", "512_512_97", "image"),
+        OSMOSE_PATH.spectrogram.joinpath(f"2_{sr}", "512_512_97", "matrix"),
         OSMOSE_PATH.spectrogram.joinpath("adjust_metadata.csv"),
-        OSMOSE_PATH.raw_audio.joinpath("2_240"),
-        OSMOSE_PATH.raw_audio.joinpath("2_240", "metadata.csv"),
+        OSMOSE_PATH.raw_audio.joinpath(f"2_{sr}"),
+        OSMOSE_PATH.raw_audio.joinpath(f"2_{sr}", "metadata.csv"),
         timestamp_path,
     ]
 
@@ -162,8 +163,7 @@ def test_initialize_2s(input_dataset):
 
     assert len(all_audio_files) == 15
     for file in all_audio_files:
-        if not platform.system() == "Windows":
-            assert sf.info(file).samplerate == 240
+        assert sf.info(file).samplerate == sr
         assert sf.info(file).duration == 2.0
 
     full_input = np.concatenate(

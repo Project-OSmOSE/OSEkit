@@ -19,14 +19,17 @@ def test_resample(input_dir: Path, output_dir: Path):
         # check that all resampled files exist and have the correct properties
         for i in range(3):
             output_file = output_dir.joinpath(f"test{i}.wav")
+            outinfo = sf.info(output_file)
             assert output_file.is_file()
-            assert sf.info(output_file).samplerate == sr
-            assert sf.info(output_file).channels == 1
-            assert sf.info(output_file).frames == sr * 3
-            assert sf.info(output_file).duration == 3.0
+            assert outinfo.samplerate == sr
+            assert outinfo.channels == 1
+            assert outinfo.frames == sr * 3
+            assert outinfo.duration == 3.0
 
         assert len(os.listdir(output_dir)) == 4
         # check that the original files were not modified
         for i in range(3):
             input_file = input_dir.joinpath(f"test{i}.wav")
-            assert sf.info(input_file).sample_rate == 300
+            ininfo = sf.info(input_file)
+            assert ininfo.samplerate == 300
+            assert ininfo.frames == 900

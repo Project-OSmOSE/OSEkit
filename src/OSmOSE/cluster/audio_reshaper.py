@@ -139,8 +139,10 @@ def reshape(
             f"Bad value {last_file_behavior} for last_file_behavior parameters. Must be one of truncate, pad or discard."
         )
 
+    implicit_output = False
     if not output_dir_path:
         print("No output directory provided. Will use the input directory instead.")
+        implicit_output = True
         output_dir_path = input_dir_path
         if overwrite:
             print(
@@ -158,9 +160,6 @@ def reshape(
         raise FileNotFoundError(
             f"The timestamp.csv file must be present in the directory {input_dir_path} and correspond to the audio files in the same location."
         )
-
-    if overwrite and output_dir_path:
-        shutil.rmtree(output_dir_path)
 
     make_path(output_dir_path, mode=0o2775)
 
@@ -198,6 +197,10 @@ def reshape(
 
     while i < len(files):
         audio_data, sample_rate = sf.read(input_dir_path.joinpath(files[i]))
+        
+        if overwrite and not implicit_output and output_dir_path == input_dir_path and output_dir_path == input_dir_path and i<len(files)-1:
+            print(f"Deleting {files[i]}")
+            input_dir_path.joinpath(files[i]).unlink()
 
         if i == 0:
             timestamp = input_timestamp[input_timestamp["filename"] == files[i]][
@@ -305,6 +308,9 @@ def reshape(
                     nextdata, next_sample_rate = sf.read(
                         input_dir_path.joinpath(files[i + 1])
                     )
+                    if overwrite and not implicit_output and output_dir_path == input_dir_path and i+1<len(files)-1:
+                        print(f"Deleting {files[i+1]}")
+                        input_dir_path.joinpath(files[i+1]).unlink()
                     rest = (chunk_size * next_sample_rate) - len(audio_data)
                     audio_data = np.concatenate(
                         (
@@ -316,12 +322,6 @@ def reshape(
 
                 output = audio_data
                 previous_audio_data = nextdata[rest:]
-
-        end_time = (
-            (t + 1) * chunk_size
-            if chunk_size * sample_rate <= len(output)
-            else t * chunk_size + len(output) // sample_rate
-        )
 
         outfilename = output_dir_path.joinpath(
             f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')[:-3].replace(':','-').replace('.','_')}.wav"
@@ -346,11 +346,6 @@ def reshape(
     while len(previous_audio_data) >= chunk_size * sample_rate:
         output = previous_audio_data[: chunk_size * sample_rate]
         previous_audio_data = previous_audio_data[chunk_size * sample_rate :]
-        end_time = (
-            (t + 1) * chunk_size
-            if chunk_size * sample_rate <= len(output)
-            else t * chunk_size + len(output) // sample_rate
-        )
 
         outfilename = output_dir_path.joinpath(
             f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')[:-3].replace(':','-').replace('.','_')}.wav"
@@ -384,8 +379,10 @@ def reshape(
             case "discard":
                 skip_last = True
 
+        if overwrite and not implicit_output and output_dir_path == input_dir_path:
+                        print(f"Deleting {files[i]}")
+                        input_dir_path.joinpath(files[i]).unlink()
         if not skip_last:
-            end_time = t * chunk_size + len(output) // sample_rate
 
             outfilename = output_dir_path.joinpath(
                 f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')[:-3].replace(':','-').replace('.','_')}.wav"
@@ -515,7 +512,7 @@ if __name__ == "__main__":
     )
 
     print("Parameters :", args)
-    
+
     files = reshape(
         chunk_size=args.chunk_size,
         input_files=input_files,
