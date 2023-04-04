@@ -306,10 +306,7 @@ def check_n_files(
                                         "Please specify the path to the output folder:"
                                     )
                                 normalize = True
-                        else:
-                            print("no tty detected")
                         if not normalize:
-                            print("normalize is false D:")
                             raise ValueError(
                                 "You need to set auto_normalization to True to normalize your dataset automatically."
                             )
