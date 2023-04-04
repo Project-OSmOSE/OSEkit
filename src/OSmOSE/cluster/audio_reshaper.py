@@ -421,6 +421,7 @@ def reshape(
             na_rep="NaN",
             header=None,
         )
+        path_csv.chmod(mode=FPDEFAULT)
 
     return [output_dir_path.joinpath(res) for res in result]
 

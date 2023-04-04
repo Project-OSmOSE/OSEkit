@@ -418,9 +418,9 @@ class Dataset:
                 path_raw_audio.joinpath("timestamp.csv"),
                 index=False,
                 na_rep="NaN",
-                header=None,
-                mode=FPDEFAULT
+                header=None
             )
+            path_raw_audio.joinpath("timestamp.csv").chmod(mode=FPDEFAULT)
 
             # change name of the original wav folder
             new_folder_name = path_raw_audio.parent.joinpath(
@@ -441,9 +441,9 @@ class Dataset:
                 pd.DataFrame([ff[0].replace("-", "_") for ff in xx]).to_csv(
                     subset_path,
                     index=False,
-                    header=None,
-                    mode=FPDEFAULT
+                    header=None
                 )
+                subset_path.chmod(mode=FPDEFAULT)
 
             # save lists of metadata in metadata_file
             # f = open(path_raw_audio.joinpath("metadata.csv"), "w")
@@ -490,9 +490,9 @@ class Dataset:
         df["dataset_fileDuration"] = int(round(mean(list_duration), 2))
         df.to_csv(
             path_raw_audio.joinpath("metadata.csv"),
-            index=False,
-            mode=FPDEFAULT
+            index=False
         )
+        path_raw_audio.joinpath("metadata.csv").chmod(mode=FPDEFAULT)
 
         print("\n DONE ! your dataset is on OSmOSE platform !")
 
@@ -523,9 +523,9 @@ class Dataset:
             timestamp_path,
             index=False,
             na_rep="NaN",
-            header=None,
-            mode=FPDEFAULT
+            header=None
         )
+        timestamp_path.chmod(mode=FPDEFAULT)
 
         print(
             "\n ALL ABNORMAL FILES REMOVED ! you can now re-run the build() method to finish importing it on OSmOSE platform"

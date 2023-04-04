@@ -818,7 +818,8 @@ class Spectrogram(Dataset):
 
         metadata["dataset_fileDuration"] = self.spectro_duration
         new_meta_path = self.audio_path.joinpath("metadata.csv")
-        metadata.to_csv(new_meta_path, mode=FPDEFAULT)
+        metadata.to_csv(new_meta_path)
+        new_meta_path.chmod(mode=FPDEFAULT)
 
         if not self.__analysis_file:
             data = {
@@ -850,21 +851,22 @@ class Spectrogram(Dataset):
 
             analysis_sheet = pd.DataFrame.from_records([data])
             analysis_sheet.to_csv(
-                self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv"), mode=FPDEFAULT
+                self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv")
             )
+            self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv").chmod(mode=FPDEFAULT)
             
             if not self.path.joinpath(
                 OSMOSE_PATH.spectrogram, "adjust_metadata.csv"
             ).exists():
                 print("Failed to write adjust_metadata.csv")
 
-    def to_csv(self, filename: str) -> None:
+    def to_csv(self, filename: Path) -> None:
         """Outputs the characteristics of the spectrogram the specified file in csv format.
 
         Parameter
         ---------
-        filename: str
-            The name of the file to be written."""
+        filename: Path
+            The path of the file to be written."""
 
         data = {
             "name": self.__spectro_foldername,
@@ -886,7 +888,8 @@ class Spectrogram(Dataset):
         }
         # TODO: readd `, 'cvr_max':self.dynamic_max, 'cvr_min':self.dynamic_min` above when ok with Aplose
         df = pd.DataFrame.from_records([data])
-        df.to_csv(filename, index=False, mode=FPDEFAULT)
+        df.to_csv(filename, index=False)
+        filename.chmod(mode=FPDEFAULT)
 
     # region On cluster
 
