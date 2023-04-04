@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from OSmOSE.utils import make_path, set_umask
-
+from OSmOSE.config import *
 
 def substract_timestamps(
     input_timestamp: pd.DataFrame, files: List[str], index: int
