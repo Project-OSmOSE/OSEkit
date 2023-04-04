@@ -32,4 +32,4 @@ def test_resample(input_dir: Path, output_dir: Path):
             input_file = input_dir.joinpath(f"test{i}.wav")
             ininfo = sf.info(input_file)
             assert ininfo.samplerate == 44100
-            assert ininfo.frames == 900
+            assert ininfo.frames == 132300
