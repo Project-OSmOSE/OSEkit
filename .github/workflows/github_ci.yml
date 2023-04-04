@@ -35,7 +35,7 @@ jobs:
         poetry run pytest -v
     - name: Run coverage
       run: |
-        poetry run coverage run pytest
+        poetry run coverage run -m pytest
         poetry run coverage report
     - name: Format with black
       run: |
