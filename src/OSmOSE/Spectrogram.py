@@ -818,7 +818,7 @@ class Spectrogram(Dataset):
 
         metadata["dataset_fileDuration"] = self.spectro_duration
         new_meta_path = self.audio_path.joinpath("metadata.csv")
-        metadata.to_csv(new_meta_path)
+        metadata.to_csv(new_meta_path, mode=0o664)
 
         if not self.__analysis_file:
             data = {
@@ -850,13 +850,9 @@ class Spectrogram(Dataset):
 
             analysis_sheet = pd.DataFrame.from_records([data])
             analysis_sheet.to_csv(
-                self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv")
+                self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv"), mode=0o664
             )
-
-            self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv").chmod(
-                0o777
-            )
-
+            
             if not self.path.joinpath(
                 OSMOSE_PATH.spectrogram, "adjust_metadata.csv"
             ).exists():
