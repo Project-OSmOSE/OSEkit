@@ -1,7 +1,5 @@
 import math
-import os
 import sys
-import shutil
 from datetime import datetime, timedelta
 from typing import List, Union, Literal
 from argparse import ArgumentParser
@@ -12,7 +10,7 @@ import soundfile as sf
 import numpy as np
 import pandas as pd
 
-from OSmOSE.utils import make_path
+from OSmOSE.utils import make_path, set_umask
 
 
 def substract_timestamps(
@@ -122,6 +120,7 @@ def reshape(
     --------
         The list of the path of newly created audio files.
     """
+    set_umask()
     verbose = True
     files = []
 

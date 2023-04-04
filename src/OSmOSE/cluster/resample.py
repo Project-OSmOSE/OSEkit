@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 import subprocess
 import platform
-
+from OSmOSE.utils import set_umask
 
 def resample(
     *,
@@ -12,6 +12,8 @@ def resample(
     batch_ind_min: int = 0,
     batch_ind_max: int = -1,
 ):
+    
+    set_umask()
     if platform.system() == "Windows":
         print("Sox is unavailable on Windows")
         return

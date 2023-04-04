@@ -18,7 +18,7 @@ import numpy as np
 from tqdm import tqdm
 from OSmOSE.utils import read_header, check_n_files, make_path, set_umask
 from OSmOSE.timestamps import write_timestamp
-from OSmOSE.config import OSMOSE_PATH
+from OSmOSE.config import *
 
 
 class Dataset:
@@ -268,7 +268,7 @@ class Dataset:
                     os.chown(self.path, -1, gid)
 
                 # Add the setgid bid to the folder's permissions, in order for subsequent created files to be created by the same user group.
-                os.chmod(self.path, stat.S_ISGID | 0o775)
+                os.chmod(self.path, DPDEFAULT)
 
         path_raw_audio = self._find_or_create_original_folder(original_folder)
 
@@ -419,6 +419,7 @@ class Dataset:
                 index=False,
                 na_rep="NaN",
                 header=None,
+                mode=FPDEFAULT
             )
 
             # change name of the original wav folder
@@ -431,7 +432,7 @@ class Dataset:
 
             for subpath in OSMOSE_PATH:
                 if "data" in str(subpath):
-                    make_path(self.path.joinpath(subpath), mode=0o2775)
+                    make_path(self.path.joinpath(subpath), mode=DPDEFAULT)
 
             # rename filenames in the subset_files.csv if any to replace -' by '_'
             subset_path = OSMOSE_PATH.processed.joinpath("subset_files.csv")
@@ -441,6 +442,7 @@ class Dataset:
                     subset_path,
                     index=False,
                     header=None,
+                    mode=FPDEFAULT
                 )
 
             # save lists of metadata in metadata_file
@@ -489,6 +491,7 @@ class Dataset:
         df.to_csv(
             path_raw_audio.joinpath("metadata.csv"),
             index=False,
+            mode=FPDEFAULT
         )
 
         print("\n DONE ! your dataset is on OSmOSE platform !")
@@ -521,6 +524,7 @@ class Dataset:
             index=False,
             na_rep="NaN",
             header=None,
+            mode=FPDEFAULT
         )
 
         print(
@@ -532,7 +536,7 @@ class Dataset:
         if any(
             file.endswith(".wav") for file in os.listdir(self.path)
         ):  # If there are audio files in the dataset folder
-            make_path(path_raw_audio.joinpath("original"), mode=0o2775)
+            make_path(path_raw_audio.joinpath("original"), mode=DPDEFAULT)
 
             for audiofile in os.listdir(self.path):
                 if audiofile.endswith(".wav"):
@@ -543,7 +547,7 @@ class Dataset:
         elif (
             len(next(os.walk(self.path))[1]) == 1
         ):  # If there is exactly one folder in the dataset folder
-            make_path(path_raw_audio, mode=0o2775)
+            make_path(path_raw_audio, mode=DPDEFAULT)
             orig_folder = self.path.joinpath(next(os.walk(self.path))[1][0])
             new_path = orig_folder.rename(path_raw_audio.joinpath(orig_folder.name))
             return new_path

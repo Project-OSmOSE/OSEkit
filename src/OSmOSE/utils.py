@@ -18,7 +18,7 @@ except ModuleNotFoundError:
 
 import soundfile as sf
 import numpy as np
-from OSmOSE.config import OSMOSE_PATH
+from OSmOSE.config import *
 
 
 def display_folder_storage_infos(dir_path: str) -> None:
@@ -311,7 +311,7 @@ def check_n_files(
                                 "You need to set auto_normalization to True to normalize your dataset automatically."
                             )
 
-                    make_path(Path(output_path), mode=0o775)
+                    make_path(Path(output_path), mode=DPDEFAULT)
 
                     for audio_file in file_list:
                         data, sr = safe_read(audio_file)
@@ -321,11 +321,14 @@ def check_n_files(
                         data[data > 1] = 1
                         data[data < -1] = -1
 
+                        outfile = Path(output_path, Path(audio_file).name)
                         sf.write(
-                            Path(output_path, Path(audio_file).name),
+                            outfile,
                             data=data,
                             samplerate=sr,
                         )
+
+                        outfile.chmod(mode=FPDEFAULT)
                         # TODO: lock in spectrum mode
                     print(
                         "All files have been normalized. Spectrograms created from them will be locked in spectrum mode."
@@ -335,7 +338,7 @@ def check_n_files(
 
 
 # Will move to pathutils
-def make_path(path: Path, *, mode=0o2775) -> Path:
+def make_path(path: Path, *, mode=DPDEFAULT) -> Path:
     for parent in path.parents[::-1]:
         parent.mkdir(mode=mode, exist_ok=True)
 

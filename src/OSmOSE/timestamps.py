@@ -4,6 +4,8 @@ import argparse
 import pandas as pd
 from pathlib import Path
 
+from OSmOSE.config import *
+
 __converter = {
     "%Y": r"[12][0-9]{3}",
     "%y": r"[0-9]{2}",
@@ -117,6 +119,7 @@ def write_timestamp(
         index=False,
         na_rep="NaN",
         header=None,
+        mode=FPDEFAULT
     )
 
 

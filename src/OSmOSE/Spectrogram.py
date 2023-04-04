@@ -21,7 +21,7 @@ from OSmOSE.cluster import (
 )
 from OSmOSE.Dataset import Dataset
 from OSmOSE.utils import safe_read, make_path
-from OSmOSE.config import OSMOSE_PATH
+from OSmOSE.config import *
 
 
 class Spectrogram(Dataset):
@@ -432,10 +432,10 @@ class Spectrogram(Dataset):
 
         # Create paths
         if not dry:
-            make_path(self.audio_path, mode=0o2775)
-            make_path(self.path_output_spectrogram, mode=0o2775)
-            make_path(self.path_output_spectrogram_matrix, mode=0o2775)
-            make_path(self.path.joinpath(OSMOSE_PATH.statistics), mode=0o2775)
+            make_path(self.audio_path, mode=DPDEFAULT)
+            make_path(self.path_output_spectrogram, mode=DPDEFAULT)
+            make_path(self.path_output_spectrogram_matrix, mode=DPDEFAULT)
+            make_path(self.path.joinpath(OSMOSE_PATH.statistics), mode=DPDEFAULT)
 
     def check_spectro_size(self):
         """Verify if the parameters will generate a spectrogram that can fit one screen properly"""
@@ -818,7 +818,7 @@ class Spectrogram(Dataset):
 
         metadata["dataset_fileDuration"] = self.spectro_duration
         new_meta_path = self.audio_path.joinpath("metadata.csv")
-        metadata.to_csv(new_meta_path, mode=0o664)
+        metadata.to_csv(new_meta_path, mode=FPDEFAULT)
 
         if not self.__analysis_file:
             data = {
@@ -850,7 +850,7 @@ class Spectrogram(Dataset):
 
             analysis_sheet = pd.DataFrame.from_records([data])
             analysis_sheet.to_csv(
-                self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv"), mode=0o664
+                self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv"), mode=FPDEFAULT
             )
             
             if not self.path.joinpath(
@@ -886,7 +886,7 @@ class Spectrogram(Dataset):
         }
         # TODO: readd `, 'cvr_max':self.dynamic_max, 'cvr_min':self.dynamic_min` above when ok with Aplose
         df = pd.DataFrame.from_records([data])
-        df.to_csv(filename, index=False)
+        df.to_csv(filename, index=False, mode=FPDEFAULT)
 
     # region On cluster
 
@@ -970,7 +970,7 @@ class Spectrogram(Dataset):
         data = signal.sosfilt(bpcoef, data)
 
         if adjust:
-            make_path(self.path_output_spectrogram, mode=0o2775)
+            make_path(self.path_output_spectrogram, mode=DPDEFAULT)
 
         output_file = self.path_output_spectrogram.joinpath(audio_file)
 
@@ -1117,7 +1117,7 @@ class Spectrogram(Dataset):
 
         # save spectrogram matrices (intensity, time and freq) in a npz file
         if self.save_matrix:
-            make_path(self.path_output_spectrogram_matrix, mode=0o2775)
+            make_path(self.path_output_spectrogram_matrix, mode=DPDEFAULT)
 
             output_matrix = self.path_output_spectrogram_matrix.joinpath(
                 output_file.name
@@ -1130,6 +1130,8 @@ class Spectrogram(Dataset):
                 Freq=Freq,
                 Time=Time,
             )
+
+            output_matrix.chmod(mode=FPDEFAULT)
 
         return Sxx, Freq
 
@@ -1186,6 +1188,8 @@ class Spectrogram(Dataset):
         plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
         plt.close()
 
+        output_file.chmod(mode=FPDEFAULT)
+
         metadata_input = self.path.joinpath(
             OSMOSE_PATH.spectrogram, "adjust_metadata.csv"
         )
@@ -1195,7 +1199,7 @@ class Spectrogram(Dataset):
             f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",
             "metadata.csv",
         )
-        print()
+        
         if not self.adjust and metadata_input.exists() and not metadata_output.exists():
             metadata_input.rename(metadata_output)
 
