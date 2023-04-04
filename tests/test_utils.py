@@ -97,11 +97,11 @@ def test_check_n_files_bad_files(input_dir, output_dir):
         file_list=file_list, n=5, output_path=output_dir, auto_normalization=True
     )
     assert len(os.listdir(output_dir)) == 10
-
-
+    
 def test_check_n_files_under_threshold_bad_files(input_dir, output_dir, monkeypatch):
     monkeypatch.setattr("sys.stdin", StringIO("y\n"))
     file_list = [input_dir.joinpath("test.wav")]
+    autonorm = True if not sys.__stdin__.isatty() else False
     for i in range(8):
         wav_file = input_dir.joinpath(f"test{i}.wav")
         shutil.copyfile(input_dir.joinpath("test.wav"), wav_file)
@@ -129,6 +129,6 @@ def test_check_n_files_under_threshold_bad_files(input_dir, output_dir, monkeypa
     )
     assert len(os.listdir(output_dir)) == 0
     assert check_n_files(
-        file_list=file_list, n=11, output_path=output_dir, threshold_percent=0.1
+        file_list=file_list, n=11, output_path=output_dir, threshold_percent=0.1, auto_normalization=autonorm
     )
     assert len(os.listdir(output_dir)) == 11
