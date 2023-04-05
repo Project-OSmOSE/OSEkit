@@ -894,6 +894,8 @@ class Spectrogram(Dataset):
             with open(csv_path, "w") as f:
                 f.write("\n".join(self.list_wav_to_process))
 
+            csv_path.chmod(mode=FPDEFAULT)
+
             return csv_path
 
     def to_csv(self, filename: Path) -> None:

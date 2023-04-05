@@ -247,6 +247,7 @@ def reshape(
                 sf.write(
                     outfilename, output, sample_rate, format="WAV", subtype="DOUBLE"
                 )
+                outfilename.chmod(mode=FPDEFAULT)
 
                 if verbose:
                     print(
@@ -333,6 +334,7 @@ def reshape(
         timestamp += timedelta(seconds=chunk_size)
 
         sf.write(outfilename, output, sample_rate, format="WAV", subtype="DOUBLE")
+        outfilename.chmod(mode=FPDEFAULT)
 
         if verbose:
             print(
@@ -357,6 +359,7 @@ def reshape(
         timestamp += timedelta(seconds=chunk_size)
 
         sf.write(outfilename, output, sample_rate, format="WAV", subtype="DOUBLE")
+        outfilename.chmod(mode=FPDEFAULT)
 
         if verbose:
             print(
@@ -394,6 +397,7 @@ def reshape(
             timestamp += timedelta(seconds=len(output))
 
             sf.write(outfilename, output, sample_rate, format="WAV", subtype="DOUBLE")
+            outfilename.chmod(mode=FPDEFAULT)
 
             if verbose:
                 print(

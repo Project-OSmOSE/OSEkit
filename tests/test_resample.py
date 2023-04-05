@@ -19,8 +19,8 @@ def test_resample(input_dir: Path, output_dir: Path):
         # check that all resampled files exist and have the correct properties
         for i in range(3):
             output_file = output_dir.joinpath(f"test{i}.wav")
-            outinfo = sf.info(output_file)
             assert output_file.is_file()
+            outinfo = sf.info(output_file)
             assert outinfo.samplerate == sr
             assert outinfo.channels == 1
             assert outinfo.frames == sr * 3

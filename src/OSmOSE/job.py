@@ -350,12 +350,11 @@ class Job_builder:
         job_file.append(f"{prefix} {time_param}{walltime}")
         job_file.append(f"{prefix} {mem_param}{mem}")
 
-        uid = (
+        uid = str(
             len(glob.glob(Path(outfile).stem[:-2] + "*.out"))
             + len(self.prepared_jobs)
             + len(self.ongoing_jobs)
-            + date_id
-        )
+        ) + date_id
 
         outfile = Path(outfile).with_stem(f"{Path(outfile).stem}{uid}")
 
@@ -383,7 +382,7 @@ class Job_builder:
         job_file_path = jobdir.joinpath(outfilename)
 
         # job_file.append(f"\nchmod 444 {outfile} {errfile}")
-        job_file.append(f"\nrm {job_file_path}")
+        job_file.append(f"\nrm {job_file_path}\n")
 
         #! BUILD DONE => WRITING
         with open(job_file_path, "w") as jobfile:
@@ -435,6 +434,7 @@ class Job_builder:
                     .stdout.decode("utf-8")
                     .rstrip("\n")
                 )
+                print(f"qsub{dep} {jobinfo['path']}")
                 jobid_list.append(jobid)
             elif "slurm" in str(jobinfo["path"]).lower():
                 dep = f"-d afterok:{dependency}" if dependency else ""
