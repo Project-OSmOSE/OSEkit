@@ -202,6 +202,7 @@ class Job_builder:
         mem: str = None,
         outfile: str = None,
         errfile: str = None,
+        logdir: Path = None
     ) -> str:
         """Build a job file corresponding to your job scheduler.
 
@@ -261,13 +262,19 @@ class Job_builder:
         job_preset = getattr(self.__config.Presets, preset)
 
         pwd = Path(__file__).parent
-        jobdir = pwd.joinpath("ongoing_jobs")
-        logdir = pwd.joinpath("log_job")
-        jobdir.mkdir(mode=DPDEFAULT, exist_ok=True)
-        logdir.mkdir(mode=DPDEFAULT, exist_ok=True)
+        if not logdir:
+            jobdir = pwd.joinpath("ongoing_jobs")
+            logdir = pwd.joinpath("log_job")
+            jobdir.mkdir(mode=DPDEFAULT, exist_ok=True)
+            logdir.mkdir(mode=DPDEFAULT, exist_ok=True)
+        else:
+            logdir.mkdir(mode=DPDEFAULT, exist_ok=True)
+            jobdir = logdir
+        
 
         job_file = ["#!/bin/bash"]
 
+        date_id = datetime.now().strftime('%H-%M-%S')
         # region Build header
         #! HEADER
         # Getting all header variables from the parameters or the configuration defaults
@@ -347,6 +354,7 @@ class Job_builder:
             len(glob.glob(Path(outfile).stem[:-2] + "*.out"))
             + len(self.prepared_jobs)
             + len(self.ongoing_jobs)
+            + date_id
         )
 
         outfile = Path(outfile).with_stem(f"{Path(outfile).stem}{uid}")
@@ -370,7 +378,7 @@ class Job_builder:
         job_file.append(f"python {script_path} {script_args}")
 
         #! FOOTER
-        outfilename = f"{jobname}_{datetime.now().strftime('%H-%M-%S')}_{job_scheduler}_{len(os.listdir(jobdir))}.pbs"
+        outfilename = f"{jobname}_{date_id}_{job_scheduler}_{len(os.listdir(jobdir))}.pbs"
 
         job_file_path = jobdir.joinpath(outfilename)
 
@@ -422,7 +430,7 @@ class Job_builder:
                 dep = f" -W depend=afterok:{dependency}" if dependency else ""
                 jobid = (
                     subprocess.run(
-                        [f"qsub{dep}", jobinfo["path"]], stdout=subprocess.PIPE
+                        [f"qsub{dep}", jobinfo["path"]], stdout=subprocess.PIPE, shell=True
                     )
                     .stdout.decode("utf-8")
                     .rstrip("\n")
@@ -432,7 +440,7 @@ class Job_builder:
                 dep = f"-d afterok:{dependency}" if dependency else ""
                 jobid = (
                     subprocess.run(
-                        ["sbatch", dep, jobinfo["path"]], stdout=subprocess.PIPE
+                        ["sbatch", dep, jobinfo["path"]], stdout=subprocess.PIPE, shell=True
                     )
                     .stdout.decode("utf-8")
                     .rstrip("\n")

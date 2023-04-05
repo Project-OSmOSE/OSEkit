@@ -271,7 +271,7 @@ class Dataset:
                 # Add the setgid bid to the folder's permissions, in order for subsequent created files to be created by the same user group.
                 os.chmod(self.path, DPDEFAULT)
 
-        path_raw_audio = self._find_or_create_original_folder(original_folder)
+        path_raw_audio = original_folder if original_folder is not None else self._find_or_create_original_folder()
 
         path_timestamp_formatted = path_raw_audio.joinpath("timestamp.csv")
 

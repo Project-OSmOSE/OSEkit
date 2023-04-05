@@ -643,11 +643,12 @@ class Spectrogram(Dataset):
                         script_args=f"--input-dir {self.path_input_audio_file} --target-sr {self.sr_analysis} --ind-min {i_min} --ind-max {i_max} --output-dir {self.audio_path}",
                         jobname="OSmOSE_resample",
                         preset="low",
+                        logdir=self.path.joinpath("log")
                     )
                     # TODO: use importlib.resources
 
                     job_id = self.jb.submit_job()
-                    resample_job_id_list.append(job_id)
+                    resample_job_id_list += job_id
 
             self.pending_jobs = resample_job_id_list
             for process in processes:
@@ -697,10 +698,11 @@ class Spectrogram(Dataset):
                                     --ind-min {i_min} --ind-max {i_max} --output-file {self.path.joinpath(OSMOSE_PATH.statistics, 'SummaryStats_' + str(i_min) + '.csv')}",
                         jobname="OSmOSE_get_zscore_params",
                         preset="low",
+                        logdir=self.path.joinpath("log")
                     )
 
                     job_id = self.jb.submit_job(dependency=resample_job_id_list)
-                    norma_job_id_list.append(job_id)
+                    norma_job_id_list += job_id
             
             self.pending_jobs = norma_job_id_list
 
@@ -807,10 +809,11 @@ class Spectrogram(Dataset):
                                         --last-file-behavior {last_file_behavior} {'--force' if force_init else ''} {'--overwrite' if resample else ''}",
                             jobname="OSmOSE_reshape_py",
                             preset="low",
+                            logdir=self.path.joinpath("log")
                         )
 
                         job_id = self.jb.submit_job(dependency=norma_job_id_list)
-                        reshape_job_id_list.append(job_id)
+                        reshape_job_id_list += job_id
                 self.pending_jobs = reshape_job_id_list
 
                 for process in processes:
@@ -831,10 +834,11 @@ class Spectrogram(Dataset):
                                     -m {i_min} -x {i_max} -o {self.audio_path} -n {self.spectro_duration} {silence_arg}",
                         jobname="OSmOSE_reshape_bash",
                         preset="low",
+                        logdir=self.path.joinpath("log")
                     )
 
                     job_id = self.jb.submit_job(dependency=resample_job_id_list)
-                    reshape_job_id_list.append(job_id)
+                    reshape_job_id_list += job_id
                     self.pending_jobs = reshape_job_id_list
         
         metadata["dataset_fileDuration"] = self.spectro_duration
