@@ -10,6 +10,7 @@ from pathlib import Path
 from datetime import datetime
 from importlib import resources
 from OSmOSE.utils import read_config
+from OSmOSE.config import *
 
 
 class Job_builder:
@@ -262,8 +263,8 @@ class Job_builder:
         pwd = Path(__file__).parent
         jobdir = pwd.joinpath("ongoing_jobs")
         logdir = pwd.joinpath("log_job")
-        jobdir.mkdir(mode=0o774, exist_ok=True)
-        logdir.mkdir(mode=0o774, exist_ok=True)
+        jobdir.mkdir(mode=DPDEFAULT, exist_ok=True)
+        logdir.mkdir(mode=DPDEFAULT, exist_ok=True)
 
         job_file = ["#!/bin/bash"]
 
@@ -411,6 +412,9 @@ class Job_builder:
 
         jobid_list = []
 
+        if isinstance(dependency, list):
+            dependency = ":".join(dependency)
+
         # TODO: Think about the issue when a job have too many dependencies and workaround.
 
         for jobinfo in jobinfo_list:
@@ -454,9 +458,9 @@ class Job_builder:
         for job_info in self.finished_jobs:
             try:
                 if job_info["outfile"].exists():
-                    os.chmod(job_info["outfile"], 0o664)
+                    os.chmod(job_info["outfile"], FPDEFAULT)
                 if job_info["errfile"].exists():
-                    os.chmod(job_info["errfile"], 0o664)
+                    os.chmod(job_info["errfile"], FPDEFAULT)
             except KeyError:
                 print(f"No outfile or errfile associated with job {job_info['path']}.")
 

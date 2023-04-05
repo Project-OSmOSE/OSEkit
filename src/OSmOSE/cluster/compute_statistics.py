@@ -7,6 +7,7 @@ import soundfile as sf
 import numpy as np
 from scipy import signal
 
+from OSmOSE.utils import set_umask
 
 def Write_zscore_norma_params(
     *,
@@ -39,6 +40,7 @@ def Write_zscore_norma_params(
     batch_ind_max: `int`
         The last file of the list to be processed. Default is -1, meaning the entire list is processed.
     """
+    set_umask()
     all_files = sorted(Path(input_dir).glob("*wav"))
     # If batch_ind_max is -1, we go to the end of the list.
     wav_list = all_files[
