@@ -412,6 +412,9 @@ class Job_builder:
 
         jobid_list = []
 
+        if isinstance(dependency, list):
+            dependency = ":".join(dependency)
+
         # TODO: Think about the issue when a job have too many dependencies and workaround.
 
         for jobinfo in jobinfo_list:
