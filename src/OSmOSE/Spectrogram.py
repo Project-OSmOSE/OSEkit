@@ -561,6 +561,9 @@ class Spectrogram(Dataset):
             audio_file.name for audio_file in list_wav_withEvent
         ]
 
+        """List containing the last job ids to grab outside of the class."""
+        self.pending_jobs = []
+
         # Stop initialization if already done
         final_path = self.path.joinpath(
             OSMOSE_PATH.spectrogram,
@@ -646,6 +649,7 @@ class Spectrogram(Dataset):
                     job_id = self.jb.submit_job()
                     resample_job_id_list.append(job_id)
 
+            self.pending_jobs = resample_job_id_list
             for process in processes:
                 process.join()
 
@@ -697,6 +701,8 @@ class Spectrogram(Dataset):
 
                     job_id = self.jb.submit_job(dependency=resample_job_id_list)
                     norma_job_id_list.append(job_id)
+            
+            self.pending_jobs = norma_job_id_list
 
             for process in processes:
                 process.join()
@@ -805,6 +811,7 @@ class Spectrogram(Dataset):
 
                         job_id = self.jb.submit_job(dependency=norma_job_id_list)
                         reshape_job_id_list.append(job_id)
+                self.pending_jobs = reshape_job_id_list
 
                 for process in processes:
                     process.join()
@@ -828,7 +835,8 @@ class Spectrogram(Dataset):
 
                     job_id = self.jb.submit_job(dependency=resample_job_id_list)
                     reshape_job_id_list.append(job_id)
-
+                    self.pending_jobs = reshape_job_id_list
+        
         metadata["dataset_fileDuration"] = self.spectro_duration
         new_meta_path = self.audio_path.joinpath("metadata.csv")
         metadata.to_csv(new_meta_path)
