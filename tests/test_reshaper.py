@@ -67,10 +67,11 @@ def test_reshape_errors(input_dir):
 def test_reshape_smaller(input_reshape: Path, output_dir: Path):
     reshape(input_files=input_reshape, chunk_size=2, output_dir_path=output_dir)
 
-    reshaped_files = sorted(
-        [x for x in Path(output_dir).iterdir() if str(x).endswith(".wav")],
-        key=os.path.getmtime,
-    )
+    reshaped_files = [output_dir.joinpath(outfile) for outfile in pd.read_csv(str(output_dir.joinpath("timestamp.csv")), header=None)[0].values]
+    # reshaped_files = sorted(
+    #     [x for x in Path(output_dir).iterdir() if str(x).endswith(".wav")],
+    #     key=os.path.getmtime,
+    # )
     assert len(reshaped_files) == 15
     assert sf.info(reshaped_files[0]).duration == 2.0
     assert sf.info(reshaped_files[0]).samplerate == 44100
@@ -128,10 +129,7 @@ def test_reshape_truncate_last(input_reshape: Path, output_dir):
         last_file_behavior="truncate",
     )
 
-    reshaped_files = sorted(
-        [x for x in Path(output_dir).iterdir() if str(x).endswith(".wav")],
-        key=os.path.getmtime,
-    )
+    reshaped_files = [output_dir.joinpath(outfile) for outfile in pd.read_csv(str(output_dir.joinpath("timestamp.csv")), header=None)[0].values]
 
     assert len(reshaped_files) == 8
     assert sf.info(reshaped_files[0]).duration == 4.0

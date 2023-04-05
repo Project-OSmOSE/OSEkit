@@ -1,4 +1,5 @@
 import os
+import stat
 from pathlib import Path
 from typing import Union, Tuple, List
 from datetime import datetime
@@ -15,9 +16,9 @@ except ModuleNotFoundError:
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
-from OSmOSE.utils import read_header, check_n_files, make_path
+from OSmOSE.utils import read_header, check_n_files, make_path, set_umask
 from OSmOSE.timestamps import write_timestamp
-from OSmOSE.config import OSMOSE_PATH
+from OSmOSE.config import *
 
 
 class Dataset:
@@ -256,8 +257,19 @@ class Dataset:
 
             DONE ! your dataset is on OSmOSE platform !
         """
+        set_umask()
         if owner_group is None:
             owner_group = self.owner_group
+
+        if not skip_perms:
+                print("\nSetting OSmOSE permission to the dataset...")
+                if owner_group:
+                    gid = grp.getgrnam(owner_group).gr_gid
+                    os.chown(self.path, -1, gid)
+
+                # Add the setgid bid to the folder's permissions, in order for subsequent created files to be created by the same user group.
+                os.chmod(self.path, DPDEFAULT)
+
         path_raw_audio = self._find_or_create_original_folder(original_folder)
 
         path_timestamp_formatted = path_raw_audio.joinpath("timestamp.csv")
@@ -406,8 +418,9 @@ class Dataset:
                 path_raw_audio.joinpath("timestamp.csv"),
                 index=False,
                 na_rep="NaN",
-                header=None,
+                header=None
             )
+            path_raw_audio.joinpath("timestamp.csv").chmod(mode=FPDEFAULT)
 
             # change name of the original wav folder
             new_folder_name = path_raw_audio.parent.joinpath(
@@ -419,7 +432,7 @@ class Dataset:
 
             for subpath in OSMOSE_PATH:
                 if "data" in str(subpath):
-                    make_path(self.path.joinpath(subpath), mode=0o2775)
+                    make_path(self.path.joinpath(subpath), mode=DPDEFAULT)
 
             # rename filenames in the subset_files.csv if any to replace -' by '_'
             subset_path = OSMOSE_PATH.processed.joinpath("subset_files.csv")
@@ -428,8 +441,9 @@ class Dataset:
                 pd.DataFrame([ff[0].replace("-", "_") for ff in xx]).to_csv(
                     subset_path,
                     index=False,
-                    header=None,
+                    header=None
                 )
+                subset_path.chmod(mode=FPDEFAULT)
 
             # save lists of metadata in metadata_file
             # f = open(path_raw_audio.joinpath("metadata.csv"), "w")
@@ -442,17 +456,7 @@ class Dataset:
             # change permission on the dataset
             if force_upload:
                 print("\n Well you have anomalies but you choose to FORCE UPLOAD")
-            if not skip_perms:
-                print("\n Now setting OSmOSE permissions ; wait a bit ...")
-                if owner_group:
-                    gid = grp.getgrnam(owner_group).gr_gid
-                    os.chown(self.path, -1, gid)
 
-                os.chmod(self.path, 0o2775)
-                for path in self.path.rglob("*"):
-                    if owner_group:
-                        os.chown(path, -1, gid)
-                    os.chmod(path, 0o2775)
 
         # write metadata.csv
         data = {
@@ -486,8 +490,9 @@ class Dataset:
         df["dataset_fileDuration"] = int(round(mean(list_duration), 2))
         df.to_csv(
             path_raw_audio.joinpath("metadata.csv"),
-            index=False,
+            index=False
         )
+        path_raw_audio.joinpath("metadata.csv").chmod(mode=FPDEFAULT)
 
         print("\n DONE ! your dataset is on OSmOSE platform !")
 
@@ -518,8 +523,9 @@ class Dataset:
             timestamp_path,
             index=False,
             na_rep="NaN",
-            header=None,
+            header=None
         )
+        timestamp_path.chmod(mode=FPDEFAULT)
 
         print(
             "\n ALL ABNORMAL FILES REMOVED ! you can now re-run the build() method to finish importing it on OSmOSE platform"
@@ -530,7 +536,7 @@ class Dataset:
         if any(
             file.endswith(".wav") for file in os.listdir(self.path)
         ):  # If there are audio files in the dataset folder
-            make_path(path_raw_audio.joinpath("original"), mode=0o2775)
+            make_path(path_raw_audio.joinpath("original"), mode=DPDEFAULT)
 
             for audiofile in os.listdir(self.path):
                 if audiofile.endswith(".wav"):
@@ -541,7 +547,7 @@ class Dataset:
         elif (
             len(next(os.walk(self.path))[1]) == 1
         ):  # If there is exactly one folder in the dataset folder
-            make_path(path_raw_audio, mode=0o2775)
+            make_path(path_raw_audio, mode=DPDEFAULT)
             orig_folder = self.path.joinpath(next(os.walk(self.path))[1][0])
             new_path = orig_folder.rename(path_raw_audio.joinpath(orig_folder.name))
             return new_path

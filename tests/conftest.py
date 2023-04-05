@@ -6,7 +6,6 @@ import shutil
 import csv
 from OSmOSE.config import OSMOSE_PATH
 
-
 def capture_csv(monkeypatch):
     pass
 

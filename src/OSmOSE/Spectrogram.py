@@ -21,7 +21,7 @@ from OSmOSE.cluster import (
 )
 from OSmOSE.Dataset import Dataset
 from OSmOSE.utils import safe_read, make_path
-from OSmOSE.config import OSMOSE_PATH
+from OSmOSE.config import *
 
 
 class Spectrogram(Dataset):
@@ -432,10 +432,10 @@ class Spectrogram(Dataset):
 
         # Create paths
         if not dry:
-            make_path(self.audio_path, mode=0o2775)
-            make_path(self.path_output_spectrogram, mode=0o2775)
-            make_path(self.path_output_spectrogram_matrix, mode=0o2775)
-            make_path(self.path.joinpath(OSMOSE_PATH.statistics), mode=0o2775)
+            make_path(self.audio_path, mode=DPDEFAULT)
+            make_path(self.path_output_spectrogram, mode=DPDEFAULT)
+            make_path(self.path_output_spectrogram_matrix, mode=DPDEFAULT)
+            make_path(self.path.joinpath(OSMOSE_PATH.statistics), mode=DPDEFAULT)
 
     def check_spectro_size(self):
         """Verify if the parameters will generate a spectrogram that can fit one screen properly"""
@@ -594,8 +594,11 @@ class Spectrogram(Dataset):
         #! RESAMPLING
         resample_job_id_list = []
         processes = []
+        resample = False
 
         if self.sr_analysis != sr_origin and not os.listdir(self.audio_path):
+            resample = True
+            shutil.copy(self.path_input_audio_file.joinpath("timestamp.csv"), self.audio_path.joinpath("timestamp.csv"))
             for batch in range(self.batch_number):
                 i_min = batch * batch_size
                 i_max = (
@@ -704,6 +707,9 @@ class Spectrogram(Dataset):
 
             if reshape_method == "classic":
                 # build job, qsub, stuff
+
+                input_files = self.audio_path if resample else self.path_input_audio_file
+
                 nb_reshaped_files = (
                     audio_file_origin_duration * audio_file_count
                 ) / self.spectro_duration
@@ -711,6 +717,7 @@ class Spectrogram(Dataset):
                 next_offset_beginning = 0
                 offset_end = 0
                 i_max = -1
+
                 for batch in range(self.batch_number):
                     if i_max >= len(self.list_wav_to_process) - 1:
                         continue
@@ -760,7 +767,7 @@ class Spectrogram(Dataset):
                         process = mp.Process(
                             target=reshape,
                             kwargs={
-                                "input_files": self.path_input_audio_file,
+                                "input_files": input_files,
                                 "chunk_size": self.spectro_duration,
                                 "output_dir_path": self.audio_path,
                                 "offset_beginning": int(offset_beginning),
@@ -776,9 +783,9 @@ class Spectrogram(Dataset):
                     else:
                         self.jb.build_job_file(
                             script_path=Path(inspect.getfile(reshape)).resolve(),
-                            script_args=f"--input-files {self.path_input_audio_file} --chunk-size {self.spectro_duration} --ind-min {i_min}\
+                            script_args=f"--input-files {input_files} --chunk-size {self.spectro_duration} --ind-min {i_min}\
                                         --ind-max {i_max} --output-dir {self.audio_path} --offset-beginning {int(offset_beginning)} --offset-end {int(offset_end)}\
-                                        --last-file-behavior {last_file_behavior} {'--force' if force_init else ''}",
+                                        --last-file-behavior {last_file_behavior} {'--force' if force_init else ''} {'--overwrite' if resample else ''}",
                             jobname="OSmOSE_reshape_py",
                             preset="low",
                         )
@@ -812,6 +819,7 @@ class Spectrogram(Dataset):
         metadata["dataset_fileDuration"] = self.spectro_duration
         new_meta_path = self.audio_path.joinpath("metadata.csv")
         metadata.to_csv(new_meta_path)
+        new_meta_path.chmod(mode=FPDEFAULT)
 
         if not self.__analysis_file:
             data = {
@@ -845,23 +853,31 @@ class Spectrogram(Dataset):
             analysis_sheet.to_csv(
                 self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv")
             )
-
-            self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv").chmod(
-                0o777
-            )
-
+            self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv").chmod(mode=FPDEFAULT)
+            
             if not self.path.joinpath(
                 OSMOSE_PATH.spectrogram, "adjust_metadata.csv"
             ).exists():
                 print("Failed to write adjust_metadata.csv")
 
-    def to_csv(self, filename: str) -> None:
+    def audio_file_list_csv(self) -> Path:
+        csv_path = self.audio_path.joinpath("wav_list.csv")
+
+        if csv_path.exists():
+            return csv_path
+        else:
+            with open(csv_path, "w") as f:
+                f.write("\n".join(self.list_wav_to_process))
+
+            return csv_path
+
+    def to_csv(self, filename: Path) -> None:
         """Outputs the characteristics of the spectrogram the specified file in csv format.
 
         Parameter
         ---------
-        filename: str
-            The name of the file to be written."""
+        filename: Path
+            The path of the file to be written."""
 
         data = {
             "name": self.__spectro_foldername,
@@ -884,6 +900,7 @@ class Spectrogram(Dataset):
         # TODO: readd `, 'cvr_max':self.dynamic_max, 'cvr_min':self.dynamic_min` above when ok with Aplose
         df = pd.DataFrame.from_records([data])
         df.to_csv(filename, index=False)
+        filename.chmod(mode=FPDEFAULT)
 
     # region On cluster
 
@@ -967,7 +984,7 @@ class Spectrogram(Dataset):
         data = signal.sosfilt(bpcoef, data)
 
         if adjust:
-            make_path(self.path_output_spectrogram, mode=0o2775)
+            make_path(self.path_output_spectrogram, mode=DPDEFAULT)
 
         output_file = self.path_output_spectrogram.joinpath(audio_file)
 
@@ -1114,7 +1131,7 @@ class Spectrogram(Dataset):
 
         # save spectrogram matrices (intensity, time and freq) in a npz file
         if self.save_matrix:
-            make_path(self.path_output_spectrogram_matrix, mode=0o2775)
+            make_path(self.path_output_spectrogram_matrix, mode=DPDEFAULT)
 
             output_matrix = self.path_output_spectrogram_matrix.joinpath(
                 output_file.name
@@ -1127,6 +1144,8 @@ class Spectrogram(Dataset):
                 Freq=Freq,
                 Time=Time,
             )
+
+            output_matrix.chmod(mode=FPDEFAULT)
 
         return Sxx, Freq
 
@@ -1183,6 +1202,8 @@ class Spectrogram(Dataset):
         plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
         plt.close()
 
+        output_file.chmod(mode=FPDEFAULT)
+
         metadata_input = self.path.joinpath(
             OSMOSE_PATH.spectrogram, "adjust_metadata.csv"
         )
@@ -1192,7 +1213,7 @@ class Spectrogram(Dataset):
             f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",
             "metadata.csv",
         )
-        print()
+        
         if not self.adjust and metadata_input.exists() and not metadata_output.exists():
             metadata_input.rename(metadata_output)
 

@@ -1,5 +1,6 @@
 from pathlib import Path
 from collections import namedtuple
+import stat
 
 SUPPORTED_AUDIO_FORMAT = [".wav"]
 
@@ -15,3 +16,6 @@ __global_path_dict = {
 }
 
 OSMOSE_PATH = namedtuple("path_list", __global_path_dict.keys())(**__global_path_dict)
+
+FPDEFAULT = 0o664 # Default file permissions
+DPDEFAULT = (stat.S_ISGID | 0o775) # Default directory permissions

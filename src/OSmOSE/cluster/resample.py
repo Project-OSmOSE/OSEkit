@@ -1,8 +1,8 @@
 import argparse
 from pathlib import Path
-import sox
+import subprocess
 import platform
-
+from OSmOSE.utils import set_umask
 
 def resample(
     *,
@@ -12,6 +12,8 @@ def resample(
     batch_ind_min: int = 0,
     batch_ind_max: int = -1,
 ):
+    
+    set_umask()
     if platform.system() == "Windows":
         print("Sox is unavailable on Windows")
         return
@@ -22,16 +24,17 @@ def resample(
         batch_ind_min : batch_ind_max if batch_ind_max != -1 else len(all_files)
     ]
 
-    tfm = sox.Transformer()
-    tfm.set_output_format(rate=target_sr)
+    # tfm = sox.Transformer()
+    # tfm.set_output_format(rate=target_sr)
 
     for audio_file in audio_files_list:
-        tfm.build_file(
-            input_filepath=str(audio_file),
-            output_filepath=str(Path(output_dir, audio_file.name)),
-        )
+        subprocess.run(f"sox {str(audio_file)} -r {str(target_sr)} -t wavpcm {str(Path(output_dir, audio_file.name))}", shell=True)
 
         print(f"{audio_file.name} resampled to {target_sr}!")
+    #     tfm.build_file(
+    #         input_filepath=str(audio_file),
+    #         output_filepath=str(Path(output_dir, audio_file.name)),
+    #     )
 
 
 if __name__ == "__main__":
@@ -70,6 +73,8 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+
+    print("Parameters :", args)
 
     resample(
         input_dir=args.input_dir,
