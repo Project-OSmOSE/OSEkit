@@ -11,8 +11,8 @@ from OSmOSE.utils import set_umask
 
 def Write_zscore_norma_params(
     *,
-    input_dir: str,
-    output_file: str,
+    input_dir: Path,
+    output_file: Path,
     HPfilter_min_freq: int,
     batch_ind_min: int = 0,
     batch_ind_max: int = -1
@@ -25,10 +25,10 @@ def Write_zscore_norma_params(
 
     Parameters
     ----------
-    input_dir: `str`
+    input_dir: `Path`
         The absolute path to the input directory. All audio files within this directory will be used.
 
-    output_file: `str`
+    output_file: `Path`
         The absolute path of the output csv file.
 
     HPfilter_min_freq: `int`
@@ -113,8 +113,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     Write_zscore_norma_params(
-        input_dir=args.input_dir,
-        output_file=args.output_file,
+        input_dir=Path(args.input_dir),
+        output_file=Path(args.output_file),
         HPfilter_min_freq=args.HPfilter_min_freq,
         batch_ind_min=args.batch_ind_min,
         batch_ind_max=args.batch_ind_max,

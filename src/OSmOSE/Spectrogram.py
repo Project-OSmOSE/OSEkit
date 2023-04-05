@@ -236,7 +236,7 @@ class Spectrogram(Dataset):
 
     @property
     def sr_analysis(self):
-        """The sampling frequency of the dataset."""
+        """int: The sampling frequency of the dataset."""
         return self.__sr_analysis
 
     @sr_analysis.setter
@@ -245,76 +245,83 @@ class Spectrogram(Dataset):
 
     @property
     def nfft(self):
-        """The Nonequispaced Fast Fourier Transform of the dataset."""
+        """int: The number of Fast Fourier Transform used to generate the spectrograms."""
         return self.__nfft
 
     @nfft.setter
-    def nfft(self, value):
+    def nfft(self, value: int):
         self.__nfft = value
 
     @property
     def window_size(self):
-        """The window size"""
+        """int: The window size of the generated spectrograms."""
         return self.__window_size
 
     @window_size.setter
-    def window_size(self, value):
+    def window_size(self, value: int):
         self.__window_size = value
 
     @property
     def overlap(self):
+        """int: The overlap percentage between two spectrogram windows."""
         return self.__overlap
 
     @overlap.setter
-    def overlap(self, value):
+    def overlap(self, value: int):
         self.__overlap = value
 
     @property
     def colormap(self):
+        """str: The type of colormap of the spectrograms."""
         return self.__colormap
 
     @colormap.setter
-    def colormap(self, value):
+    def colormap(self, value: str):
         self.__colormap = value
 
     @property
     def zoom_level(self):
+        """int: Number of zoom levels."""
         return self.__zoom_level
 
     @zoom_level.setter
-    def zoom_level(self, value):
+    def zoom_level(self, value: int):
         self.__zoom_level = value
 
     @property
     def dynamic_min(self):
+        """int: Minimum value of the colormap."""
         return self.__dynamic_min
 
     @dynamic_min.setter
-    def dynamic_min(self, value):
+    def dynamic_min(self, value: int):
         self.__dynamic_min = value
 
     @property
     def dynamic_max(self):
+        """int: Maximum value of the colormap."""
         return self.__dynamic_max
 
     @dynamic_max.setter
-    def dynamic_max(self, value):
+    def dynamic_max(self, value: int):
         self.__dynamic_max = value
 
     @property
     def number_adjustment_spectrogram(self):
+        """int: Number of spectrograms used to adjust the parameters."""
         return self.__number_adjustment_spectrogram
 
     @number_adjustment_spectrogram.setter
-    def number_adjustment_spectrogram(self, value):
+    def number_adjustment_spectrogram(self, value: int):
         self.__number_adjustment_spectrogram = value
 
     @property
     def spectro_duration(self):
+        """int: Duration of the spectrogram (at the lowest zoom level) in seconds."""
         return self.__spectro_duration
 
     @spectro_duration.setter
-    def spectro_duration(self, value):
+    def spectro_duration(self, value: int):
         self.__spectro_duration = value
 
     @property
@@ -322,65 +329,71 @@ class Spectrogram(Dataset):
         return self.__zscore_duration
 
     @zscore_duration.setter
-    def zscore_duration(self, value):
+    def zscore_duration(self, value: int):
         self.__zscore_duration = value
 
     @property
     def HPfilter_min_freq(self):
+        """float: Floor frequency for the High Pass Filter."""
         return self.__hpfilter_min_freq
 
     @HPfilter_min_freq.setter
-    def HPfilter_min_freq(self, value):
+    def HPfilter_min_freq(self, value: float):
         self.__hpfilter_min_freq = value
 
     @property
     def sensitivity(self):
+        """int: Numeric sensitivity of the recording device."""
         return self.__sensitivity
 
     @sensitivity.setter
     def sensitivity(self, value):
-        """Always assume the sensitivity is given in dB"""
-        
+        """Always assume the sensitivity is given in dB."""
         self.__sensitivity = 10 ** (value / 20) * 1e6
 
     @property
     def peak_voltage(self):
+        """float: The maximum voltage of the device."""
         return self.__peak_voltage
 
     @peak_voltage.setter
-    def peak_voltage(self, value):
+    def peak_voltage(self, value: float):
         self.__peak_voltage = value
 
     @property
     def spectro_normalization(self):
+        """str: Type of normalization used to generate the spectrograms."""
         return self.__spectro_normalization
 
     @spectro_normalization.setter
-    def spectro_normalization(self, value):
+    def spectro_normalization(self, value: Literal["spectrum", "density"]):
         self.__spectro_normalization = value
 
     @property
     def data_normalization(self):
+        """str: Type of normalization applied to the data."""
         return self.__data_normalization
 
     @data_normalization.setter
-    def data_normalization(self, value):
+    def data_normalization(self, value: Literal["instrument", "zscore"]):
         self.__data_normalization = value
 
     @property
     def gain_dB(self):
+        """float: Gain of the device in decibels."""
         return self.__gain_dB
 
     @gain_dB.setter
-    def gain_dB(self, value):
+    def gain_dB(self, value: float):
         self.__gain_dB = value
 
     @property
     def window_type(self):
+        """str: Type of the window used to generate the spectrograms."""
         return self.__window_type
 
     @window_type.setter
-    def window_type(self, value):
+    def window_type(self, value: Literal["hamming"]):
         self.__window_type = value
 
     @property
@@ -402,7 +415,7 @@ class Spectrogram(Dataset):
     # endregion
 
     def __build_path(self, adjust: bool = False, dry: bool = False):
-        """Build some internal paths according to the expected architecture. Not path is created.
+        """Build some internal paths according to the expected architecture and might create them.
 
         Parameter
         ---------

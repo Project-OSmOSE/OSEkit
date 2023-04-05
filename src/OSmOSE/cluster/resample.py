@@ -6,18 +6,33 @@ from OSmOSE.utils import set_umask
 
 def resample(
     *,
-    input_dir: str,
-    output_dir: str,
+    input_dir: Path,
+    output_dir: Path,
     target_sr: int,
     batch_ind_min: int = 0,
     batch_ind_max: int = -1,
 ):
+    """Resample all audio files in a given directory to a target sample rate and write them to a new directory.
+
+    Parameters
+    ----------
+        input_dir: `Path`, keyword-only
+            The input directory containing the input files.
+        output_dir: `Path`, keyword-only
+            The output directory to write the resampled files.
+        target_sr: `int`, keyword-only
+            The target sample rate.
+        batch_ind_min: `int`, keyword-only
+            The index of the first file of the batch. The default is 0.
+        batch_ind_max: `int`, keyword-only
+            The index of the last file of the batch. The default is -1, meaning the last file of the input directory.
+    """
     
     set_umask()
     if platform.system() == "Windows":
         print("Sox is unavailable on Windows")
         return
-    all_files = sorted(Path(input_dir).glob("*wav"))
+    all_files = sorted(input_dir.glob("*wav"))
 
     # If batch_ind_max is -1, we go to the end of the list.
     audio_files_list = all_files[
@@ -29,6 +44,7 @@ def resample(
 
     for audio_file in audio_files_list:
         subprocess.run(f"sox {str(audio_file)} -r {str(target_sr)} -t wavpcm {str(Path(output_dir, audio_file.name))}", shell=True)
+
 
         print(f"{audio_file.name} resampled to {target_sr}!")
     #     tfm.build_file(
@@ -77,8 +93,8 @@ if __name__ == "__main__":
     print("Parameters :", args)
 
     resample(
-        input_dir=args.input_dir,
-        output_dir=args.output_dir,
+        input_dir=Path(args.input_dir),
+        output_dir=Path(args.output_dir),
         target_sr=args.targets_sr,
         batch_ind_min=args.batch_ind_min,
         batch_ind_max=args.batch_ind_max,
