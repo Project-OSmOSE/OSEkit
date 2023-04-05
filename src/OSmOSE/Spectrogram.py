@@ -860,6 +860,17 @@ class Spectrogram(Dataset):
             ).exists():
                 print("Failed to write adjust_metadata.csv")
 
+    def audio_file_list_csv(self) -> Path:
+        csv_path = self.audio_path.joinpath("wav_list.csv")
+
+        if csv_path.exists():
+            return csv_path
+        else:
+            with open(csv_path, "w") as f:
+                f.write("\n".join(self.list_wav_to_process))
+
+            return csv_path
+
     def to_csv(self, filename: Path) -> None:
         """Outputs the characteristics of the spectrogram the specified file in csv format.
 
