@@ -1,4 +1,5 @@
 import re
+import os
 import datetime
 import argparse
 import pandas as pd
@@ -118,9 +119,9 @@ def write_timestamp(
         Path(audio_path, "timestamp.csv"),
         index=False,
         na_rep="NaN",
-        header=None,
-        mode=FPDEFAULT
+        header=None
     )
+    os.chmod(Path(audio_path, "timestamp.csv"), mode=FPDEFAULT)
 
 
 if __name__ == "__main__":

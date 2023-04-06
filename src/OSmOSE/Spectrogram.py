@@ -876,24 +876,31 @@ class Spectrogram(Dataset):
                 data.update({f"time_resolution_{i}": time_res})
 
             analysis_sheet = pd.DataFrame.from_records([data])
+
+            adjust_path = self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv")
+            print(adjust_path)
+            print(adjust_path.exists())
+            if adjust_path.exists(): 
+                print("removing this ezatiphaze epv thrzoguihz  r")
+                adjust_path.unlink() # Always overwrite this file
+                print(adjust_path.exists)
             analysis_sheet.to_csv(
-                self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv")
+                adjust_path
             )
-            os.chmod(self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv"), mode=FPDEFAULT)
+            os.chmod(adjust_path, mode=FPDEFAULT)
             
-            if not self.path.joinpath(
-                OSMOSE_PATH.spectrogram, "adjust_metadata.csv"
-            ).exists():
+            if not adjust_path.exists():
                 print("Failed to write adjust_metadata.csv")
 
     def audio_file_list_csv(self) -> Path:
-        csv_path = self.audio_path.joinpath("wav_list.csv")
+        list_audio = list(self.audio_path.glob("*.wav"))
+        csv_path = self.audio_path.joinpath(f"wav_list_{len(list_audio)}.csv")
 
         if csv_path.exists():
             return csv_path
         else:
             with open(csv_path, "w") as f:
-                f.write("\n".join(self.list_wav_to_process))
+                f.write("\n".join([str(audio) for audio in list_audio]))
 
             os.chmod(csv_path, mode=FPDEFAULT)
 
@@ -933,13 +940,13 @@ class Spectrogram(Dataset):
     # region On cluster
 
     def process_file(
-        self, audio_file: str, *, adjust: bool = False, save_matrix: bool = False
+        self, audio_file: Union[str, Path], *, adjust: bool = False, save_matrix: bool = False
     ) -> None:
         """Read an audio file and generate the associated spectrogram.
 
         Parameters
         ----------
-        audio_file : `str`
+        audio_file : `str` or `Path`
             The name of the audio file to be processed
         adjust : `bool`, optional, keyword-only
             Indicates whether the file should be processed alone to adjust the spectrogram parameters (the default is False)

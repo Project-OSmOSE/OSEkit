@@ -557,6 +557,11 @@ class Dataset:
                         path_raw_audio.joinpath("original", audiofile)
                     )
             return path_raw_audio.joinpath("original")
+        elif path_raw_audio.exists():
+            if path_raw_audio.joinpath("original").is_dir():
+                return path_raw_audio.joinpath("original")
+            elif len(list(path_raw_audio.iterdir())) == 1:
+                return path_raw_audio.joinpath(next(path_raw_audio.iterdir()))
         elif (
             len(next(os.walk(self.path))[1]) == 1
         ):  # If there is exactly one folder in the dataset folder
@@ -565,10 +570,7 @@ class Dataset:
             new_path = orig_folder.rename(path_raw_audio.joinpath(orig_folder.name))
             return new_path
 
-        elif path_raw_audio.joinpath("original").is_dir():
-            return path_raw_audio.joinpath("original")
-        elif len(list(path_raw_audio.iterdir())) == 1:
-            return path_raw_audio.joinpath(next(path_raw_audio.iterdir()))
+
         else:
             raise ValueError(
                 f"No folder has been found in {path_raw_audio}. Please create the raw audio file folder and try again."

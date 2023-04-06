@@ -9,7 +9,7 @@ from warnings import warn
 from pathlib import Path
 from datetime import datetime
 from importlib import resources
-from OSmOSE.utils import read_config
+from OSmOSE.utils import read_config, set_umask
 from OSmOSE.config import *
 
 
@@ -136,12 +136,6 @@ class Job_builder:
 
     @property
     def outfile(self):
-        if not Path(self.__config.outfile).is_absolute():
-            return (
-                Path(__file__)
-                .parent.joinpath("log_job", self.__config.outfile)
-                .resolve()
-            )
         return self.__config.outfile
 
     @outfile.setter
@@ -150,12 +144,6 @@ class Job_builder:
 
     @property
     def errfile(self):
-        if not Path(self.__config.errfile).is_absolute():
-            return (
-                Path(__file__)
-                .parent.joinpath("log_job", self.__config.errfile)
-                .resolve()
-            )
         return self.__config.errfile
 
     @errfile.setter
@@ -254,6 +242,7 @@ class Job_builder:
         job_path : `str`
             The path to the created job file.
         """
+        set_umask()
         if preset and preset.lower() not in self.__config.Presets._fields:
             raise ValueError(
                 f"Unrecognized preset {preset}. Valid presets are: {', '.join(self.__config.Presets._fields)}"
@@ -262,11 +251,12 @@ class Job_builder:
         job_preset = getattr(self.__config.Presets, preset)
 
         pwd = Path(__file__).parent
-        if not logdir:
-            jobdir = pwd.joinpath("ongoing_jobs")
+
+        if logdir is None:
             logdir = pwd.joinpath("log_job")
-            jobdir.mkdir(mode=DPDEFAULT, exist_ok=True)
+            jobdir = pwd.joinpath("ongoing_jobs")
             logdir.mkdir(mode=DPDEFAULT, exist_ok=True)
+            jobdir.mkdir(mode=DPDEFAULT, exist_ok=True)
         else:
             logdir.mkdir(mode=DPDEFAULT, exist_ok=True)
             jobdir = logdir
@@ -287,11 +277,11 @@ class Job_builder:
 
         if not outfile:
             outfile = self.outfile
-        outfile = Path(outfile).resolve()
 
+        outfile = logdir.joinpath(outfile)
         if not errfile:
             errfile = self.errfile
-        errfile = Path(errfile).resolve()
+        errfile = logdir.joinpath(errfile)
 
         if not queue:
             queue = self.queue if not preset else job_preset.queue
@@ -434,7 +424,7 @@ class Job_builder:
                     .stdout.decode("utf-8")
                     .rstrip("\n")
                 )
-                print(" ".join(cmd))
+                print(f'Sent command {" ".join(cmd)}')
                 jobid_list.append(jobid)
             elif "slurm" in str(jobinfo["path"]).lower():
                 dep = f"-d afterok:{dependency}" if dependency else ""
