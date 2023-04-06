@@ -95,7 +95,7 @@ if __name__ == "__main__":
     resample(
         input_dir=Path(args.input_dir),
         output_dir=Path(args.output_dir),
-        target_sr=args.targets_sr,
+        target_sr=args.target_sr,
         batch_ind_min=args.batch_ind_min,
         batch_ind_max=args.batch_ind_max,
     )
