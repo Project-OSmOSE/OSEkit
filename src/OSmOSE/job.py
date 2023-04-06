@@ -426,21 +426,21 @@ class Job_builder:
 
         for jobinfo in jobinfo_list:
             if "torque" in str(jobinfo["path"]).lower():
-                dep = f" -W depend=afterok:{dependency}" if dependency else ""
+                cmd = ["qsub", f"-W depend=afterok:{dependency}", str(jobinfo["path"])] if dependency else ["qsub", str(jobinfo["path"])]
                 jobid = (
                     subprocess.run(
-                        [f"qsub{dep}", jobinfo["path"]], stdout=subprocess.PIPE, shell=True
+                        cmd, stdout=subprocess.PIPE
                     )
                     .stdout.decode("utf-8")
                     .rstrip("\n")
                 )
-                print(f"qsub{dep} {jobinfo['path']}")
+                print(" ".join(cmd))
                 jobid_list.append(jobid)
             elif "slurm" in str(jobinfo["path"]).lower():
                 dep = f"-d afterok:{dependency}" if dependency else ""
                 jobid = (
                     subprocess.run(
-                        ["sbatch", dep, jobinfo["path"]], stdout=subprocess.PIPE, shell=True
+                        ["sbatch", dep, jobinfo["path"]], stdout=subprocess.PIPE
                     )
                     .stdout.decode("utf-8")
                     .rstrip("\n")

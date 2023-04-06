@@ -20,7 +20,7 @@ from OSmOSE.cluster import (
     compute_stats,
 )
 from OSmOSE.Dataset import Dataset
-from OSmOSE.utils import safe_read, make_path
+from OSmOSE.utils import safe_read, make_path, set_umask
 from OSmOSE.config import *
 
 
@@ -424,6 +424,7 @@ class Spectrogram(Dataset):
             dry: `bool`, optional
                 If set to True, will not create the folders and just return the file path.
         """
+        set_umask()
         processed_path = self.path.joinpath(OSMOSE_PATH.spectrogram)
         audio_foldername = f"{str(self.spectro_duration)}_{str(self.sr_analysis)}"
         self.audio_path = self.path.joinpath(OSMOSE_PATH.raw_audio, audio_foldername)
@@ -844,7 +845,7 @@ class Spectrogram(Dataset):
         metadata["dataset_fileDuration"] = self.spectro_duration
         new_meta_path = self.audio_path.joinpath("metadata.csv")
         metadata.to_csv(new_meta_path)
-        new_meta_path.chmod(mode=FPDEFAULT)
+        os.chmod(new_meta_path, mode=FPDEFAULT)
 
         if not self.__analysis_file:
             data = {
@@ -878,7 +879,7 @@ class Spectrogram(Dataset):
             analysis_sheet.to_csv(
                 self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv")
             )
-            self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv").chmod(mode=FPDEFAULT)
+            os.chmod(self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv"), mode=FPDEFAULT)
             
             if not self.path.joinpath(
                 OSMOSE_PATH.spectrogram, "adjust_metadata.csv"
@@ -894,7 +895,7 @@ class Spectrogram(Dataset):
             with open(csv_path, "w") as f:
                 f.write("\n".join(self.list_wav_to_process))
 
-            csv_path.chmod(mode=FPDEFAULT)
+            os.chmod(csv_path, mode=FPDEFAULT)
 
             return csv_path
 
@@ -927,7 +928,7 @@ class Spectrogram(Dataset):
         # TODO: readd `, 'cvr_max':self.dynamic_max, 'cvr_min':self.dynamic_min` above when ok with Aplose
         df = pd.DataFrame.from_records([data])
         df.to_csv(filename, index=False)
-        filename.chmod(mode=FPDEFAULT)
+        os.chmod(filename, mode=FPDEFAULT)
 
     # region On cluster
 
@@ -945,6 +946,7 @@ class Spectrogram(Dataset):
         save_matrix : `save_matrix`, optional, keyword-only
             Whether to save the spectrogram matrices or not. Note that activating this parameter might increase greatly the volume of the project. (the default is False)
         """
+        set_umask()
         self.__build_path(adjust)
         self.save_matrix = save_matrix
         self.adjust = adjust
@@ -1172,7 +1174,7 @@ class Spectrogram(Dataset):
                 Time=Time,
             )
 
-            output_matrix.chmod(mode=FPDEFAULT)
+            os.chmod(output_matrix, mode=FPDEFAULT)
 
         return Sxx, Freq
 
@@ -1229,7 +1231,7 @@ class Spectrogram(Dataset):
         plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
         plt.close()
 
-        output_file.chmod(mode=FPDEFAULT)
+        os.chmod(output_file, mode=FPDEFAULT)
 
         metadata_input = self.path.joinpath(
             OSMOSE_PATH.spectrogram, "adjust_metadata.csv"

@@ -421,7 +421,7 @@ class Dataset:
                 na_rep="NaN",
                 header=None
             )
-            path_raw_audio.joinpath("timestamp.csv").chmod(mode=FPDEFAULT)
+            os.chmod(path_raw_audio.joinpath("timestamp.csv"), mode=FPDEFAULT)
 
             # change name of the original wav folder
             new_folder_name = path_raw_audio.parent.joinpath(
@@ -444,7 +444,7 @@ class Dataset:
                     index=False,
                     header=None
                 )
-                subset_path.chmod(mode=FPDEFAULT)
+                os.chmod(subset_path, mode=FPDEFAULT)
 
             # change permission on the dataset
             if force_upload:
@@ -485,7 +485,7 @@ class Dataset:
             path_raw_audio.joinpath("metadata.csv"),
             index=False
         )
-        path_raw_audio.joinpath("metadata.csv").chmod(mode=FPDEFAULT)
+        os.chmod(path_raw_audio.joinpath("metadata.csv"), mode=FPDEFAULT)
 
         print("\n DONE ! your dataset is on OSmOSE platform !")
 
@@ -518,7 +518,7 @@ class Dataset:
             na_rep="NaN",
             header=None
         )
-        timestamp_path.chmod(mode=FPDEFAULT)
+        os.chmod(timestamp_path, mode=FPDEFAULT)
 
         print(
             "\n ALL ABNORMAL FILES REMOVED ! you can now re-run the build() method to finish importing it on OSmOSE platform"

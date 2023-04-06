@@ -1,5 +1,6 @@
 import math
 import sys
+import os
 from datetime import datetime, timedelta
 from typing import List, Union, Literal
 from argparse import ArgumentParser
@@ -160,7 +161,7 @@ def reshape(
             f"The timestamp.csv file must be present in the directory {input_dir_path} and correspond to the audio files in the same location."
         )
 
-    make_path(output_dir_path, mode=0o2775)
+    make_path(output_dir_path, mode=DPDEFAULT)
 
     input_timestamp = pd.read_csv(
         input_dir_path.joinpath("timestamp.csv"),
@@ -247,7 +248,7 @@ def reshape(
                 sf.write(
                     outfilename, output, sample_rate, format="WAV", subtype="DOUBLE"
                 )
-                outfilename.chmod(mode=FPDEFAULT)
+                os.chmod(outfilename, mode=FPDEFAULT)
 
                 if verbose:
                     print(
@@ -334,7 +335,7 @@ def reshape(
         timestamp += timedelta(seconds=chunk_size)
 
         sf.write(outfilename, output, sample_rate, format="WAV", subtype="DOUBLE")
-        outfilename.chmod(mode=FPDEFAULT)
+        os.chmod(outfilename, mode=FPDEFAULT)
 
         if verbose:
             print(
@@ -359,7 +360,7 @@ def reshape(
         timestamp += timedelta(seconds=chunk_size)
 
         sf.write(outfilename, output, sample_rate, format="WAV", subtype="DOUBLE")
-        outfilename.chmod(mode=FPDEFAULT)
+        os.chmod(outfilename, mode=FPDEFAULT)
 
         if verbose:
             print(
@@ -397,7 +398,7 @@ def reshape(
             timestamp += timedelta(seconds=len(output))
 
             sf.write(outfilename, output, sample_rate, format="WAV", subtype="DOUBLE")
-            outfilename.chmod(mode=FPDEFAULT)
+            os.chmod(outfilename, mode=FPDEFAULT)
 
             if verbose:
                 print(
@@ -425,7 +426,7 @@ def reshape(
             na_rep="NaN",
             header=None,
         )
-        path_csv.chmod(mode=FPDEFAULT)
+        os.chmod(path_csv, mode=FPDEFAULT)
 
     return [output_dir_path.joinpath(res) for res in result]
 

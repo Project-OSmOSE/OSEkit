@@ -333,7 +333,7 @@ def check_n_files(
                             samplerate=sr,
                         )
 
-                        outfile.chmod(mode=FPDEFAULT)
+                        os.chmod(outfile, mode=FPDEFAULT)
                         # TODO: lock in spectrum mode
                     print(
                         "All files have been normalized. Spectrograms created from them will be locked in spectrum mode."
