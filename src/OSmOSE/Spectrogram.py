@@ -611,10 +611,10 @@ class Spectrogram(Dataset):
         #! RESAMPLING
         resample_job_id_list = []
         processes = []
-        resample = False
+        resample_done = False
 
         if self.sr_analysis != sr_origin and not os.listdir(self.audio_path):
-            resample = True
+            resample_done = True
             shutil.copy(self.path_input_audio_file.joinpath("timestamp.csv"), self.audio_path.joinpath("timestamp.csv"))
             for batch in range(self.batch_number):
                 i_min = batch * batch_size
@@ -730,7 +730,7 @@ class Spectrogram(Dataset):
             if reshape_method == "classic":
                 # build job, qsub, stuff
 
-                input_files = self.audio_path if resample else self.path_input_audio_file
+                input_files = self.audio_path if resample_done else self.path_input_audio_file
 
                 nb_reshaped_files = (
                     audio_file_origin_duration * audio_file_count
@@ -807,7 +807,7 @@ class Spectrogram(Dataset):
                             script_path=Path(inspect.getfile(reshape)).resolve(),
                             script_args=f"--input-files {input_files} --chunk-size {self.spectro_duration} --ind-min {i_min}\
                                         --ind-max {i_max} --output-dir {self.audio_path} --offset-beginning {int(offset_beginning)} --offset-end {int(offset_end)}\
-                                        --last-file-behavior {last_file_behavior} {'--force' if force_init else ''} {'--overwrite' if resample else ''}",
+                                        --last-file-behavior {last_file_behavior} {'--force' if force_init else ''} {'--overwrite' if resample_done else ''}",
                             jobname="OSmOSE_reshape_py",
                             preset="low",
                             logdir=self.path.joinpath("log")
