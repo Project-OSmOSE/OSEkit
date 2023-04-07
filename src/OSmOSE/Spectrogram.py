@@ -641,7 +641,7 @@ class Spectrogram(Dataset):
                 else:
                     self.jb.build_job_file(
                         script_path=Path(inspect.getfile(resample)).resolve(),
-                        script_args=f"--input-dir {self.path_input_audio_file} --target-sr {self.sr_analysis} --ind-min {i_min} --ind-max {i_max} --output-dir {self.audio_path}",
+                        script_args=f"--input-dir {self.path_input_audio_file} --target-sr {self.sr_analysis} --batch-ind-min {i_min} --batch-ind-max {i_max} --output-dir {self.audio_path}",
                         jobname="OSmOSE_resample",
                         preset="low",
                         logdir=self.path.joinpath("log")
