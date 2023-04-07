@@ -696,7 +696,7 @@ class Spectrogram(Dataset):
                     jobfile = self.jb.build_job_file(
                         script_path=Path(inspect.getfile(compute_stats)).resolve(),
                         script_args=f"--input-dir {self.path_input_audio_file} --hpfilter-min-freq {self.HPfilter_min_freq} \
-                                    --ind-min {i_min} --ind-max {i_max} --output-file {self.path.joinpath(OSMOSE_PATH.statistics, 'SummaryStats_' + str(i_min) + '.csv')}",
+                                    --batch-ind-min {i_min} --batch-ind-max {i_max} --output-file {self.path.joinpath(OSMOSE_PATH.statistics, 'SummaryStats_' + str(i_min) + '.csv')}",
                         jobname="OSmOSE_get_zscore_params",
                         preset="low",
                         logdir=self.path.joinpath("log")
@@ -805,8 +805,8 @@ class Spectrogram(Dataset):
                     else:
                         self.jb.build_job_file(
                             script_path=Path(inspect.getfile(reshape)).resolve(),
-                            script_args=f"--input-files {input_files} --chunk-size {self.spectro_duration} --ind-min {i_min}\
-                                        --ind-max {i_max} --output-dir {self.audio_path} --offset-beginning {int(offset_beginning)} --offset-end {int(offset_end)}\
+                            script_args=f"--input-files {input_files} --chunk-size {self.spectro_duration} --batch-ind-min {i_min}\
+                                        --batch-ind-max {i_max} --output-dir {self.audio_path} --offset-beginning {int(offset_beginning)} --offset-end {int(offset_end)}\
                                         --last-file-behavior {last_file_behavior} {'--force' if force_init else ''} {'--overwrite' if resample_done else ''}",
                             jobname="OSmOSE_reshape_py",
                             preset="low",
