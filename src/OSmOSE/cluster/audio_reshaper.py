@@ -451,14 +451,14 @@ if __name__ == "__main__":
         help="The path to the directory to write reshaped files. Default is same as --input-files directory.",
     )
     parser.add_argument(
-        "--ind-min",
+        "--batch-ind-min",
         "-min",
         type=int,
         default=0,
         help="The first file of the list to be processed. Default is 0.",
     )
     parser.add_argument(
-        "--ind-max",
+        "--batch-ind-max",
         "-max",
         type=int,
         default=-1,
@@ -522,8 +522,8 @@ if __name__ == "__main__":
         chunk_size=args.chunk_size,
         input_files=input_files,
         output_dir_path=args.output_dir,
-        batch_ind_min=args.ind_min,
-        batch_ind_max=args.ind_max,
+        batch_ind_min=args.batch_ind_min,
+        batch_ind_max=args.batch_ind_max,
         offset_beginning=args.offset_beginning,
         offset_end=args.offset_end,
         max_delta_interval=args.max_delta_interval,
