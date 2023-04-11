@@ -3,7 +3,7 @@ import inspect
 import os
 import shutil
 import sys
-from typing import Tuple, Union, Literal
+from typing import List, Tuple, Union, Literal
 from math import log10
 from pathlib import Path
 import multiprocessing as mp
@@ -847,6 +847,8 @@ class Spectrogram(Dataset):
         metadata.to_csv(new_meta_path)
         os.chmod(new_meta_path, mode=FPDEFAULT)
 
+        print(self.__analysis_file)
+
         if not self.__analysis_file:
             data = {
                 "dataset_name": self.name,
@@ -878,12 +880,8 @@ class Spectrogram(Dataset):
             analysis_sheet = pd.DataFrame.from_records([data])
 
             adjust_path = self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv")
-            print(adjust_path)
-            print(adjust_path.exists())
-            if adjust_path.exists(): 
-                print("removing this ezatiphaze epv thrzoguihz  r")
+            if adjust_path.exists():
                 adjust_path.unlink() # Always overwrite this file
-                print(adjust_path.exists)
             analysis_sheet.to_csv(
                 adjust_path
             )
