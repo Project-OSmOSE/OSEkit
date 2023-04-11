@@ -96,14 +96,14 @@ if __name__ == "__main__":
         help="The High Pass Filter.",
     )
     parser.add_argument(
-        "--ind-min",
+        "--batch-ind-min",
         "-min",
         type=int,
         default=0,
         help="The first file to consider. Default is 0.",
     )
     parser.add_argument(
-        "--ind-max",
+        "--batch-ind-max",
         "-max",
         type=int,
         default=-1,
