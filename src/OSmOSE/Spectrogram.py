@@ -613,7 +613,7 @@ class Spectrogram(Dataset):
         processes = []
         resample_done = False
 
-        if self.sr_analysis != sr_origin and not os.listdir(self.audio_path):
+        if self.sr_analysis != sr_origin and not os.listdir(self.audio_path) or force_init:
             resample_done = True
             shutil.copy(self.path_input_audio_file.joinpath("timestamp.csv"), self.audio_path.joinpath("timestamp.csv"))
             for batch in range(self.batch_number):
@@ -714,7 +714,7 @@ class Spectrogram(Dataset):
         # Reshape audio files to fit the maximum spectrogram size, whether it is greater or smaller.
         reshape_job_id_list = []
 
-        if self.spectro_duration != int(audio_file_origin_duration):
+        if self.spectro_duration != int(audio_file_origin_duration) or force_init:
             # We might reshape the files and create the folder. Note: reshape function might be memory-heavy and deserve a proper qsub job.
             if self.spectro_duration > int(
                 audio_file_origin_duration
@@ -813,7 +813,7 @@ class Spectrogram(Dataset):
                             logdir=self.path.joinpath("log")
                         )
 
-                        job_id = self.jb.submit_job(dependency=norma_job_id_list)
+                        job_id = self.jb.submit_job(dependency=norma_job_id_list if norma_job_id_list else resample_job_id_list)
                         reshape_job_id_list += job_id
                 self.pending_jobs = reshape_job_id_list
 
