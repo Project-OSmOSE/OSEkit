@@ -3,7 +3,7 @@ import inspect
 import os
 import shutil
 import sys
-from typing import Tuple, Union, Literal
+from typing import List, Tuple, Union, Literal
 from math import log10
 from pathlib import Path
 import multiprocessing as mp
@@ -613,7 +613,7 @@ class Spectrogram(Dataset):
         processes = []
         resample_done = False
 
-        if self.sr_analysis != sr_origin and not os.listdir(self.audio_path):
+        if self.sr_analysis != sr_origin and not os.listdir(self.audio_path) or force_init:
             resample_done = True
             shutil.copy(self.path_input_audio_file.joinpath("timestamp.csv"), self.audio_path.joinpath("timestamp.csv"))
             for batch in range(self.batch_number):
@@ -641,7 +641,7 @@ class Spectrogram(Dataset):
                 else:
                     self.jb.build_job_file(
                         script_path=Path(inspect.getfile(resample)).resolve(),
-                        script_args=f"--input-dir {self.path_input_audio_file} --target-sr {self.sr_analysis} --ind-min {i_min} --ind-max {i_max} --output-dir {self.audio_path}",
+                        script_args=f"--input-dir {self.path_input_audio_file} --target-sr {self.sr_analysis} --batch-ind-min {i_min} --batch-ind-max {i_max} --output-dir {self.audio_path}",
                         jobname="OSmOSE_resample",
                         preset="low",
                         logdir=self.path.joinpath("log")
@@ -696,7 +696,7 @@ class Spectrogram(Dataset):
                     jobfile = self.jb.build_job_file(
                         script_path=Path(inspect.getfile(compute_stats)).resolve(),
                         script_args=f"--input-dir {self.path_input_audio_file} --hpfilter-min-freq {self.HPfilter_min_freq} \
-                                    --ind-min {i_min} --ind-max {i_max} --output-file {self.path.joinpath(OSMOSE_PATH.statistics, 'SummaryStats_' + str(i_min) + '.csv')}",
+                                    --batch-ind-min {i_min} --batch-ind-max {i_max} --output-file {self.path.joinpath(OSMOSE_PATH.statistics, 'SummaryStats_' + str(i_min) + '.csv')}",
                         jobname="OSmOSE_get_zscore_params",
                         preset="low",
                         logdir=self.path.joinpath("log")
@@ -714,7 +714,7 @@ class Spectrogram(Dataset):
         # Reshape audio files to fit the maximum spectrogram size, whether it is greater or smaller.
         reshape_job_id_list = []
 
-        if self.spectro_duration != int(audio_file_origin_duration):
+        if self.spectro_duration != int(audio_file_origin_duration) or force_init:
             # We might reshape the files and create the folder. Note: reshape function might be memory-heavy and deserve a proper qsub job.
             if self.spectro_duration > int(
                 audio_file_origin_duration
@@ -805,15 +805,15 @@ class Spectrogram(Dataset):
                     else:
                         self.jb.build_job_file(
                             script_path=Path(inspect.getfile(reshape)).resolve(),
-                            script_args=f"--input-files {input_files} --chunk-size {self.spectro_duration} --ind-min {i_min}\
-                                        --ind-max {i_max} --output-dir {self.audio_path} --offset-beginning {int(offset_beginning)} --offset-end {int(offset_end)}\
+                            script_args=f"--input-files {input_files} --chunk-size {self.spectro_duration} --batch-ind-min {i_min}\
+                                        --batch-ind-max {i_max} --output-dir {self.audio_path} --offset-beginning {int(offset_beginning)} --offset-end {int(offset_end)}\
                                         --last-file-behavior {last_file_behavior} {'--force' if force_init else ''} {'--overwrite' if resample_done else ''}",
                             jobname="OSmOSE_reshape_py",
                             preset="low",
                             logdir=self.path.joinpath("log")
                         )
 
-                        job_id = self.jb.submit_job(dependency=norma_job_id_list)
+                        job_id = self.jb.submit_job(dependency=norma_job_id_list if norma_job_id_list else resample_job_id_list)
                         reshape_job_id_list += job_id
                 self.pending_jobs = reshape_job_id_list
 
@@ -847,6 +847,8 @@ class Spectrogram(Dataset):
         metadata.to_csv(new_meta_path)
         os.chmod(new_meta_path, mode=FPDEFAULT)
 
+        print(self.__analysis_file)
+
         if not self.__analysis_file:
             data = {
                 "dataset_name": self.name,
@@ -878,12 +880,8 @@ class Spectrogram(Dataset):
             analysis_sheet = pd.DataFrame.from_records([data])
 
             adjust_path = self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv")
-            print(adjust_path)
-            print(adjust_path.exists())
-            if adjust_path.exists(): 
-                print("removing this ezatiphaze epv thrzoguihz  r")
+            if adjust_path.exists():
                 adjust_path.unlink() # Always overwrite this file
-                print(adjust_path.exists)
             analysis_sheet.to_csv(
                 adjust_path
             )
