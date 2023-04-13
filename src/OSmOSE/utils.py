@@ -74,7 +74,7 @@ def list_not_built_datasets(datasets_folder_path: str) -> None:
         [f"  - {dataset.name}" for dataset in list_unknown_datasets]
     )
     print(
-        f"""List of unreachable datasets (probably due to insufficient permissions:\n{unreachable_formatted}"""
+        f"""List of unreachable datasets (probably due to insufficient permissions) :\n{unreachable_formatted}"""
     )
 
 
