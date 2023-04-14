@@ -582,6 +582,7 @@ class Spectrogram(Dataset):
         if (
             (final_path.exists() or temp_path.exists())
             and audio_metadata_path.exists()
+            and audio_metadata_path.with_stem("timestamp").exists()
             and not force_init
         ):
             audio_file_count = pd.read_csv(audio_metadata_path)["audio_file_count"][0]
