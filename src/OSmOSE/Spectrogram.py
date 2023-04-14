@@ -615,7 +615,6 @@ class Spectrogram(Dataset):
 
         if self.sr_analysis != sr_origin and not os.listdir(self.audio_path) or force_init:
             resample_done = True
-            shutil.copy(self.path_input_audio_file.joinpath("timestamp.csv"), self.audio_path.joinpath("timestamp.csv"))
             for batch in range(self.batch_number):
                 i_min = batch * batch_size
                 i_max = (
@@ -841,7 +840,10 @@ class Spectrogram(Dataset):
                     job_id = self.jb.submit_job(dependency=resample_job_id_list)
                     reshape_job_id_list += job_id
                     self.pending_jobs = reshape_job_id_list
-        
+        else:
+            # The timestamp.csv is recreated by the reshaping step. We only need to copy it if we don't reshape.
+            shutil.copy(self.path_input_audio_file.joinpath("timestamp.csv"), self.audio_path.joinpath("timestamp.csv"))
+
         metadata["dataset_fileDuration"] = self.spectro_duration
         new_meta_path = self.audio_path.joinpath("metadata.csv")
         metadata.to_csv(new_meta_path)
