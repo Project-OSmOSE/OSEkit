@@ -60,6 +60,7 @@ def reshape(
     last_file_behavior: Literal["truncate", "pad", "discard"] = "pad",
     offset_beginning: int = 0,
     offset_end: int = 0,
+    timestamp_path: Path = None,
     verbose: bool = False,
     overwrite: bool = False,
     force_reshape: bool = False,
@@ -156,7 +157,7 @@ def reshape(
             f"The input files must either be a valid folder path or a list of file path, not {str(input_dir_path)}."
         )
 
-    if not input_dir_path.joinpath("timestamp.csv").exists():
+    if not timestamp_path.exists() and not input_dir_path.joinpath("timestamp.csv").exists():
         raise FileNotFoundError(
             f"The timestamp.csv file must be present in the directory {input_dir_path} and correspond to the audio files in the same location."
         )
@@ -164,7 +165,7 @@ def reshape(
     make_path(output_dir_path, mode=DPDEFAULT)
 
     input_timestamp = pd.read_csv(
-        input_dir_path.joinpath("timestamp.csv"),
+        timestamp_path if timestamp_path.exists() else input_dir_path.joinpath("timestamp.csv"),
         header=None,
         names=["filename", "timestamp", "timezone"],
     )
@@ -507,6 +508,11 @@ if __name__ == "__main__":
         default="pad",
         help="Tells the program what to do with the remaining data that are shorter than the chunk size. Possible arguments are pad (the default), which pads with silence until the last file has the same length as the others; truncate to create a shorter file with only the leftover data; discard to not do anything with the last data and throw it away.",
     )
+    parser.add_argument(
+        "--timestamp-path",
+        default=None,
+        help="Path to the original timestamp file."
+    )
 
     args = parser.parse_args()
 
@@ -526,6 +532,7 @@ if __name__ == "__main__":
         batch_ind_max=args.batch_ind_max,
         offset_beginning=args.offset_beginning,
         offset_end=args.offset_end,
+        timestamp_path=Path(args.timestamp_path),
         max_delta_interval=args.max_delta_interval,
         last_file_behavior=args.last_file_behavior,
         verbose=args.verbose,
