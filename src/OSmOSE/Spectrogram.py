@@ -614,7 +614,7 @@ class Spectrogram(Dataset):
         processes = []
         resample_done = False
 
-        if self.sr_analysis != sr_origin and not os.listdir(self.audio_path) or force_init:
+        if self.sr_analysis != sr_origin and (not os.listdir(self.audio_path) or force_init):
             resample_done = True
             for batch in range(self.batch_number):
                 i_min = batch * batch_size
@@ -714,7 +714,7 @@ class Spectrogram(Dataset):
         # Reshape audio files to fit the maximum spectrogram size, whether it is greater or smaller.
         reshape_job_id_list = []
 
-        if self.spectro_duration != int(audio_file_origin_duration) or force_init:
+        if self.spectro_duration != int(audio_file_origin_duration):
             # We might reshape the files and create the folder. Note: reshape function might be memory-heavy and deserve a proper qsub job.
             if self.spectro_duration > int(
                 audio_file_origin_duration
