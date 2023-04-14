@@ -844,7 +844,7 @@ class Spectrogram(Dataset):
                     reshape_job_id_list += job_id
                     self.pending_jobs = reshape_job_id_list
         else:
-            if self.path_input_audio_file != self.audio_path:
+            if self.path_input_audio_file != self.audio_path and not self.audio_path.joinpath("timestamp.csv"):
                 # The timestamp.csv is recreated by the reshaping step. We only need to copy it if we don't reshape.
                 shutil.copy(self.path_input_audio_file.joinpath("timestamp.csv"), self.audio_path.joinpath("timestamp.csv"))
 
