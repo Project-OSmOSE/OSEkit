@@ -367,6 +367,7 @@ def reshape(
             print(
                 f"{outfilename} written! File is {(len(output)/sample_rate)} seconds long. {(len(previous_audio_data)/sample_rate)} seconds left from slicing."
             )
+
         i += 1
         t += 1
 
@@ -383,9 +384,6 @@ def reshape(
             case "discard":
                 skip_last = True
 
-        if overwrite and not implicit_output and output_dir_path == input_dir_path:
-                        print(f"Deleting {files[i]}")
-                        input_dir_path.joinpath(files[i]).unlink()
         if not skip_last:
 
             outfilename = output_dir_path.joinpath(
@@ -405,6 +403,11 @@ def reshape(
                 print(
                     f"{outfilename} written! File is {(len(output)/sample_rate)} seconds long. {len(previous_audio_data)/sample_rate} seconds left from slicing."
                 )
+
+    for remaining_file in [f for f in files if input_dir_path.joinpath(f).exists()]:
+        if overwrite and not implicit_output and output_dir_path == input_dir_path:
+            print(f"Deleting {remaining_file}")
+            input_dir_path.joinpath(remaining_file).unlink()
 
     path_csv = output_dir_path.joinpath("timestamp.csv")
 
