@@ -849,48 +849,46 @@ class Spectrogram(Dataset):
         metadata.to_csv(new_meta_path)
         os.chmod(new_meta_path, mode=FPDEFAULT)
 
-        print(self.__analysis_file)
+        data = {
+            "dataset_name": self.name,
+            "sr_analysis": self.sr_analysis,
+            "nfft": self.nfft,
+            "window_size": self.window_size,
+            "overlap": self.overlap,
+            "colormap": self.colormap,
+            "zoom_level": self.zoom_level,
+            "number_adjustment_spectrogram": self.number_adjustment_spectrogram,
+            "dynamic_min": self.dynamic_min,
+            "dynamic_max": self.dynamic_max,
+            "spectro_duration": self.spectro_duration,
+            "audio_file_folder_name": self.audio_path.name,
+            "data_normalization": self.data_normalization,
+            "HPfilter_min_freq": self.HPfilter_min_freq,
+            "sensitivity_dB": 20 * log10(self.sensitivity / 1e6),
+            "peak_voltage": self.peak_voltage,
+            "spectro_normalization": self.spectro_normalization,
+            "gain_dB": self.gain_dB,
+            "zscore_duration": self.zscore_duration,
+            "window_type": self.window_type,
+            "frequency_resolution": self.frequency_resolution,
+        }
 
-        if not self.__analysis_file:
-            data = {
-                "dataset_name": self.name,
-                "sr_analysis": self.sr_analysis,
-                "nfft": self.nfft,
-                "window_size": self.window_size,
-                "overlap": self.overlap,
-                "colormap": self.colormap,
-                "zoom_level": self.zoom_level,
-                "number_adjustment_spectrogram": self.number_adjustment_spectrogram,
-                "dynamic_min": self.dynamic_min,
-                "dynamic_max": self.dynamic_max,
-                "spectro_duration": self.spectro_duration,
-                "audio_file_folder_name": self.audio_path.name,
-                "data_normalization": self.data_normalization,
-                "HPfilter_min_freq": self.HPfilter_min_freq,
-                "sensitivity_dB": 20 * log10(self.sensitivity / 1e6),
-                "peak_voltage": self.peak_voltage,
-                "spectro_normalization": self.spectro_normalization,
-                "gain_dB": self.gain_dB,
-                "zscore_duration": self.zscore_duration,
-                "window_type": self.window_type,
-                "frequency_resolution": self.frequency_resolution,
-            }
+        for i, time_res in enumerate(self.time_resolution):
+            data.update({f"time_resolution_{i}": time_res})
 
-            for i, time_res in enumerate(self.time_resolution):
-                data.update({f"time_resolution_{i}": time_res})
+        analysis_sheet = pd.DataFrame.from_records([data])
 
-            analysis_sheet = pd.DataFrame.from_records([data])
+        adjust_path = self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv")
+        if adjust_path.exists():
+            adjust_path.unlink() # Always overwrite this file
 
-            adjust_path = self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv")
-            if adjust_path.exists():
-                adjust_path.unlink() # Always overwrite this file
-            analysis_sheet.to_csv(
-                adjust_path
-            )
-            os.chmod(adjust_path, mode=FPDEFAULT)
-            
-            if not adjust_path.exists():
-                print("Failed to write adjust_metadata.csv")
+        analysis_sheet.to_csv(
+            adjust_path
+        )
+        os.chmod(adjust_path, mode=FPDEFAULT)
+        
+        if not adjust_path.exists():
+            raise FileNotFoundError("Failed to write adjust_metadata.csv")
 
     def audio_file_list_csv(self) -> Path:
         list_audio = list(self.audio_path.glob("*.wav"))
