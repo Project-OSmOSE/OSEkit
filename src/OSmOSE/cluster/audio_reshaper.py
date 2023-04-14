@@ -200,6 +200,7 @@ def reshape(
 
     while i < len(files):
         audio_data, sample_rate = sf.read(input_dir_path.joinpath(files[i]))
+        file_duration = len(audio_data)//sample_rate
         
         if overwrite and not implicit_output and output_dir_path == input_dir_path and output_dir_path == input_dir_path and i<len(files)-1:
             print(f"Deleting {files[i]}")
@@ -285,12 +286,12 @@ def reshape(
             else:
                 # Check if the timestamp_list can safely be merged
                 if not (
-                    len(audio_data) - max_delta_interval * sample_rate
+                    file_duration - max_delta_interval
                     < substract_timestamps(input_timestamp, files, i).seconds
-                    < len(audio_data) + max_delta_interval * sample_rate
+                    < file_duration + max_delta_interval
                 ):
                     print(
-                        f"Warning: You are trying to merge two audio files that are not chronologically consecutive.\n{files[i]} ends at {to_timestamp(input_timestamp[input_timestamp['filename'] == files[i-1]]['timestamp'].values[0]) + timedelta(seconds=len(audio_data)//sample_rate)} and {files[i]} starts at {input_timestamp[input_timestamp['filename'] == files[i+1]]['timestamp'].values[0]}."
+                        f"Warning: You are trying to merge two audio files that are not chronologically consecutive.\n{files[i]} ends at {to_timestamp(input_timestamp[input_timestamp['filename'] == files[i-1]]['timestamp'].values[0]) + timedelta(seconds=file_duration)} and {files[i]} starts at {to_timestamp(input_timestamp[input_timestamp['filename'] == files[i+1]]['timestamp'].values[0])}."
                     )
                     if (
                         not proceed and sys.__stdin__.isatty()
