@@ -290,7 +290,7 @@ def reshape(
                     < len(audio_data) + max_delta_interval * sample_rate
                 ):
                     print(
-                        f"Warning: You are trying to merge two audio files that are not chronologically consecutive.\n{files[i-1]} ends at {to_timestamp(input_timestamp[input_timestamp['filename'] == files[i-1]]['timestamp'].values[0]) + timedelta(seconds=len(audio_data)//sample_rate)} and {files[i]} starts at {input_timestamp[input_timestamp['filename'] == files[i]]['timestamp'].values[0]}."
+                        f"Warning: You are trying to merge two audio files that are not chronologically consecutive.\n{files[i]} ends at {to_timestamp(input_timestamp[input_timestamp['filename'] == files[i-1]]['timestamp'].values[0]) + timedelta(seconds=len(audio_data)//sample_rate)} and {files[i]} starts at {input_timestamp[input_timestamp['filename'] == files[i+1]]['timestamp'].values[0]}."
                     )
                     if (
                         not proceed and sys.__stdin__.isatty()
