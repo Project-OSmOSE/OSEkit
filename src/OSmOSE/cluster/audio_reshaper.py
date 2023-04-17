@@ -159,15 +159,15 @@ def reshape(
             f"The input files must either be a valid folder path or a list of file path, not {str(input_dir_path)}."
         )
 
-    if not timestamp_path.exists() and not input_dir_path.joinpath("timestamp.csv").exists():
+    if not input_dir_path.joinpath("timestamp.csv").exists() and (not timestamp_path or not timestamp_path.exists()):
         raise FileNotFoundError(
-            f"The timestamp.csv file must be present in the directory {input_dir_path} and correspond to the audio files in the same location."
+            f"The timestamp.csv file must be present in the directory {input_dir_path} and correspond to the audio files in the same location, or be specified in the argument."
         )
 
     make_path(output_dir_path, mode=DPDEFAULT)
 
     input_timestamp = pd.read_csv(
-        timestamp_path if timestamp_path.exists() else input_dir_path.joinpath("timestamp.csv"),
+        timestamp_path if timestamp_path and timestamp_path.exists() else input_dir_path.joinpath("timestamp.csv"),
         header=None,
         names=["filename", "timestamp", "timezone"],
     )
