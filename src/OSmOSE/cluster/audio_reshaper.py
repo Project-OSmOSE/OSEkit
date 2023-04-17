@@ -218,7 +218,10 @@ def reshape(
             i == len(files) - 1 and offset_end != 0 and not last_file_behavior == "pad"
         ):
             audio_data = audio_data[: int(len(audio_data) - (offset_end * sample_rate))]
-
+        elif previous_audio_data.size <= 1:
+            timestamp = to_timestamp(input_timestamp[input_timestamp["filename"] == files[i]][
+                "timestamp"
+            ].values[0])
         # Need to check if size > 1 because numpy arrays are never empty urgh
         if previous_audio_data.size > 1:
             audio_data = np.concatenate((previous_audio_data, audio_data))
