@@ -664,8 +664,8 @@ class Spectrogram(Dataset):
 
         norma_job_id_list = []
         if (
-            os.listdir(self.path.joinpath(OSMOSE_PATH.statistics))
-            and self.data_normalization == "zscore"
+            #os.listdir(self.path.joinpath(OSMOSE_PATH.statistics))
+            self.data_normalization == "zscore"
             and isnorma
         ):
             for batch in range(self.batch_number):
@@ -907,6 +907,57 @@ class Spectrogram(Dataset):
             os.chmod(csv_path, mode=FPDEFAULT)
 
             return csv_path
+
+    def update_parameters(self, filename: Path) -> bool:
+        """Read the csv file filename and compare it to the spectrogram parameters. If any parameter is different, the file will be replaced and the fields changed.
+        
+        If there is nothing to update, the file won't be changed.
+        
+        Parameter
+        ---------
+        filename: Path
+            The path to the csv file to be updated.
+        
+        Returns
+        -------
+            True if the parameters were updated else False."""
+        
+        if not filename.suffix == "csv":
+            raise ValueError("The file must be a .csv file to be updated.")
+        
+        orig_params = pd.read_csv(filename, header=True)
+        new_params = {
+            "dataset_name": self.name,
+            "sr_analysis": self.sr_analysis,
+            "nfft": self.nfft,
+            "window_size": self.window_size,
+            "overlap": self.overlap,
+            "colormap": self.colormap,
+            "zoom_level": self.zoom_level,
+            "number_adjustment_spectrogram": self.number_adjustment_spectrogram,
+            "dynamic_min": self.dynamic_min,
+            "dynamic_max": self.dynamic_max,
+            "spectro_duration": self.spectro_duration,
+            "audio_file_folder_name": self.audio_path.name,
+            "data_normalization": self.data_normalization,
+            "HPfilter_min_freq": self.HPfilter_min_freq,
+            "sensitivity_dB": 20 * log10(self.sensitivity / 1e6),
+            "peak_voltage": self.peak_voltage,
+            "spectro_normalization": self.spectro_normalization,
+            "gain_dB": self.gain_dB,
+            "zscore_duration": self.zscore_duration,
+            "window_type": self.window_type,
+            "frequency_resolution": self.frequency_resolution,
+        }
+        for i, time_res in enumerate(self.time_resolution):
+            new_params.update({f"time_resolution_{i}": time_res})
+
+        if any([str(orig_params[param]) != str(new_params[param]) or param not in orig_params for param in new_params]):
+            pd.DataFrame.from_records([new_params]).to_csv(filename)
+
+            os.chmod(filename, mode=DPDEFAULT)
+            return True
+        return False
 
     def to_csv(self, filename: Path) -> None:
         """Outputs the characteristics of the spectrogram the specified file in csv format.
@@ -1251,9 +1302,11 @@ class Spectrogram(Dataset):
             f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",
             "metadata.csv",
         )
-        
-        if not self.adjust and metadata_input.exists() and not metadata_output.exists():
-            metadata_input.rename(metadata_output)
+        try:
+            if not self.adjust and metadata_input.exists() and not metadata_output.exists():
+                metadata_input.rename(metadata_output)
+        finally:
+            pass
 
     # endregion
 
