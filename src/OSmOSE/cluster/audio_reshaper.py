@@ -159,15 +159,15 @@ def reshape(
             f"The input files must either be a valid folder path or a list of file path, not {str(input_dir_path)}."
         )
 
-    if not timestamp_path.exists() and not input_dir_path.joinpath("timestamp.csv").exists():
+    if not input_dir_path.joinpath("timestamp.csv").exists() and (not timestamp_path or not timestamp_path.exists()):
         raise FileNotFoundError(
-            f"The timestamp.csv file must be present in the directory {input_dir_path} and correspond to the audio files in the same location."
+            f"The timestamp.csv file must be present in the directory {input_dir_path} and correspond to the audio files in the same location, or be specified in the argument."
         )
 
     make_path(output_dir_path, mode=DPDEFAULT)
 
     input_timestamp = pd.read_csv(
-        timestamp_path if timestamp_path.exists() else input_dir_path.joinpath("timestamp.csv"),
+        timestamp_path if timestamp_path and timestamp_path.exists() else input_dir_path.joinpath("timestamp.csv"),
         header=None,
         names=["filename", "timestamp", "timezone"],
     )
@@ -218,7 +218,10 @@ def reshape(
             i == len(files) - 1 and offset_end != 0 and not last_file_behavior == "pad"
         ):
             audio_data = audio_data[: int(len(audio_data) - (offset_end * sample_rate))]
-
+        elif previous_audio_data.size <= 1:
+            timestamp = to_timestamp(input_timestamp[input_timestamp["filename"] == files[i]][
+                "timestamp"
+            ].values[0])
         # Need to check if size > 1 because numpy arrays are never empty urgh
         if previous_audio_data.size > 1:
             audio_data = np.concatenate((previous_audio_data, audio_data))
