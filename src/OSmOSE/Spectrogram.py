@@ -922,10 +922,8 @@ class Spectrogram(Dataset):
         -------
             True if the parameters were updated else False."""
         
-        if not filename.suffix == "csv":
+        if not filename.suffix == ".csv":
             raise ValueError("The file must be a .csv file to be updated.")
-        
-        orig_params = pd.read_csv(filename, header=True)
         new_params = {
             "dataset_name": self.name,
             "sr_analysis": self.sr_analysis,
@@ -952,6 +950,14 @@ class Spectrogram(Dataset):
         for i, time_res in enumerate(self.time_resolution):
             new_params.update({f"time_resolution_{i}": time_res})
 
+        if not filename.exists():
+            pd.DataFrame.from_records([new_params]).to_csv(filename)
+
+            os.chmod(filename, mode=DPDEFAULT)
+            return True
+        
+        orig_params = pd.read_csv(filename)
+        
         if any([str(orig_params[param]) != str(new_params[param]) or param not in orig_params for param in new_params]):
             pd.DataFrame.from_records([new_params]).to_csv(filename)
 
@@ -1007,23 +1013,34 @@ class Spectrogram(Dataset):
             Whether to save the spectrogram matrices or not. Note that activating this parameter might increase greatly the volume of the project. (the default is False)
         """
         set_umask()
+
+        try:
+            if (self.path_output_spectrogram.parent.parent.joinpath(
+                    "adjustment_spectros"
+                ).exists()
+            ):
+                shutil.rmtree(
+                    self.path_output_spectrogram.parent.parent.joinpath(
+                        "adjustment_spectros"
+                    )
+                )
+        finally: 
+            pass
+
         self.__build_path(adjust)
         self.save_matrix = save_matrix
         self.adjust = adjust
         Zscore = self.zscore_duration if not adjust else "original"
 
-        if (
-            not adjust
-            and self.path_output_spectrogram.parent.parent.joinpath(
-                "adjustment_spectros"
-            ).exists()
-        ):
-            shutil.rmtree(
-                self.path_output_spectrogram.parent.parent.joinpath(
-                    "adjustment_spectros"
-                )
-            )
+        audio_file = Path(audio_file).name
+        output_file = self.path_output_spectrogram.joinpath(audio_file)
 
+        if len(list(self.path_output_spectrogram.glob(f"{Path(audio_file).stem}*"))) == sum(2**i for i in range(self.zoom_level+1)) and (
+            save_matrix and len(list(self.path_output_spectrogram_matrix.glob(f"{Path(audio_file).stem}*"))) == 2**self.zoom_level
+            ):
+            print(f"The spectrograms for the file {audio_file.name} have already been generated, skipping...")
+            return
+        
         #! Determination of zscore normalization parameters
         if Zscore and self.data_normalization == "zscore" and Zscore != "original":
             average_over_H = int(
@@ -1039,7 +1056,6 @@ class Spectrogram(Dataset):
 
             self.__summStats = df
 
-        audio_file = Path(audio_file).name
         if audio_file not in os.listdir(self.audio_path):
             raise FileNotFoundError(
                 f"The file {audio_file} must be in {self.audio_path} in order to be processed."
@@ -1074,8 +1090,6 @@ class Spectrogram(Dataset):
 
         if adjust:
             make_path(self.path_output_spectrogram, mode=DPDEFAULT)
-
-        output_file = self.path_output_spectrogram.joinpath(audio_file)
 
         self.gen_tiles(data=data, sample_rate=sample_rate, output_file=output_file)
 
@@ -1212,12 +1226,7 @@ class Spectrogram(Dataset):
             log_spectro = 10 * np.log10((Sxx / (1e-12)) + (1e-20))
         if self.spectro_normalization == "spectrum":
             log_spectro = 10 * np.log10(Sxx + (1e-20))
-
-        # save spectrogram as a png image - disabled because it might create duplicates
-        # self.generate_and_save_figures(
-        #     time=Time, freq=Freq, log_spectro=log_spectro, output_file=output_file
-        # )
-
+            
         # save spectrogram matrices (intensity, time and freq) in a npz file
         if self.save_matrix:
             make_path(self.path_output_spectrogram_matrix, mode=DPDEFAULT)
