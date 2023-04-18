@@ -656,17 +656,11 @@ class Spectrogram(Dataset):
                 process.join()
 
         #! ZSCORE NORMALIZATION
-        isnorma = (
-            any([cc in self.zscore_duration for cc in ["D", "M", "H", "S", "W"]])
-            if self.zscore_duration
-            else False
-        )
-
         norma_job_id_list = []
         if (
             #os.listdir(self.path.joinpath(OSMOSE_PATH.statistics))
             self.data_normalization == "zscore"
-            and isnorma
+            and self.zscore_duration is not None
         ):
             for batch in range(self.batch_number):
                 i_min = batch * batch_size
@@ -1235,15 +1229,17 @@ class Spectrogram(Dataset):
                 output_file.name
             ).with_suffix(".npz")
 
-            np.savez(
-                output_matrix,
-                Sxx=Sxx,
-                log_spectro=log_spectro,
-                Freq=Freq,
-                Time=Time,
-            )
+            # TODO: add an option to force regeneration (in case of corrupted file)
+            if not output_matrix.exists():
+                np.savez(
+                    output_matrix,
+                    Sxx=Sxx,
+                    log_spectro=log_spectro,
+                    Freq=Freq,
+                    Time=Time,
+                )
 
-            os.chmod(output_matrix, mode=FPDEFAULT)
+                os.chmod(output_matrix, mode=FPDEFAULT)
 
         return Sxx, Freq
 
@@ -1264,6 +1260,7 @@ class Spectrogram(Dataset):
         log_spectro : `np.NDArray[signed int]`
         output_file : `str`
             The name of the spectrogram file."""
+        if output_file.exists(): return
         # Plotting spectrogram
         my_dpi = 100
         fact_x = 1.3
