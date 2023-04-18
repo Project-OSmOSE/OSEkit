@@ -1038,7 +1038,7 @@ class Spectrogram(Dataset):
         if len(list(self.path_output_spectrogram.glob(f"{Path(audio_file).stem}*"))) == sum(2**i for i in range(self.zoom_level+1)) and (
             save_matrix and len(list(self.path_output_spectrogram_matrix.glob(f"{Path(audio_file).stem}*"))) == 2**self.zoom_level
             ):
-            print(f"The spectrograms for the file {audio_file.name} have already been generated, skipping...")
+            print(f"The spectrograms for the file {audio_file} have already been generated, skipping...")
             return
         
         #! Determination of zscore normalization parameters
