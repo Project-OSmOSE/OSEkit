@@ -1,3 +1,4 @@
+from copy import copy
 import glob
 import os
 import json
@@ -404,7 +405,7 @@ class Job_builder:
         """
 
         jobinfo_list = (
-            [{"path": jobfile}] if jobfile is not None else self.prepared_jobs
+            [{"path": jobfile}] if jobfile is not None else copy(self.prepared_jobs)
         )
 
         jobid_list = []
