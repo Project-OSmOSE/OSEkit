@@ -47,7 +47,7 @@ class Dataset:
             The absolute path to the dataset folder. The last folder in the path will be considered as the name of the dataset.
 
         gps_coordinates : `str` or `list` or `Tuple`, optional, keyword-only
-            The GPS coordinates of the listening location. If it is of type `str`, it must be the name of a csv file located in `raw/auxiliary`,
+            The GPS coordinates of the listening location. If it is of type `str`, it must be the name of a csv file located in `data/auxiliary`,
             otherwise a list or a tuple with the first element being the latitude coordinates and second the longitude coordinates.
 
         owner_group : `str`, optional, keyword-only
@@ -143,9 +143,9 @@ class Dataset:
                 csvFileArray = pd.read_csv(
                     self.path.joinpath(OSMOSE_PATH.auxiliary, new_coordinates)
                 )
-                self.__gps_coordinates = [
-                    (np.min(csvFileArray["lat"]), np.max(csvFileArray["lat"])),
-                    (np.min(csvFileArray["lon"]), np.max(csvFileArray["lon"])),
+                self.__gps_coordinates = [np.mean(csvFileArray["lat"]), np.mean(csvFileArray["lon"])
+                    #(np.min(csvFileArray["lat"]), np.max(csvFileArray["lat"])),
+                    #(np.min(csvFileArray["lon"]), np.max(csvFileArray["lon"])),
                 ]
             case tuple():
                 self.__gps_coordinates = new_coordinates
@@ -272,7 +272,6 @@ class Dataset:
                 os.chmod(self.path, DPDEFAULT)
 
         path_raw_audio = original_folder if original_folder is not None else self._find_or_create_original_folder()
-
         path_timestamp_formatted = path_raw_audio.joinpath("timestamp.csv")
 
         if not path_timestamp_formatted.exists():
@@ -474,7 +473,6 @@ class Dataset:
             "is_built": True,
         }
         df = pd.DataFrame.from_records([data])
-
         if self.gps_coordinates:
             df["lat"] = self.gps_coordinates[0]
             df["lon"] = self.gps_coordinates[1]
