@@ -1116,15 +1116,15 @@ class Spectrogram(Dataset):
 
             sample_data = data[int(start * sample_rate) : int((end + 1) * sample_rate)]
 
-        Sxx, Freq = self.gen_spectro(
-            data=sample_data,
-            sample_rate=sample_rate,
-            output_file=output_file.parent.joinpath(
-                f"{output_file.stem}_{nber_tiles_lowest_zoom_level}_{str(tile)}.png"
-            ),
-        )
+            Sxx, Freq = self.gen_spectro(
+                data=sample_data,
+                sample_rate=sample_rate,
+                output_file=output_file.parent.joinpath(
+                    f"{output_file.stem}_{nber_tiles_lowest_zoom_level}_{str(tile)}.png"
+                ),
+            )
 
-        Sxx_2 = np.hstack((Sxx_2, Sxx))
+            Sxx_2 = np.hstack((Sxx_2, Sxx))
 
         Sxx_lowest_level = Sxx_2[:, 1:]
 
