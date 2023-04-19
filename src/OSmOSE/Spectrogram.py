@@ -953,6 +953,7 @@ class Spectrogram(Dataset):
         orig_params = pd.read_csv(filename)
         
         if any([str(orig_params[param]) != str(new_params[param]) or param not in orig_params for param in new_params]):
+            filename.unlink()
             pd.DataFrame.from_records([new_params]).to_csv(filename)
 
             os.chmod(filename, mode=DPDEFAULT)
