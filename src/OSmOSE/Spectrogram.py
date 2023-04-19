@@ -994,7 +994,7 @@ class Spectrogram(Dataset):
     # region On cluster
 
     def process_file(
-        self, audio_file: Union[str, Path], *, adjust: bool = False, save_matrix: bool = False
+        self, audio_file: Union[str, Path], *, adjust: bool = False, save_matrix: bool = False, clean_adjust_folder: bool = False
     ) -> None:
         """Read an audio file and generate the associated spectrogram.
 
@@ -1004,20 +1004,22 @@ class Spectrogram(Dataset):
             The name of the audio file to be processed
         adjust : `bool`, optional, keyword-only
             Indicates whether the file should be processed alone to adjust the spectrogram parameters (the default is False)
-        save_matrix : `save_matrix`, optional, keyword-only
+        save_matrix : `bool`, optional, keyword-only
             Whether to save the spectrogram matrices or not. Note that activating this parameter might increase greatly the volume of the project. (the default is False)
+        clean_adjust_folder: `bool`, optional, keyword-only
+            Whether the adjustment folder should be deleted.
         """
         set_umask()
 
         try:
-            if (self.path_output_spectrogram.parent.parent.joinpath(
+            if clean_adjust_folder and (self.path_output_spectrogram.parent.parent.joinpath(
                     "adjustment_spectros"
                 ).exists()
             ):
                 shutil.rmtree(
                     self.path_output_spectrogram.parent.parent.joinpath(
                         "adjustment_spectros"
-                    )
+                    ), ignore_errors=True
                 )
         finally: 
             pass
