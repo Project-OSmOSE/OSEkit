@@ -7,6 +7,7 @@ from typing import List, Tuple, Union, Literal
 from math import log10
 from pathlib import Path
 import multiprocessing as mp
+from filelock import FileLock
 
 import pandas as pd
 import numpy as np
@@ -1021,7 +1022,7 @@ class Spectrogram(Dataset):
                         "adjustment_spectros"
                     ), ignore_errors=True
                 )
-        finally: 
+        except: 
             pass
 
         self.__build_path(adjust)
@@ -1305,17 +1306,20 @@ class Spectrogram(Dataset):
         metadata_input = self.path.joinpath(
             OSMOSE_PATH.spectrogram, "adjust_metadata.csv"
         )
+
         metadata_output = self.path.joinpath(
             OSMOSE_PATH.spectrogram,
             f"{str(self.spectro_duration)}_{str(self.sr_analysis)}",
             f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",
             "metadata.csv",
         )
-        try:
-            if not self.adjust and metadata_input.exists() and not metadata_output.exists():
-                metadata_input.rename(metadata_output)
-        finally:
-            pass
+        if not metadata_output.exists:
+            shutil.copyfile(metadata_input, metadata_output)
+        # try:
+        #     if not self.adjust and metadata_input.exists() and not metadata_output.exists():
+        #         metadata_input.rename(metadata_output)
+        # except:
+        #     pass
 
     # endregion
 
