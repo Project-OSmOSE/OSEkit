@@ -807,6 +807,8 @@ class Spectrogram(Dataset):
                                         --last-file-behavior {last_file_behavior} {'--force' if force_init else ''} {'--overwrite' if resample_done else ''}",
                             jobname="OSmOSE_reshape_py",
                             preset="low",
+                            mem="30G",
+                            walltime="04:00:00",
                             logdir=self.path.joinpath("log")
                         )
 
