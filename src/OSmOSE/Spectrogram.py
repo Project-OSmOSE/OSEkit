@@ -449,8 +449,9 @@ class Spectrogram(Dataset):
         if not dry:
             make_path(self.audio_path, mode=DPDEFAULT)
             make_path(self.path_output_spectrogram, mode=DPDEFAULT)
-            make_path(self.path_output_spectrogram_matrix, mode=DPDEFAULT)
-            make_path(self.path.joinpath(OSMOSE_PATH.statistics), mode=DPDEFAULT)
+            if not adjust:
+                make_path(self.path_output_spectrogram_matrix, mode=DPDEFAULT)
+                make_path(self.path.joinpath(OSMOSE_PATH.statistics), mode=DPDEFAULT)
 
     def check_spectro_size(self):
         """Verify if the parameters will generate a spectrogram that can fit one screen properly"""
@@ -1109,7 +1110,6 @@ class Spectrogram(Dataset):
                 data = (data - self.__zscore_mean) / self.__zscore_std
             elif self.zscore_duration == "original":
                 data = (data - np.mean(data)) / np.std(data)
-
         duration = len(data) / int(sample_rate)
 
         nber_tiles_lowest_zoom_level = 2 ** (self.zoom_level)
