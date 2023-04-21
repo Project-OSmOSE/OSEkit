@@ -115,7 +115,7 @@ if __name__ == "__main__":
     Write_zscore_norma_params(
         input_dir=Path(args.input_dir),
         output_file=Path(args.output_file),
-        HPfilter_min_freq=args.HPfilter_min_freq,
+        HPfilter_min_freq=args.hpfilter_min_freq,
         batch_ind_min=args.batch_ind_min,
         batch_ind_max=args.batch_ind_max,
     )
