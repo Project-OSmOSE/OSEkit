@@ -4,6 +4,7 @@ import os
 import json
 import tomlkit
 import subprocess
+from uuid import uuid4
 from string import Template
 from typing import NamedTuple, List, Literal
 from warnings import warn
@@ -413,9 +414,12 @@ class Job_builder:
         if isinstance(dependency, list):
             dependency = ":".join(dependency)
 
+        jobarray_uuid = str(uuid4())
+        job_dir = Path(jobinfo_list[0]["path"]).parent
         # TODO: Think about the issue when a job have too many dependencies and workaround.
 
-        for jobinfo in jobinfo_list:
+        for i, jobinfo in enumerate(jobinfo_list):
+            #open(job_dir.joinpath(f"tmp_{jobarray_uuid}_{i}.joblock"), "w").close() # Create a temp file with a unique uuid
             if "torque" in str(jobinfo["path"]).lower():
                 cmd = ["qsub", f"-W depend=afterok:{dependency}", str(jobinfo["path"])] if dependency else ["qsub", str(jobinfo["path"])]
                 jobid = (
