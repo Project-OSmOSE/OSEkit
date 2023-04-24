@@ -157,7 +157,7 @@ class Spectrogram(Dataset):
             analysis_sheet["zscore_duration"][0]
             if "zscore_duration" in analysis_sheet
             and isinstance(analysis_sheet["zscore_duration"][0], float)
-            else None
+            else "original"
         )
 
         # fmin cannot be 0 in butterworth. If that is the case, it takes the smallest value possible, epsilon
@@ -509,6 +509,7 @@ class Spectrogram(Dataset):
         pad_silence: bool = False,
         force_init: bool = False,
         date_template: str = None,
+        merge_on_reshape: bool = True
     ) -> None:
         """Prepares everything (path, variables, files) for spectrogram generation. This needs to be run before the spectrograms are generated.
         If the dataset has not yet been build, it is before the rest of the functions are initialized.
@@ -793,7 +794,8 @@ class Spectrogram(Dataset):
                                 "batch_ind_min": i_min,
                                 "batch_ind_max": i_max,
                                 "last_file_behavior": last_file_behavior,
-                                "timestamp_path": self.path_input_audio_file.joinpath("timestamp.csv")
+                                "timestamp_path": self.path_input_audio_file.joinpath("timestamp.csv"),
+                                "merge_files": merge_on_reshape
                             },
                         )
 
@@ -805,7 +807,8 @@ class Spectrogram(Dataset):
                             script_args=f"--input-files {input_files} --chunk-size {self.spectro_duration} --batch-ind-min {i_min}\
                                         --batch-ind-max {i_max} --output-dir {self.audio_path} --timestamp-path {self.path_input_audio_file.joinpath('timestamp.csv')}\
                                         --offset-beginning {int(offset_beginning)} --offset-end {int(offset_end)}\
-                                        --last-file-behavior {last_file_behavior} {'--force' if force_init else ''} {'--overwrite' if resample_done else ''}",
+                                        --last-file-behavior {last_file_behavior} {'--force' if force_init else ''}\
+                                        {'--overwrite' if resample_done else ''} {'--no-merge' if not merge_on_reshape else ''}",
                             jobname="OSmOSE_reshape_py",
                             preset="low",
                             mem="30G",
@@ -1105,11 +1108,15 @@ class Spectrogram(Dataset):
             The sample rate of the audio data.
         output_file : `str`
             The name of the output spectrogram."""
+        print(np.mean(data))
+        print(self.data_normalization, self.zscore_duration)
         if self.data_normalization == "zscore" and self.zscore_duration:
             if (len(self.zscore_duration) > 0) and (self.zscore_duration != "original"):
                 data = (data - self.__zscore_mean) / self.__zscore_std
             elif self.zscore_duration == "original":
                 data = (data - np.mean(data)) / np.std(data)
+                print("original norma")
+        print(np.mean(data))
         duration = len(data) / int(sample_rate)
 
         nber_tiles_lowest_zoom_level = 2 ** (self.zoom_level)
