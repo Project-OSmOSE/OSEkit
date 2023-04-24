@@ -75,7 +75,7 @@ class Spectrogram(Dataset):
                 - number_adjustment_spectrogram : `int`
                 - spectro_duration : `int`
                 - zscore_duration : `float` or `str`
-                - HPfilter_min_freq : `int`
+                - hp_filter_min_freq : `int`
                 - sensitivity_dB : `int`
                 - peak_voltage : `float`
                 - spectro_normalization : `str`
@@ -161,10 +161,10 @@ class Spectrogram(Dataset):
         )
 
         # fmin cannot be 0 in butterworth. If that is the case, it takes the smallest value possible, epsilon
-        self.HPfilter_min_freq: int = (
-            analysis_sheet["HPfilter_min_freq"][0]
-            if "HPfilter_min_freq" in analysis_sheet
-            and analysis_sheet["HPfilter_min_freq"][0] != 0
+        self.hp_filter_min_freq: int = (
+            analysis_sheet["hp_filter_min_freq"][0]
+            if "hp_filter_min_freq" in analysis_sheet
+            and analysis_sheet["hp_filter_min_freq"][0] != 0
             else sys.float_info.epsilon
         )
 
@@ -334,13 +334,13 @@ class Spectrogram(Dataset):
         self.__zscore_duration = value
 
     @property
-    def HPfilter_min_freq(self):
+    def hp_filter_min_freq(self):
         """float: Floor frequency for the High Pass Filter."""
-        return self.__hpfilter_min_freq
+        return self.__hp_filter_min_freq
 
-    @HPfilter_min_freq.setter
-    def HPfilter_min_freq(self, value: float):
-        self.__hpfilter_min_freq = value
+    @hp_filter_min_freq.setter
+    def hp_filter_min_freq(self, value: float):
+        self.__hp_filter_min_freq = value
 
     @property
     def sensitivity(self):
@@ -509,6 +509,8 @@ class Spectrogram(Dataset):
         pad_silence: bool = False,
         force_init: bool = False,
         date_template: str = None,
+        merge_on_reshape: bool = True,
+        last_file_behavior: Literal["pad","truncate","discard"] = "pad"
     ) -> None:
         """Prepares everything (path, variables, files) for spectrogram generation. This needs to be run before the spectrograms are generated.
         If the dataset has not yet been build, it is before the rest of the functions are initialized.
@@ -695,7 +697,7 @@ class Spectrogram(Dataset):
                 else:
                     jobfile = self.jb.build_job_file(
                         script_path=Path(inspect.getfile(compute_stats)).resolve(),
-                        script_args=f"--input-dir {self.path_input_audio_file} --hpfilter-min-freq {self.HPfilter_min_freq} \
+                        script_args=f"--input-dir {self.path_input_audio_file} --hp-filter-min-freq {self.hp_filter_min_freq} \
                                     --batch-ind-min {i_min} --batch-ind-max {i_max} --output-file {self.path.joinpath(OSMOSE_PATH.statistics, 'SummaryStats_' + str(i_min) + '.csv')}",
                         jobname="OSmOSE_get_zscore_params",
                         preset="low",
@@ -769,12 +771,13 @@ class Spectrogram(Dataset):
                     ) * audio_file_origin_duration < self.spectro_duration:
                         i_max += 1
 
-                    last_file_behavior = (
-                        "pad"
-                        if batch == self.batch_number - 1
-                        or i_max == len(self.list_wav_to_process) - 1
-                        else "discard"
-                    )
+                    if merge_on_reshape:
+                        last_file_behavior = (
+                            "pad"
+                            if batch == self.batch_number - 1
+                            or i_max == len(self.list_wav_to_process) - 1
+                            else "discard"
+                        )
 
                     offset_end = (
                         (i_max - i_min + 1) * audio_file_origin_duration
@@ -797,7 +800,8 @@ class Spectrogram(Dataset):
                                 "batch_ind_min": i_min,
                                 "batch_ind_max": i_max,
                                 "last_file_behavior": last_file_behavior,
-                                "timestamp_path": self.path_input_audio_file.joinpath("timestamp.csv")
+                                "timestamp_path": self.path_input_audio_file.joinpath("timestamp.csv"),
+                                "merge_files": merge_on_reshape
                             },
                         )
 
@@ -809,7 +813,8 @@ class Spectrogram(Dataset):
                             script_args=f"--input-files {input_files} --chunk-size {self.spectro_duration} --batch-ind-min {i_min}\
                                         --batch-ind-max {i_max} --output-dir {self.audio_path} --timestamp-path {self.path_input_audio_file.joinpath('timestamp.csv')}\
                                         --offset-beginning {int(offset_beginning)} --offset-end {int(offset_end)}\
-                                        --last-file-behavior {last_file_behavior} {'--force' if force_init else ''} {'--overwrite' if resample_done else ''}",
+                                        --last-file-behavior {last_file_behavior} {'--force' if force_init else ''}\
+                                        {'--overwrite' if resample_done else ''} {'--no-merge' if not merge_on_reshape else ''}",
                             jobname="OSmOSE_reshape_py",
                             preset="low",
                             mem="30G",
@@ -834,11 +839,12 @@ class Spectrogram(Dataset):
                         else len(self.list_wav_to_process)
                     )  # If it is the last batch, take all files
                     self.jb.build_job_file(
-                        script_path=Path(__file__.parent, "cluster", "reshaper.sh"),
+                        script_path=Path(__file__).parent.joinpath("cluster", "reshaper.sh"),
                         script_args=f"-d {self.path} -i {self.path_input_audio_file.name} -t {sr_analysis} \
                                     -m {i_min} -x {i_max} -o {self.audio_path} -n {self.spectro_duration} {silence_arg}",
                         jobname="OSmOSE_reshape_bash",
                         preset="low",
+                        mem="20G",
                         logdir=self.path.joinpath("log")
                     )
 
@@ -869,7 +875,7 @@ class Spectrogram(Dataset):
             "spectro_duration": self.spectro_duration,
             "audio_file_folder_name": self.audio_path.name,
             "data_normalization": self.data_normalization,
-            "HPfilter_min_freq": self.HPfilter_min_freq,
+            "hp_filter_min_freq": self.hp_filter_min_freq,
             "sensitivity_dB": 20 * log10(self.sensitivity / 1e6),
             "peak_voltage": self.peak_voltage,
             "spectro_normalization": self.spectro_normalization,
@@ -940,7 +946,7 @@ class Spectrogram(Dataset):
             "spectro_duration": self.spectro_duration,
             "audio_file_folder_name": self.audio_path.name,
             "data_normalization": self.data_normalization,
-            "HPfilter_min_freq": self.HPfilter_min_freq,
+            "hp_filter_min_freq": self.hp_filter_min_freq,
             "sensitivity_dB": 20 * log10(self.sensitivity / 1e6),
             "peak_voltage": self.peak_voltage,
             "spectro_normalization": self.spectro_normalization,
@@ -987,7 +993,7 @@ class Spectrogram(Dataset):
             # "number_adjustment_spectrogram": self.number_adjustment_spectrogram,
             # "spectro_duration": self.spectro_duration,
             # "zscore_duration": self.zscore_duration,
-            # "HPfilter_min_freq": self.HPfilter_min_freq,
+            # "hp_filter_min_freq": self.hp_filter_min_freq,
             # "sensitivity_dB": 20 * log10(self.sensitivity / 1e6),
             # "peak_voltage": self.peak_voltage,
             # "spectro_normalization": self.spectro_normalization,
@@ -1085,7 +1091,7 @@ class Spectrogram(Dataset):
 
         bpcoef = signal.butter(
             20,
-            np.array([self.HPfilter_min_freq, sample_rate / 2 - 1]),
+            np.array([self.hp_filter_min_freq, sample_rate / 2 - 1]),
             fs=sample_rate,
             output="sos",
             btype="bandpass",
@@ -1095,9 +1101,9 @@ class Spectrogram(Dataset):
         if adjust:
             make_path(self.path_output_spectrogram, mode=DPDEFAULT)
 
-        self.gen_tiles(data=data, sample_rate=sample_rate, output_file=output_file)
+        self.gen_tiles(data=data, sample_rate=sample_rate, output_file=output_file, adjust=adjust)
 
-    def gen_tiles(self, *, data: np.ndarray, sample_rate: int, output_file: Path):
+    def gen_tiles(self, *, data: np.ndarray, sample_rate: int, output_file: Path, adjust: bool):
         """Generate spectrogram tiles corresponding to the zoom levels.
 
         Parameters
@@ -1108,11 +1114,15 @@ class Spectrogram(Dataset):
             The sample rate of the audio data.
         output_file : `str`
             The name of the output spectrogram."""
+        print(np.mean(data))
+        print(self.data_normalization, self.zscore_duration)
         if self.data_normalization == "zscore" and self.zscore_duration:
             if (len(self.zscore_duration) > 0) and (self.zscore_duration != "original"):
                 data = (data - self.__zscore_mean) / self.__zscore_std
             elif self.zscore_duration == "original":
                 data = (data - np.mean(data)) / np.std(data)
+                print("original norma")
+        print(np.mean(data))
         duration = len(data) / int(sample_rate)
 
         nber_tiles_lowest_zoom_level = 2 ** (self.zoom_level)
@@ -1167,6 +1177,7 @@ class Spectrogram(Dataset):
                     output_file=output_file.parent.joinpath(
                         f"{output_file.stem}_{str(2 ** zoom_level)}_{str(tile)}.png"
                     ),
+                    adjust=adjust
                 )
 
     def gen_spectro(
@@ -1259,6 +1270,7 @@ class Spectrogram(Dataset):
         freq: np.ndarray[float],
         log_spectro: np.ndarray[int],
         output_file: Path,
+        adjust: bool
     ):
         """Write the spectrogram figures to the output file.
 
@@ -1284,23 +1296,20 @@ class Spectrogram(Dataset):
         plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
         plt.clim(vmin=self.dynamic_min, vmax=self.dynamic_max)
         # plt.colorbar()
-
-        # If generate all
-        fig.axes[0].get_xaxis().set_visible(True)
-        fig.axes[0].get_yaxis().set_visible(True)
-        ax.set_frame_on(True)
-
-        ax.spines["right"].set_visible(True)
-        ax.spines["left"].set_visible(True)
-        ax.spines["bottom"].set_visible(True)
-        ax.spines["top"].set_visible(True)
-
-        # For test
-        fig.axes[0].get_xaxis().set_visible(True)
-        fig.axes[0].get_yaxis().set_visible(True)
-        ax.set_ylabel("Frequency (Hz)")
-        ax.set_xlabel("Time (s)")
-        plt.colorbar()
+        if adjust:
+            fig.axes[0].get_xaxis().set_visible(True)
+            fig.axes[0].get_yaxis().set_visible(True)
+            ax.set_ylabel('Frequency (Hz)')
+            ax.set_xlabel('Time (s)')
+            plt.colorbar()
+        else:            
+            fig.axes[0].get_xaxis().set_visible(False)
+            fig.axes[0].get_yaxis().set_visible(False)
+            ax.set_frame_on(False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['left'].set_visible(False)
+            ax.spines['bottom'].set_visible(False)
+            ax.spines['top'].set_visible(False)
 
         # Saving spectrogram plot to file
         plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
