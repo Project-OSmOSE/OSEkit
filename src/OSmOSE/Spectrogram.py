@@ -1008,7 +1008,7 @@ class Spectrogram(Dataset):
     # region On cluster
 
     def process_file(
-        self, audio_file: Union[str, Path], *, adjust: bool = False, save_matrix: bool = False, clean_adjust_folder: bool = False
+        self, audio_file: Union[str, Path], *, adjust: bool = False, save_matrix: bool = False, overwrite: bool = False, clean_adjust_folder: bool = False
     ) -> None:
         """Read an audio file and generate the associated spectrogram.
 
@@ -1020,6 +1020,8 @@ class Spectrogram(Dataset):
             Indicates whether the file should be processed alone to adjust the spectrogram parameters (the default is False)
         save_matrix : `bool`, optional, keyword-only
             Whether to save the spectrogram matrices or not. Note that activating this parameter might increase greatly the volume of the project. (the default is False)
+        overwrite: `bool`, optional, keyword-only
+            If set to False, will skip the processing if all output files already exist. If set to True, will first delete the existing files before processing.
         clean_adjust_folder: `bool`, optional, keyword-only
             Whether the adjustment folder should be deleted.
         """
@@ -1046,11 +1048,20 @@ class Spectrogram(Dataset):
         audio_file = Path(audio_file).name
         output_file = self.path_output_spectrogram.joinpath(audio_file)
 
-        if len(list(self.path_output_spectrogram.glob(f"{Path(audio_file).stem}*"))) == sum(2**i for i in range(self.zoom_level+1)) and (
-            save_matrix and len(list(self.path_output_spectrogram_matrix.glob(f"{Path(audio_file).stem}*"))) == 2**self.zoom_level
-            ):
-            print(f"The spectrograms for the file {audio_file} have already been generated, skipping...")
-            return
+        def check_existing_matrix(self):
+            return len(list(self.path_output_spectrogram_matrix.glob(f"{Path(audio_file).stem}*"))) == 2**self.zoom_level if save_matrix else True
+
+        if len(list(self.path_output_spectrogram.glob(f"{Path(audio_file).stem}*"))) == sum(2**i for i in range(self.zoom_level+1)) and check_existing_matrix():
+            if overwrite:
+                print(f"Existing files detected for audio file {audio_file}! They will be overwritten.")
+                for old_file in self.path_output_spectrogram.glob(f"{Path(audio_file).stem}*"):
+                    old_file.unlink()
+                if save_matrix:
+                    for old_matrix in self.path_output_spectrogram_matrix.glob(f"{Path(audio_file).stem}*"):
+                        old_matrix.unlink()
+            else:
+                print(f"The spectrograms for the file {audio_file} have already been generated, skipping...")
+                return
         
         if audio_file not in os.listdir(self.audio_path):
             raise FileNotFoundError(
