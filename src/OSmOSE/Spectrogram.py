@@ -665,7 +665,11 @@ class Spectrogram(Dataset):
             #os.listdir(self.path.joinpath(OSMOSE_PATH.statistics))
             self.data_normalization == "zscore"
             and self.zscore_duration is not None
+            and len(os.listdir(self.path.joinpath(OSMOSE_PATH.statistics))) == 0
+            or force_init
         ):
+            shutil.rmtree(self.path.joinpath(OSMOSE_PATH.statistics), ignore_errors=True)
+            make_path(self.path.joinpath(OSMOSE_PATH.statistics), mode=DPDEFAULT)
             for batch in range(self.batch_number):
                 i_min = batch * batch_size
                 i_max = (
@@ -1048,8 +1052,13 @@ class Spectrogram(Dataset):
             print(f"The spectrograms for the file {audio_file} have already been generated, skipping...")
             return
         
+        if audio_file not in os.listdir(self.audio_path):
+            raise FileNotFoundError(
+                f"The file {audio_file} must be in {self.audio_path} in order to be processed."
+            ) 
+        
         #! Determination of zscore normalization parameters
-        if Zscore and self.data_normalization == "zscore" and Zscore != "original":
+        if self.data_normalization == "zscore" and Zscore != "original":
             average_over_H = int(
                 round(pd.to_timedelta(Zscore).total_seconds() / self.spectro_duration)
             )
@@ -1062,19 +1071,13 @@ class Spectrogram(Dataset):
             df["std_avg"] = df["std"].rolling(average_over_H, min_periods=1).std()
 
             self.__summStats = df
-
-        if audio_file not in os.listdir(self.audio_path):
-            raise FileNotFoundError(
-                f"The file {audio_file} must be in {self.audio_path} in order to be processed."
-            )
-
-        if Zscore and Zscore != "original" and self.data_normalization == "zscore":
             self.__zscore_mean = self.__summStats[
-                self.__summStats["filename"] == audio_file
+            self.__summStats["filename"] == audio_file
             ]["mean_avg"].values[0]
             self.__zscore_std = self.__summStats[
                 self.__summStats["filename"] == audio_file
             ]["std_avg"].values[0]
+
 
         #! File processing
         data, sample_rate = safe_read(self.audio_path.joinpath(audio_file))
