@@ -509,7 +509,8 @@ class Spectrogram(Dataset):
         pad_silence: bool = False,
         force_init: bool = False,
         date_template: str = None,
-        merge_on_reshape: bool = True
+        merge_on_reshape: bool = True,
+        last_file_behavior: Literal["pad","truncate","discard"] = "pad"
     ) -> None:
         """Prepares everything (path, variables, files) for spectrogram generation. This needs to be run before the spectrograms are generated.
         If the dataset has not yet been build, it is before the rest of the functions are initialized.
@@ -766,12 +767,13 @@ class Spectrogram(Dataset):
                     ) * audio_file_origin_duration < self.spectro_duration:
                         i_max += 1
 
-                    last_file_behavior = (
-                        "pad"
-                        if batch == self.batch_number - 1
-                        or i_max == len(self.list_wav_to_process) - 1
-                        else "discard"
-                    )
+                    if merge_on_reshape:
+                        last_file_behavior = (
+                            "pad"
+                            if batch == self.batch_number - 1
+                            or i_max == len(self.list_wav_to_process) - 1
+                            else "discard"
+                        )
 
                     offset_end = (
                         (i_max - i_min + 1) * audio_file_origin_duration
@@ -833,11 +835,12 @@ class Spectrogram(Dataset):
                         else len(self.list_wav_to_process)
                     )  # If it is the last batch, take all files
                     self.jb.build_job_file(
-                        script_path=Path(__file__.parent, "cluster", "reshaper.sh"),
+                        script_path=Path(__file__).parent.joinpath("cluster", "reshaper.sh"),
                         script_args=f"-d {self.path} -i {self.path_input_audio_file.name} -t {sr_analysis} \
                                     -m {i_min} -x {i_max} -o {self.audio_path} -n {self.spectro_duration} {silence_arg}",
                         jobname="OSmOSE_reshape_bash",
                         preset="low",
+                        mem="20G",
                         logdir=self.path.joinpath("log")
                     )
 
