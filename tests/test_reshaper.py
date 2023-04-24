@@ -228,8 +228,8 @@ def test_reshape_no_merge_truncate(input_reshape: Path, output_dir):
     )
 
     assert len(reshaped_files) == 20
-    assert sf.info(reshaped_files[0]).duration == 2
-    assert sf.info(reshaped_files[1]).duration == 1
+    assert sf.info(output_dir.joinpath("2022-01-01T11-59-57_000.wav")).duration == 2
+    assert sf.info(output_dir.joinpath("2022-01-01T11-59-59_000.wav")).duration == 1
 
     for f in reshaped_files:
         f.unlink()
@@ -251,9 +251,9 @@ def test_reshape_no_merge_truncate(input_reshape: Path, output_dir):
     print(reshaped_files)
 
     assert len(reshaped_files) == 30
-    assert sf.info(reshaped_files[0]).duration == 1
-    assert sf.info(reshaped_files[1]).duration == 1
-    assert sf.info(reshaped_files[2]).duration == 1
+    assert sf.info(output_dir.joinpath("2022-01-01T11-59-57_000.wav")).duration == 1
+    assert sf.info(output_dir.joinpath("2022-01-01T11-59-58_000.wav")).duration == 1
+    assert sf.info(output_dir.joinpath("2022-01-01T11-59-59_000.wav")).duration == 1
 
 def test_reshape_no_merge_pad(input_reshape: Path, output_dir):
     reshape(
@@ -271,5 +271,5 @@ def test_reshape_no_merge_pad(input_reshape: Path, output_dir):
     )
 
     assert len(reshaped_files) == 20
-    assert sf.info(reshaped_files[0]).duration == 2
-    assert sf.info(reshaped_files[1]).duration == 2
+    assert sf.info(output_dir.joinpath("2022-01-01T11-59-57_000.wav")).duration == 2
+    assert sf.info(output_dir.joinpath("2022-01-01T11-59-59_000.wav")).duration == 2

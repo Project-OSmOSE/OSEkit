@@ -1125,15 +1125,13 @@ class Spectrogram(Dataset):
             The sample rate of the audio data.
         output_file : `str`
             The name of the output spectrogram."""
-        print(np.mean(data))
-        print(self.data_normalization, self.zscore_duration)
         if self.data_normalization == "zscore" and self.zscore_duration:
             if (len(self.zscore_duration) > 0) and (self.zscore_duration != "original"):
                 data = (data - self.__zscore_mean) / self.__zscore_std
             elif self.zscore_duration == "original":
                 data = (data - np.mean(data)) / np.std(data)
                 print("original norma")
-        print(np.mean(data))
+
         duration = len(data) / int(sample_rate)
 
         nber_tiles_lowest_zoom_level = 2 ** (self.zoom_level)
