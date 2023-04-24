@@ -1092,9 +1092,9 @@ class Spectrogram(Dataset):
         if adjust:
             make_path(self.path_output_spectrogram, mode=DPDEFAULT)
 
-        self.gen_tiles(data=data, sample_rate=sample_rate, output_file=output_file)
+        self.gen_tiles(data=data, sample_rate=sample_rate, output_file=output_file, adjust=adjust)
 
-    def gen_tiles(self, *, data: np.ndarray, sample_rate: int, output_file: Path):
+    def gen_tiles(self, *, data: np.ndarray, sample_rate: int, output_file: Path, adjust: bool):
         """Generate spectrogram tiles corresponding to the zoom levels.
 
         Parameters
@@ -1164,6 +1164,7 @@ class Spectrogram(Dataset):
                     output_file=output_file.parent.joinpath(
                         f"{output_file.stem}_{str(2 ** zoom_level)}_{str(tile)}.png"
                     ),
+                    adjust=adjust
                 )
 
     def gen_spectro(
@@ -1256,6 +1257,7 @@ class Spectrogram(Dataset):
         freq: np.ndarray[float],
         log_spectro: np.ndarray[int],
         output_file: Path,
+        adjust: bool
     ):
         """Write the spectrogram figures to the output file.
 
@@ -1281,23 +1283,20 @@ class Spectrogram(Dataset):
         plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
         plt.clim(vmin=self.dynamic_min, vmax=self.dynamic_max)
         # plt.colorbar()
-
-        # If generate all
-        fig.axes[0].get_xaxis().set_visible(True)
-        fig.axes[0].get_yaxis().set_visible(True)
-        ax.set_frame_on(True)
-
-        ax.spines["right"].set_visible(True)
-        ax.spines["left"].set_visible(True)
-        ax.spines["bottom"].set_visible(True)
-        ax.spines["top"].set_visible(True)
-
-        # For test
-        fig.axes[0].get_xaxis().set_visible(True)
-        fig.axes[0].get_yaxis().set_visible(True)
-        ax.set_ylabel("Frequency (Hz)")
-        ax.set_xlabel("Time (s)")
-        plt.colorbar()
+        if adjust:
+            fig.axes[0].get_xaxis().set_visible(True)
+            fig.axes[0].get_yaxis().set_visible(True)
+            ax.set_ylabel('Frequency (Hz)')
+            ax.set_xlabel('Time (s)')
+            plt.colorbar()
+        else:            
+            fig.axes[0].get_xaxis().set_visible(False)
+            fig.axes[0].get_yaxis().set_visible(False)
+            ax.set_frame_on(False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['left'].set_visible(False)
+            ax.spines['bottom'].set_visible(False)
+            ax.spines['top'].set_visible(False)
 
         # Saving spectrogram plot to file
         plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
