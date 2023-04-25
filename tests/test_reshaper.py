@@ -69,7 +69,7 @@ def test_reshape_smaller(input_reshape: Path, output_dir: Path):
 
     reshaped_files = [output_dir.joinpath(outfile) for outfile in pd.read_csv(str(output_dir.joinpath("timestamp.csv")), header=None)[0].values]
     # reshaped_files = sorted(
-    #     [x for x in Path(output_dir).iterdir() if str(x).endswith(".wav")],
+    #     [x for x in output_dir.iterdir() if str(x).endswith(".wav")],
     #     key=os.path.getmtime,
     # )
     assert len(reshaped_files) == 15
@@ -95,7 +95,7 @@ def test_reshape_larger(input_reshape: Path, output_dir):
     reshape(input_files=input_reshape, chunk_size=5, output_dir_path=output_dir)
 
     reshaped_files = sorted(
-        [x for x in Path(output_dir).iterdir() if str(x).endswith(".wav")],
+        [x for x in output_dir.iterdir() if str(x).endswith(".wav")],
         key=os.path.getmtime,
     )
     assert len(reshaped_files) == 6
@@ -112,7 +112,7 @@ def test_reshape_pad_last(input_reshape: Path, output_dir):
     )
 
     reshaped_files = sorted(
-        [x for x in Path(output_dir).iterdir() if str(x).endswith(".wav")],
+        [x for x in output_dir.iterdir() if str(x).endswith(".wav")],
         key=os.path.getmtime,
     )
     assert len(reshaped_files) == 8
@@ -146,7 +146,7 @@ def test_reshape_discard_last(input_reshape: Path, output_dir):
     )
 
     reshaped_files = sorted(
-        [x for x in Path(output_dir).iterdir() if str(x).endswith(".wav")],
+        [x for x in output_dir.iterdir() if str(x).endswith(".wav")],
         key=os.path.getmtime,
     )
     assert len(reshaped_files) == 7
@@ -167,7 +167,7 @@ def test_reshape_offsets(input_reshape: Path, output_dir):
     )
 
     reshaped_files = sorted(
-        [x for x in Path(output_dir).iterdir() if str(x).endswith(".wav")],
+        [x for x in output_dir.iterdir() if str(x).endswith(".wav")],
         key=os.path.getmtime,
     )
 
@@ -192,3 +192,84 @@ def test_reshape_offsets(input_reshape: Path, output_dir):
     assert np.array_equal(
         input_content_end[: 2 * 44100], output_content_end[-2 * 44100 :]
     )
+
+def test_reshape_no_merge_discard(input_reshape: Path, output_dir):
+    reshape(
+        input_files=input_reshape,
+        chunk_size=2,
+        output_dir_path=output_dir,
+        last_file_behavior="discard",
+        verbose=True,
+        merge_files=False
+    )
+
+    reshaped_files = sorted(
+        [x for x in output_dir.iterdir() if str(x).endswith(".wav")],
+        key=os.path.getmtime,
+    )
+    print(reshaped_files)
+
+    assert len(reshaped_files) == 10
+    assert sf.info(reshaped_files[0]).duration == 2
+
+def test_reshape_no_merge_truncate(input_reshape: Path, output_dir):
+    reshape(
+        input_files=input_reshape,
+        chunk_size=2,
+        output_dir_path=output_dir,
+        last_file_behavior="truncate",
+        verbose=True,
+        merge_files=False
+    )
+
+    reshaped_files = sorted(
+        [x for x in output_dir.iterdir() if str(x).endswith(".wav")],
+        key=os.path.getmtime,
+    )
+
+    assert len(reshaped_files) == 20
+    assert sf.info(output_dir.joinpath("2022-01-01T11-59-57_000.wav")).duration == 2
+    assert sf.info(output_dir.joinpath("2022-01-01T11-59-59_000.wav")).duration == 1
+
+    for f in reshaped_files:
+        f.unlink()
+
+    reshape(
+        input_files=input_reshape,
+        chunk_size=1,
+        output_dir_path=output_dir,
+        last_file_behavior="truncate",
+        verbose=True,
+        merge_files=False
+    )
+
+    reshaped_files = sorted(
+        [x for x in output_dir.iterdir() if str(x).endswith(".wav")],
+        key=os.path.getmtime,
+    )
+
+    print(reshaped_files)
+
+    assert len(reshaped_files) == 30
+    assert sf.info(output_dir.joinpath("2022-01-01T11-59-57_000.wav")).duration == 1
+    assert sf.info(output_dir.joinpath("2022-01-01T11-59-58_000.wav")).duration == 1
+    assert sf.info(output_dir.joinpath("2022-01-01T11-59-59_000.wav")).duration == 1
+
+def test_reshape_no_merge_pad(input_reshape: Path, output_dir):
+    reshape(
+        input_files=input_reshape,
+        chunk_size=2,
+        output_dir_path=output_dir,
+        last_file_behavior="pad",
+        verbose=True,
+        merge_files=False
+    )
+
+    reshaped_files = sorted(
+        [x for x in output_dir.iterdir() if str(x).endswith(".wav")],
+        key=os.path.getmtime,
+    )
+
+    assert len(reshaped_files) == 20
+    assert sf.info(output_dir.joinpath("2022-01-01T11-59-57_000.wav")).duration == 2
+    assert sf.info(output_dir.joinpath("2022-01-01T11-59-59_000.wav")).duration == 2
