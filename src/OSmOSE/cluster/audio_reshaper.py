@@ -569,7 +569,7 @@ if __name__ == "__main__":
         "--no-merge",
         action="store_false",
         help="Don't try to merge the reshaped files."
-    )
+    ) # When absent = we merge file; when present = we don't merge -> merge_file is False
 
     args = parser.parse_args()
 

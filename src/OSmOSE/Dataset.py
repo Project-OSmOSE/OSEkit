@@ -201,7 +201,11 @@ class Dataset:
         timestamp_path = next(
             self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("timestamp.csv"), None
         )
+<<<<<<< HEAD
         return metadata_path and metadata_path.exists() and timestamp_path and timestamp_path.exists() and not self.path.joinpath(OSMOSE_PATH.raw_audio,"original").exists()
+=======
+        return metadata_path and metadata_path.exists() and timestamp_path and timestamp_path.exists()
+>>>>>>> 4979329... small updates
 
     # endregion
 
