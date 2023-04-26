@@ -250,12 +250,15 @@ class Job_builder:
             The path to the created job file.
         """
         set_umask()
-        if preset and preset.lower() not in self.__config.Presets._fields:
-            raise ValueError(
-                f"Unrecognized preset {preset}. Valid presets are: {', '.join(self.__config.Presets._fields)}"
-            )
+        if "Presets" in self.__config._fields:
+            if preset and preset.lower() not in self.__config.Presets._fields:
+                raise ValueError(
+                    f"Unrecognized preset {preset}. Valid presets are: {', '.join(self.__config.Presets._fields)}"
+                )
 
-        job_preset = getattr(self.__config.Presets, preset)
+            job_preset = getattr(self.__config.Presets, preset)
+        else:
+            preset = None
 
         pwd = Path(__file__).parent
 
