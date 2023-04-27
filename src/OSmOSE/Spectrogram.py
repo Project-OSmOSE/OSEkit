@@ -743,6 +743,7 @@ class Spectrogram(Dataset):
                 i_max = -1
 
                 for batch in range(self.batch_number):
+                    
                     if i_max >= len(self.list_wav_to_process) - 1:
                         continue
 
@@ -757,21 +758,21 @@ class Spectrogram(Dataset):
                         else len(self.list_wav_to_process) - 1
                     )  # If it is the last batch, take all files
 
-                    while (
-                        (
-                            (i_max - i_min + 1) * audio_file_origin_duration
-                            - offset_end
-                            - offset_beginning  # Determines if the offset would require more than one file
-                        )
-                        % self.spectro_duration
-                        > audio_file_origin_duration
-                        and i_max < len(self.list_wav_to_process)
-                    ) or (
-                        i_max - i_min + offset_end - offset_beginning + 1
-                    ) * audio_file_origin_duration < self.spectro_duration:
-                        i_max += 1
-
                     if merge_on_reshape:
+                        while (
+                            (
+                                (i_max - i_min + 1) * audio_file_origin_duration
+                                - offset_end
+                                - offset_beginning  # Determines if the offset would require more than one file
+                            )
+                            % self.spectro_duration
+                            > audio_file_origin_duration
+                            and i_max < len(self.list_wav_to_process)
+                        ) or (
+                            i_max - i_min + offset_end - offset_beginning + 1
+                        ) * audio_file_origin_duration < self.spectro_duration:
+                            i_max += 1
+
                         last_file_behavior = (
                             "pad"
                             if batch == self.batch_number - 1
@@ -779,14 +780,14 @@ class Spectrogram(Dataset):
                             else "discard"
                         )
 
-                    offset_end = (
-                        (i_max - i_min + 1) * audio_file_origin_duration
-                        - offset_beginning
-                    ) % self.spectro_duration
-                    if offset_end:
-                        next_offset_beginning = audio_file_origin_duration - offset_end
-                    else:
-                        offset_end = 0  # ? ack
+                        offset_end = (
+                            (i_max - i_min + 1) * audio_file_origin_duration
+                            - offset_beginning
+                        ) % self.spectro_duration
+                        if offset_end:
+                            next_offset_beginning = audio_file_origin_duration - offset_end
+                        else:
+                            offset_end = 0  # ? ack
 
                     if self.__local:
                         process = mp.Process(

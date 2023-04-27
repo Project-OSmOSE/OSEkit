@@ -202,9 +202,6 @@ def reshape(
     while i < len(files):
         audio_data, sample_rate = sf.read(input_dir_path.joinpath(files[i]))
         file_duration = len(audio_data)//sample_rate
-
-        if not merge_files and file_duration < chunk_size:
-            raise ValueError("When not merging files, the file duration must be smaller than the target duration.")
         
         if overwrite and not implicit_output and output_dir_path == input_dir_path and output_dir_path == input_dir_path and i<len(files)-1:
             print(f"Deleting {files[i]}")
@@ -226,6 +223,9 @@ def reshape(
             timestamp = to_timestamp(input_timestamp[input_timestamp["filename"] == files[i]][
                 "timestamp"
             ].values[0])
+
+        if not merge_files and file_duration < chunk_size:
+            raise ValueError("When not merging files, the file duration must be smaller than the target duration.")
         # Need to check if size > 1 because numpy arrays are never empty urgh
         if previous_audio_data.size > 1:
             audio_data = np.concatenate((previous_audio_data, audio_data))
