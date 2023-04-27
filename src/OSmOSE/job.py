@@ -71,6 +71,10 @@ class Job_builder:
     def finished_jobs(self):
         self.update_job_status()
         return self.__finished_jobs
+    
+    @property
+    def all_jobs(self):
+        return self.prepared_jobs + self.ongoing_jobs + self.finished_jobs
 
     # READ-WRITE properties
     @property
@@ -380,6 +384,12 @@ class Job_builder:
         #! BUILD DONE => WRITING
         with open(job_file_path, "w") as jobfile:
             jobfile.write("\n".join(job_file))
+
+        try:
+            get_dict_index_in_list(self.all_jobs, "job_name", jobname)
+            jobname = jobname + str(len(self.all_jobs))
+        except ValueError:
+            pass
 
         job_info = {"job_name": jobname, "path": job_file_path, "outfile": outfile, "errfile": errfile}
 
