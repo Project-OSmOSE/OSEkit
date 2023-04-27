@@ -198,7 +198,10 @@ class Dataset:
         metadata_path = next(
             self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("metadata.csv"), None
         )
-        return metadata_path and metadata_path.exists()
+        timestamp_path = next(
+            self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("timestamp.csv"), None
+        )
+        return metadata_path and metadata_path.exists() and timestamp_path and timestamp_path.exists()
 
     # endregion
 
@@ -266,7 +269,10 @@ class Dataset:
                 print("\nSetting OSmOSE permission to the dataset...")
                 if owner_group:
                     gid = grp.getgrnam(owner_group).gr_gid
-                    os.chown(self.path, -1, gid)
+                    try:
+                        os.chown(self.path, -1, gid)
+                    except PermissionError:
+                        print(f"You have not the permission to change the owner of the {self.path} folder. This might be because you are trying to rebuild an existing dataset. The group owner has not been changed.")
 
                 # Add the setgid bid to the folder's permissions, in order for subsequent created files to be created by the same user group.
                 os.chmod(self.path, DPDEFAULT)
