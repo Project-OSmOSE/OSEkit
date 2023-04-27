@@ -203,7 +203,7 @@ def reshape(
         audio_data, sample_rate = sf.read(input_dir_path.joinpath(files[i]))
         file_duration = len(audio_data)//sample_rate
 
-        if not merge_files and file_duration > chunk_size:
+        if not merge_files and file_duration < chunk_size:
             raise ValueError("When not merging files, the file duration must be smaller than the target duration.")
         
         if overwrite and not implicit_output and output_dir_path == input_dir_path and output_dir_path == input_dir_path and i<len(files)-1:
@@ -269,7 +269,8 @@ def reshape(
                 t += 1
                 audio_data = previous_audio_data
 
-                if not merge_files:
+                if not merge_files and len(audio_data) < chunk_size * sample_rate:
+                    previous_audio_data = np.empty(0)
                     match last_file_behavior:
                         case "truncate":
                             output = audio_data
@@ -279,7 +280,8 @@ def reshape(
                             output = np.concatenate((audio_data, fill))
                             audio_data = []
                         case "discard":
-                            continue
+                            audio_data = []
+                            break
 
                     outfilename = output_dir_path.joinpath(
                         f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')[:-3].replace(':','-').replace('.','_')}.wav"
@@ -294,7 +296,7 @@ def reshape(
                     sf.write(outfilename, output, sample_rate, format="WAV", subtype="DOUBLE")
                     os.chmod(outfilename, mode=FPDEFAULT)
 
-                    pad_text = f"Padded with {fill.size // sample_rate} seconds." if last_file_behavior == "pad" else ""
+                    pad_text = f"Padded with {fill.size // sample_rate} seconds." if last_file_behavior == "pad" and fill.size > 0 else ""
 
                     if verbose:
                         print(
@@ -305,6 +307,7 @@ def reshape(
             if len(audio_data) == 0:
                 i += 1
                 continue
+            
         #! AUDIO DURATION == CHUNK SIZE
         # Else if audio_data is already in the desired duration, output it
         if len(audio_data) == chunk_size * sample_rate:
