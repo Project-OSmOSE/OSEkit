@@ -198,7 +198,10 @@ class Dataset:
         metadata_path = next(
             self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("metadata.csv"), None
         )
-        return metadata_path and metadata_path.exists()
+        timestamp_path = next(
+            self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("timestamp.csv"), None
+        )
+        return metadata_path and metadata_path.exists() and timestamp_path and timestamp_path.exists() and not self.path.joinpath(OSMOSE_PATH.raw_audio,"original").exists()
 
     # endregion
 
@@ -266,7 +269,10 @@ class Dataset:
                 print("\nSetting OSmOSE permission to the dataset...")
                 if owner_group:
                     gid = grp.getgrnam(owner_group).gr_gid
-                    os.chown(self.path, -1, gid)
+                    try:
+                        os.chown(self.path, -1, gid)
+                    except PermissionError:
+                        print(f"You have not the permission to change the owner of the {self.path} folder. This might be because you are trying to rebuild an existing dataset. The group owner has not been changed.")
 
                 # Add the setgid bid to the folder's permissions, in order for subsequent created files to be created by the same user group.
                 os.chmod(self.path, DPDEFAULT)
@@ -410,7 +416,8 @@ class Dataset:
             print(
                 "So YOUR DATASET HAS NOT BEEN IMPORTED ON OSMOSE PLATFORM, but you have the choice now : either 1) you can force the upload using the variable force_upbload , or 2) you can first delete those files with small durations, they have been put into the variable list_abnormalFilename_name and can be removed from your dataset using the cell below"
             )
-
+            return
+        
         else:
             df = pd.DataFrame({"filename": filename_rawaudio, "timestamp": timestamp})
             df.sort_values(by=["timestamp"], inplace=True)
@@ -446,7 +453,7 @@ class Dataset:
                 os.chmod(subset_path, mode=FPDEFAULT)
 
             # change permission on the dataset
-            if force_upload:
+            if ct_abnormal_duration > 0 and force_upload:
                 print("\n Well you have anomalies but you choose to FORCE UPLOAD")
 
 
