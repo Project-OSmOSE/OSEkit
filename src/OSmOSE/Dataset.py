@@ -198,7 +198,7 @@ class Dataset:
         metadata_path = next(
             self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("metadata.csv"), None
         )
-        return metadata_path and metadata_path.exists()
+        return metadata_path and metadata_path.exists() and not self.path.joinpath(OSMOSE_PATH.raw_audio,"original").exists()
 
     # endregion
 
@@ -410,7 +410,8 @@ class Dataset:
             print(
                 "So YOUR DATASET HAS NOT BEEN IMPORTED ON OSMOSE PLATFORM, but you have the choice now : either 1) you can force the upload using the variable force_upbload , or 2) you can first delete those files with small durations, they have been put into the variable list_abnormalFilename_name and can be removed from your dataset using the cell below"
             )
-
+            return
+        
         else:
             df = pd.DataFrame({"filename": filename_rawaudio, "timestamp": timestamp})
             df.sort_values(by=["timestamp"], inplace=True)
@@ -446,7 +447,7 @@ class Dataset:
                 os.chmod(subset_path, mode=FPDEFAULT)
 
             # change permission on the dataset
-            if force_upload:
+            if ct_abnormal_duration > 0 and force_upload:
                 print("\n Well you have anomalies but you choose to FORCE UPLOAD")
 
 
