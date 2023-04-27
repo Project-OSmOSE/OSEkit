@@ -2,6 +2,7 @@ from copy import copy
 import glob
 import os
 import json
+import time
 import tomlkit
 import subprocess
 from uuid import uuid4
@@ -9,7 +10,7 @@ from string import Template
 from typing import NamedTuple, List, Literal
 from warnings import warn
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 from importlib import resources
 from OSmOSE.utils import read_config, set_umask
 from OSmOSE.config import *
@@ -380,7 +381,7 @@ class Job_builder:
         with open(job_file_path, "w") as jobfile:
             jobfile.write("\n".join(job_file))
 
-        job_info = {"path": job_file_path, "outfile": outfile, "errfile": errfile}
+        job_info = {"job_name": jobname, "path": job_file_path, "outfile": outfile, "errfile": errfile}
 
         self.__prepared_jobs.append(job_info)
 
@@ -467,8 +468,37 @@ class Job_builder:
             except KeyError:
                 print(f"No outfile or errfile associated with job {job_info['path']}.")
 
+    def list_jobs(self):
+        res = ""
+
+        if len(self.prepared_jobs) > 0:
+            res += "==== PREPARED JOBS ====\n\n"
+        for job_info in self.prepared_jobs:
+            created_at = datetime.strptime(job_info["outfile"].stem[-8:], "%H-%M-%S")
+            res += f"{job_info['job_name']} (created at {created_at}) : ready to start.\n"
+
+        if len(self.ongoing_jobs) > 0:
+            res += "==== ONGOING JOBS ====\n\n"
+        for job_info in self.ongoing_jobs:
+            created_at = datetime.strptime(job_info["outfile"].stem[-8:], "%H-%M-%S")
+            delta = timedelta(seconds = datetime.now() - created_at)
+            strftime = f"{'%H hours, ' if delta >= 3600 else ''}{'%M minutes and ' if delta >= 60 else ''}%S seconds"
+            elapsed_time = datetime.strftime(delta, strftime)
+            res += f"{job_info['job_name']} (created at {created_at}) : running for {elapsed_time}.\n"
+
+        if len(self.finished_jobs) > 0:
+            res += "==== FINISHED JOBS ====\n\n"
+        for job_info in self.finished_jobs:
+            created_at = datetime.strptime(job_info["outfile"].stem[-8:], "%H-%M-%S")
+            delta = timedelta(seconds = time.localtime(job_info["outfile"].stat().st_ctime) - created_at)
+            strftime = f"{'%H hours, ' if delta >= 3600 else ''}{'%M minutes and ' if delta >= 60 else ''}%S seconds"
+            elapsed_time = datetime.strftime(delta, strftime)
+            res += f"{job_info['job_name']} (created at {created_at}) : finished in {elapsed_time}.\n"
+
+        print(res)
+
     def read_output_file(
-        self, *, outtype: Literal["out", "err"] = "out", job_file_name: str = None
+        self, *, job_name: str = None, outtype: Literal["out", "err"] = "out", job_file_name: str = None
     ):
         """Read the content of a specific job output file, or the first in the finished list.
 
@@ -485,17 +515,27 @@ class Job_builder:
             )
 
         if not job_file_name:
-            if len(self.finished_jobs) == 0:
+            job_id = 0
+            if job_name:
+                job_id = get_dict_index_in_list(self.finished_jobs, "job_name", job_name)
+            elif len(self.finished_jobs) == 0:
                 print(
                     f"There are no finished jobs in this context. Wait until the {len(self.ongoing_jobs)} ongoing jobs are done before reading the output. Otherwise, you can specify which file you wish to read."
                 )
                 return
-            else:
-                job_file_name = (
-                    self.finished_jobs[0]["outfile"]
-                    if outtype == "out"
-                    else self.finished_jobs[0]["errfile"]
-                )
+            
+            job_file_name = (
+                self.finished_jobs[job_id]["outfile"]
+                if outtype == "out"
+                else self.finished_jobs[job_id]["errfile"]
+            )
 
         with open(job_file_name, "r") as f:
             print("".join(f.readlines()))
+
+def get_dict_index_in_list(list: list, key: str, value: any) -> int:
+    for i, d in enumerate(list):
+        if d[key] == value:
+            return i
+    
+    raise ValueError(f"The value {value} appears nowhere in the {key} list.")
