@@ -470,29 +470,33 @@ class Job_builder:
 
     def list_jobs(self):
         res = ""
-
+        epoch = datetime.utcfromtimestamp(0)
+        today = datetime.strftime(datetime.today(), "%d%m%y")
         if len(self.prepared_jobs) > 0:
             res += "==== PREPARED JOBS ====\n\n"
         for job_info in self.prepared_jobs:
-            created_at = datetime.strptime(job_info["outfile"].stem[-8:], "%H-%M-%S")
+            created_at = datetime.strptime(today + job_info["outfile"].stem[-8:], "%d%m%y%H-%M-%S")
             res += f"{job_info['job_name']} (created at {created_at}) : ready to start.\n"
 
         if len(self.ongoing_jobs) > 0:
             res += "==== ONGOING JOBS ====\n\n"
         for job_info in self.ongoing_jobs:
-            created_at = datetime.strptime(job_info["outfile"].stem[-8:], "%H-%M-%S")
-            delta = timedelta(seconds = datetime.now() - created_at)
-            strftime = f"{'%H hours, ' if delta >= 3600 else ''}{'%M minutes and ' if delta >= 60 else ''}%S seconds"
-            elapsed_time = datetime.strftime(delta, strftime)
+            created_at = datetime.strptime(today + job_info["outfile"].stem[-8:], "%d%m%y%H-%M-%S")
+            delta = datetime.now() - created_at
+            strftime = f"{'%H hours, ' if delta.seconds >= 3600 else ''}{'%M minutes and ' if delta.seconds >= 60 else ''}%S seconds"
+            elapsed_time = datetime.strftime(epoch + delta, strftime)
             res += f"{job_info['job_name']} (created at {created_at}) : running for {elapsed_time}.\n"
 
         if len(self.finished_jobs) > 0:
             res += "==== FINISHED JOBS ====\n\n"
         for job_info in self.finished_jobs:
-            created_at = datetime.strptime(job_info["outfile"].stem[-8:], "%H-%M-%S")
-            delta = timedelta(seconds = time.localtime(job_info["outfile"].stat().st_ctime) - created_at)
-            strftime = f"{'%H hours, ' if delta >= 3600 else ''}{'%M minutes and ' if delta >= 60 else ''}%S seconds"
-            elapsed_time = datetime.strftime(delta, strftime)
+            if not job_info["outfile"].exists():
+                res += f"{job_info['job_name']} (created at {created_at}) : Output file still writing..."
+
+            created_at = datetime.strptime(today + job_info["outfile"].stem[-8:], "%d%m%y%H-%M-%S")
+            delta = datetime.fromtimestamp(time.mktime(time.localtime(job_info["outfile"].stat().st_ctime))) - created_at
+            strftime = f"{'%H hours, ' if delta.seconds >= 3600 else ''}{'%M minutes and ' if delta.seconds >= 60 else ''}%S seconds"
+            elapsed_time = datetime.strftime(epoch + delta, strftime)
             res += f"{job_info['job_name']} (created at {created_at}) : finished in {elapsed_time}.\n"
 
         print(res)
