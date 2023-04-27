@@ -2,6 +2,7 @@ from copy import copy
 import glob
 import os
 import json
+import time
 import tomlkit
 import subprocess
 from uuid import uuid4
@@ -9,7 +10,7 @@ from string import Template
 from typing import NamedTuple, List, Literal
 from warnings import warn
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 from importlib import resources
 from OSmOSE.utils import read_config, set_umask
 from OSmOSE.config import *
@@ -70,6 +71,10 @@ class Job_builder:
     def finished_jobs(self):
         self.update_job_status()
         return self.__finished_jobs
+    
+    @property
+    def all_jobs(self):
+        return self.prepared_jobs + self.ongoing_jobs + self.finished_jobs
 
     # READ-WRITE properties
     @property
@@ -380,7 +385,13 @@ class Job_builder:
         with open(job_file_path, "w") as jobfile:
             jobfile.write("\n".join(job_file))
 
-        job_info = {"path": job_file_path, "outfile": outfile, "errfile": errfile}
+        try:
+            get_dict_index_in_list(self.all_jobs, "job_name", jobname)
+            jobname = jobname + str(len(self.all_jobs))
+        except ValueError:
+            pass
+
+        job_info = {"job_name": jobname, "path": job_file_path, "outfile": outfile, "errfile": errfile}
 
         self.__prepared_jobs.append(job_info)
 
@@ -467,8 +478,41 @@ class Job_builder:
             except KeyError:
                 print(f"No outfile or errfile associated with job {job_info['path']}.")
 
+    def list_jobs(self):
+        res = ""
+        epoch = datetime.utcfromtimestamp(0)
+        today = datetime.strftime(datetime.today(), "%d%m%y")
+        if len(self.prepared_jobs) > 0:
+            res += "==== PREPARED JOBS ====\n\n"
+        for job_info in self.prepared_jobs:
+            created_at = datetime.strptime(today + job_info["outfile"].stem[-8:], "%d%m%y%H-%M-%S")
+            res += f"{job_info['job_name']} (created at {created_at}) : ready to start.\n"
+
+        if len(self.ongoing_jobs) > 0:
+            res += "==== ONGOING JOBS ====\n\n"
+        for job_info in self.ongoing_jobs:
+            created_at = datetime.strptime(today + job_info["outfile"].stem[-8:], "%d%m%y%H-%M-%S")
+            delta = datetime.now() - created_at
+            strftime = f"{'%H hours, ' if delta.seconds >= 3600 else ''}{'%M minutes and ' if delta.seconds >= 60 else ''}%S seconds"
+            elapsed_time = datetime.strftime(epoch + delta, strftime)
+            res += f"{job_info['job_name']} (created at {created_at}) : running for {elapsed_time}.\n"
+
+        if len(self.finished_jobs) > 0:
+            res += "==== FINISHED JOBS ====\n\n"
+        for job_info in self.finished_jobs:
+            if not job_info["outfile"].exists():
+                res += f"{job_info['job_name']} (created at {created_at}) : Output file still writing..."
+
+            created_at = datetime.strptime(today + job_info["outfile"].stem[-8:], "%d%m%y%H-%M-%S")
+            delta = datetime.fromtimestamp(time.mktime(time.localtime(job_info["outfile"].stat().st_ctime))) - created_at
+            strftime = f"{'%H hours, ' if delta.seconds >= 3600 else ''}{'%M minutes and ' if delta.seconds >= 60 else ''}%S seconds"
+            elapsed_time = datetime.strftime(epoch + delta, strftime)
+            res += f"{job_info['job_name']} (created at {created_at}) : finished in {elapsed_time}.\n"
+
+        print(res)
+
     def read_output_file(
-        self, *, outtype: Literal["out", "err"] = "out", job_file_name: str = None
+        self, *, job_name: str = None, outtype: Literal["out", "err"] = "out", job_file_name: str = None
     ):
         """Read the content of a specific job output file, or the first in the finished list.
 
@@ -485,17 +529,27 @@ class Job_builder:
             )
 
         if not job_file_name:
-            if len(self.finished_jobs) == 0:
+            job_id = 0
+            if job_name:
+                job_id = get_dict_index_in_list(self.finished_jobs, "job_name", job_name)
+            elif len(self.finished_jobs) == 0:
                 print(
                     f"There are no finished jobs in this context. Wait until the {len(self.ongoing_jobs)} ongoing jobs are done before reading the output. Otherwise, you can specify which file you wish to read."
                 )
                 return
-            else:
-                job_file_name = (
-                    self.finished_jobs[0]["outfile"]
-                    if outtype == "out"
-                    else self.finished_jobs[0]["errfile"]
-                )
+            
+            job_file_name = (
+                self.finished_jobs[job_id]["outfile"]
+                if outtype == "out"
+                else self.finished_jobs[job_id]["errfile"]
+            )
 
         with open(job_file_name, "r") as f:
             print("".join(f.readlines()))
+
+def get_dict_index_in_list(list: list, key: str, value: any) -> int:
+    for i, d in enumerate(list):
+        if d[key] == value:
+            return i
+    
+    raise ValueError(f"The value {value} appears nowhere in the {key} list.")
