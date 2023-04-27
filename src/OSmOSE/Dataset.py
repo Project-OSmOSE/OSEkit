@@ -578,6 +578,7 @@ class Dataset:
 
         for audio in audio_files:
             audio.rename(path_raw_audio.joinpath("original",audio.name))
+            os.chmod(path_raw_audio.joinpath("original",audio.name), mode=FPDEFAULT)
             if len(os.listdir(audio.parent)) == 0:
                 self.path.joinpath(audio.parent).rmdir()
 
