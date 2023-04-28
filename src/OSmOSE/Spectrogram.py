@@ -1027,7 +1027,6 @@ class Spectrogram(Dataset):
             Whether the adjustment folder should be deleted.
         """
         set_umask()
-
         try:
             if clean_adjust_folder and (self.path_output_spectrogram.parent.parent.joinpath(
                     "adjustment_spectros"
@@ -1049,7 +1048,7 @@ class Spectrogram(Dataset):
         audio_file = Path(audio_file).name
         output_file = self.path_output_spectrogram.joinpath(audio_file)
 
-        def check_existing_matrix(self):
+        def check_existing_matrix():
             return len(list(self.path_output_spectrogram_matrix.glob(f"{Path(audio_file).stem}*"))) == 2**self.zoom_level if save_matrix else True
 
         if len(list(self.path_output_spectrogram.glob(f"{Path(audio_file).stem}*"))) == sum(2**i for i in range(self.zoom_level+1)) and check_existing_matrix():
@@ -1061,7 +1060,9 @@ class Spectrogram(Dataset):
                     for old_matrix in self.path_output_spectrogram_matrix.glob(f"{Path(audio_file).stem}*"):
                         old_matrix.unlink()
             else:
-                print(f"The spectrograms for the file {audio_file} have already been generated, skipping...")
+                check = len(list(self.path_output_spectrogram.glob(f"{Path(audio_file).stem}*"))) == sum(2**i for i in range(self.zoom_level+1)) and check_existing_matrix()
+                print(f"The spectrograms for the file {audio_file} have already been generated, skipping because check is {check}...")
+                print(f"Looking for {Path(audio_file).stem} in {self.path_output_spectrogram}")
                 return
         
         if audio_file not in os.listdir(self.audio_path):
@@ -1069,6 +1070,7 @@ class Spectrogram(Dataset):
                 f"The file {audio_file} must be in {self.audio_path} in order to be processed."
             ) 
         
+        print(f"Generating spectrograms for {audio_file}...")
         #! Determination of zscore normalization parameters
         if self.data_normalization == "zscore" and Zscore != "original":
             average_over_H = int(
@@ -1131,7 +1133,6 @@ class Spectrogram(Dataset):
                 data = (data - self.__zscore_mean) / self.__zscore_std
             elif self.zscore_duration == "original":
                 data = (data - np.mean(data)) / np.std(data)
-                print("original norma")
 
         duration = len(data) / int(sample_rate)
 
@@ -1291,7 +1292,9 @@ class Spectrogram(Dataset):
         log_spectro : `np.NDArray[signed int]`
         output_file : `str`
             The name of the spectrogram file."""
-        if output_file.exists(): return
+        if output_file.exists(): 
+            print(f"The spectrogram {output_file.name} has already been generated, skipping...")
+            return
         # Plotting spectrogram
         my_dpi = 100
         fact_x = 1.3
@@ -1327,6 +1330,8 @@ class Spectrogram(Dataset):
 
         os.chmod(output_file, mode=FPDEFAULT)
 
+        print(f"Successfully generated {output_file.name}.")
+
         metadata_input = self.path.joinpath(
             OSMOSE_PATH.spectrogram, "adjust_metadata.csv"
         )
@@ -1337,8 +1342,9 @@ class Spectrogram(Dataset):
             f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",
             "metadata.csv",
         )
-        if not metadata_output.exists:
+        if not metadata_output.exists():
             shutil.copyfile(metadata_input, metadata_output)
+            print(f"Written {metadata_output}")
         # try:
         #     if not self.adjust and metadata_input.exists() and not metadata_output.exists():
         #         metadata_input.rename(metadata_output)

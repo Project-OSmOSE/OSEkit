@@ -459,7 +459,7 @@ class Dataset:
 
         # write metadata.csv
         data = {
-            "sr_origin": int(mean(list_samplingRate)),
+            "origin_sr": int(mean(list_samplingRate)),
             "sample_bits": int(8 * mean(list_sampwidth)),
             "channel_count": int(channel_count),
             "audio_file_count": len(filename_csv),
@@ -485,7 +485,7 @@ class Dataset:
             df["lon"] = self.gps_coordinates[1]
 
         df["dataset_sr"] = int(mean(list_samplingRate))
-        df["dataset_fileDuration"] = int(round(mean(list_duration), 2))
+        df["audio_file_dataset_duration"] = int(round(mean(list_duration), 2))
         df.to_csv(
             path_raw_audio.joinpath("metadata.csv"),
             index=False
