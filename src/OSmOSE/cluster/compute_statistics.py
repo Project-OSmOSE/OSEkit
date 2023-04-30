@@ -17,6 +17,7 @@ def Write_zscore_norma_params(
     batch_ind_min: int = 0,
     batch_ind_max: int = -1
 ):
+
     """Computes the normalization parameters for the Zscore normalisation of the dataset and writes it to a csv.
 
     This function can also be called from the command line. Type `get_zscore_params.py -h` to see the list of arguments.
@@ -41,6 +42,14 @@ def Write_zscore_norma_params(
         The last file of the list to be processed. Default is -1, meaning the entire list is processed.
     """
     set_umask()
+
+	# fmin cannot be 0 in butterworth. If that is the case, it takes the smallest value possible, epsilon
+	hp_filter_min_freq: int = (
+		hp_filter_min_freq
+		if hp_filter_min_freq != 0
+		else sys.float_info.epsilon
+	)
+
     all_files = sorted(Path(input_dir).glob("*wav"))
     # If batch_ind_max is -1, we go to the end of the list.
     wav_list = all_files[
@@ -119,3 +128,4 @@ if __name__ == "__main__":
         batch_ind_min=args.batch_ind_min,
         batch_ind_max=args.batch_ind_max,
     )
+
