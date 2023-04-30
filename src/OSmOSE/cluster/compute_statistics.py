@@ -64,7 +64,7 @@ def Write_zscore_norma_params(
         bpcoef = signal.butter(
             20,
             np.array(
-                [max(hp_filter_min_freq, sys.float_info.epsilon), sample_rate / 2 - 1]
+                [hp_filter_min_freq, sample_rate / 2 - 1]
             ),
             fs=sample_rate,
             output="sos",
