@@ -347,11 +347,11 @@ class Job_builder:
         job_file.append(f"{prefix} {time_param}{walltime}")
         job_file.append(f"{prefix} {mem_param}{mem}")
 
-        uid = str(
+        uid = date_id + str(
             len(glob.glob(Path(outfile).stem[:-2] + "*.out"))
             + len(self.prepared_jobs)
             + len(self.ongoing_jobs)
-        ) + date_id
+        )
 
         outfile = Path(outfile).with_stem(f"{Path(outfile).stem}{uid}")
 
