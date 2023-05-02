@@ -164,8 +164,7 @@ class Spectrogram(Dataset):
         self.hp_filter_min_freq: int = (
             analysis_sheet["hp_filter_min_freq"][0]
             if "hp_filter_min_freq" in analysis_sheet
-            and analysis_sheet["hp_filter_min_freq"][0] != 0
-            else sys.float_info.epsilon
+            else 0
         )
 
         self.sensitivity: float = (
@@ -339,7 +338,7 @@ class Spectrogram(Dataset):
         return self.__hp_filter_min_freq
 
     @hp_filter_min_freq.setter
-    def hp_filter_min_freq(self, value: float):
+    def hp_filter_min_freq(self, value: Union[float,int]):
         self.__hp_filter_min_freq = value
 
     @property

@@ -92,7 +92,7 @@ if __name__ == "__main__":
         "--hp-filter-min-freq",
         "-fmin",
         required=True,
-        type=int,
+        type=float,
         help="The High Pass Filter.",
     )
     parser.add_argument(
