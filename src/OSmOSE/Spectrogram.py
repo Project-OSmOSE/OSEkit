@@ -599,7 +599,7 @@ class Spectrogram(Dataset):
         # Load variables from raw metadata
         metadata = pd.read_csv(self.path_input_audio_file.joinpath("metadata.csv"))
         audio_file_origin_duration = metadata["audio_file_origin_duration"][0]
-        sr_origin = metadata["sr_origin"][0]
+        sr_origin = metadata["dataset_sr"][0]
         audio_file_count = metadata["audio_file_count"][0]
 
         if self.path.joinpath(OSMOSE_PATH.processed, "subset_files.csv").is_file():
