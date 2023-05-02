@@ -1104,7 +1104,7 @@ class Spectrogram(Dataset):
 
         bpcoef = signal.butter(
             20,
-            np.array([self.hp_filter_min_freq, sample_rate / 2 - 1]),
+            np.array([max(self.hp_filter_min_freq, sys.float_info.epsilon), sample_rate / 2 - 1]),
             fs=sample_rate,
             output="sos",
             btype="bandpass",
