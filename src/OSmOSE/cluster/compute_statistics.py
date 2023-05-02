@@ -44,10 +44,10 @@ def Write_zscore_norma_params(
     set_umask()
 
 	# fmin cannot be 0 in butterworth. If that is the case, it takes the smallest value possible, epsilon
-	hp_filter_min_freq: int = (
-		hp_filter_min_freq
-		if hp_filter_min_freq != 0
-		else sys.float_info.epsilon
+    hp_filter_min_freq: int = (
+        hp_filter_min_freq
+        if hp_filter_min_freq != 0
+        else sys.float_info.epsilon
 	)
 
     all_files = sorted(Path(input_dir).glob("*wav"))
