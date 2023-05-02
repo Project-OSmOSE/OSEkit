@@ -114,7 +114,7 @@ class Spectrogram(Dataset):
             )
 
         self.batch_number: int = batch_number
-        self.sr_analysis: int = sr_analysis
+        self.dataset_sr: int = sr_analysis
 
         self.nfft: int = analysis_sheet["nfft"][0] if "nfft" in analysis_sheet else None
         self.window_size: int = (
@@ -236,13 +236,13 @@ class Spectrogram(Dataset):
     # region Spectrogram properties
 
     @property
-    def sr_analysis(self):
+    def dataset_sr(self):
         """int: The sampling frequency of the dataset."""
-        return self.__sr_analysis
+        return self.__dataset_sr
 
-    @sr_analysis.setter
-    def sr_analysis(self, value: int):
-        self.__sr_analysis = value
+    @dataset_sr.setter
+    def dataset_sr(self, value: int):
+        self.__dataset_sr = value
 
     @property
     def nfft(self):
@@ -427,7 +427,7 @@ class Spectrogram(Dataset):
         """
         set_umask()
         processed_path = self.path.joinpath(OSMOSE_PATH.spectrogram)
-        audio_foldername = f"{str(self.spectro_duration)}_{str(self.sr_analysis)}"
+        audio_foldername = f"{str(self.spectro_duration)}_{str(self.dataset_sr)}"
         self.audio_path = self.path.joinpath(OSMOSE_PATH.raw_audio, audio_foldername)
 
         if adjust:
@@ -466,15 +466,15 @@ class Spectrogram(Dataset):
 
         tile_duration = self.spectro_duration / 2 ** (self.zoom_level)
 
-        data = np.zeros([int(tile_duration * self.sr_analysis), 1])
+        data = np.zeros([int(tile_duration * self.dataset_sr), 1])
 
         Noverlap = int(self.window_size * self.overlap / 100)
 
         Nbech = np.size(data)
         Noffset = self.window_size - Noverlap
         Nbwin = int((Nbech - self.window_size) / Noffset)
-        Freq = np.fft.rfftfreq(self.nfft, d=1 / self.sr_analysis)
-        Time = np.linspace(0, Nbech / self.sr_analysis, Nbwin)
+        Freq = np.fft.rfftfreq(self.nfft, d=1 / self.dataset_sr)
+        Time = np.linspace(0, Nbech / self.dataset_sr, Nbwin)
 
         print("your smallest tile has a duration of:", tile_duration, "(s)")
         print("\n")
@@ -502,7 +502,7 @@ class Spectrogram(Dataset):
     def initialize(
         self,
         *,
-        sr_analysis: int = None,
+        dataset_sr: int = None,
         reshape_method: Literal["legacy", "classic", "none"] = "none",
         batch_ind_min: int = 0,
         batch_ind_max: int = -1,
@@ -517,8 +517,8 @@ class Spectrogram(Dataset):
 
         Parameters
         ----------
-        sr_analysis : `int`, optional, keyword-only
-            The sampling frequency of the audio files used to generate the spectrograms. If set, will overwrite the Spectrogram.sr_analysis attribute.
+        dataset_sr : `int`, optional, keyword-only
+            The sampling frequency of the audio files used to generate the spectrograms. If set, will overwrite the Spectrogram.dataset_sr attribute.
         reshape_method : {"legacy", "classic", "none"}, optional, keyword-only
             Which method to use if the desired size of the spectrogram is different from the audio file duration.
             - legacy : Legacy method, use bash and sox software to trim the audio files and fill the empty space with nothing.
@@ -552,8 +552,8 @@ class Spectrogram(Dataset):
 
         self.__build_path()
 
-        if sr_analysis:
-            self.sr_analysis = sr_analysis
+        if dataset_sr:
+            self.dataset_sr = dataset_sr
 
         self.path_input_audio_file = self._get_original_after_build()
         list_wav_withEvent_comp = sorted(self.path_input_audio_file.glob("*wav"))
@@ -572,14 +572,14 @@ class Spectrogram(Dataset):
         # Stop initialization if already done
         final_path = self.path.joinpath(
             OSMOSE_PATH.spectrogram,
-            f"{str(self.spectro_duration)}_{str(self.sr_analysis)}",
+            f"{str(self.spectro_duration)}_{str(self.dataset_sr)}",
             f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",
             "metadata.csv",
         )
         temp_path = self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv")
         audio_metadata_path = self.path.joinpath(
             OSMOSE_PATH.raw_audio,
-            f"{str(self.spectro_duration)}_{str(self.sr_analysis)}",
+            f"{str(self.spectro_duration)}_{str(self.dataset_sr)}",
             "metadata.csv",
         )
 
@@ -618,7 +618,7 @@ class Spectrogram(Dataset):
         processes = []
         resample_done = False
 
-        if self.sr_analysis != sr_origin and (not os.listdir(self.audio_path) or force_init):
+        if self.dataset_sr != sr_origin and (not os.listdir(self.audio_path) or force_init):
             resample_done = True
             for batch in range(self.batch_number):
                 i_min = batch * batch_size
@@ -634,7 +634,7 @@ class Spectrogram(Dataset):
                         kwargs={
                             "input_dir": self.path_input_audio_file,
                             "output_dir": self.audio_path,
-                            "target_sr": self.sr_analysis,
+                            "target_sr": self.dataset_sr,
                             "batch_ind_min": i_min,
                             "batch_ind_max": i_max,
                         },
@@ -645,7 +645,7 @@ class Spectrogram(Dataset):
                 else:
                     self.jb.build_job_file(
                         script_path=Path(inspect.getfile(resample)).resolve(),
-                        script_args=f"--input-dir {self.path_input_audio_file} --target-sr {self.sr_analysis} --batch-ind-min {i_min} --batch-ind-max {i_max} --output-dir {self.audio_path}",
+                        script_args=f"--input-dir {self.path_input_audio_file} --target-sr {self.dataset_sr} --batch-ind-min {i_min} --batch-ind-max {i_max} --output-dir {self.audio_path}",
                         jobname="OSmOSE_resample",
                         preset="low",
                         logdir=self.path.joinpath("log")
@@ -686,7 +686,7 @@ class Spectrogram(Dataset):
                                 OSMOSE_PATH.statistics,
                                 "SummaryStats_" + str(i_min) + ".csv",
                             ),
-                            "target_sr": self.sr_analysis,
+                            "target_sr": self.dataset_sr,
                             "batch_ind_min": i_min,
                             "batch_ind_max": i_max,
                         },
@@ -841,7 +841,7 @@ class Spectrogram(Dataset):
                     )  # If it is the last batch, take all files
                     self.jb.build_job_file(
                         script_path=Path(__file__).parent.joinpath("cluster", "reshaper.sh"),
-                        script_args=f"-d {self.path} -i {self.path_input_audio_file.name} -t {sr_analysis} \
+                        script_args=f"-d {self.path} -i {self.path_input_audio_file.name} -t {dataset_sr} \
                                     -m {i_min} -x {i_max} -o {self.audio_path} -n {self.spectro_duration} {silence_arg}",
                         jobname="OSmOSE_reshape_bash",
                         preset="low",
@@ -864,7 +864,7 @@ class Spectrogram(Dataset):
 
         data = {
             "dataset_name": self.name,
-            "dataset_sr": self.sr_analysis,
+            "dataset_sr": self.dataset_sr,
             "nfft": self.nfft,
             "window_size": self.window_size,
             "overlap": self.overlap,
@@ -935,7 +935,7 @@ class Spectrogram(Dataset):
             raise ValueError("The file must be a .csv file to be updated.")
         new_params = {
             "dataset_name": self.name,
-            "sr_analysis": self.sr_analysis,
+            "dataset_sr": self.dataset_sr,
             "nfft": self.nfft,
             "window_size": self.window_size,
             "overlap": self.overlap,
@@ -967,7 +967,7 @@ class Spectrogram(Dataset):
         
         orig_params = pd.read_csv(filename)
         
-        if any([str(orig_params[param]) != str(new_params[param]) or param not in orig_params for param in new_params]):
+        if any([param not in orig_params or str(orig_params[param]) != str(new_params[param]) for param in new_params]):
             filename.unlink()
             pd.DataFrame.from_records([new_params]).to_csv(filename)
 
@@ -1338,7 +1338,7 @@ class Spectrogram(Dataset):
 
         metadata_output = self.path.joinpath(
             OSMOSE_PATH.spectrogram,
-            f"{str(self.spectro_duration)}_{str(self.sr_analysis)}",
+            f"{str(self.spectro_duration)}_{str(self.dataset_sr)}",
             f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",
             "metadata.csv",
         )
