@@ -338,7 +338,7 @@ class Spectrogram(Dataset):
         return self.__hp_filter_min_freq
 
     @hp_filter_min_freq.setter
-    def hp_filter_min_freq(self, value: Union[float,int]):
+    def hp_filter_min_freq(self, value:int):
         self.__hp_filter_min_freq = value
 
     @property
