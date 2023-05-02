@@ -864,7 +864,7 @@ class Spectrogram(Dataset):
 
         data = {
             "dataset_name": self.name,
-            "sr_analysis": self.sr_analysis,
+            "dataset_sr": self.sr_analysis,
             "nfft": self.nfft,
             "window_size": self.window_size,
             "overlap": self.overlap,
