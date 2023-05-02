@@ -501,7 +501,7 @@ class Spectrogram(Dataset):
     def initialize(
         self,
         *,
-        dataset_sr: int = None,
+        sr_analysis: int = None,
         reshape_method: Literal["legacy", "classic", "none"] = "none",
         batch_ind_min: int = 0,
         batch_ind_max: int = -1,
@@ -516,7 +516,7 @@ class Spectrogram(Dataset):
 
         Parameters
         ----------
-        dataset_sr : `int`, optional, keyword-only
+        sr_analysis : `int`, optional, keyword-only
             The sampling frequency of the audio files used to generate the spectrograms. If set, will overwrite the Spectrogram.dataset_sr attribute.
         reshape_method : {"legacy", "classic", "none"}, optional, keyword-only
             Which method to use if the desired size of the spectrogram is different from the audio file duration.
@@ -551,8 +551,8 @@ class Spectrogram(Dataset):
 
         self.__build_path()
 
-        if dataset_sr:
-            self.dataset_sr = dataset_sr
+        if sr_analysis:
+            self.dataset_sr = sr_analysis
 
         self.path_input_audio_file = self._get_original_after_build()
         list_wav_withEvent_comp = sorted(self.path_input_audio_file.glob("*wav"))
