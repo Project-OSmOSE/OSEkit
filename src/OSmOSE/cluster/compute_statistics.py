@@ -49,6 +49,8 @@ def Write_zscore_norma_params(
         batch_ind_min : batch_ind_max if batch_ind_max != -1 else len(all_files)
     ]
 
+    print(f"Computing statistics over {len(wav_list)} files.")
+
     list_summaryStats = []
 
     for wav in wav_list:
@@ -72,6 +74,7 @@ def Write_zscore_norma_params(
         write.writerow(["filename", "mean", "std"])
         write.writerows(list_summaryStats)
 
+    print(f"{output_file} written.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

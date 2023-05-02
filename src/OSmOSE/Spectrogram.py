@@ -1059,9 +1059,7 @@ class Spectrogram(Dataset):
                     for old_matrix in self.path_output_spectrogram_matrix.glob(f"{Path(audio_file).stem}*"):
                         old_matrix.unlink()
             else:
-                check = len(list(self.path_output_spectrogram.glob(f"{Path(audio_file).stem}*"))) == sum(2**i for i in range(self.zoom_level+1)) and check_existing_matrix()
-                print(f"The spectrograms for the file {audio_file} have already been generated, skipping because check is {check}...")
-                print(f"Looking for {Path(audio_file).stem} in {self.path_output_spectrogram}")
+                print(f"The spectrograms for the file {audio_file} have already been generated, skipping...")
                 return
         
         if audio_file not in os.listdir(self.audio_path):
@@ -1091,6 +1089,7 @@ class Spectrogram(Dataset):
                 self.__summStats["filename"] == audio_file
             ]["std_avg"].values[0]
 
+            print(f"Zscore mean : {self.__zscore_mean} and std : {self.__zscore_std}/")
 
         #! File processing
         data, sample_rate = safe_read(self.audio_path.joinpath(audio_file))
@@ -1131,7 +1130,10 @@ class Spectrogram(Dataset):
             if (len(self.zscore_duration) > 0) and (self.zscore_duration != "original"):
                 data = (data - self.__zscore_mean) / self.__zscore_std
             elif self.zscore_duration == "original":
+                print("zscore normalisation")
                 data = (data - np.mean(data)) / np.std(data)
+
+            print(f"data mean : {np.mean(data)} and std : {np.std(data)}")
 
         duration = len(data) / int(sample_rate)
 

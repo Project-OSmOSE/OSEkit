@@ -351,7 +351,7 @@ class Job_builder:
             len(glob.glob(Path(outfile).stem[:-2] + "*.out"))
             + len(self.prepared_jobs)
             + len(self.ongoing_jobs)
-        )
+        ).zfill(3)
 
         outfile = Path(outfile).with_stem(f"{Path(outfile).stem}{uid}")
 
@@ -485,13 +485,13 @@ class Job_builder:
         if len(self.prepared_jobs) > 0:
             res += "==== PREPARED JOBS ====\n\n"
         for job_info in self.prepared_jobs:
-            created_at = datetime.strptime(today + job_info["outfile"].stem[-8:], "%d%m%y%H-%M-%S")
+            created_at = datetime.strptime(today + job_info["outfile"].stem[-11:-3], "%d%m%y%H-%M-%S")
             res += f"{job_info['job_name']} (created at {created_at}) : ready to start.\n"
 
         if len(self.ongoing_jobs) > 0:
             res += "==== ONGOING JOBS ====\n\n"
         for job_info in self.ongoing_jobs:
-            created_at = datetime.strptime(today + job_info["outfile"].stem[-8:], "%d%m%y%H-%M-%S")
+            created_at = datetime.strptime(today + job_info["outfile"].stem[-11:-3], "%d%m%y%H-%M-%S")
             delta = datetime.now() - created_at
             strftime = f"{'%H hours, ' if delta.seconds >= 3600 else ''}{'%M minutes and ' if delta.seconds >= 60 else ''}%S seconds"
             elapsed_time = datetime.strftime(epoch + delta, strftime)
@@ -503,7 +503,7 @@ class Job_builder:
             if not job_info["outfile"].exists():
                 res += f"{job_info['job_name']} (created at {created_at}) : Output file still writing..."
 
-            created_at = datetime.strptime(today + job_info["outfile"].stem[-8:], "%d%m%y%H-%M-%S")
+            created_at = datetime.strptime(today + job_info["outfile"].stem[-11:-3], "%d%m%y%H-%M-%S")
             delta = datetime.fromtimestamp(time.mktime(time.localtime(job_info["outfile"].stat().st_ctime))) - created_at
             strftime = f"{'%H hours, ' if delta.seconds >= 3600 else ''}{'%M minutes and ' if delta.seconds >= 60 else ''}%S seconds"
             elapsed_time = datetime.strftime(epoch + delta, strftime)
