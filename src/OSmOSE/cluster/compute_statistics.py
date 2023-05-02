@@ -43,13 +43,6 @@ def Write_zscore_norma_params(
     """
     set_umask()
 
-	# fmin cannot be 0 in butterworth. If that is the case, it takes the smallest value possible, epsilon
-    hp_filter_min_freq: int = (
-        hp_filter_min_freq
-        if hp_filter_min_freq != 0
-        else sys.float_info.epsilon
-	)
-
     all_files = sorted(Path(input_dir).glob("*wav"))
     # If batch_ind_max is -1, we go to the end of the list.
     wav_list = all_files[
@@ -64,7 +57,7 @@ def Write_zscore_norma_params(
         bpcoef = signal.butter(
             20,
             np.array(
-                [hp_filter_min_freq, sample_rate / 2 - 1]
+                [max(hp_filter_min_freq, sys.float_info.epsilon), sample_rate / 2 - 1]
             ),
             fs=sample_rate,
             output="sos",
