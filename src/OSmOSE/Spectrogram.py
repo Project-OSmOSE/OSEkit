@@ -1256,7 +1256,7 @@ class Spectrogram(Dataset):
             else:
                 x_win = data[idwin * Noffset : idwin * Noffset + self.window_size] * win
                 Sxx[:, idwin] = np.abs(np.fft.rfft(x_win, n=self.nfft)) ** 2
-        Sxx[:, idwin] *= scale_psd
+            Sxx[:, idwin] *= scale_psd
 
         if self.spectro_normalization == "density":
             log_spectro = 10 * np.log10((Sxx / (1e-12)) + (1e-20))
