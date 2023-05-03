@@ -565,6 +565,10 @@ class Spectrogram(Dataset):
             audio_file.name for audio_file in list_wav_withEvent
         ]
 
+        if self.data_normalization == "zscore" and self.spectro_normalization != "spectrum":
+            self.spectro_normalization = "spectrum"
+            print("WARNING: the spectrogram normalization has been changed to spectrum because the data will be normalized using zscore.")
+
         """List containing the last job ids to grab outside of the class."""
         self.pending_jobs = []
 
@@ -595,6 +599,7 @@ class Spectrogram(Dataset):
                 )
                 return
 
+        #! INITIALIZATION START
         # Load variables from raw metadata
         metadata = pd.read_csv(self.path_input_audio_file.joinpath("metadata.csv"))
         audio_file_origin_duration = metadata["audio_file_origin_duration"][0]
@@ -1065,7 +1070,12 @@ class Spectrogram(Dataset):
         if audio_file not in os.listdir(self.audio_path):
             raise FileNotFoundError(
                 f"The file {audio_file} must be in {self.audio_path} in order to be processed."
-            ) 
+            )
+        
+        if self.data_normalization == "zscore" and self.spectro_normalization != "spectrum":
+            self.spectro_normalization = "spectrum"
+            print("WARNING: the spectrogram normalization has been changed to spectrum because the data will be normalized using zscore.")
+        
         
         print(f"Generating spectrograms for {audio_file}...")
         #! Determination of zscore normalization parameters
@@ -1306,6 +1316,9 @@ class Spectrogram(Dataset):
             figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi),
             dpi=my_dpi,
         )
+
+        print(f"Log spectro: {np.amin(log_spectro)}-{np.amax(log_spectro)}\nDynamic: {self.dynamic_min}-{self.dynamic_max}")
+
         color_map = plt.cm.get_cmap(self.colormap)  # .reversed()
         plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
         plt.clim(vmin=self.dynamic_min, vmax=self.dynamic_max)
