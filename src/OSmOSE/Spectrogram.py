@@ -32,7 +32,7 @@ class Spectrogram(Dataset):
         self,
         dataset_path: str,
         *,
-        sr_analysis: int,
+        dataset_sr: int,
         gps_coordinates: Union[str, list, tuple] = None,
         owner_group: str = None,
         analysis_params: dict = None,
@@ -54,7 +54,7 @@ class Spectrogram(Dataset):
         ----------
         dataset_path : `str`
             The absolute path to the dataset folder. The last folder in the path will be considered as the name of the dataset.
-        sr_analysis : `int`, keyword-only
+        dataset_sr : `int`, keyword-only
             The sample rate used for the generation of the spectrograms.
         coordinates : `str` or `list` or `tuple`, optional, keyword-only
             The GPS coordinates of the listening location. If it is of type `str`, it must be the name of a csv file located in `raw/auxiliary`,
@@ -116,7 +116,7 @@ class Spectrogram(Dataset):
             )
 
         self.batch_number: int = batch_number
-        self.dataset_sr: int = sr_analysis
+        self.dataset_sr: int = dataset_sr
 
         self.nfft: int = analysis_sheet["nfft"][0] if "nfft" in analysis_sheet else 1
         self.window_size: int = (
@@ -498,7 +498,7 @@ class Spectrogram(Dataset):
     def initialize(
         self,
         *,
-        sr_analysis: int = None,
+        dataset_sr: int = None,
         reshape_method: Literal["legacy", "classic", "none"] = "none",
         batch_ind_min: int = 0,
         batch_ind_max: int = -1,
@@ -513,7 +513,7 @@ class Spectrogram(Dataset):
 
         Parameters
         ----------
-        sr_analysis : `int`, optional, keyword-only
+        dataset_sr : `int`, optional, keyword-only
             The sampling frequency of the audio files used to generate the spectrograms. If set, will overwrite the Spectrogram.dataset_sr attribute.
         reshape_method : {"legacy", "classic", "none"}, optional, keyword-only
             Which method to use if the desired size of the spectrogram is different from the audio file duration.
@@ -548,8 +548,8 @@ class Spectrogram(Dataset):
 
         self.__build_path()
 
-        if sr_analysis:
-            self.dataset_sr = sr_analysis
+        if dataset_sr:
+            self.dataset_sr = dataset_sr
 
         self.path_input_audio_file = self._get_original_after_build()
         list_wav_withEvent_comp = sorted(self.path_input_audio_file.glob("*wav"))
@@ -1255,7 +1255,7 @@ class Spectrogram(Dataset):
             else:
                 x_win = data[idwin * Noffset : idwin * Noffset + self.window_size] * win
                 Sxx[:, idwin] = np.abs(np.fft.rfft(x_win, n=self.nfft)) ** 2
-        Sxx[:, idwin] *= scale_psd
+            Sxx[:, idwin] *= scale_psd
 
         if self.spectro_normalization == "density":
             log_spectro = 10 * np.log10((Sxx / (1e-12)) + (1e-20))
