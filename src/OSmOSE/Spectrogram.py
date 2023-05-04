@@ -97,7 +97,8 @@ class Spectrogram(Dataset):
 
         self.__local = local
 
-        orig_metadata = pd.read_csv(self._get_original_after_build().joinpath("metadata.csv"), header=0)
+        if self.is_built:
+            orig_metadata = pd.read_csv(self._get_original_after_build().joinpath("metadata.csv"), header=0)
         processed_path = self.path.joinpath(OSMOSE_PATH.spectrogram)
         metadata_path = processed_path.joinpath("adjust_metadata.csv")
         if metadata_path.exists():
@@ -151,7 +152,11 @@ class Spectrogram(Dataset):
         self.spectro_duration: int = (
             analysis_sheet["spectro_duration"][0]
             if analysis_sheet is not None and "spectro_duration" in analysis_sheet
-            else orig_metadata["audio_file_origin_duration"][0]
+            else (
+                orig_metadata["audio_file_origin_duration"][0]
+                if self.is_built
+                else -1
+            )
         )
 
         self.zscore_duration: Union[float, str] = (
