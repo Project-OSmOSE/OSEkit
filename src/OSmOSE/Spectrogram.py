@@ -1140,7 +1140,6 @@ class Spectrogram(Dataset):
             if (len(self.zscore_duration) > 0) and (self.zscore_duration != "original"):
                 data = (data - self.__zscore_mean) / self.__zscore_std
             elif self.zscore_duration == "original":
-                print("zscore normalisation")
                 data = (data - np.mean(data)) / np.std(data)
 
             print(f"data mean : {np.mean(data)} and std : {np.std(data)}")
@@ -1224,7 +1223,7 @@ class Spectrogram(Dataset):
         Noverlap = int(self.window_size * self.overlap / 100)
 
         win = np.hamming(self.window_size)
-        if self.nfft < (0.5 * self.window_size):
+        if self.nfft < (self.window_size):
             if self.spectro_normalization == "density":
                 scale_psd = 2.0
             if self.spectro_normalization == "spectrum":
@@ -1243,7 +1242,7 @@ class Spectrogram(Dataset):
         Sxx = np.zeros([np.size(Freq), Nbwin])
         Time = np.linspace(0, Nbech / sample_rate, Nbwin)
         for idwin in range(Nbwin):
-            if self.nfft < (0.5 * self.window_size):
+            if self.nfft < (self.window_size):
                 x_win = data[idwin * Noffset : idwin * Noffset + self.window_size]
                 _, Sxx[:, idwin] = signal.welch(
                     x_win,
