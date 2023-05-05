@@ -97,6 +97,8 @@ class Spectrogram(Dataset):
 
         self.__local = local
 
+        if self.is_built:
+            orig_metadata = pd.read_csv(self._get_original_after_build().joinpath("metadata.csv"), header=0)
         processed_path = self.path.joinpath(OSMOSE_PATH.spectrogram)
         metadata_path = processed_path.joinpath("adjust_metadata.csv")
         if metadata_path.exists():
@@ -116,7 +118,7 @@ class Spectrogram(Dataset):
         self.batch_number: int = batch_number
         self.dataset_sr: int = dataset_sr
 
-        self.nfft: int = analysis_sheet["nfft"][0] if "nfft" in analysis_sheet else None
+        self.nfft: int = analysis_sheet["nfft"][0] if "nfft" in analysis_sheet else 1
         self.window_size: int = (
             analysis_sheet["window_size"][0]
             if "window_size" in analysis_sheet
@@ -130,7 +132,7 @@ class Spectrogram(Dataset):
 
         )
         self.zoom_level: int = (
-            analysis_sheet["zoom_level"][0] if "zoom_level" in analysis_sheet else None
+            analysis_sheet["zoom_level"][0] if "zoom_level" in analysis_sheet else 0
         )
         self.dynamic_min: int = (
             analysis_sheet["dynamic_min"][0]
@@ -150,7 +152,11 @@ class Spectrogram(Dataset):
         self.spectro_duration: int = (
             analysis_sheet["spectro_duration"][0]
             if analysis_sheet is not None and "spectro_duration" in analysis_sheet
-            else -1
+            else (
+                orig_metadata["audio_file_origin_duration"][0]
+                if self.is_built
+                else -1
+            )
         )
 
         self.zscore_duration: Union[float, str] = (
@@ -200,20 +206,14 @@ class Spectrogram(Dataset):
             else "hamming"
         )
 
-        self.frequency_resolution: int = (
-            analysis_sheet["frequency_resolution"][0]
-            if "frequency_resolution" in analysis_sheet
-            else None
-        )
-
-        self.time_resolution = (
+        self.time_resolution: List[float] = (
             [
                 analysis_sheet[col][0]
                 for col in analysis_sheet
                 if "time_resolution" in col
             ]
             if analysis_sheet is not None
-            else None
+            else [0] * self.zoom_level
         )
 
         self.jb = Job_builder()
@@ -397,12 +397,9 @@ class Spectrogram(Dataset):
         self.__window_type = value
 
     @property
-    def frequency_resolution(self):
-        return self.__frequency_resolution
-
-    @frequency_resolution.setter
-    def frequency_resolution(self, value):
-        self.__frequency_resolution = value
+    def frequency_resolution(self) -> float:
+        """Frequency resolution of the spectrogram, calculated by dividing the sample rate by the number of nfft."""
+        return self.dataset_sr / self.nfft
 
     @property
     def time_resolution(self):
@@ -1076,7 +1073,7 @@ class Spectrogram(Dataset):
             self.spectro_normalization = "spectrum"
             print("WARNING: the spectrogram normalization has been changed to spectrum because the data will be normalized using zscore.")
         
-        
+
         print(f"Generating spectrograms for {audio_file}...")
         #! Determination of zscore normalization parameters
         if self.data_normalization == "zscore" and Zscore != "original":
@@ -1171,6 +1168,8 @@ class Spectrogram(Dataset):
         segment_times = np.linspace(
             0, len(data) / sample_rate, Sxx_lowest_level.shape[1]
         )[np.newaxis, :]
+
+        self.time_resolution[0] = segment_times[1] - segment_times[0]
 
         # loop over the zoom levels from the second lowest to the highest one
         for zoom_level in range(self.zoom_level + 1)[::-1]:
