@@ -327,13 +327,10 @@ def reshape(
                 previous_audio_data = np.empty(0)
             else:
                 # Check if the timestamp_list can safely be merged
-                if not (
-                    file_duration - max_delta_interval
-                    < substract_timestamps(input_timestamp, files, i).seconds
-                    < file_duration + max_delta_interval
-                ):
+                delta = substract_timestamps(input_timestamp, files, i).seconds - file_duration
+                if ( delta > max_delta_interval):
                     print(
-                        f"Warning: You are trying to merge two audio files that are not chronologically consecutive.\n{files[i]} ends at {to_timestamp(input_timestamp[input_timestamp['filename'] == files[i]]['timestamp'].values[0]) + timedelta(seconds=file_duration)} and {files[i+1]} starts at {to_timestamp(input_timestamp[input_timestamp['filename'] == files[i+1]]['timestamp'].values[0])}."
+                        f"""Warning: You are trying to merge two audio files that are not chronologically consecutive.\n{files[i]} ends at {to_timestamp(input_timestamp[input_timestamp['filename'] == files[i]]['timestamp'].values[0]) + timedelta(seconds=file_duration)} and {files[i+1]} starts at {to_timestamp(input_timestamp[input_timestamp['filename'] == files[i+1]]['timestamp'].values[0])}.\nThere is {delta} seconds of difference between the two files, which is over the maximum tolerance of {max_delta_interval} seconds."""
                     )
                     if (
                         not proceed and sys.__stdin__.isatty()
@@ -344,12 +341,17 @@ def reshape(
                         if "yes" in res.lower() or res == "":
                             proceed = True
                         else:
-                            sys.exit()
-                    elif not proceed and not sys.__stdin__.isatty():
-                        print(
+                            # This is meant to close the program with an error while still be user-friendly and test compliant.
+                            # Thus we disable the error trace just before raising it to avoid a long trace when the error is clearly identified.
+                            sys.tracebacklimit = 0 
+                            raise ValueError(
                             "Error: Cannot merge non-continuous audio files if force_reshape is false."
                         )
-                        sys.exit(1)
+                    elif not proceed and not sys.__stdin__.isatty():
+                        sys.tracebacklimit = 0 
+                        raise ValueError(
+                            "Error: Cannot merge non-continuous audio files if force_reshape is false."
+                        )
 
                 while len(audio_data) < chunk_size * sample_rate and i + 1 < len(files):
                     nextdata, next_sample_rate = sf.read(

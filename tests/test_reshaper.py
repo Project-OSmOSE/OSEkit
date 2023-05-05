@@ -273,3 +273,52 @@ def test_reshape_no_merge_pad(input_reshape: Path, output_dir):
     assert len(reshaped_files) == 20
     assert sf.info(output_dir.joinpath("2022-01-01T11-59-57_000.wav")).duration == 2
     assert sf.info(output_dir.joinpath("2022-01-01T11-59-59_000.wav")).duration == 2
+
+
+def test_reshape_max_delta_interval(input_reshape: Path, output_dir: Path, monkeypatch):
+    monkeypatch.setattr('builtins.input', lambda _: "no")
+    with open(input_reshape.joinpath("timestamp.csv"), "w", newline="") as timestampf:
+        writer = csv.writer(timestampf)
+        writer.writerow(
+            [str(input_reshape.joinpath("test.wav")), "2022-01-01T11:59:56.000Z", "UTC"]
+        )
+        writer.writerows(
+            [
+                [
+                    str(input_reshape.joinpath(f"test{i}.wav")),
+                    f"2022-01-01T12:00:{str(5*i).zfill(2)}.000Z",
+                    "UTC",
+                ]
+                for i in range(9)
+            ]
+        )
+
+    reshape(
+        input_files=input_reshape,
+        chunk_size=2,
+        output_dir_path=output_dir,
+        max_delta_interval = 5,
+        last_file_behavior="pad",
+        verbose=True
+    )
+
+    reshaped_files = sorted(
+        [x for x in output_dir.iterdir() if str(x).endswith(".wav")],
+        key=os.path.getmtime,
+    )
+
+    assert len(reshaped_files) == 15
+    assert sf.info(output_dir.joinpath("2022-01-01T11-59-56_000.wav")).duration == 2
+    assert sf.info(output_dir.joinpath("2022-01-01T11-59-58_000.wav")).duration == 2
+
+
+    with pytest.raises(ValueError) as e:
+        reshape(
+            input_files=input_reshape,
+            chunk_size=2,
+            output_dir_path=output_dir,
+            max_delta_interval = 1,
+            last_file_behavior="pad",
+            verbose=True
+        )
+    assert str(e.value) == "Error: Cannot merge non-continuous audio files if force_reshape is false."
