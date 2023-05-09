@@ -32,7 +32,7 @@ class Spectrogram(Dataset):
         self,
         dataset_path: str,
         *,
-        dataset_sr: int,
+        dataset_sr: int = None,
         gps_coordinates: Union[str, list, tuple] = None,
         owner_group: str = None,
         analysis_params: dict = None,
@@ -99,6 +99,8 @@ class Spectrogram(Dataset):
 
         if self.is_built:
             orig_metadata = pd.read_csv(self._get_original_after_build().joinpath("metadata.csv"), header=0)
+        elif not dataset_sr:
+            raise ValueError('If you dont know your sr, please use the build() method first')
         processed_path = self.path.joinpath(OSMOSE_PATH.spectrogram)
         metadata_path = processed_path.joinpath("adjust_metadata.csv")
         if metadata_path.exists():
@@ -116,7 +118,7 @@ class Spectrogram(Dataset):
             )
 
         self.batch_number: int = batch_number
-        self.dataset_sr: int = dataset_sr
+        self.dataset_sr: int = dataset_sr if dataset_sr is not None else orig_metadata['origin_sr'][0]
 
         self.nfft: int = analysis_sheet["nfft"][0] if "nfft" in analysis_sheet else 1
         self.window_size: int = (
