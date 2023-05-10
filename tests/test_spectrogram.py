@@ -190,6 +190,3 @@ def test_initialize_2s(input_dataset):
     )
 
     assert np.allclose(full_input, full_output)
-
-def test_process_file_adjust(input_spectrogram, output_dir):
-    
