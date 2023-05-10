@@ -202,6 +202,9 @@ def reshape(
     while i < len(files):
         audio_data, sample_rate = sf.read(input_dir_path.joinpath(files[i]))
         file_duration = len(audio_data)//sample_rate
+
+        if not merge_files and file_duration < chunk_size:
+            raise ValueError("When not merging files, the file duration must be smaller than the target duration.")
         
         if overwrite and not implicit_output and output_dir_path == input_dir_path and output_dir_path == input_dir_path and i<len(files)-1:
             print(f"Deleting {files[i]}")
@@ -566,7 +569,7 @@ if __name__ == "__main__":
         "--no-merge",
         action="store_false",
         help="Don't try to merge the reshaped files."
-    )
+    ) # When absent = we merge file; when present = we don't merge -> merge_file is False
 
     args = parser.parse_args()
 
