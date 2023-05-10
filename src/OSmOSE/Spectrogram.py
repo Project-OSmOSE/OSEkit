@@ -1088,7 +1088,7 @@ class Spectrogram(Dataset):
                 df = pd.concat([df, pd.read_csv(dd, header=0)])
 
             df["mean_avg"] = df["mean"].rolling(average_over_H, min_periods=1).mean()
-            df["std_avg"] = df["std"].rolling(average_over_H, min_periods=1).mean()
+            df["std_avg"] = df["std"].pow(2).rolling(average_over_H, min_periods=1).mean().apply(np.sqrt, raw=True)
 
             self.__summStats = df
             self.__zscore_mean = self.__summStats[
