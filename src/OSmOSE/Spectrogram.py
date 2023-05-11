@@ -621,7 +621,11 @@ class Spectrogram(Dataset):
         processes = []
         resample_done = False
 
-        if self.dataset_sr != sr_origin and (not os.listdir(self.audio_path) or force_init):
+        if self.dataset_sr != sr_origin and (next(self.audio_path.glob(".wav"),None) is None or force_init):
+
+            if self.spectro_duration == int(audio_file_origin_duration):
+                shutil.copyfile(self.path_input_audio_file.joinpath("timestamp.csv"), self.audio_path.joinpath("timestamp.csv"))
+                
             resample_done = True
             for batch in range(self.batch_number):
                 i_min = batch * batch_size
@@ -1171,7 +1175,7 @@ class Spectrogram(Dataset):
             0, len(data) / sample_rate, Sxx_lowest_level.shape[1]
         )[np.newaxis, :]
 
-        self.time_resolution[0] = segment_times[1] - segment_times[0]
+        #self.time_resolution[0] = segment_times[1] - segment_times[0]
 
         # loop over the zoom levels from the second lowest to the highest one
         for zoom_level in range(self.zoom_level + 1)[::-1]:
