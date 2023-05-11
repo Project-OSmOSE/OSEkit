@@ -625,7 +625,7 @@ class Spectrogram(Dataset):
 
             if self.spectro_duration == int(audio_file_origin_duration):
                 shutil.copyfile(self.path_input_audio_file.joinpath("timestamp.csv"), self.audio_path.joinpath("timestamp.csv"))
-                
+
             resample_done = True
             for batch in range(self.batch_number):
                 i_min = batch * batch_size
@@ -672,8 +672,8 @@ class Spectrogram(Dataset):
             #os.listdir(self.path.joinpath(OSMOSE_PATH.statistics))
             self.data_normalization == "zscore"
             and self.zscore_duration is not None
-            and len(os.listdir(self.path.joinpath(OSMOSE_PATH.statistics))) == 0
-            or force_init
+            and (len(os.listdir(self.path.joinpath(OSMOSE_PATH.statistics))) == 0
+            or force_init)
         ):
             shutil.rmtree(self.path.joinpath(OSMOSE_PATH.statistics), ignore_errors=True)
             make_path(self.path.joinpath(OSMOSE_PATH.statistics), mode=DPDEFAULT)
