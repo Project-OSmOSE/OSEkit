@@ -155,7 +155,7 @@ class Spectrogram(Dataset):
             analysis_sheet["spectro_duration"][0]
             if analysis_sheet is not None and "spectro_duration" in analysis_sheet
             else (
-                orig_metadata["audio_file_origin_duration"][0]
+                int(orig_metadata["audio_file_origin_duration"][0])
                 if self.is_built
                 else -1
             )
@@ -723,7 +723,7 @@ class Spectrogram(Dataset):
         # Reshape audio files to fit the maximum spectrogram size, whether it is greater or smaller.
         reshape_job_id_list = []
 
-        if self.spectro_duration != int(audio_file_origin_duration):
+        if int(self.spectro_duration) != int(audio_file_origin_duration):
             # We might reshape the files and create the folder. Note: reshape function might be memory-heavy and deserve a proper qsub job.
             if self.spectro_duration > int(
                 audio_file_origin_duration
@@ -801,7 +801,7 @@ class Spectrogram(Dataset):
                             target=reshape,
                             kwargs={
                                 "input_files": input_files,
-                                "chunk_size": self.spectro_duration,
+                                "chunk_size": int(self.spectro_duration),
                                 "output_dir_path": self.audio_path,
                                 "offset_beginning": int(offset_beginning),
                                 "offset_end": int(offset_end),
@@ -818,7 +818,7 @@ class Spectrogram(Dataset):
                     else:
                         self.jb.build_job_file(
                             script_path=Path(inspect.getfile(reshape)).resolve(),
-                            script_args=f"--input-files {input_files} --chunk-size {self.spectro_duration} --batch-ind-min {i_min}\
+                            script_args=f"--input-files {input_files} --chunk-size {int(self.spectro_duration)} --batch-ind-min {i_min}\
                                         --batch-ind-max {i_max} --output-dir {self.audio_path} --timestamp-path {self.path_input_audio_file.joinpath('timestamp.csv')}\
                                         --offset-beginning {int(offset_beginning)} --offset-end {int(offset_end)}\
                                         --last-file-behavior {last_file_behavior} {'--force' if force_init else ''}\
@@ -864,8 +864,10 @@ class Spectrogram(Dataset):
                 # The timestamp.csv is recreated by the reshaping step. We only need to copy it if we don't reshape.
                 shutil.copy(self.path_input_audio_file.joinpath("timestamp.csv"), self.audio_path.joinpath("timestamp.csv"))
 
-        metadata["dataset_fileDuration"] = self.spectro_duration
+        metadata["audio_file_dataset_duration"] = self.spectro_duration
         new_meta_path = self.audio_path.joinpath("metadata.csv")
+        if new_meta_path.exists():
+            new_meta_path.unlink()
         metadata.to_csv(new_meta_path)
         os.chmod(new_meta_path, mode=FPDEFAULT)
 
@@ -1360,9 +1362,10 @@ class Spectrogram(Dataset):
             f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",
             "metadata.csv",
         )
-        if not metadata_output.exists():
-            shutil.copyfile(metadata_input, metadata_output)
-            print(f"Written {metadata_output}")
+        if metadata_output.exists():
+            metadata_output.unlink()
+        shutil.copyfile(metadata_input, metadata_output)
+        print(f"Written {metadata_output}")
         # try:
         #     if not self.adjust and metadata_input.exists() and not metadata_output.exists():
         #         metadata_input.rename(metadata_output)
