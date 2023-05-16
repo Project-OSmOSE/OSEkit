@@ -1,4 +1,4 @@
-mport numpy as np
+import numpy as np
 import time, calendar, datetime
 import scipy.interpolate as inter
 from pykdtree.kdtree import KDTree

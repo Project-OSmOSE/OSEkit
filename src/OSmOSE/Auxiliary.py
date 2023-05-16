@@ -1,8 +1,8 @@
-mport numpy as np
+import numpy as np
 import pandas as pd
 import os, glob
 import scipy.signal as sg
-import jointure as j
+from OSmOSE import jointure as j
 import soundfile as sf
 from tqdm import tqdm
 from netCDF4 import Dataset
