@@ -37,7 +37,7 @@ class Spectrogram(Dataset):
         owner_group: str = None,
         analysis_params: dict = None,
         batch_number: int = 10,
-        local: bool = False,
+        local: bool = True,
     ) -> None:
         """Instanciates a spectrogram object.
 
