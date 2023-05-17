@@ -69,14 +69,33 @@ def write_timestamp(
             a tuple containing the beginning and end offset of the date.
             The first element is the first character of the date, and the second is the last.
     """
-    # TODO: extension-agnostic
     list_audio_file = sorted([file for file in Path(audio_path).glob("*.wav")])
 
     if len(list_audio_file) == 0:
-        print(
-            f"No audio file found in the {audio_path} directory. An empty timestamp.csv will be created."
-        )
+        
+        list_audio_file_WAV = sorted([file for file in Path(audio_path).glob("*.WAV")])
 
+        if len(list_audio_file_WAV) > 0:
+
+            print(
+                f"Your audio files have a .WAV extension, we are changing it to the standard .wav extension"
+                )
+            
+            for file_name in list_audio_file_WAV:
+                os.rename(file_name, Path(audio_path).joinpath(file_name.stem+'.wav'))
+        
+        elif len(Path(audio_path).glob("*.mp3",".*flac"))>0:
+
+            print(
+                f"Your audio files do not have the right extension, we only accept wav audio files for the moment."
+            )
+                    
+        else:
+        
+            print(
+                f"No audio files found in the {audio_path} directory."
+            )
+            
     timestamp = []
     filename_raw_audio = []
 

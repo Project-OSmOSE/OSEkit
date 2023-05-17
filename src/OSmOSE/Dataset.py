@@ -562,7 +562,7 @@ class Dataset:
         for path, _, files in os.walk(self.path):
             for f in files:
                 if not Path(f).parent == "original":
-                    if f.endswith(".wav"):
+                    if f.endswith((".wav",".WAV","*.mp3",".*flac")):
                         audio_files.append(Path(path,f))
                     elif "timestamp.csv" in f:
                         timestamp_files.append(Path(path,f))
