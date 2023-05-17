@@ -693,7 +693,7 @@ class Spectrogram(Dataset):
                                 OSMOSE_PATH.statistics,
                                 "SummaryStats_" + str(i_min) + ".csv",
                             ),
-                            "target_sr": self.dataset_sr,
+                            "hp_filter_min_freq" : self.hp_filter_min_freq,
                             "batch_ind_min": i_min,
                             "batch_ind_max": i_max,
                         },
@@ -1085,16 +1085,13 @@ class Spectrogram(Dataset):
         print(f"Generating spectrograms for {audio_file}...")
         #! Determination of zscore normalization parameters
         if self.data_normalization == "zscore" and Zscore != "original":
-            average_over_H = int(
-                round(pd.to_timedelta(Zscore).total_seconds() / self.spectro_duration)
-            )
 
             df = pd.DataFrame()
             for dd in self.path.joinpath(OSMOSE_PATH.statistics).glob("summaryStats*"):
                 df = pd.concat([df, pd.read_csv(dd, header=0)])
 
-            df["mean_avg"] = df["mean"].rolling(average_over_H, min_periods=1).mean()
-            df["std_avg"] = df["std"].pow(2).rolling(average_over_H, min_periods=1).mean().apply(np.sqrt, raw=True)
+            df["mean_avg"] = df["mean"].groupby(df.index.to_period(Zscore)).transform('mean')
+            df["std_avg"] = df["std"].pow(2).groupby(df.index.to_period(Zscore)).transform('mean').apply(np.sqrt, raw=True)
 
             self.__summStats = df
             self.__zscore_mean = self.__summStats[

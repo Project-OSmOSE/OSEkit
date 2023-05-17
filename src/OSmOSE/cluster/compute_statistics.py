@@ -3,6 +3,8 @@ import sys
 import csv
 import argparse
 
+import pandas as pd
+
 import soundfile as sf
 import numpy as np
 from scipy import signal
@@ -48,6 +50,8 @@ def Write_zscore_norma_params(
     wav_list = all_files[
         batch_ind_min : batch_ind_max if batch_ind_max != -1 else len(all_files)
     ]
+    
+    timestamps = pd.read_csv(Path(input_dir).joinpath('timestamp.csv'),header=None)
 
     print(f"Computing statistics over {len(wav_list)} files.")
 
@@ -66,12 +70,15 @@ def Write_zscore_norma_params(
             btype="bandpass",
         )
         data = signal.sosfilt(bpcoef, data)
+        
+        # get timestamp of the audio file
+        current_timestamp = timestamps.loc[timestamps[0] == wav.name, 1].values[0]
 
-        list_summaryStats.append([wav, np.mean(data), np.std(data)])
+        list_summaryStats.append([wav, current_timestamp, np.mean(data), np.std(data)])
 
     with open(output_file, "w", newline="") as f:
         write = csv.writer(f)
-        write.writerow(["filename", "mean", "std"])
+        write.writerow(["filename","timestamp", "mean", "std"])
         write.writerows(list_summaryStats)
 
     print(f"{output_file} written.")
