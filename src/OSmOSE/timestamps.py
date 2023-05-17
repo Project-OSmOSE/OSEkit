@@ -73,8 +73,8 @@ def write_timestamp(
     list_audio_file = sorted([file for file in Path(audio_path).glob("*.wav")])
 
     if len(list_audio_file) == 0:
-        print(
-            f"No audio file found in the {audio_path} directory. An empty timestamp.csv will be created."
+        raise ValueError(
+            f"No audio file found in the {audio_path} directory."
         )
 
     timestamp = []
