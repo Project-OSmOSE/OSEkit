@@ -1,12 +1,12 @@
 import numpy as np
 import pandas as pd
-import os, glob
+import os, glob, sys
 import scipy.signal as sg
 from OSmOSE import jointure as j
 import soundfile as sf
 from tqdm import tqdm
 from netCDF4 import Dataset
-import func_api
+from OSmOSE import func_api
 import calendar, time, datetime
 from bisect import bisect_left
 
@@ -57,6 +57,7 @@ def nearest_shore(x,y):
 	lat_ind2 = np.rint(-9000/0.04*(_y-0.04)+20245500).astype(int)
 	lon_ind = (_x/0.04+4499.5).astype(int)
 	sub_dist2shore = np.stack([dist2shore_ds[ind1 : ind2]  for ind1, ind2 in zip(lat_ind, lat_ind2)])
+	print('I made it here')
 	shore_temp = np.array([sub_dist2shore[i, lon_ind[i], -1] for i in range(len(lon_ind))])
 	shore_distance[(~np.isnan(x)) | (~np.isnan(y))] = shore_temp
 	return shore_distance
@@ -164,7 +165,7 @@ class Variables():
         Precision is 0.04 degrees and data is from NASA.
     '''
 
-	def __init__(self, df):
+	def __init__(self, df, local = True):
 		'''
       Initializes the Variables object.
       
@@ -178,106 +179,13 @@ class Variables():
           Dataframe containing 'time' column with desired timestamps at which aux data will be computed. 
           Default is an empty dataframe.
       '''
-		self.df = df 
+		self.df = df[['time', 'depth', 'lat', 'lon']] 
 		self.latitude, self.longitude = self.df['lat'], self.df['lon']
 		self.ftime = self.df['time']
 		self.depth = self.df['depth']
+		self.local = local
 
-
-	def read_files(self, mpath, tpath):
-		'''
-        Attempts to read dataset files.
-        Timestamps and metadata are required, and GPS data is optional.
-        All time steps will be the time as found in timestamps.csv.
-        If a different time step is required, a new dataset needs to be created.
-        '''
-		try :
-			self.metadata = pd.read_csv(mpath)
-		except FileNotFoundError :
-			self.metadata = pd.DataFrame({'lat':[np.float('nan')], 'lon':[np.float('nan')]})
-			print('Metadata file not found')
-
-		try :
-			self.timestamps = pd.read_csv(tpath)
-		except FileNotFoundError :
-			print('self.timestamps file not found')
-
-	def read_gps(self, gps_path):
-		'''
-        Reads the GPS data from the specified path. 
-        If no path is provided, prompts the user for the hydrophone's depth.
-        
-        Parameters
-        ----------
-        gps_path : str
-            Path to the directory containing the GPS data. If None, the user is prompted for the hydrophone's depth.
-        '''
-        
-		self.gps_path = gps_path
-		if self.gps_path != None:
-			try :
-				self.gps = pd.read_csv(self.gps_path)
-				self.latitude, self.longitude = self.gps['lat'], self.gps['lon']
-				self.depth = self.gps['depth']
-				self.type = 'moving'
-			except FileNotFoundError :
-				print('GPS file not found')
-		else :
-			self.gps = None
-			self.depth = float(input('\nHYDROPHONE DEPTH (in meters) : '))
-			self.latitude, self.longitude = self.metadata['lat'].astype('float32'), self.metadata['lon'].astype('float32')
-			self.type = 'fixed'
-			
-	
-	def format_time(self):
-		'''
-        Converts the time to epoch time for all computations.
-        '''
-		if len(self.df) == 1:
-			self.ftime = self.timestamps['time'].astype(int) #.apply(lambda x : numerical_time(x))
-			self.df = pd.DataFrame(np.tile(self.df.to_numpy(), (len(self.ftime),1)), columns = ['time', 'lat', 'lon', 'depth'])
-			self.latitude = self.df.lat.astype(float)
-			self.longitude = self.df.lon.astype(float)
-			self.depth = self.df.depth.astype(float)
-
-	def get_fn(self, timestamp_path):
-		files = pd.read_csv(timestamp_path+'/timestamps.csv')
-		fns, fns_start = files['fn'], files['begin']
-		try :
-			fns_end = files['end']
-		except KeyError:
-			fns_end = fns_start + fns.apply(lambda x : sf.info(timestamp_path+'/raw/'+x).duration)
-		fns_ftime = np.full(len(self.ftime), 'no wav file found for that timestamp')
-		for i, iter_time in enumerate(self.ftime) :
-			fn_ind = take_closest(fns_start, iter_time)
-			if iter_time >= fns_start[fn_ind] and iter_time <= fns_end[fn_ind]:
-				fns_ftime[i] = fns[fn_ind]
-		self.df['fn'] = fns_ftime
-
-		
-		
-	# GPS IS NOW CODED FOR GPS_DEPTH AS CREATED RIGHT NOW... UPDATE NEEDED
-	def format_gps(self):
-		'''
-		Converts gps data to have latitude/longitude/depth at the time in timestamps file
-		Uses cubic spline interpolation by default if possible, or linear if not enough points are found
-		Call this function to have a latitude/longitude/depth array that has same dimension than timestamps even if hydrophone is fixed
-		'''
-		if not isinstance(type(self.gps), type(None)):
-			#time_inter = self.gps.apply(numerical_gps, axis = 1)
-			time_inter = self.gps['time']
-			interp_lat, interp_lon, interp_depth = j.interpolation_gps(time_inter, self.latitude, self.longitude, self.depth)
-			self.latitude, self.longitude, self.depth = j.apply_interp(interp_lat, self.ftime), j.apply_interp(interp_lon, self.ftime), j.apply_interp(interp_depth, self.ftime)
-			self.df['lon'], self.df['lat'], self.df['depth'] = self.longitude, self.latitude, self.depth
-		else :
-			self.latitude, self.longitude, self.depth = np.tile(self.latitude, len(self.ftime)), np.tile(self.longitude, len(self.ftime)), np.tile(self.depth, len(self.ftime))
-			self.df['lon'], self.df['lat'], self.df['depth'] = self.longitude, self.latitude, self.depth
-
-	def get_salinity_temp(self):
-		self.df['T'] = self.gps['T']
-		self.df['S'] = self.gps['S']
-		
-	def compute_nearest_shore(self):
+	def shore_distance(self):
 		'''
 		Function that computes the distance between the hydrophone and the closest shore.
 		Precision is 0.04°, data is from NASA
@@ -285,7 +193,7 @@ class Variables():
 		'''
 		global dist2shore_ds
 		print('\nLoading distance to shore data...')
-		dist2shore_ds = np.loadtxt('dist2coast.txt').astype('float32')
+		dist2shore_ds = np.loadtxt('/home/datawork-osmose/dataset/auxiliary/dist2coast.txt').astype('float32')
 		if len(np.unique(self.df.lat)) == 1:
 			shore_distance = nearest_shore(self.longitude[:1], self.latitude[:1])
 			self.shore_distance = np.tile(shore_distance, len(self.ftime))
@@ -297,12 +205,12 @@ class Variables():
 			self.shore_distance = shore_distance
 			self.df['shore_dist'] = self.shore_distance
 
-	def compute_wind_fetch(self):
+	def wind_fetch(self):
 		'''
 		Method that computes wind fetch.
 		Algorithm is optimized to use closest shore distance to reduce computation time
 		'''
-				
+		assert 'interp_u10' in self.df, "To load wind fetch please load wind direction first"				
 		print('\nComputing Wind Fetch')
 		total_wind_fetch = np.zeros(len(self.ftime))
 		dir_u, dir_v = self.df['interp_u10'].to_numpy(), self.df['interp_v10'].to_numpy()
@@ -329,9 +237,9 @@ class Variables():
 		self.wind_fetch = total_wind_fetch
 		self.df['wind_fetch'] = self.wind_fetch
 		
-	def load_bathymetry(self):
+	def bathymetry(self):
 		global bathymetry_ds
-		bathymetrie_ds = Dataset('GEBCO_2022_sub_ice_topo.nc')
+		bathymetrie_ds = Dataset('/home/datawork-osmose/dataset/auxiliary/GEBCO_2022_sub_ice_topo.nc')
 		temp_lat, temp_lon = self.latitude[~np.isnan(self.latitude)].to_numpy(), self.longitude[~np.isnan(self.longitude)].to_numpy()
 		pos_lat, pos_dist = j.nearest_point(temp_lat, bathymetrie_ds['lat'][:])
 		pos_lon, pos_dist = j.nearest_point(temp_lon, bathymetrie_ds['lon'][:])
@@ -340,23 +248,23 @@ class Variables():
 		self.df['bathy'] = bathymetrie
 
 	@classmethod
-	def from_scratch(cls, dic):
+	def from_scratch(cls, dic,*, local = True):
 		'''
 		Takes dictionary with lat, lon, depth of hydrophone and creates empty dataframe for class
 		Objective is to build time with timestamps
 		'''
-		return cls(pd.DataFrame({**{'time': None}, **dic}, index = [0]))
+		return cls(pd.DataFrame({**{'time': None}, **dic}, index = [0]), local)
 
 	@classmethod
-	def from_fn(cls, path):
-		return cls(pd.read_csv(path))
+	def from_fn(cls, path, *, local = True):
+		return cls(pd.read_csv(path), local)
 
 
 
 class Weather(Variables):
 	
-	def __init__(self, df):
-		super().__init__(df)		
+	def __init__(self, df, local = True):
+		super().__init__(df, local)		
 		
 	def load_era(self, era_path, filename, caller = 'stamps'):
 		'''
@@ -379,6 +287,9 @@ class Weather(Variables):
 		lon_off : float
 			For nearest method, maximum longitude offset in degrees above which no ERA data is joined (default is np.inf).
         '''
+		if not self.local :
+			print("Please download Era on local machine and upload it on Datarmor. \nSystem exit.")
+			sys.exit()
 		if os.path.exists(era_path+filename+'.nc'):
 			downloaded_cds =era_path+filename+'.nc'
 			fh = Dataset(downloaded_cds, mode='r')

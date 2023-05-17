@@ -15,7 +15,7 @@
 
     [Job.Presets.low]
         queue = "sequentiel"
-        walltime = "01:00:00"
+        walltime = "04:00:00"
         ncpus = 1
         mem = "1g"
         nodes = 1
