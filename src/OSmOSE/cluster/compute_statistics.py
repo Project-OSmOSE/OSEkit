@@ -74,7 +74,7 @@ def Write_zscore_norma_params(
         # get timestamp of the audio file
         current_timestamp = timestamps.loc[timestamps[0] == wav.name, 1].values[0]
 
-        list_summaryStats.append([wav, current_timestamp, np.mean(data), np.std(data)])
+        list_summaryStats.append([wav.name, current_timestamp, np.mean(data), np.std(data)])
 
     with open(output_file, "w", newline="") as f:
         write = csv.writer(f)

@@ -1087,12 +1087,19 @@ class Spectrogram(Dataset):
         if self.data_normalization == "zscore" and Zscore != "original":
 
             df = pd.DataFrame()
-            for dd in self.path.joinpath(OSMOSE_PATH.statistics).glob("summaryStats*"):
+            for dd in self.path.joinpath(OSMOSE_PATH.statistics).glob("SummaryStats*"):
                 df = pd.concat([df, pd.read_csv(dd, header=0)])
-
-            df["mean_avg"] = df["mean"].groupby(df.index.to_period(Zscore)).transform('mean')
-            df["std_avg"] = df["std"].pow(2).groupby(df.index.to_period(Zscore)).transform('mean').apply(np.sqrt, raw=True)
-
+            
+            df.set_index('timestamp', inplace=True)
+            df.index = pd.to_datetime(df.index)            
+            
+            if Zscore == "all":
+                df["mean_avg"] = df["mean"].mean()   
+                df["std_avg"] = df["std"].pow(2).apply(np.sqrt, raw=True)
+            else:            
+                df["mean_avg"] = df["mean"].groupby(df.index.to_period(Zscore)).transform('mean')
+                df["std_avg"] = df["std"].pow(2).groupby(df.index.to_period(Zscore)).transform('mean').apply(np.sqrt, raw=True)
+            
             self.__summStats = df
             self.__zscore_mean = self.__summStats[
             self.__summStats["filename"] == audio_file
