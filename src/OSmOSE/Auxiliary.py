@@ -1,3 +1,4 @@
+from Dataset import Dataset
 import numpy as np
 import pandas as pd
 import os, glob, sys
@@ -115,7 +116,7 @@ def download_era(ftime, longitude, latitude, era_path, filename) :
 	return func_api.final_creation(os.getcwd()+"/"+filename, filename, key, full_variables, years, months, days, hours, [north_boundary, west_boundary, south_boundary, east_boundary])	
 
 get_cfosat_time = lambda x : calendar.timegm(time.strptime(x, '%Y%m%dT%H%M%S'))
-
+get_datarmor_time = lambda x : calendar.timegm(time.strptime(x, '%Y-%m-%dT%H:%M:%S.000Z'))
 get_era_time = lambda x : calendar.timegm(x.timetuple()) if isinstance(x, datetime.datetime) else x
 
 
@@ -134,55 +135,27 @@ class Variables():
         Path pointing to dataframe containing time stamps at which to compute auxiliary data
     df : dataframe, optional
         Dataframe containing 'time' column with desired timestamps at which aux data will be computed
-
-    Methods
-    -------
-    read_files()
-        Attempts to read the dataset files. 
-        Timestamps and metadata are required, and GPS data is optional.
-        All time steps will be the time as found in timestamps.csv.
-        If a different time step is required, a new dataset needs to be created.
-        
-    read_gps(gps_path)
-        Reads the GPS data from the specified path. If no path is provided, prompts the user for the hydrophone's depth.
-    
-    format_time()
-        Converts the time to epoch time for all computations, such as cubic splines.
-    
-    get_fn(timestamp_path)
-        Returns the filenames for the WAV files corresponding to each timestamp.
-    
-    format_gps()
-        Converts GPS data to have latitude/longitude/depth at the time in the timestamps file.
-        Uses cubic spline interpolation by default if possible, or linear if not enough points are found.
-        Call this function to have a latitude/longitude/depth array that has the same dimensions as timestamps even if the hydrophone is fixed.
-        
-    get_salinity_temp()
-        Assigns the GPS-derived temperature and salinity values to the corresponding columns in the dataframe.
-    
-    compute_nearest_shore()
-        Computes the distance between the hydrophone and the closest shore.
-        Precision is 0.04 degrees and data is from NASA.
-    '''
-
-	def __init__(self, df, local = True):
+	'''
+	
+	def __init__(self, path, local = True):
 		'''
-      Initializes the Variables object.
-      
-      Parameters
-      ----------
-      metadata_path : str
-          Path to metadata.csv file.
-      time_path : str
-          Path to dataframe containing timestamps at which to compute auxiliary data.
-      df : dataframe, optional
-          Dataframe containing 'time' column with desired timestamps at which aux data will be computed. 
-          Default is an empty dataframe.
-      '''
-		self.df = df[['time', 'depth', 'lat', 'lon']] 
-		self.latitude, self.longitude = self.df['lat'], self.df['lon']
-		self.ftime = self.df['time']
-		self.depth = self.df['depth']
+		Initializes the Variables object.
+		Parameters
+		----------
+		metadata_path : str
+		Path to metadata.csv file.
+		time_path : str
+		Path to dataframe containing timestamps at which to compute auxiliary data.
+		df : dataframe, optional
+		Dataframe containing 'time' column with desired timestamps at which aux data will be computed. 
+		Default is an empty dataframe.
+		'''
+		self.path = path
+		if os.path.exists(os.path.join(path, 'data', 'auxiliary', 'aux_data.csv'):
+			self.df = pd.read_csv(os.path.join(path, 'data', 'auxiliary', 'aux_data.csv')[['time', 'depth', 'lat', 'lon']] 
+			self.latitude, self.longitude = self.df['lat'], self.df['lon']
+			self.timestamps = self.df['time']
+			self.depth = self.df['depth']
 		self.local = local
 
 	def shore_distance(self):
@@ -247,17 +220,24 @@ class Variables():
 		bathymetrie[~np.isnan(self.latitude)] = [bathymetrie_ds['elevation'][i,j] for i,j in zip(pos_lat, pos_lon)] 
 		self.df['bathy'] = bathymetrie
 
-	@classmethod
-	def from_scratch(cls, dic,*, local = True):
+	def from_scratch(self):
 		'''
 		Takes dictionary with lat, lon, depth of hydrophone and creates empty dataframe for class
 		Objective is to build time with timestamps
 		'''
-		return cls(pd.DataFrame({**{'time': None}, **dic}, index = [0]), local)
+		try : 
+			metadata = pd.read_csv(Dataset._get_original_after_build().joinpath("metadata.csv"))
+		except FileNotFoundError:
+			print('Could not find built dataset.')
+			sys.exit()
+		start_date, end_date = get_datarmor_time(metadata.start_date), get_datarmor_time(metadata.end_date)
+		self.timestamps = np.arange(start_date, end_date, 600)
+		self.latitude, self.longitude = [metadata.lat]*len(self.timestamps), [metadata.lon]*len(self.timestamps)
+		self.df = pd.DataFrame({'time': self.timestamsp, 'lat':self.latitude, 'lon':self.longitude, 'depth':float('nan')}, index = [0])
 
 	@classmethod
 	def from_fn(cls, path, *, local = True):
-		return cls(pd.read_csv(path), local)
+		return cls(path, local)
 
 
 
@@ -266,7 +246,7 @@ class Weather(Variables):
 	def __init__(self, df, local = True):
 		super().__init__(df, local)		
 		
-	def load_era(self, era_path, filename, caller = 'stamps'):
+	def load_era(self, method = 'other'):
 		'''
 		Method that uploads ERA5 data into a dataframe.
 		Temporal and spatial interpolation or nearest point method is used to compute the single level at the desired longitude/latitude/time
@@ -287,10 +267,11 @@ class Weather(Variables):
 		lon_off : float
 			For nearest method, maximum longitude offset in degrees above which no ERA data is joined (default is np.inf).
         '''
+		print(self.local)
 		if not self.local :
-			print("Please download Era on local machine and upload it on Datarmor. \nSystem exit.")
+			print("Please download ERA on local machine and upload it on Datarmor. \nSystem exit.")
 			sys.exit()
-		if os.path.exists(era_path+filename+'.nc'):
+		if os.path.exists(os.path.join(self.)):
 			downloaded_cds =era_path+filename+'.nc'
 			fh = Dataset(downloaded_cds, mode='r')
 			self.variables = list(fh.variables.keys())[3:]
@@ -299,14 +280,17 @@ class Weather(Variables):
 			self.variables = download_era(self.ftime.to_numpy(), self.longitude, self.latitude, era_path, filename)
 		self.era_path = era_path
 		self.filename = filename
-		if caller == 'stamps':
-			self.stamps = np.load(era_path+'stamps_'+filename+'.npy', allow_pickle = True)
-		if caller == 'stampz':
+		if method == 'cube':
 			self.stamps = np.load(era_path+'stamps.npz', allow_pickle = True)
-		
+		else :
+			temp_stamps = np.load(era_path + 'stamps.npz', allow_pickle=True)
+			dates, lat, lon = temp_stamps['timestamps'], temp_stamps['latitude'], temp_stamps['longitude']
+			stamps = np.array([[date, lat_val, lon_val] for date in dates for lat_val in lat for lon_val in lon])
+			self.stamps = stamps.reshape(len(dates), len(lat), len(lon), 3)
+
 	def nearest_era(self, era_path, filename, *, time_off = 600, lat_off = 0.5, lon_off = 0.5, variables = ['u10','v10']):
 		
-		self.load_era(era_path, filename, caller = 'stamps')
+		self.load_era(era_path, filename)
 		data = self.df[['time', 'lat', 'lon']].dropna().to_numpy()
 		self.stamps[:,:,:,0] = np.array(list(map(get_era_time, self.stamps[:,:,:,0].ravel()))).reshape(self.stamps[:,:,:,0].shape)
 		pos_ind, pos_dist = j.nearest_point(data, self.stamps.reshape(-1, 3))
@@ -328,7 +312,7 @@ class Weather(Variables):
 	
 	def interpolation_era(self, era_path, filename):
 		
-		self.load_era(era_path, filename, caller = 'stamps')
+		self.load_era(era_path, filename)
 		temp_lat = self.latitude[(~np.isnan(self.longitude)) | (~np.isnan(self.latitude))]
 		temp_lon = self.longitude[(~np.isnan(self.longitude)) | (~np.isnan(self.latitude))]
 		temp_ftime = self.ftime[(~np.isnan(self.longitude)) | (~np.isnan(self.latitude))]
@@ -347,7 +331,7 @@ class Weather(Variables):
 
 	def cube_era(self,era_path, filename, *, time_off = 600, lat_off = 0.5, lon_off = 0.5, variables = ['u10', 'v10']):
 
-		self.load_era(era_path, filename, caller = 'stampz')
+		self.load_era(era_path, filename, method = 'cube')
 		temp_df = self.df[['time', 'lat', 'lon']].dropna()
 		if variables == None:
 			variables = self.variables
@@ -415,104 +399,12 @@ class Weather(Variables):
 			variable = f'cylinder_{time_off}_{r}_{variable}'
 			self.df[variable] = temp_variable
 		self.df[f'cylinder_{time_off}_{r}_era'] = np.sqrt(self.df[f'cylinder_{time_off}_{r}_u10']**2+self.df[f'cylinder_{time_off}_{r}_v10']**2)
-		
-		
-	def load_cfosat(self, cfosat_path):
-		'''
-		Method that uploads ERA5 data into a dataframe.
-		Nearest point method is used to compute the single level at the desired longitude/latitude/time
-        Parameters
-        ----------
-		cfosat_path : str
-           Path to the directory containing the CFOSAT data.
-		time_off : float
-			For nearest method, maximum time offset in seconds above which no ERA data is joined (default is 1800).
-		lat_off : float
-			For nearest method, maximum latitude offset in degrees above which no ERA data is joined (default is 0.2).
-		lon_off : float
-			For nearest method, maximum longitude offset in degrees above which no ERA data is joined (default is 0.2).
-        '''
-		path = os.path.join(cfosat_path, 'data', '*')
-		self.fn_cfosat = glob.glob(path)
-		self.fn_cfosat.sort()
-		time_cfosat = list(map(lambda x : get_cfosat_time(x.split('_')[-2]), self.fn_cfosat))
-		self.fn_ind = np.array([take_closest(time_cfosat, t) for t in self.df[['time', 'lat', 'lon']].dropna().time])
-
-	def nearest_norm_cfosat(self, *, time_off = 600, lat_off = 0.5, lon_off = 0.5):
-		
-		final_wind = np.full(len(self.df), np.nan)
-		temp_df = self.df[['time', 'lat', 'lon']].dropna()
-		wind_speed = np.full(len(temp_df), np.nan)
-		pbar = tqdm(total = len(np.unique(self.fn_ind)), position = 0, leave = True)
-		pbar.set_description("Loading nearest CFOSAT data respecting given boudaries")
-		for ind in np.unique(self.fn_ind) :
-			ds = Dataset(self.fn_cfosat[ind])
-			ds_time = np.array(list(map(get_nc_time, ds['row_time'][:].data)))
-			ds_lat, ds_lon = ds['wvc_lat'][:].data.flatten(), ds['wvc_lon'][:].data.flatten()
-			ds_time = np.tile(ds_time.reshape(-1,1), ds['wvc_lat'].shape[1]).flatten()
-			stamps = np.stack((ds_time, ds_lat, ds_lon), axis = 1)
-			data = temp_df.to_numpy()[self.fn_ind == ind]
-			ds_time_normed, data_time_normed = norm_uneven(ds_time, data[:,0])
-			ds_lat_normed, data_lat_normed = norm_uneven(ds_lat, data[:,1])
-			ds_lon_normed, data_lon_normed = norm_uneven(ds_lon, data[:,2])
-			stamps_normed = np.stack((ds_time_normed, ds_lat_normed, ds_lon_normed), axis = 1)
-			data_normed = np.stack((data_time_normed, data_lat_normed, data_lon_normed), axis = 1)
-			pos_ind, pos_dist = j.nearest_point(data_normed, stamps_normed)
-			temp_wind = ds['wind_speed_selection'][:].data.flatten()[pos_ind]
-			#mask = abs((data - stamps[pos_ind]) > [time_off, lat_off, lon_off]).sum(axis = 1) != 0
-			mask = np.any(abs(data - stamps[pos_ind]) > [time_off, lat_off, lon_off], axis = 1)
-			temp_wind[mask] = np.nan
-			wind_speed[self.fn_ind == ind] = temp_wind
-			pbar.update(1)
-		final_wind[self.df[['time','lat','lon']].isna().sum(axis = 1) == 0] = wind_speed
-		final_wind[final_wind < 0] = np.nan
-		self.df['np_norm_cfosat'] = final_wind
-		
-	def cube_cfosat(self, * ,time_off = 600, lat_off = 0.5, lon_off = 0.5):
-		
-		final_wind = np.full(len(self.df), np.nan)
-		temp_df = self.df[['time', 'lat', 'lon']].dropna()
-		wind_speed = np.full(len(temp_df), np.nan)
-		unique_ind = np.unique(self.fn_ind)
-		pbar = tqdm(total = len(temp_df), position = 0, leave = True)
-		pbar.set_description("Loading CFOSAT data within given boudaries")
-		for ind, rows in zip(unique_ind, [(self.fn_ind == elem).nonzero() for elem in unique_ind]):			
-			ds = Dataset(self.fn_cfosat[ind])
-			ds_time = np.array(list(map(get_nc_time, ds['row_time'][:].data)))
-			ds_lat, ds_lon = ds['wvc_lat'][:].data, ds['wvc_lon'][:].data
-			ds_wind = ds['wind_speed_selection'][:].data
-			for i in rows[0]:
-				ds_wind[abs(ds_time - temp_df.iloc[i].time) > time_off] = np.nan
-				ds_wind[abs(ds_lat - temp_df.iloc[i].lat) > lat_off] = np.nan
-				ds_wind[abs(ds_lon - temp_df.iloc[i].lon) > lon_off] = np.nan
-				wind_speed[i] = np.nanmean(ds_wind[ds_wind >= 0])
-				pbar.update(1)
-		final_wind[self.df[['time','lat','lon']].isna().sum(axis = 1) == 0] = wind_speed
-		final_wind[final_wind < 0] = np.nan
-		self.df[f'cube_{time_off}_{lat_off}_{lon_off}_cfosat'] = final_wind			
-			
-	def load_synop(self, synop_path):
-		'''
-		Method that uploads meteofrance in situ measurements.
-		Temporal interpolation (cubic spline) is used to compute the single level at the desired time
-		Rain rate used is the rain rate every hour, can be changed to every three hours
-        Parameters
-        ----------
-		synop_path : str
-           Path to the directory containing the SYNOP data.
-		'''
-		try :
-			synop = pd.read_csv(synop_path)
-		except FileNotFoundError :
-			print('MeteoFrance data not found')
-		wind = synop['ff']
-		rain = synop['rr1']
-		synop_time = synop['date'].apply(lambda x : numerical_time(x))
-		temp_wind_time, temp_wind = synop_time.drop(wind[wind=='mq'].index), wind.drop(wind[wind=='mq'].index)
-		temp_rain_time, temp_rain = synop_time.drop(rain[rain=='mq'].index), rain.drop(rain[rain=='mq'].index)
-		wind_fit = j.time_interpolation(temp_wind_time, temp_wind)
-		rain_fit = j.time_interpolation(temp_rain_time, temp_rain)
-		self.synop_wind = wind_fit(self.ftime)
-		self.synop_rain = rain_fit(self.ftime)
-		self.df['synop_wind'], self.df['synop_rain'] = self.synop_wind, self.synop_rain
-
+	
+def check_era(path, dataset):
+	if os.path.isdir(os.path.join(path, dataset, 'data', 'auxiliary', 'weather', 'era')):
+		print("Era is already downloaded, you're free to continue")
+		return None
+	else:
+		os.makedirs(os.path.join(path, dataset, 'data', 'auxiliary', 'weather', 'era'))
+		print(f"Please upload ERA data in {os.path.join(path, 'weather', 'era')} \nIf you have not downloaded ERA data yet see https://github.com/Project-OSmOSE/osmose-datarmor/tree/package/local_notebooks")
+		return None

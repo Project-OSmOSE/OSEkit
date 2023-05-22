@@ -811,7 +811,7 @@ class Spectrogram(Dataset):
                 # The timestamp.csv is recreated by the reshaping step. We only need to copy it if we don't reshape.
                 shutil.copy(self.path_input_audio_file.joinpath("timestamp.csv"), self.audio_path.joinpath("timestamp.csv"))
 
-                #! ZSCORE NORMALIZATION
+        #! ZSCORE NORMALIZATION
         norma_job_id_list = []
         if (
             #os.listdir(self.path.joinpath(OSMOSE_PATH.statistics))
@@ -1037,6 +1037,10 @@ class Spectrogram(Dataset):
         """
         set_umask()
         try:
+            print(clean_adjust_folder)
+            print(self.path_output_spectrogram.parent.parent.joinpath(
+                    "adjustment_spectros"
+                ).exists())
             if clean_adjust_folder and (self.path_output_spectrogram.parent.parent.joinpath(
                     "adjustment_spectros"
                 ).exists()
@@ -1046,7 +1050,9 @@ class Spectrogram(Dataset):
                         "adjustment_spectros"
                     ), ignore_errors=True
                 )
-        except: 
+                print("adjustment_spectros folder deleted.")
+        except Exception as e:
+            print(f"Cannot remove adjustment_spectros folder. Description of the error : {str(e.value)}")
             pass
 
         self.__build_path(adjust)

@@ -250,12 +250,15 @@ class Job_builder:
             The path to the created job file.
         """
         set_umask()
-        if preset and preset.lower() not in self.__config.Presets._fields:
-            raise ValueError(
-                f"Unrecognized preset {preset}. Valid presets are: {', '.join(self.__config.Presets._fields)}"
-            )
+        if "Presets" in self.__config._fields:
+            if preset and preset.lower() not in self.__config.Presets._fields:
+                raise ValueError(
+                    f"Unrecognized preset {preset}. Valid presets are: {', '.join(self.__config.Presets._fields)}"
+                )
 
-        job_preset = getattr(self.__config.Presets, preset)
+            job_preset = getattr(self.__config.Presets, preset)
+        else:
+            preset = None
 
         pwd = Path(__file__).parent
 
@@ -531,7 +534,7 @@ class Job_builder:
         if not job_file_name:
             job_id = 0
             if job_name:
-                job_id = get_dict_index_in_list(self.finished_jobs, "job_name", job_name)
+                job_id = get_dict_index_in_list(self.finished_jobs, "job_name", job_name.rstrip())
             elif len(self.finished_jobs) == 0:
                 print(
                     f"There are no finished jobs in this context. Wait until the {len(self.ongoing_jobs)} ongoing jobs are done before reading the output. Otherwise, you can specify which file you wish to read."

@@ -170,7 +170,7 @@ def reshape(
     input_timestamp = pd.read_csv(
         timestamp_path if timestamp_path and timestamp_path.exists() else input_dir_path.joinpath("timestamp.csv"),
         header=None,
-        names=["filename", "timestamp", "timezone"],
+        names=["filename", "timestamp",]# "timezone"],
     )
 
     # When automatically reshaping, will populate the files list
@@ -202,6 +202,9 @@ def reshape(
     while i < len(files):
         audio_data, sample_rate = sf.read(input_dir_path.joinpath(files[i]))
         file_duration = len(audio_data)//sample_rate
+
+        if not merge_files and file_duration < chunk_size:
+            raise ValueError("When not merging files, the file duration must be smaller than the target duration.")
         
         if overwrite and not implicit_output and output_dir_path == input_dir_path and output_dir_path == input_dir_path and i<len(files)-1:
             print(f"Deleting {files[i]}")
@@ -327,13 +330,10 @@ def reshape(
                 previous_audio_data = np.empty(0)
             else:
                 # Check if the timestamp_list can safely be merged
-                if not (
-                    file_duration - max_delta_interval
-                    < substract_timestamps(input_timestamp, files, i).seconds
-                    < file_duration + max_delta_interval
-                ):
+                delta = substract_timestamps(input_timestamp, files, i).seconds - file_duration
+                if ( delta > max_delta_interval):
                     print(
-                        f"Warning: You are trying to merge two audio files that are not chronologically consecutive.\n{files[i]} ends at {to_timestamp(input_timestamp[input_timestamp['filename'] == files[i]]['timestamp'].values[0]) + timedelta(seconds=file_duration)} and {files[i+1]} starts at {to_timestamp(input_timestamp[input_timestamp['filename'] == files[i+1]]['timestamp'].values[0])}."
+                        f"""Warning: You are trying to merge two audio files that are not chronologically consecutive.\n{files[i]} ends at {to_timestamp(input_timestamp[input_timestamp['filename'] == files[i]]['timestamp'].values[0]) + timedelta(seconds=file_duration)} and {files[i+1]} starts at {to_timestamp(input_timestamp[input_timestamp['filename'] == files[i+1]]['timestamp'].values[0])}.\nThere is {delta} seconds of difference between the two files, which is over the maximum tolerance of {max_delta_interval} seconds."""
                     )
                     if (
                         not proceed and sys.__stdin__.isatty()
@@ -344,12 +344,17 @@ def reshape(
                         if "yes" in res.lower() or res == "":
                             proceed = True
                         else:
-                            sys.exit()
-                    elif not proceed and not sys.__stdin__.isatty():
-                        print(
+                            # This is meant to close the program with an error while still be user-friendly and test compliant.
+                            # Thus we disable the error trace just before raising it to avoid a long trace when the error is clearly identified.
+                            sys.tracebacklimit = 0 
+                            raise ValueError(
                             "Error: Cannot merge non-continuous audio files if force_reshape is false."
                         )
-                        sys.exit(1)
+                    elif not proceed and not sys.__stdin__.isatty():
+                        sys.tracebacklimit = 0 
+                        raise ValueError(
+                            "Error: Cannot merge non-continuous audio files if force_reshape is false."
+                        )
 
                 while len(audio_data) < chunk_size * sample_rate and i + 1 < len(files):
                     nextdata, next_sample_rate = sf.read(
@@ -466,7 +471,7 @@ def reshape(
             timestamp_list += list(tmp_timestamp[1].values)
 
         input_timestamp = pd.DataFrame(
-            {"filename": result, "timestamp": timestamp_list, "timezone": "UTC"}
+            {"filename": result, "timestamp": timestamp_list,}# "timezone": "UTC"}
         )
         input_timestamp.sort_values(by=["timestamp"], inplace=True)
         input_timestamp.drop_duplicates().to_csv(
@@ -564,7 +569,7 @@ if __name__ == "__main__":
         "--no-merge",
         action="store_false",
         help="Don't try to merge the reshaped files."
-    )
+    ) # When absent = we merge file; when present = we don't merge -> merge_file is False
 
     args = parser.parse_args()
 
