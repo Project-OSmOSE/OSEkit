@@ -1046,7 +1046,9 @@ class Spectrogram(Dataset):
                         "adjustment_spectros"
                     ), ignore_errors=True
                 )
-        except: 
+                print("adjustment_spectros folder deleted.")
+        except Exception as e:
+            print(f"Cannot remove adjustment_spectros folder. Description of the error : {str(e.value)}")
             pass
 
         self.__build_path(adjust)
