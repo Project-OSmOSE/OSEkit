@@ -9,6 +9,9 @@ from pathlib import Path
 import multiprocessing as mp
 from filelock import FileLock
 
+import re
+from datetime import timedelta
+
 import pandas as pd
 import numpy as np
 from scipy import signal
@@ -21,7 +24,7 @@ from OSmOSE.cluster import (
     compute_stats,
 )
 from OSmOSE.Dataset import Dataset
-from OSmOSE.utils import safe_read, make_path, set_umask
+from OSmOSE.utils import safe_read, make_path, set_umask, get_timestamp_of_audio_file
 from OSmOSE.config import *
 
 
@@ -443,6 +446,8 @@ class Spectrogram(Dataset):
             audio_foldername, self.__spectro_foldername, "matrix"
         )
 
+        self.path_output_LTAS_intermediate_features = self.path.joinpath(OSMOSE_PATH.LTAS,"intermediate_features")
+        
         # Create paths
         if not dry:
             make_path(self.audio_path, mode=DPDEFAULT)
@@ -450,6 +455,7 @@ class Spectrogram(Dataset):
             if not adjust:
                 make_path(self.path_output_spectrogram_matrix, mode=DPDEFAULT)
                 make_path(self.path.joinpath(OSMOSE_PATH.statistics), mode=DPDEFAULT)
+                make_path(self.path_output_LTAS_intermediate_features, mode=DPDEFAULT)
 
     def check_spectro_size(self):
         """Verify if the parameters will generate a spectrogram that can fit one screen properly"""
@@ -1018,7 +1024,7 @@ class Spectrogram(Dataset):
     # region On cluster
 
     def process_file(
-        self, audio_file: Union[str, Path], *, adjust: bool = False, save_matrix: bool = False, overwrite: bool = False, clean_adjust_folder: bool = False
+        self, audio_file: Union[str, Path], *, adjust: bool = False, save_matrix: bool = False,save_for_LTAS:bool=False, overwrite: bool = False, clean_adjust_folder: bool = False
     ) -> None:
         """Read an audio file and generate the associated spectrogram.
 
@@ -1051,6 +1057,8 @@ class Spectrogram(Dataset):
 
         self.__build_path(adjust)
         self.save_matrix = save_matrix
+        self.save_for_LTAS = save_for_LTAS
+
         self.adjust = adjust
         Zscore = self.zscore_duration if not adjust else "original"
 
@@ -1211,6 +1219,8 @@ class Spectrogram(Dataset):
                     ),
                     adjust=adjust
                 )
+         
+
 
     def gen_spectro(
         self, *, data: np.ndarray, sample_rate: int, output_file: Path
@@ -1292,6 +1302,31 @@ class Spectrogram(Dataset):
                 )
 
                 os.chmod(output_matrix, mode=FPDEFAULT)
+
+
+        if self.save_for_LTAS:
+            
+            o = output_file.stem
+            audio_file_name  = o[:[o.start() for o in re.finditer(r"_",o)][-2]]
+            
+            current_timestamp = pd.to_datetime(get_timestamp_of_audio_file( self.audio_path.joinpath('timestamp.csv') , audio_file_name+".wav"))
+            
+            output_matrix = self.path_output_LTAS_intermediate_features.joinpath(
+                output_file.name
+            ).with_suffix(".npz")
+
+            # TODO: add an option to force regeneration (in case of corrupted file)
+            if not output_matrix.exists():
+                np.savez(
+                    output_matrix,
+                    Sxx=Sxx.mean(axis=1),
+                    Freq=Freq,
+                    Time=current_timestamp+timedelta(seconds=int(Time[0])),
+                )
+
+                os.chmod(output_matrix, mode=FPDEFAULT)  
+                
+
 
         return Sxx, Freq
 
@@ -1378,14 +1413,88 @@ class Spectrogram(Dataset):
 
     # endregion
 
-    def process_all_files(self, *, save_matrix: bool = False):
+    def process_all_files(self, *, save_matrix: bool = False, save_for_LTAS:bool = False):
         """Process all the files in the dataset and generates the spectrograms. It uses the python multiprocessing library
         to parallelise the computation, so it is less efficient to use this method rather than the job scheduler if run on a cluster.
         """
 
-        kwargs = {"save_matrix": save_matrix}
+        kwargs = {"save_matrix": save_matrix,"save_for_LTAS":save_for_LTAS}
 
         map_process_file = partial(self.process_file, **kwargs)
 
-        with mp.Pool(processes=min(self.batch_number, mp.cpu_count())) as pool:
-            pool.map(map_process_file, self.list_wav_to_process)
+        # with mp.Pool(processes=min(self.batch_number, mp.cpu_count())) as pool:
+        #     pool.map(map_process_file, self.list_wav_to_process)
+
+        for af in self.list_wav_to_process:
+            self.process_file(af,**kwargs)
+            
+
+    def build_LTAS(self,time_scale:str='D'):
+        
+        list_npz_files = list(self.path_output_LTAS_intermediate_features.glob('*npz'))
+        if len(list_npz_files) > 0:
+            
+            LTAS = np.empty((1, int(self.nfft/2) + 1))
+            time = []
+            for file_npz in list_npz_files:
+                current_matrix=np.load(file_npz,allow_pickle=True)
+                
+                LTAS = np.vstack((LTAS, current_matrix['Sxx'][np.newaxis,:]))
+                time.append(str(current_matrix['Time']))
+            
+            LTAS=LTAS[1:,:]
+            
+            df=pd.DataFrame(LTAS,dtype=float)
+            df['time'] = time
+            df.set_index('time', inplace=True, drop= True)
+            df.index = pd.to_datetime(df.index)  
+            groups_LTAS = df.groupby(df.index.to_period(time_scale)).agg(list)
+                        
+            time_periods = groups_LTAS.index.get_level_values(0)
+                     
+            for ind_group_LTAS in range(groups_LTAS.values.shape[0]):
+                            
+                log_spectro = 10*np.log10(np.stack(groups_LTAS.values[ind_group_LTAS,:]))            
+                    
+                # Plotting spectrogram
+                my_dpi = 100
+                fact_x = 1.3
+                fact_y = 1.3
+                fig, ax = plt.subplots(
+                    nrows=1,
+                    ncols=1,
+                    figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi),
+                    dpi=my_dpi,
+                )
+                                        
+                plt.pcolormesh( np.arange(0,log_spectro.shape[1]) , current_matrix['Freq'] , log_spectro, cmap=plt.cm.get_cmap(self.colormap) )
+                
+                plt.clim(vmin=-80, vmax=30)                
+
+
+
+                # set timestamps
+                
+                nber_xticks = min(10,log_spectro.shape[1])                   
+
+                if ind_group_LTAS<groups_LTAS.values.shape[0]-1:
+                    ending_timestamp = time_periods[ind_group_LTAS+1].to_timestamp()
+                else:
+                    print(time_periods[ind_group_LTAS].to_timestamp())
+                    print(pd.date_range(time_periods[ind_group_LTAS].to_timestamp(),periods=2,freq=time_scale))
+                    ending_timestamp = pd.date_range(time_periods[ind_group_LTAS].to_timestamp(),periods=2,freq=time_scale)[0]
+                    print(ending_timestamp)
+
+                nber_xticks = 10
+                label_smoother = {'Y':'M','M':'D','D':'T'}
+                date = pd.date_range(time_periods[ind_group_LTAS].to_timestamp(),ending_timestamp,periods=log_spectro.shape[1]).to_period(label_smoother[time_scale])
+                int_sep = int(len(date) / nber_xticks)
+                print(type(date))
+                plt.xticks(np.arange(0, len(date), int_sep), date[::int_sep])
+                ax.tick_params(axis='x', rotation=20)                
+
+                ax.set_ylabel("Frequency (Hz)")
+                
+                # Saving spectrogram plot to file
+                plt.savefig(self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_{ind_group_LTAS}.png'), bbox_inches="tight", pad_inches=0)
+                plt.close()
