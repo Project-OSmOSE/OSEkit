@@ -38,6 +38,7 @@ class Dataset:
         gps_coordinates: Union[str, list, Tuple] = None,
         owner_group: str = None,
         original_folder: str = None,
+        local: bool = True,
     ) -> None:
         """Instanciate the dataset with at least its path.
 
@@ -67,6 +68,7 @@ class Dataset:
         self.__name = self.__path.stem
         self.owner_group = owner_group
         self.__gps_coordinates = []
+        self.__local = local
         if gps_coordinates is not None:
             self.gps_coordinates = gps_coordinates
 
@@ -261,21 +263,22 @@ class Dataset:
 
             DONE ! your dataset is on OSmOSE platform !
         """
-        set_umask()
-        if owner_group is None:
-            owner_group = self.owner_group
-
-        if not skip_perms:
-                print("\nSetting OSmOSE permission to the dataset...")
-                if owner_group:
-                    gid = grp.getgrnam(owner_group).gr_gid
-                    try:
-                        os.chown(self.path, -1, gid)
-                    except PermissionError:
-                        print(f"You have not the permission to change the owner of the {self.path} folder. This might be because you are trying to rebuild an existing dataset. The group owner has not been changed.")
-
-                # Add the setgid bid to the folder's permissions, in order for subsequent created files to be created by the same user group.
-                os.chmod(self.path, DPDEFAULT)
+        if not self.__local:
+            set_umask()
+            if owner_group is None:
+                owner_group = self.owner_group
+    
+            if not skip_perms:
+                    print("\nSetting OSmOSE permission to the dataset...")
+                    if owner_group:
+                        gid = grp.getgrnam(owner_group).gr_gid
+                        try:
+                            os.chown(self.path, -1, gid)
+                        except PermissionError:
+                            print(f"You have not the permission to change the owner of the {self.path} folder. This might be because you are trying to rebuild an existing dataset. The group owner has not been changed.")
+    
+                    # Add the setgid bid to the folder's permissions, in order for subsequent created files to be created by the same user group.
+                    os.chmod(self.path, DPDEFAULT)
 
         path_raw_audio = original_folder if original_folder is not None else self._find_or_create_original_folder()
         path_timestamp_formatted = path_raw_audio.joinpath("timestamp.csv")
@@ -559,7 +562,7 @@ class Dataset:
         for path, _, files in os.walk(self.path):
             for f in files:
                 if not Path(f).parent == "original":
-                    if f.endswith(".wav"):
+                    if f.endswith((".wav",".WAV","*.mp3",".*flac")):
                         audio_files.append(Path(path,f))
                     elif "timestamp.csv" in f:
                         timestamp_files.append(Path(path,f))
