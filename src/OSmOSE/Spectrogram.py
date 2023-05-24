@@ -37,7 +37,7 @@ class Spectrogram(Dataset):
         owner_group: str = None,
         analysis_params: dict = None,
         batch_number: int = 10,
-        local: bool = False,
+        local: bool = True,
     ) -> None:
         """Instanciates a spectrogram object.
 
@@ -665,7 +665,7 @@ class Spectrogram(Dataset):
             self.pending_jobs = resample_job_id_list
             for process in processes:
                 process.join()
-
+                
         #! RESHAPING
         # Reshape audio files to fit the maximum spectrogram size, whether it is greater or smaller.
         reshape_job_id_list = []
@@ -838,7 +838,7 @@ class Spectrogram(Dataset):
                                 OSMOSE_PATH.statistics,
                                 "SummaryStats_" + str(i_min) + ".csv",
                             ),
-                            "target_sr": self.dataset_sr,
+                            "hp_filter_min_freq" : self.hp_filter_min_freq,
                             "batch_ind_min": i_min,
                             "batch_ind_max": i_max,
                         },
@@ -856,13 +856,14 @@ class Spectrogram(Dataset):
                         logdir=self.path.joinpath("log")
                     )
 
-                    job_id = self.jb.submit_job(dependency=reshape_job_id_list if reshape_job_id_list else resample_job_id_list)
+                    job_id = self.jb.submit_job(dependency=resample_job_id_list)
                     norma_job_id_list += job_id
             
             self.pending_jobs = norma_job_id_list
 
             for process in processes:
                 process.join()
+
 
         metadata["dataset_fileDuration"] = self.spectro_duration
         new_meta_path = self.audio_path.joinpath("metadata.csv")
@@ -1087,17 +1088,21 @@ class Spectrogram(Dataset):
         print(f"Generating spectrograms for {audio_file}...")
         #! Determination of zscore normalization parameters
         if self.data_normalization == "zscore" and Zscore != "original":
-            average_over_H = int(
-                round(pd.to_timedelta(Zscore).total_seconds() / self.spectro_duration)
-            )
 
             df = pd.DataFrame()
-            for dd in self.path.joinpath(OSMOSE_PATH.statistics).glob("summaryStats*"):
+            for dd in self.path.joinpath(OSMOSE_PATH.statistics).glob("SummaryStats*"):
                 df = pd.concat([df, pd.read_csv(dd, header=0)])
-
-            df["mean_avg"] = df["mean"].rolling(average_over_H, min_periods=1).mean()
-            df["std_avg"] = df["std"].pow(2).rolling(average_over_H, min_periods=1).mean().apply(np.sqrt, raw=True)
-
+            
+            df.set_index('timestamp', inplace=True)
+            df.index = pd.to_datetime(df.index)            
+            
+            if Zscore == "all":
+                df["mean_avg"] = df["mean"].mean()   
+                df["std_avg"] = df["std"].pow(2).apply(np.sqrt, raw=True)
+            else:            
+                df["mean_avg"] = df["mean"].groupby(df.index.to_period(Zscore)).transform('mean')
+                df["std_avg"] = df["std"].pow(2).groupby(df.index.to_period(Zscore)).transform('mean').apply(np.sqrt, raw=True)
+            
             self.__summStats = df
             self.__zscore_mean = self.__summStats[
             self.__summStats["filename"] == audio_file
@@ -1162,7 +1167,7 @@ class Spectrogram(Dataset):
             end = start + tile_duration
 
             sample_data = data[int(start * sample_rate) : int(end * sample_rate)-1]
-            
+
             Sxx, Freq = self.gen_spectro(
                 data=sample_data,
                 sample_rate=sample_rate,
