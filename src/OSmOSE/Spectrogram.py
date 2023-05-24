@@ -665,60 +665,7 @@ class Spectrogram(Dataset):
             self.pending_jobs = resample_job_id_list
             for process in processes:
                 process.join()
-
-        #! ZSCORE NORMALIZATION
-        norma_job_id_list = []
-        if (
-            #os.listdir(self.path.joinpath(OSMOSE_PATH.statistics))
-            self.data_normalization == "zscore"
-            and self.zscore_duration is not None
-            and (len(os.listdir(self.path.joinpath(OSMOSE_PATH.statistics))) == 0
-            or force_init)
-        ):
-            shutil.rmtree(self.path.joinpath(OSMOSE_PATH.statistics), ignore_errors=True)
-            make_path(self.path.joinpath(OSMOSE_PATH.statistics), mode=DPDEFAULT)
-            for batch in range(self.batch_number):
-                i_min = batch * batch_size
-                i_max = (
-                    i_min + batch_size
-                    if batch < self.batch_number - 1
-                    else len(self.list_wav_to_process)
-                )  # If it is the last batch, take all files
-                if self.__local:
-                    process = mp.Process(
-                        target=compute_stats,
-                        kwargs={
-                            "input_dir": self.path_input_audio_file,
-                            "output_file": self.path.joinpath(
-                                OSMOSE_PATH.statistics,
-                                "SummaryStats_" + str(i_min) + ".csv",
-                            ),
-                            "hp_filter_min_freq" : self.hp_filter_min_freq,
-                            "batch_ind_min": i_min,
-                            "batch_ind_max": i_max,
-                        },
-                    )
-
-                    process.start()
-                    processes.append(process)
-                else:
-                    jobfile = self.jb.build_job_file(
-                        script_path=Path(inspect.getfile(compute_stats)).resolve(),
-                        script_args=f"--input-dir {self.path_input_audio_file} --hp-filter-min-freq {self.hp_filter_min_freq} \
-                                    --batch-ind-min {i_min} --batch-ind-max {i_max} --output-file {self.path.joinpath(OSMOSE_PATH.statistics, 'SummaryStats_' + str(i_min) + '.csv')}",
-                        jobname="OSmOSE_get_zscore_params",
-                        preset="low",
-                        logdir=self.path.joinpath("log")
-                    )
-
-                    job_id = self.jb.submit_job(dependency=resample_job_id_list)
-                    norma_job_id_list += job_id
-            
-            self.pending_jobs = norma_job_id_list
-
-            for process in processes:
-                process.join()
-
+                
         #! RESHAPING
         # Reshape audio files to fit the maximum spectrogram size, whether it is greater or smaller.
         reshape_job_id_list = []
@@ -830,7 +777,7 @@ class Spectrogram(Dataset):
                             logdir=self.path.joinpath("log")
                         )
 
-                        job_id = self.jb.submit_job(dependency=norma_job_id_list if norma_job_id_list else resample_job_id_list)
+                        job_id = self.jb.submit_job(dependency=resample_job_id_list)
                         reshape_job_id_list += job_id
                 self.pending_jobs = reshape_job_id_list
 
@@ -864,7 +811,61 @@ class Spectrogram(Dataset):
                 # The timestamp.csv is recreated by the reshaping step. We only need to copy it if we don't reshape.
                 shutil.copy(self.path_input_audio_file.joinpath("timestamp.csv"), self.audio_path.joinpath("timestamp.csv"))
 
-        metadata["audio_file_dataset_duration"] = self.spectro_duration
+        #! ZSCORE NORMALIZATION
+        norma_job_id_list = []
+        if (
+            #os.listdir(self.path.joinpath(OSMOSE_PATH.statistics))
+            self.data_normalization == "zscore"
+            and self.zscore_duration is not None
+            and (len(os.listdir(self.path.joinpath(OSMOSE_PATH.statistics))) == 0
+            or force_init)
+        ):
+            shutil.rmtree(self.path.joinpath(OSMOSE_PATH.statistics), ignore_errors=True)
+            make_path(self.path.joinpath(OSMOSE_PATH.statistics), mode=DPDEFAULT)
+            for batch in range(self.batch_number):
+                i_min = batch * batch_size
+                i_max = (
+                    i_min + batch_size
+                    if batch < self.batch_number - 1
+                    else len(self.list_wav_to_process)
+                )  # If it is the last batch, take all files
+                if self.__local:
+                    process = mp.Process(
+                        target=compute_stats,
+                        kwargs={
+                            "input_dir": self.path_input_audio_file,
+                            "output_file": self.path.joinpath(
+                                OSMOSE_PATH.statistics,
+                                "SummaryStats_" + str(i_min) + ".csv",
+                            ),
+                            "hp_filter_min_freq" : self.hp_filter_min_freq,
+                            "batch_ind_min": i_min,
+                            "batch_ind_max": i_max,
+                        },
+                    )
+
+                    process.start()
+                    processes.append(process)
+                else:
+                    jobfile = self.jb.build_job_file(
+                        script_path=Path(inspect.getfile(compute_stats)).resolve(),
+                        script_args=f"--input-dir {self.path_input_audio_file} --hp-filter-min-freq {self.hp_filter_min_freq} \
+                                    --batch-ind-min {i_min} --batch-ind-max {i_max} --output-file {self.path.joinpath(OSMOSE_PATH.statistics, 'SummaryStats_' + str(i_min) + '.csv')}",
+                        jobname="OSmOSE_get_zscore_params",
+                        preset="low",
+                        logdir=self.path.joinpath("log")
+                    )
+
+                    job_id = self.jb.submit_job(dependency=resample_job_id_list)
+                    norma_job_id_list += job_id
+            
+            self.pending_jobs = norma_job_id_list
+
+            for process in processes:
+                process.join()
+
+
+        metadata["dataset_fileDuration"] = self.spectro_duration
         new_meta_path = self.audio_path.joinpath("metadata.csv")
         if new_meta_path.exists():
             new_meta_path.unlink()
@@ -1155,7 +1156,7 @@ class Spectrogram(Dataset):
 
         duration = len(data) / int(sample_rate)
 
-        nber_tiles_lowest_zoom_level = 2 ** (self.zoom_level)
+        nber_tiles_lowest_zoom_level = 2 ** (self.zoom_level -1)
         tile_duration = duration / nber_tiles_lowest_zoom_level
 
         Sxx_2 = np.empty((int(self.nfft / 2) + 1, 1))
@@ -1184,7 +1185,7 @@ class Spectrogram(Dataset):
         #self.time_resolution[0] = segment_times[1] - segment_times[0]
 
         # loop over the zoom levels from the second lowest to the highest one
-        for zoom_level in range(self.zoom_level + 1)[::-1]:
+        for zoom_level in range(self.zoom_level)[::-1]: #zoom_level + 1
             nberspec = Sxx_lowest_level.shape[1] // (2**zoom_level)
 
             # loop over the tiles at each zoom level
@@ -1366,10 +1367,15 @@ class Spectrogram(Dataset):
             f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",
             "metadata.csv",
         )
-        if metadata_output.exists():
-            metadata_output.unlink()
-        shutil.copyfile(metadata_input, metadata_output)
-        print(f"Written {metadata_output}")
+
+        # Horrible. To change.
+        try:
+            if metadata_output.exists():
+                metadata_output.unlink()
+            shutil.copyfile(metadata_input, metadata_output)
+            print(f"Written {metadata_output}")
+        except:
+            pass
         # try:
         #     if not self.adjust and metadata_input.exists() and not metadata_output.exists():
         #         metadata_input.rename(metadata_output)

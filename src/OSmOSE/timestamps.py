@@ -95,7 +95,7 @@ def write_timestamp(
             print(
                 f"No audio files found in the {audio_path} directory."
             )
-            
+  
     timestamp = []
     filename_raw_audio = []
 
@@ -124,7 +124,7 @@ def write_timestamp(
         filename_raw_audio.append(filename.name)
 
     df = pd.DataFrame(
-        {"filename": filename_raw_audio, "timestamp": timestamp, "timezone": timezone}
+        {"filename": filename_raw_audio, "timestamp": timestamp}#, "timezone": timezone}
     )
     df.sort_values(by=["timestamp"], inplace=True)
     df.to_csv(
