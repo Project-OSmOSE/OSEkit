@@ -1163,7 +1163,7 @@ class Spectrogram(Dataset):
             start = tile * tile_duration
             end = start + tile_duration
 
-            sample_data = data[int(start * sample_rate) : int((end + 1) * sample_rate)]
+            sample_data = data[int(start * sample_rate) : int(end * sample_rate)-1]
 
             Sxx, Freq = self.gen_spectro(
                 data=sample_data,
