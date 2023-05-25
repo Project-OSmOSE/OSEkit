@@ -1432,7 +1432,10 @@ class Spectrogram(Dataset):
     def build_LTAS(self,time_scale:str='D'):
         
         list_npz_files = list(self.path_output_LTAS_intermediate_features.glob('*npz'))
-        if len(list_npz_files) > 0:
+        if len(list_npz_files) == 0:            
+            print('No intermediary welch spectra to aggregate, run a complete generation of spectrograms first!')
+            
+        else:
             
             LTAS = np.empty((1, int(self.nfft/2) + 1))
             time = []
@@ -1467,10 +1470,9 @@ class Spectrogram(Dataset):
                     dpi=my_dpi,
                 )
                                         
-                plt.pcolormesh( np.arange(0,log_spectro.shape[1]) , current_matrix['Freq'] , log_spectro, cmap=plt.cm.get_cmap(self.colormap) )
-                
+                im = ax.pcolormesh( np.arange(0,log_spectro.shape[1]) , current_matrix['Freq'] , log_spectro, cmap=plt.cm.get_cmap(self.colormap) )
+                cb=plt.colorbar(im,ax=ax)
                 plt.clim(vmin=-80, vmax=30)                
-
 
 
                 # set timestamps
@@ -1480,10 +1482,7 @@ class Spectrogram(Dataset):
                 if ind_group_LTAS<groups_LTAS.values.shape[0]-1:
                     ending_timestamp = time_periods[ind_group_LTAS+1].to_timestamp()
                 else:
-                    print(time_periods[ind_group_LTAS].to_timestamp())
-                    print(pd.date_range(time_periods[ind_group_LTAS].to_timestamp(),periods=2,freq=time_scale))
                     ending_timestamp = pd.date_range(time_periods[ind_group_LTAS].to_timestamp(),periods=2,freq=time_scale)[0]
-                    print(ending_timestamp)
 
                 nber_xticks = 10
                 label_smoother = {'Y':'M','M':'D','D':'T'}
