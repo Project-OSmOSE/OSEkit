@@ -1435,7 +1435,9 @@ class Spectrogram(Dataset):
         
         list_npz_files = list(self.path_output_LTAS_intermediate_features.glob('*npz'))
         if len(list_npz_files) == 0:            
-            print('No intermediary welch spectra to aggregate, run a complete generation of spectrograms first!')
+            raise FileNotFoundError(
+                "No intermediary welch spectra to aggregate, run a complete generation of spectrograms first!"
+            )                
             
         else:
             
@@ -1472,7 +1474,7 @@ class Spectrogram(Dataset):
                     else:
                         ending_timestamp = pd.date_range(time_periods[ind_group_LTAS].to_timestamp(),periods=2,freq=time_scale)[0]
                     
-                self.generate_and_save_LTAS(time_periods[ind_group_LTAS].to_timestamp(),ending_timestamp,current_matrix['Freq'],10*np.log10(LTAS.T) ,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_{time_periods[ind_group_LTAS]}.png'),time_scale)
+                    self.generate_and_save_LTAS(time_periods[ind_group_LTAS].to_timestamp(),ending_timestamp,current_matrix['Freq'],10*np.log10(LTAS.T) ,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_{time_periods[ind_group_LTAS]}.png'),time_scale)
 
                 
     def generate_and_save_LTAS(
