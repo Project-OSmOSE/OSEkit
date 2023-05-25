@@ -1429,6 +1429,8 @@ class Spectrogram(Dataset):
             self.process_file(af,**kwargs)
             
 
+
+
     def build_LTAS(self,time_scale:str='D'):
         
         list_npz_files = list(self.path_output_LTAS_intermediate_features.glob('*npz'))
@@ -1450,50 +1452,75 @@ class Spectrogram(Dataset):
             df=pd.DataFrame(LTAS,dtype=float)
             df['time'] = time
             df.set_index('time', inplace=True, drop= True)
-            df.index = pd.to_datetime(df.index)  
-            groups_LTAS = df.groupby(df.index.to_period(time_scale)).agg(list)
-                        
-            time_periods = groups_LTAS.index.get_level_values(0)
-                     
-            for ind_group_LTAS in range(groups_LTAS.values.shape[0]):
+            df.index = pd.to_datetime(df.index)
+            
+            if time_scale=="all":              
+                self.generate_and_save_LTAS(df.index[0],df.index[-1],current_matrix['Freq'],10*np.log10(LTAS.T) ,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_all.png'),'all')
+
+            else:
+            
+                groups_LTAS = df.groupby(df.index.to_period(time_scale)).agg(list)
                             
-                log_spectro = 10*np.log10(np.stack(groups_LTAS.values[ind_group_LTAS,:]))            
+                time_periods = groups_LTAS.index.get_level_values(0)
+                         
+                for ind_group_LTAS in range(groups_LTAS.values.shape[0]):
+                                
+                    log_spectro = 10*np.log10(np.stack(groups_LTAS.values[ind_group_LTAS,:]))            
+
+                    if ind_group_LTAS<groups_LTAS.values.shape[0]-1:
+                        ending_timestamp = time_periods[ind_group_LTAS+1].to_timestamp()
+                    else:
+                        ending_timestamp = pd.date_range(time_periods[ind_group_LTAS].to_timestamp(),periods=2,freq=time_scale)[0]
                     
-                # Plotting spectrogram
-                my_dpi = 100
-                fact_x = 1.3
-                fact_y = 1.3
-                fig, ax = plt.subplots(
-                    nrows=1,
-                    ncols=1,
-                    figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi),
-                    dpi=my_dpi,
-                )
-                                        
-                im = ax.pcolormesh( np.arange(0,log_spectro.shape[1]) , current_matrix['Freq'] , log_spectro, cmap=plt.cm.get_cmap(self.colormap) )
-                cb=plt.colorbar(im,ax=ax)
-                plt.clim(vmin=-80, vmax=30)                
+                self.generate_and_save_LTAS(time_periods[ind_group_LTAS].to_timestamp(),ending_timestamp,current_matrix['Freq'],10*np.log10(LTAS.T) ,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_{time_periods[ind_group_LTAS]}.png'),time_scale)
 
-
-                # set timestamps
                 
-                nber_xticks = min(10,log_spectro.shape[1])                   
+    def generate_and_save_LTAS(
+        self,
+        start_time:pd._libs.tslibs.timestamps.Timestamp,
+        end_time:pd._libs.tslibs.timestamps.Timestamp,
+        freq: np.ndarray[float],
+        log_spectro: np.ndarray[float],
+        output_file: Path,
+        time_scale: str
+    ):
+        """Write the spectrogram figures to the output file.
 
-                if ind_group_LTAS<groups_LTAS.values.shape[0]-1:
-                    ending_timestamp = time_periods[ind_group_LTAS+1].to_timestamp()
-                else:
-                    ending_timestamp = pd.date_range(time_periods[ind_group_LTAS].to_timestamp(),periods=2,freq=time_scale)[0]
+        Parameters
+        ----------
+        time : `np.NDArray[floating]`
+        freq : `np.NDArray[floating]`
+        log_spectro : `np.NDArray[signed int]`
+        output_file : `str`
+            The name of the spectrogram file."""
+        if output_file.exists(): 
+            print(f"The spectrogram {output_file.name} has already been generated, skipping...")
+            return
+        # Plotting spectrogram
+        my_dpi = 100
+        fact_x = 1.3
+        fact_y = 1.3
+        fig, ax = plt.subplots(
+            nrows=1,
+            ncols=1,
+            figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi),
+            dpi=my_dpi,
+        )
 
-                nber_xticks = 10
-                label_smoother = {'Y':'M','M':'D','D':'T'}
-                date = pd.date_range(time_periods[ind_group_LTAS].to_timestamp(),ending_timestamp,periods=log_spectro.shape[1]).to_period(label_smoother[time_scale])
-                int_sep = int(len(date) / nber_xticks)
-                print(type(date))
-                plt.xticks(np.arange(0, len(date), int_sep), date[::int_sep])
-                ax.tick_params(axis='x', rotation=20)                
+        im = ax.pcolormesh( np.arange(0,log_spectro.shape[1]) , freq , log_spectro, cmap=plt.cm.get_cmap(self.colormap) )
+        plt.colorbar(im,ax=ax)
+                            
+        ax.set_ylabel("Frequency (Hz)")
+        
+        # make timestamps proper xitck_labels
+        nber_xticks = min(10,log_spectro.shape[1])                 
+        label_smoother = {'all':'D','Y':'M','M':'D','D':'T'}
+        date = pd.date_range(start_time,end_time,periods=log_spectro.shape[1]).to_period(label_smoother[time_scale])  
+        int_sep = int(len(date) / nber_xticks)
+        plt.xticks(np.arange(0, len(date), int_sep), date[::int_sep])
+        ax.tick_params(axis='x', rotation=20)    
 
-                ax.set_ylabel("Frequency (Hz)")
-                
-                # Saving spectrogram plot to file
-                plt.savefig(self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_{ind_group_LTAS}.png'), bbox_inches="tight", pad_inches=0)
-                plt.close()
+        # Saving spectrogram plot to file
+        plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
+        plt.close()
+        
