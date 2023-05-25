@@ -446,7 +446,8 @@ class Spectrogram(Dataset):
             audio_foldername, self.__spectro_foldername, "matrix"
         )
 
-        self.path_output_LTAS_intermediate_features = self.path.joinpath(OSMOSE_PATH.LTAS,"intermediate_features")
+        self.path_output_welch = self.path.joinpath(OSMOSE_PATH.welch)
+        self.path_output_LTAS = self.path.joinpath(OSMOSE_PATH.LTAS)
         
         # Create paths
         if not dry:
@@ -455,7 +456,6 @@ class Spectrogram(Dataset):
             if not adjust:
                 make_path(self.path_output_spectrogram_matrix, mode=DPDEFAULT)
                 make_path(self.path.joinpath(OSMOSE_PATH.statistics), mode=DPDEFAULT)
-                make_path(self.path_output_LTAS_intermediate_features, mode=DPDEFAULT)
 
     def check_spectro_size(self):
         """Verify if the parameters will generate a spectrogram that can fit one screen properly"""
@@ -1166,6 +1166,12 @@ class Spectrogram(Dataset):
         nber_tiles_lowest_zoom_level = 2 ** (self.zoom_level)
         tile_duration = duration / nber_tiles_lowest_zoom_level
 
+        if self.save_for_LTAS:
+            self.output_path_welch_resolution = self.path_output_welch.joinpath(str(tile_duration))
+            if not self.output_path_welch_resolution.exists():
+                make_path(self.output_path_welch_resolution, mode=DPDEFAULT)
+                
+
         Sxx_2 = np.empty((int(self.nfft / 2) + 1, 1))
         for tile in range(0, nber_tiles_lowest_zoom_level):
             start = tile * tile_duration
@@ -1311,7 +1317,7 @@ class Spectrogram(Dataset):
             
             current_timestamp = pd.to_datetime(get_timestamp_of_audio_file( self.audio_path.joinpath('timestamp.csv') , audio_file_name+".wav"))
             
-            output_matrix = self.path_output_LTAS_intermediate_features.joinpath(
+            output_matrix = self.output_path_welch_resolution.joinpath(
                 output_file.name
             ).with_suffix(".npz")
 
@@ -1326,8 +1332,6 @@ class Spectrogram(Dataset):
 
                 os.chmod(output_matrix, mode=FPDEFAULT)  
                 
-
-
         return Sxx, Freq
 
     def generate_and_save_figures(
@@ -1430,17 +1434,19 @@ class Spectrogram(Dataset):
             
 
 
-
-    def build_LTAS(self,time_scale:str='D'):
+    def build_LTAS(self,time_resolution:str,time_scale:str='D'):
         
-        list_npz_files = list(self.path_output_LTAS_intermediate_features.glob('*npz'))
+        list_npz_files = list(self.path_output_welch.joinpath(time_resolution).glob('*npz'))
         if len(list_npz_files) == 0:            
             raise FileNotFoundError(
                 "No intermediary welch spectra to aggregate, run a complete generation of spectrograms first!"
             )                
             
         else:
-            
+
+            if not self.path_output_LTAS.exists():
+                make_path(self.path_output_LTAS, mode=DPDEFAULT)
+                
             LTAS = np.empty((1, int(self.nfft/2) + 1))
             time = []
             for file_npz in list_npz_files:
