@@ -1024,7 +1024,7 @@ class Spectrogram(Dataset):
     # region On cluster
 
     def process_file(
-        self, audio_file: Union[str, Path], *, adjust: bool = False, save_matrix: bool = False,save_for_LTAS:bool=False, overwrite: bool = False, clean_adjust_folder: bool = False
+        self, audio_file: Union[str, Path], *, adjust: bool = False, save_matrix: bool = False,save_for_LTAS:bool=True, overwrite: bool = False, clean_adjust_folder: bool = False
     ) -> None:
         """Read an audio file and generate the associated spectrogram.
 
@@ -1166,11 +1166,6 @@ class Spectrogram(Dataset):
         nber_tiles_lowest_zoom_level = 2 ** (self.zoom_level)
         tile_duration = duration / nber_tiles_lowest_zoom_level
 
-        if self.save_for_LTAS:
-            self.output_path_welch_resolution = self.path_output_welch.joinpath(str(tile_duration))
-            if not self.output_path_welch_resolution.exists():
-                make_path(self.output_path_welch_resolution, mode=DPDEFAULT)
-                
 
         Sxx_2 = np.empty((int(self.nfft / 2) + 1, 1))
         for tile in range(0, nber_tiles_lowest_zoom_level):
@@ -1194,8 +1189,6 @@ class Spectrogram(Dataset):
         segment_times = np.linspace(
             0, len(data) / sample_rate, Sxx_lowest_level.shape[1]
         )[np.newaxis, :]
-
-        #self.time_resolution[0] = segment_times[1] - segment_times[0]
 
         # loop over the zoom levels from the second lowest to the highest one
         for zoom_level in range(self.zoom_level + 1)[::-1]:
@@ -1226,6 +1219,35 @@ class Spectrogram(Dataset):
                     adjust=adjust
                 )
          
+
+        
+
+        if self.save_for_LTAS:
+
+            output_path_welch_resolution = self.path_output_welch.joinpath(str(self.spectro_duration))
+                
+            if not output_path_welch_resolution.exists():
+                make_path(output_path_welch_resolution, mode=DPDEFAULT)
+                            
+            audio_file_name = output_file.stem
+            
+            current_timestamp = pd.to_datetime(get_timestamp_of_audio_file( self.audio_path.joinpath('timestamp.csv') , audio_file_name+".wav"))
+            
+            output_matrix = output_path_welch_resolution.joinpath(
+                output_file.name
+            ).with_suffix(".npz")
+            
+            if not output_matrix.exists():
+                np.savez(
+                    output_matrix,
+                    Sxx=Sxx_int.mean(axis=1),
+                    Freq=Freq,
+                    Time=current_timestamp,#+timedelta(seconds=int(segment_times_int,
+                )
+
+                os.chmod(output_matrix, mode=FPDEFAULT)  
+                
+                
 
 
     def gen_spectro(
@@ -1308,29 +1330,6 @@ class Spectrogram(Dataset):
                 )
 
                 os.chmod(output_matrix, mode=FPDEFAULT)
-
-
-        if self.save_for_LTAS:
-            
-            o = output_file.stem
-            audio_file_name  = o[:[o.start() for o in re.finditer(r"_",o)][-2]]
-            
-            current_timestamp = pd.to_datetime(get_timestamp_of_audio_file( self.audio_path.joinpath('timestamp.csv') , audio_file_name+".wav"))
-            
-            output_matrix = self.output_path_welch_resolution.joinpath(
-                output_file.name
-            ).with_suffix(".npz")
-
-            # TODO: add an option to force regeneration (in case of corrupted file)
-            if not output_matrix.exists():
-                np.savez(
-                    output_matrix,
-                    Sxx=Sxx.mean(axis=1),
-                    Freq=Freq,
-                    Time=current_timestamp+timedelta(seconds=int(Time[0])),
-                )
-
-                os.chmod(output_matrix, mode=FPDEFAULT)  
                 
         return Sxx, Freq
 
@@ -1417,7 +1416,7 @@ class Spectrogram(Dataset):
 
     # endregion
 
-    def process_all_files(self, *, save_matrix: bool = False, save_for_LTAS:bool = False):
+    def process_all_files(self, *, save_matrix: bool = False, save_for_LTAS:bool = True):
         """Process all the files in the dataset and generates the spectrograms. It uses the python multiprocessing library
         to parallelise the computation, so it is less efficient to use this method rather than the job scheduler if run on a cluster.
         """
@@ -1436,7 +1435,7 @@ class Spectrogram(Dataset):
 
     def build_LTAS(self,time_resolution:str,time_scale:str='D'):
         
-        list_npz_files = list(self.path_output_welch.joinpath(time_resolution).glob('*npz'))
+        list_npz_files = list(self.path_output_welch.joinpath(str(self.spectro_duration)).glob('*npz'))
         if len(list_npz_files) == 0:            
             raise FileNotFoundError(
                 "No intermediary welch spectra to aggregate, run a complete generation of spectrograms first!"
