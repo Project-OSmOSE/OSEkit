@@ -9,6 +9,8 @@ from pathlib import Path
 import multiprocessing as mp
 from filelock import FileLock
 
+from tqdm import tqdm
+
 import re
 from datetime import timedelta
 
@@ -1448,11 +1450,12 @@ class Spectrogram(Dataset):
                 
             LTAS = np.empty((1, int(self.nfft/2) + 1))
             time = []
-            for file_npz in list_npz_files:
+            for file_npz in tqdm(list_npz_files):
                 current_matrix=np.load(file_npz,allow_pickle=True)
                 
                 LTAS = np.vstack((LTAS, current_matrix['Sxx'][np.newaxis,:]))
                 time.append(str(current_matrix['Time']))
+
             
             LTAS=LTAS[1:,:]
             
