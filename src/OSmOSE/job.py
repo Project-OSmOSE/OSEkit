@@ -73,8 +73,12 @@ class Job_builder:
         return self.__finished_jobs
     
     @property
+    def cancelled_jobs(self):
+        return self.__cancelled_jobs
+    
+    @property
     def all_jobs(self):
-        return self.prepared_jobs + self.ongoing_jobs + self.finished_jobs
+        return self.prepared_jobs + self.ongoing_jobs + self.finished_jobs + self.cancelled_jobs
 
     # READ-WRITE properties
     @property
@@ -458,6 +462,7 @@ class Job_builder:
 
             if jobinfo in self.prepared_jobs:
                 self.__prepared_jobs.remove(jobinfo)
+            jobinfo["id"] = jobid
             self.__ongoing_jobs.append(jobinfo)
 
         return jobid_list
@@ -503,15 +508,20 @@ class Job_builder:
         if len(self.finished_jobs) > 0:
             res += "==== FINISHED JOBS ====\n\n"
         for job_info in self.finished_jobs:
+            created_at = datetime.strptime(today + job_info["outfile"].stem[-11:-3], "%d%m%y%H-%M-%S")
+
             if not job_info["outfile"].exists():
                 res += f"{job_info['job_name']} (created at {created_at}) : Output file still writing..."
+            else:
+                delta = datetime.fromtimestamp(time.mktime(time.localtime(job_info["outfile"].stat().st_ctime))) - created_at
+                strftime = f"{'%H hours, ' if delta.seconds >= 3600 else ''}{'%M minutes and ' if delta.seconds >= 60 else ''}%S seconds"
+                elapsed_time = datetime.strftime(epoch + delta, strftime)
+                res += f"{job_info['job_name']} (created at {created_at}) : finished in {elapsed_time}.\n"
 
-            created_at = datetime.strptime(today + job_info["outfile"].stem[-11:-3], "%d%m%y%H-%M-%S")
-            delta = datetime.fromtimestamp(time.mktime(time.localtime(job_info["outfile"].stat().st_ctime))) - created_at
-            strftime = f"{'%H hours, ' if delta.seconds >= 3600 else ''}{'%M minutes and ' if delta.seconds >= 60 else ''}%S seconds"
-            elapsed_time = datetime.strftime(epoch + delta, strftime)
-            res += f"{job_info['job_name']} (created at {created_at}) : finished in {elapsed_time}.\n"
-
+        if len(self.cancelled_jobs) > 0:
+            res += "==== CANCELLED JOBS ====\n\n"
+            for jobinfo in self.cancelled_jobs:
+                res+= f"{job_info['job_name']}"
         print(res)
 
     def read_output_file(
@@ -550,8 +560,23 @@ class Job_builder:
         with open(job_file_name, "r") as f:
             print("".join(f.readlines()))
 
-def get_dict_index_in_list(list: list, key: str, value: any) -> int:
-    for i, d in enumerate(list):
+    def delete_job(self, job_identifier:str):
+        try:
+            job_id = get_dict_index_in_list(self.ongoing_jobs, "job_name", job_identifier.rstrip())
+        except ValueError:
+            job_id = get_dict_index_in_list(self.ongoing_jobs, "id", job_identifier.rstrip())
+        
+        jobinfo = self.ongoing_jobs[job_id]
+        if "Torque" in jobinfo["path"]:
+            subprocess.run(["qdel", jobinfo["id"]])
+        elif "Slurm" in jobinfo["path"]:
+            subprocess.run(["scancel", jobinfo["id"]])
+        self.__ongoing_jobs.remove(jobinfo)
+        self.__cancelled_jobs.append(jobinfo)
+        
+
+def get_dict_index_in_list(item_list: list, key: str, value: any) -> int:
+    for i, d in enumerate(item_list):
         if d[key] == value:
             return i
     
