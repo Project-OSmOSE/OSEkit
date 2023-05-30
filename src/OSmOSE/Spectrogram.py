@@ -1427,12 +1427,8 @@ class Spectrogram(Dataset):
 
         map_process_file = partial(self.process_file, **kwargs)
 
-        # with mp.Pool(processes=min(self.batch_number, mp.cpu_count())) as pool:
-        #     pool.map(map_process_file, self.list_wav_to_process)
-
-        for af in self.list_wav_to_process:
-            self.process_file(af,**kwargs)
-            
+        with mp.Pool(processes=min(self.batch_number, mp.cpu_count())) as pool:
+            pool.map(map_process_file, self.list_wav_to_process)
 
 
     def build_LTAS(self,time_resolution:str,time_scale:str='D'):
@@ -1448,24 +1444,32 @@ class Spectrogram(Dataset):
             if not self.path_output_LTAS.exists():
                 make_path(self.path_output_LTAS, mode=DPDEFAULT)
                 
-            LTAS = np.empty((1, int(self.nfft/2) + 1))
-            time = []
-            for file_npz in tqdm(list_npz_files):
-                current_matrix=np.load(file_npz,allow_pickle=True)
+            path_all_welch = self.path_output_welch.joinpath(str(self.spectro_duration),'all_welch.npz')
+            if os.path.exists(path_all_welch):                
+                data = np.load(path_all_welch,allow_pickle=True)   
+                LTAS=data['LTAS']
+                time=data['time']
+                Freq=data['Freq']
                 
-                LTAS = np.vstack((LTAS, current_matrix['Sxx'][np.newaxis,:]))
-                time.append(str(current_matrix['Time']))
-
-            
-            LTAS=LTAS[1:,:]
-            
+            else:
+                LTAS = np.empty((1, int(self.nfft/2) + 1))
+                time = []
+                for file_npz in tqdm(list_npz_files):
+                    current_matrix=np.load(file_npz,allow_pickle=True)                
+                    LTAS = np.vstack((LTAS, current_matrix['Sxx'][np.newaxis,:]))
+                    time.append(str(current_matrix['Time']))           
+                LTAS=LTAS[1:,:]     
+                Freq = current_matrix['Freq']
+                
+                np.savez(path_all_welch,LTAS=LTAS,time=time,Freq=Freq,allow_pickle=True) 
+                        
             df=pd.DataFrame(LTAS,dtype=float)
             df['time'] = time
             df.set_index('time', inplace=True, drop= True)
             df.index = pd.to_datetime(df.index)
-            
+                            
             if time_scale=="all":              
-                self.generate_and_save_LTAS(df.index[0],df.index[-1],current_matrix['Freq'],10*np.log10(LTAS.T) ,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_all.png'),'all')
+                self.generate_and_save_LTAS(df.index[0],df.index[-1],Freq,10*np.log10(LTAS.T) ,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_all.png'),'all')
 
             else:
             
@@ -1503,9 +1507,7 @@ class Spectrogram(Dataset):
         log_spectro : `np.NDArray[signed int]`
         output_file : `str`
             The name of the spectrogram file."""
-        if output_file.exists(): 
-            print(f"The spectrogram {output_file.name} has already been generated, skipping...")
-            return
+
         # Plotting spectrogram
         my_dpi = 100
         fact_x = 1.3
