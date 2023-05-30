@@ -568,9 +568,9 @@ class Job_builder:
             job_id = get_dict_index_in_list(self.ongoing_jobs, "id", job_identifier.rstrip())
         
         jobinfo = self.ongoing_jobs[job_id]
-        if "Torque" in jobinfo["path"]:
+        if "Torque" in str(jobinfo["path"]):
             subprocess.run(["qdel", jobinfo["id"]])
-        elif "Slurm" in jobinfo["path"]:
+        elif "Slurm" in str(jobinfo["path"]):
             subprocess.run(["scancel", jobinfo["id"]])
         self.__ongoing_jobs.remove(jobinfo)
         self.__cancelled_jobs.append(jobinfo)
