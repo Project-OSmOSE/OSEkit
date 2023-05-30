@@ -202,6 +202,7 @@ def reshape(
     while i < len(files):
         audio_data, sample_rate = sf.read(input_dir_path.joinpath(files[i]))
         file_duration = len(audio_data)//sample_rate
+        file_type = sf.info(input_dir_path.joinpath(files[i])).subtype
 
         if not merge_files and file_duration < chunk_size:
             raise ValueError("When not merging files, the file duration must be smaller than the target duration.")
@@ -260,7 +261,7 @@ def reshape(
                 timestamp += timedelta(seconds=chunk_size)
 
                 sf.write(
-                    outfilename, output, sample_rate, format="WAV", subtype="DOUBLE"
+                    outfilename, output, sample_rate, format="WAV", subtype=file_type
                 )
                 os.chmod(outfilename, mode=FPDEFAULT)
 
@@ -296,7 +297,7 @@ def reshape(
                     )
                     timestamp += timedelta(seconds=len(output))
 
-                    sf.write(outfilename, output, sample_rate, format="WAV", subtype="DOUBLE")
+                    sf.write(outfilename, output, sample_rate, format="WAV", subtype=file_type)
                     os.chmod(outfilename, mode=FPDEFAULT)
 
                     pad_text = f"Padded with {fill.size // sample_rate} seconds." if last_file_behavior == "pad" and fill.size > 0 else ""
@@ -385,7 +386,7 @@ def reshape(
         )
         timestamp += timedelta(seconds=chunk_size)
 
-        sf.write(outfilename, output, sample_rate, format="WAV", subtype="DOUBLE")
+        sf.write(outfilename, output, sample_rate, format="WAV", subtype=file_type)
         os.chmod(outfilename, mode=FPDEFAULT)
 
         if verbose:
@@ -410,7 +411,7 @@ def reshape(
         )
         timestamp += timedelta(seconds=chunk_size)
 
-        sf.write(outfilename, output, sample_rate, format="WAV", subtype="DOUBLE")
+        sf.write(outfilename, output, sample_rate, format="WAV", subtype=file_type)
         os.chmod(outfilename, mode=FPDEFAULT)
 
         if verbose:
@@ -446,7 +447,7 @@ def reshape(
             )
             timestamp += timedelta(seconds=len(output))
 
-            sf.write(outfilename, output, sample_rate, format="WAV", subtype="DOUBLE")
+            sf.write(outfilename, output, sample_rate, format="WAV", subtype=file_type)
             os.chmod(outfilename, mode=FPDEFAULT)
 
             if verbose:
