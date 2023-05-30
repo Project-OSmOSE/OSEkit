@@ -1395,5 +1395,11 @@ class Spectrogram(Dataset):
 
         map_process_file = partial(self.process_file, **kwargs)
 
-        with mp.Pool(processes=min(self.batch_number, mp.cpu_count())) as pool:
-            pool.map(map_process_file, self.list_wav_to_process)
+        if self.__local:
+            for file in self.list_wav_to_process:
+                self.process_file(file)
+        else:            
+            with mp.Pool(processes=min(self.batch_number, mp.cpu_count())) as pool:
+                pool.map(map_process_file, self.list_wav_to_process)
+
+
