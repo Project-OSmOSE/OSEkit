@@ -33,6 +33,7 @@ class Job_builder:
         self.__prepared_jobs = []
         self.__ongoing_jobs = []
         self.__finished_jobs = []
+        self.__cancelled_jobs = []
 
         required_properties = [
             "job_scheduler",
@@ -521,7 +522,7 @@ class Job_builder:
         if len(self.cancelled_jobs) > 0:
             res += "==== CANCELLED JOBS ====\n\n"
             for jobinfo in self.cancelled_jobs:
-                res+= f"{job_info['job_name']}"
+                res+= f"{jobinfo['job_name']}"
         print(res)
 
     def read_output_file(
@@ -567,9 +568,9 @@ class Job_builder:
             job_id = get_dict_index_in_list(self.ongoing_jobs, "id", job_identifier.rstrip())
         
         jobinfo = self.ongoing_jobs[job_id]
-        if "Torque" in jobinfo["path"]:
+        if "Torque" in str(jobinfo["path"]):
             subprocess.run(["qdel", jobinfo["id"]])
-        elif "Slurm" in jobinfo["path"]:
+        elif "Slurm" in str(jobinfo["path"]):
             subprocess.run(["scancel", jobinfo["id"]])
         self.__ongoing_jobs.remove(jobinfo)
         self.__cancelled_jobs.append(jobinfo)
