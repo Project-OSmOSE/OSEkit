@@ -170,7 +170,7 @@ def reshape(
     input_timestamp = pd.read_csv(
         timestamp_path if timestamp_path and timestamp_path.exists() else input_dir_path.joinpath("timestamp.csv"),
         header=None,
-        names=["filename", "timestamp", "timezone"],
+        names=["filename", "timestamp",]# "timezone"],
     )
 
     # When automatically reshaping, will populate the files list
@@ -202,6 +202,7 @@ def reshape(
     while i < len(files):
         audio_data, sample_rate = sf.read(input_dir_path.joinpath(files[i]))
         file_duration = len(audio_data)//sample_rate
+        file_type = sf.info(input_dir_path.joinpath(files[i])).subtype
 
         if not merge_files and file_duration < chunk_size:
             raise ValueError("When not merging files, the file duration must be smaller than the target duration.")
@@ -260,7 +261,7 @@ def reshape(
                 timestamp += timedelta(seconds=chunk_size)
 
                 sf.write(
-                    outfilename, output, sample_rate, format="WAV", subtype="DOUBLE"
+                    outfilename, output, sample_rate, format="WAV", subtype=file_type
                 )
                 os.chmod(outfilename, mode=FPDEFAULT)
 
@@ -296,7 +297,7 @@ def reshape(
                     )
                     timestamp += timedelta(seconds=len(output))
 
-                    sf.write(outfilename, output, sample_rate, format="WAV", subtype="DOUBLE")
+                    sf.write(outfilename, output, sample_rate, format="WAV", subtype=file_type)
                     os.chmod(outfilename, mode=FPDEFAULT)
 
                     pad_text = f"Padded with {fill.size // sample_rate} seconds." if last_file_behavior == "pad" and fill.size > 0 else ""
@@ -385,7 +386,7 @@ def reshape(
         )
         timestamp += timedelta(seconds=chunk_size)
 
-        sf.write(outfilename, output, sample_rate, format="WAV", subtype="DOUBLE")
+        sf.write(outfilename, output, sample_rate, format="WAV", subtype=file_type)
         os.chmod(outfilename, mode=FPDEFAULT)
 
         if verbose:
@@ -410,7 +411,7 @@ def reshape(
         )
         timestamp += timedelta(seconds=chunk_size)
 
-        sf.write(outfilename, output, sample_rate, format="WAV", subtype="DOUBLE")
+        sf.write(outfilename, output, sample_rate, format="WAV", subtype=file_type)
         os.chmod(outfilename, mode=FPDEFAULT)
 
         if verbose:
@@ -446,7 +447,7 @@ def reshape(
             )
             timestamp += timedelta(seconds=len(output))
 
-            sf.write(outfilename, output, sample_rate, format="WAV", subtype="DOUBLE")
+            sf.write(outfilename, output, sample_rate, format="WAV", subtype=file_type)
             os.chmod(outfilename, mode=FPDEFAULT)
 
             if verbose:
@@ -471,7 +472,7 @@ def reshape(
             timestamp_list += list(tmp_timestamp[1].values)
 
         input_timestamp = pd.DataFrame(
-            {"filename": result, "timestamp": timestamp_list, "timezone": "UTC"}
+            {"filename": result, "timestamp": timestamp_list,}# "timezone": "UTC"}
         )
         input_timestamp.sort_values(by=["timestamp"], inplace=True)
         input_timestamp.drop_duplicates().to_csv(
