@@ -49,6 +49,7 @@ def write_timestamp(
     date_template: str,
     timezone: str = "UTC",
     offset: tuple = None,
+    verbose: bool = False 
 ):
     """Read the dates in the filenames of audio files in the `audio_path` folder,
     according to the date template in strftime format or the offsets from the beginning and end of the date.
@@ -68,6 +69,8 @@ def write_timestamp(
         offsets: `tuple(int,int)`, optional
             a tuple containing the beginning and end offset of the date.
             The first element is the first character of the date, and the second is the last.
+        verbose: `bool`, optional, keyword-only
+            If set to True, print all messages. default is False 
     """
     list_audio_file = sorted([file for file in Path(audio_path).glob("*.wav")])
 
@@ -100,7 +103,7 @@ def write_timestamp(
     filename_raw_audio = []
 
     converted = convert_template_to_re(date_template)
-    for filename in list_audio_file:
+    for i, filename in enumerate(list_audio_file):
         try:
             if offset:
                 date_extracted = re.search(converted, filename.stem[offset[0] : offset[1] + 1])[0]
@@ -115,9 +118,12 @@ def write_timestamp(
         dates = datetime.datetime.strftime(date_obj, "%Y-%m-%dT%H:%M:%S.%f")
 
         dates_final = dates[:-3] + "Z"
-
-        print("filename->", filename)
-        print("extracted timestamp->", dates_final, "\n")
+        if i <5:
+            print("filename->", filename)
+            print("extracted timestamp->", dates_final, "\n")
+        elif verbose:
+            print("filename->", filename)
+            print("extracted timestamp->", dates_final, "\n")
 
         timestamp.append(dates_final)
 
