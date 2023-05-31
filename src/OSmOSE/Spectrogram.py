@@ -152,7 +152,7 @@ class Spectrogram(Dataset):
             else None
         )
         self.spectro_duration: int = (
-            analysis_sheet["spectro_duration"][0]
+            int(analysis_sheet["spectro_duration"][0])
             if analysis_sheet is not None and "spectro_duration" in analysis_sheet
             else (
                 int(orig_metadata["audio_file_origin_duration"][0])
