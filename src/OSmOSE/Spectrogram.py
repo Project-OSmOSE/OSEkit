@@ -1207,7 +1207,7 @@ class Spectrogram(Dataset):
         # lowest tuile resolution
         if self.save_for_LTAS:
 
-            output_path_welch_resolution = self.path_output_welch.joinpath(str(tile_duration))
+            output_path_welch_resolution = self.path_output_welch.joinpath(str(round(tile_duration)))
                 
             if not output_path_welch_resolution.exists():
                 make_path(output_path_welch_resolution, mode=DPDEFAULT)
