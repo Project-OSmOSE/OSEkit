@@ -151,8 +151,8 @@ class Variables():
 		Default is an empty dataframe.
 		'''
 		self.path = path
-		if os.path.exists(os.path.join(path, 'data', 'auxiliary', 'aux_data.csv'):
-			self.df = pd.read_csv(os.path.join(path, 'data', 'auxiliary', 'aux_data.csv')[['time', 'depth', 'lat', 'lon']] 
+		if os.path.exists(os.path.join(path, 'data', 'auxiliary', 'aux_data.csv')):
+			self.df = pd.read_csv(os.path.join(path, 'data', 'auxiliary', 'aux_data.csv'))[['time', 'depth', 'lat', 'lon']] 
 			self.latitude, self.longitude = self.df['lat'], self.df['lon']
 			self.timestamps = self.df['time']
 			self.depth = self.df['depth']
