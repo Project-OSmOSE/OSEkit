@@ -1,0 +1,13 @@
+Index: Pillow-8.4.0/setup.py
+===================================================================
+--- Pillow-8.4.0.orig/setup.py
++++ Pillow-8.4.0/setup.py
+@@ -328,7 +328,7 @@ class pil_build_ext(build_ext):
+     )
+ 
+     def initialize_options(self):
+-        self.disable_platform_guessing = None
++        self.disable_platform_guessing = True
+         self.add_imaging_libs = ""
+         build_ext.initialize_options(self)
+         for x in self.feature:

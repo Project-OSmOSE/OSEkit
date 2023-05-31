@@ -1,0 +1,70 @@
+{% set name = "fonttools" %}
+{% set version = "4.25.0" %}
+{% set sha256 = "618f1ecb7f328c17164e4c9a11fdf8945164eb764ff11a2a17a368720ecc892e" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  fn: {{ name }}-{{ version }}.tar.gz
+  url: https://github.com/{{ name }}/{{ name }}/archive/{{ version }}.tar.gz
+  sha256: {{ sha256 }}
+
+build:
+  noarch: python
+  number: 0
+  script: python setup.py install --single-version-externally-managed --record record.txt
+  entry_points:
+    - fonttools = fontTools.__main__:main
+    - ttx = fontTools.ttx:main
+    - pyftsubset = fontTools.subset:main
+    - pyftmerge = fontTools.merge:main
+
+requirements:
+  host:
+    - python >=3.6
+    - setuptools
+    - pip
+    - wheel
+  run:
+    - python >=3.6
+    # for fontTools.sfnt and fontTools.woff2: to compress/uncompress
+    # WOFF 1.0 and WOFF 2.0 webfonts.
+    - brotli >=1.0.1
+    # 5/17/2021: the unicodedata2 extension module doesn't work on PyPy.
+    # Python 3.9 already has Unicode 13.0, so the backport is not needed.
+    - unicodedata2 >=13.0.0  # [py<39 and (python_impl != "pypy")]
+    - munkres
+
+test:
+  imports:
+    - fontTools
+    - fontTools.ttLib
+  commands:
+    - fonttools subset --help
+    - ttx -h
+    - pyftsubset --help
+    # pyftmerge has no help option
+    # pyftinspect requires gtk
+
+about:
+  home: https://github.com/fonttools/fonttools
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE
+  summary: 'fontTools is a library for manipulating fonts, written in Python.'
+
+  description: |
+    fontTools is a library for manipulating fonts, written in Python. The
+    project includes the TTX tool, that can convert TrueType and OpenType
+    fonts to and from an XML text format, which is also called TTX. It
+    supports TrueType, OpenType, AFM and to an extent Type 1 and some
+    Mac-specific formats. The project has a BSD-style open-source licence.
+
+  doc_url: https://groups.google.com/forum/#!forum/fonttools
+  dev_url: https://github.com/fonttools/fonttools
+
+extra:
+  recipe-maintainers:
+    - CJ-Wright

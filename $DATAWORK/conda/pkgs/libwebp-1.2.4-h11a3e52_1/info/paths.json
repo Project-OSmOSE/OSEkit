@@ -1,0 +1,47 @@
+{
+  "paths": [
+    {
+      "_path": "bin/cwebp",
+      "path_type": "hardlink",
+      "sha256": "40ac177cdea8f2fb69f0cfd7ee257356ce2b3a825937930d783aae232ab48701",
+      "size_in_bytes": 68648
+    },
+    {
+      "_path": "bin/dwebp",
+      "path_type": "hardlink",
+      "sha256": "096784f657500bab4a9f08426e6fb7042b3356b7891a236588bb92be98d46358",
+      "size_in_bytes": 35144
+    },
+    {
+      "_path": "bin/gif2webp",
+      "path_type": "hardlink",
+      "sha256": "02de8a823e068be64ab08df66efa490af63e4f60833a6082fd230a21fb3f937f",
+      "size_in_bytes": 35360
+    },
+    {
+      "_path": "bin/img2webp",
+      "path_type": "hardlink",
+      "sha256": "514a57d66d10758df0dc70192547e0614d915f24f1205ae004e5f7feef88b251",
+      "size_in_bytes": 55760
+    },
+    {
+      "_path": "bin/webpinfo",
+      "path_type": "hardlink",
+      "sha256": "ebebe93daaf9fd207c57f40c19efb8fb7af79b4c32867c33f55584b00ca5b2cb",
+      "size_in_bytes": 33440
+    },
+    {
+      "_path": "bin/webpmux",
+      "path_type": "hardlink",
+      "sha256": "b79c6742f2be870b9b40eec736d9b1dc1b491ab5996387384923cc1022aade54",
+      "size_in_bytes": 38936
+    },
+    {
+      "_path": "share/man/man1/gif2webp.1",
+      "path_type": "hardlink",
+      "sha256": "19c208659f284d4c815849df21b046b3040c3059fc8d8b67b1fa6ee2d242c0ab",
+      "size_in_bytes": 5564
+    }
+  ],
+  "paths_version": 1
+}

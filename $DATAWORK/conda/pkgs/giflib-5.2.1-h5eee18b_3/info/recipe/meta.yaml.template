@@ -1,0 +1,66 @@
+{% set version = "5.2.1" %}
+
+package:
+  name: giflib
+  version: {{ version }}
+
+source:
+  - url: https://downloads.sourceforge.net/project/giflib/giflib-{{ version }}.tar.gz
+    sha256: 31da5562f44c5f15d63340a09a4fd62b48c45620cd302f77a6d9acf0077879bd
+    patches:
+      - fix_win.patch    # [win]
+      - stdbool_h.patch  # [win]
+      - CVE-2022-28506.patch
+  # add a getopt polyfill
+  - path: getopt.h  # [win]
+
+build:
+  number: 3
+  skip: true  # [win and vc<14]
+  run_exports:
+    # SONAME changes at minor revs.
+    #    https://abi-laboratory.pro/tracker/timeline/giflib/
+    - {{ pin_subpackage('giflib', max_pin='x.x') }}
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - make        # [not win]
+    - git         # [win]
+    - cmake
+    - m2-patch    # [win]
+    - patch       # [not win]
+
+test:
+  commands:
+    - gifbuild -h
+    - giffix -h
+    - giftext -h
+    - gifclrmp -h
+    - gif2rgb -h
+
+about:
+  home: https://giflib.sourceforge.net
+  license: MIT
+  license_family: MIT
+  license_file:
+    - COPYING
+    - getopt_LICENSE.txt  # [win]
+  summary: Library for reading and writing gif images
+  description: |
+    The GIFLIB project maintains the giflib service library, which has been pulling images
+    out of GIFs since 1989. It is deployed everywhere you can think of and some places you
+    probably can't - graphics applications and web browsers on multiple operating systems,
+    game consoles, smartphones, and likely your ATM too.
+  dev_url: https://giflib.sourceforge.net
+  doc_url: https://giflib.sourceforge.net
+
+extra:
+  recipe-maintainers:
+    - ocefpaf
+    - 183amir
+    - msarahan
+    - isuruf
+    - wolfv
+    - katietz
+

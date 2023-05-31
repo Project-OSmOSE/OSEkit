@@ -1,0 +1,34 @@
+# This file created by conda-build 3.10.7
+# ------------------------------------------------
+
+package:
+    name: blas
+    version: 1.0
+source:
+    fn: openblas-0.2.20.tar.gz
+    patches:
+        - gh_1247.patch
+        - gh_1256.patch
+        - gh_1259.patch
+        - gh_1264.patch
+        - gh_1279.patch
+        - gh_1323.patch
+        - gh_1350.patch
+        - gh_1377.patch
+        - gh_1417.patch
+    sha256: 5ef38b15d9c652985774869efd548b8e3e972e1e99475c673b25537ed7bcf394
+    url: https://github.com/xianyi/OpenBLAS/archive/v0.2.20.tar.gz
+build:
+    number: 7
+    string: openblas
+    track_features:
+        - nomkl
+extra:
+    copy_test_source_files: true
+    final: true
+    recipe-maintainers:
+        - gillins
+        - groutr
+        - isuruf
+        - jakirkham
+        - jschueller

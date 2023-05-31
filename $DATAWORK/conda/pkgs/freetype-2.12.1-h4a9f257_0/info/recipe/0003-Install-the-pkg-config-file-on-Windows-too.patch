@@ -1,0 +1,11 @@
+--- freetype-2.10.2.orig/CMakeLists.txt	2020-05-08 06:01:46.000000000 -0300
++++ freetype-2.10.2/CMakeLists.txt	2020-05-12 10:14:53.117411732 -0300
+@@ -499,7 +499,7 @@
+ 
+ if (NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL)
+   # Generate the pkg-config file
+-  if (UNIX)
++  if (1)
+     file(READ "${PROJECT_SOURCE_DIR}/builds/unix/freetype2.in" FREETYPE2_PC_IN)
+ 
+     string(REPLACE ";" ", " PKG_CONFIG_REQUIRED_PRIVATE "${PKG_CONFIG_REQUIRED_PRIVATE}")

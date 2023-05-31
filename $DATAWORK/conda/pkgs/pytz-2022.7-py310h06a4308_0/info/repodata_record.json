@@ -1,0 +1,25 @@
+{
+  "arch": "x86_64",
+  "build": "py310h06a4308_0",
+  "build_number": 0,
+  "channel": "https://repo.anaconda.com/pkgs/main/linux-64",
+  "constrains": [],
+  "depends": [
+    "python >=3.10,<3.11.0a0"
+  ],
+  "features": "",
+  "fn": "pytz-2022.7-py310h06a4308_0.conda",
+  "legacy_bz2_md5": "71db24d98277c0b9d16e6b28ac89b13e",
+  "license": "MIT",
+  "license_family": "MIT",
+  "md5": "e9fa82907692334494d14d7751ca0190",
+  "name": "pytz",
+  "platform": "linux",
+  "sha256": "90736f2257bea1c0269d5382a25b9f081b3b36293df1d4c1d9957678298bb4bc",
+  "size": 213011,
+  "subdir": "linux-64",
+  "timestamp": 1671697464600,
+  "track_features": "",
+  "url": "https://repo.anaconda.com/pkgs/main/linux-64/pytz-2022.7-py310h06a4308_0.conda",
+  "version": "2022.7"
+}

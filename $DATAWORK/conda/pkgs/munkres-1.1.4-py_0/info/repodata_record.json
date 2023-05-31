@@ -1,0 +1,25 @@
+{
+  "build": "py_0",
+  "build_number": 0,
+  "channel": "https://repo.anaconda.com/pkgs/main/noarch",
+  "constrains": [],
+  "depends": [
+    "python"
+  ],
+  "features": "",
+  "fn": "munkres-1.1.4-py_0.conda",
+  "legacy_bz2_md5": "67857cc5e9044770d2b15f9d94a4521d",
+  "license": "Apache-2.0",
+  "license_family": "Apache",
+  "md5": "148362ba07f92abab76999a680c80084",
+  "name": "munkres",
+  "noarch": "python",
+  "package_type": "noarch_python",
+  "sha256": "f3f473a60a6766a7f64447c0c7e49d0640db7f995255951e3477b5d21d144dc7",
+  "size": 13573,
+  "subdir": "noarch",
+  "timestamp": 1600445183315,
+  "track_features": "",
+  "url": "https://repo.anaconda.com/pkgs/main/noarch/munkres-1.1.4-py_0.conda",
+  "version": "1.1.4"
+}

@@ -1,0 +1,119 @@
+diff --git a/Projects/VC2017/jpegicc/jpegicc.vcxproj b/Projects/VC2017/jpegicc/jpegicc.vcxproj
+index 39cfd00..4f33705 100644
+--- a/Projects/VC2017/jpegicc/jpegicc.vcxproj
++++ b/Projects/VC2017/jpegicc/jpegicc.vcxproj
+@@ -20,7 +20,7 @@
+   </ItemGroup>
+   <PropertyGroup Label="Globals">
+     <ProjectGuid>{62812507-F926-4968-96A9-17678460AD90}</ProjectGuid>
+-    <RootNamespace>jpegicc</RootNamespace>
++    <RootNamespace>jpgicc</RootNamespace>
+     <Keyword>Win32Proj</Keyword>
+     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+   </PropertyGroup>
+@@ -212,4 +212,4 @@
+   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+   <ImportGroup Label="ExtensionTargets">
+   </ImportGroup>
+-</Project>
+\ No newline at end of file
++</Project>
+diff --git a/Projects/VC2017/lcms2.sln b/Projects/VC2017/lcms2.sln
+index b48c204..fc80f9f 100644
+Binary files a/Projects/VC2017/lcms2.sln and b/Projects/VC2017/lcms2.sln differ
+diff --git a/Projects/VC2017/tiffdiff/tiffdiff.vcxproj b/Projects/VC2017/tiffdiff/tiffdiff.vcxproj
+index 3a6d837..8e0ef05 100644
+--- a/Projects/VC2017/tiffdiff/tiffdiff.vcxproj
++++ b/Projects/VC2017/tiffdiff/tiffdiff.vcxproj
+@@ -113,7 +113,7 @@
+       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+     </ClCompile>
+     <Link>
+-      <AdditionalDependencies>libtiff.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>tiff.lib;%(AdditionalDependencies)</AdditionalDependencies>
+       <GenerateDebugInformation>true</GenerateDebugInformation>
+       <SubSystem>Console</SubSystem>
+       <TargetMachine>MachineX86</TargetMachine>
+@@ -134,7 +134,7 @@
+       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+     </ClCompile>
+     <Link>
+-      <AdditionalDependencies>libtiff.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>tiff.lib;%(AdditionalDependencies)</AdditionalDependencies>
+       <GenerateDebugInformation>true</GenerateDebugInformation>
+       <SubSystem>Console</SubSystem>
+       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+@@ -156,7 +156,7 @@
+       <BrowseInformation>true</BrowseInformation>
+     </ClCompile>
+     <Link>
+-      <AdditionalDependencies>libtiff.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>tiff.lib;%(AdditionalDependencies)</AdditionalDependencies>
+       <GenerateDebugInformation>true</GenerateDebugInformation>
+       <SubSystem>Console</SubSystem>
+       <OptimizeReferences>true</OptimizeReferences>
+@@ -184,7 +184,7 @@
+       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+     </ClCompile>
+     <Link>
+-      <AdditionalDependencies>libtiff.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>tiff.lib;%(AdditionalDependencies)</AdditionalDependencies>
+       <GenerateDebugInformation>true</GenerateDebugInformation>
+       <SubSystem>Console</SubSystem>
+       <OptimizeReferences>true</OptimizeReferences>
+diff --git a/Projects/VC2017/tifficc/tifficc.vcxproj b/Projects/VC2017/tifficc/tifficc.vcxproj
+index 5ef954f..a94449a 100644
+--- a/Projects/VC2017/tifficc/tifficc.vcxproj
++++ b/Projects/VC2017/tifficc/tifficc.vcxproj
+@@ -20,7 +20,7 @@
+   </ItemGroup>
+   <PropertyGroup Label="Globals">
+     <ProjectGuid>{2256DE16-ED92-4A6F-9C54-F65BB61E64A2}</ProjectGuid>
+-    <RootNamespace>tifficc</RootNamespace>
++    <RootNamespace>tificc</RootNamespace>
+     <Keyword>Win32Proj</Keyword>
+     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+   </PropertyGroup>
+@@ -113,7 +113,7 @@
+       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+     </ClCompile>
+     <Link>
+-      <AdditionalDependencies>libtiff.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>tiff.lib;%(AdditionalDependencies)</AdditionalDependencies>
+       <GenerateDebugInformation>true</GenerateDebugInformation>
+       <SubSystem>Console</SubSystem>
+       <TargetMachine>MachineX86</TargetMachine>
+@@ -134,7 +134,7 @@
+       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+     </ClCompile>
+     <Link>
+-      <AdditionalDependencies>libtiff.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>tiff.lib;%(AdditionalDependencies)</AdditionalDependencies>
+       <GenerateDebugInformation>true</GenerateDebugInformation>
+       <SubSystem>Console</SubSystem>
+       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+@@ -156,7 +156,7 @@
+       <BrowseInformation>true</BrowseInformation>
+     </ClCompile>
+     <Link>
+-      <AdditionalDependencies>libtiff.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>tiff.lib;%(AdditionalDependencies)</AdditionalDependencies>
+       <GenerateDebugInformation>true</GenerateDebugInformation>
+       <SubSystem>Console</SubSystem>
+       <OptimizeReferences>true</OptimizeReferences>
+@@ -183,7 +183,7 @@
+       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+     </ClCompile>
+     <Link>
+-      <AdditionalDependencies>libtiff.lib;%(AdditionalDependencies)</AdditionalDependencies>
++      <AdditionalDependencies>tiff.lib;%(AdditionalDependencies)</AdditionalDependencies>
+       <GenerateDebugInformation>true</GenerateDebugInformation>
+       <SubSystem>Console</SubSystem>
+       <OptimizeReferences>true</OptimizeReferences>
+@@ -208,4 +208,4 @@
+   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+   <ImportGroup Label="ExtensionTargets">
+   </ImportGroup>
+-</Project>
+\ No newline at end of file
++</Project>

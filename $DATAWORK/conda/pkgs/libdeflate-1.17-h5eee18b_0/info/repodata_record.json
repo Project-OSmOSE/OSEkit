@@ -1,0 +1,25 @@
+{
+  "arch": "x86_64",
+  "build": "h5eee18b_0",
+  "build_number": 0,
+  "channel": "https://repo.anaconda.com/pkgs/main/linux-64",
+  "constrains": [],
+  "depends": [
+    "libgcc-ng >=11.2.0"
+  ],
+  "features": "",
+  "fn": "libdeflate-1.17-h5eee18b_0.conda",
+  "legacy_bz2_md5": "0bba870378a2bef020ba80093daad19a",
+  "license": "MIT",
+  "license_family": "MIT",
+  "md5": "b4891fa07ca4cad1c53a0d0e539482da",
+  "name": "libdeflate",
+  "platform": "linux",
+  "sha256": "529ebc4555ef377b00ec07708b47fdcea1dcf4721f5a2fddfd0ca7cb652e9d0a",
+  "size": 70808,
+  "subdir": "linux-64",
+  "timestamp": 1677486576483,
+  "track_features": "",
+  "url": "https://repo.anaconda.com/pkgs/main/linux-64/libdeflate-1.17-h5eee18b_0.conda",
+  "version": "1.17"
+}

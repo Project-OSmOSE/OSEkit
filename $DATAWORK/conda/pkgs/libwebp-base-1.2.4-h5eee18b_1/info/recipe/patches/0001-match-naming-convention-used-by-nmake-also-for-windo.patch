@@ -1,0 +1,30 @@
+From 11cd27f19fc93cb45e39d1c45419b9fb2878bdeb Mon Sep 17 00:00:00 2001
+From: "H. Vetinari" <h.vetinari@gmx.com>
+Date: Thu, 21 Jul 2022 23:57:06 +0200
+Subject: [PATCH 1/2] match naming convention used by nmake also for windows
+ build from CMake
+
+---
+ CMakeLists.txt | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index d1b120bd..5d8e6076 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -117,6 +117,13 @@ set(includedir "\$\{prefix\}/include")
+ set(PTHREAD_LIBS ${CMAKE_THREAD_LIBS_INIT})
+ set(INSTALLED_LIBRARIES)
+ 
++if(WIN32)
++  # match the naming convention used by nmake also in cmake
++  set(CMAKE_SHARED_LIBRARY_PREFIX "lib")
++  set(CMAKE_IMPORT_LIBRARY_PREFIX "lib")
++  set(CMAKE_STATIC_LIBRARY_PREFIX "lib")
++endif()
++
+ set(CMAKE_C_VISIBILITY_PRESET hidden)
+ 
+ # ##############################################################################
+-- 
+2.37.0.windows.1

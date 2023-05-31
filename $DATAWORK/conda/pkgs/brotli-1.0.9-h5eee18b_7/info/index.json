@@ -1,0 +1,17 @@
+{
+  "arch": "x86_64",
+  "build": "h5eee18b_7",
+  "build_number": 7,
+  "depends": [
+    "brotli-bin 1.0.9 h5eee18b_7",
+    "libbrotlidec 1.0.9 h5eee18b_7",
+    "libbrotlienc 1.0.9 h5eee18b_7",
+    "libgcc-ng >=11.2.0"
+  ],
+  "license": "MIT",
+  "name": "brotli",
+  "platform": "linux",
+  "subdir": "linux-64",
+  "timestamp": 1659616178155,
+  "version": "1.0.9"
+}

@@ -1,0 +1,317 @@
+commit e51cf30ccd62f6e79e82990e7f1b5b189ca6541e
+Author: Paul Yim <paul.j.yim@gmail.com>
+Date:   Mon Apr 5 14:46:10 2021 -0400
+
+    Add patch to change Windows SDK version.
+
+commit 7f187da9840cc323f7d15cbacb7ce6adde03d271
+Author: Paul Yim <paul.j.yim@gmail.com>
+Date:   Mon Apr 5 14:32:57 2021 -0400
+
+    Update to v2.12; update source url
+
+commit 693675a62870982db987b87364bb92de0f15cd3b
+Author: Kai Tietz <ktietz@anaconda.com>
+Date:   Wed Oct 21 10:36:43 2020 +0200
+
+    Explicit disable win32
+
+commit 6210c6db4780d4027af52c792bc55f6131e30ed3
+Merge: 72d8431 ba1d8a4
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Wed Jun 17 08:21:15 2020 -0400
+
+    Merge pull request #10 from regro-cf-autotick-bot/2.11_h7a2211
+    
+    lcms2 v2.11
+
+commit ba1d8a4f41fb72ba903aa098773b3186c81a1a77
+Author: regro-cf-autotick-bot <circleci@cf-graph.regro.github.com>
+Date:   Tue Jun 16 22:56:35 2020 +0000
+
+    MNT: Re-rendered with conda-build 3.19.2, conda-smithy 3.7.3, and conda-forge-pinning 2020.06.16.21.09.39
+
+commit 0d0888cdf0e39b135b69734a6e5c28a3b0741783
+Author: regro-cf-autotick-bot <circleci@cf-graph.regro.github.com>
+Date:   Tue Jun 16 22:56:09 2020 +0000
+
+    updated v2.11
+
+commit 72d8431a8c3ebc3c37f6581d83ee6fcc086f1141
+Merge: 8f6bafd 51b5439
+Author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+Date:   Sun May 24 01:09:25 2020 +0000
+
+    Windows  build
+    
+    automerged PR by conda-forge/automerge-action
+
+commit 51b543993f31aa864b2c61ba94bbbb410883d41c
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Sat May 23 17:58:46 2020 -0700
+
+    Update meta.yaml
+
+commit 1ab8757fd9959e1956b96643fed707bf25e533be
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Sat May 23 17:17:09 2020 -0700
+
+    Delete remove_library_directive_win.patch
+
+commit c9d379308a5ebe77e13e26a805506f0a351e4188
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Sat May 23 12:08:32 2020 -0700
+
+    Try building without extra patch
+
+commit 186f4f3b407ef7f2235850ccedf7f978b469b2b2
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Sat May 23 10:41:36 2020 -0700
+
+    Update meta.yaml
+
+commit 3ce2b2f5ed92dca1fb0e83f94dfd5d6a243e85ae
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Sat May 23 10:29:09 2020 -0700
+
+    Delete CMakeLists.txt
+
+commit 4c190a5fcea3f49f059f990de28c8ee69137b679
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Sat May 23 10:28:50 2020 -0700
+
+    Update bld.bat
+
+commit d12c7305b9e963f97ebde05010b9a365a7e953ff
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Sat May 23 10:25:57 2020 -0700
+
+    Update bld.bat
+
+commit 2688210426ff285c57f0a05e437be0119cd876f2
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Sat May 23 09:48:18 2020 -0700
+
+    copy files in
+
+commit ea4183ea9435100d0777dafc3fa24955d07ccecd
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Fri May 22 19:52:20 2020 -0400
+
+    Print out directory contents
+
+commit 88be28a903c7a497165be0866b4ec1285afb5bec
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Fri May 22 19:37:01 2020 -0400
+
+    Remove libtiff hack
+
+commit 9b5b6b34c177f19306d3ec578644b091bd14978b
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Fri May 22 19:36:37 2020 -0400
+
+    Add a patch for windows compatibility
+
+commit 2b958633537ccaca8cec16acc6e711b0c5a0f977
+Author: Isuru Fernando <isuruf@gmail.com>
+Date:   Fri May 22 16:47:34 2020 -0500
+
+    copy tiff.lib to libtiff.lib
+
+commit 4bc2ffaed45cb5b726498b77a45f312a64a1be7c
+Author: Isuru Fernando <isuruf@gmail.com>
+Date:   Fri May 22 11:23:46 2020 -0500
+
+    Add libpath
+
+commit 16f059efb3199a76c32b0ff387714c8a4f708ea5
+Author: Isuru Fernando <isuruf@gmail.com>
+Date:   Fri May 22 11:12:48 2020 -0500
+
+    AdditionalLibraryDirectories
+
+commit 158c1f1775e52a224d92cf345b293d7253a87a9e
+Author: Isuru Fernando <isuruf@gmail.com>
+Date:   Fri May 22 00:06:37 2020 -0500
+
+    set UseEnv=true
+
+commit c84ccb83bde6701e0066d1d77bf629bcf8193151
+Author: Isuru Fernando <isuruf@gmail.com>
+Date:   Thu May 21 23:21:49 2020 -0500
+
+    Fix win build
+
+commit 53c140da7c4607f6377dc97fd8a05285dd120dd3
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Thu May 21 23:23:52 2020 -0400
+
+    use msbuild
+
+commit 8f6bafd7d1473ff4e1ea1dc310bc43803751cf85
+Author: Matthew R Becker <becker.mr@gmail.com>
+Date:   Mon May 18 07:44:38 2020 -0500
+
+    [ci skip] [skip ci] [cf admin skip] ***NO_CI*** admin migration CondaForgeAutomerge
+
+commit 62a92007f36d61f4ce0eb3fa8c0533e37632d3f2
+Author: conda-forge-admin <conda-forge-admin@email.com>
+Date:   Sat May 16 16:29:12 2020 +0000
+
+    [ci skip] [skip ci] [cf admin skip] ***NO_CI*** admin migration CFEP13TokensAndConfig
+
+commit 03e6fed8f037e7e94f9c0f29c4a35232e70abbd6
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Tue May 12 13:16:11 2020 -0400
+
+    Added myself to the mainter list
+
+commit 08a6a6b2813662a0ac94e389eddbc73719e3a13c
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Tue May 12 13:01:24 2020 -0400
+
+    udpate tests for new name
+
+commit e06f5227690931dd2a87639fc4addead7cdd255f
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Tue May 12 12:59:21 2020 -0400
+
+    lcms->lcsm2 for windows.
+
+commit dd1d888f5468cc6d71e180f44b4c6232cdd14b40
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Tue May 12 12:40:50 2020 -0400
+
+    truly remove the windows share patch.
+
+commit 9d98e4998d14c7c57cc574e192a7818a654cac97
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Tue May 12 12:40:03 2020 -0400
+
+    install cmake files in the correct location
+
+commit 98d2a8a6d2be5ac6b7e3ed6b0a7f0bcd2cb04eb9
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Tue May 12 12:37:18 2020 -0400
+
+    remove header patch windows.
+
+commit d4e73e70191dab97e679174def8a93fb2443f00d
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Tue May 12 12:26:38 2020 -0400
+
+    tificc
+
+commit 204b394e587d5051f06f1659f4d9fbdb1832a3d0
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Tue May 12 12:23:32 2020 -0400
+
+    fixup jpegicc again
+
+commit d2a6038513ea902d2532cdbaffcbd224b1e746cb
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Tue May 12 12:22:11 2020 -0400
+
+    less commit noise
+
+commit d826ca0b876cf4dd09f7513139842dcef5c8a6a4
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Tue May 12 12:21:32 2020 -0400
+
+    whitespace
+
+commit c07b6db7ee37b96be404d4f4a7c2f0c2442c6a89
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Tue May 12 12:21:26 2020 -0400
+
+    Correct name for jpgicc executable.
+
+commit 3926add478b43ab4651dc9db49ee27df9bda4d48
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Tue May 12 12:19:48 2020 -0400
+
+    Update tests
+
+commit bd785ee124046c341ab4472a97a7281687c95a28
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Tue May 12 12:13:40 2020 -0400
+
+    Update install location to LIBRARY_PREFIX on windows.
+
+commit 9965aa0f67de482841e3fc0613973fd9c69fbc9b
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Tue May 12 12:03:01 2020 -0400
+
+    Add one more patch
+
+commit 155d7cb1c3e4443e2566e3c516092e0d0fcfeb8d
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Tue May 12 12:01:03 2020 -0400
+
+    MNT: Re-rendered with conda-build 3.19.2, conda-smithy 3.7.0, and conda-forge-pinning 2020.05.11.16.49.47
+
+commit ce73cae436f824bd506198fb31c7a8deaf973996
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Tue May 12 11:59:25 2020 -0400
+
+    Updated many things from pauparneix
+
+commit b4c293dca71e9f53b497aade2260a1e78455afb9
+Author: conda-forge-admin <conda-forge-admin@email.com>
+Date:   Mon Mar 2 21:23:07 2020 +0000
+
+    [ci skip] [skip ci] [cf admin skip] ***NO_CI*** admin migration AutomergeAndRerender
+
+commit a92ace65a7532474fac898072cc4120ea5c1a086
+Merge: 9a897cd 50bb8fa
+Author: Filipe <ocefpaf@gmail.com>
+Date:   Tue Nov 19 12:44:13 2019 -0300
+
+    Rebuild for libtiff-4.1.0 (#2)
+    
+    Rebuild for libtiff-4.1.0
+
+commit 50bb8fad84759b0d4e91b6dcf7fc9916111e3b7f
+Author: regro-cf-autotick-bot <circleci@cf-graph.regro.github.com>
+Date:   Tue Nov 19 15:26:27 2019 +0000
+
+    MNT: Re-rendered with conda-build 3.18.11, conda-smithy 3.6.2, and conda-forge-pinning 2019.11.18
+
+commit 8bc172336a66138c6202d1504dca35fa85acce2d
+Author: regro-cf-autotick-bot <circleci@cf-graph.regro.github.com>
+Date:   Tue Nov 19 15:26:10 2019 +0000
+
+    bump build number
+
+commit 9a897cd5a89640f53bed3a0dc3c474e11b86a70f
+Merge: 465e9e6 2fa080a
+Author: Isuru Fernando <isuruf@gmail.com>
+Date:   Tue Oct 29 23:39:16 2019 -0500
+
+    Merge pull request #1 from regro-cf-autotick-bot/rebuildaarch64_and_ppc64le_addition1_arch
+    
+    Arch Migrator
+
+commit 2fa080a0c9cccf32c293feaf4b2a02c0692fcb0c
+Author: regro-cf-autotick-bot <circleci@cf-graph.regro.github.com>
+Date:   Wed Oct 30 04:21:25 2019 +0000
+
+    MNT: Re-rendered with conda-build 3.18.10, conda-smithy 3.6.0, and conda-forge-pinning 2019.10.28
+
+commit 0b8cf48ccae10ae2e34f954c9438ef94d21b30f4
+Author: regro-cf-autotick-bot <circleci@cf-graph.regro.github.com>
+Date:   Wed Oct 30 04:21:05 2019 +0000
+
+    bump build number
+
+commit 465e9e61c6fa365c90191c58318c0a737bbcfb8f
+Author: Travis-CI on github.com/conda-forge/staged-recipes <conda-forge@googlegroups.com>
+Date:   Mon Aug 12 00:03:36 2019 +0000
+
+    Re-render the feedstock after CI registration.
+
+commit 55f5d31ff5355227e27985fe532bd122ebf44525
+Author: Travis-CI on github.com/conda-forge/staged-recipes <conda-forge@googlegroups.com>
+Date:   Mon Aug 12 00:00:55 2019 +0000
+
+    Initial feedstock commit with conda-smithy 3.4.1.

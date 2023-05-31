@@ -1,0 +1,31 @@
+{
+  "arch": "x86_64",
+  "build": "py310h1128e8f_1",
+  "build_number": 1,
+  "depends": [
+    "contourpy >=1.0.1",
+    "cycler >=0.10",
+    "fonttools >=4.22.0",
+    "freetype >=2.10",
+    "freetype >=2.10.4,<3.0a0",
+    "kiwisolver >=1.0.1",
+    "libgcc-ng >=11.2.0",
+    "libstdcxx-ng >=11.2.0",
+    "numpy >=1.20",
+    "numpy >=1.21.5,<2.0a0",
+    "packaging >=20.0",
+    "pillow >=6.2.0",
+    "pyparsing >=2.3.1",
+    "python >=3.10,<3.11.0a0",
+    "python-dateutil >=2.7",
+    "tk >=8.6.12,<8.7",
+    "tk >=8.6.12,<8.7.0a0"
+  ],
+  "license": "LicenseRef-PSF-based",
+  "license_family": "PSF",
+  "name": "matplotlib-base",
+  "platform": "linux",
+  "subdir": "linux-64",
+  "timestamp": 1679593629865,
+  "version": "3.7.1"
+}

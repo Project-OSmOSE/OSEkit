@@ -1,0 +1,104 @@
+# This file created by conda-build 3.22.0
+# meta.yaml template originally from:
+# /feedstock/recipe, last modified Wed Feb 22 09:24:41 2023
+# ------------------------------------------------
+
+package:
+  name: libwebp-base
+  version: 1.2.4
+source:
+  sha256: 7bf5a8a28cc69bcfa8cb214f2c3095703c6b73ac5fba4d5480c205331d9494df
+  url: https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.2.4.tar.gz
+build:
+  number: '1'
+  run_exports:
+    - libwebp-base
+  string: h5eee18b_1
+requirements:
+  build:
+    - _libgcc_mutex 0.1 main
+    - _openmp_mutex 5.1 1_gnu
+    - _sysroot_linux-64_curr_repodata_hack 3 haa98f57_10
+    - binutils_impl_linux-64 2.38 h2a08ee3_1
+    - binutils_linux-64 2.38.0 hc2dff05_0
+    - gcc_impl_linux-64 11.2.0 h1234567_1
+    - gcc_linux-64 11.2.0 h5c386dc_0
+    - kernel-headers_linux-64 3.10.0 h57e8cba_10
+    - ld_impl_linux-64 2.38 h1181459_1
+    - libgcc-devel_linux-64 11.2.0 h1234567_1
+    - libgcc-ng 11.2.0 h1234567_1
+    - libgomp 11.2.0 h1234567_1
+    - libstdcxx-ng 11.2.0 h1234567_1
+    - libtool 2.4.6 h6a678d5_1009
+    - make 4.2.1 h1bed415_1
+    - sysroot_linux-64 2.17 h57e8cba_10
+  host:
+    - _libgcc_mutex 0.1 main
+    - _openmp_mutex 5.1 1_gnu
+    - libgcc-ng 11.2.0 h1234567_1
+    - libgomp 11.2.0 h1234567_1
+  run:
+    - libgcc-ng >=11.2.0
+  run_constrained:
+    - libwebp 1.2.4
+test:
+  commands:
+    - test -f $PREFIX/lib/libwebp.so
+    - test ! -f $PREFIX/lib/libwebp.a
+    - test $PREFIX/pkgconfig/libwebp.pc
+    - test -f $PREFIX/lib/libwebpdemux.so
+    - test ! -f $PREFIX/lib/libwebpdemux.a
+    - test $PREFIX/pkgconfig/libwebpdemux.pc
+    - test -f $PREFIX/lib/libwebpmux.so
+    - test ! -f $PREFIX/lib/libwebpmux.a
+    - test $PREFIX/pkgconfig/libwebpmux.pc
+    - test -f $PREFIX/lib/libwebpdecoder.so
+    - test ! -f $PREFIX/lib/libwebpdecoder.a
+    - test $PREFIX/pkgconfig/libwebpdecoder.pc
+    - test -f $PREFIX/include/webp/decode.h || (echo "decode.h not found" && exit
+      1)
+    - test -f $PREFIX/include/webp/demux.h || (echo "demux.h not found" && exit 1)
+    - test -f $PREFIX/include/webp/encode.h || (echo "encode.h not found" && exit
+      1)
+    - test -f $PREFIX/include/webp/mux_types.h || (echo "mux_types.h not found" &&
+      exit 1)
+    - test -f $PREFIX/include/webp/mux.h || (echo "mux.h not found" && exit 1)
+    - test -f $PREFIX/include/webp/types.h || (echo "types.h not found" && exit 1)
+    - test ! -f $PREFIX/bin/cwebp
+    - test ! -f $PREFIX/bin/dwebp
+    - test ! -f $PREFIX/bin/gif2webp
+    - test ! -f $PREFIX/bin/img2webp
+    - test ! -f $PREFIX/bin/webpinfo
+    - test ! -f $PREFIX/bin/webpmux
+about:
+  description: 'WebP is a method of lossy and lossless compression that can be used
+    on a
+
+    large variety of photographic, translucent and graphical images found on the
+
+    web. The degree of lossy compression is adjustable so a user can choose the
+
+    trade-off between file size and image quality.
+
+    libwebp-base provides the headers and shared libraries. For cwebp and dwep,
+
+    binaries install libwebp.
+
+    '
+  dev_url: https://chromium.googlesource.com/webm/libwebp
+  doc_url: https://developers.google.com/speed/webp/docs/using
+  home: https://developers.google.com/speed/webp
+  license: BSD-3-Clause
+  license_family: BSD
+  license_file: COPYING
+  summary: WebP image library
+extra:
+  copy_test_source_files: true
+  final: true
+  flow_run_id: ddab1ae2-b838-455d-be40-4cdb0ff1ccfe
+  recipe-maintainers:
+    - carterbox
+    - dschreij
+    - ocefpaf
+  remote_url: git@github.com:AnacondaRecipes/libwebp-base-feedstock.git
+  sha: a7de8454178e6430f8ed4430ff048d96789360c1

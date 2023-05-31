@@ -1,0 +1,17 @@
+{
+  "arch": "x86_64",
+  "build": "h3be6417_0",
+  "build_number": 0,
+  "depends": [
+    "jpeg >=9b,<10a",
+    "libgcc-ng >=7.3.0",
+    "libtiff >=4.1.0,<5.0a0"
+  ],
+  "license": "MIT",
+  "license_family": "MIT",
+  "name": "lcms2",
+  "platform": "linux",
+  "subdir": "linux-64",
+  "timestamp": 1617648674152,
+  "version": "2.12"
+}

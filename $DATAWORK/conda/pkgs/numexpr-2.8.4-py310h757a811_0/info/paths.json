@@ -1,0 +1,161 @@
+{
+  "paths": [
+    {
+      "_path": "lib/python3.10/site-packages/numexpr-2.8.4.dist-info/AUTHORS.txt",
+      "path_type": "hardlink",
+      "sha256": "d2da98361fe7a337cf010d110f3cd3d79f81bc889eb18126eed7d8ca5ecabd1e",
+      "size_in_bytes": 942
+    },
+    {
+      "_path": "lib/python3.10/site-packages/numexpr-2.8.4.dist-info/INSTALLER",
+      "path_type": "hardlink",
+      "sha256": "d0edee15f91b406f3f99726e44eb990be6e34fd0345b52b910c568e0eef6a2a8",
+      "size_in_bytes": 5
+    },
+    {
+      "_path": "lib/python3.10/site-packages/numexpr-2.8.4.dist-info/LICENSE.txt",
+      "path_type": "hardlink",
+      "sha256": "4a725d188360ece549d776c53af67cd9ab3a87ff90639f2404229c0cb84fcf82",
+      "size_in_bytes": 1214
+    },
+    {
+      "_path": "lib/python3.10/site-packages/numexpr-2.8.4.dist-info/METADATA",
+      "path_type": "hardlink",
+      "sha256": "a3c5e4b5604717b67cc4ceb39611ee9e7537dbaa1d21bc6bd8867e64460b5faa",
+      "size_in_bytes": 7972
+    },
+    {
+      "_path": "lib/python3.10/site-packages/numexpr-2.8.4.dist-info/RECORD",
+      "path_type": "hardlink",
+      "sha256": "c84583ce501f6f7a9fb8664d18fdd1db5d44864efe126d2cee05e5e3357b2700",
+      "size_in_bytes": 1903
+    },
+    {
+      "_path": "lib/python3.10/site-packages/numexpr-2.8.4.dist-info/REQUESTED",
+      "path_type": "hardlink",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_in_bytes": 0
+    },
+    {
+      "_path": "lib/python3.10/site-packages/numexpr-2.8.4.dist-info/WHEEL",
+      "path_type": "hardlink",
+      "sha256": "9d3cbf67c8af18407aa85c152e0eff87aaead09b74254e4fcf670bdbf16348c4",
+      "size_in_bytes": 105
+    },
+    {
+      "_path": "lib/python3.10/site-packages/numexpr-2.8.4.dist-info/direct_url.json",
+      "path_type": "hardlink",
+      "sha256": "03b234907115e943bdf5be5c59235af67e09baa414b8f5a4dd0d7a86121ca9ad",
+      "size_in_bytes": 67
+    },
+    {
+      "_path": "lib/python3.10/site-packages/numexpr-2.8.4.dist-info/top_level.txt",
+      "path_type": "hardlink",
+      "sha256": "e51e4e02173b93ab146a3aade2fa7edfaf2559685bdb70a80ba2e5b4830da8d0",
+      "size_in_bytes": 8
+    },
+    {
+      "_path": "lib/python3.10/site-packages/numexpr/__init__.py",
+      "path_type": "hardlink",
+      "sha256": "72ad0baecaab594f2965805f8bc1910c29384863a14c1a7cfe30b4072319a794",
+      "size_in_bytes": 2328
+    },
+    {
+      "_path": "lib/python3.10/site-packages/numexpr/__pycache__/__init__.cpython-310.pyc",
+      "path_type": "hardlink",
+      "sha256": "ecfdd1ebfd4ebc8c5f4e06dce7c39677422f7a61497266f22d1faee56f192b2b",
+      "size_in_bytes": 1714
+    },
+    {
+      "_path": "lib/python3.10/site-packages/numexpr/__pycache__/cpuinfo.cpython-310.pyc",
+      "path_type": "hardlink",
+      "sha256": "5261a491f21ba40ce45097429d09358b93774e2f7050d34000c01d71f75dde01",
+      "size_in_bytes": 31767
+    },
+    {
+      "_path": "lib/python3.10/site-packages/numexpr/__pycache__/expressions.cpython-310.pyc",
+      "path_type": "hardlink",
+      "sha256": "e438b8ba359771c8933b03a9414d7292e4752b513559ce56c1744b3cc801dd33",
+      "size_in_bytes": 14180
+    },
+    {
+      "_path": "lib/python3.10/site-packages/numexpr/__pycache__/necompiler.cpython-310.pyc",
+      "path_type": "hardlink",
+      "sha256": "27e0ea52d4b3bd291d9a525ee5ba25a82963c4c936901d1bb4e00a618f3f4882",
+      "size_in_bytes": 25076
+    },
+    {
+      "_path": "lib/python3.10/site-packages/numexpr/__pycache__/utils.cpython-310.pyc",
+      "path_type": "hardlink",
+      "sha256": "5916154a7ebeb7ed111cacd81c1a4e0d63c3e3f70071908920bfcebdf176d57d",
+      "size_in_bytes": 6310
+    },
+    {
+      "_path": "lib/python3.10/site-packages/numexpr/__pycache__/version.cpython-310.pyc",
+      "path_type": "hardlink",
+      "sha256": "b7e2ca3eeaf5585546bc71f5d1c8e6f052b301c81ed04a8c8eba18ce19e5dec4",
+      "size_in_bytes": 224
+    },
+    {
+      "_path": "lib/python3.10/site-packages/numexpr/cpuinfo.py",
+      "path_type": "hardlink",
+      "sha256": "0dec38de2153eb827e2ff9646dd61c6c343ef80f6dd6ddaa184819deefd2511d",
+      "size_in_bytes": 26021
+    },
+    {
+      "_path": "lib/python3.10/site-packages/numexpr/expressions.py",
+      "path_type": "hardlink",
+      "sha256": "fab66ba5e57553dcb02a3889b7fd58e0a38078cb8f5cb89d8b6711b58efdcaba",
+      "size_in_bytes": 16818
+    },
+    {
+      "_path": "lib/python3.10/site-packages/numexpr/interpreter.cpython-310-x86_64-linux-gnu.so",
+      "path_type": "hardlink",
+      "sha256": "61ea4f972f8a1832682e77c22d17f91c38fcbc1b0fbb1be4f454fd3a85bab679",
+      "size_in_bytes": 161584
+    },
+    {
+      "_path": "lib/python3.10/site-packages/numexpr/necompiler.py",
+      "path_type": "hardlink",
+      "sha256": "681a71f240548ee42527a3d1df5863843500ff047f3b6b576ef357d5a9dd792c",
+      "size_in_bytes": 28891
+    },
+    {
+      "_path": "lib/python3.10/site-packages/numexpr/tests/__init__.py",
+      "path_type": "hardlink",
+      "sha256": "f52d72ac06b8643f1969e26fe6907de18033de1418e175a79390bd51001b015f",
+      "size_in_bytes": 461
+    },
+    {
+      "_path": "lib/python3.10/site-packages/numexpr/tests/__pycache__/__init__.cpython-310.pyc",
+      "path_type": "hardlink",
+      "sha256": "f01f914f6845b658d0e178c0cec6e9b995080bcdd120a08df4f8e0045a5b3e41",
+      "size_in_bytes": 271
+    },
+    {
+      "_path": "lib/python3.10/site-packages/numexpr/tests/__pycache__/test_numexpr.cpython-310.pyc",
+      "path_type": "hardlink",
+      "sha256": "4145febf2d0f892e63a0323cd9d8ea251a790a27559b59f373b824eef8b7d241",
+      "size_in_bytes": 39522
+    },
+    {
+      "_path": "lib/python3.10/site-packages/numexpr/tests/test_numexpr.py",
+      "path_type": "hardlink",
+      "sha256": "857cf5f3812321b68b09235ac5d8bcef79cd4caf2ac3dbb05bb8e4e76dc61d36",
+      "size_in_bytes": 46773
+    },
+    {
+      "_path": "lib/python3.10/site-packages/numexpr/utils.py",
+      "path_type": "hardlink",
+      "sha256": "c6739e807f570caeefdda663ae0453fda8a00efd24a326132cda607343031ca3",
+      "size_in_bytes": 7693
+    },
+    {
+      "_path": "lib/python3.10/site-packages/numexpr/version.py",
+      "path_type": "hardlink",
+      "sha256": "7f9c06b9d8f1a9c2e02f76859d1a4db0ebbd5c31e712c18f74a9af38399def10",
+      "size_in_bytes": 116
+    }
+  ],
+  "paths_version": 1
+}

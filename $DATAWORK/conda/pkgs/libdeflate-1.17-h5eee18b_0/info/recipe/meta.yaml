@@ -1,0 +1,95 @@
+# This file created by conda-build 3.22.0
+# meta.yaml template originally from:
+# /feedstock/recipe, last modified Mon Feb 27 08:28:58 2023
+# ------------------------------------------------
+
+package:
+  name: libdeflate
+  version: '1.17'
+source:
+  sha256: fa4615af671513fa2a53dc2e7a89ff502792e2bdfc046869ef35160fcc373763
+  url: https://github.com/ebiggers/libdeflate/archive/v1.17.tar.gz
+build:
+  number: '0'
+  run_exports:
+    - libdeflate >=1.17,<1.18.0a0
+  string: h5eee18b_0
+requirements:
+  build:
+    - _libgcc_mutex 0.1 main
+    - _openmp_mutex 5.1 1_gnu
+    - _sysroot_linux-64_curr_repodata_hack 3 haa98f57_10
+    - binutils_impl_linux-64 2.38 h2a08ee3_1
+    - binutils_linux-64 2.38.0 hc2dff05_0
+    - bzip2 1.0.8 h7b6447c_0
+    - c-ares 1.18.1 h7f8727e_0
+    - ca-certificates 2023.01.10 h06a4308_0
+    - cmake 3.22.1 h1fce559_0
+    - expat 2.4.9 h6a678d5_0
+    - gcc_impl_linux-64 11.2.0 h1234567_1
+    - gcc_linux-64 11.2.0 h5c386dc_0
+    - kernel-headers_linux-64 3.10.0 h57e8cba_10
+    - krb5 1.19.4 h568e23c_0
+    - ld_impl_linux-64 2.38 h1181459_1
+    - libcurl 7.87.0 h91b91d3_0
+    - libedit 3.1.20221030 h5eee18b_0
+    - libev 4.33 h7f8727e_1
+    - libgcc-devel_linux-64 11.2.0 h1234567_1
+    - libgcc-ng 11.2.0 h1234567_1
+    - libgomp 11.2.0 h1234567_1
+    - libnghttp2 1.46.0 hce63b2e_0
+    - libssh2 1.10.0 h8f2d780_0
+    - libstdcxx-ng 11.2.0 h1234567_1
+    - libuv 1.44.2 h5eee18b_0
+    - lz4-c 1.9.4 h6a678d5_0
+    - make 4.2.1 h1bed415_1
+    - ncurses 6.4 h6a678d5_0
+    - openssl 1.1.1t h7f8727e_0
+    - rhash 1.4.1 h3c74f83_1
+    - sysroot_linux-64 2.17 h57e8cba_10
+    - xz 5.2.10 h5eee18b_1
+    - zlib 1.2.13 h5eee18b_0
+    - zstd 1.5.2 ha4553b6_0
+  host:
+    - _libgcc_mutex 0.1 main
+    - _openmp_mutex 5.1 1_gnu
+    - libgcc-ng 11.2.0 h1234567_1
+    - libgomp 11.2.0 h1234567_1
+  run:
+    - libgcc-ng >=11.2.0
+test:
+  commands:
+    - test ! -f ${PREFIX}/lib/libdeflate.a
+    - test -f ${PREFIX}/lib/libdeflate${SHLIB_EXT}
+    - test -f ${PREFIX}/include/libdeflate.h
+    - libdeflate-gzip -h
+    - libdeflate-gunzip -h
+about:
+  description: 'libdeflate is heavily optimized. It is significantly faster than the
+    zlib
+
+    library, both for compression and decompression, and especially on x86
+
+    processors. In addition, libdeflate provides optional high compression
+
+    modes that provide a better compression ratio than the zlib''s "level 9".
+
+    '
+  dev_url: https://github.com/ebiggers/libdeflate
+  doc_url: https://github.com/ebiggers/libdeflate/blob/master/README.md
+  home: https://github.com/ebiggers/libdeflate
+  license: MIT
+  license_family: MIT
+  license_file: COPYING
+  summary: libdeflate is a library for fast, whole-buffer DEFLATE-based compression
+    and decompression.
+extra:
+  copy_test_source_files: true
+  final: true
+  flow_run_id: 04727ea3-9c13-4bcc-a550-a6d462a490a3
+  recipe-maintainers:
+    - dpryan79
+    - hmaarrfk
+    - rhpvorderman
+  remote_url: git@github.com:AnacondaRecipes/libdeflate-feedstock.git
+  sha: 7b85bce83f9869d1278ecc239613813c9e4aa0ae

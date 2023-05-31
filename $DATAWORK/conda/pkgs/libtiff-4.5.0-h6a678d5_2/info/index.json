@@ -1,0 +1,24 @@
+{
+  "arch": "x86_64",
+  "build": "h6a678d5_2",
+  "build_number": 2,
+  "depends": [
+    "jpeg >=9e,<10a",
+    "lerc >=3.0,<4.0a0",
+    "libdeflate >=1.17,<1.18.0a0",
+    "libgcc-ng >=11.2.0",
+    "libstdcxx-ng >=11.2.0",
+    "libwebp-base",
+    "xz >=5.2.10,<6.0a0",
+    "xz >=5.2.4,<6.0a0",
+    "zlib >=1.2.13,<1.3.0a0",
+    "zstd >=1.5.2,<1.6.0a0"
+  ],
+  "license": "HPND",
+  "license_family": "Other",
+  "name": "libtiff",
+  "platform": "linux",
+  "subdir": "linux-64",
+  "timestamp": 1677493430198,
+  "version": "4.5.0"
+}

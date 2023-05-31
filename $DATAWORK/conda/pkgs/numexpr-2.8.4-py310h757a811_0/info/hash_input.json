@@ -1,0 +1,11 @@
+{
+  "channel_targets": "defaults",
+  "blas_impl": "openblas",
+  "c_compiler": "gcc",
+  "openblas": "0.3.20",
+  "c_compiler_version": "11.2.0",
+  "target_platform": "linux-64",
+  "numpy": "1.21",
+  "cxx_compiler": "gxx",
+  "cxx_compiler_version": "11.2.0"
+}

@@ -1,0 +1,11 @@
+{
+  "paths": [
+    {
+      "_path": "bin/brotli",
+      "path_type": "hardlink",
+      "sha256": "e27a4a1b55c918b7fdc1029d367fb7c5c43897b23bd9404af3984aa8440edec1",
+      "size_in_bytes": 34248
+    }
+  ],
+  "paths_version": 1
+}

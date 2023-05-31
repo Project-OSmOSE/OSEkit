@@ -1,0 +1,64 @@
+# This file created by conda-build 3.21.4
+# meta.yaml template originally from:
+# /tmp/build/80754af9/rsync-recipes/lcms2-2.12-on-linux_64, last modified Mon Apr  5 18:45:38 2021
+# ------------------------------------------------
+
+package:
+  name: lcms2
+  version: '2.12'
+source:
+  patches: null
+  sha256: e501f1482fc424550ef3abbf86bf1c66090e1661249e89552d39ed5bf935df66
+  url: https://github.com/mm2/Little-CMS/archive/2.12.tar.gz
+build:
+  number: '0'
+  run_exports:
+    - lcms2 >=2.12,<3.0a0
+  string: h3be6417_0
+requirements:
+  build:
+    - _libgcc_mutex 0.1 main
+    - binutils_impl_linux-64 2.33.1 he6710b0_7
+    - binutils_linux-64 2.33.1 h9595d00_15
+    - gcc_impl_linux-64 7.3.0 habb00fd_1
+    - gcc_linux-64 7.3.0 h553295d_15
+    - ld_impl_linux-64 2.33.1 h53a641e_7
+    - libgcc-ng 9.1.0 hdf63c60_0
+    - libstdcxx-ng 9.1.0 hdf63c60_0
+    - make 4.2.1 h1bed415_1
+  host:
+    - _libgcc_mutex 0.1 main
+    - jpeg 9b h024ee3a_2
+    - libgcc-ng 9.1.0 hdf63c60_0
+    - libstdcxx-ng 9.1.0 hdf63c60_0
+    - libtiff 4.1.0 h2733197_1
+    - lz4-c 1.9.3 h2531618_0
+    - xz 5.2.5 h7b6447c_0
+    - zlib 1.2.11 h7b6447c_3
+    - zstd 1.4.9 haebb681_0
+  run:
+    - jpeg >=9b,<10a
+    - libgcc-ng >=7.3.0
+    - libtiff >=4.1.0,<5.0a0
+test:
+  commands:
+    - test -f ${PREFIX}/include/lcms2.h
+    - test -f ${PREFIX}/lib/liblcms2.a
+    - test -f ${PREFIX}/lib/liblcms2${SHLIB_EXT}
+    - jpgicc
+    - tificc
+    - linkicc
+    - transicc
+    - psicc
+about:
+  home: http://www.littlecms.com/
+  license: MIT
+  license_family: MIT
+  license_file: COPYING
+  summary: Open Source Color Management Engine
+extra:
+  copy_test_source_files: true
+  final: true
+  recipe-maintainers:
+    - hmaarrfk
+    - isuruf

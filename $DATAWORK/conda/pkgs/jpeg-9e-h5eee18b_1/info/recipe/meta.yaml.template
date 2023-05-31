@@ -1,0 +1,54 @@
+{% set version = "9e" %}
+
+package:
+  name: jpeg
+  version: {{ version }}
+
+source:
+  url: https://www.ijg.org/files/jpegsrc.v{{ version }}.tar.gz
+  sha256: 4077d6a6a75aeb01884f708919d25934c93305e49f7e3f36db9129320e6f4f3d
+  patches:                  # [win]
+    - CMakeLists.txt.patch  # [win]
+
+build:
+  number: 1
+  run_exports:
+    # compatible within major version numbers
+    # https://abi-laboratory.pro/tracker/timeline/libjpeg/
+    - {{ pin_subpackage('jpeg') }}
+
+requirements:
+  build:
+    - cmake         # [win]
+    - {{ compiler('c') }}
+    - libtool       # [unix]
+    - make          # [unix]
+    - m2-patch      # [win]
+test:
+  files:
+    - testorig.jpg
+  commands:
+    - djpeg -dct int -ppm -outfile testout.ppm testorig.jpg
+    - if not exist %PREFIX%/Library/lib/pkgconfig/libjpeg.pc exit 1  # [win]
+    - test -f ${PREFIX}/lib/pkgconfig/libjpeg.pc  # [unix]
+
+about:
+  home: https://www.ijg.org/
+  license: IJG
+  license_file: README
+  license_family: Other
+  summary: read/write jpeg COM, EXIF, IPTC medata
+  description: |
+    This software library is the basis for the processing of images in the
+    ubiquitous JPEG format and is used worldwide in a countless number of
+    applications of software vendors and in the photographic industry under
+    a fee-free license with open source code.
+  doc_url: https://www.ijg.org/files/
+  dev_url: https://www.ijg.org/files/
+    
+extra:    
+  recipe-maintainers:
+    - gillins
+    - jakirkham
+    - msarahan
+    - katietz

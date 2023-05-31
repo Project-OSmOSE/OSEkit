@@ -1,0 +1,77 @@
+# This file created by conda-build 3.22.0
+# meta.yaml template originally from:
+# /feedstock/recipe, last modified Thu Dec 22 08:23:45 2022
+# ------------------------------------------------
+
+package:
+  name: pytz
+  version: '2022.7'
+source:
+  sha256: 7ccfae7b4b2c067464a6733c6261673fdb8fd1be905460396b97a073e9fa683a
+  url: https://pypi.io/packages/source/p/pytz/pytz-2022.7.tar.gz
+build:
+  number: '0'
+  script: /croot/pytz_1671697431263/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pl/bin/python
+    -m pip install . --no-deps -vv
+  string: py310h06a4308_0
+requirements:
+  host:
+    - _libgcc_mutex 0.1 main
+    - _openmp_mutex 5.1 1_gnu
+    - bzip2 1.0.8 h7b6447c_0
+    - ca-certificates 2022.10.11 h06a4308_0
+    - certifi 2022.12.7 py310h06a4308_0
+    - ld_impl_linux-64 2.38 h1181459_1
+    - libffi 3.4.2 h6a678d5_6
+    - libgcc-ng 11.2.0 h1234567_1
+    - libgomp 11.2.0 h1234567_1
+    - libstdcxx-ng 11.2.0 h1234567_1
+    - libuuid 1.41.5 h5eee18b_0
+    - ncurses 6.3 h5eee18b_3
+    - openssl 1.1.1s h7f8727e_0
+    - pip 22.3.1 py310h06a4308_0
+    - python 3.10.8 h7a1cb2a_1
+    - readline 8.2 h5eee18b_0
+    - setuptools 65.5.0 py310h06a4308_0
+    - sqlite 3.40.0 h5082296_0
+    - tk 8.6.12 h1ccaba5_0
+    - tzdata 2022g h04d1e81_0
+    - wheel 0.37.1 pyhd3eb1b0_0
+    - xz 5.2.8 h5eee18b_0
+    - zlib 1.2.13 h5eee18b_0
+  run:
+    - python >=3.10,<3.11.0a0
+test:
+  commands:
+    - pip check || true
+  imports:
+    - pytz
+  requires:
+    - pip
+about:
+  description: 'pytz brings the Olson tz database into Python. This library allows
+
+    accurate and cross platform timezone calculations using Python 2.4 or
+
+    higher. It also solves the issue of ambiguous times at the end of daylight
+
+    saving time.
+
+    '
+  dev_url: https://github.com/stub42/pytz
+  doc_source_url: https://github.com/stub42/pytz#readme
+  doc_url: https://pythonhosted.org/pytz/
+  home: https://pythonhosted.org/pytz/
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE.txt
+  summary: World timezone definitions, modern and historical.
+extra:
+  copy_test_source_files: true
+  final: true
+  flow_run_id: 2f7852fb-bbae-41bd-9e62-f78164245d4e
+  recipe-maintainers:
+    - msarahan
+    - ocefpaf
+  remote_url: git@github.com:AnacondaRecipes/pytz-feedstock.git
+  sha: 4a990390a8c5d19a697c5425594fee2889c1685f
