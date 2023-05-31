@@ -150,9 +150,10 @@ class Variables():
 		Dataframe containing 'time' column with desired timestamps at which aux data will be computed. 
 		Default is an empty dataframe.
 		'''
-		self.path = path
-		if os.path.exists(os.path.join(path, 'data', 'auxiliary', 'aux_data.csv')):
-			self.df = pd.read_csv(os.path.join(path, 'data', 'auxiliary', 'aux_data.csv'))[['time', 'depth', 'lat', 'lon']] 
+		self.path = os.path.join(path, dataset)
+		self.dataset = dataset
+		if os.path.exists(os.path.join(self.path, 'data', 'auxiliary', 'aux_data.csv')):
+			self.df = pd.read_csv(os.path.join(self.path, 'data', 'auxiliary', 'aux_data.csv'))[['time', 'depth', 'lat', 'lon']] 
 			self.latitude, self.longitude = self.df['lat'], self.df['lon']
 			self.timestamps = self.df['time']
 			self.depth = self.df['depth']
@@ -236,8 +237,8 @@ class Variables():
 		self.df = pd.DataFrame({'time': self.timestamsp, 'lat':self.latitude, 'lon':self.longitude, 'depth':float('nan')}, index = [0])
 
 	@classmethod
-	def from_fn(cls, path, *, local = True):
-		return cls(path, local)
+	def from_fn(cls, path, dataset, *, local = True):
+		return cls(path, dataset, local)
 
 
 
@@ -267,20 +268,20 @@ class Weather(Variables):
 		lon_off : float
 			For nearest method, maximum longitude offset in degrees above which no ERA data is joined (default is np.inf).
         '''
-		print(self.local)
-		if not self.local :
-			print("Please download ERA on local machine and upload it on Datarmor. \nSystem exit.")
-			sys.exit()
-		if os.path.exists(os.path.join(self.)):
-			downloaded_cds =era_path+filename+'.nc'
+
+		if os.path.exists(os.path.join(self.path, 'data', 'auxiliary', 'weather', 'era')):
+			self.era_path = os.path.join(self.path, 'data', 'auxiliary', 'weather', 'era')
+			downloaded_cds = os.path.join(self.era_path, self.dataset+'.nc')
 			fh = Dataset(downloaded_cds, mode='r')
 			self.variables = list(fh.variables.keys())[3:]
 		else :
-			print('Please download ERA5 data first from a local machine\nTrying to download...')
+			if not self.local :
+				print("Please download ERA on local machine and upload it on Datarmor. \nSystem exit.")
+				sys.exit()
+			print('Trying to download ERA5 data...')
 			self.variables = download_era(self.ftime.to_numpy(), self.longitude, self.latitude, era_path, filename)
-		self.era_path = era_path
-		self.filename = filename
-		if method == 'cube':
+
+		if method == 'cube' or method == 'cylinder':
 			self.stamps = np.load(era_path+'stamps.npz', allow_pickle = True)
 		else :
 			temp_stamps = np.load(era_path + 'stamps.npz', allow_pickle=True)
@@ -288,9 +289,9 @@ class Weather(Variables):
 			stamps = np.array([[date, lat_val, lon_val] for date in dates for lat_val in lat for lon_val in lon])
 			self.stamps = stamps.reshape(len(dates), len(lat), len(lon), 3)
 
-	def nearest_era(self, era_path, filename, *, time_off = 600, lat_off = 0.5, lon_off = 0.5, variables = ['u10','v10']):
+	def nearest_era(self, *, time_off = 600, lat_off = 0.5, lon_off = 0.5, variables = ['u10','v10']):
 		
-		self.load_era(era_path, filename)
+		self.load_era(method = 'nearest')
 		data = self.df[['time', 'lat', 'lon']].dropna().to_numpy()
 		self.stamps[:,:,:,0] = np.array(list(map(get_era_time, self.stamps[:,:,:,0].ravel()))).reshape(self.stamps[:,:,:,0].shape)
 		pos_ind, pos_dist = j.nearest_point(data, self.stamps.reshape(-1, 3))
@@ -300,7 +301,7 @@ class Weather(Variables):
 			pbar.update(1)
 			pbar.set_description("Loading and formatting %s" % variable)
 			temp_variable = np.full([len(self.ftime)], np.nan)
-			var = np.load(self.era_path+variable+'_'+self.filename+'.npy')
+			var = np.load(self.era_path+variable+'_'+self.dataset+'.npy')
 			var = var.flatten()[pos_ind]
 			mask = np.any(abs(data - self.stamps.reshape(-1,3)[pos_ind]) > [time_off, lat_off, lon_off], axis = 1)
 			var[mask] = np.nan
@@ -310,9 +311,9 @@ class Weather(Variables):
 		self.df[f'np_{time_off}_{lat_off}_{lon_off}_era'] = np.sqrt(self.df[f'np_{time_off}_{lat_off}_{lon_off}_u10']**2 + self.df[f'np_{time_off}_{lat_off}_{lon_off}_v10']**2)
 		
 	
-	def interpolation_era(self, era_path, filename):
+	def interpolation_era(self):
 		
-		self.load_era(era_path, filename)
+		self.load_era(method = 'interpolation')
 		temp_lat = self.latitude[(~np.isnan(self.longitude)) | (~np.isnan(self.latitude))]
 		temp_lon = self.longitude[(~np.isnan(self.longitude)) | (~np.isnan(self.latitude))]
 		temp_ftime = self.ftime[(~np.isnan(self.longitude)) | (~np.isnan(self.latitude))]
@@ -320,7 +321,7 @@ class Weather(Variables):
 		for variable in self.variables:
 			pbar.update(1)
 			pbar.set_description("Loading and formatting %s" % variable)
-			var = np.load(self.era_path+variable+'_'+self.filename+'.npy')
+			var = np.load(self.era_path+variable+'_'+self.dataset+'.npy')
 			interp = j.rect_interpolation_era(self.stamps, var)
 			temp_variable =  np.full([len(self.ftime)], np.nan)
 			temp_variable[(~np.isnan(self.longitude)) | (~np.isnan(self.latitude))] = j.apply_interp(interp, temp_ftime, temp_lat, temp_lon)
@@ -329,15 +330,15 @@ class Weather(Variables):
 		self.df['interp_era'] = np.sqrt(self.df.interp_u10**2 + self.df.interp_v10**2)
 
 
-	def cube_era(self,era_path, filename, *, time_off = 600, lat_off = 0.5, lon_off = 0.5, variables = ['u10', 'v10']):
+	def cube_era(self, *, time_off = 600, lat_off = 0.5, lon_off = 0.5, variables = ['u10', 'v10']):
 
-		self.load_era(era_path, filename, method = 'cube')
+		self.load_era(method = 'cube')
 		temp_df = self.df[['time', 'lat', 'lon']].dropna()
 		if variables == None:
 			variables = self.variables
 		for variable in  variables:
 			temp_variable =  np.full([len(self.ftime)], np.nan)
-			var = np.load(self.era_path+variable+'_'+self.filename+'.npy')
+			var = np.load(self.era_path+variable+'_'+self.dataset+'.npy')
 			pbar = tqdm(total = len(temp_df), position = 0, leave = True)
 			for i, row in temp_df.iterrows():
 				time_index = np.where((abs(self.stamps['timestamps_epoch'] - row.time) <= time_off))[0]
@@ -367,9 +368,9 @@ class Weather(Variables):
 		self.df[f'cube_{time_off}_{lat_off}_{lon_off}_era'] = np.sqrt(self.df[f'cube_{time_off}_{lat_off}_{lon_off}_u10']**2+self.df[f'cube_{time_off}_{lat_off}_{lon_off}_v10']**2)
 		
 		
-	def cylinder_era(self, era_path, filename, *, time_off = 600, r = 'depth', variables = ['u10', 'v10']):
+	def cylinder_era(self, *, time_off = 600, r = 'depth', variables = ['u10', 'v10']):
 
-		self.load_era(era_path, filename, caller = 'stampz')
+		self.load_era(method = 'cylinder')
 		temp_df = self.df[['time', 'lat', 'lon']].dropna()
 		if isinstance(r, int) or isinstance(r, float):
 			r = [r]*len(temp_df)
@@ -379,7 +380,7 @@ class Weather(Variables):
 			variables = self.variables
 		for variable in  variables:
 			temp_variable =  np.full([len(self.ftime)], np.nan)
-			var = np.load(self.era_path+variable+'_'+self.filename+'.npy')
+			var = np.load(self.era_path+variable+'_'+self.dataset+'.npy')
 			pbar = tqdm(total = len(temp_df), position = 0, leave = True)
 			for i, row in temp_df.iterrows():
 				time_index = np.where((abs(self.stamps['timestamps_epoch'] - row.time) <= time_off))[0]
