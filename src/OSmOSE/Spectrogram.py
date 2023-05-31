@@ -1171,11 +1171,17 @@ class Spectrogram(Dataset):
         nber_tiles_lowest_zoom_level = 2 ** (self.zoom_level -1)
         tile_duration = duration / nber_tiles_lowest_zoom_level
 
-
-        Sxx_2 = np.empty((int(self.nfft / 2) + 1, 1))
+        audio_file_name = output_file.stem        
+        current_timestamp = pd.to_datetime(get_timestamp_of_audio_file( self.audio_path.joinpath('timestamp.csv') , audio_file_name+".wav"))            
+        list_timestamps = []
+        
+        Sxx_complete_lowest_level = np.empty((int(self.nfft / 2) + 1, 1))
+        Sxx_mean_lowest_tuile = np.empty((1,int(self.nfft / 2) + 1))
         for tile in range(0, nber_tiles_lowest_zoom_level):
             start = tile * tile_duration
             end = start + tile_duration
+            
+            list_timestamps.append(current_timestamp+timedelta(seconds=int(start)))
 
             sample_data = data[int(start * sample_rate) : int(end * sample_rate)-1]
 
@@ -1187,21 +1193,47 @@ class Spectrogram(Dataset):
                 ),
             )
 
-            Sxx_2 = np.hstack((Sxx_2, Sxx))
+            Sxx_complete_lowest_level = np.hstack((Sxx_complete_lowest_level, Sxx))
+            Sxx_mean_lowest_tuile = np.vstack((Sxx_mean_lowest_tuile, Sxx.mean(axis=1)[np.newaxis,:]))
 
-        Sxx_lowest_level = Sxx_2[:, 1:]
+        Sxx_complete_lowest_level = Sxx_complete_lowest_level[:, 1:]
+        Sxx_mean_lowest_tuile = Sxx_mean_lowest_tuile[:, 1:]
 
         segment_times = np.linspace(
-            0, len(data) / sample_rate, Sxx_lowest_level.shape[1]
+            0, len(data) / sample_rate, Sxx_complete_lowest_level.shape[1]
         )[np.newaxis, :]
+
+        # lowest tuile resolution
+        if self.save_for_LTAS:
+
+            output_path_welch_resolution = self.path_output_welch.joinpath(str(tile_duration))
+                
+            if not output_path_welch_resolution.exists():
+                make_path(output_path_welch_resolution, mode=DPDEFAULT)
+                            
+            output_matrix = output_path_welch_resolution.joinpath(
+                output_file.name
+            ).with_suffix(".npz")
+            
+            if not output_matrix.exists():
+                np.savez(
+                    output_matrix,
+                    Sxx=Sxx_mean_lowest_tuile,
+                    Freq=Freq,
+                    Time=list_timestamps
+                )
+
+                os.chmod(output_matrix, mode=FPDEFAULT)                  
+
+
 
         # loop over the zoom levels from the second lowest to the highest one
         for zoom_level in range(self.zoom_level)[::-1]: #zoom_level + 1
-            nberspec = Sxx_lowest_level.shape[1] // (2**zoom_level)
+            nberspec = Sxx_complete_lowest_level.shape[1] // (2**zoom_level)
 
             # loop over the tiles at each zoom level
             for tile in range(2**zoom_level):
-                Sxx_int = Sxx_lowest_level[:, tile * nberspec : (tile + 1) * nberspec][
+                Sxx_int = Sxx_complete_lowest_level[:, tile * nberspec : (tile + 1) * nberspec][
                     :, :: 2 ** (self.zoom_level - zoom_level)
                 ]
 
@@ -1224,20 +1256,15 @@ class Spectrogram(Dataset):
                     adjust=adjust
                 )
          
-
         
-
+        # highest tuile resolution
         if self.save_for_LTAS:
 
             output_path_welch_resolution = self.path_output_welch.joinpath(str(self.spectro_duration))
                 
             if not output_path_welch_resolution.exists():
                 make_path(output_path_welch_resolution, mode=DPDEFAULT)
-                            
-            audio_file_name = output_file.stem
-            
-            current_timestamp = pd.to_datetime(get_timestamp_of_audio_file( self.audio_path.joinpath('timestamp.csv') , audio_file_name+".wav"))
-            
+                                                    
             output_matrix = output_path_welch_resolution.joinpath(
                 output_file.name
             ).with_suffix(".npz")
@@ -1247,7 +1274,7 @@ class Spectrogram(Dataset):
                     output_matrix,
                     Sxx=Sxx_int.mean(axis=1),
                     Freq=Freq,
-                    Time=current_timestamp,#+timedelta(seconds=int(segment_times_int,
+                    Time=current_timestamp,
                 )
 
                 os.chmod(output_matrix, mode=FPDEFAULT)  
@@ -1435,9 +1462,11 @@ class Spectrogram(Dataset):
 
         map_process_file = partial(self.process_file, **kwargs)
 
-        with mp.Pool(processes=min(self.batch_number, mp.cpu_count())) as pool:
-            pool.map(map_process_file, self.list_wav_to_process)
-
+        # with mp.Pool(processes=min(self.batch_number, mp.cpu_count())) as pool:
+        #     pool.map(map_process_file, self.list_wav_to_process)
+        
+        for file in self.list_wav_to_process:
+            self.process_file(file, **kwargs)
 
     def build_LTAS(self,time_resolution:str,time_scale:str='D'):
         
