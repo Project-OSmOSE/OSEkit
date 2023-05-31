@@ -10,6 +10,7 @@ import multiprocessing as mp
 from filelock import FileLock
 
 from tqdm import tqdm
+import itertools
 
 import re
 from datetime import timedelta
@@ -1197,7 +1198,7 @@ class Spectrogram(Dataset):
             Sxx_mean_lowest_tuile = np.vstack((Sxx_mean_lowest_tuile, Sxx.mean(axis=1)[np.newaxis,:]))
 
         Sxx_complete_lowest_level = Sxx_complete_lowest_level[:, 1:]
-        Sxx_mean_lowest_tuile = Sxx_mean_lowest_tuile[:, 1:]
+        Sxx_mean_lowest_tuile = Sxx_mean_lowest_tuile[1:,:]
 
         segment_times = np.linspace(
             0, len(data) / sample_rate, Sxx_complete_lowest_level.shape[1]
@@ -1470,7 +1471,7 @@ class Spectrogram(Dataset):
 
     def build_LTAS(self,time_resolution:str,time_scale:str='D'):
         
-        list_npz_files = list(self.path_output_welch.joinpath(str(self.spectro_duration)).glob('*npz'))
+        list_npz_files = list(self.path_output_welch.joinpath(time_resolution).glob('*npz'))
         if len(list_npz_files) == 0:            
             raise FileNotFoundError(
                 "No intermediary welch spectra to aggregate, run a complete generation of spectrograms first!"
@@ -1481,7 +1482,7 @@ class Spectrogram(Dataset):
             if not self.path_output_LTAS.exists():
                 make_path(self.path_output_LTAS, mode=DPDEFAULT)
                 
-            path_all_welch = self.path_output_welch.joinpath(str(self.spectro_duration),'all_welch.npz')
+            path_all_welch = self.path_output_welch.joinpath(time_resolution,'all_welch.npz')
             if os.path.exists(path_all_welch):                
                 data = np.load(path_all_welch,allow_pickle=True)   
                 LTAS=data['LTAS']
@@ -1492,19 +1493,19 @@ class Spectrogram(Dataset):
                 LTAS = np.empty((1, int(self.nfft/2) + 1))
                 time = []
                 for file_npz in tqdm(list_npz_files):
-                    current_matrix=np.load(file_npz,allow_pickle=True)                
-                    LTAS = np.vstack((LTAS, current_matrix['Sxx'][np.newaxis,:]))
-                    time.append(str(current_matrix['Time']))           
+                    current_matrix=np.load(file_npz,allow_pickle=True)    
+                    LTAS = np.vstack((LTAS, current_matrix['Sxx']))
+                    time.append( current_matrix['Time'] )       
                 LTAS=LTAS[1:,:]     
                 Freq = current_matrix['Freq']
                 
                 np.savez(path_all_welch,LTAS=LTAS,time=time,Freq=Freq,allow_pickle=True) 
-                        
+ 
             df=pd.DataFrame(LTAS,dtype=float)
-            df['time'] = time
+            df['time'] = list(itertools.chain(*time))
             df.set_index('time', inplace=True, drop= True)
             df.index = pd.to_datetime(df.index)
-                            
+                                        
             if time_scale=="all":              
                 self.generate_and_save_LTAS(df.index[0],df.index[-1],Freq,10*np.log10(LTAS.T) ,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_all.png'),'all')
 
