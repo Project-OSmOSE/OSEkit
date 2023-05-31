@@ -655,6 +655,8 @@ class Spectrogram(Dataset):
                         script_args=f"--input-dir {self.path_input_audio_file} --target-sr {self.dataset_sr} --batch-ind-min {i_min} --batch-ind-max {i_max} --output-dir {self.audio_path}",
                         jobname="OSmOSE_resample",
                         preset="low",
+                        mem="30G",
+                        walltime="04:00:00",
                         logdir=self.path.joinpath("log")
                     )
                     # TODO: use importlib.resources

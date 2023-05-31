@@ -571,7 +571,7 @@ class Dataset:
             res = "-1"
             choice = ""
             for i, ts in enumerate(timestamp_files):
-                choice += f"{i+1}: {ts}"
+                choice += f"{i+1}: {ts}\n"
             while int(res) not in range(1,len(timestamp_files) +1):
                 res = input(f"Multiple timestamp.csv detected. Choose which one should be considered the original:\n{choice}")
 
