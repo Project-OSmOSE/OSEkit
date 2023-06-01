@@ -1,4 +1,5 @@
 from OSmOSE.Dataset import Dataset
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import os, glob, sys
@@ -7,7 +8,7 @@ from OSmOSE import jointure as j
 from importlib import resources
 import soundfile as sf
 from tqdm import tqdm
-from netCDF4 import Dataset
+import netCDF4 as nc
 from OSmOSE import func_api
 import calendar, time, datetime
 from bisect import bisect_left
@@ -153,11 +154,13 @@ class Variables():
 		'''
 		self.path = os.path.join(path, dataset)
 		self.dataset = dataset
-		if os.path.exists(os.path.join(self.path, 'data', 'auxiliary', 'aux_data.csv')):
-			self.df = pd.read_csv(os.path.join(self.path, 'data', 'auxiliary', 'aux_data.csv'))[['time', 'depth', 'lat', 'lon']] 
+		if os.path.exists(os.path.join(self.path, 'data', 'auxiliary', 'instrument', 'gps_data.csv')):
+			self.df = pd.read_csv(os.path.join(self.path, 'data', 'auxiliary', 'instrument', 'gps_data.csv'))[['time', 'depth', 'lat', 'lon']] 
 			self.latitude, self.longitude = self.df['lat'], self.df['lon']
 			self.timestamps = self.df['time']
 			self.depth = self.df['depth']
+		else :
+			self.from_scratch()
 		self.local = local
 
 	def distance_to_shore(self):
@@ -227,12 +230,12 @@ class Variables():
 		if self.local == True :
 			try :
 				path = read_config(resources.files("OSmOSE").joinpath('config.toml'))
-				bathymetry_ds = Dataset(path.Auxiliary.bathymetry)
+				bathymetry_ds = nc.Dataset(path.Auxiliary.bathymetry)
 			except FileNotFoundError :
 				print('Please modify path to GEBCO_2022_sub_ice_topo.nc file in .aux_path.txt')
 				return None
 		else :
-			bathymetry_ds = Dataset('/home/datawork-osmose/dataset/auxiliary/GEBCO_2022_sub_ice_topo.nc')
+			bathymetry_ds = nc.Dataset('/home/datawork-osmose/dataset/auxiliary/GEBCO_2022_sub_ice_topo.nc')
 		temp_lat, temp_lon = self.latitude[~np.isnan(self.latitude)].to_numpy().astype('float16'), self.longitude[~np.isnan(self.longitude)].to_numpy().astype('float16')
 		pos_lat, pos_dist = j.nearest_point(temp_lat, bathymetry_ds['lat'][:].astype('float16'))
 		pos_lon, pos_dist = j.nearest_point(temp_lon, bathymetry_ds['lon'][:].astype('float16'))
@@ -247,7 +250,8 @@ class Variables():
 		Objective is to build time with timestamps
 		'''
 		try : 
-			metadata = pd.read_csv(Dataset._get_original_after_build().joinpath("metadata.csv"))
+			dataset = Dataset(Path(self.path, self.dataset), gps_coordinates=gps, osmose_group_name="gosmose")
+			metadata = pd.read_csv(dataset._get_original_after_build().joinpath("metadata.csv"))
 		except FileNotFoundError:
 			print('Could not find built dataset.')
 			sys.exit()
@@ -264,9 +268,6 @@ class Variables():
 		print('\nJoining wind fetch data...')
 		self.wind_fetch()
 
-	@classmethod
-	def from_fn(cls, path, dataset, *, local = True):
-		return cls(path, dataset, local)
 
 
 
@@ -315,7 +316,7 @@ class Weather(Variables):
 		if os.path.exists(os.path.join(self.path, 'data', 'auxiliary', 'weather', 'era')):
 			self.era_path = os.path.join(self.path, 'data', 'auxiliary', 'weather', 'era')
 			downloaded_cds = os.path.join(self.era_path, self.dataset+'.nc')
-			fh = Dataset(downloaded_cds, mode='r')
+			fh = nc.Dataset(downloaded_cds, mode='r')
 			self.variables = list(fh.variables.keys())[3:]
 		else :
 			if not self.local :
