@@ -1,15 +1,17 @@
-from Dataset import Dataset
+from OSmOSE.Dataset import Dataset
 import numpy as np
 import pandas as pd
 import os, glob, sys
 import scipy.signal as sg
 from OSmOSE import jointure as j
+from importlib import resources
 import soundfile as sf
 from tqdm import tqdm
 from netCDF4 import Dataset
 from OSmOSE import func_api
 import calendar, time, datetime
 from bisect import bisect_left
+from OSmOSE.utils import read_config
 
 def haversine(lat1, lat2, lon1, lon2):
 	lat1 = np.array(lat1).astype('float64')
@@ -41,8 +43,8 @@ def get_wind_fetch(dist, dir_u, dir_v):
 	scale used for wind fetch is 0.04° = 5 km
 	This ensures that shore distance in km yields a distance in ° that is less than the true distance.
 	'''
-	angle = np.arctan(dir_v/dir_u)
-	return 0.04 / 5 * dist * np.cos(angle), 0.04 / 5 * dist * np.sin(angle)
+	angle = np.arctan(dir_v/dir_u).astype('float16')
+	return 0.04 / 5 * dist.astype('float16') * np.cos(angle), 0.04 / 5 * dist.astype('float16') * np.sin(angle)
 
 def mod_pos(x, name):
 	if name == 'lat':
@@ -58,7 +60,6 @@ def nearest_shore(x,y):
 	lat_ind2 = np.rint(-9000/0.04*(_y-0.04)+20245500).astype(int)
 	lon_ind = (_x/0.04+4499.5).astype(int)
 	sub_dist2shore = np.stack([dist2shore_ds[ind1 : ind2]  for ind1, ind2 in zip(lat_ind, lat_ind2)])
-	print('I made it here')
 	shore_temp = np.array([sub_dist2shore[i, lon_ind[i], -1] for i in range(len(lon_ind))])
 	shore_distance[(~np.isnan(x)) | (~np.isnan(y))] = shore_temp
 	return shore_distance
@@ -137,7 +138,7 @@ class Variables():
         Dataframe containing 'time' column with desired timestamps at which aux data will be computed
 	'''
 	
-	def __init__(self, path, local = True):
+	def __init__(self, path, dataset, local = True):
 		'''
 		Initializes the Variables object.
 		Parameters
@@ -159,36 +160,47 @@ class Variables():
 			self.depth = self.df['depth']
 		self.local = local
 
-	def shore_distance(self):
+	def distance_to_shore(self):
 		'''
 		Function that computes the distance between the hydrophone and the closest shore.
 		Precision is 0.04°, data is from NASA
 		Make sure to call format_gps before running method
 		'''
 		global dist2shore_ds
-		print('\nLoading distance to shore data...')
-		dist2shore_ds = np.loadtxt('/home/datawork-osmose/dataset/auxiliary/dist2coast.txt').astype('float32')
+		print('Loading distance to shore data...')
+		if self.local == True :
+			try :
+				path = read_config(resources.files("OSmOSE").joinpath('config.toml'))
+				dist2shore_ds = np.loadtxt(path.Auxiliary.shore_dist).astype('float16')
+			except FileNotFoundError :
+				print('Please modify path to dist2coast.txt file in .aux_path.txt')
+				return None
+		else :
+			dist2shore_ds = np.loadtxt('/home/datawork-osmose/dataset/auxiliary/dist2coast.txt').astype('float16')
 		if len(np.unique(self.df.lat)) == 1:
 			shore_distance = nearest_shore(self.longitude[:1], self.latitude[:1])
-			self.shore_distance = np.tile(shore_distance, len(self.ftime))
+			self.shore_distance = np.tile(shore_distance, len(self.timestamps)).astype('float16')
 			self.df['shore_dist'] = self.shore_distance
 		else :
-			#shore_distance =  np.full([len(self.ftime)], np.nan)
+			#shore_distance =  np.full([len(self.timestamps)], np.nan)
 			#shore_distance[(~np.isnan(self.longitude)) | (~np.isnan(self.latitude))] = nearest_shore(self.longitude, self.latitude, 1)
 			shore_distance = nearest_shore(self.longitude, self.latitude)
-			self.shore_distance = shore_distance
+			self.shore_distance = shore_distance.astype('float16')
 			self.df['shore_dist'] = self.shore_distance
+
 
 	def wind_fetch(self):
 		'''
 		Method that computes wind fetch.
 		Algorithm is optimized to use closest shore distance to reduce computation time
 		'''
-		assert 'interp_u10' in self.df, "To load wind fetch please load wind direction first"				
-		print('\nComputing Wind Fetch')
-		total_wind_fetch = np.zeros(len(self.ftime))
-		dir_u, dir_v = self.df['interp_u10'].to_numpy(), self.df['interp_v10'].to_numpy()
+		assert 'u10' in [elem[-3:] for elem in self.df.columns], "To load wind fetch please load wind direction first"				
+		print('Computing Wind Fetch')
+		u10_col = self.df.columns[np.where((np.array('-'.join(elem[-3:] for elem in self.df.columns).split('-')) == 'u10'))[0]]
+		v10_col = self.df.columns[np.where((np.array('-'.join(elem[-3:] for elem in self.df.columns).split('-')) == 'v10'))[0]]
+		total_wind_fetch = np.zeros(len(self.timestamps))
 		shore_distance = self.shore_distance
+		dir_u, dir_v = self.df[u10_col].to_numpy().reshape(shore_distance.shape), self.df[v10_col].to_numpy().reshape(shore_distance.shape)
 		dlon, dlat = get_wind_fetch(shore_distance, dir_u, dir_v)
 		lon, lat = mod_pos(self.longitude-dlon, 'lon'), mod_pos(self.latitude-dlat, 'lat')
 		total_wind_fetch += shore_distance
@@ -212,14 +224,22 @@ class Variables():
 		self.df['wind_fetch'] = self.wind_fetch
 		
 	def bathymetry(self):
-		global bathymetry_ds
-		bathymetrie_ds = Dataset('/home/datawork-osmose/dataset/auxiliary/GEBCO_2022_sub_ice_topo.nc')
-		temp_lat, temp_lon = self.latitude[~np.isnan(self.latitude)].to_numpy(), self.longitude[~np.isnan(self.longitude)].to_numpy()
-		pos_lat, pos_dist = j.nearest_point(temp_lat, bathymetrie_ds['lat'][:])
-		pos_lon, pos_dist = j.nearest_point(temp_lon, bathymetrie_ds['lon'][:])
-		bathymetrie = np.full(len(self.df), np.nan)
-		bathymetrie[~np.isnan(self.latitude)] = [bathymetrie_ds['elevation'][i,j] for i,j in zip(pos_lat, pos_lon)] 
-		self.df['bathy'] = bathymetrie
+		if self.local == True :
+			try :
+				path = read_config(resources.files("OSmOSE").joinpath('config.toml'))
+				bathymetry_ds = Dataset(path.Auxiliary.bathymetry)
+			except FileNotFoundError :
+				print('Please modify path to GEBCO_2022_sub_ice_topo.nc file in .aux_path.txt')
+				return None
+		else :
+			bathymetry_ds = Dataset('/home/datawork-osmose/dataset/auxiliary/GEBCO_2022_sub_ice_topo.nc')
+		temp_lat, temp_lon = self.latitude[~np.isnan(self.latitude)].to_numpy().astype('float16'), self.longitude[~np.isnan(self.longitude)].to_numpy().astype('float16')
+		pos_lat, pos_dist = j.nearest_point(temp_lat, bathymetry_ds['lat'][:].astype('float16'))
+		pos_lon, pos_dist = j.nearest_point(temp_lon, bathymetry_ds['lon'][:].astype('float16'))
+		bathymetry = np.full(len(self.df), np.nan)
+		bathymetry[~np.isnan(self.latitude)] = [bathymetry_ds['elevation'][i,j] for i,j in zip(pos_lat, pos_lon)] 
+		self.df['bathy'] = bathymetry
+		del bathymetry_ds
 
 	def from_scratch(self):
 		'''
@@ -236,6 +256,14 @@ class Variables():
 		self.latitude, self.longitude = [metadata.lat]*len(self.timestamps), [metadata.lon]*len(self.timestamps)
 		self.df = pd.DataFrame({'time': self.timestamsp, 'lat':self.latitude, 'lon':self.longitude, 'depth':float('nan')}, index = [0])
 
+	def join_auxiliary(self):
+		print('\nJoining bathymetry data...')
+		self.bathymetry()
+		print('\nJoining shore distance data...')
+		self.distance_to_shore()
+		print('\nJoining wind fetch data...')
+		self.wind_fetch()
+
 	@classmethod
 	def from_fn(cls, path, dataset, *, local = True):
 		return cls(path, dataset, local)
@@ -244,9 +272,24 @@ class Variables():
 
 class Weather(Variables):
 	
-	def __init__(self, df, local = True):
-		super().__init__(df, local)		
-		
+	def __init__(self, path, dataset, local = True):
+		super().__init__(path, dataset, local)		
+
+	def join_era(self, *, method = 'interpolation', time_off = np.inf, lat_off = np.inf, lon_off = np.inf, r = np.inf, variables = ['u10', 'v10']):
+		print(f'Joining ERA5 data using the {method} method.')
+		if method == 'nearest':
+			print(f'Offsets are :\n   time offset = {time_off}\n   latitude offset = {lat_off}\n   longitude offset = {lon_off}, \n   variables = {variables}')
+			self.nearest_era(time_off=time_off, lat_off=lat_off, lon_off=lon_off, variables=variables)
+		if method == 'interpolation':
+			self.interpolation_era()
+		if method == 'cube':
+			print(f'Offsets are :\n   time offset = {time_off}\n   latitude offset = {lat_off}\n   longitude offset = {lon_off}, \n   variables = {variables}')
+			self.cube_era(time_off=time_off, lat_off=lat_off, lon_off=lon_off, variables=variables)
+		if method == 'cylinder':
+			print(f'Offsets are :\n   time offset = {time_off}\n   radius = {r}, \n   variables = {variables}')
+			self.cylinder_era(time_off=time_off, r=r, variables=variables)
+
+
 	def load_era(self, method = 'other'):
 		'''
 		Method that uploads ERA5 data into a dataframe.
@@ -279,29 +322,49 @@ class Weather(Variables):
 				print("Please download ERA on local machine and upload it on Datarmor. \nSystem exit.")
 				sys.exit()
 			print('Trying to download ERA5 data...')
-			self.variables = download_era(self.ftime.to_numpy(), self.longitude, self.latitude, era_path, filename)
+			self.variables = download_era(self.timestamps.to_numpy(), self.longitude, self.latitude, era_path, filename)
 
 		if method == 'cube' or method == 'cylinder':
-			self.stamps = np.load(era_path+'stamps.npz', allow_pickle = True)
+			self.stamps = np.load(os.path.join(self.era_path, 'stamps.npz'), allow_pickle = True)
 		else :
-			temp_stamps = np.load(era_path + 'stamps.npz', allow_pickle=True)
+			temp_stamps = np.load(os.path.join(self.era_path, 'stamps.npz'), allow_pickle=True)
 			dates, lat, lon = temp_stamps['timestamps'], temp_stamps['latitude'], temp_stamps['longitude']
 			stamps = np.array([[date, lat_val, lon_val] for date in dates for lat_val in lat for lon_val in lon])
 			self.stamps = stamps.reshape(len(dates), len(lat), len(lon), 3)
+		del temp_stamps, downloaded_cds, stamps
 
 	def nearest_era(self, *, time_off = 600, lat_off = 0.5, lon_off = 0.5, variables = ['u10','v10']):
-		
+		"""joins nearest mesh point values to dataset.
+
+		The variable values from the nearest mesh point at a given time is joined to the timestamp.
+		This occurs only if the mesh point is within the given time, latitude and longitude offsets.
+		Latitude, longitude and time distance have the same weight.
+
+		Parameter
+		---------
+		time_off: 'int' or 'float'
+		Maximum time offset allowed for mesh point to be taken into consideration, in seconds.
+		lat_off : 'int' or 'float'
+		Maximum latitude offset allowed for mesh point to be taken into consideration, in degrees.
+		lon_off : 'int' or 'float'
+		Maximum longitude offset allowed for mesh point to be taken into consideration, in degrees.
+
+		Returns
+		-------
+		None. Results are saved in self.df as 'interp_{variable}'
+		"""
 		self.load_era(method = 'nearest')
 		data = self.df[['time', 'lat', 'lon']].dropna().to_numpy()
 		self.stamps[:,:,:,0] = np.array(list(map(get_era_time, self.stamps[:,:,:,0].ravel()))).reshape(self.stamps[:,:,:,0].shape)
 		pos_ind, pos_dist = j.nearest_point(data, self.stamps.reshape(-1, 3))
-		pbar = tqdm(total = len(self.variables), position = 0, leave = True)
-
-		for variable in self.variables:
+		if variables == 'None':
+			variables = self.variables
+		pbar = tqdm(total = len(variables), position = 0, leave = True)
+		for variable in variables:
 			pbar.update(1)
 			pbar.set_description("Loading and formatting %s" % variable)
-			temp_variable = np.full([len(self.ftime)], np.nan)
-			var = np.load(self.era_path+variable+'_'+self.dataset+'.npy')
+			temp_variable = np.full([len(self.timestamps)], np.nan)
+			var = np.load(os.path.join(self.era_path, variable+'_'+self.dataset+'.npy'))
 			var = var.flatten()[pos_ind]
 			mask = np.any(abs(data - self.stamps.reshape(-1,3)[pos_ind]) > [time_off, lat_off, lon_off], axis = 1)
 			var[mask] = np.nan
@@ -309,50 +372,81 @@ class Weather(Variables):
 			variable = f'np_{time_off}_{lat_off}_{lon_off}_{variable}'
 			self.df[variable] = temp_variable
 		self.df[f'np_{time_off}_{lat_off}_{lon_off}_era'] = np.sqrt(self.df[f'np_{time_off}_{lat_off}_{lon_off}_u10']**2 + self.df[f'np_{time_off}_{lat_off}_{lon_off}_v10']**2)
-		
+		del var
 	
 	def interpolation_era(self):
-		
+		"""Computes interpolated variables values from ERA5 mesh points.
+
+		ERA5 is suited for a scipy's 3D grid interpolation in time, latitude and longitude.
+		As this method is quick, it is computed for all available variables.
+
+		Parameter
+		---------
+		None.
+
+		Returns
+		-------
+		None. Results are saved in self.df as 'interp_{variable}'
+		"""
 		self.load_era(method = 'interpolation')
-		temp_lat = self.latitude[(~np.isnan(self.longitude)) | (~np.isnan(self.latitude))]
+		temp_lat = self.latitude[(~np.isnan(self.longitude)) | (~np.isnan(self.latitude))]    #Remove nan values from computation
 		temp_lon = self.longitude[(~np.isnan(self.longitude)) | (~np.isnan(self.latitude))]
-		temp_ftime = self.ftime[(~np.isnan(self.longitude)) | (~np.isnan(self.latitude))]
+		temp_timestamps = self.timestamps[(~np.isnan(self.longitude)) | (~np.isnan(self.latitude))]
 		pbar = tqdm(total = len(self.variables), position = 0, leave = True)
 		for variable in self.variables:
 			pbar.update(1)
 			pbar.set_description("Loading and formatting %s" % variable)
-			var = np.load(self.era_path+variable+'_'+self.dataset+'.npy')
+			var = np.load(os.path.join(self.era_path, variable+'_'+self.dataset+'.npy'))
 			interp = j.rect_interpolation_era(self.stamps, var)
-			temp_variable =  np.full([len(self.ftime)], np.nan)
-			temp_variable[(~np.isnan(self.longitude)) | (~np.isnan(self.latitude))] = j.apply_interp(interp, temp_ftime, temp_lat, temp_lon)
+			temp_variable =  np.full([len(self.timestamps)], np.nan)
+			temp_variable[(~np.isnan(self.longitude)) | (~np.isnan(self.latitude))] = j.apply_interp(interp, temp_timestamps, temp_lat, temp_lon)
 			variable = 'interp_'+variable
 			self.df[variable] = temp_variable
 		self.df['interp_era'] = np.sqrt(self.df.interp_u10**2 + self.df.interp_v10**2)
-
+		del var
 
 	def cube_era(self, *, time_off = 600, lat_off = 0.5, lon_off = 0.5, variables = ['u10', 'v10']):
+		"""Computes average of variables values of all ERA5 mesh points within a cube.
+		All mesh points within a defined latitude distance and longitude distance are kept, and within a maximum time offset.
 
+		Parameter
+		---------
+		time_off: 'int' or 'float'
+		Maximum time offset allowed for mesh point to be taken into consideration, in seconds.
+		lat_off : 'int' or 'float'
+		Maximum latitude offset allowed for mesh point to be taken into consideration, in degrees.
+		lon_off : 'int' or 'float'
+		Maximum longitude offset allowed for mesh point to be taken into consideration, in degrees.
+		variables : 'list' or None
+		List of variables from ERA5 to join to hydrophone position. None if you want all variables to be joined to data.
+
+		Returns
+		-------
+		None. Results are saved in self.df as 'cube_{time_off}_{lat_off}_{lon_off}_{variable}'
+		"""
 		self.load_era(method = 'cube')
-		temp_df = self.df[['time', 'lat', 'lon']].dropna()
+		temp_df = self.df[['time', 'lat', 'lon']]
 		if variables == None:
 			variables = self.variables
 		for variable in  variables:
-			temp_variable =  np.full([len(self.ftime)], np.nan)
-			var = np.load(self.era_path+variable+'_'+self.dataset+'.npy')
+			temp_variable =  np.full([len(self.timestamps)], np.nan)
+			var = np.load(os.path.join(self.era_path, variable+'_'+self.dataset+'.npy'))
 			pbar = tqdm(total = len(temp_df), position = 0, leave = True)
 			for i, row in temp_df.iterrows():
-				time_index = np.where((abs(self.stamps['timestamps_epoch'] - row.time) <= time_off))[0]
-				if len(time_index) == 0:
+				if row.isnull().any():      #Skip iteration if there is a nan value
+					continue
+				time_index = np.where((abs(self.stamps['timestamps_epoch'] - row.time) <= time_off))[0]    #Get timestamps satisfyin time offset
+				if len(time_index) == 0:    #Skip iteration if no weather source is within time offset for this timestep
 					pbar.update(1)
 					temp_variable[i] = np.nan
 					continue
-				lat_index = np.where((abs(self.stamps['latitude'] - row.lat) <= lat_off))[0]
-				if len(lat_index) == 0:
+				lat_index = np.where((abs(self.stamps['latitude'] - row.lat) <= lat_off))[0]    #Get latitude indexes satisfyin lon offset
+				if len(lat_index) == 0:     #Skip iteration if no weather source is within lat offset for this timestep
 					pbar.update(1)
 					temp_variable[i] = np.nan
 					continue
-				lon_index = np.where((abs(self.stamps['longitude'] - row.lon) <= lon_off))[0]
-				if len(lon_index) == 0:
+				lon_index = np.where((abs(self.stamps['longitude'] - row.lon) <= lon_off))[0]   #Get longitude indexes satisfying lon offset
+				if len(lon_index) == 0:     #Skip iteration if no weather source is within lon offset for this timestep
 					pbar.update(1)
 					temp_variable[i] = np.nan
 					continue
@@ -360,47 +454,67 @@ class Weather(Variables):
 				for time_ind in time_index:
 					for lat_ind in lat_index:
 						for lon_ind in lon_index :
-							temp_value.append(var[time_ind, lat_ind, lon_ind])
+							temp_value.append(var[time_ind, lat_ind, lon_ind])   #Saving values satisfying the conditions
 				temp_variable[i] = np.nanmean(temp_value)
 				pbar.update(1)
 			variable = f'cube_{time_off}_{lat_off}_{lon_off}_{variable}'
 			self.df[variable] = temp_variable
 		self.df[f'cube_{time_off}_{lat_off}_{lon_off}_era'] = np.sqrt(self.df[f'cube_{time_off}_{lat_off}_{lon_off}_u10']**2+self.df[f'cube_{time_off}_{lat_off}_{lon_off}_v10']**2)
-		
+		del var
 		
 	def cylinder_era(self, *, time_off = 600, r = 'depth', variables = ['u10', 'v10']):
+		"""Computes average variables values of all ERA5 mesh points within a cylinder.
 
+		All mesh points within a defined distance are kept, and within a maximum time offset. Radius can vary as a function of depth.
+		90% of noise sources that can be heard at a depth D come from a surface area of (3D)²*pi.
+
+		Parameter
+		---------
+		time_off: 'int' or 'float'
+		Maximum time offset allowed for mesh point to be taken into consideration, in seconds.
+		r : 'int', 'float' or 'str'
+		Maximum distance in kilometer for which a mesh point is taken into consideration. 'depth' if that distance is computed with the hydrophone's depth.
+		variables : 'list' or None
+		List of variables from ERA5 to join to hydrophone position. None if you want all variables to be joined to data.
+
+		Returns
+		-------
+		None. Results are saved in self.df as 'cylinder_{time_off}_{lat_off}_{lon_off}_{variable}'
+		"""
 		self.load_era(method = 'cylinder')
-		temp_df = self.df[['time', 'lat', 'lon']].dropna()
+		temp_df = self.df[['time', 'lat', 'lon']]
 		if isinstance(r, int) or isinstance(r, float):
-			r = [r]*len(temp_df)
+			radius = [r]*len(temp_df)
 		else :
-			r = 3*self.df.depth
+			radius = 3*self.df.depth       #Compute radius as a function of hydrophone's depth
 		if variables == None:
 			variables = self.variables
 		for variable in  variables:
-			temp_variable =  np.full([len(self.ftime)], np.nan)
-			var = np.load(self.era_path+variable+'_'+self.dataset+'.npy')
+			temp_variable =  np.full([len(self.timestamps)], np.nan)
+			var = np.load(os.path.join(self.era_path,variable+'_'+self.dataset+'.npy'))
 			pbar = tqdm(total = len(temp_df), position = 0, leave = True)
 			for i, row in temp_df.iterrows():
-				time_index = np.where((abs(self.stamps['timestamps_epoch'] - row.time) <= time_off))[0]
+				if row.isnull().any():      #Skip iteration if there is a nan value
+					continue
+				time_index = np.where((abs(self.stamps['timestamps_epoch'] - row.time) <= time_off))[0]  #Keep variable values within time offset
 				if len(time_index) == 0:
 					pbar.update(1)
 					temp_variable[i] = np.nan
 					continue
-				mask = np.full((var[0].shape), False)
+				mask = np.full((var[0].shape), False)   #Create mask for longitude latitude limits
 				for k, latitude in enumerate(self.stamps['latitude']):
-					mask[k, np.where((haversine(latitude, row.lat, self.stamps['longitude'], row.lon) <= r[i]))[0]] = True
+					mask[k, np.where((haversine(latitude, row.lat, self.stamps['longitude'], row.lon) <= radius[i]))[0]] = True   #Keep elements within desired distance
 				if not mask.any():
 					pbar.update(1)
 					temp_variable[i] = np.nan
 					continue
-				temp_variable[i] = np.nanmean(var[time_index][mask])
+				temp_variable[i] = np.nanmean(np.nanmean(var[time_index], axis = 0)[mask])
 				pbar.update(1)
 			variable = f'cylinder_{time_off}_{r}_{variable}'
 			self.df[variable] = temp_variable
 		self.df[f'cylinder_{time_off}_{r}_era'] = np.sqrt(self.df[f'cylinder_{time_off}_{r}_u10']**2+self.df[f'cylinder_{time_off}_{r}_v10']**2)
-	
+		del var
+
 def check_era(path, dataset):
 	if os.path.isdir(os.path.join(path, dataset, 'data', 'auxiliary', 'weather', 'era')):
 		print("Era is already downloaded, you're free to continue")
