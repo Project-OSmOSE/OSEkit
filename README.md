@@ -1,9 +1,54 @@
-# OSmOSE_package
+# OSmOSE-toolkit
 
 
-## Installation
+## Presentation
 
-OSmOSE is currently in development, and no release exist yet. Thus, installing the package means using an unstable, unfinished version.
+**OSmOSE toolkit** is an open source suite of tools dedicated to the management and analysis of passive underwater acoustic data.
+
+## Quick start for users
+
+Users will be interested in the stable versions of our toolkit, which are released on a regular basis and are available (here)[https://github.com/Project-OSmOSE/osmose-toolkit/releases/tag/v0.1.0]. We discourage users to install the toolkit from our git repository, as it is under permanent development and thus potentially unstable and unfinished.
+
+### Local installation
+
+### Installation on DATARMOR
+
+If you are on DATARMOR, then the initial setup is already done! The conda environment is named osmose_dev and the package can be found on `/home/datawork-osmose/osmose_package/`. If you are using Jupyter Hub, then you can just change the kernel to `osmose_dev` and start using the OSmOSE package. Note that without the command line, you will not automatically update the package and might be missing a newer version.
+
+On the command line, run this line just once:
+
+```csh
+echo "alias osmose_activate='cd /home/datawork-osmose/osmose_package; git checkout main; git pull origin main; . /appli/anaconda/latest/etc/profile.d/conda.sh; conda activate /home/datawork-osmose/conda-env/osmose_dev/; cd -'" >> .bashrc
+```
+
+Then reload the shell. From now on, typing 
+```bash
+bash
+osmose_activate
+``` 
+will:
+
+- Update the local package to the latest version.
+
+- Activate the conda environment.
+
+- Update or install any dependency that is not present.
+
+Note that the environment is a development environment and might not be suitable for prod
+
+
+
+
+
+## Quick start for contributors
+
+The installation procedure below concerns our git repository
+
+
+
+( (issues)[https://github.com/orgs/Project-OSmOSE/projects/6])
+
+
 
 ### Local installation
 
@@ -14,7 +59,7 @@ Follow this step if you are installing the package from scratch locally on your 
 ```bash
 git init
 
-git clone https://github.com/Project-ODE/OSmOSE_package.git
+git clone https://github.com/Project-OSmOSE/osmose-toolkit.git
 ```
 
 2. Create a Conda virtual environment in python 3.10.
@@ -47,27 +92,4 @@ dataset = osm.Dataset()
 
 Note that it is installed in editable mode, meaning that any change made to the package's file will be reflected immediately on the environment, without needing to reload it. 
 
-### Use on DATARMOR
-
-If you are on DATARMOR, then the initial setup is already done! The conda environment is named osmose_dev and the package can be found on `/home/datawork-osmose/osmose_package/`. If you are using Jupyter Hub, then you can just change the kernel to `osmose_dev` and start using the OSmOSE package. Note that without the command line, you will not automatically update the package and might be missing a newer version.
-
-On the command line, run this line just once:
-
-```csh
-echo "alias osmose_activate='cd /home/datawork-osmose/osmose_package; git checkout main; git pull origin main; . /appli/anaconda/latest/etc/profile.d/conda.sh; conda activate /home/datawork-osmose/conda-env/osmose_dev/; cd -'" >> .bashrc
-```
-
-Then reload the shell. From now on, typing 
-```bash
-bash
-osmose_activate
-``` 
-will:
-
-- Update the local package to the latest version.
-
-- Activate the conda environment.
-
-- Update or install any dependency that is not present.
-
-Note that the environment is a development environment and might not be suitable for production.
+uction.
