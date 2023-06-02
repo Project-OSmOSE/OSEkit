@@ -161,7 +161,6 @@ class Variables():
 			self.timestamps = self.df['time']
 			self.depth = self.df['depth']
 		else :
-			print('I was here')
 			self.from_scratch()
 		self.local = local
 
@@ -252,7 +251,7 @@ class Variables():
 		Objective is to build time with timestamps
 		'''
 		try : 
-			dataset = Dataset(Path(self.path, self.dataset), gps_coordinates=gps)
+			dataset = Dataset(self.path, gps_coordinates=gps)
 			metadata = pd.read_csv(dataset._get_original_after_build().joinpath("metadata.csv"))
 		except FileNotFoundError:
 			print('Could not find built dataset.')
