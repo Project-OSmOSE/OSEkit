@@ -257,7 +257,7 @@ class Variables():
 			print('Could not find built dataset.')
 			sys.exit()
 		start_date, end_date = get_datarmor_time(metadata.start_date[0]), get_datarmor_time(metadata.end_date[0])
-		self.timestamps = pd.Series(np.arange(start_date, end_date, 600))
+		self.timestamps = pd.read_csv(ds._get_original_after_build().joinpath("timestamp.csv"), header = None)[1].apply(get_datarmor_time)
 		self.latitude, self.longitude = pd.Series([metadata.lat[0]]*len(self.timestamps)), pd.Series([metadata.lon[0]]*len(self.timestamps))
 		self.df = pd.DataFrame.from_dict({'time': self.timestamps, 'lat':self.latitude, 'lon':self.longitude, 'depth':float('nan')})
 
