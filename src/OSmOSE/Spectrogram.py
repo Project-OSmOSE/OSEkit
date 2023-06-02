@@ -871,7 +871,7 @@ class Spectrogram(Dataset):
         new_meta_path = self.audio_path.joinpath("metadata.csv")
         if new_meta_path.exists():
             new_meta_path.unlink()
-        metadata.to_csv(new_meta_path)
+        metadata.to_csv(new_meta_path,index=False)
         os.chmod(new_meta_path, mode=FPDEFAULT)
 
         data = {
