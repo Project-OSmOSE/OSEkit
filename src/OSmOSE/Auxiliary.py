@@ -162,7 +162,7 @@ class Variables():
 			self.depth = self.df['depth']			     
 		else :
 			self.from_scratch()
-		self.df['datetime'] = self.time.apply(lambda x : from_timestamp(datetime.datetime.fromtimestamp(x)))
+		self.df['datetime'] = self.df.time.apply(lambda x : from_timestamp(datetime.datetime.fromtimestamp(x)))
 		self.df = self.df[['datetime', 'time', 'depth', 'lat', 'lon']]
 		self.local = local
 
