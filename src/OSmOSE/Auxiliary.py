@@ -13,7 +13,7 @@ import netCDF4 as nc
 from OSmOSE import func_api
 import calendar, time, datetime
 from bisect import bisect_left
-from OSmOSE.utils import read_config
+from OSmOSE.utils import read_config, from_timestamp
 
 def haversine(lat1, lat2, lon1, lon2):
 	lat1 = np.array(lat1).astype('float64')
@@ -159,9 +159,11 @@ class Variables():
 			self.df = pd.read_csv(os.path.join(self.path, 'data', 'auxiliary', 'instrument', 'gps_data.csv'))[['time', 'depth', 'lat', 'lon']] 
 			self.latitude, self.longitude = self.df['lat'], self.df['lon']
 			self.timestamps = self.df['time']
-			self.depth = self.df['depth']
+			self.depth = self.df['depth']			     
 		else :
 			self.from_scratch()
+		self.df['datetime'] = self.time.apply(lambda x : from_timestamp(datetime.datetime.fromtimestamp(x)))
+		self.df = self.df[['datetime', 'time', 'depth', 'lat', 'lon']]
 		self.local = local
 
 	def distance_to_shore(self):
