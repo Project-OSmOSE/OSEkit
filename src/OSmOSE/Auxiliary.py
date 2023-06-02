@@ -7,6 +7,7 @@ import scipy.signal as sg
 from OSmOSE import jointure as j
 from importlib import resources
 import soundfile as sf
+import grp
 from tqdm import tqdm
 import netCDF4 as nc
 from OSmOSE import func_api
@@ -244,13 +245,13 @@ class Variables():
 		self.df['bathy'] = bathymetry
 		del bathymetry_ds
 
-	def from_scratch(self):
+	def from_scratch(self, gps = None):
 		'''
 		Takes dictionary with lat, lon, depth of hydrophone and creates empty dataframe for class
 		Objective is to build time with timestamps
 		'''
 		try : 
-			dataset = Dataset(Path(self.path, self.dataset), gps_coordinates=gps, osmose_group_name="gosmose")
+			dataset = Dataset(Path(self.path, self.dataset), gps_coordinates=gps, owner_group='root')
 			metadata = pd.read_csv(dataset._get_original_after_build().joinpath("metadata.csv"))
 		except FileNotFoundError:
 			print('Could not find built dataset.')
