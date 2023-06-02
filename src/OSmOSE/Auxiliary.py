@@ -256,9 +256,9 @@ class Variables():
 		except FileNotFoundError:
 			print('Could not find built dataset.')
 			sys.exit()
-		start_date, end_date = get_datarmor_time(metadata.start_date), get_datarmor_time(metadata.end_date)
+		start_date, end_date = get_datarmor_time(metadata.start_date[0]), get_datarmor_time(metadata.end_date[0])
 		self.timestamps = np.arange(start_date, end_date, 600)
-		self.latitude, self.longitude = [metadata.lat]*len(self.timestamps), [metadata.lon]*len(self.timestamps)
+		self.latitude, self.longitude = [metadata.lat[0]]*len(self.timestamps), [metadata.lon[0]]*len(self.timestamps)
 		self.df = pd.DataFrame({'time': self.timestamsp, 'lat':self.latitude, 'lon':self.longitude, 'depth':float('nan')}, index = [0])
 
 	def join_auxiliary(self):
