@@ -266,8 +266,9 @@ class Variables():
 		self.bathymetry()
 		print('\nJoining shore distance data...')
 		self.distance_to_shore()
-		print('\nJoining wind fetch data...')
-		self.wind_fetch()
+		if 'era' in [elem[-3:] for elem in self.df.columns]:
+			print('\nJoining wind fetch data...')
+			self.wind_fetch()
 
 
 
