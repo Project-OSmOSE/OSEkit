@@ -1396,12 +1396,8 @@ class Spectrogram(Dataset):
         kwargs = {"save_matrix": save_matrix}
 
         map_process_file = partial(self.process_file, **kwargs)
-
-        if self.__local:
-            for file in self.list_wav_to_process:
-                self.process_file(file, **kwargs)
-        else:            
-            with mp.Pool(processes=min(self.batch_number, mp.cpu_count())) as pool:
-                pool.map(map_process_file, self.list_wav_to_process)
+      
+        with mp.Pool(processes=min(self.batch_number, mp.cpu_count())) as pool:
+            pool.map(map_process_file, self.list_wav_to_process)
 
 
