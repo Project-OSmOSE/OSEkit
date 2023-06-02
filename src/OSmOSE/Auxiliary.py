@@ -250,8 +250,9 @@ class Variables():
 		Takes dictionary with lat, lon, depth of hydrophone and creates empty dataframe for class
 		Objective is to build time with timestamps
 		'''
+		print('I was here')
 		try : 
-			dataset = Dataset(Path(self.path, self.dataset), gps_coordinates=gps, owner_group='root')
+			dataset = Dataset(Path(self.path, self.dataset), gps_coordinates=gps)
 			metadata = pd.read_csv(dataset._get_original_after_build().joinpath("metadata.csv"))
 		except FileNotFoundError:
 			print('Could not find built dataset.')
@@ -323,7 +324,7 @@ class Weather(Variables):
 		else :
 			if not self.local :
 				print("Please download ERA on local machine and upload it on Datarmor. \nSystem exit.")
-				sys.exit()
+				sys.exit("No ERA5 data")
 			print('Trying to download ERA5 data...')
 			self.variables = download_era(self.timestamps.to_numpy(), self.longitude, self.latitude, era_path, filename)
 
