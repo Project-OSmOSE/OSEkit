@@ -117,7 +117,7 @@ Users will be interested in the stable versions of our toolkit, which are releas
 
 ### Quick start on DATARMOR
 
-The newest stable version can be directly used within a Jupyter Hub session of Datarmor by setting the kernel to `osmose`. A set of "getting started" Jupyter notebooks are available from our datawork `/home/datawork-osmose/osmose-datarmor`, which covers basic use cases from your dataset uploading to first AI model development. To access the Datarmor cluster, you will need a user account, which may be provided upon request (please contact dorian.cazau@ensta-bretagne.fr).
+The newest stable version can be directly used within a Jupyter Hub session of Datarmor by setting the kernel to `osmose`. A set of "getting started" Jupyter notebooks are available from our datawork `/home/datawork-osmose/osmose-datarmor/notebooks/`, which covers basic use cases from your dataset uploading to first AI model development. To access the Datarmor cluster, you will need a user account, which may be provided upon request (please contact dorian.cazau@ensta-bretagne.fr).
  
 
 
@@ -127,7 +127,7 @@ The newest stable version can be directly used within a Jupyter Hub session of D
 
 1. Install locally our toolkit (see section **Local installation** below);
 
-2. Start by reviewing our Github (issues)[https://github.com/orgs/Project-OSmOSE/projects/6]), get in touch with our developer team to obtain an account, and propose new issues anytime following standard procedures (in particular, among other must-have: short description, assignees, status, label...);
+2. Review our Github (issues)[https://github.com/orgs/Project-OSmOSE/projects/6], get in touch with our developer team to obtain an account, and propose new issues anytime following standard procedures (in particular, among other must-have: short description, assignees, status, label...);
 
 3. Develop and validate locally your contribution. Please follow standad github procedures such as developing on a new branch built from our main branch; no pushes will be accepted on our main repository. We recomend the use of our poetry-based editable conda environment to ensure ??;
 
