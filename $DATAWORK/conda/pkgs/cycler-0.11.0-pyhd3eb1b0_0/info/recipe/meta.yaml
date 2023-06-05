@@ -1,0 +1,71 @@
+# This file created by conda-build 3.21.6
+# meta.yaml template originally from:
+# /tmp/build/80754af9/rsync-recipes/cycler-0.11.0-on-linux_64, last modified Thu Nov 25 14:42:19 2021
+# ------------------------------------------------
+
+package:
+  name: cycler
+  version: 0.11.0
+source:
+  fn: cycler-v0.11.0.tar.gz
+  sha256: 2530b40270be9e5e8c5f570d15a934c5dc9737ce3f3ba54307b371655e48e7e4
+  url: https://github.com/matplotlib/cycler/archive/v0.11.0.tar.gz
+build:
+  noarch: python
+  number: '0'
+  script: /tmp/build/80754af9/cycler_1637851556182/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placeho/bin/python
+    -m pip install . -vv
+  string: pyhd3eb1b0_0
+requirements:
+  host:
+    - _libgcc_mutex 0.1 main
+    - _openmp_mutex 4.5 1_gnu
+    - ca-certificates 2021.10.26 h06a4308_2
+    - certifi 2021.10.8 py39h06a4308_0
+    - ld_impl_linux-64 2.35.1 h7274673_9
+    - libffi 3.3 he6710b0_2
+    - libgcc-ng 9.3.0 h5101ec6_17
+    - libgomp 9.3.0 h5101ec6_17
+    - libstdcxx-ng 9.3.0 hd4cf53a_17
+    - ncurses 6.3 h7f8727e_2
+    - openssl 1.1.1l h7f8727e_0
+    - pip 21.2.4 py39h06a4308_0
+    - python 3.9.7 h12debd9_1
+    - readline 8.1 h27cfd23_0
+    - setuptools 58.0.4 py39h06a4308_0
+    - sqlite 3.36.0 hc218d9a_0
+    - tk 8.6.11 h1ccaba5_0
+    - tzdata 2021e hda174b7_0
+    - wheel 0.37.0 pyhd3eb1b0_1
+    - xz 5.2.5 h7b6447c_0
+    - zlib 1.2.11 h7b6447c_3
+  run:
+    - python >=3.6
+test:
+  commands:
+    - pip check
+  imports:
+    - cycler
+  requires:
+    - pip
+    - python <3.10
+about:
+  description: 'Cycler is a package used to create composable style cycles.
+
+    '
+  dev_url: https://github.com/matplotlib/cycler
+  doc_source_url: https://github.com/matplotlib/cycler/blob/master/doc/source/index.rst
+  doc_url: http://matplotlib.org/cycler/
+  home: http://matplotlib.org/cycler
+  license: BSD-3-Clause
+  license_family: BSD
+  license_file: LICENSE
+  summary: Composable style cycles.
+extra:
+  copy_test_source_files: true
+  final: true
+  recipe-maintainers:
+    - janschulz
+    - ocefpaf
+    - pelson
+    - tacaswell

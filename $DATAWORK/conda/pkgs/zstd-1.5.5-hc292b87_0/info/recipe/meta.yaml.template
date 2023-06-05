@@ -1,0 +1,78 @@
+{% set name = "zstd" %}
+{% set version = "1.5.5" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  url: https://github.com/facebook/{{ name }}/archive/v{{ version }}.tar.gz
+  sha256: 98e9c3d949d1b924e28e01eccb7deed865eefebf25c2f21c702e5cd5b63b85e1
+
+build:
+  number: 0
+  skip: True  # [win and vc<14]
+  run_exports:
+    # pretty bad removal of symbols in every other micro release:
+    #   https://abi-laboratory.pro/tracker/timeline/zstd/
+    #  Working smoothly since 1.4.x
+    - {{ pin_subpackage('zstd', max_pin='x.x') }}
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - msinttypes    # [win]
+    - ninja
+    - make          # [unix]
+    # Require `cmake-no-system` to break circular dependency;
+    # the `cmake` package on defaults requires `zstd`.
+    - cmake-no-system
+  host:
+    - zlib
+    - lz4-c
+    - xz
+
+test:
+  requires:
+    - pkg-config  # [unix]
+
+  commands:
+    - zstd -be -i5
+
+    - test -f ${PREFIX}/include/{{ name }}.h     # [unix]
+    - test -f ${PREFIX}/lib/lib{{ name }}.a      # [unix]
+    - test -f ${PREFIX}/lib/lib{{ name }}.so     # [linux]
+    - test -f ${PREFIX}/lib/lib{{ name }}.dylib  # [osx]
+
+    - if not exist %LIBRARY_INC%\{{ name }}.h exit 1              # [win]
+    - if not exist %LIBRARY_BIN%\lib{{ name }}.dll exit 1         # [win]
+    - if not exist %LIBRARY_LIB%\lib{{ name }}.lib exit 1         # [win]
+    - if not exist %LIBRARY_LIB%\lib{{ name }}_static.lib exit 1  # [win and vc>=14]
+
+    - export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig  # [unix]
+    - test -f ${PREFIX}/lib/pkgconfig/lib{{ name }}.pc  # [unix]
+    - pkg-config --cflags lib{{ name }}  # [unix]
+
+about:
+  home: https://facebook.github.io/zstd/
+  license: BSD-3-Clause AND GPL-2.0-or-later
+  license_family: BSD
+  license_file: LICENSE
+  summary: "Zstandard - Fast real-time compression algorithm"
+  description: |
+    Zstandard is a real-time compression algorithm, providing high compression
+    ratios. It offers a very wide range of compression / speed trade-off, while
+    being backed by a very fast decoder. It also offers a special mode for
+    small data, called dictionary compression, and can create dictionaries from
+    any sample set. Zstandard library is provided as open source software using
+    a BSD license.
+  doc_url: https://facebook.github.io/zstd/zstd_manual.html
+  dev_url: https://github.com/facebook/zstd
+
+extra:
+  recipe-maintainers:
+    - rmax
+    - msarahan
+    - xhochy
+    - chenghlee

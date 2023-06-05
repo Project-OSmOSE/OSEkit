@@ -1,0 +1,18 @@
+{
+  "arch": null,
+  "build": "pyhd3eb1b0_0",
+  "build_number": 0,
+  "depends": [
+    "brotli >=1.0.1",
+    "munkres",
+    "python >=3.6"
+  ],
+  "license": "MIT",
+  "license_family": "MIT",
+  "name": "fonttools",
+  "noarch": "python",
+  "platform": null,
+  "subdir": "noarch",
+  "timestamp": 1625743217109,
+  "version": "4.25.0"
+}

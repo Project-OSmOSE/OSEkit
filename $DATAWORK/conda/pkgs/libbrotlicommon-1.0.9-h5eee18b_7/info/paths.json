@@ -1,0 +1,31 @@
+{
+  "paths": [
+    {
+      "_path": "lib/libbrotlicommon.so",
+      "path_type": "softlink",
+      "sha256": "30010fd66af2091a6e52997968400727f352d0a52d9cc9d22a2aff5d0ad7ea2d",
+      "size_in_bytes": 139152
+    },
+    {
+      "_path": "lib/libbrotlicommon.so.1",
+      "path_type": "softlink",
+      "sha256": "30010fd66af2091a6e52997968400727f352d0a52d9cc9d22a2aff5d0ad7ea2d",
+      "size_in_bytes": 139152
+    },
+    {
+      "_path": "lib/libbrotlicommon.so.1.0.9",
+      "path_type": "hardlink",
+      "sha256": "30010fd66af2091a6e52997968400727f352d0a52d9cc9d22a2aff5d0ad7ea2d",
+      "size_in_bytes": 139152
+    },
+    {
+      "_path": "lib/pkgconfig/libbrotlicommon.pc",
+      "file_mode": "text",
+      "path_type": "hardlink",
+      "prefix_placeholder": "/tmp/abs_ecyw11_7ze/croots/recipe/brotli-split_1659616059936/_h_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placeho",
+      "sha256": "035595230deaa318a3855db10f626aea9eabfdf31bb900fee60bf2b47b46bade",
+      "size_in_bytes": 760
+    }
+  ],
+  "paths_version": 1
+}

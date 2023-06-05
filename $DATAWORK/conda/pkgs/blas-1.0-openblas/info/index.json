@@ -1,0 +1,12 @@
+{
+  "arch": "x86_64",
+  "build": "openblas",
+  "build_number": 7,
+  "depends": [],
+  "name": "blas",
+  "platform": "linux",
+  "subdir": "linux-64",
+  "timestamp": 1528224118045,
+  "track_features": "nomkl",
+  "version": "1.0"
+}

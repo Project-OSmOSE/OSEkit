@@ -1,0 +1,98 @@
+# This file created by conda-build 3.22.0
+# meta.yaml template originally from:
+# /home/builder/ktietz/aggregate/libtiff-feedstock/recipe, last modified Mon Feb 27 04:21:30 2023
+# ------------------------------------------------
+
+package:
+  name: libtiff
+  version: 4.5.0
+source:
+  - folder: .
+    sha256: c7a1d9296649233979fa3eacffef3fa024d73d05d589cb622727b5b08c423464
+    url: https://download.osgeo.org/libtiff/tiff-4.5.0.tar.gz
+build:
+  missing_dso_whitelist:
+    - /opt/X11/lib/libGL.1.dylib
+    - /opt/X11/lib/libglut.3.dylib
+  number: '2'
+  run_exports:
+    - libtiff >=4.5.0,<5.0a0
+  string: h6a678d5_2
+requirements:
+  build:
+    - _libgcc_mutex 0.1 main
+    - _openmp_mutex 5.1 1_gnu
+    - _sysroot_linux-64_curr_repodata_hack 3 haa98f57_10
+    - binutils_impl_linux-64 2.38 h2a08ee3_1
+    - binutils_linux-64 2.38.0 hc2dff05_0
+    - gcc_impl_linux-64 11.2.0 h1234567_1
+    - gcc_linux-64 11.2.0 h5c386dc_0
+    - gxx_impl_linux-64 11.2.0 h1234567_1
+    - gxx_linux-64 11.2.0 hc2dff05_0
+    - kernel-headers_linux-64 3.10.0 h57e8cba_10
+    - ld_impl_linux-64 2.38 h1181459_1
+    - libgcc-devel_linux-64 11.2.0 h1234567_1
+    - libgcc-ng 11.2.0 h1234567_1
+    - libgomp 11.2.0 h1234567_1
+    - libstdcxx-devel_linux-64 11.2.0 h1234567_1
+    - libstdcxx-ng 11.2.0 h1234567_1
+    - libtool 2.4.6 h6a678d5_1009
+    - make 4.2.1 h1bed415_1
+    - sysroot_linux-64 2.17 h57e8cba_10
+  host:
+    - _libgcc_mutex 0.1 main
+    - _openmp_mutex 5.1 1_gnu
+    - jpeg 9e h7f8727e_0
+    - lerc 3.0 h295c915_0
+    - libdeflate 1.17 h5eee18b_0
+    - libgcc-ng 11.2.0 h1234567_1
+    - libgomp 11.2.0 h1234567_1
+    - libstdcxx-ng 11.2.0 h1234567_1
+    - libwebp-base 1.2.4 h5eee18b_1
+    - lz4-c 1.9.4 h6a678d5_0
+    - xz 5.2.10 h5eee18b_1
+    - zlib 1.2.13 h5eee18b_0
+    - zstd 1.5.2 ha4553b6_0
+  run:
+    - jpeg >=9e,<10a
+    - lerc >=3.0,<4.0a0
+    - libdeflate >=1.17,<1.18.0a0
+    - libgcc-ng >=11.2.0
+    - libstdcxx-ng >=11.2.0
+    - libwebp-base
+    - xz >=5.2.10,<6.0a0
+    - xz >=5.2.4,<6.0a0
+    - zlib >=1.2.13,<1.3.0a0
+    - zstd >=1.5.2,<1.6.0a0
+test:
+  commands:
+    - test -f ${PREFIX}/lib/libtiff.a
+    - test -f ${PREFIX}/lib/libtiffxx.a
+    - test -f ${PREFIX}/lib/libtiff.so
+    - test -f ${PREFIX}/lib/libtiffxx.so
+  downstreams:
+    - pillow >=8
+    - py-opencv >=4
+about:
+  description: 'This software provides support for the Tag Image File Format (TIFF),
+    a
+
+    widely used format for storing image data.
+
+    '
+  dev_url: https://gitlab.com/libtiff/libtiff
+  doc_url: http://www.simplesystems.org/libtiff/
+  home: http://www.simplesystems.org/libtiff/
+  license: HPND
+  license_family: Other
+  license_file: LICENSE.md
+  summary: Support for the Tag Image File Format (TIFF).
+extra:
+  copy_test_source_files: true
+  final: true
+  recipe-maintainers:
+    - jakirkham
+    - mingwandroid
+    - msarahan
+    - ocefpaf
+    - stuarteberg

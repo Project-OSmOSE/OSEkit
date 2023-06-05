@@ -1,0 +1,15 @@
+{
+  "arch": "x86_64",
+  "build": "h5eee18b_1",
+  "build_number": 1,
+  "depends": [
+    "libgcc-ng >=11.2.0"
+  ],
+  "license": "IJG",
+  "license_family": "Other",
+  "name": "jpeg",
+  "platform": "linux",
+  "subdir": "linux-64",
+  "timestamp": 1677849152168,
+  "version": "9e"
+}

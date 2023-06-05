@@ -1,0 +1,143 @@
+commit 2f88d2582cb4684916c2fcfca86d33723b1256ab
+Merge: 11f136c ddfbd70
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Mon Sep 27 10:30:37 2021 -0400
+
+    Merge pull request #7 from regro-cf-autotick-bot/3.0_hbb50eb
+    
+    lerc v3.0
+
+commit ddfbd700f7a5cee19d33734c88593d92076708e4
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Mon Sep 27 10:09:37 2021 -0400
+
+    MNT: Re-rendered with conda-build 3.21.4, conda-smithy 3.12, and conda-forge-pinning 2021.09.27.11.28.37
+
+commit 2f111907aa70416ba909e3fba04d31a00906fb1b
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Mon Sep 27 10:08:03 2021 -0400
+
+    Use the provided cmake file
+
+commit ad35c0565b75533d14cb2c882ca8283277975d77
+Author: regro-cf-autotick-bot <36490558+regro-cf-autotick-bot@users.noreply.github.com>
+Date:   Fri Jul 30 20:16:55 2021 +0000
+
+    MNT: Re-rendered with conda-build 3.21.4, conda-smithy 3.11.0, and conda-forge-pinning 2021.07.30.11.17.02
+
+commit cbba44f3c85fd5541083cb2d1c7ea1bee3ec6e06
+Author: regro-cf-autotick-bot <36490558+regro-cf-autotick-bot@users.noreply.github.com>
+Date:   Fri Jul 30 20:16:40 2021 +0000
+
+    updated v3.0
+
+commit 11f136c97af6479122d7ada5dafef70364a269bc
+Merge: 7027f2c 5fafeae
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Mon Dec 28 17:00:59 2020 -0500
+
+    Merge pull request #6 from regro-cf-autotick-bot/2.2.1_h405fd3
+    
+    lerc v2.2.1
+
+commit 5fafeaef6c0310e0ae4033836616720bfedb0569
+Author: regro-cf-autotick-bot <36490558+regro-cf-autotick-bot@users.noreply.github.com>
+Date:   Mon Dec 28 21:29:15 2020 +0000
+
+    updated v2.2.1
+
+commit 7027f2c12dc6bdad0a49de67f15252950c6f5be2
+Merge: 0b23b5b 57d6dcc
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Sun Dec 6 21:45:08 2020 -0500
+
+    Merge pull request #5 from regro-cf-autotick-bot/bot-pr_arm_osx_h2f0a2d
+    
+    ARM OSX Migrator
+
+commit 57d6dcc661469cc30c55a34e4581773aa104591f
+Author: regro-cf-autotick-bot <36490558+regro-cf-autotick-bot@users.noreply.github.com>
+Date:   Sun Dec 6 18:02:02 2020 +0000
+
+    MNT: Re-rendered with conda-build 3.20.5, conda-smithy 3.8.5, and conda-forge-pinning 2020.12.06.16.40.53
+
+commit 62efbb1225e25739d24c6d4b7b31fec3d8fd694a
+Author: regro-cf-autotick-bot <36490558+regro-cf-autotick-bot@users.noreply.github.com>
+Date:   Sun Dec 6 18:01:51 2020 +0000
+
+    migration: OSXArm
+
+commit 0b23b5b215191f0745f8381ffab792689515d088
+Author: conda-forge-admin <conda-forge-admin@email.com>
+Date:   Sun Aug 9 11:44:45 2020 +0000
+
+    [ci skip] [skip ci] [cf admin skip] ***NO_CI*** admin migration CFEP13TokenCleanup
+
+commit 6bdd86d08538f12e5319ec36e973936997159aaa
+Merge: a5187a5 333f04f
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Sat Aug 1 16:26:49 2020 -0400
+
+    Merge pull request #3 from regro-cf-autotick-bot/bot-pr_arch_h47a02f
+    
+    Arch Migrator
+
+commit 333f04fc52ef7844b95f98efef9649835e3af2f6
+Author: regro-cf-autotick-bot <circleci@cf-graph.regro.github.com>
+Date:   Sat Aug 1 00:36:45 2020 +0000
+
+    MNT: Re-rendered with conda-build 3.19.2, conda-smithy 3.7.5, and conda-forge-pinning 2020.07.31.22.07.41
+
+commit a5187a57afd63f64010de0b9c7ce111efc20804a
+Merge: bdfdee0 1a23c22
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Mon Jul 6 20:18:11 2020 -0400
+
+    Merge pull request #2 from regro-cf-autotick-bot/2.2_head0fb
+    
+    lerc v2.2
+
+commit 1a23c220984ea15456f348a7364fa9be6d8d383d
+Author: regro-cf-autotick-bot <circleci@cf-graph.regro.github.com>
+Date:   Mon Jul 6 20:23:24 2020 +0000
+
+    MNT: Re-rendered with conda-build 3.19.2, conda-smithy 3.7.4, and conda-forge-pinning 2020.07.06.18.43.00
+
+commit 9cc989b449dcb43684a0897c845ac2a772dfded9
+Author: regro-cf-autotick-bot <circleci@cf-graph.regro.github.com>
+Date:   Mon Jul 6 20:23:14 2020 +0000
+
+    updated v2.2
+
+commit bdfdee0da444435475645ff048766856ff432733
+Merge: 1b16491 c1ab097
+Author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+Date:   Sat Jun 27 19:58:14 2020 +0000
+
+    Aarch64
+    
+    automerged PR by conda-forge/automerge-action
+
+commit c1ab0975bd4471e5a72e69d6df95f049edf00aa0
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Sat Jun 27 15:47:13 2020 -0400
+
+    MNT: Re-rendered with conda-build 3.19.2, conda-smithy 3.7.3, and conda-forge-pinning 2020.06.24.16.31.11
+
+commit c6e6cbd145f840211a245e4beef6676f17bc68ee
+Author: Mark Harfouche <mark.harfouche@gmail.com>
+Date:   Sat Jun 27 15:45:01 2020 -0400
+
+    Enable aarch64
+
+commit 1b1649129f30e3eb6e9b3eadef6a74214b956e58
+Author: Travis-CI on github.com/conda-forge/staged-recipes <conda-forge@googlegroups.com>
+Date:   Wed Jun 24 23:42:33 2020 +0000
+
+    Re-render the feedstock after CI registration.
+
+commit 92eb281f366d5fdd0e0101c4b09481288992b2fc
+Author: Travis-CI on github.com/conda-forge/staged-recipes <conda-forge@googlegroups.com>
+Date:   Wed Jun 24 23:22:00 2020 +0000
+
+    Initial feedstock commit with conda-smithy 3.7.3.

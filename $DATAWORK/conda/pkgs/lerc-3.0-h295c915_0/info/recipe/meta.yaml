@@ -1,0 +1,92 @@
+# This file created by conda-build 3.21.5
+# meta.yaml template originally from:
+# /tmp/build/80754af9/rsync-recipes/lerc-3.0-on-linux_64, last modified Fri Oct 29 15:47:16 2021
+# ------------------------------------------------
+
+package:
+  name: lerc
+  version: '3.0'
+source:
+  sha256: 8c0148f5c22d823eff7b2c999b0781f8095e49a7d3195f13c68c5541dd5740a1
+  url: https://github.com/Esri/lerc/archive/v3.0.tar.gz
+build:
+  number: '0'
+  run_exports:
+    - lerc >=3.0,<4.0a0
+  string: h295c915_0
+requirements:
+  build:
+    - _libgcc_mutex 0.1 main
+    - _openmp_mutex 4.5 1_gnu
+    - _sysroot_linux-64_curr_repodata_hack 3 haa98f57_10
+    - binutils_impl_linux-64 2.35.1 h27ae35d_9
+    - binutils_linux-64 2.35.1 h454624a_30
+    - bzip2 1.0.8 h7b6447c_0
+    - c-ares 1.17.1 h27cfd23_0
+    - ca-certificates 2021.10.26 h06a4308_2
+    - cmake 3.19.6 h973ab73_0
+    - expat 2.4.1 h2531618_2
+    - gcc_impl_linux-64 7.5.0 h7105cf2_17
+    - gcc_linux-64 7.5.0 h8f34230_30
+    - gxx_impl_linux-64 7.5.0 h0a5bf11_17
+    - gxx_linux-64 7.5.0 hffc177d_30
+    - kernel-headers_linux-64 3.10.0 h57e8cba_10
+    - krb5 1.19.2 hac12032_0
+    - ld_impl_linux-64 2.35.1 h7274673_9
+    - libcurl 7.78.0 h0b77cf5_0
+    - libedit 3.1.20210714 h7f8727e_0
+    - libev 4.33 h7f8727e_1
+    - libgcc-devel_linux-64 7.5.0 hbbeae57_17
+    - libgcc-ng 9.3.0 h5101ec6_17
+    - libgomp 9.3.0 h5101ec6_17
+    - libnghttp2 1.41.0 hf8bcb03_2
+    - libssh2 1.9.0 h1ba5d50_1
+    - libstdcxx-devel_linux-64 7.5.0 hf0c5c8d_17
+    - libstdcxx-ng 9.3.0 hd4cf53a_17
+    - libuv 1.40.0 h7b6447c_0
+    - lz4-c 1.9.3 h295c915_1
+    - make 4.2.1 h1bed415_1
+    - ncurses 6.2 he6710b0_1
+    - openssl 1.1.1l h7f8727e_0
+    - rhash 1.4.1 h3c74f83_1
+    - sysroot_linux-64 2.17 h57e8cba_10
+    - xz 5.2.5 h7b6447c_0
+    - zlib 1.2.11 h7b6447c_3
+    - zstd 1.4.9 haebb681_0
+  host:
+    - _libgcc_mutex 0.1 main
+    - _openmp_mutex 4.5 1_gnu
+    - libgcc-ng 9.3.0 h5101ec6_17
+    - libgomp 9.3.0 h5101ec6_17
+    - libstdcxx-ng 9.3.0 hd4cf53a_17
+  run:
+    - libgcc-ng >=7.5.0
+    - libstdcxx-ng >=7.5.0
+test:
+  commands:
+    - test -f ${PREFIX}/lib/libLerc${SHLIB_EXT}
+    - test -f ${PREFIX}/include/Lerc_types.h
+about:
+  description: 'LERC is an open-source image or raster format which
+
+    supports rapid encoding and decoding for any pixel type
+
+    (not just RGB or Byte). Users set the maximum compression
+
+    error per pixel while encoding, so the precision of the
+
+    original input image is preserved (within user defined
+
+    error bounds).
+
+    '
+  home: https://github.com/Esri/lerc
+  license: Apache-2.0
+  license_family: Apache
+  license_file: LICENSE
+  summary: LERC - Limited Error Raster Compression
+extra:
+  copy_test_source_files: true
+  final: true
+  recipe-maintainers:
+    - hmaarrfk

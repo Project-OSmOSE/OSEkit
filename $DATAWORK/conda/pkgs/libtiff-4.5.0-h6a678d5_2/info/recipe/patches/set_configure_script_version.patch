@@ -1,0 +1,40 @@
+Up to libtiff 4.4.0, the LIBTIFF_CURRENT version was 13, and LIBTIFF_AGE was 8.
+As of 4.5.0, LIBTIFF_CURRENT was decremented to 6, and LIBTIFF_AGE was reset.
+This change has major implications for Mach-O dynamic libraries on MacOS.
+
+In order to maintain compatibility with other libraries that were
+linked with previous versions of libtiff, these must be reset back to the
+previous values, with LIBTIFF_CURRENT being incremented by 1. The maintainers
+of libtiff decided to increment the SO version as a result of the private
+symbol that was removed in libtiff 4.4.0.
+
+This must be done because existing packages that are linked with older versions
+of libtiff require a compatibility_version that is greater than or equal to the
+version number in the dependency being loaded. The change to LIBTIFF_CURRENT
+causes this version to be lower than before, resulting in the dynamic linker
+being unable to load the library. This is because the compatbility and current
+version values used by libtool are derived from the LIBTIFF_CURRENT value.
+
+This fix sets LIBTIFF_CURRENT to the value used in libtiff 4.4.0, plus 1 (14).
+The LIBTIFF_AGE value must remain the same, as the SO_MAJOR version is later
+calculated by (LIBTIFF_CURRENT - LIBTIFF_AGE). This is how the SO version
+number (6) is determined (e.g., libtiff.6.dylib).
+
+When libtiff alters the LIBTIFF_CURRENT or LIBTIFF_AGE values, this patch will
+need to be updated (it will fail to apply when that occurs). Hopefully, changes
+can be made upstream to better address this before that happens.
+
+--- configure	2023-01-10 14:40:57.000000000 -0700
++++ configure 	2023-01-10 14:15:28.000000000 -0700
+@@ -3721,9 +3721,9 @@
+ LIBTIFF_VERSION=$LIBTIFF_MAJOR_VERSION.$LIBTIFF_MINOR_VERSION.$LIBTIFF_MICRO_VERSION$LIBTIFF_ALPHA_VERSION
+ LIBTIFF_RELEASE_DATE=`date +"%Y%m%d"`
+ 
+-LIBTIFF_CURRENT=6
++LIBTIFF_CURRENT=14
+ LIBTIFF_REVISION=0
+-LIBTIFF_AGE=0
++LIBTIFF_AGE=8 
+ LIBTIFF_VERSION_INFO=$LIBTIFF_CURRENT:$LIBTIFF_REVISION:$LIBTIFF_AGE
+ 
+ # This is a special hack for OpenBSD and MirOS systems. The dynamic linker

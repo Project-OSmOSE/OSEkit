@@ -1,0 +1,12 @@
+{
+  "noarch": {
+    "entry_points": [
+      "fonttools = fontTools.__main__:main",
+      "ttx = fontTools.ttx:main",
+      "pyftsubset = fontTools.subset:main",
+      "pyftmerge = fontTools.merge:main"
+    ],
+    "type": "python"
+  },
+  "package_metadata_version": 1
+}

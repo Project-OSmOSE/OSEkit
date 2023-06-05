@@ -1,0 +1,21 @@
+{
+  "arch": "x86_64",
+  "build": "openblas",
+  "build_number": 7,
+  "channel": "https://repo.anaconda.com/pkgs/main/linux-64",
+  "constrains": [],
+  "depends": [],
+  "features": "",
+  "fn": "blas-1.0-openblas.conda",
+  "legacy_bz2_md5": "671f6e045d03a842f379145e7fc43c0d",
+  "md5": "9ddfcaef10d79366c90128f5dc444be8",
+  "name": "blas",
+  "platform": "linux",
+  "sha256": "c85b5d0a336b5be0f415c71fd7fe2eca59e09f42221bfa684aafef5510ba5487",
+  "size": 46671,
+  "subdir": "linux-64",
+  "timestamp": 1528224118045,
+  "track_features": "nomkl",
+  "url": "https://repo.anaconda.com/pkgs/main/linux-64/blas-1.0-openblas.conda",
+  "version": "1.0"
+}

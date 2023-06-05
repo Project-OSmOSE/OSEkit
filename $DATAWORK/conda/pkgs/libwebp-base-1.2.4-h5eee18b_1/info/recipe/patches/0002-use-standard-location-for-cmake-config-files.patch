@@ -1,0 +1,25 @@
+From 05161d37aba9134c0f18709cb4672020465ccecf Mon Sep 17 00:00:00 2001
+From: "H. Vetinari" <h.vetinari@gmx.com>
+Date: Fri, 22 Jul 2022 20:24:44 +0200
+Subject: [PATCH 2/2] use standard location for cmake config files
+
+Change-Id: I22dae95363e3d61da1ae9608de4a8fc8e4902ffa
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 5d8e6076..15ac65f7 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -731,7 +731,7 @@ install(TARGETS ${INSTALLED_LIBRARIES}
+         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+-set(ConfigPackageLocation ${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/cmake/)
++set(ConfigPackageLocation ${CMAKE_INSTALL_PREFIX}/cmake/)
+ install(EXPORT ${PROJECT_NAME}Targets
+         NAMESPACE ${PROJECT_NAME}::
+         DESTINATION ${ConfigPackageLocation})
+-- 
+2.37.0.windows.1

@@ -1,0 +1,82 @@
+# This file created by conda-build 3.21.4
+# meta.yaml template originally from:
+# /tmp/build/80754af9/combined_recipe, last modified Thu Jul  8 11:19:25 2021
+# ------------------------------------------------
+
+package:
+  name: fonttools
+  version: 4.25.0
+source:
+  fn: fonttools-4.25.0.tar.gz
+  sha256: 618f1ecb7f328c17164e4c9a11fdf8945164eb764ff11a2a17a368720ecc892e
+  url: https://github.com/fonttools/fonttools/archive/4.25.0.tar.gz
+build:
+  entry_points:
+    - fonttools = fontTools.__main__:main
+    - pyftmerge = fontTools.merge:main
+    - pyftsubset = fontTools.subset:main
+    - ttx = fontTools.ttx:main
+  noarch: python
+  number: '0'
+  script: python setup.py install --single-version-externally-managed --record record.txt
+  string: pyhd3eb1b0_0
+requirements:
+  host:
+    - _libgcc_mutex 0.1 main
+    - _openmp_mutex 4.5 1_gnu
+    - ca-certificates 2021.7.5 h06a4308_1
+    - certifi 2021.5.30 py39h06a4308_0
+    - ld_impl_linux-64 2.35.1 h7274673_9
+    - libffi 3.3 he6710b0_2
+    - libgcc-ng 9.3.0 h5101ec6_17
+    - libgomp 9.3.0 h5101ec6_17
+    - libstdcxx-ng 9.3.0 hd4cf53a_17
+    - ncurses 6.2 he6710b0_1
+    - openssl 1.1.1k h27cfd23_0
+    - pip 21.1.3 py39h06a4308_0
+    - python 3.9.5 h12debd9_4
+    - readline 8.1 h27cfd23_0
+    - setuptools 52.0.0 py39h06a4308_0
+    - sqlite 3.36.0 hc218d9a_0
+    - tk 8.6.10 hbc83047_0
+    - tzdata 2021a h52ac0ba_0
+    - wheel 0.36.2 pyhd3eb1b0_0
+    - xz 5.2.5 h7b6447c_0
+    - zlib 1.2.11 h7b6447c_3
+  run:
+    - brotli >=1.0.1
+    - munkres
+    - python >=3.6
+test:
+  commands:
+    - fonttools subset --help
+    - ttx -h
+    - pyftsubset --help
+  imports:
+    - fontTools
+    - fontTools.ttLib
+about:
+  description: 'fontTools is a library for manipulating fonts, written in Python.
+    The
+
+    project includes the TTX tool, that can convert TrueType and OpenType
+
+    fonts to and from an XML text format, which is also called TTX. It
+
+    supports TrueType, OpenType, AFM and to an extent Type 1 and some
+
+    Mac-specific formats. The project has a BSD-style open-source licence.
+
+    '
+  dev_url: https://github.com/fonttools/fonttools
+  doc_url: https://groups.google.com/forum/#!forum/fonttools
+  home: https://github.com/fonttools/fonttools
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE
+  summary: fontTools is a library for manipulating fonts, written in Python.
+extra:
+  copy_test_source_files: true
+  final: true
+  recipe-maintainers:
+    - CJ-Wright

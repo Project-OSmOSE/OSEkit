@@ -858,14 +858,13 @@ class Spectrogram(Dataset):
                         logdir=self.path.joinpath("log")
                     )
 
-                    job_id = self.jb.submit_job(dependency=resample_job_id_list)
+                    job_id = self.jb.submit_job(dependency=reshape_job_id_list if reshape_job_id_list else resample_job_id_list)
                     norma_job_id_list += job_id
             
             self.pending_jobs = norma_job_id_list
 
             for process in processes:
                 process.join()
-
 
         metadata["dataset_fileDuration"] = self.spectro_duration
         new_meta_path = self.audio_path.joinpath("metadata.csv")
@@ -1040,6 +1039,10 @@ class Spectrogram(Dataset):
         """
         set_umask()
         try:
+            print(clean_adjust_folder)
+            print(self.path_output_spectrogram.parent.parent.joinpath(
+                    "adjustment_spectros"
+                ).exists())
             if clean_adjust_folder and (self.path_output_spectrogram.parent.parent.joinpath(
                     "adjustment_spectros"
                 ).exists()

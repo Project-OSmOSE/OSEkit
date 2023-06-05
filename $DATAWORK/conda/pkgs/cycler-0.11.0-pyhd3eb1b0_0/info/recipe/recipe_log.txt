@@ -1,0 +1,259 @@
+commit 08654d9a80fe6c3e1264fe46840da32cc7d60b24
+Author: Serhii Kupriienko <skupriienko@anaconda.com>
+Date:   Thu Nov 25 14:43:52 2021 +0000
+
+    Use noarch python
+
+commit 1e98ec9e6ad9fd7cd50d6265644a76d8d5b7a5fb
+Author: Serhii Kupriienko <skupriienko@anaconda.com>
+Date:   Thu Nov 25 10:06:32 2021 +0000
+
+    Fix sha256
+
+commit 676c956af2868f73215954d1ae02c426da44805f
+Author: Serhii Kupriienko <skupriienko@anaconda.com>
+Date:   Thu Nov 25 09:53:15 2021 +0000
+
+    Update dependencies, add license_family, add pip check
+
+commit 35f7ed5a323d3516e3c38ccb251b943e8bb65cca
+Author: Nehal J Wani <nehaljw.kkd1@gmail.com>
+Date:   Sun Aug 13 06:54:31 2017 +0000
+
+    Update about section
+
+commit db1a40ccf4095810d3323746085d39f8f9734dd7
+Author: Nehal J Wani <nehaljw.kkd1@gmail.com>
+Date:   Thu Jul 13 09:50:00 2017 +0000
+
+    Make recipe cross-compile capable
+
+commit 2bcd9b9dde200d0bce1681d47fffe2f4ad544706
+Merge: 9cab3f0 16926f0
+Author: Filipe <ocefpaf@gmail.com>
+Date:   Thu Mar 2 14:03:50 2017 -0300
+
+    Merge pull request #9 from ocefpaf/minor_recipe_fixes
+    
+    minor recipe fixes
+
+commit 16926f0de4693d69946f7ada63f2c76ad6a6a729
+Author: ocefpaf <ocefpaf@gmail.com>
+Date:   Thu Mar 2 13:47:09 2017 -0300
+
+    minor recipe fixes
+
+commit 9cab3f0ba1121df38ac562cb52341fcec07f5685
+Merge: 1977f78 2e6e8ad
+Author: Filipe <ocefpaf@gmail.com>
+Date:   Thu Mar 2 13:25:02 2017 -0300
+
+    Merge pull request #8 from lexual/rerender_py36
+    
+    MNT: Re-rendered with conda-smithy 2.1.1
+
+commit 2e6e8ad655f791c1ae12d5d29888fb7e316f690b
+Author: lexual <a.hider@bom.gov.au>
+Date:   Wed Mar 1 20:30:20 2017 +1100
+
+    bugfix: use write meta key for sha256 sum.
+
+commit 21402fbdde35b7466f45f37633ed01dabeba8477
+Author: lexual <a.hider@bom.gov.au>
+Date:   Wed Mar 1 20:26:49 2017 +1100
+
+    make linter happy.
+
+commit 16d2b5fe08fe1d72a5e62592da337fd436ba4c69
+Author: lexual <lex.hider@bom.gov.au>
+Date:   Wed Mar 1 17:18:31 2017 +1100
+
+    MNT: Re-rendered with conda-smithy 2.1.1
+
+commit 1977f78949b44b579679eafa0fe44a52cd721d49
+Merge: 5a79aa1 83c1ae6
+Author: jakirkham <jakirkham@gmail.com>
+Date:   Wed Oct 12 11:35:15 2016 -0400
+
+    Merge pull request #6 from conda-forge-admin/feedstock_rerender_master
+    
+    MNT: Re-render the feedstock [ci skip]
+
+commit 83c1ae6feeea1c42810672dbb55e010dbf874c97
+Author: conda-forge-admin <pelson.pub+conda-forge@gmail.com>
+Date:   Wed Oct 12 05:04:41 2016 +0000
+
+    MNT: Updated the feedstock for conda-smithy version 1.3.2.
+
+commit 5a79aa17c1c1cf8cf3e13176e1271aa9c2120e1f
+Merge: 751c788 dbf20b4
+Author: jakirkham <jakirkham@gmail.com>
+Date:   Sat Jun 4 16:04:35 2016 -0400
+
+    Merge pull request #5 from conda-forge-admin/feedstock_rerender_master
+    
+    MNT: Re-render the feedstock
+
+commit dbf20b4de9b58d4c83a29a218d4d86c3ab075974
+Author: conda-forge-admin <pelson.pub+conda-forge@gmail.com>
+Date:   Sun May 15 06:43:36 2016 +0000
+
+    MNT: Updated the feedstock for conda-smithy version 0.10.3.
+    
+    [ci skip]
+
+commit 751c78863bdbdc39d70b03f4c871d84f985b07fd
+Merge: 919c14f 41c985f
+Author: Phil Elson <pelson.pub@gmail.com>
+Date:   Wed Mar 9 18:57:48 2016 +0000
+
+    Merge pull request #3 from conda-forge-admin/feedstock_rerender
+    
+    MNT: Re-render the feedstock
+
+commit 41c985f7f4c328649e79bd42a1d8b21487593562
+Author: Phil Elson <pelson.pub@gmail.com>
+Date:   Wed Mar 9 19:29:58 2016 +0100
+
+    MNT: Updated the feedstock for conda-smithy version 0.5.1.
+
+commit 919c14fff601382d4da2a8e222efbc35ed41b79d
+Author: Thomas A Caswell <tcaswell@gmail.com>
+Date:   Tue Feb 16 09:51:39 2016 -0500
+
+    REL: version bump to v0.10.0
+
+commit 95ca8864bbda946fa9e58cc815de0ca8dcc5ff79
+Author: Phil Elson <pelson.pub@gmail.com>
+Date:   Mon Feb 8 17:07:23 2016 +0000
+
+    Re-render the feedstock after CI registration.
+
+commit 9c3fc64bba288d2f79cae63eac071a3708cd2d6f
+Author: Phil Elson <pelson.pub@gmail.com>
+Date:   Mon Feb 8 17:04:23 2016 +0000
+
+    Re-render the feedstock after CI registration.
+
+commit 135d0326ed766c8fa26d3d1faa78bc0d20b10c50
+Author: Phil Elson <pelson.pub@gmail.com>
+Date:   Mon Feb 8 17:00:21 2016 +0000
+
+    Re-render the feedstock after CI registration.
+
+commit 792fe42154c88d7d30ae3fcccb1c138ce8e12d9f
+Author: Phil Elson <pelson.pub@gmail.com>
+Date:   Mon Feb 8 16:59:39 2016 +0000
+
+    Re-render the feedstock after CI registration.
+
+commit 92e4f4db220e38655161779ec4a06d55249d7f04
+Author: Phil Elson <pelson.pub@gmail.com>
+Date:   Mon Feb 8 16:58:54 2016 +0000
+
+    Re-render the feedstock after CI registration.
+
+commit b2d908bc17315cf9a98807729fb5bbf4d52e3ef4
+Author: Phil Elson <pelson.pub@gmail.com>
+Date:   Mon Feb 8 16:55:35 2016 +0000
+
+    Re-render the feedstock after CI registration.
+
+commit d81e78b5d90df688a2f0056d656e81d16940722b
+Author: Phil Elson <pelson.pub@gmail.com>
+Date:   Mon Feb 8 16:54:38 2016 +0000
+
+    Re-render the feedstock after CI registration.
+
+commit ae612f127f9e2633c8e0ca87ed9172baa58fc6f9
+Author: Phil Elson <pelson.pub@gmail.com>
+Date:   Mon Feb 8 16:53:50 2016 +0000
+
+    Re-render the feedstock after CI registration.
+
+commit 6f34149f96b78ab82a035d87965a881281942035
+Author: Phil Elson <pelson.pub@gmail.com>
+Date:   Mon Feb 8 16:52:34 2016 +0000
+
+    Re-render the feedstock after CI registration.
+
+commit c97e3a028c4957af22bd25c016c1255939354cae
+Author: Phil Elson <pelson.pub@gmail.com>
+Date:   Mon Feb 8 16:41:07 2016 +0000
+
+    Re-render the feedstock after CI registration.
+
+commit 606d6d3fa8d06f378f25b51ddda52df58d5765f4
+Author: Phil Elson <pelson.pub@gmail.com>
+Date:   Mon Feb 8 16:31:45 2016 +0000
+
+    Re-render the feedstock after CI registration.
+
+commit 145fdd33c686f86ed7987dd5c6e3758a44fa2a11
+Merge: fcdfae3 b14440b
+Author: Phil Elson <pelson.pub@gmail.com>
+Date:   Thu Jan 14 05:20:18 2016 +0000
+
+    Merge pull request #1 from pelson/master
+    
+    Added @tacaswell and @JanSchulz as maintainers.
+
+commit b14440b26244efc9cbf3af9d1c6156f6302c85d5
+Author: Phil Elson <pelson.pub@gmail.com>
+Date:   Thu Jan 14 05:17:56 2016 +0000
+
+    Added @tacaswell and @JanSchulz as maintainers. This will result in automatic addition to the cycler conda-forge team.
+
+commit fcdfae3121561ba3e8a0233c961605eb0b15db70
+Author: Phil Elson <pelson.pub@gmail.com>
+Date:   Sun Jan 10 07:44:37 2016 +0000
+
+    Further improvements to the README.
+
+commit f2a4f3ee79b7ec457909ed2060ffe1035cab5515
+Author: Phil Elson <pelson.pub@gmail.com>
+Date:   Sun Jan 10 07:42:15 2016 +0000
+
+    Updated readme and added a License (BSD 3-clause).
+
+commit 98cf0889fbca32e8e0b72ea587293ef159d0e807
+Author: Phil Elson <pelson.pub@gmail.com>
+Date:   Sun Jan 10 07:41:31 2016 +0000
+
+    Updated readme and added a License (BSD 3-clause).
+
+commit 997ce9d51e8215227482b8b6a0a1018389b8f526
+Author: Phil Elson <pelson.pub@gmail.com>
+Date:   Sun Jan 10 07:26:36 2016 +0000
+
+    Typos.
+
+commit a780c2d4869db870dc03b4b90941120b573e0c10
+Author: Phil Elson <pelson.pub@gmail.com>
+Date:   Sun Jan 10 07:24:35 2016 +0000
+
+    Further readme improvements.
+
+commit 0314985d4d38059c9b954845d03dbbba0710b6f3
+Author: Phil Elson <pelson.pub@gmail.com>
+Date:   Sun Jan 10 07:07:26 2016 +0000
+
+    Updated thanks to update of conda-smithy.
+
+commit 29933380df3380870adbb7fcefd9bead64e64f8f
+Author: Phil Elson <pelson.pub@gmail.com>
+Date:   Sun Jan 10 06:42:59 2016 +0000
+
+    Updated readme (through conda-smithy development).
+
+commit ecb57c0b50879628f1aa03dee0a66d211ae19eca
+Author: Phil Elson <pelson.pub@gmail.com>
+Date:   Sun Jan 10 06:19:13 2016 +0000
+
+    Add CI tokens.
+
+commit decfd2b055b875c54d2330af8d6af75758cf061b
+Author: Phil Elson <pelson.pub@gmail.com>
+Date:   Sun Jan 10 05:58:17 2016 +0000
+
+    Initial commit of the cycler feedstock.

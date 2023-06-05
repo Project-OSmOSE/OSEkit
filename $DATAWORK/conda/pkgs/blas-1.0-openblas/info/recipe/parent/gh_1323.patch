@@ -1,0 +1,123 @@
+From c7a8512d121c15a2f4fde2f156853b1335971f27 Mon Sep 17 00:00:00 2001
+From: Martin Kroeker <martin@ruby.chemie.uni-freiburg.de>
+Date: Mon, 9 Oct 2017 23:34:18 +0200
+Subject: [PATCH] Cmake fixes for DYNAMIC_ARCH builds and whitespace in path
+ names (#1323)
+
+* prebuild.cmake: Put quotes around path names that may contain whitespace
+(Copied from alexkaratakis' PR #1295)
+* kernel/CMakeLists.txt: Fix common_lapack header inclusion and DYNAMIC_ARCH generation of ?neg_tcopy and ?laswp_ncopy files
+* lapack/CMakeLists.txt: Use correct template for ?laswp_(plus,minus) functions
+---
+ cmake/prebuild.cmake  | 12 ++++++------
+ kernel/CMakeLists.txt | 13 +++++++++++--
+ lapack/CMakeLists.txt | 13 ++++++++++---
+ 3 files changed, 27 insertions(+), 11 deletions(-)
+
+diff --git a/cmake/prebuild.cmake b/cmake/prebuild.cmake
+index cc54756..b783ef9 100644
+--- a/cmake/prebuild.cmake
++++ b/cmake/prebuild.cmake
+@@ -192,7 +192,7 @@ else(NOT CMAKE_CROSSCOMPILING)
+   if (NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "WindowsStore")
+     try_compile(GETARCH_RESULT ${GETARCH_DIR}
+       SOURCES ${GETARCH_SRC}
+-      COMPILE_DEFINITIONS ${EXFLAGS} ${GETARCH_FLAGS} -I${GETARCH_DIR} -I${PROJECT_SOURCE_DIR} -I${PROJECT_BINARY_DIR}
++    COMPILE_DEFINITIONS ${EXFLAGS} ${GETARCH_FLAGS} -I${GETARCH_DIR} -I"${PROJECT_SOURCE_DIR}" -I"${PROJECT_BINARY_DIR}"
+       OUTPUT_VARIABLE GETARCH_LOG
+       COPY_FILE ${PROJECT_BINARY_DIR}/${GETARCH_BIN}
+     )
+@@ -204,8 +204,8 @@ else(NOT CMAKE_CROSSCOMPILING)
+   message(STATUS "Running getarch")
+ 
+   # use the cmake binary w/ the -E param to run a shell command in a cross-platform way
+-  execute_process(COMMAND ${PROJECT_BINARY_DIR}/${GETARCH_BIN} 0 OUTPUT_VARIABLE GETARCH_MAKE_OUT)
+-  execute_process(COMMAND ${PROJECT_BINARY_DIR}/${GETARCH_BIN} 1 OUTPUT_VARIABLE GETARCH_CONF_OUT)
++execute_process(COMMAND "${PROJECT_BINARY_DIR}/${GETARCH_BIN}" 0 OUTPUT_VARIABLE GETARCH_MAKE_OUT)
++execute_process(COMMAND "${PROJECT_BINARY_DIR}/${GETARCH_BIN}" 1 OUTPUT_VARIABLE GETARCH_CONF_OUT)
+ 
+   message(STATUS "GETARCH results:\n${GETARCH_MAKE_OUT}")
+ 
+@@ -220,7 +220,7 @@ else(NOT CMAKE_CROSSCOMPILING)
+   if (NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "WindowsStore")
+     try_compile(GETARCH2_RESULT ${GETARCH2_DIR}
+       SOURCES ${PROJECT_SOURCE_DIR}/getarch_2nd.c
+-      COMPILE_DEFINITIONS ${EXFLAGS} ${GETARCH_FLAGS} ${GETARCH2_FLAGS} -I${GETARCH2_DIR} -I${PROJECT_SOURCE_DIR} -I${PROJECT_BINARY_DIR}
++    COMPILE_DEFINITIONS ${EXFLAGS} ${GETARCH_FLAGS} ${GETARCH2_FLAGS} -I${GETARCH2_DIR} -I"${PROJECT_SOURCE_DIR}" -I"${PROJECT_BINARY_DIR}"
+       OUTPUT_VARIABLE GETARCH2_LOG
+       COPY_FILE ${PROJECT_BINARY_DIR}/${GETARCH2_BIN}
+     )
+@@ -231,8 +231,8 @@ else(NOT CMAKE_CROSSCOMPILING)
+   endif ()
+ 
+   # use the cmake binary w/ the -E param to run a shell command in a cross-platform way
+-  execute_process(COMMAND ${PROJECT_BINARY_DIR}/${GETARCH2_BIN} 0 OUTPUT_VARIABLE GETARCH2_MAKE_OUT)
+-  execute_process(COMMAND ${PROJECT_BINARY_DIR}/${GETARCH2_BIN} 1 OUTPUT_VARIABLE GETARCH2_CONF_OUT)
++execute_process(COMMAND "${PROJECT_BINARY_DIR}/${GETARCH2_BIN}" 0 OUTPUT_VARIABLE GETARCH2_MAKE_OUT)
++execute_process(COMMAND "${PROJECT_BINARY_DIR}/${GETARCH2_BIN}" 1 OUTPUT_VARIABLE GETARCH2_CONF_OUT)
+ 
+   # append config data from getarch_2nd to the TARGET file and read in CMake vars
+   file(APPEND ${TARGET_CONF_TEMP} ${GETARCH2_CONF_OUT})
+diff --git a/kernel/CMakeLists.txt b/kernel/CMakeLists.txt
+index 09e513c..a720f62 100644
+--- a/kernel/CMakeLists.txt
++++ b/kernel/CMakeLists.txt
+@@ -16,7 +16,7 @@ function (build_core TARGET_CORE KDIR TSUFFIX KERNEL_DEFINITIONS)
+     ParseMakefileVars("${KERNELDIR}/KERNEL.${TARGET_CORE}")
+ 
+     set(KERNEL_INTERFACE common_level1.h common_level2.h common_level3.h)
+-    if(NOT ${NO_LAPACK})
++    if(NOT NO_LAPACK)
+         set(KERNEL_INTERFACE ${KERNEL_INTERFACE} common_lapack.h)
+     endif ()
+ 
+@@ -500,12 +500,21 @@ function (build_core TARGET_CORE KDIR TSUFFIX KERNEL_DEFINITIONS)
+         set(KERNEL_TSUFFIX_CONTENTS "")
+         foreach (KERNEL_INTERFACE_H ${KERNEL_INTERFACE})
+             file(READ ${PROJECT_SOURCE_DIR}/${KERNEL_INTERFACE_H} KERNEL_INTERFACE_H_CONTENTS)
+-            string(REGEX REPLACE "[ ]*\\(" "${TSUFFIX}(" KERNEL_INTERFACE_H_CONTENTS_NEW "${KERNEL_INTERFACE_H_CONTENTS}")
++            string(REGEX REPLACE " *\\(" "${TSUFFIX}(" KERNEL_INTERFACE_H_CONTENTS_NEW "${KERNEL_INTERFACE_H_CONTENTS}")
+             set(KERNEL_TSUFFIX_CONTENTS "${KERNEL_TSUFFIX_CONTENTS}\n${KERNEL_INTERFACE_H_CONTENTS_NEW}")
+         endforeach()
+ 	    file(WRITE ${SETPARAM_TARGET_DIR}/kernel${TSUFFIX}.tmp "${KERNEL_TSUFFIX_CONTENTS}")
+         configure_file(${SETPARAM_TARGET_DIR}/kernel${TSUFFIX}.tmp ${SETPARAM_TARGET_DIR}/kernel${TSUFFIX}.h COPYONLY)
+         file(REMOVE ${SETPARAM_TARGET_DIR}/kernel${TSUFFIX}.tmp)
++
++    foreach (float_type ${FLOAT_TYPES})
++      # a bit of metaprogramming here to pull out the appropriate KERNEL var
++      string(SUBSTRING ${float_type} 0 1 float_char)
++      GenerateNamedObjects("generic/neg_tcopy_${${float_char}GEMM_UNROLL_M}.c" "" "neg_tcopy" false "" ${TSUFFIX}  false ${float_type})
++      GenerateNamedObjects("generic/laswp_ncopy_${${float_char}GEMM_UNROLL_N}.c" "" "laswp_ncopy" false "" ${TSUFFIX}  false ${float_type})
++    endforeach ()
++
++
+     endif ()
+ 
+     add_library(kernel${TSUFFIX} OBJECT ${OPENBLAS_SRC})
+diff --git a/lapack/CMakeLists.txt b/lapack/CMakeLists.txt
+index 9fb0006..c0a7543 100644
+--- a/lapack/CMakeLists.txt
++++ b/lapack/CMakeLists.txt
+@@ -42,9 +42,16 @@ set(UNIT_SOURCES2
+ GenerateNamedObjects("${LAPACK_SOURCES}")
+ GenerateNamedObjects("${LAPACK_MANGLED_SOURCES}" "" "" false "" "" false 3)
+ 
+-# TODO: laswp needs arch specific code
+-GenerateNamedObjects("laswp/generic/laswp_k.c" "" "laswp_plus" false "" "" false 3)
+-GenerateNamedObjects("laswp/generic/laswp_k.c" "MINUS" "laswp_minus" false "" "" false 3)
++GenerateNamedObjects("laswp/generic/laswp_k_4.c" "" "laswp_plus" false "" ""  false 3)
++GenerateNamedObjects("laswp/generic/laswp_k_4.c" "MINUS" "laswp_minus" false "" ""  false 3)
++
++# dynamic_arch laswp needs arch specific code ?
++#foreach(TARGET_CORE ${DYNAMIC_CORE})
++#      set(TSUFFIX "_${TARGET_CORE}")
++#
++#GenerateNamedObjects("laswp/generic/laswp_k_4.c" "" "laswp_plus" false "" ${TSUFFIX}  false 3)
++#GenerateNamedObjects("laswp/generic/laswp_k_4.c" "MINUS" "laswp_minus" false "" ${TSUFFIX}  false 3)
++#endforeach ()
+ 
+ if (USE_THREAD)
+ 
+-- 
+2.7.4
+

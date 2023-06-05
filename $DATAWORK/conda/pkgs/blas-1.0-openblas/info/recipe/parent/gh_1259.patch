@@ -1,0 +1,505 @@
+From 7a96499b29c6b059ecd1baa97bb8b15da6601487 Mon Sep 17 00:00:00 2001
+From: Isuru Fernando <isuruf@gmail.com>
+Date: Tue, 1 Aug 2017 11:02:00 +0530
+Subject: [PATCH 1/5] Don't change timestamps
+
+---
+ .gitignore           |  1 +
+ CMakeLists.txt       | 44 ++++++++++++++++++--------------------------
+ cmake/c_check.cmake  |  4 ++--
+ cmake/f_check.cmake  |  4 ++--
+ cmake/prebuild.cmake | 14 +++++++++-----
+ cmake/utils.cmake    |  4 +++-
+ 6 files changed, 35 insertions(+), 36 deletions(-)
+
+diff --git a/.gitignore b/.gitignore
+index a2ec7dd08..e9d08ca7e 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -5,6 +5,7 @@
+ *.def
+ *.o
+ *.out
++*.tmp
+ lapack-3.1.1
+ lapack-3.1.1.tgz
+ lapack-3.4.1
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 0243ca963..45111ce30 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -231,42 +231,34 @@ install(TARGETS ${OpenBLAS_LIBNAME}
+ 
+ # Install include files
+ 	set (GENCONFIG_BIN ${CMAKE_BINARY_DIR}/gen_config_h${CMAKE_EXECUTABLE_SUFFIX})
+-	ADD_CUSTOM_COMMAND(
+-	OUTPUT ${CMAKE_BINARY_DIR}/openblas_config.h
+-	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/config.h
+-	COMMAND ${GENCONFIG_BIN} ${CMAKE_CURRENT_SOURCE_DIR}/config.h ${CMAKE_CURRENT_SOURCE_DIR}/openblas_config_template.h > ${CMAKE_BINARY_DIR}/openblas_config.h
+-	)
+ 
+-	ADD_CUSTOM_TARGET(genconfig
+-	ALL
+-	DEPENDS openblas_config.h
+-	)
+-	add_dependencies(genconfig ${OpenBLAS_LIBNAME})
++    execute_process(COMMAND ${GENCONFIG_BIN}
++                            ${CMAKE_CURRENT_SOURCE_DIR}/config.h
++                            ${CMAKE_CURRENT_SOURCE_DIR}/openblas_config_template.h
++                    OUTPUT_VARIABLE OPENBLAS_CONFIG_H_CONTENTS)
++
++    file(WRITE ${CMAKE_BINARY_DIR}/openblas_config.tmp "${OPENBLAS_CONFIG_H_CONTENTS}")
++    configure_file(${CMAKE_BINARY_DIR}/openblas_config.tmp ${CMAKE_BINARY_DIR}/openblas_config.h COPYONLY)
+ 
+ 	install (FILES ${CMAKE_BINARY_DIR}/openblas_config.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+ 
+ 	message(STATUS "Generating f77blas.h in ${CMAKE_INSTALL_INCLUDEDIR}")
+ 
+-	ADD_CUSTOM_TARGET(genf77blas
+-	ALL
+-	COMMAND ${AWK} 'BEGIN{print \"\#ifndef OPENBLAS_F77BLAS_H\" \; print \"\#define OPENBLAS_F77BLAS_H\" \; print \"\#include \\"openblas_config.h\\" \"}; NF {print}; END{print \"\#endif\"}' ${CMAKE_CURRENT_SOURCE_DIR}/common_interface.h > ${CMAKE_BINARY_DIR}/f77blas.h
+-	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/config.h
+-	)
+-	add_dependencies(genf77blas ${OpenBLAS_LIBNAME})
+-
++    file(WRITE ${CMAKE_BINARY_DIR}/f77blas.tmp "")
++    file(APPEND ${CMAKE_BINARY_DIR}/f77blas.tmp "#ifndef OPENBLAS_F77BLAS_H\n#define OPENBLAS_F77BLAS_H\n#include \"openblas_config.h\"\n")
++    file(READ ${CMAKE_CURRENT_SOURCE_DIR}/common_interface.h COMMON_INTERFACE_H_CONTENTS)
++    file(APPEND ${CMAKE_BINARY_DIR}/f77blas.tmp "${COMMON_INTERFACE_H_CONTENTS}")
++    file(APPEND ${CMAKE_BINARY_DIR}/f77blas.tmp "#endif")
++    configure_file(${CMAKE_BINARY_DIR}/f77blas.tmp ${CMAKE_BINARY_DIR}/f77blas.h COPYONLY)
+ 	install (FILES ${CMAKE_BINARY_DIR}/f77blas.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+ 
+ if(NOT NO_CBLAS)
+ 	message (STATUS "Generating cblas.h in ${CMAKE_INSTALL_INCLUDEDIR}")
+ 
+-	ADD_CUSTOM_TARGET(gencblas
+-	ALL
+-	COMMAND ${SED} 's/common/openblas_config/g' ${CMAKE_CURRENT_SOURCE_DIR}/cblas.h > "${CMAKE_BINARY_DIR}/cblas.tmp"
+-	COMMAND cp "${CMAKE_BINARY_DIR}/cblas.tmp" "${CMAKE_BINARY_DIR}/cblas.h"
+-	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/cblas.h
+-	)
+-	add_dependencies(gencblas ${OpenBLAS_LIBNAME})
+-
++    file(READ ${CMAKE_CURRENT_SOURCE_DIR}/cblas.h CBLAS_H_CONTENTS)
++    string(REPLACE "common" "openblas_config" CBLAS_H_CONTENTS_NEW "${CBLAS_H_CONTENTS}")
++    file(WRITE ${CMAKE_BINARY_DIR}/cblas.tmp "${CBLAS_H_CONTENTS_NEW}")
++    configure_file(${CMAKE_BINARY_DIR}/cblas.tmp ${CMAKE_CURRENT_SOURCE_DIR}/cblas.h COPYONLY)
+ 	install (FILES ${CMAKE_BINARY_DIR}/cblas.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+ endif()
+ 
+@@ -277,7 +269,7 @@ if(NOT NO_LAPACKE)
+ 	install (FILES ${INCLUDE_FILES} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+  
+ 	ADD_CUSTOM_TARGET(genlapacke
+-	COMMAND cp ${CMAKE_CURRENT_SOURCE_DIR}/lapack-netlib/LAPACKE/include/lapacke_mangling_with_flags.h.in "${CMAKE_BINARY_DIR}/lapacke_mangling.h"
++	COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/lapack-netlib/LAPACKE/include/lapacke_mangling_with_flags.h.in "${CMAKE_BINARY_DIR}/lapacke_mangling.h"
+ 	)
+ 	install (FILES ${CMAKE_BINARY_DIR}/lapacke_mangling.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+ endif()
+diff --git a/cmake/c_check.cmake b/cmake/c_check.cmake
+index 56ae612ea..fc376c659 100644
+--- a/cmake/c_check.cmake
++++ b/cmake/c_check.cmake
+@@ -84,7 +84,7 @@ endif ()
+ 
+ string(TOUPPER ${ARCH} UC_ARCH)
+ 
+-file(WRITE ${TARGET_CONF}
++file(WRITE ${TARGET_CONF_TEMP}
+   "#define OS_${HOST_OS}\t1\n"
+   "#define ARCH_${UC_ARCH}\t1\n"
+   "#define C_${COMPILER_ID}\t1\n"
+@@ -92,7 +92,7 @@ file(WRITE ${TARGET_CONF}
+   "#define FUNDERSCORE\t${FU}\n")
+ 
+ if (${HOST_OS} STREQUAL "WINDOWSSTORE")
+-  file(APPEND ${TARGET_CONF}
++  file(APPEND ${TARGET_CONF_TEMP}
+     "#define OS_WINNT\t1\n")
+ endif ()
+ 
+diff --git a/cmake/f_check.cmake b/cmake/f_check.cmake
+index e8fe4bfa7..6eee027a5 100644
+--- a/cmake/f_check.cmake
++++ b/cmake/f_check.cmake
+@@ -44,7 +44,7 @@ if (NOT ONLY_CBLAS)
+   # TODO: set FEXTRALIB flags a la f_check?
+ 
+   set(BU "_")
+-  file(APPEND ${TARGET_CONF}
++  file(APPEND ${TARGET_CONF_TEMP}
+     "#define BUNDERSCORE _\n"
+     "#define NEEDBUNDERSCORE 1\n"
+     "#define NEED2UNDERSCORES 0\n")
+@@ -56,7 +56,7 @@ else ()
+   set(NO_FBLAS 1)
+   #set(F_COMPILER GFORTRAN) # CMake handles the fortran compiler
+   set(BU "_")
+-  file(APPEND ${TARGET_CONF}
++  file(APPEND ${TARGET_CONF_TEMP}
+     "#define BUNDERSCORE _\n"
+     "#define NEEDBUNDERSCORE 1\n")
+ endif()
+diff --git a/cmake/prebuild.cmake b/cmake/prebuild.cmake
+index a7f98bfb8..422d4cb37 100644
+--- a/cmake/prebuild.cmake
++++ b/cmake/prebuild.cmake
+@@ -51,6 +51,7 @@ else()
+   set(TARGET_CONF "config.h")
+ endif ()
+ 
++set(TARGET_CONF_TEMP "${TARGET_CONF}.tmp")
+ include("${PROJECT_SOURCE_DIR}/cmake/c_check.cmake")
+ 
+ if (NOT NOFORTRAN)
+@@ -80,10 +81,11 @@ endif ()
+ set(GETARCH_DIR "${PROJECT_BINARY_DIR}/getarch_build")
+ set(GETARCH_BIN "getarch${CMAKE_EXECUTABLE_SUFFIX}")
+ file(MAKE_DIRECTORY ${GETARCH_DIR})
++configure_file(${TARGET_CONF_TEMP} ${GETARCH_DIR}/${TARGET_CONF} COPYONLY)
+ if (NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "WindowsStore")
+   try_compile(GETARCH_RESULT ${GETARCH_DIR}
+     SOURCES ${GETARCH_SRC}
+-    COMPILE_DEFINITIONS ${EXFLAGS} ${GETARCH_FLAGS} -I${PROJECT_SOURCE_DIR}
++    COMPILE_DEFINITIONS ${EXFLAGS} ${GETARCH_FLAGS} -I${GETARCH_DIR} -I${PROJECT_SOURCE_DIR}
+     OUTPUT_VARIABLE GETARCH_LOG
+     COPY_FILE ${PROJECT_BINARY_DIR}/${GETARCH_BIN}
+   )
+@@ -101,16 +103,17 @@ execute_process(COMMAND ${PROJECT_BINARY_DIR}/${GETARCH_BIN} 1 OUTPUT_VARIABLE G
+ message(STATUS "GETARCH results:\n${GETARCH_MAKE_OUT}")
+ 
+ # append config data from getarch to the TARGET file and read in CMake vars
+-file(APPEND ${TARGET_CONF} ${GETARCH_CONF_OUT})
++file(APPEND ${TARGET_CONF_TEMP} ${GETARCH_CONF_OUT})
+ ParseGetArchVars(${GETARCH_MAKE_OUT})
+ 
+ set(GETARCH2_DIR "${PROJECT_BINARY_DIR}/getarch2_build")
+ set(GETARCH2_BIN "getarch_2nd${CMAKE_EXECUTABLE_SUFFIX}")
+ file(MAKE_DIRECTORY ${GETARCH2_DIR})
++configure_file(${TARGET_CONF_TEMP} ${GETARCH2_DIR}/${TARGET_CONF} COPYONLY)
+ if (NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "WindowsStore")
+   try_compile(GETARCH2_RESULT ${GETARCH2_DIR}
+     SOURCES ${PROJECT_SOURCE_DIR}/getarch_2nd.c
+-    COMPILE_DEFINITIONS ${EXFLAGS} ${GETARCH_FLAGS} ${GETARCH2_FLAGS} -I${PROJECT_SOURCE_DIR}
++    COMPILE_DEFINITIONS ${EXFLAGS} ${GETARCH_FLAGS} ${GETARCH2_FLAGS} -I${GETARCH2_DIR} -I${PROJECT_SOURCE_DIR}
+     OUTPUT_VARIABLE GETARCH2_LOG
+     COPY_FILE ${PROJECT_BINARY_DIR}/${GETARCH2_BIN}
+   )
+@@ -125,7 +128,8 @@ execute_process(COMMAND ${PROJECT_BINARY_DIR}/${GETARCH2_BIN} 0 OUTPUT_VARIABLE
+ execute_process(COMMAND ${PROJECT_BINARY_DIR}/${GETARCH2_BIN} 1 OUTPUT_VARIABLE GETARCH2_CONF_OUT)
+ 
+ # append config data from getarch_2nd to the TARGET file and read in CMake vars
+-file(APPEND ${TARGET_CONF} ${GETARCH2_CONF_OUT})
++file(APPEND ${TARGET_CONF_TEMP} ${GETARCH2_CONF_OUT})
++configure_file(${TARGET_CONF_TEMP} ${TARGET_CONF} COPYONLY)
+ ParseGetArchVars(${GETARCH2_MAKE_OUT})
+ 
+ # compile get_config_h
+@@ -145,4 +149,4 @@ if (NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "WindowsStore")
+   if (NOT ${GEN_CONFIG_H_RESULT})
+     MESSAGE(FATAL_ERROR "Compiling gen_config_h failed ${GEN_CONFIG_H_LOG}")
+   endif ()
+-endif ()
+\ No newline at end of file
++endif ()
+diff --git a/cmake/utils.cmake b/cmake/utils.cmake
+index 6e2a98069..f20ce0533 100644
+--- a/cmake/utils.cmake
++++ b/cmake/utils.cmake
+@@ -234,7 +234,9 @@ function(GenerateNamedObjects sources_in)
+ 
+       string(REPLACE ";" "\n#define " define_source "${obj_defines}")
+       string(REPLACE "=" " " define_source "${define_source}")
+-      file(WRITE ${new_source_file} "#define ${define_source}\n#include \"${old_source_file}\"")
++      file(WRITE ${new_source_file}.tmp "#define ${define_source}\n#include \"${old_source_file}\"")
++      configure_file(${new_source_file}.tmp ${new_source_file} COPYONLY)
++      file(REMOVE ${new_source_file}.tmp)
+       list(APPEND SRC_LIST_OUT ${new_source_file})
+ 
+     endforeach ()
+
+From c9c13a8a0c7b6aca3d26b2249702e711d7d1e95f Mon Sep 17 00:00:00 2001
+From: Isuru Fernando <isuruf@gmail.com>
+Date: Tue, 1 Aug 2017 14:58:49 +0530
+Subject: [PATCH 2/5] Fix installing cblas.h and fix tabs
+
+---
+ CMakeLists.txt | 33 ++++++++++++++++-----------------
+ 1 file changed, 16 insertions(+), 17 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 45111ce30..e75f915c2 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -232,34 +232,33 @@ install(TARGETS ${OpenBLAS_LIBNAME}
+ # Install include files
+ 	set (GENCONFIG_BIN ${CMAKE_BINARY_DIR}/gen_config_h${CMAKE_EXECUTABLE_SUFFIX})
+ 
+-    execute_process(COMMAND ${GENCONFIG_BIN}
+-                            ${CMAKE_CURRENT_SOURCE_DIR}/config.h
+-                            ${CMAKE_CURRENT_SOURCE_DIR}/openblas_config_template.h
+-                    OUTPUT_VARIABLE OPENBLAS_CONFIG_H_CONTENTS)
++	execute_process(COMMAND ${GENCONFIG_BIN}
++	                        ${CMAKE_CURRENT_SOURCE_DIR}/config.h
++	                        ${CMAKE_CURRENT_SOURCE_DIR}/openblas_config_template.h
++	                OUTPUT_VARIABLE OPENBLAS_CONFIG_H_CONTENTS)
+ 
+-    file(WRITE ${CMAKE_BINARY_DIR}/openblas_config.tmp "${OPENBLAS_CONFIG_H_CONTENTS}")
+-    configure_file(${CMAKE_BINARY_DIR}/openblas_config.tmp ${CMAKE_BINARY_DIR}/openblas_config.h COPYONLY)
++	file(WRITE ${CMAKE_BINARY_DIR}/openblas_config.tmp "${OPENBLAS_CONFIG_H_CONTENTS}")
++	configure_file(${CMAKE_BINARY_DIR}/openblas_config.tmp ${CMAKE_BINARY_DIR}/openblas_config.h COPYONLY)
+ 
+ 	install (FILES ${CMAKE_BINARY_DIR}/openblas_config.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+ 
+ 	message(STATUS "Generating f77blas.h in ${CMAKE_INSTALL_INCLUDEDIR}")
+ 
+-    file(WRITE ${CMAKE_BINARY_DIR}/f77blas.tmp "")
+-    file(APPEND ${CMAKE_BINARY_DIR}/f77blas.tmp "#ifndef OPENBLAS_F77BLAS_H\n#define OPENBLAS_F77BLAS_H\n#include \"openblas_config.h\"\n")
+-    file(READ ${CMAKE_CURRENT_SOURCE_DIR}/common_interface.h COMMON_INTERFACE_H_CONTENTS)
+-    file(APPEND ${CMAKE_BINARY_DIR}/f77blas.tmp "${COMMON_INTERFACE_H_CONTENTS}")
+-    file(APPEND ${CMAKE_BINARY_DIR}/f77blas.tmp "#endif")
+-    configure_file(${CMAKE_BINARY_DIR}/f77blas.tmp ${CMAKE_BINARY_DIR}/f77blas.h COPYONLY)
++	file(WRITE ${CMAKE_BINARY_DIR}/f77blas.tmp "")
++	file(APPEND ${CMAKE_BINARY_DIR}/f77blas.tmp "#ifndef OPENBLAS_F77BLAS_H\n#define OPENBLAS_F77BLAS_H\n#include \"openblas_config.h\"\n")
++	file(READ ${CMAKE_CURRENT_SOURCE_DIR}/common_interface.h COMMON_INTERFACE_H_CONTENTS)
++	file(APPEND ${CMAKE_BINARY_DIR}/f77blas.tmp "${COMMON_INTERFACE_H_CONTENTS}")
++	file(APPEND ${CMAKE_BINARY_DIR}/f77blas.tmp "#endif")
++	configure_file(${CMAKE_BINARY_DIR}/f77blas.tmp ${CMAKE_BINARY_DIR}/f77blas.h COPYONLY)
+ 	install (FILES ${CMAKE_BINARY_DIR}/f77blas.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+ 
+ if(NOT NO_CBLAS)
+ 	message (STATUS "Generating cblas.h in ${CMAKE_INSTALL_INCLUDEDIR}")
+ 
+-    file(READ ${CMAKE_CURRENT_SOURCE_DIR}/cblas.h CBLAS_H_CONTENTS)
+-    string(REPLACE "common" "openblas_config" CBLAS_H_CONTENTS_NEW "${CBLAS_H_CONTENTS}")
+-    file(WRITE ${CMAKE_BINARY_DIR}/cblas.tmp "${CBLAS_H_CONTENTS_NEW}")
+-    configure_file(${CMAKE_BINARY_DIR}/cblas.tmp ${CMAKE_CURRENT_SOURCE_DIR}/cblas.h COPYONLY)
+-	install (FILES ${CMAKE_BINARY_DIR}/cblas.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
++	file(READ ${CMAKE_CURRENT_SOURCE_DIR}/cblas.h CBLAS_H_CONTENTS)
++	string(REPLACE "common" "openblas_config" CBLAS_H_CONTENTS_NEW "${CBLAS_H_CONTENTS}")
++	file(WRITE ${CMAKE_BINARY_DIR}/cblas.tmp "${CBLAS_H_CONTENTS_NEW}")
++	install (FILES ${CMAKE_BINARY_DIR}/cblas.tmp DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} RENAME cblas.h)
+ endif()
+ 
+ if(NOT NO_LAPACKE)
+
+From d245caa49a6f41a90a77ed885e526838132ddec3 Mon Sep 17 00:00:00 2001
+From: Isuru Fernando <isuruf@gmail.com>
+Date: Tue, 1 Aug 2017 15:10:41 +0530
+Subject: [PATCH 3/5] Support out-of-source build
+
+---
+ cmake/prebuild.cmake         | 8 ++++----
+ ctest/CMakeLists.txt         | 1 +
+ driver/level2/CMakeLists.txt | 1 +
+ driver/level3/CMakeLists.txt | 1 +
+ driver/others/CMakeLists.txt | 1 +
+ interface/CMakeLists.txt     | 1 +
+ kernel/CMakeLists.txt        | 1 +
+ lapack/CMakeLists.txt        | 1 +
+ test/CMakeLists.txt          | 3 ++-
+ utest/CMakeLists.txt         | 3 ++-
+ 10 files changed, 15 insertions(+), 6 deletions(-)
+
+diff --git a/cmake/prebuild.cmake b/cmake/prebuild.cmake
+index 422d4cb37..21dc7a380 100644
+--- a/cmake/prebuild.cmake
++++ b/cmake/prebuild.cmake
+@@ -51,7 +51,7 @@ else()
+   set(TARGET_CONF "config.h")
+ endif ()
+ 
+-set(TARGET_CONF_TEMP "${TARGET_CONF}.tmp")
++set(TARGET_CONF_TEMP "${PROJECT_BINARY_DIR}/${TARGET_CONF}.tmp")
+ include("${PROJECT_SOURCE_DIR}/cmake/c_check.cmake")
+ 
+ if (NOT NOFORTRAN)
+@@ -85,7 +85,7 @@ configure_file(${TARGET_CONF_TEMP} ${GETARCH_DIR}/${TARGET_CONF} COPYONLY)
+ if (NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "WindowsStore")
+   try_compile(GETARCH_RESULT ${GETARCH_DIR}
+     SOURCES ${GETARCH_SRC}
+-    COMPILE_DEFINITIONS ${EXFLAGS} ${GETARCH_FLAGS} -I${GETARCH_DIR} -I${PROJECT_SOURCE_DIR}
++    COMPILE_DEFINITIONS ${EXFLAGS} ${GETARCH_FLAGS} -I${GETARCH_DIR} -I${PROJECT_SOURCE_DIR} -I${PROJECT_BINARY_DIR}
+     OUTPUT_VARIABLE GETARCH_LOG
+     COPY_FILE ${PROJECT_BINARY_DIR}/${GETARCH_BIN}
+   )
+@@ -113,7 +113,7 @@ configure_file(${TARGET_CONF_TEMP} ${GETARCH2_DIR}/${TARGET_CONF} COPYONLY)
+ if (NOT "${CMAKE_SYSTEM_NAME}" STREQUAL "WindowsStore")
+   try_compile(GETARCH2_RESULT ${GETARCH2_DIR}
+     SOURCES ${PROJECT_SOURCE_DIR}/getarch_2nd.c
+-    COMPILE_DEFINITIONS ${EXFLAGS} ${GETARCH_FLAGS} ${GETARCH2_FLAGS} -I${GETARCH2_DIR} -I${PROJECT_SOURCE_DIR}
++    COMPILE_DEFINITIONS ${EXFLAGS} ${GETARCH_FLAGS} ${GETARCH2_FLAGS} -I${GETARCH2_DIR} -I${PROJECT_SOURCE_DIR} -I${PROJECT_BINARY_DIR}
+     OUTPUT_VARIABLE GETARCH2_LOG
+     COPY_FILE ${PROJECT_BINARY_DIR}/${GETARCH2_BIN}
+   )
+@@ -129,7 +129,7 @@ execute_process(COMMAND ${PROJECT_BINARY_DIR}/${GETARCH2_BIN} 1 OUTPUT_VARIABLE
+ 
+ # append config data from getarch_2nd to the TARGET file and read in CMake vars
+ file(APPEND ${TARGET_CONF_TEMP} ${GETARCH2_CONF_OUT})
+-configure_file(${TARGET_CONF_TEMP} ${TARGET_CONF} COPYONLY)
++configure_file(${TARGET_CONF_TEMP} ${PROJECT_BINARY_DIR}/${TARGET_CONF} COPYONLY)
+ ParseGetArchVars(${GETARCH2_MAKE_OUT})
+ 
+ # compile get_config_h
+diff --git a/ctest/CMakeLists.txt b/ctest/CMakeLists.txt
+index addcffeac..73070d429 100644
+--- a/ctest/CMakeLists.txt
++++ b/ctest/CMakeLists.txt
+@@ -1,4 +1,5 @@
+ include_directories(${PROJECT_SOURCE_DIR})
++include_directories(${PROJECT_BINARY_DIR})
+ 
+ enable_language(Fortran)
+ 
+diff --git a/driver/level2/CMakeLists.txt b/driver/level2/CMakeLists.txt
+index f444469bd..aa5f03107 100644
+--- a/driver/level2/CMakeLists.txt
++++ b/driver/level2/CMakeLists.txt
+@@ -1,5 +1,6 @@
+ 
+ include_directories(${PROJECT_SOURCE_DIR})
++include_directories(${PROJECT_BINARY_DIR})
+ 
+ # sources that need to be compiled twice, once with no flags and once with LOWER
+ set(UL_SOURCES
+diff --git a/driver/level3/CMakeLists.txt b/driver/level3/CMakeLists.txt
+index 36677a942..c91e85f9c 100644
+--- a/driver/level3/CMakeLists.txt
++++ b/driver/level3/CMakeLists.txt
+@@ -1,4 +1,5 @@
+ include_directories(${PROJECT_SOURCE_DIR})
++include_directories(${PROJECT_BINARY_DIR})
+ 
+ # N.B. In the original makefile there was a BLOCKS define used in the compilation of these files but I don't see any evidence of it being set anywhere. -hpa
+ 
+diff --git a/driver/others/CMakeLists.txt b/driver/others/CMakeLists.txt
+index 8e0be1e0e..376cc66c4 100644
+--- a/driver/others/CMakeLists.txt
++++ b/driver/others/CMakeLists.txt
+@@ -1,4 +1,5 @@
+ include_directories(${PROJECT_SOURCE_DIR})
++include_directories(${PROJECT_BINARY_DIR})
+ 
+ if (${CORE} STREQUAL "PPC440")
+   set(MEMORY memory_qalloc.c)
+diff --git a/interface/CMakeLists.txt b/interface/CMakeLists.txt
+index 1722dc661..8b25344c0 100644
+--- a/interface/CMakeLists.txt
++++ b/interface/CMakeLists.txt
+@@ -1,5 +1,6 @@
+ 
+ include_directories(${PROJECT_SOURCE_DIR})
++include_directories(${PROJECT_BINARY_DIR})
+ 
+ 
+ set(BLAS1_SOURCES
+diff --git a/kernel/CMakeLists.txt b/kernel/CMakeLists.txt
+index 8bfcccf17..0c3569259 100644
+--- a/kernel/CMakeLists.txt
++++ b/kernel/CMakeLists.txt
+@@ -1,5 +1,6 @@
+ 
+ include_directories(${PROJECT_SOURCE_DIR})
++include_directories(${PROJECT_BINARY_DIR})
+ include("${PROJECT_SOURCE_DIR}/cmake/kernel.cmake")
+ 
+ # Makefile
+diff --git a/lapack/CMakeLists.txt b/lapack/CMakeLists.txt
+index afd583c11..b613c6c2b 100644
+--- a/lapack/CMakeLists.txt
++++ b/lapack/CMakeLists.txt
+@@ -1,5 +1,6 @@
+ 
+ include_directories(${PROJECT_SOURCE_DIR})
++include_directories(${PROJECT_BINARY_DIR})
+ 
+ 
+ set(LAPACK_SOURCES
+diff --git a/test/CMakeLists.txt b/test/CMakeLists.txt
+index 5e9baf928..69a1ceb91 100644
+--- a/test/CMakeLists.txt
++++ b/test/CMakeLists.txt
+@@ -1,4 +1,5 @@
+ include_directories(${PROJECT_SOURCE_DIR})
++include_directories(${PROJECT_BINARY_DIR})
+ 
+ enable_language(Fortran)
+ 
+@@ -35,4 +36,4 @@ add_test(NAME "${float_type}blas2"
+   COMMAND sh "${CMAKE_CURRENT_BINARY_DIR}/test_helper.sh" "${CMAKE_CURRENT_BINARY_DIR}/${float_type}blat2" "${PROJECT_SOURCE_DIR}/test/${float_type}blat2.dat" ${float_type_upper}BLAT2.SUMM)
+ add_test(NAME "${float_type}blas3" 
+   COMMAND sh "${CMAKE_CURRENT_BINARY_DIR}/test_helper.sh" "${CMAKE_CURRENT_BINARY_DIR}/${float_type}blat3" "${PROJECT_SOURCE_DIR}/test/${float_type}blat3.dat" ${float_type_upper}BLAT3.SUMM)
+-endforeach()
+\ No newline at end of file
++endforeach()
+diff --git a/utest/CMakeLists.txt b/utest/CMakeLists.txt
+index bd31ed9c6..e52fb2c90 100644
+--- a/utest/CMakeLists.txt
++++ b/utest/CMakeLists.txt
+@@ -1,4 +1,5 @@
+ include_directories(${PROJECT_SOURCE_DIR})
++include_directories(${PROJECT_BINARY_DIR})
+ 
+ set(OpenBLAS_utest_src
+   utest_main.c
+@@ -39,4 +40,4 @@ add_custom_command(TARGET ${OpenBLAS_utest_bin}
+ )
+ endif()
+ 
+-add_test(${OpenBLAS_utest_bin} ${CMAKE_CURRENT_BINARY_DIR}/${OpenBLAS_utest_bin})
+\ No newline at end of file
++add_test(${OpenBLAS_utest_bin} ${CMAKE_CURRENT_BINARY_DIR}/${OpenBLAS_utest_bin})
+
+From 8381591f5601afca6648031d7daa9406cf183091 Mon Sep 17 00:00:00 2001
+From: Isuru Fernando <isuruf@gmail.com>
+Date: Tue, 1 Aug 2017 15:27:19 +0530
+Subject: [PATCH 4/5] No need of a temp file for f77blas.h
+
+---
+ CMakeLists.txt | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index e75f915c2..16bce3526 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -244,12 +244,11 @@ install(TARGETS ${OpenBLAS_LIBNAME}
+ 
+ 	message(STATUS "Generating f77blas.h in ${CMAKE_INSTALL_INCLUDEDIR}")
+ 
+-	file(WRITE ${CMAKE_BINARY_DIR}/f77blas.tmp "")
+-	file(APPEND ${CMAKE_BINARY_DIR}/f77blas.tmp "#ifndef OPENBLAS_F77BLAS_H\n#define OPENBLAS_F77BLAS_H\n#include \"openblas_config.h\"\n")
++	file(WRITE ${CMAKE_BINARY_DIR}/f77blas.h "")
++	file(APPEND ${CMAKE_BINARY_DIR}/f77blas.h "#ifndef OPENBLAS_F77BLAS_H\n#define OPENBLAS_F77BLAS_H\n#include \"openblas_config.h\"\n")
+ 	file(READ ${CMAKE_CURRENT_SOURCE_DIR}/common_interface.h COMMON_INTERFACE_H_CONTENTS)
+-	file(APPEND ${CMAKE_BINARY_DIR}/f77blas.tmp "${COMMON_INTERFACE_H_CONTENTS}")
+-	file(APPEND ${CMAKE_BINARY_DIR}/f77blas.tmp "#endif")
+-	configure_file(${CMAKE_BINARY_DIR}/f77blas.tmp ${CMAKE_BINARY_DIR}/f77blas.h COPYONLY)
++	file(APPEND ${CMAKE_BINARY_DIR}/f77blas.h "${COMMON_INTERFACE_H_CONTENTS}")
++	file(APPEND ${CMAKE_BINARY_DIR}/f77blas.h "#endif")
+ 	install (FILES ${CMAKE_BINARY_DIR}/f77blas.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+ 
+ if(NOT NO_CBLAS)
+
+From 89ec2be11099b84c02e7dbd22f5bb10824601bfb Mon Sep 17 00:00:00 2001
+From: Isuru Fernando <isuruf@gmail.com>
+Date: Tue, 1 Aug 2017 15:47:14 +0530
+Subject: [PATCH 5/5] Fix lapacke copying
+
+---
+ cmake/lapacke.cmake | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/cmake/lapacke.cmake b/cmake/lapacke.cmake
+index f56a22886..fd5aee134 100644
+--- a/cmake/lapacke.cmake
++++ b/cmake/lapacke.cmake
+@@ -2391,6 +2391,6 @@ foreach (Utils_FILE ${Utils_SRC})
+ endforeach ()
+ 
+ set(lapacke_include_dir "${NETLIB_LAPACK_DIR}/LAPACKE/include")
+-execute_process(COMMAND ${CMAKE_COMMAND} -E copy "${lapacke_include_dir}/lapacke_mangling_with_flags.h.in" "${lapacke_include_dir}/lapacke_mangling.h")
++configure_file("${lapacke_include_dir}/lapacke_mangling_with_flags.h.in" "${lapacke_include_dir}/lapacke_mangling.h" COPYONLY)
+ include_directories(${lapacke_include_dir})
+ set_source_files_properties(${LAPACKE_SOURCES} PROPERTIES COMPILE_FLAGS "${LAPACK_CFLAGS}")
