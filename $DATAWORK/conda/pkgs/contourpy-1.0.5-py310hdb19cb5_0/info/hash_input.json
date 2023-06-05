@@ -1,6 +1,0 @@
-{
-  "cxx_compiler_version": "11.2.0",
-  "cxx_compiler": "gxx",
-  "channel_targets": "defaults",
-  "target_platform": "linux-64"
-}

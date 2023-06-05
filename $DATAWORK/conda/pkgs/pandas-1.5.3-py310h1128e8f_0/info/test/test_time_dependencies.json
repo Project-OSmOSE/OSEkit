@@ -1,1 +1,0 @@
-["pip", "hypothesis >=6.13.0", "pytest-xdist >=1.31", "pytest >=6.0"]
