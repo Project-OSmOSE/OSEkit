@@ -1499,6 +1499,7 @@ class Spectrogram(Dataset):
                 Freq = current_matrix['Freq']
                 
                 np.savez(path_all_welch,LTAS=LTAS,time=time,Freq=Freq,allow_pickle=True) 
+                time = np.array(time)
  
             df=pd.DataFrame(LTAS,dtype=float)
             if time.ndim==2:
