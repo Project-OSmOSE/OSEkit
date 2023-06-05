@@ -1574,6 +1574,7 @@ class Spectrogram(Dataset):
         ax.tick_params(axis='x', rotation=20)    
 
         # Saving spectrogram plot to file
+        print('saving',output_file.name, '/ Nber of welch:',str(log_spectro.shape[1]))
         plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
         plt.close()
         
