@@ -1261,7 +1261,7 @@ class Spectrogram(Dataset):
          
         
         # highest tuile resolution
-        if self.save_for_LTAS:
+        if self.save_for_LTAS and (nber_tiles_lowest_zoom_level>1):
 
             output_path_welch_resolution = self.path_output_welch.joinpath(str(self.spectro_duration))
                 
@@ -1501,7 +1501,10 @@ class Spectrogram(Dataset):
                 np.savez(path_all_welch,LTAS=LTAS,time=time,Freq=Freq,allow_pickle=True) 
  
             df=pd.DataFrame(LTAS,dtype=float)
-            df['time'] = list(itertools.chain(*time))
+            if time.ndim==2:
+                df['time'] = list(itertools.chain(*time))
+            else:
+                df['time'] = [tt.item() for tt in time] # suprinsingly , doing simply = list(time) was droping the Timestamp dtype, to be investigated in more depth...
             df.set_index('time', inplace=True, drop= True)
             df.index = pd.to_datetime(df.index)
                                         
@@ -1523,7 +1526,7 @@ class Spectrogram(Dataset):
                     else:
                         ending_timestamp = pd.date_range(time_periods[ind_group_LTAS].to_timestamp(),periods=2,freq=time_scale)[0]
                     
-                    self.generate_and_save_LTAS(time_periods[ind_group_LTAS].to_timestamp(),ending_timestamp,current_matrix['Freq'],10*np.log10(LTAS.T) ,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_{time_periods[ind_group_LTAS]}.png'),time_scale)
+                    self.generate_and_save_LTAS(time_periods[ind_group_LTAS].to_timestamp(),ending_timestamp,Freq,10*np.log10(LTAS.T) ,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_{time_periods[ind_group_LTAS]}.png'),time_scale)
 
                 
     def generate_and_save_LTAS(
