@@ -871,7 +871,7 @@ class Spectrogram(Dataset):
         new_meta_path = self.audio_path.joinpath("metadata.csv")
         if new_meta_path.exists():
             new_meta_path.unlink()
-        metadata.to_csv(new_meta_path)
+        metadata.to_csv(new_meta_path,index=False)
         os.chmod(new_meta_path, mode=FPDEFAULT)
 
         data = {
@@ -908,7 +908,8 @@ class Spectrogram(Dataset):
             adjust_path.unlink() # Always overwrite this file
 
         analysis_sheet.to_csv(
-            adjust_path
+            adjust_path,
+            index=False
         )
         os.chmod(adjust_path, mode=FPDEFAULT)
         
@@ -972,7 +973,7 @@ class Spectrogram(Dataset):
             new_params.update({f"time_resolution_{i}": time_res})
 
         if not filename.exists():
-            pd.DataFrame.from_records([new_params]).to_csv(filename)
+            pd.DataFrame.from_records([new_params]).to_csv(filename, index=False)
 
             os.chmod(filename, mode=DPDEFAULT)
             return True
@@ -981,7 +982,7 @@ class Spectrogram(Dataset):
         
         if any([param not in orig_params or str(orig_params[param]) != str(new_params[param]) for param in new_params]):
             filename.unlink()
-            pd.DataFrame.from_records([new_params]).to_csv(filename)
+            pd.DataFrame.from_records([new_params]).to_csv(filename, index=False)
 
             os.chmod(filename, mode=DPDEFAULT)
             return True
