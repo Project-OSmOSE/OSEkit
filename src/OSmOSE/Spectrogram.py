@@ -1388,16 +1388,19 @@ class Spectrogram(Dataset):
 
     # endregion
 
-    def process_all_files(self, *, save_matrix: bool = False):
+    def process_all_files(self, *, list_wav_to_process : list = [], save_matrix: bool = False):
         """Process all the files in the dataset and generates the spectrograms. It uses the python multiprocessing library
         to parallelise the computation, so it is less efficient to use this method rather than the job scheduler if run on a cluster.
         """
-
+        
+        if len(list_wav_to_process)>0:
+            self.list_wav_to_process=list_wav_to_process
+        
         kwargs = {"save_matrix": save_matrix}
 
         map_process_file = partial(self.process_file, **kwargs)
       
-        with mp.Pool(processes=min(self.batch_number, mp.cpu_count())) as pool:
+        with mp.Pool(processes=mp.cpu_count()) as pool:
             pool.map(map_process_file, self.list_wav_to_process)
 
 
