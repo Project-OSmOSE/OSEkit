@@ -611,7 +611,7 @@ class Spectrogram(Dataset):
         # Load variables from raw metadata
         metadata = pd.read_csv(self.path_input_audio_file.joinpath("metadata.csv"))
         audio_file_origin_duration = metadata["audio_file_origin_duration"][0]
-        sr_origin = metadata["dataset_sr"][0]
+        origin_sr = metadata["origin_sr"][0]
         audio_file_count = metadata["audio_file_count"][0]
 
         if self.path.joinpath(OSMOSE_PATH.processed, "subset_files.csv").is_file():
@@ -630,7 +630,7 @@ class Spectrogram(Dataset):
         processes = []
         resample_done = False
 
-        if self.dataset_sr != sr_origin and (next(self.audio_path.glob(".wav"),None) is None or force_init):
+        if self.dataset_sr != origin_sr and (next(self.audio_path.glob(".wav"),None) is None or force_init):
 
             if self.spectro_duration == int(audio_file_origin_duration):
                 shutil.copyfile(self.path_input_audio_file.joinpath("timestamp.csv"), self.audio_path.joinpath("timestamp.csv"))
@@ -877,6 +877,7 @@ class Spectrogram(Dataset):
 
 
         metadata["dataset_fileDuration"] = self.spectro_duration
+        metadata["dataset_sr"] = self.dataset_sr
         new_meta_path = self.audio_path.joinpath("metadata.csv")
         if new_meta_path.exists():
             new_meta_path.unlink()
@@ -987,7 +988,7 @@ class Spectrogram(Dataset):
             os.chmod(filename, mode=DPDEFAULT)
             return True
         
-        orig_params = pd.read_csv(filename)
+        orig_params = pd.read_csv(filename, header=0)
         
         if any([param not in orig_params or str(orig_params[param]) != str(new_params[param]) for param in new_params]):
             filename.unlink()
