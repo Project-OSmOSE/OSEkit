@@ -373,8 +373,8 @@ class Dataset:
 
             with open(path_raw_audio.joinpath("files_not_loaded.csv"), "w") as fp:
                 fp.write("\n".join(str(list_filename_abnormal_duration)))
-
-            return list_filename_abnormal_duration
+            if not force_upload:
+                return list_filename_abnormal_duration
 
         dd = pd.DataFrame(list_interWavInterval).describe()
         print("Summary statistics on your INTER-FILE DURATION")
