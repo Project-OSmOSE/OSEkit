@@ -9,6 +9,12 @@ from pathlib import Path
 import multiprocessing as mp
 from filelock import FileLock
 
+from tqdm import tqdm
+import itertools
+
+import re
+from datetime import timedelta
+
 import pandas as pd
 import numpy as np
 from scipy import signal
@@ -21,7 +27,7 @@ from OSmOSE.cluster import (
     compute_stats,
 )
 from OSmOSE.Dataset import Dataset
-from OSmOSE.utils import safe_read, make_path, set_umask
+from OSmOSE.utils import safe_read, make_path, set_umask, get_timestamp_of_audio_file
 from OSmOSE.config import *
 
 
@@ -443,6 +449,9 @@ class Spectrogram(Dataset):
             audio_foldername, self.__spectro_foldername, "matrix"
         )
 
+        self.path_output_welch = self.path.joinpath(OSMOSE_PATH.welch)
+        self.path_output_LTAS = self.path.joinpath(OSMOSE_PATH.LTAS)
+        
         # Create paths
         if not dry:
             make_path(self.audio_path, mode=DPDEFAULT)
@@ -667,7 +676,7 @@ class Spectrogram(Dataset):
             self.pending_jobs = resample_job_id_list
             for process in processes:
                 process.join()
-                
+
         #! RESHAPING
         # Reshape audio files to fit the maximum spectrogram size, whether it is greater or smaller.
         reshape_job_id_list = []
@@ -1022,7 +1031,7 @@ class Spectrogram(Dataset):
     # region On cluster
 
     def process_file(
-        self, audio_file: Union[str, Path], *, adjust: bool = False, save_matrix: bool = False, overwrite: bool = False, clean_adjust_folder: bool = False
+        self, audio_file: Union[str, Path], *, adjust: bool = False, save_matrix: bool = False,save_for_LTAS:bool=True, overwrite: bool = False, clean_adjust_folder: bool = False
     ) -> None:
         """Read an audio file and generate the associated spectrogram.
 
@@ -1057,6 +1066,8 @@ class Spectrogram(Dataset):
 
         self.__build_path(adjust)
         self.save_matrix = save_matrix
+        self.save_for_LTAS = save_for_LTAS
+
         self.adjust = adjust
         Zscore = self.zscore_duration if not adjust else "original"
 
@@ -1164,10 +1175,17 @@ class Spectrogram(Dataset):
         nber_tiles_lowest_zoom_level = 2 ** (self.zoom_level -1)
         tile_duration = duration / nber_tiles_lowest_zoom_level
 
-        Sxx_2 = np.empty((int(self.nfft / 2) + 1, 1))
+        audio_file_name = output_file.stem        
+        current_timestamp = pd.to_datetime(get_timestamp_of_audio_file( self.audio_path.joinpath('timestamp.csv') , audio_file_name+".wav"))            
+        list_timestamps = []
+        
+        Sxx_complete_lowest_level = np.empty((int(self.nfft / 2) + 1, 1))
+        Sxx_mean_lowest_tuile = np.empty((1,int(self.nfft / 2) + 1))
         for tile in range(0, nber_tiles_lowest_zoom_level):
             start = tile * tile_duration
             end = start + tile_duration
+            
+            list_timestamps.append(current_timestamp+timedelta(seconds=int(start)))
 
             sample_data = data[int(start * sample_rate) : int(end * sample_rate)-1]
 
@@ -1179,23 +1197,47 @@ class Spectrogram(Dataset):
                 ),
             )
 
-            Sxx_2 = np.hstack((Sxx_2, Sxx))
+            Sxx_complete_lowest_level = np.hstack((Sxx_complete_lowest_level, Sxx))
+            Sxx_mean_lowest_tuile = np.vstack((Sxx_mean_lowest_tuile, Sxx.mean(axis=1)[np.newaxis,:]))
 
-        Sxx_lowest_level = Sxx_2[:, 1:]
+        Sxx_complete_lowest_level = Sxx_complete_lowest_level[:, 1:]
+        Sxx_mean_lowest_tuile = Sxx_mean_lowest_tuile[1:,:]
 
         segment_times = np.linspace(
-            0, len(data) / sample_rate, Sxx_lowest_level.shape[1]
+            0, len(data) / sample_rate, Sxx_complete_lowest_level.shape[1]
         )[np.newaxis, :]
 
-        #self.time_resolution[0] = segment_times[1] - segment_times[0]
+        # lowest tuile resolution
+        if self.save_for_LTAS:
+
+            output_path_welch_resolution = self.path_output_welch.joinpath(str(round(tile_duration)))
+                
+            if not output_path_welch_resolution.exists():
+                make_path(output_path_welch_resolution, mode=DPDEFAULT)
+                            
+            output_matrix = output_path_welch_resolution.joinpath(
+                output_file.name
+            ).with_suffix(".npz")
+            
+            if not output_matrix.exists():
+                np.savez(
+                    output_matrix,
+                    Sxx=Sxx_mean_lowest_tuile,
+                    Freq=Freq,
+                    Time=list_timestamps
+                )
+
+                os.chmod(output_matrix, mode=FPDEFAULT)                  
+
+
 
         # loop over the zoom levels from the second lowest to the highest one
         for zoom_level in range(self.zoom_level)[::-1]: #zoom_level + 1
-            nberspec = Sxx_lowest_level.shape[1] // (2**zoom_level)
+            nberspec = Sxx_complete_lowest_level.shape[1] // (2**zoom_level)
 
             # loop over the tiles at each zoom level
             for tile in range(2**zoom_level):
-                Sxx_int = Sxx_lowest_level[:, tile * nberspec : (tile + 1) * nberspec][
+                Sxx_int = Sxx_complete_lowest_level[:, tile * nberspec : (tile + 1) * nberspec][
                     :, :: 2 ** (self.zoom_level - zoom_level)
                 ]
 
@@ -1217,6 +1259,32 @@ class Spectrogram(Dataset):
                     ),
                     adjust=adjust
                 )
+         
+        
+        # highest tuile resolution
+        if self.save_for_LTAS and (nber_tiles_lowest_zoom_level>1):
+
+            output_path_welch_resolution = self.path_output_welch.joinpath(str(self.spectro_duration))
+                
+            if not output_path_welch_resolution.exists():
+                make_path(output_path_welch_resolution, mode=DPDEFAULT)
+                                                    
+            output_matrix = output_path_welch_resolution.joinpath(
+                output_file.name
+            ).with_suffix(".npz")
+            
+            if not output_matrix.exists():
+                np.savez(
+                    output_matrix,
+                    Sxx=Sxx_int.mean(axis=1),
+                    Freq=Freq,
+                    Time=current_timestamp,
+                )
+
+                os.chmod(output_matrix, mode=FPDEFAULT)  
+                
+                
+
 
     def gen_spectro(
         self, *, data: np.ndarray, sample_rate: int, output_file: Path
@@ -1298,7 +1366,7 @@ class Spectrogram(Dataset):
                 )
 
                 os.chmod(output_matrix, mode=FPDEFAULT)
-
+                
         return Sxx, Freq
 
     def generate_and_save_figures(
@@ -1389,20 +1457,125 @@ class Spectrogram(Dataset):
 
     # endregion
 
-    def process_all_files(self, *, save_matrix: bool = False):
+    def process_all_files(self, *, save_matrix: bool = False, save_for_LTAS:bool = True):
         """Process all the files in the dataset and generates the spectrograms. It uses the python multiprocessing library
         to parallelise the computation, so it is less efficient to use this method rather than the job scheduler if run on a cluster.
         """
 
-        kwargs = {"save_matrix": save_matrix}
+        kwargs = {"save_matrix": save_matrix,"save_for_LTAS":save_for_LTAS}
 
         map_process_file = partial(self.process_file, **kwargs)
 
-        if self.__local:
-            for file in self.list_wav_to_process:
-                self.process_file(file, **kwargs)
-        else:            
-            with mp.Pool(processes=min(self.batch_number, mp.cpu_count())) as pool:
-                pool.map(map_process_file, self.list_wav_to_process)
+        for file in self.list_wav_to_process:
+            self.process_file(file, **kwargs)
 
+    def build_LTAS(self,time_resolution:str,time_scale:str='D'):
+        
+        list_npz_files = list(self.path_output_welch.joinpath(time_resolution).glob('*npz'))
+        if len(list_npz_files) == 0:            
+            raise FileNotFoundError(
+                "No intermediary welch spectra to aggregate, run a complete generation of spectrograms first!"
+            )                
+            
+        else:
 
+            if not self.path_output_LTAS.exists():
+                make_path(self.path_output_LTAS, mode=DPDEFAULT)
+                
+            path_all_welch = self.path_output_welch.joinpath(time_resolution,'all_welch.npz')
+            if os.path.exists(path_all_welch):                
+                data = np.load(path_all_welch,allow_pickle=True)   
+                LTAS=data['LTAS']
+                time=data['time']
+                Freq=data['Freq']
+                
+            else:
+                LTAS = np.empty((1, int(self.nfft/2) + 1))
+                time = []
+                for file_npz in tqdm(list_npz_files):
+                    current_matrix=np.load(file_npz,allow_pickle=True)    
+                    LTAS = np.vstack((LTAS, current_matrix['Sxx']))
+                    time.append( current_matrix['Time'] )       
+                LTAS=LTAS[1:,:]     
+                Freq = current_matrix['Freq']
+                
+                np.savez(path_all_welch,LTAS=LTAS,time=time,Freq=Freq,allow_pickle=True) 
+                time = np.array(time)
+ 
+            df=pd.DataFrame(LTAS,dtype=float)
+            if time.ndim==2:
+                df['time'] = list(itertools.chain(*time))
+            else:
+                df['time'] = [tt.item() for tt in time] # suprinsingly , doing simply = list(time) was droping the Timestamp dtype, to be investigated in more depth...
+            df.set_index('time', inplace=True, drop= True)
+            df.index = pd.to_datetime(df.index)
+                                        
+            if time_scale=="all":              
+                self.generate_and_save_LTAS(df.index[0],df.index[-1],Freq,10*np.log10(LTAS.T) ,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_all.png'),'all')
+
+            else:
+            
+                groups_LTAS = df.groupby(df.index.to_period(time_scale)).agg(list)
+                            
+                time_periods = groups_LTAS.index.get_level_values(0)
+                         
+                for ind_group_LTAS in range(groups_LTAS.values.shape[0]):
+                                
+                    log_spectro = 10*np.log10(np.stack(groups_LTAS.values[ind_group_LTAS,:]))            
+
+                    if ind_group_LTAS<groups_LTAS.values.shape[0]-1:
+                        ending_timestamp = time_periods[ind_group_LTAS+1].to_timestamp()
+                    else:
+                        ending_timestamp = pd.date_range(time_periods[ind_group_LTAS].to_timestamp(),periods=2,freq=time_scale)[0]
+                    
+                    self.generate_and_save_LTAS(time_periods[ind_group_LTAS].to_timestamp(),ending_timestamp,Freq,10*np.log10(LTAS.T) ,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_{time_periods[ind_group_LTAS]}.png'),time_scale)
+
+                
+    def generate_and_save_LTAS(
+        self,
+        start_time:pd._libs.tslibs.timestamps.Timestamp,
+        end_time:pd._libs.tslibs.timestamps.Timestamp,
+        freq: np.ndarray[float],
+        log_spectro: np.ndarray[float],
+        output_file: Path,
+        time_scale: str
+    ):
+        """Write the spectrogram figures to the output file.
+
+        Parameters
+        ----------
+        time : `np.NDArray[floating]`
+        freq : `np.NDArray[floating]`
+        log_spectro : `np.NDArray[signed int]`
+        output_file : `str`
+            The name of the spectrogram file."""
+
+        # Plotting spectrogram
+        my_dpi = 100
+        fact_x = 1.3
+        fact_y = 1.3
+        fig, ax = plt.subplots(
+            nrows=1,
+            ncols=1,
+            figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi),
+            dpi=my_dpi,
+        )
+
+        im = ax.pcolormesh( np.arange(0,log_spectro.shape[1]) , freq , log_spectro, cmap=plt.cm.get_cmap(self.colormap) )
+        plt.colorbar(im,ax=ax)
+                            
+        ax.set_ylabel("Frequency (Hz)")
+        
+        # make timestamps proper xitck_labels
+        nber_xticks = min(10,log_spectro.shape[1])                 
+        label_smoother = {'all':'D','Y':'M','M':'D','D':'T'}
+        date = pd.date_range(start_time,end_time,periods=log_spectro.shape[1]).to_period(label_smoother[time_scale])  
+        int_sep = int(len(date) / nber_xticks)
+        plt.xticks(np.arange(0, len(date), int_sep), date[::int_sep])
+        ax.tick_params(axis='x', rotation=20)    
+
+        # Saving spectrogram plot to file
+        print('saving',output_file.name, '/ Nber of welch:',str(log_spectro.shape[1]))
+        plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
+        plt.close()
+        
