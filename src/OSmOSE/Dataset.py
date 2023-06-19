@@ -263,6 +263,9 @@ class Dataset:
 
             DONE ! your dataset is on OSmOSE platform !
         """
+        if self.is_built() and not force_upload:
+            print("It seems this dataset has already been built. Running the build() method on an already built dataset might result in unexpected behavior. If this is a mistake, use the force_upload parameter.")
+
         if not self.__local:
             set_umask()
             if owner_group is None:
