@@ -321,7 +321,10 @@ def check_n_files(
                     make_path(Path(output_path), mode=DPDEFAULT)
 
                     for audio_file in file_list:
-                        data, sr = safe_read(audio_file)
+                        with sf.SoundFile(audio_file) as audio_f:
+                            sr = audio_f.samplerate
+                            subtype = audio_f.subtype
+                            data = audio_f.read()
                         data = (
                             (data - np.mean(data)) / np.std(data)
                         ) * 0.063  # = -24dB
@@ -333,6 +336,7 @@ def check_n_files(
                             outfile,
                             data=data,
                             samplerate=sr,
+                            subtype=subtype
                         )
 
                         os.chmod(outfile, mode=FPDEFAULT)

@@ -320,6 +320,11 @@ class Dataset:
                 ),
                 auto_normalization=auto_normalization,
             )
+        if lost_levels:
+            path_raw_audio.rename(path_raw_audio.parent.joinpath("original_files"))
+            path_raw_audio = self.path.joinpath(
+                    OSMOSE_PATH.raw_audio, "normalized_original"
+                )
 
         for ind_dt in tqdm(range(len(timestamp_csv))):
             if ind_dt < len(timestamp_csv) - 1:
