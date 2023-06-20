@@ -158,7 +158,7 @@ class Spectrogram(Dataset):
             else None
         )
         self.spectro_duration: int = (
-            analysis_sheet["spectro_duration"][0]
+            int(analysis_sheet["spectro_duration"][0])
             if analysis_sheet is not None and "spectro_duration" in analysis_sheet
             else (
                 int(orig_metadata["audio_file_origin_duration"][0])
@@ -1462,13 +1462,16 @@ class Spectrogram(Dataset):
         """Process all the files in the dataset and generates the spectrograms. It uses the python multiprocessing library
         to parallelise the computation, so it is less efficient to use this method rather than the job scheduler if run on a cluster.
         """
-
+      
+        if len(list_wav_to_process)>0:
+            self.list_wav_to_process=list_wav_to_process
+            
         kwargs = {"save_matrix": save_matrix,"save_for_LTAS":save_for_LTAS}
 
         map_process_file = partial(self.process_file, **kwargs)
 
-        for file in self.list_wav_to_process:
-            self.process_file(file, **kwargs)
+        with mp.Pool(processes=mp.cpu_count()) as pool:
+            pool.map(map_process_file, self.list_wav_to_process)
 
     def build_LTAS(self,time_resolution:str,time_scale:str='D'):
         
@@ -1530,6 +1533,7 @@ class Spectrogram(Dataset):
                         ending_timestamp = pd.date_range(time_periods[ind_group_LTAS].to_timestamp(),periods=2,freq=time_scale)[0]
                     
                     self.generate_and_save_LTAS(time_periods[ind_group_LTAS].to_timestamp(),ending_timestamp,Freq,10*np.log10(LTAS.T) ,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_{time_periods[ind_group_LTAS]}.png'),time_scale)
+
 
                 
     def generate_and_save_LTAS(
