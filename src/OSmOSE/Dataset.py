@@ -78,7 +78,7 @@ class Dataset:
 
         if skip_perms:
             print(
-                "It seems you are on a non-Unix operating system (probably Windows). The build_dataset() method will not work as intended and permission might be uncorrectly set."
+                "It seems you are on a non-Unix operating system (probably Windows). The build_dataset() method will not work as intended and permission might be incorrectly set."
             )
 
         pd.set_option("display.float_format", lambda x: "%.0f" % x)
@@ -197,12 +197,14 @@ class Dataset:
     @property
     def is_built(self):
         """Checks if self.path/data/audio contains at least one folder and none called "original"."""
+        
         metadata_path = next(
-            self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("metadata.csv"), None
+            self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("metadata.csv"), False
         )
         timestamp_path = next(
-            self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("timestamp.csv"), None
+            self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("timestamp.csv"), False
         )
+        
         return metadata_path and metadata_path.exists() and timestamp_path and timestamp_path.exists() and not self.path.joinpath(OSMOSE_PATH.raw_audio,"original").exists()
 
     # endregion
@@ -263,6 +265,9 @@ class Dataset:
 
             DONE ! your dataset is on OSmOSE platform !
         """
+        if self.is_built and not force_upload:
+            print("It seems this dataset has already been built. Running the build() method on an already built dataset might result in unexpected behavior. If this is a mistake, use the force_upload parameter.")
+
         if not self.__local:
             set_umask()
             if owner_group is None:
@@ -320,6 +325,11 @@ class Dataset:
                 ),
                 auto_normalization=auto_normalization,
             )
+        if lost_levels:
+            path_raw_audio.rename(path_raw_audio.parent.joinpath("original_files"))
+            path_raw_audio = self.path.joinpath(
+                    OSMOSE_PATH.raw_audio, "normalized_original"
+                )
 
         for ind_dt in tqdm(range(len(timestamp_csv))):
             if ind_dt < len(timestamp_csv) - 1:
