@@ -349,7 +349,7 @@ class Dataset:
                 print(
                     f"The audio file {audio_file} could not be loaded, its importation has been canceled.\nDescription of the error: {e}"
                 )
-                list_filename_abnormal_duration.append(audio_file)
+                list_filename_abnormal_duration.append(str(audio_file.name))
 
             list_size.append(audio_file.stat().st_size / 1e6)
 
@@ -382,7 +382,8 @@ class Dataset:
             )
 
             with open(path_raw_audio.joinpath("files_not_loaded.csv"), "w") as fp:
-                fp.write("\n".join(str(list_filename_abnormal_duration)))
+                fp.write("\n".join(list_filename_abnormal_duration))
+            os.chmod(path_raw_audio.joinpath("files_not_loaded.csv"), mode=FPDEFAULT)
             if not force_upload:
                 return list_filename_abnormal_duration
 
@@ -511,22 +512,31 @@ class Dataset:
         """Delete all files with abnormal durations in the dataset, and rewrite the timestamps.csv file to reflect the changes.
         If no abnormal file is detected, then it does nothing."""
 
-        if not self.list_abnormal_filenames:
-            warn(
-                "No abnormal file detected. You need to run the Dataset.build() method in order to detect abnormal files before using this method."
-            )
-            return
+        bad_file_list = self.list_abnormal_filenames
 
-        timestamp_path = self.list_abnormal_filenames.parent.joinpath("timestamp.csv")
+        if not bad_file_list:
+            if self.original_folder.joinpath("files_not_loaded.csv").exists():
+                with open(self.original_folder.joinpath("files_not_loaded.csv"), "r") as f:
+                    for line in f:
+                        bad_file_list.append(Path(line.rstrip()))
+            else:
+                warn(
+                    "No abnormal file detected. You need to run the Dataset.build() method in order to detect abnormal files before using this method."
+                )
+                return
+
+        timestamp_path = bad_file_list.parent.joinpath("timestamp.csv")
 
         csvFileArray = pd.read_csv(timestamp_path, header=None)
 
-        for abnormal_file in self.list_abnormal_filenames:
+        for abnormal_file in bad_file_list:
             csvFileArray = csvFileArray.drop(
                 csvFileArray[csvFileArray[0].values == abnormal_file.name].index
             )
 
             print(f"removing : {abnormal_file.name}")
+            if not abnormal_file.exists():
+                abnormal_file = self.original_folder.joinpath(abnormal_file.name)
             abnormal_file.unlink()
 
         csvFileArray.sort_values(by=[1], inplace=True)
