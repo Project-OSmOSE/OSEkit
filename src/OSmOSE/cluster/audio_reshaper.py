@@ -170,7 +170,7 @@ def reshape(
     input_timestamp = pd.read_csv(
         timestamp_path if timestamp_path and timestamp_path.exists() else input_dir_path.joinpath("timestamp.csv"),
         header=None,
-        names=["filename", "timestamp",]# "timezone"],
+        names=["filename", "timestamp", "timezone"],
     )
 
     # When automatically reshaping, will populate the files list
@@ -207,7 +207,7 @@ def reshape(
         if not merge_files and file_duration < chunk_size:
             raise ValueError("When not merging files, the file duration must be smaller than the target duration.")
         
-        if overwrite and not implicit_output and output_dir_path == input_dir_path and output_dir_path == input_dir_path and i<len(files)-1 and not (last_file_behavior == "discard" and i == len(files)-2):
+        if overwrite and not implicit_output and output_dir_path == input_dir_path and output_dir_path == input_dir_path and i<len(files)-1:
             print(f"Deleting {files[i]}")
             input_dir_path.joinpath(files[i]).unlink()
 
@@ -456,7 +456,7 @@ def reshape(
                 )
 
     for remaining_file in [f for f in files if input_dir_path.joinpath(f).exists()]:
-        if overwrite and not implicit_output and output_dir_path == input_dir_path:
+        if overwrite and not implicit_output and output_dir_path == input_dir_path and last_file_behavior != "discard":
             print(f"Deleting {remaining_file}")
             input_dir_path.joinpath(remaining_file).unlink()
 
