@@ -207,7 +207,7 @@ def reshape(
         if not merge_files and file_duration < chunk_size:
             raise ValueError("When not merging files, the file duration must be smaller than the target duration.")
         
-        if overwrite and not implicit_output and output_dir_path == input_dir_path and output_dir_path == input_dir_path and i<len(files)-1:
+        if overwrite and not implicit_output and output_dir_path == input_dir_path and output_dir_path == input_dir_path and i<len(files)-1 and not (last_file_behavior == "discard" and i == len(files)-2):
             print(f"Deleting {files[i]}")
             input_dir_path.joinpath(files[i]).unlink()
 
