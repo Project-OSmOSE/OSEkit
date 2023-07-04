@@ -669,7 +669,7 @@ class Dataset:
         metadata = pd.read_csv(metadata_path)
         # Catch the parameters inscribed in the original folder name
         audio_file_origin_duration = int(metadata["audio_file_origin_duration"][0])
-        sr_origin = int(metadata["dataset_sr"][0])
+        sr_origin = int(metadata["origin_sr"][0])
 
         self.__original_folder = self.path.joinpath(
             OSMOSE_PATH.raw_audio, f"{audio_file_origin_duration}_{sr_origin}"
