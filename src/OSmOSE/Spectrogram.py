@@ -1514,6 +1514,7 @@ class Spectrogram(Dataset):
                 df['time'] = [tt.item() for tt in time] # suprinsingly , doing simply = list(time) was droping the Timestamp dtype, to be investigated in more depth...
             df.set_index('time', inplace=True, drop= True)
             df.index = pd.to_datetime(df.index)
+            df.sort_values(by='time')
                                         
             if time_scale=="all":              
                 self.generate_and_save_LTAS(df.index[0],df.index[-1],Freq,10*np.log10(LTAS.T) ,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_all.png'),'all')
@@ -1546,15 +1547,6 @@ class Spectrogram(Dataset):
         output_file: Path,
         time_scale: str
     ):
-        """Write the spectrogram figures to the output file.
-
-        Parameters
-        ----------
-        time : `np.NDArray[floating]`
-        freq : `np.NDArray[floating]`
-        log_spectro : `np.NDArray[signed int]`
-        output_file : `str`
-            The name of the spectrogram file."""
 
         # Plotting spectrogram
         my_dpi = 100
@@ -1574,7 +1566,7 @@ class Spectrogram(Dataset):
         
         # make timestamps proper xitck_labels
         nber_xticks = min(10,log_spectro.shape[1])                 
-        label_smoother = {'all':'D','Y':'M','M':'D','D':'T'}
+        label_smoother = {'all':'D','Y':'M','M':'D','D':'T','H':'T'}
         date = pd.date_range(start_time,end_time,periods=log_spectro.shape[1]).to_period(label_smoother[time_scale])  
         int_sep = int(len(date) / nber_xticks)
         plt.xticks(np.arange(0, len(date), int_sep), date[::int_sep])
