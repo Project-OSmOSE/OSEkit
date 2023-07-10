@@ -1458,7 +1458,7 @@ class Spectrogram(Dataset):
 
     # endregion
 
-    def process_all_files(self, *, save_matrix: bool = False, save_for_LTAS:bool = True):
+    def process_all_files(self, *, save_matrix: bool = False, save_for_LTAS:bool = True, list_wav_to_process:list=[]):
         """Process all the files in the dataset and generates the spectrograms. It uses the python multiprocessing library
         to parallelise the computation, so it is less efficient to use this method rather than the job scheduler if run on a cluster.
         """
