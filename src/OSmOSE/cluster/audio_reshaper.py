@@ -63,7 +63,7 @@ def reshape(
     offset_end: int = 0,
     timestamp_path: Path = None,
     verbose: bool = False,
-    overwrite: bool = False,
+    overwrite: bool = True,
     force_reshape: bool = False,
     merge_files: bool = True
 ) -> List[str]:
@@ -173,6 +173,7 @@ def reshape(
         names=["filename", "timestamp", "timezone"],
     )
 
+
     # When automatically reshaping, will populate the files list
     if not files:
         files = list(
@@ -269,7 +270,7 @@ def reshape(
                     print(
                         f"{outfilename} written! File is {(len(output)/sample_rate)} seconds long. {(len(previous_audio_data)/sample_rate)} seconds left from slicing."
                     )
-
+                    
                 t += 1
                 audio_data = previous_audio_data
 
@@ -291,7 +292,7 @@ def reshape(
                         f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')[:-3].replace(':','-').replace('.','_')}.wav"
                     )
                     result.append(outfilename.name)
-
+                    
                     timestamp_list.append(
                         datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
                     )
@@ -311,6 +312,7 @@ def reshape(
             if len(audio_data) == 0:
                 i += 1
                 continue
+
             
         #! AUDIO DURATION == CHUNK SIZE
         # Else if audio_data is already in the desired duration, output it
@@ -393,8 +395,10 @@ def reshape(
             print(
                 f"{outfilename} written! File is {(len(output)/sample_rate)} seconds long. {(len(previous_audio_data)/sample_rate)} seconds left from slicing."
             )
+
         i += 1
         t += 1
+
 
     #! AFTER MAIN LOOP
     while len(previous_audio_data) >= chunk_size * sample_rate:
@@ -455,7 +459,9 @@ def reshape(
                     f"{outfilename} written! File is {(len(output)/sample_rate)} seconds long. {len(previous_audio_data)/sample_rate} seconds left from slicing."
                 )
 
+    # in particular, it is here that we delete files that have been resampled and copied in outputdir
     for remaining_file in [f for f in files if input_dir_path.joinpath(f).exists()]:
+        print('remaining_file',remaining_file)
         if overwrite and not implicit_output and output_dir_path == input_dir_path and last_file_behavior != "discard":
             print(f"Deleting {remaining_file}")
             input_dir_path.joinpath(remaining_file).unlink()
