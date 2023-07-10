@@ -42,7 +42,7 @@ class Spectrogram(Dataset):
         gps_coordinates: Union[str, list, tuple] = None,
         owner_group: str = None,
         analysis_params: dict = None,
-        batch_number: int = 10,
+        batch_number: int = 5,
         local: bool = True,
     ) -> None:
         """Instanciates a spectrogram object.
