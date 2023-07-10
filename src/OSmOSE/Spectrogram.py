@@ -126,14 +126,14 @@ class Spectrogram(Dataset):
         self.batch_number: int = batch_number
         self.dataset_sr: int = dataset_sr if dataset_sr is not None else orig_metadata['origin_sr'][0]
 
-        self.nfft: int = analysis_sheet["nfft"][0] if "nfft" in analysis_sheet else 1
+        self.nfft: int = analysis_sheet["nfft"][0] if "nfft" in analysis_sheet else 1024
         self.window_size: int = (
             analysis_sheet["window_size"][0]
             if "window_size" in analysis_sheet
-            else None
+            else 1024
         )
         self.overlap: int = (
-            analysis_sheet["overlap"][0] if "overlap" in analysis_sheet else None
+            analysis_sheet["overlap"][0] if "overlap" in analysis_sheet else 0
         )
         self.colormap: str = (
             analysis_sheet["colormap"][0] if "colormap" in analysis_sheet else "viridis"
@@ -145,17 +145,17 @@ class Spectrogram(Dataset):
         self.dynamic_min: int = (
             analysis_sheet["dynamic_min"][0]
             if "dynamic_min" in analysis_sheet
-            else None
+            else -30
         )
         self.dynamic_max: int = (
             analysis_sheet["dynamic_max"][0]
             if "dynamic_max" in analysis_sheet
-            else None
+            else 30
         )
         self.number_adjustment_spectrogram: int = (
             analysis_sheet["number_adjustment_spectrogram"][0]
             if "number_adjustment_spectrogram" in analysis_sheet
-            else None
+            else 1
         )
         self.spectro_duration: int = (
             int(analysis_sheet["spectro_duration"][0])
@@ -190,22 +190,22 @@ class Spectrogram(Dataset):
         self.peak_voltage: float = (
             analysis_sheet["peak_voltage"][0]
             if "peak_voltage" in analysis_sheet
-            else None
+            else 1
         )
         self.spectro_normalization: str = (
             analysis_sheet["spectro_normalization"][0]
             if "spectro_normalization" in analysis_sheet
-            else None
+            else "spectrum"
         )
         self.data_normalization: str = (
             analysis_sheet["data_normalization"][0]
             if "data_normalization" in analysis_sheet
-            else None
+            else "zscore"
         )
         self.gain_dB: float = (
             analysis_sheet["gain_dB"][0]
             if "gain_dB" in analysis_sheet is not None
-            else None
+            else 0
         )
 
         self.window_type: str = (
@@ -1306,6 +1306,7 @@ class Spectrogram(Dataset):
         Sxx : `np.NDArray[float64]`
         Freq : `np.NDArray[float]`
         """
+
         Noverlap = int(self.window_size * self.overlap / 100)
 
         win = np.hamming(self.window_size)
