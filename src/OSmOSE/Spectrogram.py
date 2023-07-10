@@ -1504,7 +1504,7 @@ class Spectrogram(Dataset):
                 LTAS=LTAS[1:,:]     
                 Freq = current_matrix['Freq']
                 
-                np.savez(path_all_welch,LTAS=LTAS,time=time,Freq=Freq,allow_pickle=True) 
+                np.savez(path_all_welch,LTAS=LTAS,time=time,Freq=Freq,allow_pickle=True)# careful data not sorted here! we should save them based on dataframe df below 
                 time = np.array(time)
  
             df=pd.DataFrame(LTAS,dtype=float)
@@ -1512,12 +1512,13 @@ class Spectrogram(Dataset):
                 df['time'] = list(itertools.chain(*time))
             else:
                 df['time'] = [tt.item() for tt in time] # suprinsingly , doing simply = list(time) was droping the Timestamp dtype, to be investigated in more depth...
+            
+            df.sort_values(by=['time'], inplace=True)
             df.set_index('time', inplace=True, drop= True)
             df.index = pd.to_datetime(df.index)
-            df.sort_values(by='time')
-                                        
+                                                    
             if time_scale=="all":              
-                self.generate_and_save_LTAS(df.index[0],df.index[-1],Freq,10*np.log10(LTAS.T) ,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_all.png'),'all')
+                self.generate_and_save_LTAS(df.index[0],df.index[-1],Freq,10*np.log10(df.values.T) ,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_all.png'),'all')
 
             else:
             
