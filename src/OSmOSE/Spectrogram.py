@@ -42,7 +42,7 @@ class Spectrogram(Dataset):
         gps_coordinates: Union[str, list, tuple] = None,
         owner_group: str = None,
         analysis_params: dict = None,
-        batch_number: int = 10,
+        batch_number: int = 5,
         local: bool = True,
     ) -> None:
         """Instanciates a spectrogram object.
@@ -1515,10 +1515,39 @@ class Spectrogram(Dataset):
             
             df.sort_values(by=['time'], inplace=True)
             df.set_index('time', inplace=True, drop= True)
-            df.index = pd.to_datetime(df.index)
-                                                    
-            if time_scale=="all":              
-                self.generate_and_save_LTAS(df.index[0],df.index[-1],Freq,10*np.log10(df.values.T) ,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_all.png'),'all')
+            df.index = pd.to_datetime(df.index)            
+            
+            if time_scale=="all":            
+                
+                cur_LTAS = df.values
+                
+                if cur_LTAS.shape[0]>2500:
+
+                    save_shape = cur_LTAS.shape[0]
+            
+                    screen_res_pixel = 2000
+
+                    ind_av = round(cur_LTAS.shape[0] / screen_res_pixel)
+
+                    mm=cur_LTAS[0::ind_av,:]
+                    bb=cur_LTAS[1::ind_av,:]
+
+                    if mm.shape[0]>bb.shape[0]:
+                        mm=mm[:-1,:]
+                    elif bb.shape[0]>mm.shape[0]:
+                        bb=bb[:-1,:]
+
+                    cur_LTAS = 0.5*(mm + bb)
+                    
+                    print(f"Be aware that we applied a window averaging to reduce your LTAS from {save_shape} welch to {cur_LTAS.shape[0]} welch \n")                    
+
+                
+                if self.spectro_normalization == "density":
+                    log_spectro = 10 * np.log10((cur_LTAS / (1e-12)) + (1e-20))
+                if self.spectro_normalization == "spectrum":
+                    log_spectro = 10 * np.log10(cur_LTAS + (1e-20))
+                
+                self.generate_and_save_LTAS(df.index[0],df.index[-1],Freq,log_spectro.T,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_all.png'),'all')
 
             else:
             
@@ -1527,15 +1556,19 @@ class Spectrogram(Dataset):
                 time_periods = groups_LTAS.index.get_level_values(0)
                          
                 for ind_group_LTAS in range(groups_LTAS.values.shape[0]):
-                                
-                    log_spectro = 10*np.log10(np.stack(groups_LTAS.values[ind_group_LTAS,:]))            
-
+                    
+                    cur_LTAS = np.stack(groups_LTAS.values[ind_group_LTAS,:])
+                    if self.spectro_normalization == "density":
+                        log_spectro = 10 * np.log10((cur_LTAS / (1e-12)) + (1e-20))
+                    if self.spectro_normalization == "spectrum":
+                        log_spectro = 10 * np.log10(cur_LTAS + (1e-20))
+                                       
                     if ind_group_LTAS<groups_LTAS.values.shape[0]-1:
                         ending_timestamp = time_periods[ind_group_LTAS+1].to_timestamp()
                     else:
-                        ending_timestamp = pd.date_range(time_periods[ind_group_LTAS].to_timestamp(),periods=2,freq=time_scale)[0]
+                        ending_timestamp = pd.date_range(time_periods[ind_group_LTAS].to_timestamp(),periods=2,freq=time_scale)[0] 
                     
-                    self.generate_and_save_LTAS(time_periods[ind_group_LTAS].to_timestamp(),ending_timestamp,Freq,10*np.log10(LTAS.T) ,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_{time_periods[ind_group_LTAS]}.png'),time_scale)
+                    self.generate_and_save_LTAS(time_periods[ind_group_LTAS].to_timestamp(),ending_timestamp,Freq,log_spectro.T,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_{time_periods[ind_group_LTAS]}.png'),time_scale)
 
 
                 
