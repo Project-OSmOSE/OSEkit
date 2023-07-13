@@ -1230,8 +1230,6 @@ class Spectrogram(Dataset):
 
                 os.chmod(output_matrix, mode=FPDEFAULT)                  
 
-
-
         # loop over the zoom levels from the second lowest to the highest one
         for zoom_level in range(self.zoom_level)[::-1]: #zoom_level + 1
             nberspec = Sxx_complete_lowest_level.shape[1] // (2**zoom_level)
@@ -1474,6 +1472,31 @@ class Spectrogram(Dataset):
         with mp.Pool(processes=mp.cpu_count()) as pool:
             pool.map(map_process_file, self.list_wav_to_process)
 
+
+    def save_all_welch(self,list_npz_files:list,path_all_welch: Path):
+
+        LTAS = np.empty((1, int(self.nfft/2) + 1))
+        time = []
+        for file_npz in tqdm(list_npz_files):
+            current_matrix=np.load(file_npz,allow_pickle=True)    
+            LTAS = np.vstack((LTAS, current_matrix['Sxx']))
+            time.append( current_matrix['Time'] )       
+        LTAS=LTAS[1:,:]     
+        Freq = current_matrix['Freq']
+        
+        time = np.array(time)
+        
+        # flatten time, which is currently a list of arrays 
+        if time.ndim==2:
+            time = list(itertools.chain(*time))
+        else:
+            time = [tt.item() for tt in time] # suprinsingly , doing simply = list(time) was droping the Timestamp dtype, to be investigated in more depth...
+    
+        np.savez(path_all_welch,LTAS=LTAS,time=time,Freq=Freq,allow_pickle=True)# careful data not sorted here! we should save them based on dataframe df below 
+
+        return LTAS, time, Freq
+                
+
     def build_LTAS(self,time_resolution:str,time_scale:str='D'):
         
         list_npz_files = list(self.path_output_welch.joinpath(time_resolution).glob('*npz'))
@@ -1492,27 +1515,14 @@ class Spectrogram(Dataset):
                 data = np.load(path_all_welch,allow_pickle=True)   
                 LTAS=data['LTAS']
                 time=data['time']
-                Freq=data['Freq']
-                
+                Freq=data['Freq']                
             else:
-                LTAS = np.empty((1, int(self.nfft/2) + 1))
-                time = []
-                for file_npz in tqdm(list_npz_files):
-                    current_matrix=np.load(file_npz,allow_pickle=True)    
-                    LTAS = np.vstack((LTAS, current_matrix['Sxx']))
-                    time.append( current_matrix['Time'] )       
-                LTAS=LTAS[1:,:]     
-                Freq = current_matrix['Freq']
-                
-                np.savez(path_all_welch,LTAS=LTAS,time=time,Freq=Freq,allow_pickle=True)# careful data not sorted here! we should save them based on dataframe df below 
-                time = np.array(time)
+                LTAS, time, Freq = self.save_all_welch(list_npz_files,path_all_welch)
  
+            # convert numpy arrays to dataframe, more convenient for time operations
             df=pd.DataFrame(LTAS,dtype=float)
-            if time.ndim==2:
-                df['time'] = list(itertools.chain(*time))
-            else:
-                df['time'] = [tt.item() for tt in time] # suprinsingly , doing simply = list(time) was droping the Timestamp dtype, to be investigated in more depth...
-            
+            df['time']=time
+            # sort by time, and make time variable as dataframe index            
             df.sort_values(by=['time'], inplace=True)
             df.set_index('time', inplace=True, drop= True)
             df.index = pd.to_datetime(df.index)            
@@ -1523,22 +1533,16 @@ class Spectrogram(Dataset):
                 
                 if cur_LTAS.shape[0]>2500:
 
-                    save_shape = cur_LTAS.shape[0]
-            
+                    save_shape = cur_LTAS.shape[0]           
                     screen_res_pixel = 2000
-
                     ind_av = round(cur_LTAS.shape[0] / screen_res_pixel)
-
                     mm=cur_LTAS[0::ind_av,:]
                     bb=cur_LTAS[1::ind_av,:]
-
                     if mm.shape[0]>bb.shape[0]:
                         mm=mm[:-1,:]
                     elif bb.shape[0]>mm.shape[0]:
                         bb=bb[:-1,:]
-
                     cur_LTAS = 0.5*(mm + bb)
-                    
                     print(f"Be aware that we applied a window averaging to reduce your LTAS from {save_shape} welch to {cur_LTAS.shape[0]} welch \n")                    
 
                 if self.spectro_normalization == "density":
@@ -1551,9 +1555,8 @@ class Spectrogram(Dataset):
             else:
             
                 groups_LTAS = df.groupby(df.index.to_period(time_scale)).agg(list)
-                            
                 time_periods = groups_LTAS.index.get_level_values(0)
-                         
+                
                 for ind_group_LTAS in range(groups_LTAS.values.shape[0]):
                     
                     cur_LTAS = np.stack(groups_LTAS.values[ind_group_LTAS,:])
@@ -1568,6 +1571,7 @@ class Spectrogram(Dataset):
                         ending_timestamp = pd.date_range(time_periods[ind_group_LTAS].to_timestamp(),periods=2,freq=time_scale)[0] 
                     
                     self.generate_and_save_LTAS(time_periods[ind_group_LTAS].to_timestamp(),ending_timestamp,Freq,log_spectro,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_{time_periods[ind_group_LTAS]}.png'),time_scale)
+
 
 
                 
@@ -1592,10 +1596,8 @@ class Spectrogram(Dataset):
             dpi=my_dpi,
         )
         
-
         im = ax.pcolormesh( np.arange(0,log_spectro.shape[1]), freq , log_spectro, cmap=plt.cm.get_cmap(self.colormap) )
         plt.colorbar(im,ax=ax)
-                            
         ax.set_ylabel("Frequency (Hz)")
         
         # make timestamps proper xitck_labels
