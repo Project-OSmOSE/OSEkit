@@ -1541,7 +1541,6 @@ class Spectrogram(Dataset):
                     
                     print(f"Be aware that we applied a window averaging to reduce your LTAS from {save_shape} welch to {cur_LTAS.shape[0]} welch \n")                    
 
-                
                 if self.spectro_normalization == "density":
                     log_spectro = 10 * np.log10((cur_LTAS / (1e-12)) + (1e-20))
                 if self.spectro_normalization == "spectrum":
@@ -1568,7 +1567,7 @@ class Spectrogram(Dataset):
                     else:
                         ending_timestamp = pd.date_range(time_periods[ind_group_LTAS].to_timestamp(),periods=2,freq=time_scale)[0] 
                     
-                    self.generate_and_save_LTAS(time_periods[ind_group_LTAS].to_timestamp(),ending_timestamp,Freq,log_spectro.T,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_{time_periods[ind_group_LTAS]}.png'),time_scale)
+                    self.generate_and_save_LTAS(time_periods[ind_group_LTAS].to_timestamp(),ending_timestamp,Freq,log_spectro,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_{time_periods[ind_group_LTAS]}.png'),time_scale)
 
 
                 
@@ -1592,8 +1591,9 @@ class Spectrogram(Dataset):
             figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi),
             dpi=my_dpi,
         )
+        
 
-        im = ax.pcolormesh( np.arange(0,log_spectro.shape[1]) , freq , log_spectro, cmap=plt.cm.get_cmap(self.colormap) )
+        im = ax.pcolormesh( np.arange(0,log_spectro.shape[1]), freq , log_spectro, cmap=plt.cm.get_cmap(self.colormap) )
         plt.colorbar(im,ax=ax)
                             
         ax.set_ylabel("Frequency (Hz)")
