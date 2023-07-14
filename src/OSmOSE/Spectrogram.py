@@ -451,6 +451,9 @@ class Spectrogram(Dataset):
 
         self.path_output_welch = self.path.joinpath(OSMOSE_PATH.welch)
         self.path_output_LTAS = self.path.joinpath(OSMOSE_PATH.LTAS)
+        self.path_output_EPD = self.path.joinpath(OSMOSE_PATH.EPD)
+        
+        
         
         # Create paths
         if not dry:
@@ -1568,8 +1571,6 @@ class Spectrogram(Dataset):
                         ending_timestamp = pd.date_range(time_periods[ind_group_LTAS].to_timestamp(),periods=2,freq=time_scale)[0] 
                     
                     self.generate_and_save_LTAS(time_periods[ind_group_LTAS].to_timestamp(),ending_timestamp,Freq,log_spectro,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_{time_periods[ind_group_LTAS]}.png'),time_scale)
-
-
                 
     def generate_and_save_LTAS(
         self,
@@ -1611,3 +1612,61 @@ class Spectrogram(Dataset):
         plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
         plt.close()
         
+
+    def build_EPD(self,time_resolution:str):
+
+        list_npz_files = list(self.path_output_welch.joinpath(time_resolution).glob('*npz'))
+        if len(list_npz_files) == 0:            
+            raise FileNotFoundError(
+                "No intermediary welch spectra to aggregate, run a complete generation of spectrograms first!"
+            )                
+
+        else:
+
+            if not self.path_output_EPD.exists():
+                make_path(self.path_output_EPD, mode=DPDEFAULT)
+
+            path_all_welch = self.path_output_welch.joinpath(time_resolution,'all_welch.npz')
+            if os.path.exists(path_all_welch):                
+                data = np.load(path_all_welch,allow_pickle=True)   
+                LTAS=data['LTAS']
+                time=data['time']
+                Freq=data['Freq']                
+            else:
+                LTAS, time, Freq = self.save_all_welch(list_npz_files,path_all_welch)
+
+
+            all_welch = 10 * np.log10(LTAS)
+            
+            RMSlevel = 10 * np.log10(np.nanmean(10 ** (all_welch / 10), axis=0))
+            
+            # Plotting SPL
+            my_dpi = 100
+            fact_x = 1.3
+            fact_y = 1.3
+            fig, ax = plt.subplots(
+                nrows=1,
+                ncols=1,
+                figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi),
+                dpi=my_dpi,
+            )   
+            
+            ax.plot(Freq, RMSlevel, color='k', label='RMS level')
+            
+            percen = [1, 5, 50, 95, 99]
+            p = np.nanpercentile(all_welch, percen, 0, interpolation='linear')
+            for i in range(len(p)):
+                plt.plot(Freq, p[i, :], linewidth=2, label='%s %% percentil' % percen[i])
+            
+            ax.semilogx()
+            plt.legend()                
+            plt.autoscale(enable=True, axis='y', tight=True)
+            plt.autoscale(enable=True, axis='x', tight=True)
+            plt.ylabel("relative SPL (dB)")
+            plt.xlabel("Frequency (Hz)")
+    
+            # save as png figure
+            output_file = self.path.joinpath(OSMOSE_PATH.EPD,f'EPD.png')
+            print(f"saving {output_file.name} / Nber of welch: {all_welch.shape[1]}")
+            plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
+            plt.close()
