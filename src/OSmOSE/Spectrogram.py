@@ -1667,6 +1667,6 @@ class Spectrogram(Dataset):
     
             # save as png figure
             output_file = self.path.joinpath(OSMOSE_PATH.EPD,f'EPD.png')
-            print(f"saving {output_file.name} / Nber of welch: {all_welch.shape[1]}")
+            print(f"saving {output_file.name} / Nber of welch: {all_welch.shape[0]}")
             plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
             plt.close()
