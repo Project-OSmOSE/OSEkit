@@ -1574,7 +1574,11 @@ class Spectrogram(Dataset):
                     self.generate_and_save_LTAS(time_periods[ind_group_LTAS].to_timestamp(),ending_timestamp,Freq,log_spectro,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_{time_periods[ind_group_LTAS]}.png'),time_scale)
 
 
-    def build_SPL_filtered(self,time_resolution:str):
+    def build_SPL_filtered(self,time_resolution:str,Freq_min:int=0, Freq_max:int=None):
+        
+        # assign default value for Freq_max, equivalent to no HF filtering
+        if Freq_max==None:
+            Freq_max = self.dataset_sr/2
         
         list_npz_files = list(self.path_output_welch.joinpath(time_resolution).glob('*npz'))
         if len(list_npz_files) == 0:            
@@ -1603,10 +1607,8 @@ class Spectrogram(Dataset):
             df.sort_values(by=['time'], inplace=True)
             df.set_index('time', inplace=True, drop= True)
             df.index = pd.to_datetime(df.index)      
-            
-            fmin=80
-            fmax=200
-            SPL_filtered = np.mean(df.values[:,np.argmin(abs(Freq-fmin)) : np.argmin(abs(Freq-fmax))],1)
+
+            SPL_filtered = np.mean(df.values[:,np.argmin(abs(Freq-Freq_min)) : np.argmin(abs(Freq-Freq_max))],1)
             
             # Plotting SPL
             my_dpi = 100
@@ -1620,9 +1622,14 @@ class Spectrogram(Dataset):
             )            
             
             plt.plot(np.arange(0,len(SPL_filtered)) , SPL_filtered)
-            plt.ylabel("SPL (dB)")
+            
+            # write custom ylabel
+            if (Freq_min!=0) or (Freq_max!=self.dataset_sr):
+                plt.ylabel(f"SPL (dB) within [{Freq_min}-{Freq_max}] Hz")
+            else:
+                plt.ylabel("SPL (dB)")
 
-            # make timestamps proper xitck_labels
+            # write proper timestamps as xitck_labels
             nber_xticks = min(10,len(SPL_filtered))                 
             if (df.index[-1] - df.index[0]).days>7:
                 label_smoother = 'D'
@@ -1633,8 +1640,7 @@ class Spectrogram(Dataset):
             plt.xticks(np.arange(0, len(date), int_sep), date[::int_sep])
             ax.tick_params(axis='x', rotation=20)        
             
-            print()
-
+            # save as png figure
             output_file = self.path.joinpath(OSMOSE_PATH.SPLfiltered,f'SPLfiltered.png')
             print('saving',output_file.name, '/ Nber of time points:',str(len(SPL_filtered)))
             plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
