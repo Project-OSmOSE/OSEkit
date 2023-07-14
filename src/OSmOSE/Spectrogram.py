@@ -451,6 +451,7 @@ class Spectrogram(Dataset):
 
         self.path_output_welch = self.path.joinpath(OSMOSE_PATH.welch)
         self.path_output_LTAS = self.path.joinpath(OSMOSE_PATH.LTAS)
+        self.path_output_SPLfiltered = self.path.joinpath(OSMOSE_PATH.SPLfiltered)
         
         # Create paths
         if not dry:
@@ -1573,7 +1574,73 @@ class Spectrogram(Dataset):
                     self.generate_and_save_LTAS(time_periods[ind_group_LTAS].to_timestamp(),ending_timestamp,Freq,log_spectro,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_{time_periods[ind_group_LTAS]}.png'),time_scale)
 
 
+    def build_SPL_filtered(self,time_resolution:str):
+        
+        list_npz_files = list(self.path_output_welch.joinpath(time_resolution).glob('*npz'))
+        if len(list_npz_files) == 0:            
+            raise FileNotFoundError(
+                "No intermediary welch spectra to aggregate, run a complete generation of spectrograms first!"
+            )                
+            
+        else:
 
+            if not self.path_output_SPLfiltered.exists():
+                make_path(self.path_output_SPLfiltered, mode=DPDEFAULT)
+                
+            path_all_welch = self.path_output_welch.joinpath(time_resolution,'all_welch.npz')
+            if os.path.exists(path_all_welch):                
+                data = np.load(path_all_welch,allow_pickle=True)   
+                LTAS=data['LTAS']
+                time=data['time']
+                Freq=data['Freq']                
+            else:
+                LTAS, time, Freq = self.save_all_welch(list_npz_files,path_all_welch)
+ 
+            # convert numpy arrays to dataframe, more convenient for time operations
+            df=pd.DataFrame(LTAS,dtype=float)
+            df['time']=time
+            # sort by time, and make time variable as dataframe index            
+            df.sort_values(by=['time'], inplace=True)
+            df.set_index('time', inplace=True, drop= True)
+            df.index = pd.to_datetime(df.index)      
+            
+            fmin=80
+            fmax=200
+            SPL_filtered = np.mean(df.values[:,np.argmin(abs(Freq-fmin)) : np.argmin(abs(Freq-fmax))],1)
+            
+            # Plotting SPL
+            my_dpi = 100
+            fact_x = 1.3
+            fact_y = 1.3
+            fig, ax = plt.subplots(
+                nrows=1,
+                ncols=1,
+                figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi),
+                dpi=my_dpi,
+            )            
+            
+            plt.plot(np.arange(0,len(SPL_filtered)) , SPL_filtered)
+            plt.ylabel("SPL (dB)")
+
+            # make timestamps proper xitck_labels
+            nber_xticks = min(10,len(SPL_filtered))                 
+            if (df.index[-1] - df.index[0]).days>7:
+                label_smoother = 'D'
+            else:
+                label_smoother = 'H'                
+            date = pd.date_range(df.index[0],df.index[-1],periods=len(SPL_filtered)).to_period(label_smoother)  
+            int_sep = int(len(date) / nber_xticks)
+            plt.xticks(np.arange(0, len(date), int_sep), date[::int_sep])
+            ax.tick_params(axis='x', rotation=20)        
+            
+            print()
+
+            output_file = self.path.joinpath(OSMOSE_PATH.SPLfiltered,f'SPLfiltered.png')
+            print('saving',output_file.name, '/ Nber of time points:',str(len(SPL_filtered)))
+            plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
+            plt.close()
+        
+            
                 
     def generate_and_save_LTAS(
         self,
