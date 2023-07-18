@@ -36,6 +36,7 @@ class Dataset:
         dataset_path: str,
         *,
         gps_coordinates: Union[str, list, Tuple] = None,
+        depth: Union[str, int] = None,
         owner_group: str = None,
         original_folder: str = None,
         local: bool = True,
@@ -69,9 +70,13 @@ class Dataset:
         self.owner_group = owner_group
         self.__gps_coordinates = []
         self.__local = local
+        
         if gps_coordinates is not None:
             self.gps_coordinates = gps_coordinates
 
+        if depth is not None:
+            self.depth = depth
+            
         self.__original_folder = original_folder
 
         self.list_abnormal_filenames = []
@@ -139,35 +144,56 @@ class Dataset:
             Tuple[Tuple[float, float], Tuple[float, float]],
         ],
     ):
-        # TODO: Allow any iterator?
+
         match new_coordinates:
             case str():
                 csvFileArray = pd.read_csv(
                     self.path.joinpath(OSMOSE_PATH.auxiliary, new_coordinates)
                 )
                 self.__gps_coordinates = [np.mean(csvFileArray["lat"]), np.mean(csvFileArray["lon"])
-                    #(np.min(csvFileArray["lat"]), np.max(csvFileArray["lat"])),
-                    #(np.min(csvFileArray["lon"]), np.max(csvFileArray["lon"])),
                 ]
             case tuple():
                 self.__gps_coordinates = new_coordinates
-            case list():
-                if all(isinstance(coord, list) for coord in new_coordinates):
-                    self.__gps_coordinates = (
-                        (new_coordinates[0][0], new_coordinates[0][1]),
-                        (new_coordinates[1][0], new_coordinates[1][1]),
-                    )
-                else:
-                    self.__gps_coordinates = (new_coordinates[0], new_coordinates[1])
-                # TODO : set a standard type for coordinates
-                # else:
-                #     raise ValueError(
-                #         f"The coordinates list must contain either only floats or only sublists of two elements."
-                #     )
             case _:
                 raise TypeError(
                     f"GPS coordinates must be either a list of coordinates or the name of csv containing the coordinates, but {type(new_coordinates)} found."
                 )
+
+
+    @property
+    def depth(
+        self,
+    ) -> int:
+
+        if not self.__depth:
+            print("Please set a depth value for your hydrophone.")
+        return self.__depth
+    
+    
+
+    @depth.setter
+    def depth(
+        self,
+        new_depth: Union[
+            str,
+            int,
+        ],
+    ):
+
+        match new_depth:
+            case str():
+                csvFileArray = pd.read_csv(
+                    self.path.joinpath(OSMOSE_PATH.instrument, new_depth)
+                )
+                self.__depth = int(np.mean(csvFileArray["depth"]))                
+            case int():
+                self.__depth = new_depth
+            case _:
+                raise TypeError(
+                    f"Variable depth must be either an int value for fixed hydrophone or a csv filename for moving hydrophone"
+                )
+                
+                
 
     @property
     def owner_group(self):
@@ -501,6 +527,7 @@ class Dataset:
             df["lat"] = self.gps_coordinates[0]
             df["lon"] = self.gps_coordinates[1]
 
+        df['depth'] = self.depth
         df["dataset_sr"] = int(mean(list_samplingRate))
         df["audio_file_dataset_duration"] = int(round(mean(list_duration), 2))
         df.to_csv(
