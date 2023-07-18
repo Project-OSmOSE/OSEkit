@@ -1568,7 +1568,7 @@ class Spectrogram(Dataset):
                     else:
                         ending_timestamp = pd.date_range(time_periods[ind_group_LTAS].to_timestamp(),periods=2,freq=time_scale)[0] 
                     
-                    self.generate_and_save_LTAS(time_periods[ind_group_LTAS].to_timestamp(),ending_timestamp,Freq,log_spectro,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_{time_periods[ind_group_LTAS]}.png'),time_scale, time)
+                    self.generate_and_save_LTAS(time_periods[ind_group_LTAS].to_timestamp(),ending_timestamp,Freq,log_spectro,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_{time_periods[ind_group_LTAS]}.png'),time_scale)
 
 
                 
@@ -1579,8 +1579,7 @@ class Spectrogram(Dataset):
         freq: np.ndarray[float],
         log_spectro: np.ndarray[float],
         output_file: Path,
-        time_scale: str,
-        time: np.ndarray[float]
+        time_scale: str
     ):
 
         # Plotting spectrogram
@@ -1616,6 +1615,6 @@ class Spectrogram(Dataset):
         # Saving LTAS in npz format
         
         output_file_npz=output_file.with_suffix('.npz')
-        np.savez(output_file_npz,LTAS=log_spectro,time=time,Freq=freq,allow_pickle=True)
+        np.savez(output_file_npz,LTAS=log_spectro,time=date,Freq=freq,allow_pickle=True)
        
        
