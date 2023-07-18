@@ -1501,6 +1501,7 @@ class Spectrogram(Dataset):
     def build_LTAS(self,time_resolution:str,time_scale:str='D'):
         
         list_npz_files = list(self.path_output_welch.joinpath(time_resolution).glob('*npz'))
+        
         if len(list_npz_files) == 0:            
             raise FileNotFoundError(
                 "No intermediary welch spectra to aggregate, run a complete generation of spectrograms first!"
@@ -1676,7 +1677,8 @@ class Spectrogram(Dataset):
         # make timestamps proper xitck_labels
         nber_xticks = min(10,log_spectro.shape[1])                 
         label_smoother = {'all':'D','Y':'M','M':'D','D':'T','H':'T'}
-        date = pd.date_range(start_time,end_time,periods=log_spectro.shape[1]).to_period(label_smoother[time_scale])  
+        time_vector = pd.date_range(start_time,end_time,periods=log_spectro.shape[1])
+        date = time_vector.to_period(label_smoother[time_scale])  
         int_sep = int(len(date) / nber_xticks)
         plt.xticks(np.arange(0, len(date), int_sep), date[::int_sep])
         ax.tick_params(axis='x', rotation=20)    
@@ -1686,3 +1688,8 @@ class Spectrogram(Dataset):
         plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
         plt.close()
         
+        # Saving LTAS in npz format        
+        output_file_npz=output_file.with_suffix('.npz')
+        np.savez(output_file_npz,LTAS=log_spectro,time=time_vector,Freq=freq,allow_pickle=True)
+       
+       
