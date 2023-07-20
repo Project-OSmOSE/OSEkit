@@ -6,6 +6,7 @@ import pandas as pd
 from pathlib import Path
 
 from OSmOSE.config import *
+from OSmOSE.utils import get_files
 
 __converter = {
     "%Y": r"[12][0-9]{3}",
@@ -74,30 +75,22 @@ def write_timestamp(
     """
     list_audio_file = sorted([file for file in Path(audio_path).glob("*.wav")])
 
-    if len(list_audio_file) == 0:
-        
+    if len(list_audio_file) == 0:        
         list_audio_file_WAV = sorted([file for file in Path(audio_path).glob("*.WAV")])
 
         if len(list_audio_file_WAV) > 0:
-
-            print(
-                f"Your audio files have a .WAV extension, we are changing it to the standard .wav extension"
-                )
+            print("Your audio files have a .WAV extension, we are changing it to the standard .wav extension.")
             
             for file_name in list_audio_file_WAV:
                 os.rename(file_name, Path(audio_path).joinpath(file_name.stem+'.wav'))
         
-        elif len(Path(audio_path).glob("*.mp3",".*flac"))>0:
-
-            print(
-                f"Your audio files do not have the right extension, we only accept wav audio files for the moment."
-            )
+        elif len(get_files(Path(audio_path),("*.mp3", "*.flac")))>0:          
+            raise FileNotFoundError("Your audio files do not have the right extension, we only accept wav audio files for the moment.")
                     
         else:
-        
-            print(
-                f"No audio files found in the {audio_path} directory."
-            )
+            raise FileNotFoundError(f"No audio files found in the {audio_path} directory.")
+
+
 
     timestamp = []
     filename_raw_audio = []
@@ -110,9 +103,7 @@ def write_timestamp(
             else:
                 date_extracted = re.search(converted, str(filename))[0]
         except TypeError:
-            raise ValueError(
-                f"The date template does not match any set of character in the file name {filename}\nMake sure you are not forgetting separator characters, or use the offsets parameter."
-            )
+            raise ValueError(f"The date template does not match any set of character in the file name {filename}\nMake sure you are not forgetting separator characters, or use the offset parameter.")
 
         date_obj = datetime.datetime.strptime(date_extracted, date_template)
         dates = datetime.datetime.strftime(date_obj, "%Y-%m-%dT%H:%M:%S.%f")

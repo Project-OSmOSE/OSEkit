@@ -376,6 +376,14 @@ def set_umask():
     os.umask(0o002)
 
 
+def get_files(path,extensions):
+    all_files = []
+    for ext in extensions:
+        all_files.extend(Path(path).glob(ext))
+    return all_files
+
+
+
 
 # TO DO : function not optimized in case you use it in a for loop , because it will reload .csv for each audiofile , should
 # be able to take as input the already loaded timestamps
