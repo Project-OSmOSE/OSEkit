@@ -149,7 +149,7 @@ def read_config(raw_config: Union[str, dict, Path]) -> NamedTuple:
 #     return template(**dictionary)
 
 
-def read_header(file: str) -> Tuple[int, float, int, int]:
+def read_header(file: str) -> Tuple[int, float, int, int,int]:
     """Read the first bytes of a wav file and extract its characteristics.
     At the very least, only the first 44 bytes are read. If the `data` chunk is not right after the header chunk,
     the subsequent chunks will be read until the `data` chunk is found. If there is no `data` chunk, all the file will be read.
@@ -208,7 +208,7 @@ def read_header(file: str) -> Tuple[int, float, int, int]:
                 \nSupposed size: {size} bytes \nActual size: {subchunk2size} bytes."
             )
 
-        return samplerate, frames, channels, sampwidth
+        return samplerate, frames, channels, sampwidth,size
 
 
 def safe_read(

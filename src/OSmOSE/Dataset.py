@@ -323,12 +323,10 @@ class Dataset:
             audio_file = audio_file_list[ind_dt]
 
             try:
-                origin_sr, frames, sampwidth, channel_count = read_header(audio_file)
+                origin_sr, frames, sampwidth, channel_count,size = read_header(audio_file)
 
             except Exception as e:
-                list_file_problem.append(audio_file)
                 print(f"The audio file {audio_file} could not be loaded, its importation has been canceled.\nDescription of the error: {e}")
-                list_filename_abnormal_duration.append(str(audio_file.name))
                     
             # define duration_inter_file; does not have a value for the last timestamp
             if ind_dt > 0:
@@ -354,7 +352,7 @@ class Dataset:
                                                     "duration":frames / float(origin_sr),
                                                     "origin_sr":int(origin_sr),
                                                     "sampwidth":sampwidth,
-                                                    "size":audio_file.stat().st_size / 1e6,
+                                                    "size":size / 1e6,
                                                     "duration_inter_file":duration_inter_file,
                                                     "channel_count":channel_count}, index=[0]) ],axis=0)
 
