@@ -316,32 +316,6 @@ class Dataset:
         for ind_dt in tqdm(range(len(timestamp_csv))):
             audio_file = audio_file_list[ind_dt]
 
-            try:
-                origin_sr, frames, sampwidth, channel_count,size = read_header(audio_file)
-
-            except Exception as e:
-                # append audio metadata read from header for files with corrupted headers
-                audio_metadata=pd.concat([audio_metadata , 
-                                          pd.DataFrame({"filename":cur_filename,
-                                                        "timestamp":timestamp_csv[ind_dt],
-                                                        "duration":None,
-                                                        "origin_sr":None,
-                                                        "sampwidth":None,
-                                                        "size":None,
-                                                        "duration_inter_file":None,
-                                                        "channel_count":None,
-                                                        "status_read_header":False}, index=[0]) ],axis=0)
-                continue
-                
-                    
-            # define duration_inter_file; does not have a value for the last timestamp
-            if ind_dt > 0:
-                duration_inter_file = (datetime.strptime(
-                    timestamp_csv[ind_dt], "%Y-%m-%dT%H:%M:%S.%fZ"
-                ) - datetime.strptime(timestamp_csv[ind_dt-1], "%Y-%m-%dT%H:%M:%S.%fZ")).total_seconds()
-            else:
-                duration_inter_file = None
-
             # define final audio filename, especially we remove the sign '-' in filenames (because of our qsub_resample.sh)
             if "-" in audio_file.name:
                 cur_filename = audio_file.name.replace("-", "_")
@@ -349,7 +323,34 @@ class Dataset:
                     path_raw_audio.joinpath(cur_filename)
                 )
             else:
-                cur_filename = audio_file.name           
+                cur_filename = audio_file.name  
+                
+
+            try:
+                origin_sr, frames, sampwidth, channel_count,size = read_header(audio_file)
+                c='njnfs'+5
+
+            except Exception as e:
+                # append audio metadata read from header for files with corrupted headers
+                audio_metadata=pd.concat([audio_metadata , 
+                                          pd.DataFrame({"filename":cur_filename,
+                                                        "timestamp":timestamp_csv[ind_dt],
+                                                        "duration":np.nan,
+                                                        "origin_sr":np.nan,
+                                                        "sampwidth":None,
+                                                        "size":None,
+                                                        "duration_inter_file":None,
+                                                        "channel_count":None,
+                                                        "status_read_header":False}, index=[0]) ],axis=0)
+                continue
+                
+            # define duration_inter_file; does not have a value for the last timestamp
+            if ind_dt > 0:
+                duration_inter_file = (datetime.strptime(
+                    timestamp_csv[ind_dt], "%Y-%m-%dT%H:%M:%S.%fZ"
+                ) - datetime.strptime(timestamp_csv[ind_dt-1], "%Y-%m-%dT%H:%M:%S.%fZ")).total_seconds()
+            else:
+                duration_inter_file = None        
 
             # append audio metadata read from header in the dataframe audio_metadata
             audio_metadata=pd.concat([audio_metadata , 
@@ -369,12 +370,12 @@ class Dataset:
             index=False
         )
         os.chmod(path_raw_audio.joinpath("file_metadata.csv"), mode=FPDEFAULT)
-                        
+
         # define anomaly tests of level 0 and 1
         test_level1_1 = (sum(audio_metadata["status_read_header"].values)==len(timestamp_csv))
-        test_level1_2 = (len(np.unique(audio_metadata["origin_sr"].values))==1)         
+        test_level1_2 = (len(np.unique(audio_metadata["origin_sr"].values[~pd.isna(audio_metadata["origin_sr"].values)]))==1)         
         test_level0_1 = (number_bad_files==0)
-        test_level0_2 = (len(np.unique(audio_metadata["duration"].values))==1)        
+        test_level0_2 = (len(np.unique(audio_metadata["duration"].values[~pd.isna(audio_metadata["duration"].values)]))==1)        
         list_tests_level0 =  [test_level0_1 , test_level0_2]
         list_tests_level1 =  [test_level1_1 , test_level1_2]
 
@@ -388,7 +389,7 @@ class Dataset:
             f.write('\n'.join(lines))                  
         
         # write messages in prompt for user
-        if (len(list_tests_level1)-sum(list_tests_level1)>0) and not force_upload:# if presence of anomalies of level 1
+        if (len(list_tests_level1)-sum(list_tests_level1)>0):# if presence of anomalies of level 1
             print(f"\n\n Your dataset failed {len(list_tests_level1)-sum(list_tests_level1)} anomaly test of level 1 (over {len(list_tests_level1)}); see details below. \n Anomalies of level 1 block dataset uploading as long as they are present. Please correct your anomalies first, and try uploading it again after. \n You can inspect your metadata saved here {path_raw_audio.joinpath('file_metadata.csv')} using the notebook metadata_analyzer.ipynb, and work on your anomalies using the notebook dataset_anomaly_cleaner.ipynb.")                   
 
             if len(list_tests_level0)-sum(list_tests_level0)>0:# if also presence of anomalies of level 0
