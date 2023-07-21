@@ -38,7 +38,7 @@ def test_error_build(input_dir: Path):
         dataset.build()
     assert (
         str(e.value)
-        == f"""The timestamp.csv file has not been found in {input_dir.joinpath("data","audio","original")}. You can create it automatically by setting the date template as argument."""
+        == f"""The timestamp.csv file has not been found in {input_dir.joinpath("data","audio","original")}. You can create it automatically but to do so you have to set the date template as argument."""
     )
 
 @pytest.mark.integ
@@ -53,7 +53,7 @@ def test_build(input_dataset):
     assert new_expected_path.exists()
 
     assert sorted(os.listdir(new_expected_path)) == sorted(
-        ["metadata.csv", "timestamp.csv"] + [f"test_{i}.wav" for i in range(10)]
+        ["file_metadata.csv","metadata.csv", "timestamp.csv"] + [f"test_{i}.wav" for i in range(10)]
     )
 
 

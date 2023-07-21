@@ -16,12 +16,14 @@ def test_display_folder_storage_infos(monkeypatch):
 
 @pytest.mark.unit
 def test_read_header(input_dir):
-    sr, frames, channels, sampwidth = read_header(input_dir.joinpath("test.wav"))
+    sr, frames, channels, sampwidth,size = read_header(input_dir.joinpath("test.wav"))
+    print(size)
 
     assert sr == 44100
     assert frames == 132300.0
     assert channels == 1
-    assert sampwidth == 2
+    assert sampwidth == 4
+    assert size == 529272
 
 @pytest.mark.unit
 @pytest.mark.filterwarnings("ignore:3 NaN detected")
@@ -53,8 +55,9 @@ def test_read_header(input_dir):
     frames = float(sr * 3)
     channels = 1
     sampwidth = 4
+    size = 529272
 
-    assert (sr, frames, channels, sampwidth) == read_header(
+    assert (sr, frames, channels, sampwidth,size) == read_header(
         input_dir.joinpath("test.wav")
     )
 
