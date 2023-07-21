@@ -412,9 +412,9 @@ class Dataset:
             df.to_csv(
                 path_raw_audio.joinpath("timestamp.csv"),
                 index=False,
-                na_rep="NaN",
                 header=None
             )
+
             os.chmod(path_raw_audio.joinpath("timestamp.csv"), mode=FPDEFAULT)
     
             # change name of the original wav folder
