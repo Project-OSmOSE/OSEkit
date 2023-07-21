@@ -325,10 +325,8 @@ class Dataset:
             else:
                 cur_filename = audio_file.name  
                 
-
             try:
                 origin_sr, frames, sampwidth, channel_count,size = read_header(audio_file)
-                c='njnfs'+5
 
             except Exception as e:
                 # append audio metadata read from header for files with corrupted headers
