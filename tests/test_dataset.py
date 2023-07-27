@@ -53,5 +53,4 @@ def test_build(input_dataset):
     assert new_expected_path.exists()
 
     assert sorted(os.listdir(new_expected_path)) == sorted(
-        ["file_metadata.csv","metadata.csv", "resume_test_anomalies.txt","timestamp.csv"] + [f"test_{i}.wav" for i in range(10)]
-      
+        ["file_metadata.csv","metadata.csv", "resume_test_anomalies.txt","timestamp.csv"] + [f"test_{i}.wav" for i in range(10)])
