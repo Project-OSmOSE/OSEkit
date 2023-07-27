@@ -74,8 +74,6 @@ class Dataset:
 
         self.__original_folder = original_folder
 
-        self.list_abnormal_filenames = []
-
         if skip_perms:
             print(
                 "It seems you are on a non-Unix operating system (probably Windows). The build() method will not work as intended and permission might be incorrectly set."
@@ -326,9 +324,10 @@ class Dataset:
                 cur_filename = audio_file.name  
                 
             try:
-                origin_sr, frames, sampwidth, channel_count,size = read_header(audio_file)
+                origin_sr, frames, sampwidth, channel_count,size = read_header(path_raw_audio.joinpath(cur_filename))
 
             except Exception as e:
+                print(f"error message making status read header False : \n {e}")
                 # append audio metadata read from header for files with corrupted headers
                 audio_metadata=pd.concat([audio_metadata , 
                                           pd.DataFrame({"filename":cur_filename,
