@@ -300,7 +300,8 @@ class Dataset:
         
         # intialize the dataframe to collect audio metadata from header
         audio_metadata = pd.DataFrame(columns = ["filename", "timestamp","duration",
-                                     "origin_sr","duration_inter_file","size","sampwidth","channel_count","status_read_header"])  
+                         "origin_sr","duration_inter_file","size","sampwidth","channel_count","status_read_header"])
+        audio_metadata["status_read_header"]=audio_metadata["status_read_header"].astype(bool)
 
         audio_file_list = [Path(path_raw_audio, indiv) for indiv in filename_csv]
 
