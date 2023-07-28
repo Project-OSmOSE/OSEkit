@@ -312,7 +312,7 @@ class Dataset:
                 auto_normalization=auto_normalization,
             )
 
-        for ind_dt in tqdm(range(len(timestamp_csv))):
+        for ind_dt in tqdm(range(len(timestamp_csv)), desc='Scanning audio files'):
             audio_file = audio_file_list[ind_dt]
 
             # define final audio filename, especially we remove the sign '-' in filenames (because of our qsub_resample.sh)
