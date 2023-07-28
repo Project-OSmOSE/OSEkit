@@ -107,10 +107,8 @@ def write_timestamp(
         dates = datetime.datetime.strftime(date_obj, "%Y-%m-%dT%H:%M:%S.%f")
 
         dates_final = dates[:-3] + "Z"
-        if i ==0:
-            print(f"Example of timestamp extraction from filename: \n")
-            print(f"filename-> {filename} ")
-            print(f"extracted timestamp-> {dates_final} \n")
+        if i ==10:
+            print(f"Timestamp extraction seems OK, here is an example: {filename.name} -> {dates_final} \n")
         elif verbose:
             print("filename->", filename)
             print("extracted timestamp->", dates_final, "\n")

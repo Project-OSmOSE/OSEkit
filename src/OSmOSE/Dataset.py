@@ -300,15 +300,15 @@ class Dataset:
         
         # intialize the dataframe to collect audio metadata from header
         audio_metadata = pd.DataFrame(columns = ["filename", "timestamp","duration",
-                         "origin_sr","duration_inter_file","size","sampwidth","channel_count","status_read_header"])
+                                     "origin_sr","duration_inter_file","size","sampwidth","channel_count","status_read_header"])  
         audio_metadata["status_read_header"]=audio_metadata["status_read_header"].astype(bool)
-
+        
         audio_file_list = [Path(path_raw_audio, indiv) for indiv in filename_csv]
 
         if not bare_check:
             number_bad_files = check_n_files(
                 audio_file_list,
-                2,
+                10,
                 auto_normalization=auto_normalization,
             )
 
@@ -383,6 +383,8 @@ class Dataset:
         else:
             status_text='a'                
         lines = ["Anomalies of level 1", f"- Test 1 : {test_level1_1}", f"- Test 2 : {test_level1_2}","---------------------","Anomalies of level 0", f"- Test 1 : {test_level0_1}", f"- Test 2 : {test_level0_2}"]
+        lines = [ll.replace('False','FAILED').replace('True','PASSED') for ll in lines]
+        
         with open(resume_test_anomalies, status_text) as f:
             f.write('\n'.join(lines))                  
         

@@ -283,11 +283,15 @@ def check_n_files(
 
     #if "float" in str(sf.info(file_list[0])): # to understand
     bad_files = []
+    print(f"Testing whether samples are within [-1,1] for the following audio files:")
     for audio_file in random.sample(file_list, n):
-        print(f"reading {audio_file.name} to check whether audio samples are within [-1,1]")
         data, sr = safe_read(audio_file)
         if not (np.max(data) <= 1.0 and np.min(data) >= -1.0):
             bad_files.append(audio_file)
+            print(f"- {audio_file.name} -> FAILED")
+        else:
+            print(f"- {audio_file.name} -> PASSED")
+    print(f"\n")
 
     return len(bad_files)
 
