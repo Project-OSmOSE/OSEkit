@@ -452,8 +452,7 @@ class Spectrogram(Dataset):
         self.path_output_welch = self.path.joinpath(OSMOSE_PATH.welch)
         self.path_output_LTAS = self.path.joinpath(OSMOSE_PATH.LTAS)
         self.path_output_EPD = self.path.joinpath(OSMOSE_PATH.EPD)
-        
-        
+        self.path_output_SPLfiltered = self.path.joinpath(OSMOSE_PATH.SPLfiltered)
         
         # Create paths
         if not dry:
@@ -1233,8 +1232,6 @@ class Spectrogram(Dataset):
 
                 os.chmod(output_matrix, mode=FPDEFAULT)                  
 
-
-
         # loop over the zoom levels from the second lowest to the highest one
         for zoom_level in range(self.zoom_level)[::-1]: #zoom_level + 1
             nberspec = Sxx_complete_lowest_level.shape[1] // (2**zoom_level)
@@ -1477,9 +1474,35 @@ class Spectrogram(Dataset):
         with mp.Pool(processes=mp.cpu_count()) as pool:
             pool.map(map_process_file, self.list_wav_to_process)
 
+
+    def save_all_welch(self,list_npz_files:list,path_all_welch: Path):
+
+        LTAS = np.empty((1, int(self.nfft/2) + 1))
+        time = []
+        for file_npz in tqdm(list_npz_files):
+            current_matrix=np.load(file_npz,allow_pickle=True)    
+            LTAS = np.vstack((LTAS, current_matrix['Sxx']))
+            time.append( current_matrix['Time'] )       
+        LTAS=LTAS[1:,:]     
+        Freq = current_matrix['Freq']
+        
+        time = np.array(time)
+        
+        # flatten time, which is currently a list of arrays 
+        if time.ndim==2:
+            time = list(itertools.chain(*time))
+        else:
+            time = [tt.item() for tt in time] # suprinsingly , doing simply = list(time) was droping the Timestamp dtype, to be investigated in more depth...
+    
+        np.savez(path_all_welch,LTAS=LTAS,time=time,Freq=Freq,allow_pickle=True)# careful data not sorted here! we should save them based on dataframe df below 
+
+        return LTAS, time, Freq
+                
+
     def build_LTAS(self,time_resolution:str,time_scale:str='D'):
         
         list_npz_files = list(self.path_output_welch.joinpath(time_resolution).glob('*npz'))
+        
         if len(list_npz_files) == 0:            
             raise FileNotFoundError(
                 "No intermediary welch spectra to aggregate, run a complete generation of spectrograms first!"
@@ -1495,27 +1518,14 @@ class Spectrogram(Dataset):
                 data = np.load(path_all_welch,allow_pickle=True)   
                 LTAS=data['LTAS']
                 time=data['time']
-                Freq=data['Freq']
-                
+                Freq=data['Freq']                
             else:
-                LTAS = np.empty((1, int(self.nfft/2) + 1))
-                time = []
-                for file_npz in tqdm(list_npz_files):
-                    current_matrix=np.load(file_npz,allow_pickle=True)    
-                    LTAS = np.vstack((LTAS, current_matrix['Sxx']))
-                    time.append( current_matrix['Time'] )       
-                LTAS=LTAS[1:,:]     
-                Freq = current_matrix['Freq']
-                
-                np.savez(path_all_welch,LTAS=LTAS,time=time,Freq=Freq,allow_pickle=True)# careful data not sorted here! we should save them based on dataframe df below 
-                time = np.array(time)
+                LTAS, time, Freq = self.save_all_welch(list_npz_files,path_all_welch)
  
+            # convert numpy arrays to dataframe, more convenient for time operations
             df=pd.DataFrame(LTAS,dtype=float)
-            if time.ndim==2:
-                df['time'] = list(itertools.chain(*time))
-            else:
-                df['time'] = [tt.item() for tt in time] # suprinsingly , doing simply = list(time) was droping the Timestamp dtype, to be investigated in more depth...
-            
+            df['time']=time
+            # sort by time, and make time variable as dataframe index            
             df.sort_values(by=['time'], inplace=True)
             df.set_index('time', inplace=True, drop= True)
             df.index = pd.to_datetime(df.index)            
@@ -1526,22 +1536,16 @@ class Spectrogram(Dataset):
                 
                 if cur_LTAS.shape[0]>2500:
 
-                    save_shape = cur_LTAS.shape[0]
-            
+                    save_shape = cur_LTAS.shape[0]           
                     screen_res_pixel = 2000
-
                     ind_av = round(cur_LTAS.shape[0] / screen_res_pixel)
-
                     mm=cur_LTAS[0::ind_av,:]
                     bb=cur_LTAS[1::ind_av,:]
-
                     if mm.shape[0]>bb.shape[0]:
                         mm=mm[:-1,:]
                     elif bb.shape[0]>mm.shape[0]:
                         bb=bb[:-1,:]
-
                     cur_LTAS = 0.5*(mm + bb)
-                    
                     print(f"Be aware that we applied a window averaging to reduce your LTAS from {save_shape} welch to {cur_LTAS.shape[0]} welch \n")                    
 
                 if self.spectro_normalization == "density":
@@ -1554,9 +1558,8 @@ class Spectrogram(Dataset):
             else:
             
                 groups_LTAS = df.groupby(df.index.to_period(time_scale)).agg(list)
-                            
                 time_periods = groups_LTAS.index.get_level_values(0)
-                         
+                
                 for ind_group_LTAS in range(groups_LTAS.values.shape[0]):
                     
                     cur_LTAS = np.stack(groups_LTAS.values[ind_group_LTAS,:])
@@ -1571,7 +1574,81 @@ class Spectrogram(Dataset):
                         ending_timestamp = pd.date_range(time_periods[ind_group_LTAS].to_timestamp(),periods=2,freq=time_scale)[0] 
                     
                     self.generate_and_save_LTAS(time_periods[ind_group_LTAS].to_timestamp(),ending_timestamp,Freq,log_spectro,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_{time_periods[ind_group_LTAS]}.png'),time_scale)
+
+                    
+    def build_SPL_filtered(self,time_resolution:str,Freq_min:int=0, Freq_max:int=None):
+        
+        # assign default value for Freq_max, equivalent to no HF filtering
+        if Freq_max==None:
+            Freq_max = self.dataset_sr/2
+        
+        list_npz_files = list(self.path_output_welch.joinpath(time_resolution).glob('*npz'))
+        if len(list_npz_files) == 0:            
+            raise FileNotFoundError(
+                "No intermediary welch spectra to aggregate, run a complete generation of spectrograms first!"
+            )                
+            
+        else:
+
+            if not self.path_output_SPLfiltered.exists():
+                make_path(self.path_output_SPLfiltered, mode=DPDEFAULT)
                 
+            path_all_welch = self.path_output_welch.joinpath(time_resolution,'all_welch.npz')
+            if os.path.exists(path_all_welch):                
+                data = np.load(path_all_welch,allow_pickle=True)   
+                LTAS=data['LTAS']
+                time=data['time']
+                Freq=data['Freq']                
+            else:
+                LTAS, time, Freq = self.save_all_welch(list_npz_files,path_all_welch)
+ 
+            # convert numpy arrays to dataframe, more convenient for time operations
+            df=pd.DataFrame(LTAS,dtype=float)
+            df['time']=time
+            # sort by time, and make time variable as dataframe index            
+            df.sort_values(by=['time'], inplace=True)
+            df.set_index('time', inplace=True, drop= True)
+            df.index = pd.to_datetime(df.index)      
+
+            SPL_filtered = np.mean(df.values[:,np.argmin(abs(Freq-Freq_min)) : np.argmin(abs(Freq-Freq_max))],1)
+            
+            # Plotting SPL
+            my_dpi = 100
+            fact_x = 1.3
+            fact_y = 1.3
+            fig, ax = plt.subplots(
+                nrows=1,
+                ncols=1,
+                figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi),
+                dpi=my_dpi,
+            )            
+            
+            plt.plot(np.arange(0,len(SPL_filtered)) , SPL_filtered)
+            
+            # write custom ylabel
+            if (Freq_min!=0) or (Freq_max!=self.dataset_sr):
+                plt.ylabel(f"SPL (dB) within [{Freq_min}-{Freq_max}] Hz")
+            else:
+                plt.ylabel("SPL (dB)")
+
+            # write proper timestamps as xitck_labels
+            nber_xticks = min(10,len(SPL_filtered))                 
+            if (df.index[-1] - df.index[0]).days>7:
+                label_smoother = 'D'
+            else:
+                label_smoother = 'H'                
+            date = pd.date_range(df.index[0],df.index[-1],periods=len(SPL_filtered)).to_period(label_smoother)  
+            int_sep = int(len(date) / nber_xticks)
+            plt.xticks(np.arange(0, len(date), int_sep), date[::int_sep])
+            ax.tick_params(axis='x', rotation=20)        
+            
+            # save as png figure
+            output_file = self.path.joinpath(OSMOSE_PATH.SPLfiltered,f'SPLfiltered.png')
+            print('saving',output_file.name, '/ Nber of time points:',str(len(SPL_filtered)))
+            plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
+            plt.close()
+        
+     
     def generate_and_save_LTAS(
         self,
         start_time:pd._libs.tslibs.timestamps.Timestamp,
@@ -1593,16 +1670,15 @@ class Spectrogram(Dataset):
             dpi=my_dpi,
         )
         
-
         im = ax.pcolormesh( np.arange(0,log_spectro.shape[1]), freq , log_spectro, cmap=plt.cm.get_cmap(self.colormap) )
         plt.colorbar(im,ax=ax)
-                            
         ax.set_ylabel("Frequency (Hz)")
         
         # make timestamps proper xitck_labels
         nber_xticks = min(10,log_spectro.shape[1])                 
         label_smoother = {'all':'D','Y':'M','M':'D','D':'T','H':'T'}
-        date = pd.date_range(start_time,end_time,periods=log_spectro.shape[1]).to_period(label_smoother[time_scale])  
+        time_vector = pd.date_range(start_time,end_time,periods=log_spectro.shape[1])
+        date = time_vector.to_period(label_smoother[time_scale])  
         int_sep = int(len(date) / nber_xticks)
         plt.xticks(np.arange(0, len(date), int_sep), date[::int_sep])
         ax.tick_params(axis='x', rotation=20)    
@@ -1612,7 +1688,7 @@ class Spectrogram(Dataset):
         plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
         plt.close()
         
-
+        
     def build_EPD(self,time_resolution:str):
 
         list_npz_files = list(self.path_output_welch.joinpath(time_resolution).glob('*npz'))

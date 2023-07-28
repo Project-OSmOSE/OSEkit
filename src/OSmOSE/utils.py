@@ -149,7 +149,7 @@ def read_config(raw_config: Union[str, dict, Path]) -> NamedTuple:
 #     return template(**dictionary)
 
 
-def read_header(file: str) -> Tuple[int, float, int, int]:
+def read_header(file: str) -> Tuple[int, float, int, int,int]:
     """Read the first bytes of a wav file and extract its characteristics.
     At the very least, only the first 44 bytes are read. If the `data` chunk is not right after the header chunk,
     the subsequent chunks will be read until the `data` chunk is found. If there is no `data` chunk, all the file will be read.
@@ -202,13 +202,13 @@ def read_header(file: str) -> Tuple[int, float, int, int]:
         framesize = channels * sampwidth
         frames = subchunk2size / framesize
 
-        if (size - 72) > subchunk2size:
-            print(
-                f"Warning : the size indicated in the header is not the same as the actual file size. This might mean that the file is truncated or otherwise corrupt.\
-                \nSupposed size: {size} bytes \nActual size: {subchunk2size} bytes."
-            )
+        # if (size - 72) > subchunk2size:
+        #     print(
+        #         f"Warning : the size indicated in the header is not the same as the actual file size. This might mean that the file is truncated or otherwise corrupt.\
+        #         \nSupposed size: {size} bytes \nActual size: {subchunk2size} bytes."
+        #     )
 
-        return samplerate, frames, channels, sampwidth
+        return samplerate, frames, channels, sampwidth,size
 
 
 def safe_read(
@@ -254,7 +254,6 @@ def check_n_files(
     n: int,
     *,
     output_path: str = None,
-    threshold_percent: float = 0.1,
     auto_normalization: bool = False,
 ) -> bool:
     """Check n files at random for anomalies and may normalize them.
@@ -271,8 +270,6 @@ def check_n_files(
         output_path: `str`, optional, keyword-only
             The path to the folder where the normalized files will be written. If auto_normalization is set to True, then
             it must have a value.
-        threshold_percent: `float`, optional, keyword-only
-            The maximum acceptable percentage of evaluated files that can contain anomalies. Understands fraction and whole numbers. Default is 0.1, or 10%
         auto_normalization: `bool`, optional, keyword_only
             Whether the normalization should proceed automatically or not if the threshold is reached. As a safeguard, the default is False.
     Returns
@@ -280,74 +277,26 @@ def check_n_files(
         normalized: `bool`
             Indicates whether or not the dataset has been normalized.
     """
-    if auto_normalization and not output_path:
-        raise ValueError(
-            "When auto_normalization is set to True, an output path must be specified."
-        )
-
-    if threshold_percent > 1:
-        threshold_percent = threshold_percent / 100
 
     if n > len(file_list):
         n = len(file_list)
 
-    if "float" in str(sf.info(file_list[0])):
-        threshold = max(threshold_percent * n, 1)
-        bad_files = []
-        for audio_file in random.sample(file_list, n):
-            data, sr = safe_read(audio_file)
-            if not (np.max(data) <= 1.0 and np.min(data) >= -1.0):
-                bad_files.append(audio_file)
+    #if "float" in str(sf.info(file_list[0])): # to understand
+    bad_files = []
+    print(f"Testing whether samples are within [-1,1] for the following audio files:")
+    for audio_file in random.sample(file_list, n):
+        data, sr = safe_read(audio_file)
+        if not (np.max(data) <= 1.0 and np.min(data) >= -1.0):
+            bad_files.append(audio_file)
+            print(f"- {audio_file.name} -> FAILED")
+        else:
+            print(f"- {audio_file.name} -> PASSED")
+    print(f"\n")
 
-                if len(bad_files) > threshold:
-                    print(
-                        "The treshold has been exceeded, too many files unadequately recorded."
-                    )
-                    if not auto_normalization:
-                        normalize = False
-                        if sys.__stdin__.isatty():
-                            res = input(
-                                "Do you want to automatically normalize your dataset? [Y]/n"
-                            )
-                            if res.lower() in ["y", "yes", ""]:
-                                if not output_path:
-                                    output_path = input(
-                                        "Please specify the path to the output folder:"
-                                    )
-                                normalize = True
-                        if not normalize:
-                            raise ValueError(
-                                "You need to set auto_normalization to True to normalize your dataset automatically."
-                            )
+    return len(bad_files)
 
-                    make_path(Path(output_path), mode=DPDEFAULT)
-
-                    for audio_file in file_list:
-                        with sf.SoundFile(audio_file) as audio_f:
-                            sr = audio_f.samplerate
-                            subtype = audio_f.subtype
-                            data = audio_f.read()
-                        data = (
-                            (data - np.mean(data)) / np.std(data)
-                        ) * 0.063  # = -24dB
-                        data[data > 1] = 1
-                        data[data < -1] = -1
-
-                        outfile = Path(output_path, Path(audio_file).name)
-                        sf.write(
-                            outfile,
-                            data=data,
-                            samplerate=sr,
-                            subtype=subtype
-                        )
-
-                        os.chmod(outfile, mode=FPDEFAULT)
-                        # TODO: lock in spectrum mode
-                    print(
-                        "All files have been normalized. Spectrograms created from them will be locked in spectrum mode."
-                    )
-                    return True
-    return False
+    
+    
 
 
 # Will move to pathutils
@@ -374,6 +323,14 @@ def make_path(path: Path, *, mode=DPDEFAULT) -> Path:
 
 def set_umask():
     os.umask(0o002)
+
+
+def get_files(path,extensions):
+    all_files = []
+    for ext in extensions:
+        all_files.extend(Path(path).glob(ext))
+    return all_files
+
 
 
 

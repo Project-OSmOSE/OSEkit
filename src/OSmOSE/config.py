@@ -16,6 +16,7 @@ __global_path_dict = {
     "LTAS": Path("processed", "LTAS"),
     "welch": Path("processed", "welch"),
     "EPD": Path("processed", "EPD"),
+    "SPLfiltered": Path("processed", "SPLfiltered"),
 }
 
 OSMOSE_PATH = namedtuple("path_list", __global_path_dict.keys())(**__global_path_dict)
