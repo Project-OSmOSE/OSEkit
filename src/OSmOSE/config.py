@@ -15,6 +15,7 @@ __global_path_dict = {
     "statistics": Path("processed", "dataset_statistics"),
     "LTAS": Path("processed", "LTAS"),
     "welch": Path("processed", "welch"),
+    "EPD": Path("processed", "EPD"),
     "SPLfiltered": Path("processed", "SPLfiltered"),
 }
 

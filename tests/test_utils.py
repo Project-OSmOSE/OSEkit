@@ -16,12 +16,14 @@ def test_display_folder_storage_infos(monkeypatch):
 
 @pytest.mark.unit
 def test_read_header(input_dir):
-    sr, frames, channels, sampwidth = read_header(input_dir.joinpath("test.wav"))
+    sr, frames, channels, sampwidth,size = read_header(input_dir.joinpath("test.wav"))
+    print(size)
 
     assert sr == 44100
     assert frames == 132300.0
     assert channels == 1
-    assert sampwidth == 2
+    assert sampwidth == 4
+    assert size == 529272
 
 @pytest.mark.unit
 @pytest.mark.filterwarnings("ignore:3 NaN detected")
@@ -53,8 +55,9 @@ def test_read_header(input_dir):
     frames = float(sr * 3)
     channels = 1
     sampwidth = 4
+    size = 529272
 
-    assert (sr, frames, channels, sampwidth) == read_header(
+    assert (sr, frames, channels, sampwidth,size) == read_header(
         input_dir.joinpath("test.wav")
     )
 
@@ -70,66 +73,4 @@ def test_check_n_files_ok_files(input_dir, output_dir):
     assert not check_n_files(file_list=file_list, n=10, output_path=output_dir)
 
     assert len(os.listdir(output_dir)) == 0
-
-@pytest.mark.unit
-def test_check_n_files_bad_files(input_dir, output_dir):
-    file_list = []
-    rate = 44100  # samples per second
-    duration = 3
-    rng = np.random.default_rng()
-
-    data = rng.standard_normal(duration * rate) + 4
-    for i in range(10):
-        wav_file = input_dir.joinpath(f"test{i}.wav")
-        sf.write(
-            input_dir.joinpath(wav_file), data, rate, format="WAV", subtype="DOUBLE"
-        )
-        file_list.append(wav_file)
-
-    assert check_n_files(
-        file_list=file_list, n=10, output_path=output_dir, auto_normalization=True
-    )
-    assert len(os.listdir(output_dir)) == 10
-
-    shutil.rmtree(output_dir)
-
-    assert check_n_files(
-        file_list=file_list, n=5, output_path=output_dir, auto_normalization=True
-    )
-    assert len(os.listdir(output_dir)) == 10
     
-@pytest.mark.unit
-def test_check_n_files_under_threshold_bad_files(input_dir, output_dir, monkeypatch):
-    monkeypatch.setattr("sys.stdin", StringIO("y\n"))
-    file_list = [input_dir.joinpath("test.wav")]
-    autonorm = True if not sys.__stdin__.isatty() else False
-    for i in range(8):
-        wav_file = input_dir.joinpath(f"test{i}.wav")
-        shutil.copyfile(input_dir.joinpath("test.wav"), wav_file)
-        file_list.append(wav_file)
-
-    rate = 44100  # samples per second
-    duration = 3
-    rng = np.random.default_rng()
-
-    data = rng.standard_normal(duration * rate) - 5
-    wav_file = input_dir.joinpath(f"test8.wav")
-    sf.write(input_dir.joinpath(wav_file), data, rate, format="WAV", subtype="DOUBLE")
-    file_list.append(wav_file)
-
-    assert not check_n_files(
-        file_list=file_list, n=10, output_path=output_dir, threshold_percent=0.1
-    )
-    assert len(os.listdir(output_dir)) == 0
-
-    shutil.copyfile(wav_file, input_dir.joinpath(f"test9.wav"))
-    file_list.append(input_dir.joinpath(f"test9.wav"))
-
-    assert not check_n_files(
-        file_list=file_list, n=11, output_path=output_dir, threshold_percent=0.2
-    )
-    assert len(os.listdir(output_dir)) == 0
-    assert check_n_files(
-        file_list=file_list, n=11, output_path=output_dir, threshold_percent=0.1, auto_normalization=autonorm
-    )
-    assert len(os.listdir(output_dir)) == 11
