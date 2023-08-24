@@ -34,6 +34,8 @@ class Dataset:
     def __init__(
         self,
         dataset_path: str,
+        gps_coordinates: Union[str, list, Tuple],
+        depth: Union[str, int],
         *,
         gps_coordinates: Union[str, list, Tuple] = None,
         depth: Union[str, int] = None,
@@ -71,11 +73,8 @@ class Dataset:
         self.__gps_coordinates = []
         self.__local = local
         
-        if gps_coordinates is not None:
-            self.gps_coordinates = gps_coordinates
-
-        if depth is not None:
-            self.depth = depth
+        self.gps_coordinates = gps_coordinates
+        self.depth = depth
             
         self.__original_folder = original_folder
 
@@ -120,7 +119,7 @@ class Dataset:
         Parameter
         ---------
         coordinates: `str` or `list` or `tuple`
-            If the coordinates are a string, it must be the name of a csv file located in `raw/auxiliary/`, containing two columns: 'lat' and 'long'
+            If the coordinates are a string, it must be the name of a csv file located in `data/auxiliary/instrument/`, containing two columns: 'lat' and 'lon'
             Else, they can be either a list or a tuple of two float, the first being the latitude and second the longitude; or a
             list or a tuple containing two lists or tuples respectively of floats. In this case, the coordinates are not treated as a point but
             as an area.
@@ -129,8 +128,6 @@ class Dataset:
         -------
         The GPS coordinates as a tuple.
         """
-        if not self.__gps_coordinates:
-            print("This dataset has no GPS coordinates.")
         return self.__gps_coordinates
 
     @gps_coordinates.setter
@@ -148,7 +145,7 @@ class Dataset:
         match new_coordinates:
             case str():
                 csvFileArray = pd.read_csv(
-                    self.path.joinpath(OSMOSE_PATH.auxiliary, new_coordinates)
+                    self.path.joinpath(OSMOSE_PATH.instrument, new_coordinates)
                 )
                 self.__gps_coordinates = [np.mean(csvFileArray["lat"]), np.mean(csvFileArray["lon"])
                 ]
@@ -164,13 +161,19 @@ class Dataset:
     def depth(
         self,
     ) -> int:
+        """The depth of the hydrophone, in meter.
 
-        if not self.__depth:
-            print("Please set a depth value for your hydrophone.")
+        Parameter
+        ---------
+        depth: `str` or `int`
+            If the depth is a string, it must be the name of a csv file located in `data/auxiliary/instrument/`, containing at least a column 'depth'
+
+        Returns
+        -------
+        The depth as an int.
+        """
         return self.__depth
     
-    
-
     @depth.setter
     def depth(
         self,
