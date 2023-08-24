@@ -34,9 +34,9 @@ class Dataset:
     def __init__(
         self,
         dataset_path: str,
-        gps_coordinates: Union[str, list, Tuple],
-        depth: Union[str, int],
         *,
+        gps_coordinates: Union[str, list, Tuple] = None,
+        depth: Union[str, int] = None,        
         owner_group: str = None,
         original_folder: str = None,
         local: bool = True,
@@ -70,9 +70,12 @@ class Dataset:
         self.owner_group = owner_group
         self.__gps_coordinates = []
         self.__local = local
-        
-        self.gps_coordinates = gps_coordinates
-        self.depth = depth
+
+        if gps_coordinates is not None:
+            self.gps_coordinates = gps_coordinates
+            
+        if depth is not None:
+            self.depth = depth
             
         self.__original_folder = original_folder
 
@@ -193,7 +196,6 @@ class Dataset:
                 )
                 
                 
-
     @property
     def owner_group(self):
         """str: The Unix group able to interact with the dataset."""
@@ -292,6 +294,15 @@ class Dataset:
         """
         if self.is_built and not force_upload:
             print("It seems this dataset has already been built. Running the build() method on an already built dataset might result in unexpected behavior. If this is a mistake, use the force_upload parameter.")
+
+        if self.gps_coordinates is None:
+            raise ValueError(
+                f"GPS coordinates must be defined !"
+            )  
+        if self.depth is None:
+            raise ValueError(
+                f"Depth must be defined !"
+            )  
 
         if not self.__local:
             set_umask()

@@ -37,9 +37,9 @@ class Spectrogram(Dataset):
     def __init__(
         self,
         dataset_path: str,
-        gps_coordinates: Union[str, list, Tuple],
-        depth: Union[str, int],
         *,
+        gps_coordinates: Union[str, list, Tuple] = None,
+        depth: Union[str, int] = None,        
         dataset_sr: int = None,
         owner_group: str = None,
         analysis_params: dict = None,
@@ -98,8 +98,6 @@ class Spectrogram(Dataset):
         """
         super().__init__(
             dataset_path=dataset_path,
-            gps_coordinates=gps_coordinates,
-            depth=depth,
             owner_group=owner_group,
         )
 
