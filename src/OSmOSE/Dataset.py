@@ -37,8 +37,6 @@ class Dataset:
         gps_coordinates: Union[str, list, Tuple],
         depth: Union[str, int],
         *,
-        gps_coordinates: Union[str, list, Tuple] = None,
-        depth: Union[str, int] = None,
         owner_group: str = None,
         original_folder: str = None,
         local: bool = True,
