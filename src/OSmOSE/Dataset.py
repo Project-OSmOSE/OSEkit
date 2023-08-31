@@ -5,10 +5,11 @@ from typing import Union, Tuple, List
 from datetime import datetime
 from warnings import warn
 from statistics import fmean as mean
+import shutil
+import glob
 
 try:
     import grp
-
     skip_perms = False
 except ModuleNotFoundError:
     skip_perms = True
@@ -310,7 +311,7 @@ class Dataset:
                 owner_group = self.owner_group
     
             if not skip_perms:
-                    print("\nSetting OSmOSE permission to the dataset...")
+                    print("\nSetting OSmOSE permission to the dataset...\n")
                     if owner_group:
                         gid = grp.getgrnam(owner_group).gr_gid
                         try:
@@ -323,7 +324,7 @@ class Dataset:
 
         path_raw_audio = original_folder if original_folder is not None else self._find_or_create_original_folder()
         path_timestamp_formatted = path_raw_audio.joinpath("timestamp.csv")
-
+    
         resume_test_anomalies = path_raw_audio.joinpath("resume_test_anomalies.txt")
 
         if not path_timestamp_formatted.exists():
@@ -335,6 +336,7 @@ class Dataset:
         # read the timestamp.csv file
         timestamp_csv = pd.read_csv(path_timestamp_formatted, header=None)[1].values
         filename_csv = pd.read_csv(path_timestamp_formatted, header=None)[0].values
+        timezone_csv = pd.read_csv(path_timestamp_formatted, header=None)[2].values
         
         # intialize the dataframe to collect audio metadata from header
         audio_metadata = pd.DataFrame(columns = ["filename", "timestamp","duration",
@@ -346,7 +348,7 @@ class Dataset:
         if not bare_check:
             number_bad_files = check_n_files(
                 audio_file_list,
-                10,
+                4,
                 auto_normalization=auto_normalization,
             )
 
@@ -359,6 +361,8 @@ class Dataset:
                 path_raw_audio.joinpath(audio_file.name).rename(
                     path_raw_audio.joinpath(cur_filename)
                 )
+                if ind_dt==0: 
+                    print(f"\n We do not accept the sign '-' in our filenames, we transformed them into '_'. In case you have to rebuild your dataset be careful to change your timestamp template accordingly.. \n")
             else:
                 cur_filename = audio_file.name  
                 
@@ -408,44 +412,49 @@ class Dataset:
         os.chmod(path_raw_audio.joinpath("file_metadata.csv"), mode=FPDEFAULT)
 
         # define anomaly tests of level 0 and 1
-        test_level1_1 = (sum(audio_metadata["status_read_header"].values)==len(timestamp_csv))
-        test_level1_2 = (len(np.unique(audio_metadata["origin_sr"].values[~pd.isna(audio_metadata["origin_sr"].values)]))==1)         
-        test_level0_1 = (number_bad_files==0)
-        test_level0_2 = (len(np.unique(audio_metadata["duration"].values[~pd.isna(audio_metadata["duration"].values)]))==1)        
-        list_tests_level0 =  [test_level0_1 , test_level0_2]
-        list_tests_level1 =  [test_level1_1 , test_level1_2]
+        test_level0_1 = (len(np.unique(audio_metadata["origin_sr"].values[~pd.isna(audio_metadata["origin_sr"].values)]))==1)
+        test_level0_2 = (number_bad_files==0)        
+        test_level0_3 = (sum(audio_metadata["status_read_header"].values)==len(timestamp_csv)) 
+        test_level1_1 = (len(np.unique(audio_metadata["duration"].values[~pd.isna(audio_metadata["duration"].values)]))==1)        
+        list_tests_level0 =  [test_level0_1 , test_level0_2 , test_level0_3]
+        list_tests_level1 =  [test_level1_1]
 
         # write resume_test_anomalies.txt
         if resume_test_anomalies.exists():
             status_text='w'
         else:
             status_text='a'                
-        lines = ["Anomalies of level 1", f"- Test 1 : {test_level1_1}", f"- Test 2 : {test_level1_2}","---------------------","Anomalies of level 0", f"- Test 1 : {test_level0_1}", f"- Test 2 : {test_level0_2}"]
+        lines = ["Anomalies of level 0", f"- Test 1 : {test_level0_1}", f"- Test 2 : {test_level0_2}", f"- Test 3 : {test_level0_3}","---------------------","Anomalies of level 1", f"- Test 1 : {test_level1_1}"]
         lines = [ll.replace('False','FAILED').replace('True','PASSED') for ll in lines]
         
         with open(resume_test_anomalies, status_text) as f:
             f.write('\n'.join(lines))                  
         
         # write messages in prompt for user
-        if (len(list_tests_level1)-sum(list_tests_level1)>0):# if presence of anomalies of level 1
-            print(f"\n\n Your dataset failed {len(list_tests_level1)-sum(list_tests_level1)} anomaly test of level 1 (over {len(list_tests_level1)}); see details below. \n Anomalies of level 1 block dataset uploading as long as they are present. Please correct your anomalies first, and try uploading it again after. \n You can inspect your metadata saved here {path_raw_audio.joinpath('file_metadata.csv')} using the notebook metadata_analyzer.ipynb, and work on your anomalies using the notebook dataset_anomaly_cleaner.ipynb.")                   
+        if (len(list_tests_level0)-sum(list_tests_level0)>0):# if presence of anomalies of level 0
+            print(f"\n\n Your dataset failed {len(list_tests_level0)-sum(list_tests_level0)} anomaly test of level 0 (over {len(list_tests_level0)}); see details below. \n Anomalies of level 0 block dataset uploading as long as they are present. Please correct your anomalies first, and try uploading it again after. \n You can inspect your metadata saved here {path_raw_audio.joinpath('file_metadata.csv')} using the notebook /home/datawork-osmose/osmose-datarmor/notebooks/metadata_analyzer.ipynb.")                   
 
-            if len(list_tests_level0)-sum(list_tests_level0)>0:# if also presence of anomalies of level 0
-                print(f"\n Your dataset also failed {len(list_tests_level0)-sum(list_tests_level0)} anomaly test of level 0 (over {len(list_tests_level0)}).")
-
-            with open(resume_test_anomalies) as f: 
-                print(f.read())
-                    
-        elif (len(list_tests_level0)-sum(list_tests_level0)>0) and not force_upload:# if presence of anomalies of level 0
-            print(f"\n\n Your dataset failed {len(list_tests_level0)-sum(list_tests_level0)} anomaly test of level 0 (over {len(list_tests_level0)}); see details below. \n  Anomalies of level 0 block dataset uploading, but anyone can force it by setting the variable `force_upload` to True. \n You can inspect your metadata saved here {path_raw_audio.joinpath('file_metadata.csv')} using the notebook metadata_analyzer.ipynb. \n")              
+            if len(list_tests_level1)-sum(list_tests_level1)>0:# if also presence of anomalies of level 1
+                print(f"\n Your dataset also failed {len(list_tests_level1)-sum(list_tests_level1)} anomaly test of level 1 (over {len(list_tests_level1)}).")
 
             with open(resume_test_anomalies) as f: 
                 print(f.read())
+            
+            # we remove timestamp.csv here to force its recreation as we may have changed the filenames during a first pass (eg - transformed into _)
+            os.remove(path_raw_audio.joinpath("timestamp.csv"))
+            
+        elif (len(list_tests_level1)-sum(list_tests_level1)>0) and not force_upload:# if presence of anomalies of level 1
+            print(f"\n\n Your dataset failed {len(list_tests_level1)-sum(list_tests_level1)} anomaly test of level 1 (over {len(list_tests_level1)}); see details below. \n  Anomalies of level 1 block dataset uploading, but anyone can force it by setting the variable `force_upload` to True. \n You can inspect your metadata saved here {path_raw_audio.joinpath('file_metadata.csv')} using the notebook  /home/datawork-osmose/osmose-datarmor/notebooks/metadata_analyzer.ipynb. \n")              
 
+            with open(resume_test_anomalies) as f: 
+                print(f.read())
+
+            os.remove(path_raw_audio.joinpath("timestamp.csv"))
+            
         else:# no anomalies
 
-            # rebuild the timestamp.csv file (really necessary ?) and set permissions
-            df = pd.DataFrame({"filename": audio_metadata["filename"].values, "timestamp": audio_metadata["timestamp"].values})
+            # rebuild the timestamp.csv file (necessary as we might have changed filenames) and set permissions
+            df = pd.DataFrame({"filename": audio_metadata["filename"].values, "timestamp": audio_metadata["timestamp"].values, "timezone":timezone_csv})
             df.sort_values(by=["timestamp"], inplace=True)
             df.to_csv(
                 path_raw_audio.joinpath("timestamp.csv"),
@@ -534,6 +543,7 @@ class Dataset:
         """
         path_raw_audio = self.path.joinpath(OSMOSE_PATH.raw_audio)
         audio_files = []
+        parent_dir_list=[]
         timestamp_files = []
 
         make_path(path_raw_audio.joinpath("original"), mode=DPDEFAULT)
@@ -543,6 +553,9 @@ class Dataset:
                 if not Path(f).parent == "original":
                     if f.endswith((".wav",".WAV","*.mp3",".*flac")):
                         audio_files.append(Path(path,f))
+                        if str(Path(path,f).parent) != str(self.path):
+                            parent_dir_list.append(Path(path,f).parent) if Path(path,f).parent not in parent_dir_list else parent_dir_list
+                        
                     elif "timestamp.csv" in f:
                         timestamp_files.append(Path(path,f))
         
@@ -561,9 +574,15 @@ class Dataset:
         for audio in audio_files:
             audio.rename(path_raw_audio.joinpath("original",audio.name))
             os.chmod(path_raw_audio.joinpath("original",audio.name), mode=FPDEFAULT)
-            if len(os.listdir(audio.parent)) == 0:
-                self.path.joinpath(audio.parent).rmdir()
-
+            
+        for parent_dir in parent_dir_list:
+            if len(os.listdir(parent_dir))==0:
+                print(f'- Removing your subfolder: {parent_dir}, but be aware that you had the following non-wav data in your subfolder {parent_dir}: {os.listdir(parent_dir)} \n')
+            else:
+                print(f'- Removing your subfolder: {parent_dir}\n')
+                
+            print(f'shutil.rmtree({parent_dir})')
+            
         return path_raw_audio.joinpath("original")
         # if any(
         #     file.endswith(".wav") for file in os.listdir(self.path)

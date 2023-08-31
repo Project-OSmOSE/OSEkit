@@ -878,7 +878,7 @@ class Spectrogram(Dataset):
                 process.join()
 
 
-        metadata["dataset_fileDuration"] = self.spectro_duration
+        metadata["audio_file_dataset_duration"] = self.spectro_duration
         metadata["dataset_sr"] = self.dataset_sr
         new_meta_path = self.audio_path.joinpath("metadata.csv")
         if new_meta_path.exists():
