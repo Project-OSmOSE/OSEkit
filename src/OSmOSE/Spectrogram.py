@@ -1576,12 +1576,15 @@ class Spectrogram(Dataset):
                     self.generate_and_save_LTAS(time_periods[ind_group_LTAS].to_timestamp(),ending_timestamp,Freq,log_spectro,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_{time_periods[ind_group_LTAS]}.png'),time_scale)
 
                     
-    def build_SPL_filtered(self,time_resolution:str,Freq_min:int=0, Freq_max:int=None):
+    def build_SPL_filtered(self,time_resolution:str,Freq_min: Union[list, int]=[0], Freq_max: Union[list, int]=None):
         
         # assign default value for Freq_max, equivalent to no HF filtering
-        if Freq_max==None:
-            Freq_max = self.dataset_sr/2
-        
+        if (Freq_max==None) or (not isinstance(Freq_min,list)):
+            Freq_max = [self.dataset_sr/2]      
+
+        if not isinstance(Freq_min,list):
+            Freq_min = [Freq_min]      
+                                
         list_npz_files = list(self.path_output_welch.joinpath(time_resolution).glob('*npz'))
         if len(list_npz_files) == 0:            
             raise FileNotFoundError(
@@ -1610,13 +1613,8 @@ class Spectrogram(Dataset):
             df.set_index('time', inplace=True, drop= True)
             df.index = pd.to_datetime(df.index)      
 
-            pre_SPL = np.mean(df.values[:,np.argmin(abs(Freq-Freq_min)) : np.argmin(abs(Freq-Freq_max))],1)
+            time_vector = pd.date_range(df.index[0],df.index[-1],periods=df.values.shape[0])
             
-            if self.spectro_normalization == "density":
-                SPL_filtered = 10 * np.log10((pre_SPL / (1e-12)) + (1e-20))
-            if self.spectro_normalization == "spectrum":
-                SPL_filtered = 10 * np.log10(pre_SPL + (1e-20))
-                                    
             # Plotting SPL
             my_dpi = 100
             fact_x = 1.3
@@ -1626,24 +1624,35 @@ class Spectrogram(Dataset):
                 ncols=1,
                 figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi),
                 dpi=my_dpi,
-            )            
+            )       
             
-            plt.plot(np.arange(0,len(SPL_filtered)) , SPL_filtered)
-            
-            # write custom ylabel
-            if (Freq_min!=0) or (Freq_max!=self.dataset_sr):
-                plt.ylabel(f"SPL (dB) within [{Freq_min}-{Freq_max}] Hz")
-            else:
-                plt.ylabel("SPL (dB)")
 
+            lst_legend=[]
+            for cur_freq_min,cur_freq_max in zip(Freq_min,Freq_max):
+                pre_SPL = np.mean(df.values[:,np.argmin(abs(Freq-cur_freq_min)) : np.argmin(abs(Freq-cur_freq_max))],1)
+                
+                if self.spectro_normalization == "density":
+                    SPL_filtered = 10 * np.log10((pre_SPL / (1e-12)) + (1e-20))
+                if self.spectro_normalization == "spectrum":
+                    SPL_filtered = 10 * np.log10(pre_SPL + (1e-20))
+
+                plt.plot(np.arange(0,len(SPL_filtered)) , SPL_filtered)
+                plt.autoscale(enable=True, axis='x', tight=True)
+                
+                lst_legend.append(f'[{cur_freq_min}-{cur_freq_max}] Hz')
+                
+                output_file_npz = self.path.joinpath(OSMOSE_PATH.SPLfiltered,f'SPLfiltered_{cur_freq_min}_{cur_freq_max}.npz')
+                np.savez(output_file_npz,SPL=SPL_filtered,time=time_vector,allow_pickle=True)                    
+            
+            plt.ylabel("SPL (dB)")
+            plt.legend(lst_legend)
+            
             # write proper timestamps as xitck_labels
             nber_xticks = min(10,len(SPL_filtered))                 
             if (df.index[-1] - df.index[0]).days>7:
                 label_smoother = 'D'
             else:
                 label_smoother = 'H'      
-                
-            time_vector = pd.date_range(df.index[0],df.index[-1],periods=len(SPL_filtered))
             date = time_vector.to_period(label_smoother)  
         
             int_sep = int(len(date) / nber_xticks)
@@ -1656,8 +1665,7 @@ class Spectrogram(Dataset):
             plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
             plt.close()
 
-            output_file_npz=output_file.with_suffix('.npz')
-            np.savez(output_file_npz,SPL=SPL_filtered,time=time_vector,allow_pickle=True)        
+    
         
         
      
