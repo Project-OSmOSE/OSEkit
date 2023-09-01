@@ -200,7 +200,7 @@ class Spectrogram(Dataset):
         self.data_normalization: str = (
             analysis_sheet["data_normalization"][0]
             if "data_normalization" in analysis_sheet
-            else "zscore"
+            else "instrument"
         )
         self.gain_dB: float = (
             analysis_sheet["gain_dB"][0]
@@ -1610,8 +1610,13 @@ class Spectrogram(Dataset):
             df.set_index('time', inplace=True, drop= True)
             df.index = pd.to_datetime(df.index)      
 
-            SPL_filtered = np.mean(df.values[:,np.argmin(abs(Freq-Freq_min)) : np.argmin(abs(Freq-Freq_max))],1)
+            pre_SPL = np.mean(df.values[:,np.argmin(abs(Freq-Freq_min)) : np.argmin(abs(Freq-Freq_max))],1)
             
+            if self.spectro_normalization == "density":
+                SPL_filtered = 10 * np.log10((pre_SPL / (1e-12)) + (1e-20))
+            if self.spectro_normalization == "spectrum":
+                SPL_filtered = 10 * np.log10(pre_SPL + (1e-20))
+                                    
             # Plotting SPL
             my_dpi = 100
             fact_x = 1.3
@@ -1636,8 +1641,11 @@ class Spectrogram(Dataset):
             if (df.index[-1] - df.index[0]).days>7:
                 label_smoother = 'D'
             else:
-                label_smoother = 'H'                
-            date = pd.date_range(df.index[0],df.index[-1],periods=len(SPL_filtered)).to_period(label_smoother)  
+                label_smoother = 'H'      
+                
+            time_vector = pd.date_range(df.index[0],df.index[-1],periods=len(SPL_filtered))
+            date = time_vector.to_period(label_smoother)  
+        
             int_sep = int(len(date) / nber_xticks)
             plt.xticks(np.arange(0, len(date), int_sep), date[::int_sep])
             ax.tick_params(axis='x', rotation=20)        
@@ -1647,6 +1655,10 @@ class Spectrogram(Dataset):
             print('saving',output_file.name, '/ Nber of time points:',str(len(SPL_filtered)))
             plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
             plt.close()
+
+            output_file_npz=output_file.with_suffix('.npz')
+            np.savez(output_file_npz,SPL=SPL_filtered,time=time_vector,allow_pickle=True)        
+        
         
      
     def generate_and_save_LTAS(
@@ -1687,6 +1699,9 @@ class Spectrogram(Dataset):
         print('saving',output_file.name, '/ Nber of welch:',str(log_spectro.shape[1]))
         plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
         plt.close()
+        
+        output_file_npz=output_file.with_suffix('.npz')
+        np.savez(output_file_npz,LTAS=log_spectro,time=time_vector,Freq=freq,allow_pickle=True)        
         
         
     def build_EPD(self,time_resolution:str):
