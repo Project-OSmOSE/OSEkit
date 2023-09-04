@@ -502,7 +502,7 @@ class Dataset:
                 "start_date": timestamp_csv[0],
                 "end_date": timestamp_csv[-1],
                 # "duty_cycle": dutyCycle_percent,
-                "audio_file_origin_duration": round(mean(audio_metadata["duration"].values), 2),
+                "audio_file_origin_duration": int(round(mean(audio_metadata["duration"].values), 2)),
                 "audio_file_origin_volume": mean(audio_metadata["size"].values),
                 "dataset_origin_volume": round(sum(audio_metadata["size"].values),1),
                 "dataset_origin_duration": round(sum(audio_metadata["duration"].values),2,),
