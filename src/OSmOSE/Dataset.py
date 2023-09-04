@@ -246,6 +246,7 @@ class Dataset:
         bare_check: bool = False,
         auto_normalization: bool = False,
         force_upload: bool = False,
+        number_test_bad_files: int = 1
     ) -> Path:
         """
         Set up the architecture of the dataset.
@@ -348,9 +349,11 @@ class Dataset:
         if not bare_check:
             number_bad_files = check_n_files(
                 audio_file_list,
-                4,
+                number_test_bad_files,
                 auto_normalization=auto_normalization,
             )
+        else: 
+            number_bad_files = 0
 
         for ind_dt in tqdm(range(len(timestamp_csv)), desc='Scanning audio files'):
             audio_file = audio_file_list[ind_dt]
