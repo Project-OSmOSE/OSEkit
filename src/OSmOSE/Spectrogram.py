@@ -200,7 +200,7 @@ class Spectrogram(Dataset):
         self.data_normalization: str = (
             analysis_sheet["data_normalization"][0]
             if "data_normalization" in analysis_sheet
-            else "instrument"
+            else "zscore"
         )
         self.gain_dB: float = (
             analysis_sheet["gain_dB"][0]
@@ -893,7 +893,7 @@ class Spectrogram(Dataset):
             "window_size": self.window_size,
             "overlap": self.overlap,
             "colormap": self.colormap,
-            "zoom_level": self.zoom_level + 1,
+            "zoom_level": self.zoom_level ,
             "number_adjustment_spectrogram": self.number_adjustment_spectrogram,
             "dynamic_min": self.dynamic_min,
             "dynamic_max": self.dynamic_max,
@@ -965,7 +965,7 @@ class Spectrogram(Dataset):
             "window_size": self.window_size,
             "overlap": self.overlap,
             "colormap": self.colormap,
-            "zoom_level": self.zoom_level + 1,
+            "zoom_level": self.zoom_level ,
             "number_adjustment_spectrogram": self.number_adjustment_spectrogram,
             "dynamic_min": self.dynamic_min,
             "dynamic_max": self.dynamic_max,
@@ -999,39 +999,6 @@ class Spectrogram(Dataset):
             os.chmod(filename, mode=DPDEFAULT)
             return True
         return False
-
-    def to_csv(self, filename: Path) -> None:
-        """Outputs the characteristics of the spectrogram the specified file in csv format.
-
-        Parameter
-        ---------
-        filename: Path
-            The path of the file to be written."""
-
-        data = {
-            "name": self.__spectro_foldername,
-            "nfft": self.nfft,
-            "window_size": self.window_size,
-            "overlap": self.overlap / 100,
-            "zoom_level": 2 ** (self.zoom_level - 1),
-            # "dynamic_min": self.dynamic_min,
-            # "dynamic_max": self.dynamic_max,
-            # "number_adjustment_spectrogram": self.number_adjustment_spectrogram,
-            # "spectro_duration": self.spectro_duration,
-            # "zscore_duration": self.zscore_duration,
-            # "hp_filter_min_freq": self.hp_filter_min_freq,
-            # "sensitivity_dB": 20 * log10(self.sensitivity / 1e6),
-            # "peak_voltage": self.peak_voltage,
-            # "spectro_normalization": self.spectro_normalization,
-            # "data_normalization": self.data_normalization,
-            # "gain_dB": self.gain_dB
-        }
-        # TODO: readd `, 'cvr_max':self.dynamic_max, 'cvr_min':self.dynamic_min` above when ok with Aplose
-        df = pd.DataFrame.from_records([data])
-        df.to_csv(filename, index=False)
-        os.chmod(filename, mode=FPDEFAULT)
-
-    # region On cluster
 
     def process_file(
         self, audio_file: Union[str, Path], *, adjust: bool = False, save_matrix: bool = False,save_for_LTAS:bool=True, overwrite: bool = False, clean_adjust_folder: bool = False
@@ -1169,15 +1136,16 @@ class Spectrogram(Dataset):
             if (len(self.zscore_duration) > 0) and (self.zscore_duration != "original"):
                 data = (data - self.__zscore_mean) / self.__zscore_std
             elif self.zscore_duration == "original":
+                print('apply zscore original')
                 data = (data - np.mean(data)) / np.std(data)
 
             print(f"data mean : {np.mean(data)} and std : {np.std(data)}")
 
         duration = len(data) / int(sample_rate)
 
-        nber_tiles_lowest_zoom_level = 2 ** (self.zoom_level -1)
+        nber_tiles_lowest_zoom_level = 2 ** self.zoom_level
         tile_duration = duration / nber_tiles_lowest_zoom_level
-
+        
         audio_file_name = output_file.stem        
         current_timestamp = pd.to_datetime(get_timestamp_of_audio_file( self.audio_path.joinpath('timestamp.csv') , audio_file_name+".wav"))            
         list_timestamps = []
@@ -1233,11 +1201,11 @@ class Spectrogram(Dataset):
                 os.chmod(output_matrix, mode=FPDEFAULT)                  
 
         # loop over the zoom levels from the second lowest to the highest one
-        for zoom_level in range(self.zoom_level)[::-1]: #zoom_level + 1
+        for zoom_level in range(self.zoom_level+1)[::-1]:
             nberspec = Sxx_complete_lowest_level.shape[1] // (2**zoom_level)
 
             # loop over the tiles at each zoom level
-            for tile in range(2**zoom_level):
+            for tile in range(2**zoom_level):                
                 Sxx_int = Sxx_complete_lowest_level[:, tile * nberspec : (tile + 1) * nberspec][
                     :, :: 2 ** (self.zoom_level - zoom_level)
                 ]
@@ -1357,7 +1325,6 @@ class Spectrogram(Dataset):
                 output_file.name
             ).with_suffix(".npz")
 
-            # TODO: add an option to force regeneration (in case of corrupted file)
             if not output_matrix.exists():
                 np.savez(
                     output_matrix,
@@ -1403,6 +1370,7 @@ class Spectrogram(Dataset):
             dpi=my_dpi,
         )
 
+        print(f"shape spectro: {np.shape(log_spectro)}")
         print(f"Log spectro: {np.amin(log_spectro)}-{np.amax(log_spectro)}\nDynamic: {self.dynamic_min}-{self.dynamic_max}")
 
         color_map = plt.cm.get_cmap(self.colormap)  # .reversed()
@@ -1470,9 +1438,12 @@ class Spectrogram(Dataset):
         kwargs = {"save_matrix": save_matrix,"save_for_LTAS":save_for_LTAS}
 
         map_process_file = partial(self.process_file, **kwargs)
-
-        with mp.Pool(processes=mp.cpu_count()) as pool:
-            pool.map(map_process_file, self.list_wav_to_process)
+        
+        for ll in self.list_wav_to_process:
+            self.process_file(ll)
+        
+        # with mp.Pool(processes=mp.cpu_count()) as pool:
+        #     pool.map(map_process_file, self.list_wav_to_process)
 
 
     def save_all_welch(self,list_npz_files:list,path_all_welch: Path):

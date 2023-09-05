@@ -332,8 +332,6 @@ def get_files(path,extensions):
     return all_files
 
 
-
-
 # TO DO : function not optimized in case you use it in a for loop , because it will reload .csv for each audiofile , should
 # be able to take as input the already loaded timestamps
 def get_timestamp_of_audio_file(path_timestamp_file:Path,audio_file_name:str) -> str:
