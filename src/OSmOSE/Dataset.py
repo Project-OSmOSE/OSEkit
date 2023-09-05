@@ -337,7 +337,6 @@ class Dataset:
         # read the timestamp.csv file
         timestamp_csv = pd.read_csv(path_timestamp_formatted, header=None)[1].values
         filename_csv = pd.read_csv(path_timestamp_formatted, header=None)[0].values
-        timezone_csv = pd.read_csv(path_timestamp_formatted, header=None)[2].values
         
         # intialize the dataframe to collect audio metadata from header
         audio_metadata = pd.DataFrame(columns = ["filename", "timestamp","duration",
@@ -457,7 +456,7 @@ class Dataset:
         else:# no anomalies
 
             # rebuild the timestamp.csv file (necessary as we might have changed filenames) and set permissions
-            df = pd.DataFrame({"filename": audio_metadata["filename"].values, "timestamp": audio_metadata["timestamp"].values, "timezone":timezone_csv})
+            df = pd.DataFrame({"filename": audio_metadata["filename"].values, "timestamp": audio_metadata["timestamp"].values})
             df.sort_values(by=["timestamp"], inplace=True)
             df.to_csv(
                 path_raw_audio.joinpath("timestamp.csv"),
