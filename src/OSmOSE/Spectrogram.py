@@ -223,6 +223,10 @@ class Spectrogram(Dataset):
             if analysis_sheet is not None
             else [0] * self.zoom_level
         )
+            
+        self.audio_file_overlap: int = (
+            analysis_sheet["audio_file_overlap"][0] if "audio_file_overlap" in analysis_sheet else 0
+        )            
 
         self.jb = Job_builder()
 
@@ -291,7 +295,7 @@ class Spectrogram(Dataset):
     def zoom_level(self):
         """int: Number of zoom levels."""
         return self.__zoom_level
-
+        
     @zoom_level.setter
     def zoom_level(self, value: int):
         self.__zoom_level = value
@@ -322,7 +326,12 @@ class Spectrogram(Dataset):
     @number_adjustment_spectrogram.setter
     def number_adjustment_spectrogram(self, value: int):
         self.__number_adjustment_spectrogram = value
-
+    
+    @property
+    def audio_file_overlap(self):
+        """int: Overlap between segmented audio files."""
+        return self.__audio_file_overlap
+    
     @property
     def spectro_duration(self):
         """int: Duration of the spectrogram (at the lowest zoom level) in seconds."""
@@ -332,6 +341,13 @@ class Spectrogram(Dataset):
     def spectro_duration(self, value: int):
         self.__spectro_duration = value
 
+    @audio_file_overlap.setter
+    def audio_file_overlap(self, value: int):
+        if value < self.spectro_duration:
+            self.__audio_file_overlap = value
+        else:
+            raise ValueError('Segmented audio file overlapping value must be smaller than spectro_duration')
+            
     @property
     def zscore_duration(self):
         return self.__zscore_duration
@@ -708,13 +724,13 @@ class Spectrogram(Dataset):
                 next_offset_beginning = 0
                 offset_end = 0
                 i_max = -1
-
+                
                 for batch in range(self.batch_number):
                     
                     if i_max >= len(self.list_wav_to_process) - 1:
                         continue
 
-                    offset_beginning = next_offset_beginning
+                    offset_beginning = next_offset_beginning 
                     next_offset_beginning = 0
 
                     i_min = i_max + (1 if not offset_beginning else 0)
@@ -755,7 +771,7 @@ class Spectrogram(Dataset):
                             next_offset_beginning = audio_file_origin_duration - offset_end
                         else:
                             offset_end = 0  # ? ack
-
+                            
                     if self.__local:
                         process = mp.Process(
                             target=reshape,
@@ -769,7 +785,8 @@ class Spectrogram(Dataset):
                                 "batch_ind_max": i_max,
                                 "last_file_behavior": last_file_behavior,
                                 "timestamp_path": self.path_input_audio_file.joinpath("timestamp.csv"),
-                                "merge_files": merge_on_reshape
+                                "merge_files": merge_on_reshape,
+                                "audio_file_overlap": self.audio_file_overlap
                             },
                         )
 
@@ -778,7 +795,7 @@ class Spectrogram(Dataset):
                     else:
                         self.jb.build_job_file(
                             script_path=Path(inspect.getfile(reshape)).resolve(),
-                            script_args=f"--input-files {input_files} --chunk-size {int(self.spectro_duration)} --batch-ind-min {i_min}\
+                            script_args=f"--input-files {input_files} --chunk-size {int(self.spectro_duration)} --audio-file-overlap {int(self.audio_file_overlap)} --batch-ind-min {i_min}\
                                         --batch-ind-max {i_max} --output-dir {self.audio_path} --timestamp-path {self.path_input_audio_file.joinpath('timestamp.csv')}\
                                         --offset-beginning {int(offset_beginning)} --offset-end {int(offset_end)}\
                                         --last-file-behavior {last_file_behavior} {'--force' if force_init else ''}\
@@ -842,11 +859,12 @@ class Spectrogram(Dataset):
                     if batch < self.batch_number - 1
                     else len(self.list_wav_to_process)
                 )  # If it is the last batch, take all files
+
                 if self.__local:
                     process = mp.Process(
                         target=compute_stats,
                         kwargs={
-                            "input_dir": self.path_input_audio_file,
+                            "input_dir": self.audio_path,
                             "output_file": self.path.joinpath(
                                 OSMOSE_PATH.statistics,
                                 "SummaryStats_" + str(i_min) + ".csv",
@@ -1132,6 +1150,7 @@ class Spectrogram(Dataset):
             The sample rate of the audio data.
         output_file : `str`
             The name of the output spectrogram."""
+        
         if self.data_normalization == "zscore" and self.zscore_duration:
             if (len(self.zscore_duration) > 0) and (self.zscore_duration != "original"):
                 data = (data - self.__zscore_mean) / self.__zscore_std
