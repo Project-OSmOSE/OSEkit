@@ -223,6 +223,10 @@ class Spectrogram(Dataset):
             if analysis_sheet is not None
             else [0] * self.zoom_level
         )
+            
+        self.audio_file_overlap: int = (
+            analysis_sheet["audio_file_overlap"][0] if "audio_file_overlap" in analysis_sheet else 0
+        )            
 
         self.jb = Job_builder()
 
@@ -291,7 +295,7 @@ class Spectrogram(Dataset):
     def zoom_level(self):
         """int: Number of zoom levels."""
         return self.__zoom_level
-
+        
     @zoom_level.setter
     def zoom_level(self, value: int):
         self.__zoom_level = value
@@ -322,7 +326,12 @@ class Spectrogram(Dataset):
     @number_adjustment_spectrogram.setter
     def number_adjustment_spectrogram(self, value: int):
         self.__number_adjustment_spectrogram = value
-
+    
+    @property
+    def audio_file_overlap(self):
+        """int: Overlap between segmented audio files."""
+        return self.__audio_file_overlap
+    
     @property
     def spectro_duration(self):
         """int: Duration of the spectrogram (at the lowest zoom level) in seconds."""
@@ -332,6 +341,13 @@ class Spectrogram(Dataset):
     def spectro_duration(self, value: int):
         self.__spectro_duration = value
 
+    @audio_file_overlap.setter
+    def audio_file_overlap(self, value: int):
+        if value < self.spectro_duration:
+            self.__audio_file_overlap = value
+        else:
+            raise ValueError('Segmented audio file overlapping value must be smaller than spectro_duration')
+            
     @property
     def zscore_duration(self):
         return self.__zscore_duration
@@ -519,7 +535,6 @@ class Spectrogram(Dataset):
         force_init: bool = False,
         date_template: str = None,
         merge_on_reshape: bool = True,
-        offset_overlap: int = 0,
         last_file_behavior: Literal["pad","truncate","discard"] = "pad"
     ) -> None:
         """Prepares everything (path, variables, files) for spectrogram generation. This needs to be run before the spectrograms are generated.
@@ -771,7 +786,7 @@ class Spectrogram(Dataset):
                                 "last_file_behavior": last_file_behavior,
                                 "timestamp_path": self.path_input_audio_file.joinpath("timestamp.csv"),
                                 "merge_files": merge_on_reshape,
-                                "offset_overlap": offset_overlap
+                                "audio_file_overlap": self.audio_file_overlap
                             },
                         )
 
@@ -780,7 +795,7 @@ class Spectrogram(Dataset):
                     else:
                         self.jb.build_job_file(
                             script_path=Path(inspect.getfile(reshape)).resolve(),
-                            script_args=f"--input-files {input_files} --chunk-size {int(self.spectro_duration)} --offset-overlap {int(offset_overlap)} --batch-ind-min {i_min}\
+                            script_args=f"--input-files {input_files} --chunk-size {int(self.spectro_duration)} --audio-file-overlap {int(self.audio_file_overlap)} --batch-ind-min {i_min}\
                                         --batch-ind-max {i_max} --output-dir {self.audio_path} --timestamp-path {self.path_input_audio_file.joinpath('timestamp.csv')}\
                                         --offset-beginning {int(offset_beginning)} --offset-end {int(offset_end)}\
                                         --last-file-behavior {last_file_behavior} {'--force' if force_init else ''}\

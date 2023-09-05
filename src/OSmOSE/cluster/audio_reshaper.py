@@ -66,7 +66,7 @@ def reshape(
     overwrite: bool = True,
     force_reshape: bool = False,
     merge_files: bool = True,
-    offset_overlap: int = 0    
+    audio_file_overlap: int = 0    
 ) -> List[str]:
     """Reshape all audio files in the folder to be of the specified duration. If chunk_size is superior to the base duration of the files, they will be fused according to their order in the timestamp.csv file in the same folder.
 
@@ -260,9 +260,9 @@ def reshape(
                     datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
                 )
 
-                if (offset_overlap>0):
-                    previous_audio_data = np.concatenate((output[- offset_overlap * sample_rate :], previous_audio_data))                     
-                    timestamp += timedelta(seconds=chunk_size-offset_overlap)
+                if (audio_file_overlap>0):
+                    previous_audio_data = np.concatenate((output[- audio_file_overlap * sample_rate :], previous_audio_data))                     
+                    timestamp += timedelta(seconds=chunk_size-audio_file_overlap)
                 else:
                     timestamp += timedelta(seconds=chunk_size)
 
@@ -582,7 +582,13 @@ if __name__ == "__main__":
         action="store_false",
         help="Don't try to merge the reshaped files."
     ) # When absent = we merge file; when present = we don't merge -> merge_file is False
-
+    parser.add_argument(
+        "--audio-file-overlap",
+        type=int,
+        default=0,
+        help="Overlap between audio files after segmentation. Default is 0, meaning no overlap.",
+    )
+    
     args = parser.parse_args()
 
     input_files = (
@@ -607,7 +613,8 @@ if __name__ == "__main__":
         verbose=args.verbose,
         overwrite=args.overwrite,
         force_reshape=args.force,
-        merge_files=args.no_merge
+        merge_files=args.no_merge,
+        audio_file_overlap=args.audio_file_overlap
     )
 
     if args.verbose:
