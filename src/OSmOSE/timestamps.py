@@ -121,8 +121,7 @@ def write_timestamp(
     df.to_csv(
         Path(audio_path, "timestamp.csv"),
         index=False,
-        na_rep="NaN",
-        header=None
+        na_rep="NaN"
     )
     os.chmod(Path(audio_path, "timestamp.csv"), mode=FPDEFAULT)
 

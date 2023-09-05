@@ -168,9 +168,7 @@ def reshape(
     make_path(output_dir_path, mode=DPDEFAULT)
 
     input_timestamp = pd.read_csv(
-        timestamp_path if timestamp_path and timestamp_path.exists() else input_dir_path.joinpath("timestamp.csv"),
-        header=None,
-        names=["filename", "timestamp", "timezone"],
+        timestamp_path if timestamp_path and timestamp_path.exists() else input_dir_path.joinpath("timestamp.csv")
     )
 
 
@@ -473,19 +471,18 @@ def reshape(
     with lock:
         # suppr doublons
         if path_csv.exists():
-            tmp_timestamp = pd.read_csv(path_csv, header=None)
-            result += list(tmp_timestamp[0].values)
-            timestamp_list += list(tmp_timestamp[1].values)
+            tmp_timestamp = pd.read_csv(path_csv)
+            result += list(tmp_timestamp["filename"].values)
+            timestamp_list += list(tmp_timestamp["timestamp"].values)
 
         input_timestamp = pd.DataFrame(
-            {"filename": result, "timestamp": timestamp_list,}# "timezone": "UTC"}
+            {"filename": result, "timestamp": timestamp_list}
         )
         input_timestamp.sort_values(by=["timestamp"], inplace=True)
         input_timestamp.drop_duplicates().to_csv(
             path_csv,
             index=False,
-            na_rep="NaN",
-            header=None,
+            na_rep="NaN"
         )
         os.chmod(path_csv, mode=FPDEFAULT)
 

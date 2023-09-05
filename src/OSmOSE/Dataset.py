@@ -335,8 +335,8 @@ class Dataset:
                 write_timestamp(audio_path=path_raw_audio, date_template=date_template, verbose=False)
 
         # read the timestamp.csv file
-        timestamp_csv = pd.read_csv(path_timestamp_formatted, header=None)[1].values
-        filename_csv = pd.read_csv(path_timestamp_formatted, header=None)[0].values
+        timestamp_csv = pd.read_csv(path_timestamp_formatted)["timestamp"].values
+        filename_csv = pd.read_csv(path_timestamp_formatted)["filename"].values
         
         # intialize the dataframe to collect audio metadata from header
         audio_metadata = pd.DataFrame(columns = ["filename", "timestamp","duration",
@@ -460,8 +460,7 @@ class Dataset:
             df.sort_values(by=["timestamp"], inplace=True)
             df.to_csv(
                 path_raw_audio.joinpath("timestamp.csv"),
-                index=False,
-                header=None
+                index=False
             )
 
             os.chmod(path_raw_audio.joinpath("timestamp.csv"), mode=FPDEFAULT)
