@@ -48,6 +48,7 @@ def write_timestamp(
     *,
     audio_path: str,
     date_template: str,
+    timezone: str,
     offset: tuple = None,
     verbose: bool = False 
 ):
@@ -100,10 +101,9 @@ def write_timestamp(
         except TypeError:
             raise ValueError(f"The date template does not match any set of character in the file name {filename}\nMake sure you are not forgetting separator characters, or use the offset parameter.")
 
-        date_obj = datetime.datetime.strptime(date_extracted, date_template)
-        dates = datetime.datetime.strftime(date_obj, "%Y-%m-%dT%H:%M:%S.%f")
+        date_obj = datetime.datetime.strptime(date_extracted+timezone, date_template+'%z')
+        dates_final = datetime.datetime.strftime(date_obj,'%Y-%m-%dT%H:%M:%S.%f%z')
 
-        dates_final = dates[:-3] + "Z"
         if i ==10:
             print(f"Timestamp extraction seems OK, here is an example: {filename.name} -> {dates_final} \n")
         elif verbose:

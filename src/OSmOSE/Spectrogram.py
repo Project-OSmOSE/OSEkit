@@ -213,16 +213,6 @@ class Spectrogram(Dataset):
             if "window_type" in analysis_sheet
             else "hamming"
         )
-
-        self.time_resolution: List[float] = (
-            [
-                analysis_sheet[col][0]
-                for col in analysis_sheet
-                if "time_resolution" in col
-            ]
-            if analysis_sheet is not None
-            else [0] * self.zoom_level
-        )
             
         self.audio_file_overlap: int = (
             analysis_sheet["audio_file_overlap"][0] if "audio_file_overlap" in analysis_sheet else 0
@@ -478,6 +468,22 @@ class Spectrogram(Dataset):
                 make_path(self.path_output_spectrogram_matrix, mode=DPDEFAULT)
                 make_path(self.path.joinpath(OSMOSE_PATH.statistics), mode=DPDEFAULT)
 
+    def extract_spectro_params(self):
+
+        tile_duration = self.spectro_duration / 2 ** (self.zoom_level)
+        data = np.zeros([int(tile_duration * self.dataset_sr), 1])
+        Noverlap = int(self.window_size * self.overlap / 100)
+        Nbech = np.size(data)
+        Noffset = self.window_size - Noverlap
+        Nbwin = int((Nbech - self.window_size) / Noffset)
+        Freq = np.fft.rfftfreq(self.nfft, d=1 / self.dataset_sr)
+        Time = np.linspace(0, Nbech / self.dataset_sr, Nbwin)
+        
+        temporal_resolution = round(Time[1] - Time[0], 3)   
+        frequency_resolution  = round(Freq[1] - Freq[0], 3)
+        
+        return  temporal_resolution, frequency_resolution, Nbwin
+
     def check_spectro_size(self):
         """Verify if the parameters will generate a spectrogram that can fit one screen properly"""
         if self.nfft > 2048:
@@ -489,19 +495,9 @@ class Spectrogram(Dataset):
                 )
             )
 
-        tile_duration = self.spectro_duration / 2 ** (self.zoom_level)
+        temporal_resolution, frequency_resolution, Nbwin = self.extract_spectro_params()
 
-        data = np.zeros([int(tile_duration * self.dataset_sr), 1])
-
-        Noverlap = int(self.window_size * self.overlap / 100)
-
-        Nbech = np.size(data)
-        Noffset = self.window_size - Noverlap
-        Nbwin = int((Nbech - self.window_size) / Noffset)
-        Freq = np.fft.rfftfreq(self.nfft, d=1 / self.dataset_sr)
-        Time = np.linspace(0, Nbech / self.dataset_sr, Nbwin)
-
-        print("your smallest tile has a duration of:", tile_duration, "(s)")
+        print("your smallest tile has a duration of:", self.spectro_duration / 2 ** (self.zoom_level), "(s)")
         print("\n")
 
         if Nbwin > 3500:
@@ -517,9 +513,9 @@ class Spectrogram(Dataset):
         print("\n")
         print(
             "your resolutions : time = ",
-            round(Time[1] - Time[0], 3),
+            temporal_resolution,
             "(s) / frequency = ",
-            round(Freq[1] - Freq[0], 3),
+            frequency_resolution,
             "(Hz)",
         )
 
@@ -591,9 +587,23 @@ class Spectrogram(Dataset):
             audio_file.name for audio_file in list_wav_withEvent
         ]
 
+
+        #! INITIALIZATION START
+        # Load variables from raw metadata
+        metadata = pd.read_csv(self.path_input_audio_file.joinpath("metadata.csv"))
+        audio_file_origin_duration = metadata["audio_file_origin_duration"][0]
+        origin_sr = metadata["origin_sr"][0]
+        audio_file_count = metadata["audio_file_count"][0]
+        
+
         if self.data_normalization == "zscore" and self.spectro_normalization != "spectrum":
             self.spectro_normalization = "spectrum"
             print("WARNING: the spectrogram normalization has been changed to spectrum because the data will be normalized using zscore.")
+
+        # when audio_file_overlap has been set to > 0 whereas the dataset is equal to the origin one
+        if self.audio_file_overlap>0 and self.dataset_sr == origin_sr and int(self.spectro_duration) == int(audio_file_origin_duration):
+            self.audio_file_overlap = 0
+            print("WARNING: the audio file overlap has been set to 0 because you work on the origin dataset, so that no segmentation will be done.")
 
         """List containing the last job ids to grab outside of the class."""
         self.pending_jobs = []
@@ -625,12 +635,7 @@ class Spectrogram(Dataset):
                 )
                 return
 
-        #! INITIALIZATION START
-        # Load variables from raw metadata
-        metadata = pd.read_csv(self.path_input_audio_file.joinpath("metadata.csv"))
-        audio_file_origin_duration = metadata["audio_file_origin_duration"][0]
-        origin_sr = metadata["origin_sr"][0]
-        audio_file_count = metadata["audio_file_count"][0]
+
 
         if self.path.joinpath(OSMOSE_PATH.processed, "subset_files.csv").is_file():
             subset = pd.read_csv(
@@ -720,7 +725,7 @@ class Spectrogram(Dataset):
                 nb_reshaped_files = (
                     audio_file_origin_duration * audio_file_count
                 ) / self.spectro_duration
-                metadata["audio_file_count"] = nb_reshaped_files
+                metadata["audio_file_count"] = int(nb_reshaped_files)
                 next_offset_beginning = 0
                 offset_end = 0
                 i_max = -1
@@ -895,14 +900,16 @@ class Spectrogram(Dataset):
             for process in processes:
                 process.join()
 
-
         metadata["audio_file_dataset_duration"] = self.spectro_duration
         metadata["dataset_sr"] = self.dataset_sr
+        metadata["audio_file_dataset_overlap"] = self.audio_file_overlap
         new_meta_path = self.audio_path.joinpath("metadata.csv")
         if new_meta_path.exists():
             new_meta_path.unlink()
         metadata.to_csv(new_meta_path,index=False)
         os.chmod(new_meta_path, mode=FPDEFAULT)
+
+        temporal_resolution, frequency_resolution, Nbwin = self.extract_spectro_params()
 
         data = {
             "dataset_name": self.name,
@@ -925,11 +932,11 @@ class Spectrogram(Dataset):
             "gain_dB": self.gain_dB,
             "zscore_duration": self.zscore_duration,
             "window_type": self.window_type,
-            "frequency_resolution": self.frequency_resolution,
+            "number_spectra": Nbwin,
+            "frequency_resolution": frequency_resolution,
+            "temporal_resolution": temporal_resolution,
+            "audio_file_dataset_overlap": self.audio_file_overlap
         }
-
-        for i, time_res in enumerate(self.time_resolution):
-            data.update({f"time_resolution_{i}": time_res})
 
         analysis_sheet = pd.DataFrame.from_records([data])
 
@@ -976,6 +983,10 @@ class Spectrogram(Dataset):
         
         if not filename.suffix == ".csv":
             raise ValueError("The file must be a .csv file to be updated.")
+
+        temporal_resolution, frequency_resolution, Nbwin = self.extract_spectro_params()
+
+
         new_params = {
             "dataset_name": self.name,
             "dataset_sr": self.dataset_sr,
@@ -997,10 +1008,11 @@ class Spectrogram(Dataset):
             "gain_dB": self.gain_dB,
             "zscore_duration": self.zscore_duration,
             "window_type": self.window_type,
-            "frequency_resolution": self.frequency_resolution,
+            "number_spectra": Nbwin,
+            "frequency_resolution": frequency_resolution,
+            "temporal_resolution": temporal_resolution,
+            "audio_file_dataset_overlap": self.audio_file_overlap
         }
-        for i, time_res in enumerate(self.time_resolution):
-            new_params.update({f"time_resolution_{i}": time_res})
 
         if not filename.exists():
             pd.DataFrame.from_records([new_params]).to_csv(filename, index=False)

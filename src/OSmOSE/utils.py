@@ -208,7 +208,7 @@ def read_header(file: str) -> Tuple[int, float, int, int,int]:
         #         \nSupposed size: {size} bytes \nActual size: {subchunk2size} bytes."
         #     )
 
-        return samplerate, frames, channels, sampwidth,size
+        return samplerate, frames, sampwidth,channels, size
 
 
 def safe_read(

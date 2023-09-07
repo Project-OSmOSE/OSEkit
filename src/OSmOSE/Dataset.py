@@ -37,7 +37,8 @@ class Dataset:
         dataset_path: str,
         *,
         gps_coordinates: Union[str, list, Tuple] = None,
-        depth: Union[str, int] = None,        
+        depth: Union[str, int] = None,  
+        timezone: str = None,
         owner_group: str = None,
         original_folder: str = None,
         local: bool = True,
@@ -77,6 +78,9 @@ class Dataset:
             
         if depth is not None:
             self.depth = depth
+            
+        if timezone is not None:
+            self.timezone = timezone            
             
         self.__original_folder = original_folder
 
@@ -332,7 +336,7 @@ class Dataset:
             if not date_template:
                 raise FileNotFoundError(f"The timestamp.csv file has not been found in {path_raw_audio}. You can create it automatically but to do so you have to set the date template as argument.")
             else:
-                write_timestamp(audio_path=path_raw_audio, date_template=date_template, verbose=False)
+                write_timestamp(audio_path=path_raw_audio, date_template=date_template, timezone=self.timezone, verbose=False)
 
         # read the timestamp.csv file
         timestamp_csv = pd.read_csv(path_timestamp_formatted)["timestamp"].values
@@ -389,8 +393,8 @@ class Dataset:
             # define duration_inter_file; does not have a value for the last timestamp
             if ind_dt > 0:
                 duration_inter_file = (datetime.strptime(
-                    timestamp_csv[ind_dt], "%Y-%m-%dT%H:%M:%S.%fZ"
-                ) - datetime.strptime(timestamp_csv[ind_dt-1], "%Y-%m-%dT%H:%M:%S.%fZ")).total_seconds()
+                    timestamp_csv[ind_dt], '%Y-%m-%dT%H:%M:%S.%f%z'
+                ) - datetime.strptime(timestamp_csv[ind_dt-1], '%Y-%m-%dT%H:%M:%S.%f%z')).total_seconds()
             else:
                 duration_inter_file = None        
 
@@ -503,13 +507,14 @@ class Dataset:
                 "audio_file_origin_duration": int(round(mean(audio_metadata["duration"].values), 2)),
                 "audio_file_origin_volume": mean(audio_metadata["size"].values),
                 "dataset_origin_volume": round(sum(audio_metadata["size"].values),1),
-                "dataset_origin_duration": round(sum(audio_metadata["duration"].values),2,),
+                "dataset_origin_duration": round(sum(audio_metadata["duration"].values)),
                 "is_built": True,
+                "audio_file_dataset_overlap": 0,
             }
             df = pd.DataFrame.from_records([data])
-            if self.gps_coordinates:
-                df["lat"] = self.gps_coordinates[0]
-                df["lon"] = self.gps_coordinates[1]
+            df["lat"] = self.gps_coordinates[0]
+            df["lon"] = self.gps_coordinates[1]
+            df["depth"] = self.depth
             df["dataset_sr"] = int(mean(audio_metadata["origin_sr"].values))
             df["audio_file_dataset_duration"] = int(round(mean(audio_metadata["duration"].values), 2))
             df.to_csv(

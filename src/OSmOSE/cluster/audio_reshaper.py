@@ -37,18 +37,18 @@ def substract_timestamps(
     cur_timestamp: str = input_timestamp[input_timestamp["filename"] == files[index]][
         "timestamp"
     ].values[0]
-    cur_timestamp: datetime = datetime.strptime(cur_timestamp, "%Y-%m-%dT%H:%M:%S.%fZ")
+    cur_timestamp: datetime = datetime.strptime(cur_timestamp, "%Y-%m-%dT%H:%M:%S.%f%z")
     next_timestamp: str = input_timestamp[
         input_timestamp["filename"] == files[index + 1]
     ]["timestamp"].values[0]
     next_timestamp: datetime = datetime.strptime(
-        next_timestamp, "%Y-%m-%dT%H:%M:%S.%fZ"
+        next_timestamp, "%Y-%m-%dT%H:%M:%S.%f%z"
     )
 
     return next_timestamp - cur_timestamp
 
 def to_timestamp(string: str) -> datetime:
-    return datetime.strptime(string, "%Y-%m-%dT%H:%M:%S.%fZ")
+    return datetime.strptime(string, "%Y-%m-%dT%H:%M:%S.%f%z")
 
 def reshape(
     input_files: Union[str, list],
@@ -215,7 +215,7 @@ def reshape(
                 "timestamp"
             ].values[0]
             timestamp = datetime.strptime(
-                timestamp, "%Y-%m-%dT%H:%M:%S.%fZ"
+                timestamp, "%Y-%m-%dT%H:%M:%S.%f%z"
             ) + timedelta(seconds=offset_beginning)
             audio_data = audio_data[int(offset_beginning * sample_rate) :]
         elif (
@@ -250,12 +250,12 @@ def reshape(
                 )
 
                 outfilename = output_dir_path.joinpath(
-                    f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')[:-3].replace(':','-').replace('.','_')}.wav"
+                    f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S').replace('-','_').replace(':','_').replace('.','_').replace('+','_')}.wav"
                 )
                 result.append(outfilename.name)
 
                 timestamp_list.append(
-                    datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+                    datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f%z")
                 )
 
                 if (audio_file_overlap>0):
@@ -292,12 +292,12 @@ def reshape(
                             break
 
                     outfilename = output_dir_path.joinpath(
-                        f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')[:-3].replace(':','-').replace('.','_')}.wav"
+                        f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S').replace('-','_').replace(':','_').replace('.','_').replace('+','_')}.wav"
                     )
                     result.append(outfilename.name)
                     
                     timestamp_list.append(
-                        datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+                        datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f%z")
                     )
                     timestamp += timedelta(seconds=len(output))
 
@@ -382,12 +382,12 @@ def reshape(
                 previous_audio_data = nextdata[rest:]
 
         outfilename = output_dir_path.joinpath(
-            f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')[:-3].replace(':','-').replace('.','_')}.wav"
+            f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S').replace('-','_').replace(':','_').replace('.','_').replace('+','_')}.wav"
         )
         result.append(outfilename.name)
 
         timestamp_list.append(
-            datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+            datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f%z")
         )
         timestamp += timedelta(seconds=chunk_size)
 
@@ -409,12 +409,12 @@ def reshape(
         previous_audio_data = previous_audio_data[chunk_size * sample_rate :]
 
         outfilename = output_dir_path.joinpath(
-            f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')[:-3].replace(':','-').replace('.','_')}.wav"
+            f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S').replace(':','_').replace('.','_').replace('+','_')}.wav"
         )
         result.append(outfilename.name)
 
         timestamp_list.append(
-            datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+            datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f%z")
         )
         timestamp += timedelta(seconds=chunk_size)
 
@@ -445,12 +445,12 @@ def reshape(
         if not skip_last:
 
             outfilename = output_dir_path.joinpath(
-                f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')[:-3].replace(':','-').replace('.','_')}.wav"
+                f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S').replace('-','_').replace(':','_').replace('.','_').replace('+','_')}.wav"
             )
             result.append(outfilename.name)
 
             timestamp_list.append(
-                datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+                datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f%z")
             )
             timestamp += timedelta(seconds=len(output))
 
