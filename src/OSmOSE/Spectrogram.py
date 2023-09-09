@@ -487,29 +487,26 @@ class Spectrogram(Dataset):
     def check_spectro_size(self):
         """Verify if the parameters will generate a spectrogram that can fit one screen properly"""
         if self.nfft > 2048:
-            print("your nfft is :", self.nfft)
+            print(f"Your spectra contain more than 1024 bin (ie {self.nfft/2}). \n")
             print(
                 colored(
-                    "PLEASE REDUCE IT UNLESS YOU HAVE A VERY HD SCREEN WITH MORE THAN 1k pixels vertically !!!! ",
+                    "Note that unless you have a 4K screen, unwanted numerical compression might occur when visualizing your spectrograms..",
                     "red",
                 )
             )
 
         temporal_resolution, frequency_resolution, Nbwin = self.extract_spectro_params()
 
-        print("your smallest tile has a duration of:", self.spectro_duration / 2 ** (self.zoom_level), "(s)")
-        print("\n")
+        print(f"your smallest tile has a duration of: {self.spectro_duration / 2 ** (self.zoom_level)} (s), with a number of spectra of {Nbwin} \n")
 
         if Nbwin > 3500:
             print(
                 colored(
-                    "PLEASE REDUCE IT UNLESS YOU HAVE A VERY HD SCREEN WITH MORE THAN 2k pixels horizontally !!!! ",
+                    "Note that unless you have a 4K screen, unwanted numerical compression might occur when visualizing your spectrograms..",
                     "red",
                 )
             )
 
-        print("\n")
-        print("your number of time windows in this tile is:", Nbwin)
         print("\n")
         print(
             "your resolutions : time = ",

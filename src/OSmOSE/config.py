@@ -8,8 +8,6 @@ SUPPORTED_AUDIO_FORMAT = [".wav"]
 __global_path_dict = {
     "raw_audio": Path("data", "audio"),
     "auxiliary": Path("data", "auxiliary"),
-    "instrument": Path("data", "auxiliary", "instrument"),
-    "environment": Path("data", "auxiliary", "environment"),
     "processed": Path("processed"),
     "spectrogram": Path("processed", "spectrogram"),
     "statistics": Path("processed", "dataset_statistics"),
