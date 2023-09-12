@@ -373,18 +373,29 @@ class Dataset:
         else: 
             number_bad_files = 0
 
+        already_printed_1 = False
         for ind_dt in tqdm(range(len(timestamp_csv)), desc='Scanning audio files'):
             audio_file = audio_file_list[ind_dt]
             
+            # trick, we need to remove an ending Z so this code works properly, will need to be cleaned
+            cur_timestamp_not_formatted = timestamp_csv[ind_dt]
+            if cur_timestamp_not_formatted.endswith('Z'):
+                cur_timestamp_not_formatted = cur_timestamp_not_formatted[:-1]
+                if date_template and date_template.endswith('Z'):
+                    date_template = date_template[:-1]            
+            
             try:
-                check_right_format = datetime.strptime(timestamp_csv[ind_dt], '%Y-%m-%dT%H:%M:%S.%f%z')
+                check_right_format = datetime.strptime(cur_timestamp_not_formatted, '%Y-%m-%dT%H:%M:%S.%f%z')
                 cur_timestamp = timestamp_csv[ind_dt]
             except Exception as e:
-                print(f"Timestamp format {timestamp_csv[ind_dt]} does not fit our template '%Y-%m-%dT%H:%M:%S.%f%z' let's reformat it")    
+                            
+                if not already_printed_1:
+                    already_printed_1 = True
+                    print(f"Timestamp format {cur_timestamp_not_formatted} does not fit our template '%Y-%m-%dT%H:%M:%S.%f%z' let's reformat it")    
                 if not date_template:
                     raise FileNotFoundError(f"You have to define a date_template please.")
                 else:
-                    date_obj = datetime.strptime(timestamp_csv[ind_dt]+self.timezone, date_template+'%z')
+                    date_obj = datetime.strptime(cur_timestamp_not_formatted+self.timezone, date_template+'%z')
                     cur_timestamp = datetime.strftime(date_obj,'%Y-%m-%dT%H:%M:%S.%f%z')
                 
 
@@ -613,7 +624,7 @@ class Dataset:
 
         for audio in audio_files:
             audio.rename(path_raw_audio.joinpath("original",audio.name))
-            os.chmod(path_raw_audio.joinpath("original",audio.name), mode=FPDEFAULT)
+            #os.chmod(path_raw_audio.joinpath("original",audio.name), mode=FPDEFAULT)
             
         for parent_dir in parent_dir_list:
             if len(os.listdir(parent_dir))==0:
