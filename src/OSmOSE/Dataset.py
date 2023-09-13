@@ -7,7 +7,8 @@ from warnings import warn
 from statistics import fmean as mean
 import shutil
 import glob
-
+from os import PathLike
+   
 try:
     import grp
     skip_perms = False
@@ -377,27 +378,7 @@ class Dataset:
         for ind_dt in tqdm(range(len(timestamp_csv)), desc='Scanning audio files'):
             audio_file = audio_file_list[ind_dt]
             
-            # trick, we need to remove an ending Z so this code works properly, will need to be cleaned
-            cur_timestamp_not_formatted = timestamp_csv[ind_dt]
-            if cur_timestamp_not_formatted.endswith('Z'):
-                cur_timestamp_not_formatted = cur_timestamp_not_formatted[:-1]
-                if date_template and date_template.endswith('Z'):
-                    date_template = date_template[:-1]            
-            
-            try:
-                check_right_format = datetime.strptime(cur_timestamp_not_formatted, '%Y-%m-%dT%H:%M:%S.%f%z')
-                cur_timestamp = timestamp_csv[ind_dt]
-            except Exception as e:
-                            
-                if not already_printed_1:
-                    already_printed_1 = True
-                    print(f"Timestamp format {cur_timestamp_not_formatted} does not fit our template '%Y-%m-%dT%H:%M:%S.%f%z' let's reformat it")    
-                if not date_template:
-                    raise FileNotFoundError(f"You have to define a date_template please.")
-                else:
-                    date_obj = datetime.strptime(cur_timestamp_not_formatted+self.timezone, date_template+'%z')
-                    cur_timestamp = datetime.strftime(date_obj,'%Y-%m-%dT%H:%M:%S.%f%z')
-                
+            cur_timestamp, _ = self._format_timestamp(timestamp_csv[ind_dt],date_template,already_printed_1)
 
             # define final audio filename, especially we remove the sign '-' in filenames (because of our qsub_resample.sh)
             if "-" in audio_file.name:
@@ -525,7 +506,7 @@ class Dataset:
             for subpath in OSMOSE_PATH:
                 if "data" in str(subpath):
                     make_path(self.path.joinpath(subpath), mode=DPDEFAULT)
-    
+
             # rename filenames in the subset_files.csv if any to replace -' by '_'
             subset_path = OSMOSE_PATH.processed.joinpath("subset_files.csv")
             if subset_path.is_file():
@@ -564,8 +545,69 @@ class Dataset:
                 index=False
             )
             os.chmod(path_raw_audio.joinpath("metadata.csv"), mode=FPDEFAULT)
-        
+
+            for path, _, files in os.walk(self.path.joinpath(OSMOSE_PATH.auxiliary)):
+                for f in files:
+                    if f.endswith((".csv")):       
+                        print(f"\n Checking your timestamp format in {Path(path,f).name}")
+                        self._format_timestamp(Path(path,f),date_template,False)
+                                                
             print("\n DONE ! your dataset is on OSmOSE platform !")
+
+
+    def _format_timestamp(self,cur_timestamp_not_formatted:str,date_template:str,already_printed_1:int):
+
+        format_OK = False
+
+        if isinstance(cur_timestamp_not_formatted, PathLike):
+            
+            already_printed_1 = False            
+            list_cur_timestamp_formatted = []
+            dataF = pd.read_csv(cur_timestamp_not_formatted)
+            for val_timestamp_not_formatted in dataF["timestamp"].values:
+                cur_timestamp_formatted, format_OK = self._format_timestamp(val_timestamp_not_formatted,date_template,True)
+                if format_OK:
+                    print(f"-> Format OK \n")
+                    return None
+                else:
+                    list_cur_timestamp_formatted.append(cur_timestamp_formatted)
+            
+            print(f"We reformatted timestamps in your file {cur_timestamp_not_formatted.name} \n")
+            dataF["timestamp"] = list_cur_timestamp_formatted 
+
+            dataF.to_csv(
+                cur_timestamp_not_formatted,
+                index=False
+            )
+            os.chmod(cur_timestamp_not_formatted, mode=FPDEFAULT)
+            
+            return None
+            
+                             
+        # trick, we need to remove an ending Z so this code works properly, will need to be cleaned
+        if cur_timestamp_not_formatted.endswith('Z'):
+            cur_timestamp_not_formatted = cur_timestamp_not_formatted[:-1]
+            if date_template and date_template.endswith('Z'):
+                date_template = date_template[:-1]            
+        
+        try:
+            check_right_format = datetime.strptime(cur_timestamp_not_formatted, '%Y-%m-%dT%H:%M:%S.%f%z')
+            cur_timestamp_formatted = cur_timestamp_not_formatted
+            format_OK = True
+            
+        except Exception as e:
+                        
+            if not already_printed_1:
+                already_printed_1 = True
+                print(f"Timestamp format {cur_timestamp_not_formatted} does not fit our template '%Y-%m-%dT%H:%M:%S.%f%z' let's reformat it")    
+            if not date_template:
+                raise FileNotFoundError(f"You have to define a date_template please.")
+            else:
+                date_obj = datetime.strptime(cur_timestamp_not_formatted+self.timezone, date_template+'%z')
+                cur_timestamp_formatted = datetime.strftime(date_obj,'%Y-%m-%dT%H:%M:%S.%f%z')
+                
+        return cur_timestamp_formatted, format_OK                
+                
 
 
     def _find_or_create_original_folder(self) -> Path:
@@ -595,7 +637,8 @@ class Dataset:
         timestamp_files = []
 
         make_path(path_raw_audio.joinpath("original"), mode=DPDEFAULT)
-        make_path(self.path.joinpath(OSMOSE_PATH.auxiliary), mode=DPDEFAULT)
+        make_path(self.path.joinpath(OSMOSE_PATH.instrument), mode=DPDEFAULT)
+        make_path(self.path.joinpath(OSMOSE_PATH.environment), mode=DPDEFAULT)
 
         for path, _, files in os.walk(self.path):
             for f in files:
@@ -606,6 +649,8 @@ class Dataset:
                             parent_dir_list.append(Path(path,f).parent) if Path(path,f).parent not in parent_dir_list else parent_dir_list                        
                     elif f=="timestamp.csv":
                         Path(path,f).rename(path_raw_audio.joinpath("original","timestamp.csv"))
+                    elif "depth" in f or "gps" in f:
+                        Path(path,f).rename(self.path.joinpath(OSMOSE_PATH.instrument,f))                    
                     elif f.endswith(".csv"):
                         Path(path,f).rename(self.path.joinpath(OSMOSE_PATH.auxiliary,f))
                         
