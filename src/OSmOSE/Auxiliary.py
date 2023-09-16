@@ -196,11 +196,9 @@ class Auxiliary():
 
     def join_welch(self,time_resolution_welch, *, method='interpolation', time_off=np.inf, lat_off=np.inf, lon_off=np.inf,r=np.inf, variables=['u10', 'v10']):
         
-        print(str(self.path.joinpath(OSMOSE_PATH.welch,str(time_resolution_welch), '*.npz')))
         fns = glob(str(self.path.joinpath(OSMOSE_PATH.welch,str(time_resolution_welch), '*.npz')))
-        print(fns)
         temp_df = pd.DataFrame(fns, columns = ['fn'])
-        temp_df['time'] = temp_df.fn.apply(lambda x : datetime.datetime.timestamp(datetime.datetime.strptime(x.split('/')[-1][:-4], '%Y%m%d_%H%M%S')))
+        temp_df['time'] = temp_df.fn.apply(lambda x : datetime.datetime.timestamp(datetime.datetime.strptime(x.split('/')[-1][:-4], '%Y_%m_%dT%H_%M_%S')))
         temp_df['timestamp'] = temp_df.time.apply(lambda x : datetime.datetime.strftime(datetime.datetime.fromtimestamp(x), '%Y-%m-%dT%H:%M:%S.%f'))
         temp_df = temp_df.sort_values('time')
         
@@ -210,12 +208,12 @@ class Auxiliary():
         for name, column in self.df.iteritems():
         	if name == 'timestamp':
         		continue
-        	temp_df[name] = inter.interp1d(ttt[:,np.newaxis], self.df[name], bounds_error = False)(temp_df.time)
+        	temp_df[name] = inter.interp1d(ttt, self.df[name], bounds_error = False)(temp_df.time)
         self.df = temp_df
 
-        make_path(os.path.joinpath(OSMOSE_PATH.processed_auxiliary,time_resolution_welch), mode=DPDEFAULT)
+        make_path(self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(time_resolution_welch)), mode=DPDEFAULT)
         self.df.sort_values(by=["timestamp"], inplace=True)
-        self.df.to_csv( os.path.joinpath(OSMOSE_PATH.processed_auxiliary,f"auxiliary_welch_{time_resolution_welch}.csv"),
+        self.df.to_csv( self.path.joinpath(OSMOSE_PATH.processed_auxiliary,f"auxiliary_welch_{time_resolution_welch}.csv"),
                 index=False,
                 na_rep="NaN"
             )                       
