@@ -165,19 +165,28 @@ class Auxiliary():
         self.dataset = dataset
         self.local = local
         
-        # search for a gps file
+        # case of a moving hydrophone: search for a gps file in OSMOSE_PATH.instrument
         for path, _, files in os.walk(self.path.joinpath(OSMOSE_PATH.instrument)):
             for f in files:
                 if "gps" in f:       
-                    print(f"\n Checking your timestamp format in {Path(path,f).name}")
+                    print(f"Moving hydrophone with gps track given in {Path(path,f)}. Now checking your timestamp format  \n")
                     self.df = pd.read_csv(Path(path,f))                
                     self.timestamps = pd.Series(self.df['timestamp']).apply(lambda x : datetime.datetime.timestamp(datetime.datetime.strptime(x, '%Y-%m-%dT%H:%M:%S.%f%z'))).to_numpy()                    
                     self.latitude, self.longitude = self.df['lat'], self.df['lon']
 
+        # case of a fixed hydrophone
+        if "latitude" not in vars(self).keys(): # ie self.latitude not defined yet                    
+            metadata_path = next(
+                self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("metadata.csv"), None
+            )        
+            csvFileArray = pd.read_csv(metadata_path)
+            self.latitude, self.longitude =  csvFileArray["lat"], csvFileArray["lon"]
+                  
         self.era_path = os.path.join(self.path, OSMOSE_PATH.environment, 'era')
 
 
     def join_era(self, *, method='interpolation', time_off=np.inf, lat_off=np.inf, lon_off=np.inf,r=np.inf, variables=['u10', 'v10']):
+
         print(f'Joining ERA5 data using the {method} method.')
         if method == 'nearest':
             print(
@@ -204,7 +213,6 @@ class Auxiliary():
         
         ttt = pd.Series(self.df.timestamp).apply(lambda x : datetime.datetime.timestamp(datetime.datetime.strptime(x, '%Y-%m-%dT%H:%M:%S.%f%z'))).to_numpy()                    
         
-        print(temp_df.time)
         for name, column in self.df.iteritems():
         	if name == 'timestamp':
         		continue
@@ -259,9 +267,7 @@ class Auxiliary():
         v10_col = self.df.columns[
             np.where((np.array('-'.join(elem[-3:] for elem in self.df.columns).split('-')) == 'v10'))[0]]
         total_wind_fetch = np.zeros(len(self.timestamps))
-        
-        print(vars(self()).keys())
-        # self.shore_distance
+
         
         shore_distance = self.shore_distance
         dir_u, dir_v = self.df[u10_col].to_numpy().reshape(shore_distance.shape), self.df[v10_col].to_numpy().reshape(
