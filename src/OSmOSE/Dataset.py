@@ -158,7 +158,7 @@ class Dataset:
                     csvFileArray = pd.read_csv(aux_data_path)
                     self.__gps_coordinates = [np.mean(csvFileArray["lat"]), np.mean(csvFileArray["lon"])]
                 else:
-                    raise FileNotFoundError(f"The {new_coordinates} has been found no where within {self.path.joinpath(OSMOSE_PATH)}")                   
+                    raise FileNotFoundError(f"The {new_coordinates} has been found no where within {self.path}")                   
                 
             case tuple():
                 self.__gps_coordinates = new_coordinates
@@ -204,7 +204,7 @@ class Dataset:
                     csvFileArray = pd.read_csv(aux_data_path)
                     self.__depth = int(np.mean(csvFileArray["depth"]))                
                 else:
-                    raise FileNotFoundError(f"The {new_coordinates} has been found no where within {self.path.joinpath(OSMOSE_PATH)}")
+                    raise FileNotFoundError(f"The {new_coordinates} has been found no where within {self.path}")
                                    
             case int():
                 self.__depth = new_depth
