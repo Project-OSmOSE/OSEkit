@@ -200,7 +200,7 @@ class Spectrogram(Dataset):
         self.data_normalization: str = (
             analysis_sheet["data_normalization"][0]
             if "data_normalization" in analysis_sheet
-            else "zscore"
+            else "none"
         )
         self.gain_dB: float = (
             analysis_sheet["gain_dB"][0]
@@ -389,7 +389,7 @@ class Spectrogram(Dataset):
         return self.__data_normalization
 
     @data_normalization.setter
-    def data_normalization(self, value: Literal["instrument", "zscore"]):
+    def data_normalization(self, value: Literal["instrument", "zscore", "none"]):
         self.__data_normalization = value
 
     @property
@@ -1091,9 +1091,8 @@ class Spectrogram(Dataset):
                 f"The file {audio_file} must be in {self.audio_path} in order to be processed."
             )
         
-        if self.data_normalization == "zscore" and self.spectro_normalization != "spectrum":
+        if self.data_normalization in ["zscore", "none"]:
             self.spectro_normalization = "spectrum"
-            print("WARNING: the spectrogram normalization has been changed to spectrum because the data will be normalized using zscore.")
         
 
         print(f"Generating spectrograms for {audio_file}...")
@@ -1167,7 +1166,8 @@ class Spectrogram(Dataset):
                 print('apply zscore original')
                 data = (data - np.mean(data)) / np.std(data)
 
-            print(f"data mean : {np.mean(data)} and std : {np.std(data)}")
+        print(f"data mean : {np.mean(data)} and std : {np.std(data)}")
+        print(f"data min : {np.min(data)} and max : {np.max(data)}")
 
         duration = len(data) / int(sample_rate)
 
