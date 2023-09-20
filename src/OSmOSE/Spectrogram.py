@@ -450,11 +450,13 @@ class Spectrogram(Dataset):
         self.path_output_spectrogram = processed_path.joinpath(
             audio_foldername, self.__spectro_foldername, "image"
         )
-
         self.path_output_spectrogram_matrix = processed_path.joinpath(
             audio_foldername, self.__spectro_foldername, "matrix"
         )
-
+        self.path_output_spectrogram_metadata = processed_path.joinpath(
+            audio_foldername, self.__spectro_foldername, "metadata"
+        )
+        
         self.path_output_welch = self.path.joinpath(OSMOSE_PATH.welch)
         self.path_output_LTAS = self.path.joinpath(OSMOSE_PATH.LTAS)
         self.path_output_EPD = self.path.joinpath(OSMOSE_PATH.EPD)
@@ -1028,7 +1030,7 @@ class Spectrogram(Dataset):
         return False
 
     def process_file(
-        self, audio_file: Union[str, Path], *, adjust: bool = False, save_matrix: bool = False,save_for_LTAS:bool=True, overwrite: bool = False, clean_adjust_folder: bool = False
+        self, audio_file: Union[str, Path], *, adjust: bool = False, save_matrix: bool = False,save_for_LTAS:bool=True, overwrite: bool = True, clean_adjust_folder: bool = False
     ) -> None:
         """Read an audio file and generate the associated spectrogram.
 
@@ -1401,6 +1403,16 @@ class Spectrogram(Dataset):
         print(f"shape spectro: {np.shape(log_spectro)}")
         print(f"Log spectro: {np.amin(log_spectro)}-{np.amax(log_spectro)}\nDynamic: {self.dynamic_min}-{self.dynamic_max}")
 
+        data = {"min": np.amin(log_spectro), "max": np.amax(log_spectro), "shape": np.shape(log_spectro)}        
+        df = pd.DataFrame.from_records([data])
+        df.to_csv(
+            self.path_output_spectrogram_metadata.joinpath(
+                f"{output_file.stem}_metadata.csv"
+            ),
+            index=False
+        )     
+        
+        
         color_map = plt.cm.get_cmap(self.colormap)  # .reversed()
         plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
         plt.clim(vmin=self.dynamic_min, vmax=self.dynamic_max)
@@ -1463,12 +1475,12 @@ class Spectrogram(Dataset):
         if len(list_wav_to_process)>0:
             self.list_wav_to_process=list_wav_to_process
             
-        kwargs = {"save_matrix": save_matrix,"save_for_LTAS":save_for_LTAS}
+        kwargs = {"save_matrix": save_matrix,"save_for_LTAS":save_for_LTAS,"overwrite":True}
 
         map_process_file = partial(self.process_file, **kwargs)
         
         for ll in self.list_wav_to_process:
-            self.process_file(ll)
+            self.process_file(ll,overwrite=True)
         
         # with mp.Pool(processes=mp.cpu_count()) as pool:
         #     pool.map(map_process_file, self.list_wav_to_process)
