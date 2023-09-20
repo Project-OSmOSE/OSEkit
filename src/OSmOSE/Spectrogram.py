@@ -453,9 +453,6 @@ class Spectrogram(Dataset):
         self.path_output_spectrogram_matrix = processed_path.joinpath(
             audio_foldername, self.__spectro_foldername, "matrix"
         )
-        self.path_output_spectrogram_metadata = processed_path.joinpath(
-            audio_foldername, self.__spectro_foldername, "metadata"
-        )
         
         self.path_output_welch = self.path.joinpath(OSMOSE_PATH.welch)
         self.path_output_LTAS = self.path.joinpath(OSMOSE_PATH.LTAS)
@@ -1077,16 +1074,16 @@ class Spectrogram(Dataset):
             return len(list(self.path_output_spectrogram_matrix.glob(f"{Path(audio_file).stem}*"))) == 2**self.zoom_level if save_matrix else True
 
         if len(list(self.path_output_spectrogram.glob(f"{Path(audio_file).stem}*"))) == sum(2**i for i in range(self.zoom_level+1)) and check_existing_matrix():
-            if overwrite:
-                print(f"Existing files detected for audio file {audio_file}! They will be overwritten.")
-                for old_file in self.path_output_spectrogram.glob(f"{Path(audio_file).stem}*"):
-                    old_file.unlink()
-                if save_matrix:
-                    for old_matrix in self.path_output_spectrogram_matrix.glob(f"{Path(audio_file).stem}*"):
-                        old_matrix.unlink()
-            else:
-                print(f"The spectrograms for the file {audio_file} have already been generated, skipping...")
-                return
+            #if overwrite:
+            print(f"Existing files detected for audio file {audio_file}! They will be overwritten.")
+            for old_file in self.path_output_spectrogram.glob(f"{Path(audio_file).stem}*"):
+                old_file.unlink()
+            if save_matrix:
+                for old_matrix in self.path_output_spectrogram_matrix.glob(f"{Path(audio_file).stem}*"):
+                    old_matrix.unlink()
+            # else:
+            #     print(f"The spectrograms for the file {audio_file} have already been generated, skipping...")
+            #     return
         
         if audio_file not in os.listdir(self.audio_path):
             raise FileNotFoundError(
@@ -1097,7 +1094,6 @@ class Spectrogram(Dataset):
             self.spectro_normalization = "spectrum"
         
 
-        print(f"Generating spectrograms for {audio_file}...")
         #! Determination of zscore normalization parameters
         if self.data_normalization == "zscore" and Zscore != "original":
 
@@ -1123,8 +1119,6 @@ class Spectrogram(Dataset):
                 self.__summStats["filename"] == audio_file
             ]["std_avg"].values[0]
 
-            print(f"Zscore mean : {self.__zscore_mean} and std : {self.__zscore_std}/")
-
         #! File processing
         data, sample_rate = safe_read(self.audio_path.joinpath(audio_file))
 
@@ -1147,6 +1141,7 @@ class Spectrogram(Dataset):
         if adjust:
             make_path(self.path_output_spectrogram, mode=DPDEFAULT)
 
+        print(f"Generating spectrograms for {output_file.name}")
         self.gen_tiles(data=data, sample_rate=sample_rate, output_file=output_file, adjust=adjust)
 
     def gen_tiles(self, *, data: np.ndarray, sample_rate: int, output_file: Path, adjust: bool):
@@ -1168,8 +1163,7 @@ class Spectrogram(Dataset):
                 print('apply zscore original')
                 data = (data - np.mean(data)) / np.std(data)
 
-        print(f"data mean : {np.mean(data)} and std : {np.std(data)}")
-        print(f"data min : {np.min(data)} and max : {np.max(data)}")
+        print(f"- data min : {np.min(data)} \n - data max : {np.max(data)} \n - data mean : {np.mean(data)} \n - data std : {np.std(data)}")
 
         duration = len(data) / int(sample_rate)
 
@@ -1386,9 +1380,9 @@ class Spectrogram(Dataset):
         log_spectro : `np.NDArray[signed int]`
         output_file : `str`
             The name of the spectrogram file."""
-        if output_file.exists(): 
-            print(f"The spectrogram {output_file.name} has already been generated, skipping...")
-            return
+        # if output_file.exists(): 
+        #     print(f"The spectrogram {output_file.name} has already been generated, skipping...")
+        #     return
         # Plotting spectrogram
         my_dpi = 100
         fact_x = 1.3
@@ -1400,18 +1394,7 @@ class Spectrogram(Dataset):
             dpi=my_dpi,
         )
 
-        print(f"shape spectro: {np.shape(log_spectro)}")
-        print(f"Log spectro: {np.amin(log_spectro)}-{np.amax(log_spectro)}\nDynamic: {self.dynamic_min}-{self.dynamic_max}")
-
-        data = {"min": np.amin(log_spectro), "max": np.amax(log_spectro), "shape": np.shape(log_spectro)}        
-        df = pd.DataFrame.from_records([data])
-        df.to_csv(
-            self.path_output_spectrogram_metadata.joinpath(
-                f"{output_file.stem}_metadata.csv"
-            ),
-            index=False
-        )     
-        
+        print(f"- min log spectro : {np.amin(log_spectro)} \n - max log spectro : {np.amax(log_spectro)} \n")
         
         color_map = plt.cm.get_cmap(self.colormap)  # .reversed()
         plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
@@ -1438,7 +1421,7 @@ class Spectrogram(Dataset):
 
         os.chmod(output_file, mode=FPDEFAULT)
 
-        print(f"Successfully generated {output_file.name}.")
+        #print(f"Successfully generated {output_file.name}.")
 
         metadata_input = self.path.joinpath(
             OSMOSE_PATH.spectrogram, "adjust_metadata.csv"
@@ -1456,7 +1439,7 @@ class Spectrogram(Dataset):
             if metadata_output.exists():
                 metadata_output.unlink()
             shutil.copyfile(metadata_input, metadata_output)
-            print(f"Written {metadata_output}")
+            #print(f"Written {metadata_output}")
         except:
             pass
         # try:
