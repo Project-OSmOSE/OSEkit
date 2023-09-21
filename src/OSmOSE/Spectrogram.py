@@ -1171,8 +1171,8 @@ class Spectrogram(Dataset):
         tile_duration = duration / nber_tiles_lowest_zoom_level
         
         audio_file_name = output_file.stem        
-        current_timestamp = pd.to_datetime(get_timestamp_of_audio_file( self.audio_path.joinpath('timestamp.csv') , audio_file_name+".wav"))            
-        list_timestamps = []
+        #current_timestamp = pd.to_datetime(get_timestamp_of_audio_file( self.audio_path.joinpath('timestamp.csv') , audio_file_name+".wav"))            
+        #list_timestamps = []
         
         Sxx_complete_lowest_level = np.empty((int(self.nfft / 2) + 1, 1))
         Sxx_mean_lowest_tuile = np.empty((1,int(self.nfft / 2) + 1))
@@ -1180,7 +1180,7 @@ class Spectrogram(Dataset):
             start = tile * tile_duration
             end = start + tile_duration
             
-            list_timestamps.append(current_timestamp+timedelta(seconds=int(start)))
+            #list_timestamps.append(current_timestamp+timedelta(seconds=int(start)))
 
             sample_data = data[int(start * sample_rate) : int(end * sample_rate)-1]
 
@@ -1218,8 +1218,8 @@ class Spectrogram(Dataset):
                 np.savez(
                     output_matrix,
                     Sxx=Sxx_mean_lowest_tuile,
-                    Freq=Freq,
-                    Time=list_timestamps
+                    Freq=Freq
+                    #Time=list_timestamps
                 )
 
                 os.chmod(output_matrix, mode=FPDEFAULT)                  
@@ -1270,8 +1270,8 @@ class Spectrogram(Dataset):
                 np.savez(
                     output_matrix,
                     Sxx=Sxx_int.mean(axis=1),
-                    Freq=Freq,
-                    Time=current_timestamp,
+                    Freq=Freq
+                    #Time=current_timestamp,
                 )
 
                 os.chmod(output_matrix, mode=FPDEFAULT)  
