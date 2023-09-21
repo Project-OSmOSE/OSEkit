@@ -164,6 +164,7 @@ class Auxiliary():
         self.path = Path(os.path.join(path, dataset))
         self.dataset = dataset
         self.local = local
+        self.hydrophone_mobile = False
         
         # case of a moving hydrophone: search for a gps file in OSMOSE_PATH.instrument
         for path, _, files in os.walk(self.path.joinpath(OSMOSE_PATH.instrument)):
@@ -173,16 +174,25 @@ class Auxiliary():
                     self.df = pd.read_csv(Path(path,f))                
                     self.timestamps = pd.Series(self.df['timestamp']).apply(lambda x : datetime.datetime.timestamp(datetime.datetime.strptime(x, '%Y-%m-%dT%H:%M:%S.%f%z'))).to_numpy()                    
                     self.latitude, self.longitude = self.df['lat'], self.df['lon']
+                    self.hydrophone_mobile = True
 
         # case of a fixed hydrophone
         if "latitude" not in vars(self).keys(): # ie self.latitude not defined yet                    
+
+            # get metadata from original folder
             metadata_path = next(
                 self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("metadata.csv"), None
             )        
             csvFileArray = pd.read_csv(metadata_path)
-            self.latitude, self.longitude =  csvFileArray["lat"], csvFileArray["lon"]
+
+            original_audio_foldername = f"{int(csvFileArray['audio_file_origin_duration'][0])}_{int(csvFileArray['origin_sr'][0])}"
+            self.audio_path = self.path.joinpath(OSMOSE_PATH.raw_audio, original_audio_foldername)        
+            self.timestamps = pd.Series(pd.read_csv(self.audio_path.joinpath("timestamp.csv"))["timestamp"]).apply(lambda x : datetime.datetime.timestamp(datetime.datetime.strptime(x, '%Y-%m-%dT%H:%M:%S.%f%z'))).to_numpy()                    
+            self.latitude, self.longitude = pd.Series([csvFileArray["lat"][0]]*len(self.timestamps)), pd.Series([csvFileArray["lon"][0]]*len(self.timestamps))
+            self.df = pd.DataFrame.from_dict({'timestamp': self.timestamps, 'lat':self.latitude, 'lon':self.longitude, 'depth':float('nan')})
                   
         self.era_path = os.path.join(self.path, OSMOSE_PATH.environment, 'era')
+
 
 
     def join_era(self, *, method='interpolation', time_off=np.inf, lat_off=np.inf, lon_off=np.inf,r=np.inf, variables=['u10', 'v10']):
@@ -206,18 +216,23 @@ class Auxiliary():
     def join_welch(self,time_resolution_welch, *, method='interpolation', time_off=np.inf, lat_off=np.inf, lon_off=np.inf,r=np.inf, variables=['u10', 'v10']):
         
         fns = glob(str(self.path.joinpath(OSMOSE_PATH.welch,str(time_resolution_welch), '*.npz')))
+        fns = [x for x in fns if x != str(self.path.joinpath(OSMOSE_PATH.welch,str(time_resolution_welch), 'all_welch.npz'))]
         temp_df = pd.DataFrame(fns, columns = ['fn'])
-        temp_df['time'] = temp_df.fn.apply(lambda x : datetime.datetime.timestamp(datetime.datetime.strptime(x.split('/')[-1][:-4], '%Y_%m_%dT%H_%M_%S')))
+        temp_df['time'] = temp_df.fn.apply(lambda x : datetime.datetime.timestamp(datetime.datetime.strptime(x.split('/')[-1][:-4], '%Y%m%d_%H%M%S')))
         temp_df['timestamp'] = temp_df.time.apply(lambda x : datetime.datetime.strftime(datetime.datetime.fromtimestamp(x), '%Y-%m-%dT%H:%M:%S.%f'))
         temp_df = temp_df.sort_values('time')
         
-        ttt = pd.Series(self.df.timestamp).apply(lambda x : datetime.datetime.timestamp(datetime.datetime.strptime(x, '%Y-%m-%dT%H:%M:%S.%f%z'))).to_numpy()                    
-        
+        if self.hydrophone_mobile:
+            ttt = pd.Series(self.df.timestamp).apply(lambda x : datetime.datetime.timestamp(datetime.datetime.strptime(x, '%Y-%m-%dT%H:%M:%S.%f%z'))).to_numpy()
+        else:
+            ttt  = self.df.timestamp.values
+
         for name, column in self.df.iteritems():
         	if name == 'timestamp':
         		continue
         	temp_df[name] = inter.interp1d(ttt, self.df[name], bounds_error = False)(temp_df.time)
         self.df = temp_df
+
 
         make_path(self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(time_resolution_welch)), mode=DPDEFAULT)
         self.df.sort_values(by=["timestamp"], inplace=True)
@@ -350,13 +365,6 @@ class Auxiliary():
             raise FileNotFoundError(
                 f"The {self.dataset+'.nc'} file has not been found in {self.era_path}. Please download ERA on local machine and upload it on Datarmor."
             )            
-
-        # else:
-        #     if not self.local:
-        #         print("Please download ERA on local machine and upload it on Datarmor. \nSystem exit.")
-        #         sys.exit("No ERA5 data")
-        #     print('Trying to download ERA5 data...')
-        #     self.variables = download_era(self.timestamps.to_numpy(), self.longitude, self.latitude, era_path, filename)
 
         if method == 'cube' or method == 'cylinder':
             self.stamps = np.load(os.path.join(self.era_path, 'stamps.npz'), allow_pickle=True)
