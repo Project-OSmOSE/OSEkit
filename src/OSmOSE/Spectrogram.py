@@ -38,11 +38,12 @@ class Spectrogram(Dataset):
         self,
         dataset_path: str,
         *,
+        gps_coordinates: Union[str, list, Tuple] = None,
+        depth: Union[str, int] = None,        
         dataset_sr: int = None,
-        gps_coordinates: Union[str, list, tuple] = None,
         owner_group: str = None,
         analysis_params: dict = None,
-        batch_number: int = 10,
+        batch_number: int = 5,
         local: bool = True,
     ) -> None:
         """Instanciates a spectrogram object.
@@ -97,7 +98,6 @@ class Spectrogram(Dataset):
         """
         super().__init__(
             dataset_path=dataset_path,
-            gps_coordinates=gps_coordinates,
             owner_group=owner_group,
         )
 
@@ -126,14 +126,14 @@ class Spectrogram(Dataset):
         self.batch_number: int = batch_number
         self.dataset_sr: int = dataset_sr if dataset_sr is not None else orig_metadata['origin_sr'][0]
 
-        self.nfft: int = analysis_sheet["nfft"][0] if "nfft" in analysis_sheet else 1
+        self.nfft: int = analysis_sheet["nfft"][0] if "nfft" in analysis_sheet else 1024
         self.window_size: int = (
             analysis_sheet["window_size"][0]
             if "window_size" in analysis_sheet
-            else None
+            else 1024
         )
         self.overlap: int = (
-            analysis_sheet["overlap"][0] if "overlap" in analysis_sheet else None
+            analysis_sheet["overlap"][0] if "overlap" in analysis_sheet else 0
         )
         self.colormap: str = (
             analysis_sheet["colormap"][0] if "colormap" in analysis_sheet else "viridis"
@@ -145,20 +145,20 @@ class Spectrogram(Dataset):
         self.dynamic_min: int = (
             analysis_sheet["dynamic_min"][0]
             if "dynamic_min" in analysis_sheet
-            else None
+            else -30
         )
         self.dynamic_max: int = (
             analysis_sheet["dynamic_max"][0]
             if "dynamic_max" in analysis_sheet
-            else None
+            else 30
         )
         self.number_adjustment_spectrogram: int = (
             analysis_sheet["number_adjustment_spectrogram"][0]
             if "number_adjustment_spectrogram" in analysis_sheet
-            else None
+            else 1
         )
         self.spectro_duration: int = (
-            analysis_sheet["spectro_duration"][0]
+            int(analysis_sheet["spectro_duration"][0])
             if analysis_sheet is not None and "spectro_duration" in analysis_sheet
             else (
                 int(orig_metadata["audio_file_origin_duration"][0])
@@ -190,22 +190,22 @@ class Spectrogram(Dataset):
         self.peak_voltage: float = (
             analysis_sheet["peak_voltage"][0]
             if "peak_voltage" in analysis_sheet
-            else None
+            else 1
         )
         self.spectro_normalization: str = (
             analysis_sheet["spectro_normalization"][0]
             if "spectro_normalization" in analysis_sheet
-            else None
+            else "spectrum"
         )
         self.data_normalization: str = (
             analysis_sheet["data_normalization"][0]
             if "data_normalization" in analysis_sheet
-            else None
+            else "none"
         )
         self.gain_dB: float = (
             analysis_sheet["gain_dB"][0]
             if "gain_dB" in analysis_sheet is not None
-            else None
+            else 0
         )
 
         self.window_type: str = (
@@ -213,16 +213,10 @@ class Spectrogram(Dataset):
             if "window_type" in analysis_sheet
             else "hamming"
         )
-
-        self.time_resolution: List[float] = (
-            [
-                analysis_sheet[col][0]
-                for col in analysis_sheet
-                if "time_resolution" in col
-            ]
-            if analysis_sheet is not None
-            else [0] * self.zoom_level
-        )
+            
+        self.audio_file_overlap: int = (
+            analysis_sheet["audio_file_overlap"][0] if "audio_file_overlap" in analysis_sheet else 0
+        )            
 
         self.jb = Job_builder()
 
@@ -291,7 +285,7 @@ class Spectrogram(Dataset):
     def zoom_level(self):
         """int: Number of zoom levels."""
         return self.__zoom_level
-
+        
     @zoom_level.setter
     def zoom_level(self, value: int):
         self.__zoom_level = value
@@ -322,7 +316,12 @@ class Spectrogram(Dataset):
     @number_adjustment_spectrogram.setter
     def number_adjustment_spectrogram(self, value: int):
         self.__number_adjustment_spectrogram = value
-
+    
+    @property
+    def audio_file_overlap(self):
+        """int: Overlap between segmented audio files."""
+        return self.__audio_file_overlap
+    
     @property
     def spectro_duration(self):
         """int: Duration of the spectrogram (at the lowest zoom level) in seconds."""
@@ -332,6 +331,13 @@ class Spectrogram(Dataset):
     def spectro_duration(self, value: int):
         self.__spectro_duration = value
 
+    @audio_file_overlap.setter
+    def audio_file_overlap(self, value: int):
+        if value < self.spectro_duration:
+            self.__audio_file_overlap = value
+        else:
+            raise ValueError('Segmented audio file overlapping value must be smaller than spectro_duration')
+            
     @property
     def zscore_duration(self):
         return self.__zscore_duration
@@ -383,7 +389,7 @@ class Spectrogram(Dataset):
         return self.__data_normalization
 
     @data_normalization.setter
-    def data_normalization(self, value: Literal["instrument", "zscore"]):
+    def data_normalization(self, value: Literal["instrument", "zscore", "none"]):
         self.__data_normalization = value
 
     @property
@@ -444,13 +450,14 @@ class Spectrogram(Dataset):
         self.path_output_spectrogram = processed_path.joinpath(
             audio_foldername, self.__spectro_foldername, "image"
         )
-
         self.path_output_spectrogram_matrix = processed_path.joinpath(
             audio_foldername, self.__spectro_foldername, "matrix"
         )
-
+        
         self.path_output_welch = self.path.joinpath(OSMOSE_PATH.welch)
         self.path_output_LTAS = self.path.joinpath(OSMOSE_PATH.LTAS)
+        self.path_output_EPD = self.path.joinpath(OSMOSE_PATH.EPD)
+        self.path_output_SPLfiltered = self.path.joinpath(OSMOSE_PATH.SPLfiltered)
         
         # Create paths
         if not dry:
@@ -460,48 +467,51 @@ class Spectrogram(Dataset):
                 make_path(self.path_output_spectrogram_matrix, mode=DPDEFAULT)
                 make_path(self.path.joinpath(OSMOSE_PATH.statistics), mode=DPDEFAULT)
 
-    def check_spectro_size(self):
-        """Verify if the parameters will generate a spectrogram that can fit one screen properly"""
-        if self.nfft > 2048:
-            print("your nfft is :", self.nfft)
-            print(
-                colored(
-                    "PLEASE REDUCE IT UNLESS YOU HAVE A VERY HD SCREEN WITH MORE THAN 1k pixels vertically !!!! ",
-                    "red",
-                )
-            )
+    def extract_spectro_params(self):
 
         tile_duration = self.spectro_duration / 2 ** (self.zoom_level)
-
         data = np.zeros([int(tile_duration * self.dataset_sr), 1])
-
         Noverlap = int(self.window_size * self.overlap / 100)
-
         Nbech = np.size(data)
         Noffset = self.window_size - Noverlap
         Nbwin = int((Nbech - self.window_size) / Noffset)
         Freq = np.fft.rfftfreq(self.nfft, d=1 / self.dataset_sr)
         Time = np.linspace(0, Nbech / self.dataset_sr, Nbwin)
+        
+        temporal_resolution = round(Time[1] - Time[0], 3)   
+        frequency_resolution  = round(Freq[1] - Freq[0], 3)
+        
+        return  temporal_resolution, frequency_resolution, Nbwin
 
-        print("your smallest tile has a duration of:", tile_duration, "(s)")
-        print("\n")
+    def check_spectro_size(self):
+        """Verify if the parameters will generate a spectrogram that can fit one screen properly"""
+        if self.nfft > 2048:
+            print(f"Your spectra contain more than 1024 bin (ie {self.nfft/2}). \n")
+            print(
+                colored(
+                    "Note that unless you have a 4K screen, unwanted numerical compression might occur when visualizing your spectrograms..",
+                    "red",
+                )
+            )
+
+        temporal_resolution, frequency_resolution, Nbwin = self.extract_spectro_params()
+
+        print(f"your smallest tile has a duration of: {self.spectro_duration / 2 ** (self.zoom_level)} (s), with a number of spectra of {Nbwin} \n")
 
         if Nbwin > 3500:
             print(
                 colored(
-                    "PLEASE REDUCE IT UNLESS YOU HAVE A VERY HD SCREEN WITH MORE THAN 2k pixels horizontally !!!! ",
+                    "Note that unless you have a 4K screen, unwanted numerical compression might occur when visualizing your spectrograms..",
                     "red",
                 )
             )
 
         print("\n")
-        print("your number of time windows in this tile is:", Nbwin)
-        print("\n")
         print(
             "your resolutions : time = ",
-            round(Time[1] - Time[0], 3),
+            temporal_resolution,
             "(s) / frequency = ",
-            round(Freq[1] - Freq[0], 3),
+            frequency_resolution,
             "(Hz)",
         )
 
@@ -573,9 +583,23 @@ class Spectrogram(Dataset):
             audio_file.name for audio_file in list_wav_withEvent
         ]
 
+
+        #! INITIALIZATION START
+        # Load variables from raw metadata
+        metadata = pd.read_csv(self.path_input_audio_file.joinpath("metadata.csv"))
+        audio_file_origin_duration = metadata["audio_file_origin_duration"][0]
+        origin_sr = metadata["origin_sr"][0]
+        audio_file_count = metadata["audio_file_count"][0]
+        
+
         if self.data_normalization == "zscore" and self.spectro_normalization != "spectrum":
             self.spectro_normalization = "spectrum"
             print("WARNING: the spectrogram normalization has been changed to spectrum because the data will be normalized using zscore.")
+
+        # when audio_file_overlap has been set to > 0 whereas the dataset is equal to the origin one
+        if self.audio_file_overlap>0 and self.dataset_sr == origin_sr and int(self.spectro_duration) == int(audio_file_origin_duration):
+            self.audio_file_overlap = 0
+            print("WARNING: the audio file overlap has been set to 0 because you work on the origin dataset, so that no segmentation will be done.")
 
         """List containing the last job ids to grab outside of the class."""
         self.pending_jobs = []
@@ -607,12 +631,7 @@ class Spectrogram(Dataset):
                 )
                 return
 
-        #! INITIALIZATION START
-        # Load variables from raw metadata
-        metadata = pd.read_csv(self.path_input_audio_file.joinpath("metadata.csv"))
-        audio_file_origin_duration = metadata["audio_file_origin_duration"][0]
-        origin_sr = metadata["origin_sr"][0]
-        audio_file_count = metadata["audio_file_count"][0]
+
 
         if self.path.joinpath(OSMOSE_PATH.processed, "subset_files.csv").is_file():
             subset = pd.read_csv(
@@ -702,17 +721,17 @@ class Spectrogram(Dataset):
                 nb_reshaped_files = (
                     audio_file_origin_duration * audio_file_count
                 ) / self.spectro_duration
-                metadata["audio_file_count"] = nb_reshaped_files
+                metadata["audio_file_count"] = int(nb_reshaped_files)
                 next_offset_beginning = 0
                 offset_end = 0
                 i_max = -1
-
+                
                 for batch in range(self.batch_number):
                     
                     if i_max >= len(self.list_wav_to_process) - 1:
                         continue
 
-                    offset_beginning = next_offset_beginning
+                    offset_beginning = next_offset_beginning 
                     next_offset_beginning = 0
 
                     i_min = i_max + (1 if not offset_beginning else 0)
@@ -753,7 +772,7 @@ class Spectrogram(Dataset):
                             next_offset_beginning = audio_file_origin_duration - offset_end
                         else:
                             offset_end = 0  # ? ack
-
+                            
                     if self.__local:
                         process = mp.Process(
                             target=reshape,
@@ -767,7 +786,8 @@ class Spectrogram(Dataset):
                                 "batch_ind_max": i_max,
                                 "last_file_behavior": last_file_behavior,
                                 "timestamp_path": self.path_input_audio_file.joinpath("timestamp.csv"),
-                                "merge_files": merge_on_reshape
+                                "merge_files": merge_on_reshape,
+                                "audio_file_overlap": self.audio_file_overlap
                             },
                         )
 
@@ -776,7 +796,7 @@ class Spectrogram(Dataset):
                     else:
                         self.jb.build_job_file(
                             script_path=Path(inspect.getfile(reshape)).resolve(),
-                            script_args=f"--input-files {input_files} --chunk-size {int(self.spectro_duration)} --batch-ind-min {i_min}\
+                            script_args=f"--input-files {input_files} --chunk-size {int(self.spectro_duration)} --audio-file-overlap {int(self.audio_file_overlap)} --batch-ind-min {i_min}\
                                         --batch-ind-max {i_max} --output-dir {self.audio_path} --timestamp-path {self.path_input_audio_file.joinpath('timestamp.csv')}\
                                         --offset-beginning {int(offset_beginning)} --offset-end {int(offset_end)}\
                                         --last-file-behavior {last_file_behavior} {'--force' if force_init else ''}\
@@ -840,11 +860,12 @@ class Spectrogram(Dataset):
                     if batch < self.batch_number - 1
                     else len(self.list_wav_to_process)
                 )  # If it is the last batch, take all files
+
                 if self.__local:
                     process = mp.Process(
                         target=compute_stats,
                         kwargs={
-                            "input_dir": self.path_input_audio_file,
+                            "input_dir": self.audio_path,
                             "output_file": self.path.joinpath(
                                 OSMOSE_PATH.statistics,
                                 "SummaryStats_" + str(i_min) + ".csv",
@@ -867,7 +888,7 @@ class Spectrogram(Dataset):
                         logdir=self.path.joinpath("log")
                     )
 
-                    job_id = self.jb.submit_job(dependency=reshape_job_id_list if reshape_job_id_list else resample_job_id_list)
+                    job_id = self.jb.submit_job(dependency=resample_job_id_list)
                     norma_job_id_list += job_id
             
             self.pending_jobs = norma_job_id_list
@@ -875,13 +896,16 @@ class Spectrogram(Dataset):
             for process in processes:
                 process.join()
 
-        metadata["dataset_fileDuration"] = self.spectro_duration
+        metadata["audio_file_dataset_duration"] = self.spectro_duration
         metadata["dataset_sr"] = self.dataset_sr
+        metadata["audio_file_dataset_overlap"] = self.audio_file_overlap
         new_meta_path = self.audio_path.joinpath("metadata.csv")
         if new_meta_path.exists():
             new_meta_path.unlink()
         metadata.to_csv(new_meta_path,index=False)
         os.chmod(new_meta_path, mode=FPDEFAULT)
+
+        temporal_resolution, frequency_resolution, Nbwin = self.extract_spectro_params()
 
         data = {
             "dataset_name": self.name,
@@ -890,7 +914,7 @@ class Spectrogram(Dataset):
             "window_size": self.window_size,
             "overlap": self.overlap,
             "colormap": self.colormap,
-            "zoom_level": self.zoom_level + 1,
+            "zoom_level": self.zoom_level ,
             "number_adjustment_spectrogram": self.number_adjustment_spectrogram,
             "dynamic_min": self.dynamic_min,
             "dynamic_max": self.dynamic_max,
@@ -904,11 +928,11 @@ class Spectrogram(Dataset):
             "gain_dB": self.gain_dB,
             "zscore_duration": self.zscore_duration,
             "window_type": self.window_type,
-            "frequency_resolution": self.frequency_resolution,
+            "number_spectra": Nbwin,
+            "frequency_resolution": frequency_resolution,
+            "temporal_resolution": temporal_resolution,
+            "audio_file_dataset_overlap": self.audio_file_overlap
         }
-
-        for i, time_res in enumerate(self.time_resolution):
-            data.update({f"time_resolution_{i}": time_res})
 
         analysis_sheet = pd.DataFrame.from_records([data])
 
@@ -955,6 +979,10 @@ class Spectrogram(Dataset):
         
         if not filename.suffix == ".csv":
             raise ValueError("The file must be a .csv file to be updated.")
+
+        temporal_resolution, frequency_resolution, Nbwin = self.extract_spectro_params()
+
+
         new_params = {
             "dataset_name": self.name,
             "dataset_sr": self.dataset_sr,
@@ -962,7 +990,7 @@ class Spectrogram(Dataset):
             "window_size": self.window_size,
             "overlap": self.overlap,
             "colormap": self.colormap,
-            "zoom_level": self.zoom_level + 1,
+            "zoom_level": self.zoom_level ,
             "number_adjustment_spectrogram": self.number_adjustment_spectrogram,
             "dynamic_min": self.dynamic_min,
             "dynamic_max": self.dynamic_max,
@@ -976,10 +1004,11 @@ class Spectrogram(Dataset):
             "gain_dB": self.gain_dB,
             "zscore_duration": self.zscore_duration,
             "window_type": self.window_type,
-            "frequency_resolution": self.frequency_resolution,
+            "number_spectra": Nbwin,
+            "frequency_resolution": frequency_resolution,
+            "temporal_resolution": temporal_resolution,
+            "audio_file_dataset_overlap": self.audio_file_overlap
         }
-        for i, time_res in enumerate(self.time_resolution):
-            new_params.update({f"time_resolution_{i}": time_res})
 
         if not filename.exists():
             pd.DataFrame.from_records([new_params]).to_csv(filename, index=False)
@@ -997,41 +1026,8 @@ class Spectrogram(Dataset):
             return True
         return False
 
-    def to_csv(self, filename: Path) -> None:
-        """Outputs the characteristics of the spectrogram the specified file in csv format.
-
-        Parameter
-        ---------
-        filename: Path
-            The path of the file to be written."""
-
-        data = {
-            "name": self.__spectro_foldername,
-            "nfft": self.nfft,
-            "window_size": self.window_size,
-            "overlap": self.overlap / 100,
-            "zoom_level": 2 ** (self.zoom_level - 1),
-            # "dynamic_min": self.dynamic_min,
-            # "dynamic_max": self.dynamic_max,
-            # "number_adjustment_spectrogram": self.number_adjustment_spectrogram,
-            # "spectro_duration": self.spectro_duration,
-            # "zscore_duration": self.zscore_duration,
-            # "hp_filter_min_freq": self.hp_filter_min_freq,
-            # "sensitivity_dB": 20 * log10(self.sensitivity / 1e6),
-            # "peak_voltage": self.peak_voltage,
-            # "spectro_normalization": self.spectro_normalization,
-            # "data_normalization": self.data_normalization,
-            # "gain_dB": self.gain_dB
-        }
-        # TODO: readd `, 'cvr_max':self.dynamic_max, 'cvr_min':self.dynamic_min` above when ok with Aplose
-        df = pd.DataFrame.from_records([data])
-        df.to_csv(filename, index=False)
-        os.chmod(filename, mode=FPDEFAULT)
-
-    # region On cluster
-
     def process_file(
-        self, audio_file: Union[str, Path], *, adjust: bool = False, save_matrix: bool = False,save_for_LTAS:bool=True, overwrite: bool = False, clean_adjust_folder: bool = False
+        self, audio_file: Union[str, Path], *, adjust: bool = False, save_matrix: bool = False,save_for_LTAS:bool=True, overwrite: bool = True, clean_adjust_folder: bool = False
     ) -> None:
         """Read an audio file and generate the associated spectrogram.
 
@@ -1050,10 +1046,6 @@ class Spectrogram(Dataset):
         """
         set_umask()
         try:
-            print(clean_adjust_folder)
-            print(self.path_output_spectrogram.parent.parent.joinpath(
-                    "adjustment_spectros"
-                ).exists())
             if clean_adjust_folder and (self.path_output_spectrogram.parent.parent.joinpath(
                     "adjustment_spectros"
                 ).exists()
@@ -1082,28 +1074,26 @@ class Spectrogram(Dataset):
             return len(list(self.path_output_spectrogram_matrix.glob(f"{Path(audio_file).stem}*"))) == 2**self.zoom_level if save_matrix else True
 
         if len(list(self.path_output_spectrogram.glob(f"{Path(audio_file).stem}*"))) == sum(2**i for i in range(self.zoom_level+1)) and check_existing_matrix():
-            if overwrite:
-                print(f"Existing files detected for audio file {audio_file}! They will be overwritten.")
-                for old_file in self.path_output_spectrogram.glob(f"{Path(audio_file).stem}*"):
-                    old_file.unlink()
-                if save_matrix:
-                    for old_matrix in self.path_output_spectrogram_matrix.glob(f"{Path(audio_file).stem}*"):
-                        old_matrix.unlink()
-            else:
-                print(f"The spectrograms for the file {audio_file} have already been generated, skipping...")
-                return
+            #if overwrite:
+            print(f"Existing files detected for audio file {audio_file}! They will be overwritten.")
+            for old_file in self.path_output_spectrogram.glob(f"{Path(audio_file).stem}*"):
+                old_file.unlink()
+            if save_matrix:
+                for old_matrix in self.path_output_spectrogram_matrix.glob(f"{Path(audio_file).stem}*"):
+                    old_matrix.unlink()
+            # else:
+            #     print(f"The spectrograms for the file {audio_file} have already been generated, skipping...")
+            #     return
         
         if audio_file not in os.listdir(self.audio_path):
             raise FileNotFoundError(
                 f"The file {audio_file} must be in {self.audio_path} in order to be processed."
             )
         
-        if self.data_normalization == "zscore" and self.spectro_normalization != "spectrum":
+        if self.data_normalization in ["zscore", "none"]:
             self.spectro_normalization = "spectrum"
-            print("WARNING: the spectrogram normalization has been changed to spectrum because the data will be normalized using zscore.")
         
 
-        print(f"Generating spectrograms for {audio_file}...")
         #! Determination of zscore normalization parameters
         if self.data_normalization == "zscore" and Zscore != "original":
 
@@ -1129,8 +1119,6 @@ class Spectrogram(Dataset):
                 self.__summStats["filename"] == audio_file
             ]["std_avg"].values[0]
 
-            print(f"Zscore mean : {self.__zscore_mean} and std : {self.__zscore_std}/")
-
         #! File processing
         data, sample_rate = safe_read(self.audio_path.joinpath(audio_file))
 
@@ -1153,6 +1141,7 @@ class Spectrogram(Dataset):
         if adjust:
             make_path(self.path_output_spectrogram, mode=DPDEFAULT)
 
+        print(f"Generating spectrograms for {output_file.name}")
         self.gen_tiles(data=data, sample_rate=sample_rate, output_file=output_file, adjust=adjust)
 
     def gen_tiles(self, *, data: np.ndarray, sample_rate: int, output_file: Path, adjust: bool):
@@ -1166,19 +1155,21 @@ class Spectrogram(Dataset):
             The sample rate of the audio data.
         output_file : `str`
             The name of the output spectrogram."""
+        
         if self.data_normalization == "zscore" and self.zscore_duration:
             if (len(self.zscore_duration) > 0) and (self.zscore_duration != "original"):
                 data = (data - self.__zscore_mean) / self.__zscore_std
             elif self.zscore_duration == "original":
+                print('apply zscore original')
                 data = (data - np.mean(data)) / np.std(data)
 
-            print(f"data mean : {np.mean(data)} and std : {np.std(data)}")
+        print(f"- data min : {np.min(data)} \n - data max : {np.max(data)} \n - data mean : {np.mean(data)} \n - data std : {np.std(data)}")
 
         duration = len(data) / int(sample_rate)
 
-        nber_tiles_lowest_zoom_level = 2 ** (self.zoom_level -1)
+        nber_tiles_lowest_zoom_level = 2 ** self.zoom_level
         tile_duration = duration / nber_tiles_lowest_zoom_level
-
+        
         audio_file_name = output_file.stem        
         current_timestamp = pd.to_datetime(get_timestamp_of_audio_file( self.audio_path.joinpath('timestamp.csv') , audio_file_name+".wav"))            
         list_timestamps = []
@@ -1233,14 +1224,12 @@ class Spectrogram(Dataset):
 
                 os.chmod(output_matrix, mode=FPDEFAULT)                  
 
-
-
         # loop over the zoom levels from the second lowest to the highest one
-        for zoom_level in range(self.zoom_level)[::-1]: #zoom_level + 1
+        for zoom_level in range(self.zoom_level+1)[::-1]:
             nberspec = Sxx_complete_lowest_level.shape[1] // (2**zoom_level)
 
             # loop over the tiles at each zoom level
-            for tile in range(2**zoom_level):
+            for tile in range(2**zoom_level):                
                 Sxx_int = Sxx_complete_lowest_level[:, tile * nberspec : (tile + 1) * nberspec][
                     :, :: 2 ** (self.zoom_level - zoom_level)
                 ]
@@ -1309,6 +1298,7 @@ class Spectrogram(Dataset):
         Sxx : `np.NDArray[float64]`
         Freq : `np.NDArray[float]`
         """
+
         Noverlap = int(self.window_size * self.overlap / 100)
 
         win = np.hamming(self.window_size)
@@ -1359,7 +1349,6 @@ class Spectrogram(Dataset):
                 output_file.name
             ).with_suffix(".npz")
 
-            # TODO: add an option to force regeneration (in case of corrupted file)
             if not output_matrix.exists():
                 np.savez(
                     output_matrix,
@@ -1391,9 +1380,9 @@ class Spectrogram(Dataset):
         log_spectro : `np.NDArray[signed int]`
         output_file : `str`
             The name of the spectrogram file."""
-        if output_file.exists(): 
-            print(f"The spectrogram {output_file.name} has already been generated, skipping...")
-            return
+        # if output_file.exists(): 
+        #     print(f"The spectrogram {output_file.name} has already been generated, skipping...")
+        #     return
         # Plotting spectrogram
         my_dpi = 100
         fact_x = 1.3
@@ -1405,8 +1394,8 @@ class Spectrogram(Dataset):
             dpi=my_dpi,
         )
 
-        print(f"Log spectro: {np.amin(log_spectro)}-{np.amax(log_spectro)}\nDynamic: {self.dynamic_min}-{self.dynamic_max}")
-
+        print(f"- min log spectro : {np.amin(log_spectro)} \n - max log spectro : {np.amax(log_spectro)} \n")
+        
         color_map = plt.cm.get_cmap(self.colormap)  # .reversed()
         plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
         plt.clim(vmin=self.dynamic_min, vmax=self.dynamic_max)
@@ -1432,7 +1421,7 @@ class Spectrogram(Dataset):
 
         os.chmod(output_file, mode=FPDEFAULT)
 
-        print(f"Successfully generated {output_file.name}.")
+        #print(f"Successfully generated {output_file.name}.")
 
         metadata_input = self.path.joinpath(
             OSMOSE_PATH.spectrogram, "adjust_metadata.csv"
@@ -1450,7 +1439,7 @@ class Spectrogram(Dataset):
             if metadata_output.exists():
                 metadata_output.unlink()
             shutil.copyfile(metadata_input, metadata_output)
-            print(f"Written {metadata_output}")
+            #print(f"Written {metadata_output}")
         except:
             pass
         # try:
@@ -1461,21 +1450,53 @@ class Spectrogram(Dataset):
 
     # endregion
 
-    def process_all_files(self, *, save_matrix: bool = False, save_for_LTAS:bool = True):
+    def process_all_files(self, *, save_matrix: bool = False, save_for_LTAS:bool = True, list_wav_to_process:list=[]):
         """Process all the files in the dataset and generates the spectrograms. It uses the python multiprocessing library
         to parallelise the computation, so it is less efficient to use this method rather than the job scheduler if run on a cluster.
         """
-
-        kwargs = {"save_matrix": save_matrix,"save_for_LTAS":save_for_LTAS}
+      
+        if len(list_wav_to_process)>0:
+            self.list_wav_to_process=list_wav_to_process
+            
+        kwargs = {"save_matrix": save_matrix,"save_for_LTAS":save_for_LTAS,"overwrite":True}
 
         map_process_file = partial(self.process_file, **kwargs)
+        
+        for ll in self.list_wav_to_process:
+            self.process_file(ll,overwrite=True)
+        
+        # with mp.Pool(processes=mp.cpu_count()) as pool:
+        #     pool.map(map_process_file, self.list_wav_to_process)
 
-        for file in self.list_wav_to_process:
-            self.process_file(file, **kwargs)
+
+    def save_all_welch(self,list_npz_files:list,path_all_welch: Path):
+
+        LTAS = np.empty((1, int(self.nfft/2) + 1))
+        time = []
+        for file_npz in tqdm(list_npz_files):
+            current_matrix=np.load(file_npz,allow_pickle=True)    
+            LTAS = np.vstack((LTAS, current_matrix['Sxx']))
+            time.append( current_matrix['Time'] )       
+        LTAS=LTAS[1:,:]     
+        Freq = current_matrix['Freq']
+        
+        time = np.array(time)
+        
+        # flatten time, which is currently a list of arrays 
+        if time.ndim==2:
+            time = list(itertools.chain(*time))
+        else:
+            time = [tt.item() for tt in time] # suprinsingly , doing simply = list(time) was droping the Timestamp dtype, to be investigated in more depth...
+    
+        np.savez(path_all_welch,LTAS=LTAS,time=time,Freq=Freq,allow_pickle=True)# careful data not sorted here! we should save them based on dataframe df below 
+
+        return LTAS, time, Freq
+                
 
     def build_LTAS(self,time_resolution:str,time_scale:str='D'):
         
         list_npz_files = list(self.path_output_welch.joinpath(time_resolution).glob('*npz'))
+        
         if len(list_npz_files) == 0:            
             raise FileNotFoundError(
                 "No intermediary welch spectra to aggregate, run a complete generation of spectrograms first!"
@@ -1491,50 +1512,157 @@ class Spectrogram(Dataset):
                 data = np.load(path_all_welch,allow_pickle=True)   
                 LTAS=data['LTAS']
                 time=data['time']
-                Freq=data['Freq']
-                
+                Freq=data['Freq']                
             else:
-                LTAS = np.empty((1, int(self.nfft/2) + 1))
-                time = []
-                for file_npz in tqdm(list_npz_files):
-                    current_matrix=np.load(file_npz,allow_pickle=True)    
-                    LTAS = np.vstack((LTAS, current_matrix['Sxx']))
-                    time.append( current_matrix['Time'] )       
-                LTAS=LTAS[1:,:]     
-                Freq = current_matrix['Freq']
-                
-                np.savez(path_all_welch,LTAS=LTAS,time=time,Freq=Freq,allow_pickle=True) 
-                time = np.array(time)
+                LTAS, time, Freq = self.save_all_welch(list_npz_files,path_all_welch)
  
+            # convert numpy arrays to dataframe, more convenient for time operations
             df=pd.DataFrame(LTAS,dtype=float)
-            if time.ndim==2:
-                df['time'] = list(itertools.chain(*time))
-            else:
-                df['time'] = [tt.item() for tt in time] # suprinsingly , doing simply = list(time) was droping the Timestamp dtype, to be investigated in more depth...
+            df['time']=time
+            # sort by time, and make time variable as dataframe index            
+            df.sort_values(by=['time'], inplace=True)
             df.set_index('time', inplace=True, drop= True)
-            df.index = pd.to_datetime(df.index)
-                                        
-            if time_scale=="all":              
-                self.generate_and_save_LTAS(df.index[0],df.index[-1],Freq,10*np.log10(LTAS.T) ,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_all.png'),'all')
+            df.index = pd.to_datetime(df.index)            
+            
+            if time_scale=="all":            
+                
+                cur_LTAS = df.values
+                
+                if cur_LTAS.shape[0]>2500:
+
+                    save_shape = cur_LTAS.shape[0]           
+                    screen_res_pixel = 2000
+                    ind_av = round(cur_LTAS.shape[0] / screen_res_pixel)
+                    mm=cur_LTAS[0::ind_av,:]
+                    bb=cur_LTAS[1::ind_av,:]
+                    if mm.shape[0]>bb.shape[0]:
+                        mm=mm[:-1,:]
+                    elif bb.shape[0]>mm.shape[0]:
+                        bb=bb[:-1,:]
+                    cur_LTAS = 0.5*(mm + bb)
+                    print(f"Be aware that we applied a window averaging to reduce your LTAS from {save_shape} welch to {cur_LTAS.shape[0]} welch \n")                    
+
+                if self.spectro_normalization == "density":
+                    log_spectro = 10 * np.log10((cur_LTAS / (1e-12)) + (1e-20))
+                if self.spectro_normalization == "spectrum":
+                    log_spectro = 10 * np.log10(cur_LTAS + (1e-20))
+                
+                self.generate_and_save_LTAS(df.index[0],df.index[-1],Freq,log_spectro.T,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_all.png'),'all')
 
             else:
             
                 groups_LTAS = df.groupby(df.index.to_period(time_scale)).agg(list)
-                            
                 time_periods = groups_LTAS.index.get_level_values(0)
-                         
+                
                 for ind_group_LTAS in range(groups_LTAS.values.shape[0]):
-                                
-                    log_spectro = 10*np.log10(np.stack(groups_LTAS.values[ind_group_LTAS,:]))            
-
+                    
+                    cur_LTAS = np.stack(groups_LTAS.values[ind_group_LTAS,:])
+                    if self.spectro_normalization == "density":
+                        log_spectro = 10 * np.log10((cur_LTAS / (1e-12)) + (1e-20))
+                    if self.spectro_normalization == "spectrum":
+                        log_spectro = 10 * np.log10(cur_LTAS + (1e-20))
+                                       
                     if ind_group_LTAS<groups_LTAS.values.shape[0]-1:
                         ending_timestamp = time_periods[ind_group_LTAS+1].to_timestamp()
                     else:
-                        ending_timestamp = pd.date_range(time_periods[ind_group_LTAS].to_timestamp(),periods=2,freq=time_scale)[0]
+                        ending_timestamp = pd.date_range(time_periods[ind_group_LTAS].to_timestamp(),periods=2,freq=time_scale)[0] 
                     
-                    self.generate_and_save_LTAS(time_periods[ind_group_LTAS].to_timestamp(),ending_timestamp,Freq,10*np.log10(LTAS.T) ,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_{time_periods[ind_group_LTAS]}.png'),time_scale)
+                    self.generate_and_save_LTAS(time_periods[ind_group_LTAS].to_timestamp(),ending_timestamp,Freq,log_spectro,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_{time_periods[ind_group_LTAS]}.png'),time_scale)
 
+                    
+    def build_SPL_filtered(self,time_resolution:str,Freq_min: Union[list, int]=[0], Freq_max: Union[list, int]=None):
+        
+        # assign default value for Freq_max, equivalent to no HF filtering
+        if (Freq_max==None) or (not isinstance(Freq_min,list)):
+            Freq_max = [self.dataset_sr/2]      
+
+        if not isinstance(Freq_min,list):
+            Freq_min = [Freq_min]      
+                                
+        list_npz_files = list(self.path_output_welch.joinpath(time_resolution).glob('*npz'))
+        if len(list_npz_files) == 0:            
+            raise FileNotFoundError(
+                "No intermediary welch spectra to aggregate, run a complete generation of spectrograms first!"
+            )                
+            
+        else:
+
+            if not self.path_output_SPLfiltered.exists():
+                make_path(self.path_output_SPLfiltered, mode=DPDEFAULT)
                 
+            path_all_welch = self.path_output_welch.joinpath(time_resolution,'all_welch.npz')
+            if os.path.exists(path_all_welch):                
+                data = np.load(path_all_welch,allow_pickle=True)   
+                LTAS=data['LTAS']
+                time=data['time']
+                Freq=data['Freq']                
+            else:
+                LTAS, time, Freq = self.save_all_welch(list_npz_files,path_all_welch)
+ 
+            # convert numpy arrays to dataframe, more convenient for time operations
+            df=pd.DataFrame(LTAS,dtype=float)
+            df['time']=time
+            # sort by time, and make time variable as dataframe index            
+            df.sort_values(by=['time'], inplace=True)
+            df.set_index('time', inplace=True, drop= True)
+            df.index = pd.to_datetime(df.index)      
+
+            time_vector = pd.date_range(df.index[0],df.index[-1],periods=df.values.shape[0])
+            
+            # Plotting SPL
+            my_dpi = 100
+            fact_x = 1.3
+            fact_y = 1.3
+            fig, ax = plt.subplots(
+                nrows=1,
+                ncols=1,
+                figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi),
+                dpi=my_dpi,
+            )       
+            
+
+            lst_legend=[]
+            for cur_freq_min,cur_freq_max in zip(Freq_min,Freq_max):
+                pre_SPL = np.mean(df.values[:,np.argmin(abs(Freq-cur_freq_min)) : np.argmin(abs(Freq-cur_freq_max))],1)
+                
+                if self.spectro_normalization == "density":
+                    SPL_filtered = 10 * np.log10((pre_SPL / (1e-12)) + (1e-20))
+                if self.spectro_normalization == "spectrum":
+                    SPL_filtered = 10 * np.log10(pre_SPL + (1e-20))
+
+                plt.plot(np.arange(0,len(SPL_filtered)) , SPL_filtered)
+                plt.autoscale(enable=True, axis='x', tight=True)
+                
+                lst_legend.append(f'[{cur_freq_min}-{cur_freq_max}] Hz')
+                
+                output_file_npz = self.path.joinpath(OSMOSE_PATH.SPLfiltered,f'SPLfiltered_{cur_freq_min}_{cur_freq_max}.npz')
+                np.savez(output_file_npz,SPL=SPL_filtered,time=time_vector,allow_pickle=True)                    
+            
+            plt.ylabel("SPL (dB)")
+            plt.legend(lst_legend)
+            
+            # write proper timestamps as xitck_labels
+            nber_xticks = min(10,len(SPL_filtered))                 
+            if (df.index[-1] - df.index[0]).days>7:
+                label_smoother = 'D'
+            else:
+                label_smoother = 'H'      
+            date = time_vector.to_period(label_smoother)  
+        
+            int_sep = int(len(date) / nber_xticks)
+            plt.xticks(np.arange(0, len(date), int_sep), date[::int_sep])
+            ax.tick_params(axis='x', rotation=20)        
+            
+            # save as png figure
+            output_file = self.path.joinpath(OSMOSE_PATH.SPLfiltered,f'SPLfiltered.png')
+            print('saving',output_file.name, '/ Nber of time points:',str(len(SPL_filtered)))
+            plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
+            plt.close()
+
+    
+        
+        
+     
     def generate_and_save_LTAS(
         self,
         start_time:pd._libs.tslibs.timestamps.Timestamp,
@@ -1544,15 +1672,6 @@ class Spectrogram(Dataset):
         output_file: Path,
         time_scale: str
     ):
-        """Write the spectrogram figures to the output file.
-
-        Parameters
-        ----------
-        time : `np.NDArray[floating]`
-        freq : `np.NDArray[floating]`
-        log_spectro : `np.NDArray[signed int]`
-        output_file : `str`
-            The name of the spectrogram file."""
 
         # Plotting spectrogram
         my_dpi = 100
@@ -1564,16 +1683,16 @@ class Spectrogram(Dataset):
             figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi),
             dpi=my_dpi,
         )
-
-        im = ax.pcolormesh( np.arange(0,log_spectro.shape[1]) , freq , log_spectro, cmap=plt.cm.get_cmap(self.colormap) )
+        
+        im = ax.pcolormesh( np.arange(0,log_spectro.shape[1]), freq , log_spectro, cmap=plt.cm.get_cmap(self.colormap) )
         plt.colorbar(im,ax=ax)
-                            
         ax.set_ylabel("Frequency (Hz)")
         
         # make timestamps proper xitck_labels
         nber_xticks = min(10,log_spectro.shape[1])                 
-        label_smoother = {'all':'D','Y':'M','M':'D','D':'T'}
-        date = pd.date_range(start_time,end_time,periods=log_spectro.shape[1]).to_period(label_smoother[time_scale])  
+        label_smoother = {'all':'D','Y':'M','M':'D','D':'T','H':'T'}
+        time_vector = pd.date_range(start_time,end_time,periods=log_spectro.shape[1])
+        date = time_vector.to_period(label_smoother[time_scale])  
         int_sep = int(len(date) / nber_xticks)
         plt.xticks(np.arange(0, len(date), int_sep), date[::int_sep])
         ax.tick_params(axis='x', rotation=20)    
@@ -1583,3 +1702,64 @@ class Spectrogram(Dataset):
         plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
         plt.close()
         
+        output_file_npz=output_file.with_suffix('.npz')
+        np.savez(output_file_npz,LTAS=log_spectro,time=time_vector,Freq=freq,allow_pickle=True)        
+        
+        
+    def build_EPD(self,time_resolution:str):
+
+        list_npz_files = list(self.path_output_welch.joinpath(time_resolution).glob('*npz'))
+        if len(list_npz_files) == 0:            
+            raise FileNotFoundError(
+                "No intermediary welch spectra to aggregate, run a complete generation of spectrograms first!"
+            )                
+
+        else:
+
+            if not self.path_output_EPD.exists():
+                make_path(self.path_output_EPD, mode=DPDEFAULT)
+
+            path_all_welch = self.path_output_welch.joinpath(time_resolution,'all_welch.npz')
+            if os.path.exists(path_all_welch):                
+                data = np.load(path_all_welch,allow_pickle=True)   
+                LTAS=data['LTAS']
+                time=data['time']
+                Freq=data['Freq']                
+            else:
+                LTAS, time, Freq = self.save_all_welch(list_npz_files,path_all_welch)
+
+
+            all_welch = 10 * np.log10(LTAS)
+            
+            RMSlevel = 10 * np.log10(np.nanmean(10 ** (all_welch / 10), axis=0))
+            
+            # Plotting SPL
+            my_dpi = 100
+            fact_x = 1.3
+            fact_y = 1.3
+            fig, ax = plt.subplots(
+                nrows=1,
+                ncols=1,
+                figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi),
+                dpi=my_dpi,
+            )   
+            
+            ax.plot(Freq, RMSlevel, color='k', label='RMS level')
+            
+            percen = [1, 5, 50, 95, 99]
+            p = np.nanpercentile(all_welch, percen, 0, interpolation='linear')
+            for i in range(len(p)):
+                plt.plot(Freq, p[i, :], linewidth=2, label='%s %% percentil' % percen[i])
+            
+            ax.semilogx()
+            plt.legend()                
+            plt.autoscale(enable=True, axis='y', tight=True)
+            plt.autoscale(enable=True, axis='x', tight=True)
+            plt.ylabel("relative SPL (dB)")
+            plt.xlabel("Frequency (Hz)")
+    
+            # save as png figure
+            output_file = self.path.joinpath(OSMOSE_PATH.EPD,f'EPD.png')
+            print(f"saving {output_file.name} / Nber of welch: {all_welch.shape[0]}")
+            plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
+            plt.close()
