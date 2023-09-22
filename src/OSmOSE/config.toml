@@ -15,7 +15,7 @@
 
     [Job.Presets.low]
         queue = "sequentiel"
-        walltime = "01:00:00"
+        walltime = "04:00:00"
         ncpus = 1
         mem = "1g"
         nodes = 1
@@ -33,3 +33,10 @@
         ncpus = 28
         mem = "120g"
         nodes = 1
+
+[Auxiliary]
+    bathymetry = "/home6/grosmaan/Documents/codes/osmose_codes/datawork-osmose/dataset/auxiliary/GEBCO_2022_sub_ice_topo.nc"
+    shore_dist = "/home6/grosmaan/Documents/codes/osmose_codes/datawork-osmose/dataset/auxiliary/dist2coast.txt"
+
+
+
