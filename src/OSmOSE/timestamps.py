@@ -6,6 +6,7 @@ import pandas as pd
 from pathlib import Path
 
 from OSmOSE.config import *
+from OSmOSE.utils import get_files
 
 __converter = {
     "%Y": r"[12][0-9]{3}",
@@ -47,7 +48,7 @@ def write_timestamp(
     *,
     audio_path: str,
     date_template: str,
-    timezone: str = "UTC",
+    timezone: str,
     offset: tuple = None,
     verbose: bool = False 
 ):
@@ -64,8 +65,6 @@ def write_timestamp(
         date_template: `str`
             the date template in strftime format. For example, `2017/02/24` has the template `%Y/%m/%d`
             For more information on strftime template, see https://strftime.org/
-        timezone: `str`, optional
-            The timezone this timestamp was originally recorded in (the default is UTC).
         offsets: `tuple(int,int)`, optional
             a tuple containing the beginning and end offset of the date.
             The first element is the first character of the date, and the second is the last.
@@ -74,31 +73,21 @@ def write_timestamp(
     """
     list_audio_file = sorted([file for file in Path(audio_path).glob("*.wav")])
 
-    if len(list_audio_file) == 0:
-        
+    if len(list_audio_file) == 0:        
         list_audio_file_WAV = sorted([file for file in Path(audio_path).glob("*.WAV")])
 
         if len(list_audio_file_WAV) > 0:
-
-            print(
-                f"Your audio files have a .WAV extension, we are changing it to the standard .wav extension"
-                )
+            print("Your audio files have a .WAV extension, we are changing it to the standard .wav extension.")
             
             for file_name in list_audio_file_WAV:
                 os.rename(file_name, Path(audio_path).joinpath(file_name.stem+'.wav'))
         
-        elif len(Path(audio_path).glob("*.mp3",".*flac"))>0:
-
-            print(
-                f"Your audio files do not have the right extension, we only accept wav audio files for the moment."
-            )
+        elif len(get_files(Path(audio_path),("*.mp3", "*.flac")))>0:          
+            raise FileNotFoundError("Your audio files do not have the right extension, we only accept wav audio files for the moment.")
                     
         else:
-        
-            print(
-                f"No audio files found in the {audio_path} directory."
-            )
-
+            raise FileNotFoundError(f"No audio files found in the {audio_path} directory.")
+            
     timestamp = []
     filename_raw_audio = []
 
@@ -110,17 +99,13 @@ def write_timestamp(
             else:
                 date_extracted = re.search(converted, str(filename))[0]
         except TypeError:
-            raise ValueError(
-                f"The date template does not match any set of character in the file name {filename}\nMake sure you are not forgetting separator characters, or use the offsets parameter."
-            )
+            raise ValueError(f"The date template does not match any set of character in the file name {filename}\nMake sure you are not forgetting separator characters, or use the offset parameter.")
 
-        date_obj = datetime.datetime.strptime(date_extracted, date_template)
-        dates = datetime.datetime.strftime(date_obj, "%Y-%m-%dT%H:%M:%S.%f")
+        date_obj = datetime.datetime.strptime(date_extracted+timezone, date_template+'%z')
+        dates_final = datetime.datetime.strftime(date_obj,'%Y-%m-%dT%H:%M:%S.%f%z')
 
-        dates_final = dates[:-3] + "Z"
-        if i <5:
-            print("filename->", filename)
-            print("extracted timestamp->", dates_final, "\n")
+        if i ==10:
+            print(f"Timestamp extraction seems OK, here is an example: {filename.name} -> {dates_final} \n")
         elif verbose:
             print("filename->", filename)
             print("extracted timestamp->", dates_final, "\n")
@@ -130,14 +115,13 @@ def write_timestamp(
         filename_raw_audio.append(filename.name)
 
     df = pd.DataFrame(
-        {"filename": filename_raw_audio, "timestamp": timestamp}#, "timezone": timezone}
+        {"filename": filename_raw_audio, "timestamp": timestamp}
     )
     df.sort_values(by=["timestamp"], inplace=True)
     df.to_csv(
         Path(audio_path, "timestamp.csv"),
         index=False,
-        na_rep="NaN",
-        header=None
+        na_rep="NaN"
     )
     os.chmod(Path(audio_path, "timestamp.csv"), mode=FPDEFAULT)
 
@@ -155,12 +139,6 @@ if __name__ == "__main__":
         "-d",
         help="The date template in strftime format. If not sure, input the whole file name.",
     )
-    argparser.add_argument(
-        "--timezone",
-        "-t",
-        default="UTC",
-        help="The timezone the date was recorded in. Default is UTC.",
-    )
     args = argparser.parse_args()
 
     if args.offset and "-" in args.offset:
@@ -174,6 +152,5 @@ if __name__ == "__main__":
     write_timestamp(
         audio_path=args.dataset_name,
         date_template=args.date_template,
-        timezone=args.timezone,
         offsets=offset,
     )

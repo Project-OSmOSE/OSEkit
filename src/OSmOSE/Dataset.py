@@ -5,10 +5,12 @@ from typing import Union, Tuple, List
 from datetime import datetime
 from warnings import warn
 from statistics import fmean as mean
-
+import shutil
+import glob
+from os import PathLike
+   
 try:
     import grp
-
     skip_perms = False
 except ModuleNotFoundError:
     skip_perms = True
@@ -36,6 +38,8 @@ class Dataset:
         dataset_path: str,
         *,
         gps_coordinates: Union[str, list, Tuple] = None,
+        depth: Union[str, int] = None,  
+        timezone: str = None,
         owner_group: str = None,
         original_folder: str = None,
         local: bool = True,
@@ -69,16 +73,21 @@ class Dataset:
         self.owner_group = owner_group
         self.__gps_coordinates = []
         self.__local = local
+
         if gps_coordinates is not None:
             self.gps_coordinates = gps_coordinates
-
+            
+        if depth is not None:
+            self.depth = depth
+            
+        if timezone is not None:
+            self.timezone = timezone            
+            
         self.__original_folder = original_folder
-
-        self.list_abnormal_filenames = []
 
         if skip_perms:
             print(
-                "It seems you are on a non-Unix operating system (probably Windows). The build_dataset() method will not work as intended and permission might be uncorrectly set."
+                "It seems you are on a non-Unix operating system (probably Windows). The build() method will not work as intended and permission might be incorrectly set."
             )
 
         pd.set_option("display.float_format", lambda x: "%.0f" % x)
@@ -115,7 +124,7 @@ class Dataset:
         Parameter
         ---------
         coordinates: `str` or `list` or `tuple`
-            If the coordinates are a string, it must be the name of a csv file located in `raw/auxiliary/`, containing two columns: 'lat' and 'long'
+            If the coordinates are a string, it must be the name of a csv file located in `data/auxiliary/instrument/`, containing two columns: 'lat' and 'lon'
             Else, they can be either a list or a tuple of two float, the first being the latitude and second the longitude; or a
             list or a tuple containing two lists or tuples respectively of floats. In this case, the coordinates are not treated as a point but
             as an area.
@@ -124,8 +133,6 @@ class Dataset:
         -------
         The GPS coordinates as a tuple.
         """
-        if not self.__gps_coordinates:
-            print("This dataset has no GPS coordinates.")
         return self.__gps_coordinates
 
     @gps_coordinates.setter
@@ -139,36 +146,74 @@ class Dataset:
             Tuple[Tuple[float, float], Tuple[float, float]],
         ],
     ):
-        # TODO: Allow any iterator?
+
         match new_coordinates:
             case str():
-                csvFileArray = pd.read_csv(
-                    self.path.joinpath(OSMOSE_PATH.auxiliary, new_coordinates)
+                
+                aux_data_path = next(
+                    self.path.rglob(new_coordinates), False
                 )
-                self.__gps_coordinates = [np.mean(csvFileArray["lat"]), np.mean(csvFileArray["lon"])
-                    #(np.min(csvFileArray["lat"]), np.max(csvFileArray["lat"])),
-                    #(np.min(csvFileArray["lon"]), np.max(csvFileArray["lon"])),
-                ]
+                
+                if aux_data_path:
+                    csvFileArray = pd.read_csv(aux_data_path)
+                    self.__gps_coordinates = [np.mean(csvFileArray["lat"]), np.mean(csvFileArray["lon"])]
+                else:
+                    raise FileNotFoundError(f"The {new_coordinates} has been found no where within {self.path}")                   
+                
             case tuple():
                 self.__gps_coordinates = new_coordinates
-            case list():
-                if all(isinstance(coord, list) for coord in new_coordinates):
-                    self.__gps_coordinates = (
-                        (new_coordinates[0][0], new_coordinates[0][1]),
-                        (new_coordinates[1][0], new_coordinates[1][1]),
-                    )
-                else:
-                    self.__gps_coordinates = (new_coordinates[0], new_coordinates[1])
-                # TODO : set a standard type for coordinates
-                # else:
-                #     raise ValueError(
-                #         f"The coordinates list must contain either only floats or only sublists of two elements."
-                #     )
             case _:
                 raise TypeError(
                     f"GPS coordinates must be either a list of coordinates or the name of csv containing the coordinates, but {type(new_coordinates)} found."
                 )
 
+
+    @property
+    def depth(
+        self,
+    ) -> int:
+        """The depth of the hydrophone, in meter.
+
+        Parameter
+        ---------
+        depth: `str` or `int`
+            If the depth is a string, it must be the name of a csv file located in `data/auxiliary/instrument/`, containing at least a column 'depth'
+
+        Returns
+        -------
+        The depth as an int.
+        """
+        return self.__depth
+    
+    @depth.setter
+    def depth(
+        self,
+        new_depth: Union[
+            str,
+            int,
+        ],
+    ):
+
+        match new_depth:
+            case str():
+
+                aux_data_path = next(
+                    self.path.rglob(new_depth), False
+                )                
+                if aux_data_path:
+                    csvFileArray = pd.read_csv(aux_data_path)
+                    self.__depth = int(np.mean(csvFileArray["depth"]))                
+                else:
+                    raise FileNotFoundError(f"The {new_coordinates} has been found no where within {self.path}")
+                                   
+            case int():
+                self.__depth = new_depth
+            case _:
+                raise TypeError(
+                    f"Variable depth must be either an int value for fixed hydrophone or a csv filename for moving hydrophone"
+                )
+                
+                
     @property
     def owner_group(self):
         """str: The Unix group able to interact with the dataset."""
@@ -197,12 +242,14 @@ class Dataset:
     @property
     def is_built(self):
         """Checks if self.path/data/audio contains at least one folder and none called "original"."""
+        
         metadata_path = next(
-            self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("metadata.csv"), None
+            self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("metadata.csv"), False
         )
         timestamp_path = next(
-            self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("timestamp.csv"), None
+            self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("timestamp.csv"), False
         )
+        
         return metadata_path and metadata_path.exists() and timestamp_path and timestamp_path.exists() and not self.path.joinpath(OSMOSE_PATH.raw_audio,"original").exists()
 
     # endregion
@@ -216,6 +263,7 @@ class Dataset:
         bare_check: bool = False,
         auto_normalization: bool = False,
         force_upload: bool = False,
+        number_test_bad_files: int = 1
     ) -> Path:
         """
         Set up the architecture of the dataset.
@@ -263,13 +311,25 @@ class Dataset:
 
             DONE ! your dataset is on OSmOSE platform !
         """
+        if self.is_built and not force_upload:
+            print("It seems this dataset has already been built. Running the build() method on an already built dataset might result in unexpected behavior. If this is a mistake, use the force_upload parameter.")
+
+        if self.gps_coordinates is None:
+            raise ValueError(
+                f"GPS coordinates must be defined !"
+            )  
+        if self.depth is None:
+            raise ValueError(
+                f"Depth must be defined !"
+            )  
+
         if not self.__local:
             set_umask()
             if owner_group is None:
                 owner_group = self.owner_group
     
             if not skip_perms:
-                    print("\nSetting OSmOSE permission to the dataset...")
+                    print("\nSetting OSmOSE permission to the dataset...\n")
                     if owner_group:
                         gid = grp.getgrnam(owner_group).gr_gid
                         try:
@@ -282,164 +342,167 @@ class Dataset:
 
         path_raw_audio = original_folder if original_folder is not None else self._find_or_create_original_folder()
         path_timestamp_formatted = path_raw_audio.joinpath("timestamp.csv")
+    
+        resume_test_anomalies = path_raw_audio.joinpath("resume_test_anomalies.txt")
 
         if not path_timestamp_formatted.exists():
+            user_timestamp = False
             if not date_template:
-                raise FileNotFoundError(
-                    f"The timestamp.csv file has not been found in {path_raw_audio}. You can create it automatically by setting the date template as argument."
-                )
+                raise FileNotFoundError(f"The timestamp.csv file has not been found in {path_raw_audio}. You can create it automatically but to do so you have to set the date template as argument.")
             else:
-                write_timestamp(audio_path=path_raw_audio, date_template=date_template)
-
-        csvFileArray = pd.read_csv(path_timestamp_formatted, header=None)
-
-        timestamp_csv = csvFileArray[1].values
-        filename_csv = csvFileArray[0].values
-
-        list_filename_abnormal_duration = []
-
-        list_file_problem = []
-        timestamp = []
-        filename_rawaudio = []
-        list_duration = []
-        list_samplingRate = []
-        list_interWavInterval = []
-        list_size = []
-        list_sampwidth = []
-        list_filename = []
-        lost_levels = False
-
+                write_timestamp(audio_path=path_raw_audio, date_template=date_template, timezone=self.timezone, verbose=False)
+        else:
+            user_timestamp = True
+        
+        # read the timestamp.csv file
+        timestamp_csv = pd.read_csv(path_timestamp_formatted)["timestamp"].values
+        filename_csv = pd.read_csv(path_timestamp_formatted)["filename"].values
+        
+        # intialize the dataframe to collect audio metadata from header
+        audio_metadata = pd.DataFrame(columns = ["filename", "timestamp","duration",
+                                     "origin_sr","duration_inter_file","size","sampwidth","channel_count","status_read_header"])  
+        audio_metadata["status_read_header"]=audio_metadata["status_read_header"].astype(bool)
+        
         audio_file_list = [Path(path_raw_audio, indiv) for indiv in filename_csv]
 
-        if not bare_check:
-            lost_levels = check_n_files(
+        if not True:
+            number_bad_files = check_n_files(
                 audio_file_list,
-                10,
-                output_path=self.path.joinpath(
-                    OSMOSE_PATH.raw_audio, "normalized_original"
-                ),
+                number_test_bad_files,
                 auto_normalization=auto_normalization,
             )
+        else: 
+            number_bad_files = 0
 
-        for ind_dt in tqdm(range(len(timestamp_csv))):
-            if ind_dt < len(timestamp_csv) - 1:
-                diff = datetime.strptime(
-                    timestamp_csv[ind_dt + 1], "%Y-%m-%dT%H:%M:%S.%fZ"
-                ) - datetime.strptime(timestamp_csv[ind_dt], "%Y-%m-%dT%H:%M:%S.%fZ")
-                list_interWavInterval.append(diff.total_seconds())
-
+        already_printed_1 = False
+        for ind_dt in tqdm(range(len(timestamp_csv)), desc='Scanning audio files'):
             audio_file = audio_file_list[ind_dt]
-            list_filename.append(audio_file)
+            
+            cur_timestamp, _ = self._format_timestamp(timestamp_csv[ind_dt],date_template,already_printed_1)
 
-            try:
-                sr, frames, sampwidth, channel_count = read_header(audio_file)
-
-            except Exception as e:
-                list_file_problem.append(audio_file)
-                print(
-                    f"The audio file {audio_file} could not be loaded, its importation has been canceled.\nDescription of the error: {e}"
-                )
-                list_filename_abnormal_duration.append(audio_file)
-
-            list_size.append(audio_file.stat().st_size / 1e6)
-
-            list_duration.append(frames / float(sr))
-            #     list_volumeFile.append( np.round(sr * params.channel_count * (sampwidth) * frames / float(sr) /1024 /1000))
-            list_samplingRate.append(float(sr))
-            list_sampwidth.append(sampwidth)
-
-            # reformat timestamp.csv
-            date_obj = datetime.strptime(timestamp_csv[ind_dt], "%Y-%m-%dT%H:%M:%S.%fZ")
-            dates = datetime.strftime(date_obj, "%Y-%m-%dT%H:%M:%S.%f")
-            # simply chopping !
-            dates_final = dates[:-3] + "Z"
-            timestamp.append(dates_final)
-
-            # we remove the sign '-' in filenames (because of our qsub_resample.sh)
-
+            # define final audio filename, especially we remove the sign '-' in filenames (because of our qsub_resample.sh)
             if "-" in audio_file.name:
                 cur_filename = audio_file.name.replace("-", "_")
                 path_raw_audio.joinpath(audio_file.name).rename(
                     path_raw_audio.joinpath(cur_filename)
                 )
+                if ind_dt==0: 
+                    print(f"\n We do not accept the sign '-' in our filenames, we transformed them into '_'. In case you have to rebuild your dataset be careful to change your timestamp template accordingly.. \n")
             else:
-                cur_filename = audio_file.name
-            filename_rawaudio.append(cur_filename)
+                cur_filename = audio_file.name  
+                
+            try:
+                origin_sr, frames, sampwidth, channel_count,size = read_header(path_raw_audio.joinpath(cur_filename))
 
-        if list_filename_abnormal_duration:
-            print(
-                "Please see list of audio files above that canceled your dataset importation (maybe corrupted files with 0kb volume ?). You can also find it in the list list_filename_abnormal_duration, and execute following cell to directly delete them. Those filenames have been written in the file ./raw/audio/files_not_loaded.csv"
-            )
+            except Exception as e:
+                print(f"error message making status read header False : \n {e}")
+                # append audio metadata read from header for files with corrupted headers
+                audio_metadata=pd.concat([audio_metadata , 
+                                          pd.DataFrame({"filename":cur_filename,
+                                                        "timestamp":cur_timestamp,
+                                                        "duration":np.nan,
+                                                        "origin_sr":np.nan,
+                                                        "sampwidth":None,
+                                                        "size":None,
+                                                        "duration_inter_file":None,
+                                                        "channel_count":None,
+                                                        "status_read_header":False}, index=[0]) ],axis=0)
+                continue
+                
+            # # define duration_inter_file; does not have a value for the last timestamp
+            # if ind_dt > 0:
+            #     duration_inter_file = (datetime.strptime(
+            #         timestamp_csv[ind_dt], '%Y-%m-%dT%H:%M:%S.%f%z'
+            #     ) - datetime.strptime(timestamp_csv[ind_dt-1], '%Y-%m-%dT%H:%M:%S.%f%z')).total_seconds()
+            # else:
+            #     duration_inter_file = None        
 
-            with open(path_raw_audio.joinpath("files_not_loaded.csv"), "w") as fp:
-                fp.write("\n".join(str(list_filename_abnormal_duration)))
-            if not force_upload:
-                return list_filename_abnormal_duration
+            # append audio metadata read from header in the dataframe audio_metadata
+            audio_metadata=pd.concat([audio_metadata , 
+                                      pd.DataFrame({"filename":cur_filename,
+                                                    "timestamp":cur_timestamp,
+                                                    "duration":frames / float(origin_sr),
+                                                    "origin_sr":int(origin_sr),
+                                                    "sampwidth":sampwidth,
+                                                    "size":size / 1e6,
+                                                    "duration_inter_file":None,
+                                                    "channel_count":channel_count,
+                                                    "status_read_header":True}, index=[0]) ],axis=0)
+                
+        audio_metadata['duration_inter_file'] = audio_metadata['duration'].diff()
+                    
+        # write file_metadata.csv
+        audio_metadata.to_csv(
+            path_raw_audio.joinpath("file_metadata.csv"),
+            index=False
+        )
+        os.chmod(path_raw_audio.joinpath("file_metadata.csv"), mode=FPDEFAULT)
 
-        dd = pd.DataFrame(list_interWavInterval).describe()
-        print("Summary statistics on your INTER-FILE DURATION")
-        print(dd[0].to_string())
-        if dd[0]["std"] < 1e-10:
-            dutyCycle_percent = round(
-                100 * mean(list_duration) / mean(list_interWavInterval),
-                1,
-            )
+        # define anomaly tests of level 0 and 1
+        test_level0_1 = (len(np.unique(audio_metadata["origin_sr"].values[~pd.isna(audio_metadata["origin_sr"].values)]))==1)
+        test_level0_2 = (number_bad_files==0)        
+        test_level0_3 = (sum(audio_metadata["status_read_header"].values)==len(timestamp_csv)) 
+        test_level1_1 = (len(np.unique(audio_metadata["duration"].values[~pd.isna(audio_metadata["duration"].values)]))==1)        
+        list_tests_level0 =  [test_level0_1 , test_level0_2 , test_level0_3]
+        list_tests_level1 =  [test_level1_1]
+
+        # write resume_test_anomalies.txt
+        if resume_test_anomalies.exists():
+            status_text='w'
         else:
-            dutyCycle_percent = np.nan
-
-        # get files with too small duration
-        nominalVal_duration = int(np.percentile(list_duration, 10))
-        print("\n Summary statistics on your file DURATION")
-        dd_duration = pd.DataFrame(list_duration).describe()
-        print(dd_duration[0].to_string())
-        # go through the duration and check whether abnormal files
-        ct_abnormal_duration = 0
-        self.list_abnormal_filenames = []
-        list_abnormalFilename_duration = []
-
-        for name, duration in zip(list_filename, list_duration):
-            if int(duration) < int(nominalVal_duration):
-                ct_abnormal_duration += 1
-                self.list_abnormal_filenames.append(name)
-                list_abnormalFilename_duration.append(duration)
-
-        if ct_abnormal_duration > 0 and not force_upload:
-            print(
-                "\n \n SORRY but your dataset contains files with different durations, especially",
-                str(len(self.list_abnormal_filenames)),
-                "files that have durations smaller than the 10th percentile of all your file durations.. \n",
-            )
-
-            print(
-                "Here are their summary stats:",
-                pd.DataFrame(list_abnormalFilename_duration).describe()[0].to_string(),
-                "\n",
-            )
-
-            print(
-                "So YOUR DATASET HAS NOT BEEN IMPORTED ON OSMOSE PLATFORM, but you have the choice now : either 1) you can force the upload using the variable force_upbload , or 2) you can first delete those files with small durations, they have been put into the variable list_abnormalFilename_name and can be removed from your dataset using the cell below"
-            )
-            return
+            status_text='a'                
+        lines = ["Anomalies of level 0", f"- Test 1 : {test_level0_1}", f"- Test 2 : {test_level0_2}", f"- Test 3 : {test_level0_3}","---------------------","Anomalies of level 1", f"- Test 1 : {test_level1_1}"]
+        lines = [ll.replace('False','FAILED').replace('True','PASSED') for ll in lines]
         
-        else:
-            df = pd.DataFrame({"filename": filename_rawaudio, "timestamp": timestamp})
+        with open(resume_test_anomalies, status_text) as f:
+            f.write('\n'.join(lines))                  
+        
+        # write messages in prompt for user
+        if (len(list_tests_level0)-sum(list_tests_level0)>0):# if presence of anomalies of level 0
+            print(f"\n\n Your dataset failed {len(list_tests_level0)-sum(list_tests_level0)} anomaly test of level 0 (over {len(list_tests_level0)}); see details below. \n Anomalies of level 0 block dataset uploading as long as they are present. Please correct your anomalies first, and try uploading it again after. \n You can inspect your metadata saved here {path_raw_audio.joinpath('file_metadata.csv')} using the notebook /home/datawork-osmose/osmose-datarmor/notebooks/metadata_analyzer.ipynb.")                   
+
+            if len(list_tests_level1)-sum(list_tests_level1)>0:# if also presence of anomalies of level 1
+                print(f"\n Your dataset also failed {len(list_tests_level1)-sum(list_tests_level1)} anomaly test of level 1 (over {len(list_tests_level1)}).")
+
+            with open(resume_test_anomalies) as f: 
+                print(f.read())
+            
+            # we remove timestamp.csv here to force its recreation as we may have changed the filenames during a first pass (eg - transformed into _)
+            if not user_timestamp:# in case where the user did not bring its own timestamp.csv file
+                os.remove(path_raw_audio.joinpath("timestamp.csv"))
+                
+        elif (len(list_tests_level1)-sum(list_tests_level1)>0) and not force_upload:# if presence of anomalies of level 1
+            print(f"\n\n Your dataset failed {len(list_tests_level1)-sum(list_tests_level1)} anomaly test of level 1 (over {len(list_tests_level1)}); see details below. \n  Anomalies of level 1 block dataset uploading, but anyone can force it by setting the variable `force_upload` to True. \n You can inspect your metadata saved here {path_raw_audio.joinpath('file_metadata.csv')} using the notebook  /home/datawork-osmose/osmose-datarmor/notebooks/metadata_analyzer.ipynb. \n")              
+
+            with open(resume_test_anomalies) as f: 
+                print(f.read())
+
+            if not user_timestamp:
+                os.remove(path_raw_audio.joinpath("timestamp.csv"))
+            
+        else:# no anomalies
+
+            # rebuild the timestamp.csv file (necessary as we might have changed filenames) and set permissions
+            df = pd.DataFrame({"filename": audio_metadata["filename"].values, "timestamp": audio_metadata["timestamp"].values})
             df.sort_values(by=["timestamp"], inplace=True)
             df.to_csv(
                 path_raw_audio.joinpath("timestamp.csv"),
-                index=False,
-                na_rep="NaN",
-                header=None
+                index=False
             )
-            os.chmod(path_raw_audio.joinpath("timestamp.csv"), mode=FPDEFAULT)
 
+            os.chmod(path_raw_audio.joinpath("timestamp.csv"), mode=FPDEFAULT)
+    
             # change name of the original wav folder
             new_folder_name = path_raw_audio.parent.joinpath(
-                str(int(mean(list_duration))) + "_" + str(int(mean(list_samplingRate)))
+                str(int(mean(audio_metadata["duration"].values))) + "_" + str(int(mean(audio_metadata["origin_sr"].values)))
             )
-
+            
+            if new_folder_name.exists():
+                new_folder_name.rmdir()
+    
             path_raw_audio = path_raw_audio.rename(new_folder_name)
             self.__original_folder = path_raw_audio
-
+    
             for subpath in OSMOSE_PATH:
                 if "data" in str(subpath):
                     make_path(self.path.joinpath(subpath), mode=DPDEFAULT)
@@ -454,83 +517,98 @@ class Dataset:
                     header=None
                 )
                 os.chmod(subset_path, mode=FPDEFAULT)
-
-            # change permission on the dataset
-            if ct_abnormal_duration > 0 and force_upload:
-                print("\n Well you have anomalies but you choose to FORCE UPLOAD")
-
-
-        # write metadata.csv
-        data = {
-            "origin_sr": int(mean(list_samplingRate)),
-            "sample_bits": int(8 * mean(list_sampwidth)),
-            "channel_count": int(channel_count),
-            "audio_file_count": len(filename_csv),
-            "start_date": timestamp_csv[0],
-            "end_date": timestamp_csv[-1],
-            "duty_cycle": dutyCycle_percent,
-            "audio_file_origin_duration": round(mean(list_duration), 2),
-            "audio_file_origin_volume": mean(list_size),
-            "dataset_origin_volume": round(
-                sum(list_size),
-                1,
-            ),
-            "dataset_origin_duration": round(
-                sum(list_duration),  # miiiiight break smth. We'll see.
-                2,
-            ),
-            "lost_levels_in_normalization": lost_levels,
-            "is_built": True,
-        }
-        df = pd.DataFrame.from_records([data])
-        if self.gps_coordinates:
+    
+            # write summary metadata.csv
+            data = {
+                "origin_sr": int(mean(audio_metadata["origin_sr"].values)),
+                "sample_bits": int(8 * mean(audio_metadata["sampwidth"].values)),
+                "channel_count": int(mean(audio_metadata["channel_count"].values)),
+                "audio_file_count": len(audio_metadata["filename"].values),
+                "start_date": timestamp_csv[0],
+                "end_date": timestamp_csv[-1],
+                # "duty_cycle": dutyCycle_percent,
+                "audio_file_origin_duration": int(round(mean(audio_metadata["duration"].values), 2)),
+                "audio_file_origin_volume": mean(audio_metadata["size"].values),
+                "dataset_origin_volume": round(sum(audio_metadata["size"].values),1),
+                "dataset_origin_duration": round(sum(audio_metadata["duration"].values)),
+                "is_built": True,
+                "audio_file_dataset_overlap": 0,
+            }
+            df = pd.DataFrame.from_records([data])
             df["lat"] = self.gps_coordinates[0]
             df["lon"] = self.gps_coordinates[1]
-
-        df["dataset_sr"] = int(mean(list_samplingRate))
-        df["audio_file_dataset_duration"] = int(round(mean(list_duration), 2))
-        df.to_csv(
-            path_raw_audio.joinpath("metadata.csv"),
-            index=False
-        )
-        os.chmod(path_raw_audio.joinpath("metadata.csv"), mode=FPDEFAULT)
-
-        print("\n DONE ! your dataset is on OSmOSE platform !")
-
-    def delete_abnormal_files(self) -> None:
-        """Delete all files with abnormal durations in the dataset, and rewrite the timestamps.csv file to reflect the changes.
-        If no abnormal file is detected, then it does nothing."""
-
-        if not self.list_abnormal_filenames:
-            warn(
-                "No abnormal file detected. You need to run the Dataset.build() method in order to detect abnormal files before using this method."
+            df["depth"] = self.depth
+            df["dataset_sr"] = int(mean(audio_metadata["origin_sr"].values))
+            df["audio_file_dataset_duration"] = int(round(mean(audio_metadata["duration"].values), 2))
+            df.to_csv(
+                path_raw_audio.joinpath("metadata.csv"),
+                index=False
             )
-            return
+            os.chmod(path_raw_audio.joinpath("metadata.csv"), mode=FPDEFAULT)
 
-        timestamp_path = self.list_abnormal_filenames.parent.joinpath("timestamp.csv")
+            for path, _, files in os.walk(self.path.joinpath(OSMOSE_PATH.auxiliary)):
+                for f in files:
+                    if f.endswith((".csv")):       
+                        print(f"\n Checking your timestamp format in {Path(path,f).name}")
+                        self._format_timestamp(Path(path,f),date_template,False)
+                                                
+            print("\n DONE ! your dataset is on OSmOSE platform !")
 
-        csvFileArray = pd.read_csv(timestamp_path, header=None)
 
-        for abnormal_file in self.list_abnormal_filenames:
-            csvFileArray = csvFileArray.drop(
-                csvFileArray[csvFileArray[0].values == abnormal_file.name].index
+    def _format_timestamp(self,cur_timestamp_not_formatted:str,date_template:str,already_printed_1:int):
+
+        format_OK = False
+
+        if isinstance(cur_timestamp_not_formatted, PathLike):
+            
+            already_printed_1 = False            
+            list_cur_timestamp_formatted = []
+            dataF = pd.read_csv(cur_timestamp_not_formatted)
+            for val_timestamp_not_formatted in dataF["timestamp"].values:
+                cur_timestamp_formatted, format_OK = self._format_timestamp(val_timestamp_not_formatted,date_template,True)
+                if format_OK:
+                    print(f"-> Format OK \n")
+                    return None
+                else:
+                    list_cur_timestamp_formatted.append(cur_timestamp_formatted)
+            
+            print(f"We reformatted timestamps in your file {cur_timestamp_not_formatted.name} \n")
+            dataF["timestamp"] = list_cur_timestamp_formatted 
+
+            dataF.to_csv(
+                cur_timestamp_not_formatted,
+                index=False
             )
+            os.chmod(cur_timestamp_not_formatted, mode=FPDEFAULT)
+            
+            return None
+            
+                             
+        # trick, we need to remove an ending Z so this code works properly, will need to be cleaned
+        if cur_timestamp_not_formatted.endswith('Z'):
+            cur_timestamp_not_formatted = cur_timestamp_not_formatted[:-1]
+            if date_template and date_template.endswith('Z'):
+                date_template = date_template[:-1]            
+        
+        try:
+            check_right_format = datetime.strptime(cur_timestamp_not_formatted, '%Y-%m-%dT%H:%M:%S.%f%z')
+            cur_timestamp_formatted = cur_timestamp_not_formatted
+            format_OK = True
+            
+        except Exception as e:
+                        
+            if not already_printed_1:
+                already_printed_1 = True
+                print(f"Timestamp format {cur_timestamp_not_formatted} does not fit our template '%Y-%m-%dT%H:%M:%S.%f%z' let's reformat it")    
+            if not date_template:
+                raise FileNotFoundError(f"You have to define a date_template please.")
+            else:
+                date_obj = datetime.strptime(cur_timestamp_not_formatted+self.timezone, date_template+'%z')
+                cur_timestamp_formatted = datetime.strftime(date_obj,'%Y-%m-%dT%H:%M:%S.%f%z')
+                
+        return cur_timestamp_formatted, format_OK                
+                
 
-            print(f"removing : {abnormal_file.name}")
-            abnormal_file.unlink()
-
-        csvFileArray.sort_values(by=[1], inplace=True)
-        csvFileArray.to_csv(
-            timestamp_path,
-            index=False,
-            na_rep="NaN",
-            header=None
-        )
-        os.chmod(timestamp_path, mode=FPDEFAULT)
-
-        print(
-            "\n ALL ABNORMAL FILES REMOVED ! you can now re-run the build() method to finish importing it on OSmOSE platform"
-        )
 
     def _find_or_create_original_folder(self) -> Path:
         """Search for the original folder or create it from existing files.
@@ -555,36 +633,52 @@ class Dataset:
         """
         path_raw_audio = self.path.joinpath(OSMOSE_PATH.raw_audio)
         audio_files = []
+        parent_dir_list=[]
         timestamp_files = []
 
         make_path(path_raw_audio.joinpath("original"), mode=DPDEFAULT)
+        make_path(self.path.joinpath(OSMOSE_PATH.instrument), mode=DPDEFAULT)
+        make_path(self.path.joinpath(OSMOSE_PATH.environment), mode=DPDEFAULT)
 
         for path, _, files in os.walk(self.path):
             for f in files:
-                if not Path(f).parent == "original":
+                if not Path(path,f).parent.name == "original" and not Path(path,f).parent.name == "auxiliary":
                     if f.endswith((".wav",".WAV","*.mp3",".*flac")):
                         audio_files.append(Path(path,f))
-                    elif "timestamp.csv" in f:
-                        timestamp_files.append(Path(path,f))
+                        if str(Path(path,f).parent) != str(self.path):
+                            parent_dir_list.append(Path(path,f).parent) if Path(path,f).parent not in parent_dir_list else parent_dir_list                        
+                    elif f=="timestamp.csv":
+                        Path(path,f).rename(path_raw_audio.joinpath("original","timestamp.csv"))
+                    elif "depth" in f or "gps" in f:
+                        Path(path,f).rename(self.path.joinpath(OSMOSE_PATH.instrument,f))                    
+                    elif f.endswith(".csv"):
+                        Path(path,f).rename(self.path.joinpath(OSMOSE_PATH.auxiliary,f))
+                        
         
-        if len(timestamp_files) > 1:
-            res = "-1"
-            choice = ""
-            for i, ts in enumerate(timestamp_files):
-                choice += f"{i+1}: {ts}\n"
-            while int(res) not in range(1,len(timestamp_files) +1):
-                res = input(f"Multiple timestamp.csv detected. Choose which one should be considered the original:\n{choice}")
+        # if len(timestamp_files) > 1:
+        #     res = "-1"
+        #     choice = ""
+        #     for i, ts in enumerate(timestamp_files):
+        #         choice += f"{i+1}: {ts}\n"
+        #     while int(res) not in range(1,len(timestamp_files) +1):
+        #         res = input(f"Multiple timestamp.csv detected. Choose which one should be considered the original:\n{choice}")
 
-                timestamp_files[int(res)-1].rename(path_raw_audio.joinpath("original","timestamp.csv"))
-        elif len(timestamp_files) == 1:
-            timestamp_files[0].rename(path_raw_audio.joinpath("original","timestamp.csv"))
+        #         timestamp_files[int(res)-1].rename(path_raw_audio.joinpath("original","timestamp.csv"))
+        # elif len(timestamp_files) == 1:
+        #     timestamp_files[0].rename(path_raw_audio.joinpath("original","timestamp.csv"))
 
         for audio in audio_files:
             audio.rename(path_raw_audio.joinpath("original",audio.name))
-            os.chmod(path_raw_audio.joinpath("original",audio.name), mode=FPDEFAULT)
-            if len(os.listdir(audio.parent)) == 0:
-                self.path.joinpath(audio.parent).rmdir()
-
+            #os.chmod(path_raw_audio.joinpath("original",audio.name), mode=FPDEFAULT)
+            
+        for parent_dir in parent_dir_list:
+            if len(os.listdir(parent_dir))==0:
+                print(f'- Removing your subfolder: {parent_dir}, but be aware that you had the following non-wav data in your subfolder {parent_dir}: {os.listdir(parent_dir)} \n')
+            else:
+                print(f'- Removing your subfolder: {parent_dir}\n')
+                
+            print(f'shutil.rmtree({parent_dir})')
+            
         return path_raw_audio.joinpath("original")
         # if any(
         #     file.endswith(".wav") for file in os.listdir(self.path)
@@ -646,10 +740,10 @@ class Dataset:
         metadata = pd.read_csv(metadata_path)
         # Catch the parameters inscribed in the original folder name
         audio_file_origin_duration = int(metadata["audio_file_origin_duration"][0])
-        sr_origin = int(metadata["dataset_sr"][0])
+        origin_sr = int(metadata["origin_sr"][0])
 
         self.__original_folder = self.path.joinpath(
-            OSMOSE_PATH.raw_audio, f"{audio_file_origin_duration}_{sr_origin}"
+            OSMOSE_PATH.raw_audio, f"{audio_file_origin_duration}_{origin_sr}"
         )
 
         return self.original_folder

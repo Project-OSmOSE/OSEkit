@@ -55,14 +55,16 @@ def list_not_built_datasets(datasets_folder_path: str) -> None:
     list_unknown_datasets = []
 
     for dataset_directory in dataset_list:
-        if os.access(ds_folder.joinpath(dataset_directory), os.R_OK):
-            ds_metadata_path = next(
-                ds_folder.joinpath(dataset_directory, OSMOSE_PATH.raw_audio).rglob(
-                    "metadata.csv"
-                ),
-                None,
+        dataset_directory = ds_folder.joinpath(dataset_directory)
+        if os.access(dataset_directory, os.R_OK):
+            metadata_path = next(
+                dataset_directory.joinpath(OSMOSE_PATH.raw_audio).rglob("metadata.csv"), None
             )
-            if not ds_folder.joinpath(dataset_directory, OSMOSE_PATH.raw_audio, "original").exists() or not ds_metadata_path :
+            timestamp_path = next(
+                dataset_directory.joinpath(OSMOSE_PATH.raw_audio).rglob("timestamp.csv"), None
+            )
+            
+            if not(metadata_path and metadata_path.exists() and timestamp_path and timestamp_path.exists() and not dataset_directory.joinpath(OSMOSE_PATH.raw_audio,"original").exists()):
                 list_not_built_datasets.append(dataset_directory)
         else:
             list_unknown_datasets.append(dataset_directory)
@@ -136,18 +138,18 @@ def read_config(raw_config: Union[str, dict, Path]) -> NamedTuple:
                         f"The provided configuration file extension ({Path(raw_config).suffix} is not a valid extension. Please use .toml or .json files."
                     )
 
-    return convert(raw_config)
+    return raw_config
 
 
-def convert(dictionary: dict) -> NamedTuple:
-    """Convert a dictionary in a Named Tuple"""
-    for key, value in dictionary.items():
-        if isinstance(value, dict):
-            dictionary[key] = convert(value)
-    return namedtuple("GenericDict", dictionary.keys())(**dictionary)
+# def convert(template: NamedTuple, dictionary: dict) -> NamedTuple:
+#     """Convert a dictionary in a Named Tuple"""
+#     for key, value in dictionary.items():
+#         if isinstance(value, dict):
+#             dictionary[key] = convert(template, value)
+#     return template(**dictionary)
 
 
-def read_header(file: str) -> Tuple[int, float, int, int]:
+def read_header(file: str) -> Tuple[int, float, int, int,int]:
     """Read the first bytes of a wav file and extract its characteristics.
     At the very least, only the first 44 bytes are read. If the `data` chunk is not right after the header chunk,
     the subsequent chunks will be read until the `data` chunk is found. If there is no `data` chunk, all the file will be read.
@@ -200,13 +202,13 @@ def read_header(file: str) -> Tuple[int, float, int, int]:
         framesize = channels * sampwidth
         frames = subchunk2size / framesize
 
-        if (size - 72) > subchunk2size:
-            print(
-                f"Warning : the size indicated in the header is not the same as the actual file size. This might mean that the file is truncated or otherwise corrupt.\
-                \nSupposed size: {size} bytes \nActual size: {subchunk2size} bytes."
-            )
+        # if (size - 72) > subchunk2size:
+        #     print(
+        #         f"Warning : the size indicated in the header is not the same as the actual file size. This might mean that the file is truncated or otherwise corrupt.\
+        #         \nSupposed size: {size} bytes \nActual size: {subchunk2size} bytes."
+        #     )
 
-        return samplerate, frames, channels, sampwidth
+        return samplerate, frames, sampwidth,channels, size
 
 
 def safe_read(
@@ -252,7 +254,6 @@ def check_n_files(
     n: int,
     *,
     output_path: str = None,
-    threshold_percent: float = 0.1,
     auto_normalization: bool = False,
 ) -> bool:
     """Check n files at random for anomalies and may normalize them.
@@ -269,8 +270,6 @@ def check_n_files(
         output_path: `str`, optional, keyword-only
             The path to the folder where the normalized files will be written. If auto_normalization is set to True, then
             it must have a value.
-        threshold_percent: `float`, optional, keyword-only
-            The maximum acceptable percentage of evaluated files that can contain anomalies. Understands fraction and whole numbers. Default is 0.1, or 10%
         auto_normalization: `bool`, optional, keyword_only
             Whether the normalization should proceed automatically or not if the threshold is reached. As a safeguard, the default is False.
     Returns
@@ -278,70 +277,26 @@ def check_n_files(
         normalized: `bool`
             Indicates whether or not the dataset has been normalized.
     """
-    if auto_normalization and not output_path:
-        raise ValueError(
-            "When auto_normalization is set to True, an output path must be specified."
-        )
-
-    if threshold_percent > 1:
-        threshold_percent = threshold_percent / 100
 
     if n > len(file_list):
         n = len(file_list)
 
-    if "float" in str(sf.info(file_list[0])):
-        threshold = max(threshold_percent * n, 1)
-        bad_files = []
-        for audio_file in random.sample(file_list, n):
-            data, sr = safe_read(audio_file)
-            if not (np.max(data) <= 1.0 and np.min(data) >= -1.0):
-                bad_files.append(audio_file)
+    #if "float" in str(sf.info(file_list[0])): # to understand
+    bad_files = []
+    print(f"Testing whether samples are within [-1,1] for the following audio files:")
+    for audio_file in random.sample(file_list, n):
+        data, sr = safe_read(audio_file)
+        if not (np.max(data) <= 1.0 and np.min(data) >= -1.0):
+            bad_files.append(audio_file)
+            print(f"- {audio_file.name} -> FAILED")
+        else:
+            print(f"- {audio_file.name} -> PASSED")
+    print(f"\n")
 
-                if len(bad_files) > threshold:
-                    print(
-                        "The treshold has been exceeded, too many files unadequately recorded."
-                    )
-                    if not auto_normalization:
-                        normalize = False
-                        if sys.__stdin__.isatty():
-                            res = input(
-                                "Do you want to automatically normalize your dataset? [Y]/n"
-                            )
-                            if res.lower() in ["y", "yes", ""]:
-                                if not output_path:
-                                    output_path = input(
-                                        "Please specify the path to the output folder:"
-                                    )
-                                normalize = True
-                        if not normalize:
-                            raise ValueError(
-                                "You need to set auto_normalization to True to normalize your dataset automatically."
-                            )
+    return len(bad_files)
 
-                    make_path(Path(output_path), mode=DPDEFAULT)
-
-                    for audio_file in file_list:
-                        data, sr = safe_read(audio_file)
-                        data = (
-                            (data - np.mean(data)) / np.std(data)
-                        ) * 0.063  # = -24dB
-                        data[data > 1] = 1
-                        data[data < -1] = -1
-
-                        outfile = Path(output_path, Path(audio_file).name)
-                        sf.write(
-                            outfile,
-                            data=data,
-                            samplerate=sr,
-                        )
-
-                        os.chmod(outfile, mode=FPDEFAULT)
-                        # TODO: lock in spectrum mode
-                    print(
-                        "All files have been normalized. Spectrograms created from them will be locked in spectrum mode."
-                    )
-                    return True
-    return False
+    
+    
 
 
 # Will move to pathutils
@@ -370,10 +325,16 @@ def set_umask():
     os.umask(0o002)
 
 
+def get_files(path,extensions):
+    all_files = []
+    for ext in extensions:
+        all_files.extend(Path(path).glob(ext))
+    return all_files
+
 
 # TO DO : function not optimized in case you use it in a for loop , because it will reload .csv for each audiofile , should
 # be able to take as input the already loaded timestamps
 def get_timestamp_of_audio_file(path_timestamp_file:Path,audio_file_name:str) -> str:
-    timestamps = pd.read_csv(path_timestamp_file,header=None, names=["filename","timestamp"])
-    # get timestamp of the audio file
+    timestamps = pd.read_csv(path_timestamp_file)
+    # get timestamp of the audio file    
     return str(timestamps["timestamp"][timestamps["filename"] == audio_file_name].values[0])

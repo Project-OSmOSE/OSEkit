@@ -6,7 +6,7 @@ import shutil
 from OSmOSE.cluster.resample import resample
 import pytest
 
-
+@pytest.mark.integ
 @pytest.mark.skipif(platform.system() == "Windows", reason="Sox is linux only")
 def test_resample(input_dir: Path, output_dir: Path):
     for i in range(3):

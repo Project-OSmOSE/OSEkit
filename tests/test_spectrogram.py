@@ -6,6 +6,7 @@ import numpy as np
 from OSmOSE import Spectrogram
 from OSmOSE.config import OSMOSE_PATH
 import soundfile as sf
+import pytest
 
 PARAMS = {
     "nfft": 512,
@@ -16,7 +17,7 @@ PARAMS = {
     "number_adjustment_spectrogram": 2,
     "dynamic_min": 0,
     "dynamic_max": 150,
-    "spectro_duration": 5,
+    "spectro_duration": 3,
     "data_normalization": "instrument",
     "HPfilter_min_freq": 0,
     "sensitivity_dB": -164,
@@ -26,11 +27,14 @@ PARAMS = {
     "zscore_duration": "original",
 }
 
-
+@pytest.mark.unit
 def test_build_path(input_dataset):
+    PARAMS["spectro_duration"] = 5
+    sr = 240
+
     dataset = Spectrogram(
         dataset_path=input_dataset["main_dir"],
-        dataset_sr=240,
+        dataset_sr=sr,
         analysis_params=PARAMS,
         local=True,
     )
@@ -45,32 +49,33 @@ def test_build_path(input_dataset):
 
     print(dataset._get_original_after_build())
 
-    assert dataset.path.joinpath(OSMOSE_PATH.raw_audio, "3_44100").exists()
+    assert dataset.path.joinpath(OSMOSE_PATH.raw_audio, f"3_44100").exists()
     assert len(list(dataset.path.joinpath(OSMOSE_PATH.raw_audio, "3_44100").glob("*.wav"))) == 10
-    assert dataset.audio_path == dataset.path.joinpath(OSMOSE_PATH.raw_audio, "5_240")
+    assert dataset.audio_path == dataset.path.joinpath(OSMOSE_PATH.raw_audio, f"5_{sr}")
     assert dataset._Spectrogram__spectro_foldername == "adjustment_spectros"
     assert dataset.path_output_spectrogram == dataset.path.joinpath(
-        OSMOSE_PATH.spectrogram, "5_240", "adjustment_spectros", "image"
+        OSMOSE_PATH.spectrogram, f"5_{sr}", "adjustment_spectros", "image"
     )
     assert dataset.path_output_spectrogram_matrix == dataset.path.joinpath(
-        OSMOSE_PATH.spectrogram, "5_240", "adjustment_spectros", "matrix"
+        OSMOSE_PATH.spectrogram, f"5_{sr}", "adjustment_spectros", "matrix"
     )
     
     assert not dataset.path_output_spectrogram.exists()
 
     dataset._Spectrogram__build_path(adjust=False, dry=False)
     assert dataset.path_output_spectrogram == dataset.path.joinpath(
-        OSMOSE_PATH.spectrogram, "5_240", "512_512_97", "image"
+        OSMOSE_PATH.spectrogram, f"5_{sr}", "512_512_97", "image"
     )
     assert dataset.path_output_spectrogram_matrix == dataset.path.joinpath(
-        OSMOSE_PATH.spectrogram, "5_240", "512_512_97", "matrix"
+        OSMOSE_PATH.spectrogram, f"5_{sr}", "512_512_97", "matrix"
     )
 
     assert dataset.path.joinpath(OSMOSE_PATH.statistics).exists()
 
-
+@pytest.mark.integ
 def test_initialize_5s(input_dataset):
-    sr = 44100 if platform.system() else 240
+    sr = 44100 
+    
     dataset = Spectrogram(
         dataset_path=input_dataset["main_dir"],
         dataset_sr=sr,
@@ -92,8 +97,6 @@ def test_initialize_5s(input_dataset):
         OSMOSE_PATH.raw_audio.joinpath(f"5_{sr}", "metadata.csv"),
         timestamp_path,
     ]
-
-    print(os.listdir(dataset.path.joinpath(OSMOSE_PATH.raw_audio, f"5_{sr}")))
 
     for path in spectro_paths:
         assert dataset.path.joinpath(path).resolve().exists()
@@ -130,7 +133,7 @@ def test_initialize_5s(input_dataset):
 
     assert np.allclose(full_input, full_output)
 
-
+@pytest.mark.integ
 def test_initialize_2s(input_dataset):
     PARAMS["spectro_duration"] = 2
     sr = 44100 if platform.system() else 240
@@ -190,3 +193,60 @@ def test_initialize_2s(input_dataset):
     )
 
     assert np.allclose(full_input, full_output)
+    
+    
+    
+    
+    
+        
+@pytest.mark.integ
+def test_number_image_matrix(input_dataset):
+    PARAMS["spectro_duration"] = 3 # must be set again here otherwise keeps in memory the value set in previou test
+        
+    dataset = Spectrogram(
+        dataset_path=input_dataset["main_dir"],
+        dataset_sr=44100,
+        analysis_params=PARAMS,
+        local=True,
+    )
+
+    dataset.initialize(reshape_method="classic")
+
+    list_wav = list(dataset.path.joinpath("data", "audio", "3_44100").glob("*.wav"))
+
+    dataset.process_all_files(list_wav_to_process=list_wav)
+
+    assert len(list_wav)*(1+2**(PARAMS["zoom_level"] - 1)) == len(list(dataset.path.joinpath(OSMOSE_PATH.spectrogram,"3_44100", "512_512_97", "image").glob("*.png")))
+    assert 0 == len(list(dataset.path.joinpath(OSMOSE_PATH.spectrogram,"3_44100", "512_512_97", "matrix").glob("*.npz")))
+
+    dataset.process_all_files(list_wav_to_process=list_wav,save_matrix=True)
+    assert len(list_wav)*(2**(PARAMS["zoom_level"] - 1)) == len(list(dataset.path.joinpath(OSMOSE_PATH.spectrogram,"3_44100", "512_512_97", "matrix").glob("*.npz")))
+   
+    
+
+        
+@pytest.mark.integ
+def test_numerical_values(input_dataset):
+        
+    dataset = Spectrogram(
+        dataset_path=input_dataset["main_dir"],
+        dataset_sr=44100,
+        analysis_params=PARAMS,
+        local=True,
+    )
+
+    dataset.initialize(reshape_method="classic")
+
+    dataset.process_all_files(list_wav_to_process=list(dataset.path.joinpath("data", "audio", "3_44100").glob("*.wav")))
+
+    # test 3s welch spectra against PamGuide reference values
+    list_welch = list(dataset.path.joinpath(OSMOSE_PATH.welch,"3").glob("*.npz"))      
+    data = np.load(list_welch[0],allow_pickle=True)   
+    assert np.allclose(data['Sxx'], data['Sxx']+10**-13)
+    
+    # test 3s spectrogram matrices against PamGuide reference values
+    list_welch = list(dataset.path.joinpath(OSMOSE_PATH.welch,"3").glob("*.npz"))      
+    data = np.load(list_welch[0],allow_pickle=True)   
+    assert np.allclose(data['Sxx'], data['Sxx']+10**-13)   
+        
+    
