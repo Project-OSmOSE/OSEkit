@@ -229,7 +229,7 @@ class Auxiliary():
         try:# case where welch have been generated from segmented wav, making filenames following the "%Y_%m_%dT%H_%M_%S"
             temp_df['time'] = temp_df.fn.apply(lambda x : datetime.datetime.timestamp(datetime.datetime.strptime(x.split('/')[-1][:-4], "%Y_%m_%dT%H_%M_%S")))
         except:# case where welch are generated from original wav
-            if not self.date_template:
+            if self.date_template:
                 temp_df['time'] = temp_df.fn.apply(lambda x : datetime.datetime.timestamp(datetime.datetime.strptime(x.split('/')[-1][:-4], self.date_template)))
             else:
                 raise ValueError(
@@ -253,11 +253,12 @@ class Auxiliary():
 
         make_path(self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(time_resolution_welch)), mode=DPDEFAULT)
         self.df.sort_values(by=["timestamp"], inplace=True)
-        self.df.to_csv( self.path.joinpath(OSMOSE_PATH.processed_auxiliary,f"auxiliary_welch_{time_resolution_welch}.csv"),
+        self.df.to_csv( self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(time_resolution_welch),"aux_data.csv"),
                 index=False,
                 na_rep="NaN"
-            )                       
-        
+            )          
+        os.chmod(self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(time_resolution_welch),"aux_data.csv"), mode=FPDEFAULT)
+        print(f"Generated file {self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(time_resolution_welch),'aux_data.csv')}")
 
     def distance_to_shore(self):
         '''
@@ -393,7 +394,7 @@ class Auxiliary():
             self.stamps = stamps.reshape(len(dates), len(lat), len(lon), 3)
         
         if min(self.timestamps) < min(dates) or max(self.timestamps) > max(dates):
-            print("Please check your ERA5 time boundaries. At least one timestamp from your audio dataset is either before or after the downloaded ERA data")
+            print(f"Please check your ERA5 time boundaries [{datetime.datetime.fromtimestamp(min(dates))} -> {datetime.datetime.fromtimestamp(max(dates))}]; it seems that at least one timestamp from your audio dataset [{datetime.datetime.fromtimestamp(min(self.timestamps))} -> {datetime.datetime.fromtimestamp(max(self.timestamps))}] is either before or after the downloaded ERA data")
             sys.exit(0)
             
         del temp_stamps, downloaded_cds, stamps
