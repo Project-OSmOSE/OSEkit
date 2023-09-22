@@ -8,14 +8,16 @@ SUPPORTED_AUDIO_FORMAT = [".wav"]
 __global_path_dict = {
     "raw_audio": Path("data", "audio"),
     "auxiliary": Path("data", "auxiliary"),
-    "instrument": Path("data", "auxiliary", "instrument"),
-    "environment": Path("data", "auxiliary", "environment"),
+    "instrument": Path("data", "auxiliary","instrument"),
+    "environment": Path("data", "auxiliary","environment"),
     "processed": Path("processed"),
     "spectrogram": Path("processed", "spectrogram"),
     "statistics": Path("processed", "dataset_statistics"),
     "LTAS": Path("processed", "LTAS"),
     "welch": Path("processed", "welch"),
-    "processed_auxiliary": Path("processed", "auxiliary"),
+    "EPD": Path("processed", "EPD"),
+    "SPLfiltered": Path("processed", "SPLfiltered"),
+    "processed_auxiliary": Path("processed", "auxiliary")
 }
 
 OSMOSE_PATH = namedtuple("path_list", __global_path_dict.keys())(**__global_path_dict)
