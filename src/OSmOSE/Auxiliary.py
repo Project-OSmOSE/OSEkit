@@ -148,7 +148,7 @@ class Auxiliary():
         Dataframe containing 'time' column with desired timestamps at which aux data will be computed
     '''
 
-    def __init__(self, path, dataset, local=True):
+    def __init__(self, path, dataset, local=True, date_template: str = None):
         '''
         Initializes the Variables object.
         Parameters
@@ -165,6 +165,7 @@ class Auxiliary():
         self.dataset = dataset
         self.local = local
         self.hydrophone_mobile = False
+        self.date_template = date_template
         
         # case of a moving hydrophone: search for a gps file in OSMOSE_PATH.instrument
         for path, _, files in os.walk(self.path.joinpath(OSMOSE_PATH.instrument)):
@@ -216,9 +217,25 @@ class Auxiliary():
     def join_welch(self,time_resolution_welch, *, method='interpolation', time_off=np.inf, lat_off=np.inf, lon_off=np.inf,r=np.inf, variables=['u10', 'v10']):
         
         fns = glob(str(self.path.joinpath(OSMOSE_PATH.welch,str(time_resolution_welch), '*.npz')))
+        
+        if len(fns)==0:
+            raise FileNotFoundError(
+                f"No npz welch files found in {self.path.joinpath(OSMOSE_PATH.welch,str(time_resolution_welch))}"
+            )        
+        
         fns = [x for x in fns if x != str(self.path.joinpath(OSMOSE_PATH.welch,str(time_resolution_welch), 'all_welch.npz'))]
         temp_df = pd.DataFrame(fns, columns = ['fn'])
-        temp_df['time'] = temp_df.fn.apply(lambda x : datetime.datetime.timestamp(datetime.datetime.strptime(x.split('/')[-1][:-4], '%Y%m%d_%H%M%S')))
+        
+        try:# case where welch have been generated from segmented wav, making filenames following the "%Y_%m_%dT%H_%M_%S"
+            temp_df['time'] = temp_df.fn.apply(lambda x : datetime.datetime.timestamp(datetime.datetime.strptime(x.split('/')[-1][:-4], "%Y_%m_%dT%H_%M_%S")))
+        except:# case where welch are generated from original wav
+            if not self.date_template:
+                temp_df['time'] = temp_df.fn.apply(lambda x : datetime.datetime.timestamp(datetime.datetime.strptime(x.split('/')[-1][:-4], self.date_template)))
+            else:
+                raise ValueError(
+                    f"Plesae provide the date_template of your npz welch filenames (the same as your original files...)"
+                )            
+        
         temp_df['timestamp'] = temp_df.time.apply(lambda x : datetime.datetime.strftime(datetime.datetime.fromtimestamp(x), '%Y-%m-%dT%H:%M:%S.%f'))
         temp_df = temp_df.sort_values('time')
         
