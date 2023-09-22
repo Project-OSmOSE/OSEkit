@@ -148,7 +148,7 @@ class Auxiliary():
         Dataframe containing 'time' column with desired timestamps at which aux data will be computed
     '''
 
-    def __init__(self, path, dataset, local=True, date_template: str = None):
+    def __init__(self, path, dataset, time_resolution_welch, local=True, date_template: str = None):
         '''
         Initializes the Variables object.
         Parameters
@@ -164,8 +164,8 @@ class Auxiliary():
         self.path = Path(os.path.join(path, dataset))
         self.dataset = dataset
         self.local = local
-        self.hydrophone_mobile = False
         self.date_template = date_template
+        self.time_resolution_welch = time_resolution_welch
         
         # case of a moving hydrophone: search for a gps file in OSMOSE_PATH.instrument
         for path, _, files in os.walk(self.path.joinpath(OSMOSE_PATH.instrument)):
@@ -175,7 +175,6 @@ class Auxiliary():
                     self.df = pd.read_csv(Path(path,f))                
                     self.timestamps = pd.Series(self.df['timestamp']).apply(lambda x : datetime.datetime.timestamp(datetime.datetime.strptime(x, '%Y-%m-%dT%H:%M:%S.%f%z'))).to_numpy()                    
                     self.latitude, self.longitude = self.df['lat'], self.df['lon']
-                    self.hydrophone_mobile = True
 
         # case of a fixed hydrophone
         if "latitude" not in vars(self).keys(): # ie self.latitude not defined yet                    
@@ -198,6 +197,10 @@ class Auxiliary():
 
     def join_era(self, *, method='interpolation', time_off=np.inf, lat_off=np.inf, lon_off=np.inf,r=np.inf, variables=['u10', 'v10']):
 
+        self.latitude=self.df.lat
+        self.longitude=self.df.lon
+        self.timestamps=self.df.time
+        
         print(f'Joining ERA5 data using the {method} method.')
         if method == 'nearest':
             print(
@@ -214,16 +217,16 @@ class Auxiliary():
             self.cylinder_era(time_off=time_off, r=r, variables=variables)
 
 
-    def join_welch(self,time_resolution_welch, *, method='interpolation', time_off=np.inf, lat_off=np.inf, lon_off=np.inf,r=np.inf, variables=['u10', 'v10']):
+    def join_welch(self, *, method='interpolation', time_off=np.inf, lat_off=np.inf, lon_off=np.inf,r=np.inf, variables=['u10', 'v10']):
         
-        fns = glob(str(self.path.joinpath(OSMOSE_PATH.welch,str(time_resolution_welch), '*.npz')))
+        fns = glob(str(self.path.joinpath(OSMOSE_PATH.welch,str(self.time_resolution_welch), '*.npz')))
         
         if len(fns)==0:
             raise FileNotFoundError(
-                f"No npz welch files found in {self.path.joinpath(OSMOSE_PATH.welch,str(time_resolution_welch))}"
+                f"No npz welch files found in {self.path.joinpath(OSMOSE_PATH.welch,str(self.time_resolution_welch))}"
             )        
         
-        fns = [x for x in fns if x != str(self.path.joinpath(OSMOSE_PATH.welch,str(time_resolution_welch), 'all_welch.npz'))]
+        fns = [x for x in fns if x != str(self.path.joinpath(OSMOSE_PATH.welch,str(self.time_resolution_welch), 'all_welch.npz'))]
         temp_df = pd.DataFrame(fns, columns = ['fn'])
         
         try:# case where welch have been generated from segmented wav, making filenames following the "%Y_%m_%dT%H_%M_%S"
@@ -239,26 +242,23 @@ class Auxiliary():
         temp_df['timestamp'] = temp_df.time.apply(lambda x : datetime.datetime.strftime(datetime.datetime.fromtimestamp(x), '%Y-%m-%dT%H:%M:%S.%f'))
         temp_df = temp_df.sort_values('time')
         
-        if self.hydrophone_mobile:
-            ttt = pd.Series(self.df.timestamp).apply(lambda x : datetime.datetime.timestamp(datetime.datetime.strptime(x, '%Y-%m-%dT%H:%M:%S.%f%z'))).to_numpy()
-        else:
-            ttt  = self.df.timestamp.values
-
         for name, column in self.df.iteritems():
         	if name == 'timestamp':
         		continue
-        	temp_df[name] = inter.interp1d(ttt, self.df[name], bounds_error = False)(temp_df.time)
+        	temp_df[name] = inter.interp1d(self.timestamps, self.df[name], bounds_error = False)(temp_df.time)
         self.df = temp_df
 
 
-        make_path(self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(time_resolution_welch)), mode=DPDEFAULT)
+    def save_aux_data(self):
+
+        make_path(self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(self.time_resolution_welch)), mode=DPDEFAULT)
         self.df.sort_values(by=["timestamp"], inplace=True)
-        self.df.to_csv( self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(time_resolution_welch),"aux_data.csv"),
+        self.df.to_csv( self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(self.time_resolution_welch),"aux_data.csv"),
                 index=False,
                 na_rep="NaN"
             )          
-        os.chmod(self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(time_resolution_welch),"aux_data.csv"), mode=FPDEFAULT)
-        print(f"Generated file {self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(time_resolution_welch),'aux_data.csv')}")
+        os.chmod(self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(self.time_resolution_welch),"aux_data.csv"), mode=FPDEFAULT)
+        print(f"Generated file {self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(self.time_resolution_welch),'aux_data.csv')}")
 
     def distance_to_shore(self):
         '''
@@ -459,6 +459,7 @@ class Auxiliary():
         None. Results are saved in self.df as 'interp_{variable}'
         """
         self.load_era(method='interpolation')
+                
         temp_lat = self.latitude[
             (~np.isnan(self.longitude)) | (~np.isnan(self.latitude))]  # Remove nan values from computation
         temp_lon = self.longitude[(~np.isnan(self.longitude)) | (~np.isnan(self.latitude))]
