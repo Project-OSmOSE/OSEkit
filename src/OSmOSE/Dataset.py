@@ -742,11 +742,12 @@ class Dataset:
     def __str__(self):
         metadata = pd.read_csv(self.original_folder.joinpath("metadata.csv"))
         list_display_metadata = [
-            "dataset_sr",
-            "audio_file_count",
-            "start_date",
-            "end_date",
             "audio_file_origin_duration",
+            "origin_sr",
+            "start_date",
+            "end_date",            
+            "audio_file_count",
+            "dataset_origin_volume"
         ]  # restrain metadata to a shorter list of fileds to be displayed
         joined_str = ""
         print(f"Metadata of {self.name} :")
