@@ -103,10 +103,10 @@ class Spectrogram(Dataset):
 
         self.__local = local
 
-        if self.is_built:
-            orig_metadata = pd.read_csv(self._get_original_after_build().joinpath("metadata.csv"), header=0)
-        elif not dataset_sr:
-            raise ValueError('If you dont know your sr, please use the build() method first')
+        # if self.is_built:
+        orig_metadata = pd.read_csv(self._get_original_after_build().joinpath("metadata.csv"), header=0)
+        # elif not dataset_sr:
+        #     raise ValueError('If you dont know your sr, please use the build() method first')
         processed_path = self.path.joinpath(OSMOSE_PATH.spectrogram)
         metadata_path = processed_path.joinpath("adjust_metadata.csv")
         if metadata_path.exists():
@@ -160,12 +160,14 @@ class Spectrogram(Dataset):
         self.spectro_duration: int = (
             int(analysis_sheet["spectro_duration"][0])
             if analysis_sheet is not None and "spectro_duration" in analysis_sheet
-            else (
-                int(orig_metadata["audio_file_origin_duration"][0])
-                if self.is_built
-                else -1
-            )
+            else int(orig_metadata["audio_file_origin_duration"][0])
+        #     else (
+        #         int(orig_metadata["audio_file_origin_duration"][0])
+        #         if self.is_built
+        #         else -1
+        #     )
         )
+        
 
         self.zscore_duration: Union[float, str] = (
             analysis_sheet["zscore_duration"][0]
@@ -557,15 +559,15 @@ class Spectrogram(Dataset):
         date_template : `str`, optiona, keyword-only
             When initializing a spectrogram of a dataset that has not been built, providing a date_template will generate the timestamp.csv.
         """
-        # Mandatory init
-        if not self.is_built:
-            try:
-                self.build(date_template=date_template)
-            except Exception as e:
-                print(
-                    f"Unhandled error during dataset building. The spectrogram initialization will be cancelled. The error may be resolved by building the dataset separately first. Description of the error: {str(e)}"
-                )
-                return
+        # # Mandatory init
+        # if not self.is_built:
+        #     try:
+        #         self.build(date_template=date_template)
+        #     except Exception as e:
+        #         print(
+        #             f"Unhandled error during dataset building. The spectrogram initialization will be cancelled. The error may be resolved by building the dataset separately first. Description of the error: {str(e)}"
+        #         )
+        #         return
 
         self.__build_path()
 
