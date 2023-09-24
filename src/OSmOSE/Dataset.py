@@ -298,33 +298,12 @@ class Dataset:
 
             DONE ! your dataset is on OSmOSE platform !
         """
-
         metadata_path = next(
             self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("metadata.csv"), False
         )
         if metadata_path and metadata_path.exists() and pd.read_csv(metadata_path)["is_built"][0] and not force_upload:
             print("This dataset has already been built. To run the build() method on an already built dataset, you have to use the force_upload parameter.")
             sys.exit()
-            
-         
-        # timestamp_path = next(
-        #     self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("timestamp.csv"), False
-        # )
-        
-        
-
-    # @classmethod # needed to be defined, otherwise it returns the object instead of the value https://stackoverflow.com/questions/55987682/property-function-returns-property-object-instead-of-value
-    # @property
-    # def is_built(self):
-    #     """Checks if self.path/data/audio contains at least one folder and none called "original"."""
-        
-
-        
-    #     return False## and metadata_path and timestamp_path and timestamp_path.exists() and not self.path.joinpath(OSMOSE_PATH.raw_audio,"original").exists()
-
-
-
-
 
         if self.gps_coordinates is None:
             raise ValueError(
