@@ -748,10 +748,12 @@ class Dataset:
             "end_date",            
             "audio_file_count",
             "dataset_origin_volume"
-        ]  # restrain metadata to a shorter list of fileds to be displayed
+        ]  # restrain metadata to a shorter list of variables to be displayed
+        ending_charac = ["(s)","(Hz)","","","","(GB)"] # assign units to variables
         joined_str = ""
         print(f"Metadata of {self.name} :")
-        for key, value in zip(metadata.keys(), metadata.values[0]):
-            if key in list_display_metadata:
-                joined_str += f"- {key} : {value} \n"
+        ct=0
+        for var in list_display_metadata:
+            joined_str += f"- {var} : {metadata[var][0]} {ending_charac[ct]} \n"
+            ct+=1
         return joined_str
