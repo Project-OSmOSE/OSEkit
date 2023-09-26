@@ -519,8 +519,8 @@ class Dataset:
                 "end_date": timestamp_csv[-1],
                 # "duty_cycle": dutyCycle_percent,
                 "audio_file_origin_duration": int(round(mean(audio_metadata["duration"].values), 2)),
-                "audio_file_origin_volume": round(mean(audio_metadata["size"].values)),
-                "dataset_origin_volume": round(sum(audio_metadata["size"].values)/ 1000),
+                "audio_file_origin_volume": round(mean(audio_metadata["size"].values),1),
+                "dataset_origin_volume": max(1,round(sum(audio_metadata["size"].values)/ 1000)),# cannot be inferior to 1 GB
                 "dataset_origin_duration": round(sum(audio_metadata["duration"].values)),
                 "is_built": True,
                 "audio_file_dataset_overlap": 0,
@@ -747,9 +747,10 @@ class Dataset:
             "start_date",
             "end_date",            
             "audio_file_count",
+            "audio_file_origin_volume",
             "dataset_origin_volume"
         ]  # restrain metadata to a shorter list of variables to be displayed
-        ending_charac = ["(s)","(Hz)","","","","(GB)"] # assign units to variables
+        ending_charac = ["(s)","(Hz)","","","","(MB)","(GB)"] # assign units to variables
         joined_str = ""
         print(f"Metadata of {self.name} :")
         ct=0
