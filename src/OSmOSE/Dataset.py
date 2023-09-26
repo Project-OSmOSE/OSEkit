@@ -519,8 +519,8 @@ class Dataset:
                 "end_date": timestamp_csv[-1],
                 # "duty_cycle": dutyCycle_percent,
                 "audio_file_origin_duration": int(round(mean(audio_metadata["duration"].values), 2)),
-                "audio_file_origin_volume": mean(audio_metadata["size"].values),
-                "dataset_origin_volume": round(sum(audio_metadata["size"].values),1),
+                "audio_file_origin_volume": round(mean(audio_metadata["size"].values)),
+                "dataset_origin_volume": round(sum(audio_metadata["size"].values)/ 1000),
                 "dataset_origin_duration": round(sum(audio_metadata["duration"].values)),
                 "is_built": True,
                 "audio_file_dataset_overlap": 0,
@@ -530,7 +530,7 @@ class Dataset:
             df["lon"] = self.gps_coordinates[1]
             df["depth"] = self.depth
             df["dataset_sr"] = int(mean(audio_metadata["origin_sr"].values))
-            df["audio_file_dataset_duration"] = int(round(mean(audio_metadata["duration"].values), 2))
+            df["audio_file_dataset_duration"] = int(round(mean(audio_metadata["duration"].values), 2))                        
             df.to_csv(
                 path_raw_audio.joinpath("metadata.csv"),
                 index=False
