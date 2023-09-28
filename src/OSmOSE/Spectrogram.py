@@ -1207,7 +1207,7 @@ class Spectrogram(Dataset):
         # lowest tuile resolution
         if self.save_for_LTAS:
 
-            output_path_welch_resolution = self.path_output_welch.joinpath(str(round(tile_duration)))
+            output_path_welch_resolution = self.path_output_welch.joinpath(str(int(self.spectro_duration))+'_'+str(int(self.dataset_sr)))
                 
             if not output_path_welch_resolution.exists():
                 make_path(output_path_welch_resolution, mode=DPDEFAULT)
@@ -1259,7 +1259,7 @@ class Spectrogram(Dataset):
         # highest tuile resolution
         if self.save_for_LTAS and (nber_tiles_lowest_zoom_level>1):
 
-            output_path_welch_resolution = self.path_output_welch.joinpath(str(self.spectro_duration))
+            output_path_welch_resolution = self.path_output_welch.joinpath(str(int(self.spectro_duration))+'_'+str(int(self.dataset_sr)))
                 
             if not output_path_welch_resolution.exists():
                 make_path(output_path_welch_resolution, mode=DPDEFAULT)
@@ -1495,13 +1495,13 @@ class Spectrogram(Dataset):
         return LTAS, time, Freq
                 
 
-    def build_LTAS(self,time_resolution:str,time_scale:str='D'):
+    def build_LTAS(self,time_resolution:str,sample_rate:int,time_scale:str='D'):
         
-        list_npz_files = list(self.path_output_welch.joinpath(time_resolution).glob('*npz'))
-        
+        list_npz_files = list(self.path_output_welch.joinpath(time_resolution+'_'+str(sample_rate)).glob('*npz'))
+                
         if len(list_npz_files) == 0:            
             raise FileNotFoundError(
-                "No intermediary welch spectra to aggregate, run a complete generation of spectrograms first!"
+                "No intermediary welch spectra to aggregate in the folder {self.path_output_welch.joinpath(time_resolution+'_'+str(sample_rate))} ; please run a complete generation of spectrograms first!"
             )                
             
         else:
@@ -1509,7 +1509,7 @@ class Spectrogram(Dataset):
             if not self.path_output_LTAS.exists():
                 make_path(self.path_output_LTAS, mode=DPDEFAULT)
                 
-            path_all_welch = self.path_output_welch.joinpath(time_resolution,'all_welch.npz')
+            path_all_welch = self.path_output_welch.joinpath(time_resolution+'_'+str(sample_rate),'all_welch.npz')
             if os.path.exists(path_all_welch):                
                 data = np.load(path_all_welch,allow_pickle=True)   
                 LTAS=data['LTAS']
@@ -1572,7 +1572,7 @@ class Spectrogram(Dataset):
                     self.generate_and_save_LTAS(time_periods[ind_group_LTAS].to_timestamp(),ending_timestamp,Freq,log_spectro,self.path.joinpath(OSMOSE_PATH.LTAS,f'LTAS_{time_periods[ind_group_LTAS]}.png'),time_scale)
 
                     
-    def build_SPL_filtered(self,time_resolution:str,Freq_min: Union[list, int]=[0], Freq_max: Union[list, int]=None):
+    def build_SPL_filtered(self,time_resolution:str,sample_rate:int,Freq_min: Union[list, int]=[0], Freq_max: Union[list, int]=None):
         
         # assign default value for Freq_max, equivalent to no HF filtering
         if (Freq_max==None) or (not isinstance(Freq_min,list)):
@@ -1581,7 +1581,7 @@ class Spectrogram(Dataset):
         if not isinstance(Freq_min,list):
             Freq_min = [Freq_min]      
                                 
-        list_npz_files = list(self.path_output_welch.joinpath(time_resolution).glob('*npz'))
+        list_npz_files = list(self.path_output_welch.joinpath(time_resolution+'_'+str(sample_rate)).glob('*npz'))
         if len(list_npz_files) == 0:            
             raise FileNotFoundError(
                 "No intermediary welch spectra to aggregate, run a complete generation of spectrograms first!"
@@ -1592,7 +1592,7 @@ class Spectrogram(Dataset):
             if not self.path_output_SPLfiltered.exists():
                 make_path(self.path_output_SPLfiltered, mode=DPDEFAULT)
                 
-            path_all_welch = self.path_output_welch.joinpath(time_resolution,'all_welch.npz')
+            path_all_welch = self.path_output_welch.joinpath(time_resolution+'_'+str(sample_rate),'all_welch.npz')
             if os.path.exists(path_all_welch):                
                 data = np.load(path_all_welch,allow_pickle=True)   
                 LTAS=data['LTAS']
@@ -1708,9 +1708,9 @@ class Spectrogram(Dataset):
         np.savez(output_file_npz,LTAS=log_spectro,time=time_vector,Freq=freq,allow_pickle=True)        
         
         
-    def build_EPD(self,time_resolution:str):
+    def build_EPD(self,time_resolution:str,sample_rate:int):
 
-        list_npz_files = list(self.path_output_welch.joinpath(time_resolution).glob('*npz'))
+        list_npz_files = list(self.path_output_welch.joinpath(time_resolution+'_'+str(sample_rate)).glob('*npz'))
         if len(list_npz_files) == 0:            
             raise FileNotFoundError(
                 "No intermediary welch spectra to aggregate, run a complete generation of spectrograms first!"
@@ -1721,7 +1721,7 @@ class Spectrogram(Dataset):
             if not self.path_output_EPD.exists():
                 make_path(self.path_output_EPD, mode=DPDEFAULT)
 
-            path_all_welch = self.path_output_welch.joinpath(time_resolution,'all_welch.npz')
+            path_all_welch = self.path_output_welch.joinpath(time_resolution+'_'+str(sample_rate),'all_welch.npz')
             if os.path.exists(path_all_welch):                
                 data = np.load(path_all_welch,allow_pickle=True)   
                 LTAS=data['LTAS']
