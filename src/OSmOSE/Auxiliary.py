@@ -219,6 +219,18 @@ class Auxiliary():
             self.cylinder_era(time_off=time_off, r=r, variables=variables)
 
 
+    def get_spl_from_ltas(npz_path, freq = 8000):
+        ltas = np.load(npz_path, allow_pickle = True)
+        frequencies = ltas['Freq']
+        df = pd.DataFrame(ltas['time'], columns = ['timestamp'])
+        df['time'] = df.timestamp.apply(lambda x : x.timestamp())
+        ltas = ltas['LTAS']
+        idx = np.argmin(abs(frequencies - freq))
+        df[freq] = ltas[:, idx]
+        return df
+
+
+
     def join_welch(self, *, method='interpolation', time_off=np.inf, lat_off=np.inf, lon_off=np.inf,r=np.inf, variables=['u10', 'v10']):
 
         fns = glob(str(self.path_output_welch.joinpath(str(self.time_resolution_welch)+'_'+str(self.sample_rate_welch), '*.npz')))
