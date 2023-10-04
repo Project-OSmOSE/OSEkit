@@ -148,7 +148,7 @@ class Auxiliary():
         Dataframe containing 'time' column with desired timestamps at which aux data will be computed
     '''
 
-    def __init__(self, path, dataset, time_resolution_welch, local=True, date_template: str = None):
+    def __init__(self, path, dataset, time_resolution_welch,sample_rate_welch, local=True, date_template: str = None):
         '''
         Initializes the Variables object.
         Parameters
@@ -166,6 +166,8 @@ class Auxiliary():
         self.local = local
         self.date_template = date_template
         self.time_resolution_welch = time_resolution_welch
+        self.sample_rate_welch = sample_rate_welch
+        self.path_output_welch = self.path.joinpath(OSMOSE_PATH.welch)
         
         # case of a moving hydrophone: search for a gps file in OSMOSE_PATH.instrument
         for path, _, files in os.walk(self.path.joinpath(OSMOSE_PATH.instrument)):
@@ -218,15 +220,15 @@ class Auxiliary():
 
 
     def join_welch(self, *, method='interpolation', time_off=np.inf, lat_off=np.inf, lon_off=np.inf,r=np.inf, variables=['u10', 'v10']):
-        
-        fns = glob(str(self.path.joinpath(OSMOSE_PATH.welch,str(self.time_resolution_welch), '*.npz')))
+
+        fns = glob(str(self.path_output_welch.joinpath(str(self.time_resolution_welch)+'_'+str(self.sample_rate_welch), '*.npz')))
         
         if len(fns)==0:
             raise FileNotFoundError(
-                f"No npz welch files found in {self.path.joinpath(OSMOSE_PATH.welch,str(self.time_resolution_welch))}"
-            )        
-        
-        fns = [x for x in fns if x != str(self.path.joinpath(OSMOSE_PATH.welch,str(self.time_resolution_welch), 'all_welch.npz'))]
+                "No intermediary welch spectra to aggregate in the folder {self.path_output_welch.joinpath(str(self.time_resolution_welch)+'_'+str(sample_rate))} ; please run a complete generation of spectrograms first!"
+            )     
+                
+        fns = [x for x in fns if x != str(self.path_output_welch.joinpath(str(self.time_resolution_welch)+'_'+str(self.sample_rate_welch),'all_welch.npz'))]
         temp_df = pd.DataFrame(fns, columns = ['fn'])
         
         try:# case where welch have been generated from segmented wav, making filenames following the "%Y_%m_%dT%H_%M_%S"
@@ -251,13 +253,13 @@ class Auxiliary():
 
     def save_aux_data(self):
 
-        make_path(self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(self.time_resolution_welch)), mode=DPDEFAULT)
+        make_path(self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(self.time_resolution_welch)+'_'+str(self.sample_rate_welch)), mode=DPDEFAULT)
         self.df.sort_values(by=["timestamp"], inplace=True)
-        self.df.to_csv( self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(self.time_resolution_welch),"aux_data.csv"),
+        self.df.to_csv( self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(self.time_resolution_welch)+'_'+str(self.sample_rate_welch),"aux_data.csv"),
                 index=False,
                 na_rep="NaN"
             )          
-        os.chmod(self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(self.time_resolution_welch),"aux_data.csv"), mode=FPDEFAULT)
+        os.chmod(self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(self.time_resolution_welch)+'_'+str(self.sample_rate_welch),"aux_data.csv"), mode=FPDEFAULT)
         print(f"Generated file {self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(self.time_resolution_welch),'aux_data.csv')}")
 
     def distance_to_shore(self):
