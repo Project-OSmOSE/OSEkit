@@ -288,7 +288,7 @@ class Auxiliary():
                 na_rep="NaN"
             )          
         os.chmod(self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(self.time_resolution_welch)+'_'+str(self.sample_rate_welch),"aux_data.csv"), mode=FPDEFAULT)
-        print(f"Generated file {self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(self.time_resolution_welch),'aux_data.csv')}")
+        print(f"Generated file {self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(self.time_resolution_welch)+'_'+str(self.sample_rate_welch),'aux_data.csv')}")
 
     def distance_to_shore(self):
         '''

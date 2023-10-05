@@ -12,6 +12,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from OSmOSE.utils import make_path
+from tqdm import tqdm
 #from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 class Weather():
@@ -124,7 +125,7 @@ class Weather():
         df=pd.read_csv(self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(self.time_resolution_welch)+'_'+str(self.sample_rate_welch),"aux_data.csv"),header=0)
         
         SPL_filtered=[]
-        for npz_path in df['fn']:
+        for npz_path in tqdm(df['fn']):
             ltas = np.load(npz_path, allow_pickle = True)
         
             if freq_min != freq_max:
