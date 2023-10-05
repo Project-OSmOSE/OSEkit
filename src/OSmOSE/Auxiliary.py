@@ -219,17 +219,30 @@ class Auxiliary():
             self.cylinder_era(time_off=time_off, r=r, variables=variables)
 
 
-    def get_spl_from_ltas(npz_path, freq = 8000):
-        ltas = np.load(npz_path, allow_pickle = True)
-        frequencies = ltas['Freq']
-        df = pd.DataFrame(ltas['time'], columns = ['timestamp'])
-        df['time'] = df.timestamp.apply(lambda x : x.timestamp())
-        ltas = ltas['LTAS']
-        idx = np.argmin(abs(frequencies - freq))
-        df[freq] = ltas[:, idx]
-        return df
+    def save_all_welch(self,list_npz_files:list,path_all_welch: Path):
 
+        LTAS = np.empty((1, int(self.nfft/2) + 1))
+        time = []
+        for file_npz in tqdm(list_npz_files):
+            current_matrix=np.load(file_npz,allow_pickle=True)    
+            LTAS = np.vstack((LTAS, current_matrix['Sxx']))
+            time.append( current_matrix['Time'] )       
+        LTAS=LTAS[1:,:]     
+        Freq = current_matrix['Freq']
+        
+        time = np.array(time)
+        
+        # flatten time, which is currently a list of arrays 
+        if time.ndim==2:
+            time = list(itertools.chain(*time))
+        else:
+            time = [tt.item() for tt in time] # suprinsingly , doing simply = list(time) was droping the Timestamp dtype, to be investigated in more depth...
+    
+        np.savez(path_all_welch,LTAS=LTAS,time=time,Freq=Freq,allow_pickle=True)# careful data not sorted here! we should save them based on dataframe df below 
 
+        return LTAS, time, Freq
+    
+    
 
     def join_welch(self, *, method='interpolation', time_off=np.inf, lat_off=np.inf, lon_off=np.inf,r=np.inf, variables=['u10', 'v10']):
 
@@ -261,6 +274,9 @@ class Auxiliary():
         		continue
         	temp_df[name] = inter.interp1d(self.timestamps, self.df[name], bounds_error = False)(temp_df.time)
         self.df = temp_df
+
+
+
 
 
     def save_aux_data(self):
