@@ -17,102 +17,97 @@ from tqdm import tqdm
 
 class Weather():
 
-    def __init__(self, path, dataset, time_resolution_welch,sample_rate_welch,local=True):
-        self.path = Path(os.path.join(path, dataset))
+    def __init__(self, osmose_path_dataset, dataset, time_resolution_welch,sample_rate_welch,local=True):
+        
+        if isinstance(dataset,str):
+            dataset = [dataset]
+        
+        self.path = Path(osmose_path_dataset)        
+        self.dataset = dataset
         self.time_resolution_welch = time_resolution_welch
         self.sample_rate_welch = sample_rate_welch
-        
-        if not self.path.joinpath(OSMOSE_PATH.weather).exists():
-            make_path(self.path.joinpath(OSMOSE_PATH.weather,self.path.name), mode=DPDEFAULT)        
-        
+
     def wind_speed_estimation(self):
 
-        df=pd.read_csv(self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(self.time_resolution_welch)+'_'+str(self.sample_rate_welch),"aux_data.csv"),header=0)
-
-        feature_matrix = pd.DataFrame({
-            'SPL_filtered': df['SPL_filtered'],
-            'InSituWIND': np.sqrt( df['interp_u10']**2 + df['interp_v10']**2)
-        })
-        
-        Y_wind= feature_matrix["InSituWIND"]
-        X_wind=feature_matrix["SPL_filtered"]
-        
-        Y_categorical = pd.cut(Y_wind, [0,2.2,3.6,6,np.inf], right=False)
+        for cur_dataset in self.dataset:        
             
-        x_train = X_wind.values
-        y_train = Y_wind
+            self.path = self.path.joinpath(cur_dataset)
+            
+            if not self.path.joinpath(OSMOSE_PATH.weather).exists():
+                make_path(self.path.joinpath(OSMOSE_PATH.weather), mode=DPDEFAULT)        
 
-        # min_max_scaler = MinMaxScaler()
-        # x_train = min_max_scaler.fit_transform(x_train)    
-        
-        
-        my_dpi = 100
-        fact_x = 0.7
-        fact_y = 1
-        fig, ax = plt.subplots(1, 1, figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi),
-                               dpi=my_dpi, constrained_layout=True)    
-        ax.scatter(x_train,y_train)
+            df=pd.read_csv(self.path.joinpath(OSMOSE_PATH.processed_auxiliary,str(self.time_resolution_welch)+'_'+str(self.sample_rate_welch),"aux_data.csv"),header=0)
     
-        z = np.polyfit(x_train, y_train, 2)
-        fit = np.poly1d(z)
-        x_train = np.sort(x_train)
-        ax.plot(x_train, fit(x_train), label=fit, color="C3", alpha=1, lw=2.5  )  
-        ax.legend([fit, ''])
-        plt.xlabel('Relative SPL (dB)')
-        plt.ylabel('ECMWF w10 (m/s)')
-        plt.savefig(self.path.joinpath(OSMOSE_PATH.weather,self.path.name,"scatter_wind_model.png"), bbox_inches="tight", pad_inches=0)
-        plt.close()
-                   
-        with open( self.path.joinpath(OSMOSE_PATH.weather,self.path.name,'polynomial_law.txt'), 'w') as f:
-            for item in z:
-                f.write("%s\n" % item)
+            feature_matrix = pd.DataFrame({
+                'SPL_filtered': df['SPL_filtered'],
+                'InSituWIND': np.sqrt( df['interp_u10']**2 + df['interp_v10']**2)
+            })
+    
+            feature_matrix = feature_matrix[pd.notnull(feature_matrix["InSituWIND"])]
             
-        with open( self.path.joinpath(OSMOSE_PATH.weather,self.path.name,'min_max.txt'), 'w') as f:
-            for item in [np.min(X_wind) , np.max(X_wind)]:
-                f.write("%s\n" % item)
+            Y_wind= feature_matrix["InSituWIND"]
+            X_wind=feature_matrix["SPL_filtered"]
             
-            
-    def compare_wind_speed_models(self):
-
-        my_dpi = 80
-        fact_x = 0.5
-        fact_y = 0.9
-        fig, ax = plt.subplots(1, 1, figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi),
-                               dpi=my_dpi, constrained_layout=True)
-        datasetID=[]
-        for path in self.path.joinpath(OSMOSE_PATH.weather).iterdir():
-            if path.is_dir():
-                datasetID.append(path)
-
-        veccol = ['r','b','g']
-        
-        print('Polynom coefs:')
-        
-        ct=0
-        for dd in datasetID:
-            
-            f = open(self.path.joinpath(OSMOSE_PATH.weather,dd,'polynomial_law.txt'), "r")
-            xx=f.read()
-            ll = [float(x) for x in xx.split('\n')[:-1]]
-            
-            p = np.poly1d(ll)
-            
-            print('-', dd , ' : ' , "{:.3f}".format(p[0]) , "/ {:.3f}".format(p[1]), "/ {:.3f}".format(p[2])  )
+            Y_categorical = pd.cut(Y_wind, [0,2.2,3.6,6,np.inf], right=False)
                 
-            x=np.arange(-20,0,0.1)
-            y = p(x)
-            plt.plot(x, y,c=veccol[ct])
+            x_train = X_wind.values
+            y_train = Y_wind
+    
+            # min_max_scaler = MinMaxScaler()
+            # x_train = min_max_scaler.fit_transform(x_train)    
+                    
+            my_dpi = 100
+            fact_x = 0.7
+            fact_y = 1
+            fig, ax = plt.subplots(1, 1, figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi),
+                                   dpi=my_dpi, constrained_layout=True)    
+            ax.scatter(x_train,y_train)
+        
+            z = np.polyfit(x_train, y_train, 2)
+            fit = np.poly1d(z)
+            x_train = np.sort(x_train)
+            ax.plot(x_train, fit(x_train), label=fit, color="C3", alpha=1, lw=2.5  )  
+            ax.legend([fit, ''])
+            plt.xlabel('Relative SPL (dB)')
+            plt.ylabel('ECMWF w10 (m/s)')
+            plt.savefig(self.path.joinpath(OSMOSE_PATH.weather,"scatter_wind_model.png"), bbox_inches="tight", pad_inches=0)
+            plt.close()
+            print(f"Saving figure {self.path.joinpath(OSMOSE_PATH.weather,'scatter_wind_model.png')}")
+                       
+            with open( self.path.joinpath(OSMOSE_PATH.weather,'polynomial_law.txt'), 'w') as f:
+                for item in z:
+                    f.write("%s\n" % item)
+                
+            with open( self.path.joinpath(OSMOSE_PATH.weather,'min_max.txt'), 'w') as f:
+                for item in [np.min(X_wind) , np.max(X_wind)]:
+                    f.write("%s\n" % item)
+                
+    
+            my_dpi = 100
+            fact_x = 0.7
+            fact_y = 1
+            fig, ax = plt.subplots(1, 1, figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi),
+                                   dpi=my_dpi, constrained_layout=True)              
+            ax.scatter(y_train,fit(x_train))
+            plt.savefig(self.path.joinpath(OSMOSE_PATH.weather,"scatter_ecmwf_model.png"), bbox_inches="tight", pad_inches=0)
+            plt.close()
+            print(f"Saving figure {self.path.joinpath(OSMOSE_PATH.weather,'scatter_ecmwf_model.png')}")
+                  
             
-            ct+=1
-        
-        plt.xlabel('Relative SPL (dB)')
-        plt.ylabel('Estimated wind speed (m/s)')
-        plt.legend(datasetID)
-        
-        plt.savefig(self.path.joinpath(OSMOSE_PATH.weather,"compare_wind_model.png"), bbox_inches="tight", pad_inches=0)
-        plt.close()
-
-
+                
+    
+            my_dpi = 100
+            fact_x = 0.7
+            fact_y = 1
+            fig, ax = plt.subplots(1, 1, figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi),
+                                   dpi=my_dpi, constrained_layout=True)              
+            plt.plot(y_train,'r')
+            plt.plot(fit(x_train))
+            ax.legend(['ecmwf', 'poly model'])
+            plt.savefig(self.path.joinpath(OSMOSE_PATH.weather,"temporal_ecmwf_model.png"), bbox_inches="tight", pad_inches=0)
+            plt.close()
+            print(f"Saving figure {self.path.joinpath(OSMOSE_PATH.weather,'temporal_ecmwf_model.png')}")
+                  
         
     def append_SPL_filtered(self,freq_min:int,freq_max:int):
         
@@ -143,3 +138,72 @@ class Weather():
                 index=False,
                 na_rep="NaN"
             )
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+class benchmark_weather():
+
+    def __init__(self, osmose_path_dataset, dataset,local=True):
+        
+        if isinstance(dataset,str):
+            dataset = [dataset]
+        
+        self.path = Path(osmose_path_dataset)        
+        self.dataset = dataset
+
+
+    def compare_wind_speed_models(self):
+
+        my_dpi = 80
+        fact_x = 0.5
+        fact_y = 0.9
+        fig, ax = plt.subplots(1, 1, figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi),
+                               dpi=my_dpi, constrained_layout=True)
+        # datasetID=[]
+        # for path in self.path.joinpath(OSMOSE_PATH.weather).iterdir():
+        #     if path.is_dir():
+        #         datasetID.append(path)
+
+        veccol = ['r','b','g']
+        
+        print('Polynom coefs:')
+        
+        ct=0
+        for dd in self.dataset:
+
+            self.path = self.path.joinpath(dd)
+            
+            f = open(self.path.joinpath(OSMOSE_PATH.weather,'polynomial_law.txt'), "r")
+            xx=f.read()
+            ll = [float(x) for x in xx.split('\n')[:-1]]
+            
+            p = np.poly1d(ll)
+            
+            print('-', dd , ' : ' , "{:.3f}".format(p[0]) , "/ {:.3f}".format(p[1]), "/ {:.3f}".format(p[2])  )
+                
+            x=np.arange(-20,0,0.1)
+            y = p(x)
+            plt.plot(x, y,c=veccol[ct])
+            
+            ct+=1
+        
+        plt.xlabel('Relative SPL (dB)')
+        plt.ylabel('Estimated wind speed (m/s)')
+        plt.legend(self.dataset)
+        
+        plt.savefig(self.path.joinpath(OSMOSE_PATH.weather,"compare_wind_model.png"), bbox_inches="tight", pad_inches=0)
+        plt.close()
+
+
+
+
+
+
