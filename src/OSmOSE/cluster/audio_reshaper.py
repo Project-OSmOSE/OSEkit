@@ -273,7 +273,7 @@ def reshape(
                     print(
                         f"{outfilename} written! File is {(len(output)/sample_rate)} seconds long. {(len(previous_audio_data)/sample_rate)} seconds left from slicing."
                     )
-                    
+				
                 t += 1
                 audio_data = previous_audio_data
 

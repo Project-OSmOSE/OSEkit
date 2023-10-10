@@ -13,6 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from OSmOSE.utils import make_path
 from tqdm import tqdm
+import sys
 #from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 class Weather():
@@ -65,8 +66,7 @@ class Weather():
         
             z = np.polyfit(x_train, y_train, 2)
             fit = np.poly1d(z)
-            x_train = np.sort(x_train)
-            ax.plot(x_train, fit(x_train), label=fit, color="C3", alpha=1, lw=2.5  )  
+            ax.plot(np.sort(x_train), fit(np.sort(x_train)), label=fit, color="C3", alpha=1, lw=2.5  )  
             ax.legend([fit, ''])
             plt.xlabel('Relative SPL (dB)')
             plt.ylabel('ECMWF w10 (m/s)')
@@ -87,8 +87,11 @@ class Weather():
             fact_x = 0.7
             fact_y = 1
             fig, ax = plt.subplots(1, 1, figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi),
-                                   dpi=my_dpi, constrained_layout=True)              
-            ax.scatter(y_train,fit(x_train))
+                                   dpi=my_dpi, constrained_layout=True)        
+
+            ax.scatter(y_train.values,fit(x_train))
+            plt.xlim(np.min([np.min(y_train.values) , np.min(fit(x_train))])-1, np.max([np.max(y_train.values) , np.max(fit(x_train))])+1)
+            plt.ylim(np.min([np.min(y_train.values) , np.min(fit(x_train))])-1, np.max([np.max(y_train.values) , np.max(fit(x_train))])+1)
             plt.savefig(self.path.joinpath(OSMOSE_PATH.weather,"scatter_ecmwf_model.png"), bbox_inches="tight", pad_inches=0)
             plt.close()
             print(f"Saving figure {self.path.joinpath(OSMOSE_PATH.weather,'scatter_ecmwf_model.png')}")
@@ -101,8 +104,9 @@ class Weather():
             fact_y = 1
             fig, ax = plt.subplots(1, 1, figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi),
                                    dpi=my_dpi, constrained_layout=True)              
-            plt.plot(y_train,'r')
             plt.plot(fit(x_train))
+            plt.plot(y_train.values,'r')
+            plt.autoscale(enable=True, axis='x', tight=True)
             ax.legend(['ecmwf', 'poly model'])
             plt.savefig(self.path.joinpath(OSMOSE_PATH.weather,"temporal_ecmwf_model.png"), bbox_inches="tight", pad_inches=0)
             plt.close()
@@ -153,12 +157,15 @@ class benchmark_weather():
 
     def __init__(self, osmose_path_dataset, dataset,local=True):
         
-        if isinstance(dataset,str):
-            dataset = [dataset]
-        
+        if not isinstance(dataset,list):
+            print(f"Dataset should be multiple and defined within a list")
+            sys.exit(0)
+            
         self.path = Path(osmose_path_dataset)        
         self.dataset = dataset
 
+        if not self.path.joinpath(OSMOSE_PATH.weather).exists():
+            make_path(self.path.joinpath(OSMOSE_PATH.weather), mode=DPDEFAULT)   
 
     def compare_wind_speed_models(self):
 
@@ -178,10 +185,8 @@ class benchmark_weather():
         
         ct=0
         for dd in self.dataset:
-
-            self.path = self.path.joinpath(dd)
             
-            f = open(self.path.joinpath(OSMOSE_PATH.weather,'polynomial_law.txt'), "r")
+            f = open(self.path.joinpath(dd,OSMOSE_PATH.weather,'polynomial_law.txt'), "r")
             xx=f.read()
             ll = [float(x) for x in xx.split('\n')[:-1]]
             
