@@ -1,0 +1,139 @@
+
+# Get started 
+
+Below you will find installation and how-to procedures to start **using** our toolkit both locally and in a cluster. If you intend to contribute to the toolkit development, please go directly to the page [](header1_contribute).
+ 
+
+## In local 
+
+### Stable version
+
+People only interested in the stable versions of our toolkit, which are released on a regular basis and are available [here](https://github.com/Project-OSmOSE/osmose-toolkit/releases/tag/v0.1.0). You can then install it through `pip` and `whl` file as follows:
+
+
+```bash
+pip force-reinstall=True install osmose.whl
+```
+
+
+
+```{warning}
+We discourage users to install the toolkit from our git repository, as it is under permanent development and thus potentially unstable and unfinished.
+```
+
+```{note}
+If for any reason you get an unexpected error message or an incorrect result, please open a new issue in the [issue tracker](https://github.com/Project-OSmOSE/osmose-toolkit/issues) and we will try to answer promptly.
+```
+
+
+### Development version
+
+
+1. First, create an empty git repository in a newly created folder and clone this repository.
+
+```bash
+git init
+
+git clone https://github.com/Project-OSmOSE/osmose-toolkit.git
+```
+
+2. Create a Conda virtual environment in python 3.10.
+
+```bash
+conda create --name osmose python=3.10 -y
+conda activate osmose
+```
+
+3. Install poetry and use it to install the package.
+
+```bash
+conda install poetry
+poetry install
+```
+
+Note: if `poetry install` fails with the message ``ImportError: cannot import name 'PyProjectException'``, run this line instead:
+
+```bash
+conda install -c conda-forge poetry==1.3.2
+```
+
+The package is installed in editable mode! You can now call it just like any regular python package as long as you are in the environment.
+
+```python
+import OSmOSE as osm
+
+dataset = osm.Dataset()
+```
+
+Note that it is installed in editable mode, meaning that any change made to the package's file will be reflected immediately on the environment, without needing to reload it. 
+
+
+
+
+
+
+
+
+
+
+
+
+## In the cluster Datarmor
+
+
+
+
+
+### Prerequesites 
+
+You need to have an account on Datarmor, that will provide you with
+- extranet logins (username + password)
+- intranet logins (username + password)
+
+To get an account, please contact your IT assistant if you are from an institute partner of Datarmor, otherwise contact please contact [Dorian Cazau](mailto:dorian.cazau@ensta-bretagne.fr). The jupyterhub of Datarmor is now directly reachable via this  [portal](https://domicile.ifremer.fr/dana-na/auth/url_default/welcome.cgi). 
+
+
+```{warning}
+In case of first connexion, you first have to make a first ssh connexion to datarmor before you can use the jupyterhub of Datarmor.
+```
+
+### Manage jupyterhub sessions
+
+Once you are on the Portail Domicile Ifremer (see figure 1) after entering your extranet logins, click on JUPYTER, enter your intranet logins if asked and click on Start My Server. You will then have to select a job profile, corresponding to the computer resources associated with your jupyterhub session. By default, we recommend to use Datarmor - Jupyterlab - 8 cores, 32 GB RAM, 2 hours (quite equivalent to a personal computer). You are now on the Jupyter-Hub of Datarmor! 
+
+![Figure 1 : Portail Domicile Ifremer](./figures/figure_1.png)
+
+Once you are done, please follow this procedure to close your session : on the Jupyter Hub main page -> click tab Running -> click on all Shutdown then click on the button Logout on the Jupyter Hub main page. Please see our Note in annex regarding how to shut down a jupyter hub session on Datarmor.
+
+Finally : some things to check and keep in mind
+
+- Be aware of your computational resources, and avoid overusing them (this will crash your kernel) !
+- Conversely, avoid underusing your notebook, especially do not forget to close your notebook session once you are done (see Step 3)
+- Do not use the jupyterhub session to download or upload high volume data, only a few small files- 
+- Be sure to be affiliated with the unix group : gosmose 
+
+In case of connection problems, please report it to Dorian Cazau and contact the assistance at IFREMER : assistance@ifremer.fr
+
+Si le terminal est tout noir : Ctrl C ou reloader la page ou la fermer et la rouvrir !
+Often check that you do not have several jupyterhub sessions running simultaneously (use qstat and qdel, please refer to the Glossary)
+
+#### Use the toolkit through notebooks
+
+OSmOSE notebooks are located on our workspace at /home/datawork-osmose/. You will have to make a copy of them into your personal workspace. To do this, open a terminal from your jupyterhub portal (see figure 2) and run the following command: 
+
+```bash
+cp -R /home/datawork-osmose/OSmOSEanalytics_0.0.1/ . ; chmod 700 -R ./OSmOSEanalytics_0.0.1/
+```
+
+To open a notebook, just double click on it. If your notebook kernel is not automatically set to osmose (see figure 3), change it in Kernel -> Change Kernel -> Python [conda env:osmose]. This is the latest stable version. Our set of "getting started" Jupyter notebooks presented in our gallery is also available from our Datarmor datawork `/home/datawork-osmose/osmose-datarmor`, which covers basic use cases from your dataset uploading to first AI model development. 
+
+
+
+
+
+
+
+
+
+
+

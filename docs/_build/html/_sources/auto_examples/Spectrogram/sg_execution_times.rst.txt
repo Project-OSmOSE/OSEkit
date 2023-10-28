@@ -1,0 +1,13 @@
+
+:orphan:
+
+.. _sphx_glr_auto_examples_Spectrogram_sg_execution_times:
+
+
+Computation times
+=================
+**00:00.001** total execution time for **auto_examples_Spectrogram** files:
+
++-----------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_auto_examples_Spectrogram_plot_ex.py` (``plot_ex.py``) | 00:00.001 | 0.0 MB |
++-----------------------------------------------------------------------+-----------+--------+

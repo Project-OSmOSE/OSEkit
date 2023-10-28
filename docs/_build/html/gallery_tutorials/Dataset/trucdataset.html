@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Format a dataset &mdash; OSmOSE toolkit  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery-binder.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery-dataframe.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery-rendered-html.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/osmose_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../going_further.html">Going further</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../on_datarmor.html">On Datarmor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apidocs.html">API Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: white" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">OSmOSE toolkit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Format a dataset</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/gallery_tutorials/Dataset/trucdataset.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="#sphx-glr-download-gallery-tutorials-dataset-trucdataset-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code</p>
+</div>
+<section class="sphx-glr-example-title" id="format-a-dataset">
+<span id="sphx-glr-gallery-tutorials-dataset-trucdataset-py"></span><h1>Format a dataset<a class="headerlink" href="#format-a-dataset" title="Link to this heading">¶</a></h1>
+<p>This code will format raw data into a OSmOSE dataset</p>
+<section id="package-importation">
+<h2>Package importation<a class="headerlink" href="#package-importation" title="Link to this heading">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">OSmOSE</span> <span class="kn">import</span> <span class="n">Dataset</span>
+</pre></div>
+</div>
+</section>
+<section id="define-paths-and-names">
+<h2>Define paths and names<a class="headerlink" href="#define-paths-and-names" title="Link to this heading">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">path_osmose_dataset</span> <span class="o">=</span> <span class="s2">&quot;/home6/cazaudo/Bureau/osmose_sample_datasets/&quot;</span>
+<span class="n">dataset_name</span> <span class="o">=</span> <span class="s2">&quot;ohasisbio&quot;</span>
+<span class="n">campaign_name</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="define-analysis-parameters">
+<h2>Define analysis parameters<a class="headerlink" href="#define-analysis-parameters" title="Link to this heading">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">save_matrix</span> <span class="o">=</span> <span class="kc">False</span> <span class="c1"># Set to True if you want to generate the numpy matrices</span>
+<span class="n">save_image</span> <span class="o">=</span> <span class="kc">True</span> <span class="c1"># Set to False if you don&#39;t want to generate the spectrogram images.</span>
+
+<span class="n">date_template</span> <span class="o">=</span> <span class="s2">&quot;%Y_%m_</span><span class="si">%d</span><span class="s2">T%H_%M_%S&quot;</span> <span class="c1"># strftime format, used to build the dataset from scratch (ignore if the dataset is already built)</span>
+<span class="n">depth</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">gps_coordinates</span> <span class="o">=</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="run-the-class-dataset">
+<h2>Run the class Dataset<a class="headerlink" href="#run-the-class-dataset" title="Link to this heading">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span> <span class="o">=</span> <span class="n">Dataset</span><span class="p">(</span><span class="n">dataset_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path_osmose_dataset</span><span class="p">,</span> <span class="n">campaign_name</span><span class="p">,</span> <span class="n">dataset_name</span><span class="p">),</span> <span class="n">gps_coordinates</span> <span class="o">=</span> <span class="n">gps_coordinates</span><span class="p">,</span> <span class="n">depth</span> <span class="o">=</span> <span class="n">depth</span><span class="p">,</span> <span class="n">timezone</span><span class="o">=</span><span class="s1">&#39;+00:00&#39;</span><span class="p">)</span>
+<span class="n">dataset</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">date_template</span> <span class="o">=</span> <span class="n">date_template</span> <span class="p">,</span> <span class="n">force_upload</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">number_test_bad_files</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.000 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-gallery-tutorials-dataset-trucdataset-py">
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../../_downloads/2bb881324f1a36e8949a78257086807e/trucdataset.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">trucdataset.py</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="../../_downloads/684cdf8d07a800d27b8de7422d088a09/trucdataset.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">trucdataset.ipynb</span></code></a></p>
+</div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, OSmOSE team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

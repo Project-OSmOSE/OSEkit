@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Generate spectrograms &mdash; OSmOSE toolkit  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery-binder.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery-dataframe.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery-rendered-html.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/osmose_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../going_further.html">Going further</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../on_datarmor.html">On Datarmor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apidocs.html">API Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: white" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">OSmOSE toolkit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Generate spectrograms</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/gallery_tutorials/Spectrogram/plot_ex6.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="#sphx-glr-download-gallery-tutorials-spectrogram-plot-ex6-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code</p>
+</div>
+<section class="sphx-glr-example-title" id="generate-spectrograms">
+<span id="sphx-glr-gallery-tutorials-spectrogram-plot-ex6-py"></span><h1>Generate spectrograms<a class="headerlink" href="#generate-spectrograms" title="Link to this heading">¶</a></h1>
+<p>This code will show you how to compute spectrograms</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+</pre></div>
+</div>
+<p>As this is an example, we have already worked out where
+we need to crop for the active region we want to showcase.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">start_time</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="s1">&#39;2012-09-24T14:56:03&#39;</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="s1">&#39;utc&#39;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;isot&#39;</span><span class="p">)</span>
+<span class="n">bottom_left</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="o">-</span><span class="mi">500</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="p">,</span> <span class="o">-</span><span class="mi">275</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="p">,</span> <span class="n">obstime</span><span class="o">=</span><span class="n">start_time</span><span class="p">,</span> <span class="n">observer</span><span class="o">=</span><span class="s2">&quot;earth&quot;</span><span class="p">,</span> <span class="n">frame</span><span class="o">=</span><span class="s2">&quot;helioprojective&quot;</span><span class="p">)</span>
+<span class="n">top_right</span> <span class="o">=</span> <span class="n">SkyCoord</span><span class="p">(</span><span class="mi">150</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="p">,</span> <span class="mi">375</span><span class="o">*</span><span class="n">u</span><span class="o">.</span><span class="n">arcsec</span><span class="p">,</span> <span class="n">obstime</span><span class="o">=</span><span class="n">start_time</span><span class="p">,</span> <span class="n">observer</span><span class="o">=</span><span class="s2">&quot;earth&quot;</span><span class="p">,</span> <span class="n">frame</span><span class="o">=</span><span class="s2">&quot;helioprojective&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-pytb notranslate"><div class="highlight"><pre><span></span><span class="gt">Traceback (most recent call last):</span>
+  File <span class="nb">&quot;/home6/cazaudo/Bureau/minimalsphinx-main/tutorials/Spectrogram/plot_ex6.py&quot;</span>, line <span class="m">17</span>, in <span class="n">&lt;module&gt;</span>
+<span class="w">    </span><span class="n">start_time</span> <span class="o">=</span> <span class="n">Time</span><span class="p">(</span><span class="s1">&#39;2012-09-24T14:56:03&#39;</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="s1">&#39;utc&#39;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;isot&#39;</span><span class="p">)</span>
+<span class="gr">NameError</span>: <span class="n">name &#39;Time&#39; is not defined</span>
+</pre></div>
+</div>
+<p>Now construct the cutout from the coordinates above
+above using the <code class="xref py py-obj docutils literal notranslate"><span class="pre">Cutout</span></code> attribute.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cutout</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">jsoc</span><span class="o">.</span><span class="n">Cutout</span><span class="p">(</span><span class="n">bottom_left</span><span class="p">,</span> <span class="n">top_right</span><span class="o">=</span><span class="n">top_right</span><span class="p">,</span> <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.006 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-gallery-tutorials-spectrogram-plot-ex6-py">
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../../_downloads/06c1d1c22db244c811b611e85ad4e9db/plot_ex6.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_ex6.py</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="../../_downloads/7b76764600ac449c0d0c166ae0e74db4/plot_ex6.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_ex6.ipynb</span></code></a></p>
+</div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, OSmOSE team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

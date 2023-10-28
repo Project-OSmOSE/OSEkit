@@ -1,0 +1,38 @@
+
+# OSmOSE python toolkit
+
+OSmOSE toolkit is an open source suite of tools dedicated to the management and analysis of :term:`passive underwater acoustic data`. Among other key features, our toolkit has been adapted to be deployed on a cluster infrastructure; in OSmOSE, our production version runs on named :term:`DATARMOR`, the cluster of IFREMER.
+
+Here are a few indications to help you going through our documentation. Jump to
+
+
+- {ref}`my text <header1_getting_started>` if you want to **use as quickly as possible** our toolkit in a **standalone executable** way. Once you have installed the toolkit in its stable version, his section will also allow you to handle basic functionalities of our toolkit through use cases ;
+- {ref}`my text <header2_going_further>` if you want to **execute our codes in a development environment** with the intention of **contributing** or reusing them in another project ;
+
+
+
+
+
+```{toctree}
+---
+maxdepth: 2
+---
+   getting_started
+   going_further
+   on_datarmor
+   glossary
+   apidocs
+* :ref:`genindex`
+* :ref:`modindex`
+```
+
+
+
+
+
+
+
+
+
+
+

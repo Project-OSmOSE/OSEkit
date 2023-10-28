@@ -1,0 +1,43 @@
+
+
+.. _sphx_glr_autoexample_basic_Dataset:
+
+Dataset
+-------
+
+
+
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbnails">
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example doesn&#x27;t do much, it just makes a simple plot">
+
+.. only:: html
+
+  .. image:: /autoexample_basic/Dataset/images/thumb/sphx_glr_plot_ex3_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_autoexample_basic_Dataset_plot_ex3.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">This is my example script</div>
+    </div>
+
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /autoexample_basic/Dataset/plot_ex3
+

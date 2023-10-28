@@ -1,0 +1,13 @@
+
+:orphan:
+
+.. _sphx_glr_autoexample_advanced_Soundscape_sg_execution_times:
+
+
+Computation times
+=================
+**00:00.001** total execution time for **autoexample_advanced_Soundscape** files:
+
++-----------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_autoexample_advanced_Soundscape_plot_ex.py` (``plot_ex.py``) | 00:00.001 | 0.0 MB |
++-----------------------------------------------------------------------------+-----------+--------+

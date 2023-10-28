@@ -1,0 +1,13 @@
+
+:orphan:
+
+.. _sphx_glr_autoexample_advanced_Weather_sg_execution_times:
+
+
+Computation times
+=================
+**00:00.001** total execution time for **autoexample_advanced_Weather** files:
+
++----------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_autoexample_advanced_Weather_plot_ex3.py` (``plot_ex3.py``) | 00:00.001 | 0.0 MB |
++----------------------------------------------------------------------------+-----------+--------+

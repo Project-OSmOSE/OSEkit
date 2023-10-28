@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Generate spectrograms &mdash; OSmOSE toolkit  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery-binder.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery-dataframe.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery-rendered-html.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/osmose_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../going_further.html">Going further</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../on_datarmor.html">On Datarmor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apidocs.html">API Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: white" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">OSmOSE toolkit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Generate spectrograms</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/gallery_tutorials/Spectrogram/bb_spectrogram.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="#sphx-glr-download-gallery-tutorials-spectrogram-bb-spectrogram-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code</p>
+</div>
+<section class="sphx-glr-example-title" id="generate-spectrograms">
+<span id="sphx-glr-gallery-tutorials-spectrogram-bb-spectrogram-py"></span><h1>Generate spectrograms<a class="headerlink" href="#generate-spectrograms" title="Link to this heading">¶</a></h1>
+<p>This code will show you how to compute spectrograms</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">OSmOSE</span> <span class="kn">import</span> <span class="n">Spectrogram</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+</pre></div>
+</div>
+<p>Define dataset path and name</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">path_osmose_dataset</span> <span class="o">=</span> <span class="s2">&quot;/home6/cazaudo/Bureau/osmose_sample_datasets/&quot;</span>
+<span class="n">dataset_name</span> <span class="o">=</span> <span class="s2">&quot;MPSU&quot;</span>
+<span class="n">campaign_name</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+</pre></div>
+</div>
+<p>Define standard parameters for spectrogram computation</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">spectrogram</span> <span class="o">=</span> <span class="n">Spectrogram</span><span class="p">(</span><span class="n">dataset_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path_osmose_dataset</span><span class="p">,</span> <span class="n">campaign_name</span><span class="p">,</span> <span class="n">dataset_name</span><span class="p">))</span>
+
+<span class="n">spectrogram</span><span class="o">.</span><span class="n">dataset_sr</span> <span class="o">=</span> <span class="mi">18000</span>
+<span class="n">spectrogram</span><span class="o">.</span><span class="n">spectro_duration</span> <span class="o">=</span> <span class="mi">15</span>
+
+<span class="n">spectrogram</span><span class="o">.</span><span class="n">nfft</span> <span class="o">=</span> <span class="mi">1024</span>
+<span class="n">spectrogram</span><span class="o">.</span><span class="n">window_size</span> <span class="o">=</span> <span class="mi">1024</span>
+<span class="n">spectrogram</span><span class="o">.</span><span class="n">overlap</span> <span class="o">=</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<p>Check size of spectrogram</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">spectrogram</span><span class="o">.</span><span class="n">check_spectro_size</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Initialize spectrogram computation ; this method will prepare audio data</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">reshape_method</span> <span class="o">=</span> <span class="s2">&quot;classic&quot;</span> <span class="c1"># Automatically reshape the audio files to fit the spectro_duration value. Available methods : &quot;classic&quot; or &quot;legacy&quot;</span>
+<span class="n">merge_on_reshape</span> <span class="o">=</span> <span class="kc">False</span> <span class="c1"># Set to False if fyou don&#39;t want to merge audio files while reshaping them (if they do not follow each other chronologically for example)</span>
+<span class="n">force_init</span> <span class="o">=</span> <span class="kc">False</span> <span class="c1"># Force every initialization parameter, including force_reshape and other computing jobs. It is best to avoid using it.</span>
+<span class="n">spectrogram</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="n">reshape_method</span><span class="o">=</span><span class="n">reshape_method</span><span class="p">,</span> <span class="n">force_init</span><span class="o">=</span><span class="n">force_init</span><span class="p">,</span> <span class="n">merge_on_reshape</span><span class="o">=</span><span class="n">merge_on_reshape</span><span class="p">)</span><span class="c1">#, offset_overlap=offset_overlap)</span>
+
+<span class="n">list_wav_to_process</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">path_osmose_dataset</span><span class="o">+</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">dataset_name</span><span class="si">}</span><span class="s1">/data/audio/</span><span class="si">{</span><span class="n">spectrogram</span><span class="o">.</span><span class="n">spectro_duration</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">spectrogram</span><span class="o">.</span><span class="n">dataset_sr</span><span class="si">}</span><span class="s1">/*wav&#39;</span><span class="p">)</span>
+
+<span class="n">spectrogram</span><span class="o">.</span><span class="n">process_all_files</span><span class="p">(</span><span class="n">list_wav_to_process</span><span class="o">=</span><span class="n">list_wav_to_process</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 0.000 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-gallery-tutorials-spectrogram-bb-spectrogram-py">
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../../_downloads/f2e3d4c4db82518b73b681cd1d133753/bb_spectrogram.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">bb_spectrogram.py</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="../../_downloads/e73997819f295f560fa8d34478cd58c6/bb_spectrogram.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">bb_spectrogram.ipynb</span></code></a></p>
+</div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, OSmOSE team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,78 @@
+
+
+
+# On Datarmor 
+
+## Installation
+
+### Prerequesites 
+
+You need to have an account on Datarmor, that will provide you with
+- extranet logins (username + password)
+- intranet logins (username + password)
+
+To get an account, please contact your IT assistant if you are from an institute partner of Datarmor, otherwise contact please contact [Dorian Cazau](mailto:dorian.cazau@ensta-bretagne.fr). The jupyterhub of Datarmor is now directly reachable via this  [portal](https://domicile.ifremer.fr/dana-na/auth/url_default/welcome.cgi). 
+
+
+```{warning}
+In case of first connexion, you first have to make a first ssh connexion to datarmor before you can use the jupyterhub of Datarmor.
+```
+
+### ssh access
+
+### Jupyterhub
+
+Once you are on the Portail Domicile Ifremer (see figure 1) after entering your extranet logins, click on JUPYTER, enter your intranet logins if asked and click on Start My Server. You will then have to select a job profile, corresponding to the computer resources associated with your jupyterhub session. By default, we recommend to use Datarmor - Jupyterlab - 8 cores, 32 GB RAM, 2 hours (quite equivalent to a personal computer). You are now on the Jupyter-Hub of Datarmor! 
+
+![Figure 1 : Portail Domicile Ifremer](./figures/figure_1.png)
+
+Once you are done, please follow this procedure to close your session : on the Jupyter Hub main page -> click tab Running -> click on all Shutdown then click on the button Logout on the Jupyter Hub main page. Please see our Note in annex regarding how to shut down a jupyter hub session on Datarmor.
+
+Finally : some things to check and keep in mind
+
+- Be aware of your computational resources, and avoid overusing them (this will crash your kernel) !
+- Conversely, avoid underusing your notebook, especially do not forget to close your notebook session once you are done (see Step 3)
+- Do not use the jupyterhub session to download or upload high volume data, only a few small files- 
+- Be sure to be affiliated with the unix group : gosmose 
+
+In case of connection problems, please report it to Dorian Cazau and contact the assistance at IFREMER : assistance@ifremer.fr
+
+Si le terminal est tout noir : Ctrl C ou reloader la page ou la fermer et la rouvrir !
+Often check that you do not have several jupyterhub sessions running simultaneously (use qstat and qdel, please refer to the Glossary)
+
+#### Use the toolkit through notebooks
+
+OSmOSE notebooks are located on our workspace at /home/datawork-osmose/. You will have to make a copy of them into your personal workspace. To do this, open a terminal from your jupyterhub portal (see figure 2) and run the following command: 
+
+```bash
+cp -R /home/datawork-osmose/OSmOSEanalytics_0.0.1/ . ; chmod 700 -R ./OSmOSEanalytics_0.0.1/
+```
+
+To open a notebook, just double click on it. If your notebook kernel is not automatically set to osmose (see figure 3), change it in Kernel -> Change Kernel -> Python [conda env:osmose]. This is the latest stable version. Our set of "getting started" Jupyter notebooks presented in our gallery is also available from our Datarmor datawork `/home/datawork-osmose/osmose-datarmor`, which covers basic use cases from your dataset uploading to first AI model development. 
+
+
+
+
+
+
+### Validation of the cluster-based production version 
+
+To develop and/or test your code contributions on Datarmor, use the local git repository located at `/home/datawork-osmose/osmose_toolkit_dev/`; the corresponding editable conda environment is named `osmose_dev`. To update yourself this local repository, you can use the following `osmose_activate` alias:
+
+```csh
+echo "alias osmose_activate='cd /home/datawork-osmose/osmose_package; git checkout main; git pull origin main; . /appli/anaconda/latest/etc/profile.d/conda.sh; conda activate /home/datawork-osmose/conda-env/osmose_dev/; cd -'" >> .bashrc
+```
+
+After reloading your shell, from now on typing 
+```bash
+bash
+osmose_activate
+``` 
+will:
+
+- Update the local package to the latest version.
+
+- Activate the conda environment.
+
+- Update or install any dependency that is not present.
+
