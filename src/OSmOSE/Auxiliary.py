@@ -11,7 +11,6 @@ import soundfile as sf
 import grp
 from tqdm import tqdm
 import netCDF4 as nc
-from OSmOSE import func_api
 import calendar, time, datetime
 from bisect import bisect_left
 from OSmOSE.utils import read_config

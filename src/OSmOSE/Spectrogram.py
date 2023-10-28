@@ -522,13 +522,13 @@ class Spectrogram(Dataset):
         self,
         *,
         dataset_sr: int = None,
-        reshape_method: Literal["legacy", "classic", "none"] = "none",
+        reshape_method: Literal["legacy", "classic", "none"] = "classic",
         batch_ind_min: int = 0,
         batch_ind_max: int = -1,
         pad_silence: bool = False,
         force_init: bool = False,
         date_template: str = None,
-        merge_on_reshape: bool = True,
+        merge_on_reshape: bool = False,
         last_file_behavior: Literal["pad","truncate","discard"] = "pad"
     ) -> None:
         """Prepares everything (path, variables, files) for spectrogram generation. This needs to be run before the spectrograms are generated.
