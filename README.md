@@ -2,7 +2,7 @@
 <br>
 <div align='center'>
 <a href="https://github.com/Project-OSmOSE/osmose-toolkit">
-    <img src="https://github.com/Project-OSmOSE/osmose-toolkit/blob/main/docs/logo/osmose_logo.png" alt="osmose logo" title="OSmOSE" height="200" style="padding-bottom:1em !important;" />
+    <img src="https://github.com/Project-OSmOSE/osmose-toolkit/blob/main/docs/logo/osmose_logo.png" alt="osmose logo" title="OSmOSE" height="120" style="padding-bottom:1em !important;" />
 </a>
 
 <br>
@@ -31,7 +31,7 @@ OSmOSE toolkit is an open source suite of tools written in python and dedicated 
 
 ### Getting into it
 
-All details to start using our toolkit and make the most out of it are given in our [documentation]([https://nilomr.github.io/pykanto/_build/html/contents/installation.html](https://github.com/Project-OSmOSE/osmose-toolkit/blob/main/docs/index.rst)). On this page you will be redirected to more specific parts of it depending on your intentions:)
+All details to start using our toolkit and make the most out of it are given in our [documentation](https://github.com/Project-OSmOSE/osmose-toolkit/blob/main/docs/_build/html/index.html). On this page you will be redirected to more specific parts of it depending on your profile and intentions:)
 
 <br>
 
