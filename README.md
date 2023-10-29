@@ -1,4 +1,33 @@
-# OSmOSE-toolkit
+<br>
+<br>
+<div align='center'>
+<a href="https://github.com/Project-OSmOSE/osmose-toolkit">
+    <img src="https://github.com/Project-OSmOSE/osmose-toolkit/blob/main/docs/logo/osmose_logo.png" alt="osmose logo" title="OSmOSE" height="80" style="padding-bottom:1em !important;" />
+</a>
+
+<br>
+<br>
+
+![version](https://img.shields.io/badge/package_version-0.1.7-orange)
+![PyPI status](https://img.shields.io/pypi/status/ansicolortags.svg)
+![license](https://img.shields.io/github/license/mashape/apistatus.svg)
+![Open Source Love](https://img.shields.io/badge/open%20source-♡-lightgrey)
+![Python 3.8](https://img.shields.io/badge/python-3.8%20|%203.9%20|%203.10-blue.svg)
+
+**OSmOSE-toolkit** is a python library to manage and analyse bird vocalisations
+
+[Installation](#installation) •
+[Getting started](#getting-started) •
+[Acknowledgements](#acknowledgements)
+# ㅤ
+
+</div>
+
+### Installation
+
+
+
+# 
 
 
 ## Presentation
