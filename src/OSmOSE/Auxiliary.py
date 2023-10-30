@@ -175,7 +175,8 @@ class Auxiliary():
                     print(f"Moving hydrophone with gps track given in {Path(path,f)}. Now checking your timestamp format  \n")
                     self.df = pd.read_csv(Path(path,f))                
                     self.timestamps = pd.Series(self.df['timestamp']).apply(lambda x : datetime.datetime.timestamp(datetime.datetime.strptime(x, '%Y-%m-%dT%H:%M:%S.%f%z'))).to_numpy()                    
-                    self.latitude, self.longitude = self.df['lat'], self.df['lon']
+                    self.latitude, self.longitude = self.df['lat'], self.df['lon']                      
+                                        
 
         # case of a fixed hydrophone
         if "latitude" not in vars(self).keys(): # ie self.latitude not defined yet                    
@@ -189,8 +190,8 @@ class Auxiliary():
             original_audio_foldername = f"{int(csvFileArray['audio_file_origin_duration'][0])}_{int(csvFileArray['origin_sr'][0])}"
             self.audio_path = self.path.joinpath(OSMOSE_PATH.raw_audio, original_audio_foldername)        
             self.timestamps = pd.Series(pd.read_csv(self.audio_path.joinpath("timestamp.csv"))["timestamp"]).apply(lambda x : datetime.datetime.timestamp(datetime.datetime.strptime(x, '%Y-%m-%dT%H:%M:%S.%f%z'))).to_numpy()                    
-            self.latitude, self.longitude = pd.Series([csvFileArray["lat"][0]]*len(self.timestamps)), pd.Series([csvFileArray["lon"][0]]*len(self.timestamps))
-            self.df = pd.DataFrame.from_dict({'timestamp': self.timestamps, 'lat':self.latitude, 'lon':self.longitude, 'depth':float('nan')})
+            self.latitude, self.longitude, self.depth = pd.Series([csvFileArray["lat"][0]]*len(self.timestamps)), pd.Series([csvFileArray["lon"][0]]*len(self.timestamps)), pd.Series([csvFileArray["depth"][0]]*len(self.timestamps))
+            self.df = pd.DataFrame.from_dict({'timestamp': self.timestamps, 'lat':self.latitude, 'lon':self.longitude, 'depth':self.depth})
                   
         self.era_path = os.path.join(self.path, OSMOSE_PATH.environment, 'era')
 
