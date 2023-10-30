@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tuning some parameters &mdash; OSmOSE toolkit  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery-binder.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery-dataframe.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery-rendered-html.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+        <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/osmose_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../going_further.html">Going further</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../on_datarmor.html">On Datarmor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../apidocs.html">API Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: white" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">OSmOSE toolkit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Tuning some parameters</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/gallery_basic_use_cases/Spectrogram/tune_parameters.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="#sphx-glr-download-gallery-basic-use-cases-spectrogram-tune-parameters-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code</p>
+</div>
+<section class="sphx-glr-example-title" id="tuning-some-parameters">
+<span id="sphx-glr-gallery-basic-use-cases-spectrogram-tune-parameters-py"></span><h1>Tuning some parameters<a class="headerlink" href="#tuning-some-parameters" title="Link to this heading">¶</a></h1>
+<p>This code will show you how to tune more</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">OSmOSE</span> <span class="kn">import</span> <span class="n">Spectrogram</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+</pre></div>
+</div>
+<p>Define dataset path and name</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">path_osmose_dataset</span> <span class="o">=</span> <span class="s2">&quot;/home6/cazaudo/Bureau/osmose_sample_datasets/&quot;</span>
+<span class="n">dataset_name</span> <span class="o">=</span> <span class="s2">&quot;MPSU&quot;</span>
+<span class="n">campaign_name</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+</pre></div>
+</div>
+<p>Define standard parameters for spectrogram computation</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">spectrogram</span> <span class="o">=</span> <span class="n">Spectrogram</span><span class="p">(</span><span class="n">dataset_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path_osmose_dataset</span><span class="p">,</span> <span class="n">campaign_name</span><span class="p">,</span> <span class="n">dataset_name</span><span class="p">))</span>
+
+<span class="n">spectrogram</span><span class="o">.</span><span class="n">dataset_sr</span> <span class="o">=</span> <span class="mi">18000</span>
+<span class="n">spectrogram</span><span class="o">.</span><span class="n">spectro_duration</span> <span class="o">=</span> <span class="mi">15</span>
+
+<span class="n">spectrogram</span><span class="o">.</span><span class="n">nfft</span> <span class="o">=</span> <span class="mi">1024</span>
+<span class="n">spectrogram</span><span class="o">.</span><span class="n">window_size</span> <span class="o">=</span> <span class="mi">1024</span>
+<span class="n">spectrogram</span><span class="o">.</span><span class="n">overlap</span> <span class="o">=</span> <span class="mi">80</span>
+
+<span class="n">spectrogram</span><span class="o">.</span><span class="n">dynamic_min</span> <span class="o">=</span> <span class="o">-</span><span class="mi">140</span>
+<span class="n">spectrogram</span><span class="o">.</span><span class="n">dynamic_max</span> <span class="o">=</span> <span class="o">-</span><span class="mi">12</span>
+</pre></div>
+</div>
+<p>Check size of spectrogram</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">spectrogram</span><span class="o">.</span><span class="n">check_spectro_size</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>your smallest tile has a duration of: 15.0 (s), with a number of spectra of 1312
+
+
+
+your resolutions : time =  0.011 (s) / frequency =  17.578 (Hz)
+</pre></div>
+</div>
+<p>Initialize everything needed for spectrogram computation ; in particular, this method will segment and/or resample audio files if needed</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">spectrogram</span><span class="o">.</span><span class="n">initialize</span><span class="p">()</span>
+
+<span class="n">wav_path</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">path_osmose_dataset</span><span class="o">+</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">dataset_name</span><span class="si">}</span><span class="s1">/data/audio/</span><span class="si">{</span><span class="n">spectrogram</span><span class="o">.</span><span class="n">spectro_duration</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">spectrogram</span><span class="o">.</span><span class="n">dataset_sr</span><span class="si">}</span><span class="s1">/*wav&#39;</span><span class="p">)</span>
+
+<span class="n">spectrogram</span><span class="o">.</span><span class="n">process_all_files</span><span class="p">(</span><span class="n">list_wav_to_process</span><span class="o">=</span><span class="n">wav_path</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Automatically reshaping audio files to fit the spectro duration value. Files will be 15 seconds long.
+Generating spectrograms for 2021_12_04T06_40_00.wav
+- data min : -0.043599591624315655
+ - data max : 0.0408572184436705
+ - data mean : -3.256038438041736e-05
+ - data std : 0.008187055127703766
+- min log spectro : -172.9915463895249
+ - max log spectro : -8.792831518758613
+
+Generating spectrograms for 2021_12_04T06_40_15.wav
+- data min : -0.04882523892434128
+ - data max : 0.0487071332517277
+ - data mean : -3.528930784192402e-05
+ - data std : 0.00811411147225643
+- min log spectro : -152.1867336201935
+ - max log spectro : -6.681082899022445
+
+Generating spectrograms for 2021_12_04T06_50_00.wav
+- data min : -0.033511807805999064
+ - data max : 0.03378511587047679
+ - data mean : -3.0569848501945664e-05
+ - data std : 0.007233793129894892
+- min log spectro : -149.18511017847976
+ - max log spectro : -16.71863902418962
+
+Generating spectrograms for 2021_12_04T06_50_15.wav
+- data min : -0.07263694677527446
+ - data max : 0.06125275820136163
+ - data mean : -3.730065638181639e-05
+ - data std : 0.008284730742198244
+- min log spectro : -158.67639523879294
+ - max log spectro : -8.68441891376687
+
+Generating spectrograms for 2021_12_04T07_00_00.wav
+- data min : -0.0353791861746213
+ - data max : 0.032017860200249285
+ - data mean : -3.058869269670414e-05
+ - data std : 0.006896311374136439
+- min log spectro : -137.3532132851326
+ - max log spectro : -16.55967468585012
+
+Generating spectrograms for 2021_12_04T06_45_00.wav
+- data min : -0.03271694052703739
+ - data max : 0.03550244405117467
+ - data mean : -2.470931195863298e-05
+ - data std : 0.007168413733075086
+- min log spectro : -134.7586202758711
+ - max log spectro : -16.799396474289022
+
+Generating spectrograms for 2021_12_04T06_45_15.wav
+- data min : -0.032692184394880704
+ - data max : 0.028990941280004096
+ - data mean : -3.348295730210429e-05
+ - data std : 0.0069611601087854495
+- min log spectro : -148.48923552005738
+ - max log spectro : -17.432529154500155
+
+Generating spectrograms for 2021_12_04T07_00_15.wav
+- data min : -0.03393691048092638
+ - data max : 0.03207500968610353
+ - data mean : -1.4907714119963936e-05
+ - data std : 0.006842811109712114
+- min log spectro : -146.8071845006292
+ - max log spectro : -16.14939243921077
+
+Generating spectrograms for 2021_12_04T06_55_00.wav
+- data min : -0.22344564529106045
+ - data max : 0.1584035185104064
+ - data mean : -3.0459480142493036e-05
+ - data std : 0.015558977306660969
+- min log spectro : -155.55863280371153
+ - max log spectro : 1.5318814344393026
+
+Generating spectrograms for 2021_12_04T07_10_00.wav
+- data min : -0.042873458835719
+ - data max : 0.04607848884003839
+ - data mean : -2.7528583020479752e-05
+ - data std : 0.007092797925864307
+- min log spectro : -141.246302487159
+ - max log spectro : -15.506930718985119
+
+Generating spectrograms for 2021_12_04T06_55_15.wav
+- data min : -0.04948294802461567
+ - data max : 0.0724102864258771
+ - data mean : -3.179966152878225e-05
+ - data std : 0.008127737227802023
+- min log spectro : -139.32829952935143
+ - max log spectro : -7.673325870463714
+
+Generating spectrograms for 2021_12_04T07_10_15.wav
+- data min : -0.032933465292427286
+ - data max : 0.03590521275416265
+ - data mean : -2.8949383472354138e-05
+ - data std : 0.006741754713959076
+- min log spectro : -148.61428688691382
+ - max log spectro : -16.572049234059097
+
+Generating spectrograms for 2021_12_04T07_05_00.wav
+- data min : -0.03440312222645359
+ - data max : 0.034693545653262506
+ - data mean : -3.6658858799508606e-05
+ - data std : 0.007197493204620723
+- min log spectro : -173.2026519655707
+ - max log spectro : -15.155617931053625
+
+Generating spectrograms for 2021_12_04T07_20_00.wav
+- data min : -0.032010778011500055
+ - data max : 0.03458223234973341
+ - data mean : -3.314539181087843e-05
+ - data std : 0.007145486956007369
+- min log spectro : -157.32920231026182
+ - max log spectro : -15.478991058895971
+
+Generating spectrograms for 2021_12_04T07_15_00.wav
+- data min : -0.09924625398421374
+ - data max : 0.09158876466307328
+ - data mean : -2.7759113660133463e-05
+ - data std : 0.01204331800062843
+- min log spectro : -157.82381488219394
+ - max log spectro : -7.741832748322784
+
+Generating spectrograms for 2021_12_04T07_05_15.wav
+- data min : -0.031218231758656827
+ - data max : 0.03886586145252704
+ - data mean : -4.107302409942018e-05
+ - data std : 0.006843314685816063
+- min log spectro : -167.01485756522047
+ - max log spectro : -16.746542016124586
+
+Generating spectrograms for 2021_12_04T07_20_15.wav
+- data min : -0.03378479822699975
+ - data max : 0.029732829137727824
+ - data mean : -3.313237826505332e-05
+ - data std : 0.006786943301938468
+- min log spectro : -146.91793691711547
+ - max log spectro : -16.69733359871541
+
+Generating spectrograms for 2021_12_04T07_15_15.wav
+- data min : -0.06430679719393462
+ - data max : 0.08806874597417144
+ - data mean : -3.627654021683887e-05
+ - data std : 0.011381953559107818
+- min log spectro : -173.6233388564238
+ - max log spectro : -13.451690923726323
+</pre></div>
+</div>
+<p>Visualize an example of spectrogram</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">spectrogram_path</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">path_osmose_dataset</span><span class="o">+</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">dataset_name</span><span class="si">}</span><span class="s1">/processed/spectrogram/</span><span class="si">{</span><span class="n">spectrogram</span><span class="o">.</span><span class="n">spectro_duration</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">spectrogram</span><span class="o">.</span><span class="n">dataset_sr</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">spectrogram</span><span class="o">.</span><span class="n">nfft</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">spectrogram</span><span class="o">.</span><span class="n">window_size</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">spectrogram</span><span class="o">.</span><span class="n">overlap</span><span class="si">}</span><span class="s1">/image/*png&#39;</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">image</span> <span class="k">as</span> <span class="n">mpimg</span>
+
+<span class="n">image</span> <span class="o">=</span> <span class="n">mpimg</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="n">spectrogram_path</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s1">&#39;nearest&#39;</span><span class="p">,</span> <span class="n">aspect</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">)</span>
+
+<span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_tick_params</span><span class="p">(</span><span class="n">labelbottom</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_tick_params</span><span class="p">(</span><span class="n">labelleft</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([])</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">([])</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<img src="../../_images/sphx_glr_tune_parameters_001.png" srcset="../../_images/sphx_glr_tune_parameters_001.png" alt="tune parameters" class = "sphx-glr-single-img"/><p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 21.035 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-gallery-basic-use-cases-spectrogram-tune-parameters-py">
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../../_downloads/25229cbd54ced9c91a306e1c42a7b284/tune_parameters.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">tune_parameters.py</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="../../_downloads/6254f11fa6b3823cfa339a7ba1275752/tune_parameters.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">tune_parameters.ipynb</span></code></a></p>
+</div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, OSmOSE team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

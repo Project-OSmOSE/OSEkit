@@ -25,13 +25,14 @@ author = 'OSmOSE team'
 
 add_module_names = False
 
+#		'myst_parser',
+
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [  'sphinx_gallery.gen_gallery',
-		'myst_parser',
 	        'sphinx.ext.autodoc',
                'sphinx.ext.doctest',
                'sphinx.ext.intersphinx',
@@ -43,16 +44,15 @@ extensions = [  'sphinx_gallery.gen_gallery',
 from sphinx_gallery.sorting import ExplicitOrder # NOQA
 from sphinx_gallery.sorting import ExampleTitleSortKey  # NOQA
 sphinx_gallery_conf = {
-     'examples_dirs': ['../tutorials','../advanced_workflows'],   # path to your example scripts
-     'gallery_dirs': ['gallery_tutorials','gallery_advanced_workflows'],  
+     'examples_dirs': ['../basic_use_cases','../advanced_use_cases'],   # path to your example scripts
+     'gallery_dirs': ['gallery_basic_use_cases','gallery_advanced_use_cases'],  
      'filename_pattern': '^((?!skip_).)*$',
-     'subsection_order': ExplicitOrder(['../tutorials/Dataset','../tutorials/Spectrogram','../tutorials/Auxiliary','../advanced_workflows/Soundscape','../advanced_workflows/Weather']),
+     'subsection_order': ExplicitOrder(['../basic_use_cases/Dataset','../basic_use_cases/Spectrogram','../basic_use_cases/Auxiliary','../advanced_use_cases/Soundscape','../advanced_use_cases/Weather']),
      'within_subsection_order': ExampleTitleSortKey,	
 }
     
 
 
-source_suffix = ['.rst', '.md']
 
 
 

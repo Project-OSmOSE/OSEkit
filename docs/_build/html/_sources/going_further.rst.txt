@@ -14,21 +14,24 @@ Installation with github and poetry
 In this section we give you the instructions to install our toolkit from github using the `poetry <https://python-poetry.org/>`_ tool:
 
 
-1. First, create an empty git repository in a newly created folder and clone this repository.
-
+1. First clone our Github project repository
 
 .. code:: bash
 
-	git init
 	git clone https://github.com/Project-OSmOSE/osmose-toolkit.git
 
 
-2. Create a Conda virtual environment in python 3.10, install poetry and use it to install the toolkit
+2. Create and activate a Conda virtual environment in python 3.10 with the name you want (here osmose_dev)
 
 .. code:: bash
 
 	conda create --name osmose_dev python=3.10 -y
 	conda activate osmose_dev
+
+3. Install poetry and use it to install our toolkit
+
+.. code:: bash
+
 	conda install poetry
 	poetry install
 

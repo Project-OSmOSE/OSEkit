@@ -104,18 +104,22 @@
 </div>
 <p>In this section we give you the instructions to install our toolkit from github using the <a class="reference external" href="https://python-poetry.org/">poetry</a> tool:</p>
 <ol class="arabic simple">
-<li><p>First, create an empty git repository in a newly created folder and clone this repository.</p></li>
+<li><p>First clone our Github project repository</p></li>
 </ol>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>init
-git<span class="w"> </span>clone<span class="w"> </span>https://github.com/Project-OSmOSE/osmose-toolkit.git
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/Project-OSmOSE/osmose-toolkit.git
 </pre></div>
 </div>
 <ol class="arabic simple" start="2">
-<li><p>Create a Conda virtual environment in python 3.10, install poetry and use it to install the toolkit</p></li>
+<li><p>Create and activate a Conda virtual environment in python 3.10 with the name you want (here osmose_dev)</p></li>
 </ol>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>--name<span class="w"> </span>osmose_dev<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.10<span class="w"> </span>-y
 conda<span class="w"> </span>activate<span class="w"> </span>osmose_dev
-conda<span class="w"> </span>install<span class="w"> </span>poetry
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p>Install poetry and use it to install our toolkit</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>install<span class="w"> </span>poetry
 poetry<span class="w"> </span>install
 </pre></div>
 </div>
