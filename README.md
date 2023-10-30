@@ -31,7 +31,7 @@ OSmOSE toolkit is an open source suite of tools written in python and dedicated 
 
 ### Getting into it
 
-All details to start using our toolkit and make the most out of it are given in our [documentation](https://github.com/Project-OSmOSE/osmose-toolkit/blob/main/docs/_build/html/index.html). On this page you will be redirected to more specific parts of it depending on your profile and intentions:)
+All details to start using our toolkit and make the most out of it are given in our [documentation](https://project-osmose.github.io/osmose-toolkit/); you will then be redirected to more specific parts of it depending on your profile and intentions:)
 
 <br>
 
