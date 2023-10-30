@@ -65,17 +65,17 @@ Contribute
 Here is the general workflow for contributing to our project:
 
 
-1. Install locally our toolkit (see section :ref:`Installation with github and poetry` above);
+1. Install locally our toolkit (see section :ref:`Installation with github and poetry` above) ;
 
-2. Start by reviewing our Github `issues <https://github.com/Project-OSmOSE/osmose-toolkit/issues>`_ and propose new issues anytime following standard procedures (in particular, among other must-have: short description, assignees, status, label...);
+2. Start by reviewing our Github `issues <https://github.com/Project-OSmOSE/osmose-toolkit/issues>`_ and propose new issues anytime following standard procedures (in particular, among other must-have: short description, assignees, status, label...) ;
 
 3. Develop and validate locally your contribution. Please follow standad github procedures such as developing on a new branch built from our main branch; no pushes will be accepted on our main repository ;
 
-4. (Optional) If intended to be deployed on Datarmor, you will have to also validate your contribution on it (see section :ref:`On Datarmor` for details);
+4. (Optional) If intended to be deployed on Datarmor, you will have to also validate your contribution on it (see section :ref:`On Datarmor` for details) ;
 
-5. Once validated, commit and push your branch to our Github project and create a pull-request so it can be properly peer-reviewed. 
+5. Once validated, commit and push your branch to our Github project and create a pull-request so it can be properly peer-reviewed ;
 
-6. Change the version in pyproject.toml depending on the importance of the changes: 
+6. Change the version in `pyproject.toml` depending on the importance of the changes: 
 	- small patch : change patch version (x.x.X)
 	- non breaking changes : change minor version (x.X.x)
 	- breaking changes : change major version (X.x.x)

@@ -54,13 +54,15 @@ Sample datasets
 
 Our toolkit comes with a diversified set of sample datasets containing both audio recordings and auxiliary data, described in the table below.
 
-======================= ===================== ========================= ======================================================= ======================= =====================================================
-Dataset name               Time period              Location                  Predominant sources                                  Sample frequency (Hz)    Audio recorder
-======================= ===================== ========================= ======================================================= ======================= =====================================================
-SPM2011                 2013--  -> 2013        Saint Pierre et Miquelon                                                                                   Fixed hydrophone
-BallenyIslands2015      20150115 -> 20160110        Southern Ocean               Blue whales, seisms                                       1000                     Fixed hydrophone
-SES                     2019-04-12 ->          Southern Indian Ocean      Wind speed, flow noise                                    50000                  Bio-logged elephant seal
-======================= ===================== ========================= ======================================================= ======================= =====================================================
+======================= ========== ========== ========================= =======================================================
+Code name               Date       Time       Location                  Sample frequency (Hz)
+======================= ========== ========== ========================= =======================================================
+SPM2011                 2011-09-19 11:00      Saint Pierre et Miquelon  48000
+BallenyIslands2015      2011-09-19 11:00      Balleny Islands 2015      1000
+======================= ========== ========== ========================= =======================================================
+
+
+
 
 Most of the examples found in modules and in the use case gallery use these audio recordings. To test and run the scripts, we recommend downloading these files to your local hard drive. The files can be downloaded from the GitHub `repository <https://github.com/project-OSmOSE>`_
 

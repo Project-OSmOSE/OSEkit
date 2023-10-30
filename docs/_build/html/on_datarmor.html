@@ -147,7 +147,7 @@
 <h4>Launch a qsub job<a class="headerlink" href="#launch-a-qsub-job" title="Link to this heading">¶</a></h4>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>We have made a <a class="reference internal" href="tutorials.html#conda"><span class="std std-ref">tutorial on Conda</span></a> if you are starting with it</p>
+<p>We have made a <a class="reference internal" href="getting_started.html#conda"><span class="std std-ref">tutorial on Conda</span></a> if you are starting with it</p>
 </div>
 <p>You can now create a job to ask for resources (including internet access) using the <code class="xref py py-obj docutils literal notranslate"><span class="pre">qsub</span></code> command, for example</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>qsub<span class="w"> </span>-I<span class="w"> </span>-l<span class="w"> </span><span class="nv">walltime</span><span class="o">=</span><span class="m">1</span>:00:00<span class="w"> </span>-q<span class="w"> </span>ftp<span class="w"> </span>-S<span class="w"> </span>/bin/bash
@@ -229,7 +229,7 @@
 <p>Launch an interactive qsub job following the procedure described in <a class="reference internal" href="#launch-a-qsub-job"><span class="std std-ref">Launch a qsub job</span></a>. Be careful of the memory asked, package installation might need memory higher than to the default 500 MB.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>We have made a <a class="reference internal" href="tutorials.html#conda"><span class="std std-ref">tutorial on Conda</span></a> if you are starting with it</p>
+<p>We have made a <a class="reference internal" href="getting_started.html#conda"><span class="std std-ref">tutorial on Conda</span></a> if you are starting with it</p>
 </div>
 <p>If at the end you do not find your Kernel in your jupyterhub sessions, especially those installed on your datawork and not datahome, insert in the file ~/.condarc the line “$DATAWORK/conda-env”  , this file should look like that:</p>
 <ol class="arabic simple">

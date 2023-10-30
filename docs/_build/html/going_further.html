@@ -100,7 +100,7 @@
 <h2>Installation with github and poetry<a class="headerlink" href="#installation-with-github-and-poetry" title="Link to this heading">¶</a></h2>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>We have made a <a class="reference internal" href="tutorials.html#github"><span class="std std-ref">tutorial on Github</span></a> if you are starting with it</p>
+<p>We have made a <a class="reference internal" href="getting_started.html#github"><span class="std std-ref">tutorial on Github</span></a> if you are starting with it</p>
 </div>
 <p>In this section we give you the instructions to install our toolkit from github using the <a class="reference external" href="https://python-poetry.org/">poetry</a> tool:</p>
 <ol class="arabic simple">
@@ -135,19 +135,19 @@ poetry<span class="w"> </span>install
 <span class="n">dataset</span> <span class="o">=</span> <span class="n">osm</span><span class="o">.</span><span class="n">Dataset</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>Note that on the contrary of the installation procedure given in <a class="reference internal" href="on_datarmor.html#id1"><span class="std std-ref">Getting started</span></a>, the OSmOSE toolkit is now installed in editable mode, meaning that any change made to the package’s file will be reflected immediately on the environment, without needing to reload it.</p>
+<p>Note that on the contrary of the installation procedure given in <a class="reference internal" href="getting_started.html#getting-started"><span class="std std-ref">Getting started</span></a>, the OSmOSE toolkit is now installed in editable mode, meaning that any change made to the package’s file will be reflected immediately on the environment, without needing to reload it.</p>
 </section>
 <section id="contribute">
 <h2>Contribute<a class="headerlink" href="#contribute" title="Link to this heading">¶</a></h2>
 <p>Here is the general workflow for contributing to our project:</p>
 <ol class="arabic simple">
-<li><p>Install locally our toolkit (see section <a class="reference internal" href="#installation-with-github-and-poetry"><span class="std std-ref">Installation with github and poetry</span></a> above);</p></li>
-<li><p>Start by reviewing our Github <a class="reference external" href="https://github.com/Project-OSmOSE/osmose-toolkit/issues">issues</a> and propose new issues anytime following standard procedures (in particular, among other must-have: short description, assignees, status, label…);</p></li>
+<li><p>Install locally our toolkit (see section <a class="reference internal" href="#installation-with-github-and-poetry"><span class="std std-ref">Installation with github and poetry</span></a> above) ;</p></li>
+<li><p>Start by reviewing our Github <a class="reference external" href="https://github.com/Project-OSmOSE/osmose-toolkit/issues">issues</a> and propose new issues anytime following standard procedures (in particular, among other must-have: short description, assignees, status, label…) ;</p></li>
 <li><p>Develop and validate locally your contribution. Please follow standad github procedures such as developing on a new branch built from our main branch; no pushes will be accepted on our main repository ;</p></li>
-<li><p>(Optional) If intended to be deployed on Datarmor, you will have to also validate your contribution on it (see section <a class="reference internal" href="on_datarmor.html#on-datarmor"><span class="std std-ref">On Datarmor</span></a> for details);</p></li>
-<li><p>Once validated, commit and push your branch to our Github project and create a pull-request so it can be properly peer-reviewed.</p></li>
+<li><p>(Optional) If intended to be deployed on Datarmor, you will have to also validate your contribution on it (see section <a class="reference internal" href="on_datarmor.html#on-datarmor"><span class="std std-ref">On Datarmor</span></a> for details) ;</p></li>
+<li><p>Once validated, commit and push your branch to our Github project and create a pull-request so it can be properly peer-reviewed ;</p></li>
 <li><dl class="simple">
-<dt>Change the version in pyproject.toml depending on the importance of the changes:</dt><dd><ul class="simple">
+<dt>Change the version in <code class="xref py py-obj docutils literal notranslate"><span class="pre">pyproject.toml</span></code> depending on the importance of the changes:</dt><dd><ul class="simple">
 <li><p>small patch : change patch version (x.x.X)</p></li>
 <li><p>non breaking changes : change minor version (x.X.x)</p></li>
 <li><p>breaking changes : change major version (X.x.x)</p></li>
