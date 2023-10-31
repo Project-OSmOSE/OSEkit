@@ -73,7 +73,8 @@ Here is the general workflow for contributing to our project:
 		
 	git remote add origin git@github.com:Project-OSmOSE/osmose-toolkit.git
 
-3. Review our Github `issues <https://github.com/Project-OSmOSE/osmose-toolkit/issues>`_ and propose new issues anytime following standard procedures; in particular, among other must-have: short description, assignees, status, label... ;
+3. Review our Github `issues <https://github.com/Project-OSmOSE/osmose-toolkit/issues>`_ : find an open issue to tackle and /or ask if you can help write a new feature (follow standard procedures such as: short description, assignees, status, label...) ;
+
 
 4. Develop and validate your contribution in local using a branch checkout from our main branch and dedicated to your issue. As is often the case, no pushes are accepted on our main branch. Note that after creating your issue, under Development in the right panel, you can directly "Create a branch for this issue or link a pull request." that willl provide you a command of the form
 
@@ -81,7 +82,6 @@ Here is the general workflow for contributing to our project:
 			
 	git fetch origin
 	git checkout 112-create-a-double-fs-spectrogram-concatenated-horizontally
-
 
 
 5. (Optional) If intended to be deployed on Datarmor, you will have to also validate your contribution on it (see section :ref:`On Datarmor` for details) ;
@@ -93,7 +93,14 @@ Here is the general workflow for contributing to our project:
 
 7. Push your branch to our Github project and create a pull-request so it can be properly peer-reviewed ;
 
-8. Use `poetry build` and upload generated files (present locally in the folder `~/dist`) in the upgraded package version on github `here <https://github.com/Project-OSmOSE/osmose-toolkit/releases/tag/v0.1.0>`_ 
+8. Use `poetry build` and upload generated files (present locally in the folder `~/dist`) in the corresponding package version on github `here <https://github.com/Project-OSmOSE/osmose-toolkit/releases/tag/v0.1.0>`_ 
+
+
+.. note::
+
+	Beyond this workflow, you can find in this `guide <https://opensource.guide/how-to-contribute/>`_ a more exhaustive list of possible contributions for an open source project, do not hesite to make us original propositions. This `document <https://www.dataschool.io/how-to-contribute-on-github/>`_ provides a more detailed step-by-step guide on how to make contributinons on github, and this `one <https://developer.mozilla.org/en-US/docs/MDN/Community/Issues>`_ is a guideline of best practices on github.
+
+
 
 .. include:: gallery_advanced_workflows/index.rst
 
