@@ -271,7 +271,7 @@ Develop and contribute using github and poetry
 ===============================================
 
 
-Although Datarmor should not be used as a development environment, step 4 from our github-based contribution workflow described in :ref:`Contribute` may include a few specific developments regarding features only available on Datarmor (typically everything related to distributed computing). The installation procedure described in :ref:`Installation with github and poetry` is still valid, just considered your Datarmor datahome as your local working directory.
+Although Datarmor should not be used as a development environment, step 4 from our github-based contribution workflow described in :ref:`Contribute` may include a few specific developments regarding features only available on Datarmor (typically everything related to distributed computing). The installation procedure described in :ref:`Installation with github and poetry` is still valid, just considered your Datarmor datahome as your local working directory ; just be cautious with the Conda environment creation on Datarmor, better you read :ref:`Procedure for conda environment creation / modification` if it is your first time.
 
 
 

@@ -65,22 +65,35 @@ Contribute
 Here is the general workflow for contributing to our project:
 
 
-1. Install locally our toolkit (see section :ref:`Installation with github and poetry` above) ;
+1. Install our toolkit in local following instructions in :ref:`Installation with github and poetry` ;
 
-2. Start by reviewing our Github `issues <https://github.com/Project-OSmOSE/osmose-toolkit/issues>`_ and propose new issues anytime following standard procedures (in particular, among other must-have: short description, assignees, status, label...) ;
+2. To be able to push/pull codes to/from github, add remote to your origin folder
 
-3. Develop and validate locally your contribution. Please follow standad github procedures such as developing on a new branch built from our main branch; no pushes will be accepted on our main repository ;
+.. code:: bash
+		
+	git remote add origin git@github.com:Project-OSmOSE/osmose-toolkit.git
 
-4. (Optional) If intended to be deployed on Datarmor, you will have to also validate your contribution on it (see section :ref:`On Datarmor` for details) ;
+3. Review our Github `issues <https://github.com/Project-OSmOSE/osmose-toolkit/issues>`_ and propose new issues anytime following standard procedures; in particular, among other must-have: short description, assignees, status, label... ;
 
-5. Once validated, commit and push your branch to our Github project and create a pull-request so it can be properly peer-reviewed ;
+4. Develop and validate your contribution in local using a branch checkout from our main branch and dedicated to your issue. As is often the case, no pushes are accepted on our main branch. Note that after creating your issue, under Development in the right panel, you can directly "Create a branch for this issue or link a pull request." that willl provide you a command of the form
 
-6. Change the version in `pyproject.toml` depending on the importance of the changes: 
+.. code:: bash
+			
+	git fetch origin
+	git checkout 112-create-a-double-fs-spectrogram-concatenated-horizontally
+
+
+
+5. (Optional) If intended to be deployed on Datarmor, you will have to also validate your contribution on it (see section :ref:`On Datarmor` for details) ;
+
+6. You can suggest changing in the version of the toolkit through the parameter `version` in `pyproject.toml`, depending on the importance of the changes: 
 	- small patch : change patch version (x.x.X)
 	- non breaking changes : change minor version (x.X.x)
 	- breaking changes : change major version (X.x.x)
 
-7. Use `poetry build` and upload generated files (present locally in the folder `~/dist`) in the upgraded package version on github `here <https://github.com/Project-OSmOSE/osmose-toolkit/releases/tag/v0.1.0>`_ 
+7. Push your branch to our Github project and create a pull-request so it can be properly peer-reviewed ;
+
+8. Use `poetry build` and upload generated files (present locally in the folder `~/dist`) in the upgraded package version on github `here <https://github.com/Project-OSmOSE/osmose-toolkit/releases/tag/v0.1.0>`_ 
 
 .. include:: gallery_advanced_workflows/index.rst
 

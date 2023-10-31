@@ -31,16 +31,22 @@ ERA5 downloading
 To use this code you will first need to download and format some ERA5 data : to do so, please use this `notebook <./download_ERA5.html>`__ . For OSmOSE members, this notebook can be directly executing
 on our `Google drive team  <https://drive.google.com/drive/folders/1QtNjUo1EaGEKSs4BY_E9iRUSWAlw4bOs>`_ 
 
-.. GENERATED FROM PYTHON SOURCE LINES 20-22
+.. GENERATED FROM PYTHON SOURCE LINES 19-22
+
+Requirement
+------------------------
+This code uses latitude and longitude coordinates of the hydrophone (which can be time-dependent or not) to join welch spectra to ERA5. All other instrument auxiliary variables to be joined (eg depth, accelerometer) MUST be present in the same csv file where lat and lon are stored.
+
+.. GENERATED FROM PYTHON SOURCE LINES 26-28
 
 Codes
 ------------------------
 
-.. GENERATED FROM PYTHON SOURCE LINES 24-25
+.. GENERATED FROM PYTHON SOURCE LINES 30-31
 
 Define dataset path and name
 
-.. GENERATED FROM PYTHON SOURCE LINES 25-36
+.. GENERATED FROM PYTHON SOURCE LINES 31-42
 
 .. code-block:: default
 
@@ -62,11 +68,11 @@ Define dataset path and name
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 37-38
+.. GENERATED FROM PYTHON SOURCE LINES 43-44
 
 Select your set of welch spectra through their time resolution and sampling rate
 
-.. GENERATED FROM PYTHON SOURCE LINES 38-42
+.. GENERATED FROM PYTHON SOURCE LINES 44-48
 
 .. code-block:: default
 
@@ -81,11 +87,11 @@ Select your set of welch spectra through their time resolution and sampling rate
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 43-44
+.. GENERATED FROM PYTHON SOURCE LINES 49-50
 
 Run the Auxiliary class to perform joining
 
-.. GENERATED FROM PYTHON SOURCE LINES 44-54
+.. GENERATED FROM PYTHON SOURCE LINES 50-60
 
 .. code-block:: default
 
@@ -109,11 +115,11 @@ Run the Auxiliary class to perform joining
 
     Moving hydrophone with gps track given in /home6/cazaudo/Bureau/osmose_sample_datasets/SES1/data/auxiliary/instrument/gps.csv. Now checking your timestamp format  
 
-    /home6/cazaudo/Bureau/osmose_V0/src/OSmOSE/Auxiliary.py:271: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
+    /home6/cazaudo/Bureau/osmose_V0/src/OSmOSE/Auxiliary.py:272: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
       for name, column in self.df.iteritems():
     Joining ERA5 data using the interpolation method.
     Loading SES1.nc file...
-      0%|          | 0/6 [00:00<?, ?it/s]    Loading and formatting u10:  17%|█▋        | 1/6 [00:00<00:00, 45590.26it/s]    Loading and formatting u10:  33%|███▎      | 2/6 [00:00<00:00,  7.27it/s]       Loading and formatting v10:  33%|███▎      | 2/6 [00:00<00:00,  7.27it/s]    Loading and formatting v10:  50%|█████     | 3/6 [00:00<00:00,  5.51it/s]    Loading and formatting sst:  50%|█████     | 3/6 [00:00<00:00,  5.51it/s]    Loading and formatting sst:  67%|██████▋   | 4/6 [00:00<00:00,  4.78it/s]    Loading and formatting tp:  67%|██████▋   | 4/6 [00:00<00:00,  4.78it/s]     Loading and formatting tp:  83%|████████▎ | 5/6 [00:01<00:00,  4.34it/s]    Loading and formatting tcc:  83%|████████▎ | 5/6 [00:01<00:00,  4.34it/s]    Loading and formatting tcc: 100%|██████████| 6/6 [00:01<00:00,  4.38it/s]    Loading and formatting wmb: 100%|██████████| 6/6 [00:01<00:00,  4.38it/s]    Loading and formatting wmb: 100%|██████████| 6/6 [00:01<00:00,  3.95it/s]
+      0%|          | 0/6 [00:00<?, ?it/s]    Loading and formatting u10:  17%|█▋        | 1/6 [00:00<00:00, 104857.60it/s]    Loading and formatting u10:  33%|███▎      | 2/6 [00:00<00:00,  9.49it/s]        Loading and formatting v10:  33%|███▎      | 2/6 [00:00<00:00,  9.49it/s]    Loading and formatting v10:  50%|█████     | 3/6 [00:00<00:00,  6.71it/s]    Loading and formatting sst:  50%|█████     | 3/6 [00:00<00:00,  6.71it/s]    Loading and formatting sst:  67%|██████▋   | 4/6 [00:00<00:00,  5.79it/s]    Loading and formatting tp:  67%|██████▋   | 4/6 [00:00<00:00,  5.79it/s]     Loading and formatting tp:  83%|████████▎ | 5/6 [00:00<00:00,  5.49it/s]    Loading and formatting tcc:  83%|████████▎ | 5/6 [00:00<00:00,  5.49it/s]    Loading and formatting tcc: 100%|██████████| 6/6 [00:01<00:00,  5.13it/s]    Loading and formatting wmb: 100%|██████████| 6/6 [00:01<00:00,  5.13it/s]    Loading and formatting wmb: 100%|██████████| 6/6 [00:01<00:00,  4.72it/s]
     Generated file /home6/cazaudo/Bureau/osmose_sample_datasets/SES1/processed/auxiliary/300_38400/aux_data.csv
 
 
@@ -122,7 +128,7 @@ Run the Auxiliary class to perform joining
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 6.893 seconds)
+   **Total running time of the script:** (0 minutes 5.918 seconds)
 
 
 .. _sphx_glr_download_gallery_basic_use_cases_Auxiliary_joiner_auxiliary.py:

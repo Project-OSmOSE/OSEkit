@@ -92,6 +92,10 @@ to download the full example code</p>
 <p>To use this code you will first need to download and format some ERA5 data : to do so, please use this <a class="reference external" href="./download_ERA5.html">notebook</a> . For OSmOSE members, this notebook can be directly executing
 on our <a class="reference external" href="https://drive.google.com/drive/folders/1QtNjUo1EaGEKSs4BY_E9iRUSWAlw4bOs">Google drive team</a></p>
 </section>
+<section id="requirement">
+<h2>Requirement<a class="headerlink" href="#requirement" title="Link to this heading">¶</a></h2>
+<p>This code uses latitude and longitude coordinates of the hydrophone (which can be time-dependent or not) to join welch spectra to ERA5. All other instrument auxiliary variables to be joined (eg depth, accelerometer) MUST be present in the same csv file where lat and lon are stored.</p>
+</section>
 <section id="codes">
 <h2>Codes<a class="headerlink" href="#codes" title="Link to this heading">¶</a></h2>
 <p>Define dataset path and name</p>
@@ -123,28 +127,28 @@ on our <a class="reference external" href="https://drive.google.com/drive/folder
 </div>
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Moving hydrophone with gps track given in /home6/cazaudo/Bureau/osmose_sample_datasets/SES1/data/auxiliary/instrument/gps.csv. Now checking your timestamp format
 
-/home6/cazaudo/Bureau/osmose_V0/src/OSmOSE/Auxiliary.py:271: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
+/home6/cazaudo/Bureau/osmose_V0/src/OSmOSE/Auxiliary.py:272: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
   for name, column in self.df.iteritems():
 Joining ERA5 data using the interpolation method.
 Loading SES1.nc file...
 
   0%|          | 0/6 [00:00&lt;?, ?it/s]
-Loading and formatting u10:  17%|█▋        | 1/6 [00:00&lt;00:00, 45590.26it/s]
-Loading and formatting u10:  33%|███▎      | 2/6 [00:00&lt;00:00,  7.27it/s]
-Loading and formatting v10:  33%|███▎      | 2/6 [00:00&lt;00:00,  7.27it/s]
-Loading and formatting v10:  50%|█████     | 3/6 [00:00&lt;00:00,  5.51it/s]
-Loading and formatting sst:  50%|█████     | 3/6 [00:00&lt;00:00,  5.51it/s]
-Loading and formatting sst:  67%|██████▋   | 4/6 [00:00&lt;00:00,  4.78it/s]
-Loading and formatting tp:  67%|██████▋   | 4/6 [00:00&lt;00:00,  4.78it/s]
-Loading and formatting tp:  83%|████████▎ | 5/6 [00:01&lt;00:00,  4.34it/s]
-Loading and formatting tcc:  83%|████████▎ | 5/6 [00:01&lt;00:00,  4.34it/s]
-Loading and formatting tcc: 100%|██████████| 6/6 [00:01&lt;00:00,  4.38it/s]
-Loading and formatting wmb: 100%|██████████| 6/6 [00:01&lt;00:00,  4.38it/s]
-Loading and formatting wmb: 100%|██████████| 6/6 [00:01&lt;00:00,  3.95it/s]
+Loading and formatting u10:  17%|█▋        | 1/6 [00:00&lt;00:00, 104857.60it/s]
+Loading and formatting u10:  33%|███▎      | 2/6 [00:00&lt;00:00,  9.49it/s]
+Loading and formatting v10:  33%|███▎      | 2/6 [00:00&lt;00:00,  9.49it/s]
+Loading and formatting v10:  50%|█████     | 3/6 [00:00&lt;00:00,  6.71it/s]
+Loading and formatting sst:  50%|█████     | 3/6 [00:00&lt;00:00,  6.71it/s]
+Loading and formatting sst:  67%|██████▋   | 4/6 [00:00&lt;00:00,  5.79it/s]
+Loading and formatting tp:  67%|██████▋   | 4/6 [00:00&lt;00:00,  5.79it/s]
+Loading and formatting tp:  83%|████████▎ | 5/6 [00:00&lt;00:00,  5.49it/s]
+Loading and formatting tcc:  83%|████████▎ | 5/6 [00:00&lt;00:00,  5.49it/s]
+Loading and formatting tcc: 100%|██████████| 6/6 [00:01&lt;00:00,  5.13it/s]
+Loading and formatting wmb: 100%|██████████| 6/6 [00:01&lt;00:00,  5.13it/s]
+Loading and formatting wmb: 100%|██████████| 6/6 [00:01&lt;00:00,  4.72it/s]
 Generated file /home6/cazaudo/Bureau/osmose_sample_datasets/SES1/processed/auxiliary/300_38400/aux_data.csv
 </pre></div>
 </div>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 6.893 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 5.918 seconds)</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-gallery-basic-use-cases-auxiliary-joiner-auxiliary-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../../_downloads/4ed94dbc59259a1bf0cd6f8b790b44e1/joiner_auxiliary.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">joiner_auxiliary.py</span></code></a></p>

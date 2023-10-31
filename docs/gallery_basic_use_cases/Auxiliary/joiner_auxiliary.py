@@ -15,6 +15,12 @@ This code will join welch spectra with variables from ERA5 within a pandas dataf
 # To use this code you will first need to download and format some ERA5 data : to do so, please use this `notebook <./download_ERA5.html>`__ . For OSmOSE members, this notebook can be directly executing
 # on our `Google drive team  <https://drive.google.com/drive/folders/1QtNjUo1EaGEKSs4BY_E9iRUSWAlw4bOs>`_ 
 
+# %%
+# Requirement
+# ------------------------
+# This code uses latitude and longitude coordinates of the hydrophone (which can be time-dependent or not) to join welch spectra to ERA5. All other instrument auxiliary variables to be joined (eg depth, accelerometer) MUST be present in the same csv file where lat and lon are stored.
+
+
 
 # %%
 # Codes
