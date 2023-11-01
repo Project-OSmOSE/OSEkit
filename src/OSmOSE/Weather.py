@@ -65,7 +65,7 @@ class Weather():
     
     
 
-    def wind_speed_estimation(self):
+    def wind_speed_estimation(self,show_fig:bool=False, percentile_outliers:int=None, threshold_SPL:[int,list]=None):
                 
         if not self.path.joinpath(OSMOSE_PATH.weather).exists():
             make_path(self.path.joinpath(OSMOSE_PATH.weather), mode=DPDEFAULT)        
@@ -83,10 +83,23 @@ class Weather():
         X_wind=feature_matrix["SPL_filtered"]
         
         #Y_categorical = pd.cut(Y_wind, [0,2.2,3.6,6,np.inf], right=False)
-            
+
         x_train = X_wind.values
         y_train = Y_wind
 
+        if percentile_outliers:
+            val_outlier = np.percentile(x_train,percentile_outliers)    
+            y_train = y_train[  x_train < val_outlier]
+            x_train = x_train[  x_train < val_outlier]
+        if threshold_SPL:
+            if type(threshold_SPL)==int:
+                y_train = y_train[  x_train < threshold_SPL]
+                x_train = x_train[  x_train < threshold_SPL]      
+            else:
+                y_train = y_train[  (x_train > threshold_SPL[0]) & (x_train < threshold_SPL[1])]
+                x_train = x_train[  (x_train > threshold_SPL[0]) & (x_train < threshold_SPL[1])]
+                
+                
         z = np.polyfit(x_train, y_train, 2)
         fit = np.poly1d(z)
         
@@ -103,7 +116,10 @@ class Weather():
         plt.xlabel('Relative SPL (dB)')
         plt.ylabel('ECMWF w10 (m/s)')
         plt.savefig(self.path.joinpath(OSMOSE_PATH.weather,"scatter_wind_model.png"), bbox_inches="tight", pad_inches=0)
-        plt.close()
+        if show_fig:
+            plt.show()        
+        else:
+            plt.close()
         print(f"Saving figure {self.path.joinpath(OSMOSE_PATH.weather,'scatter_wind_model.png')}")
                    
         with open( self.path.joinpath(OSMOSE_PATH.weather,'polynomial_law.txt'), 'w') as f:
@@ -128,7 +144,10 @@ class Weather():
         plt.xlim(np.min([np.min(y_train.values) , np.min(fit(x_train))])-1, np.max([np.max(y_train.values) , np.max(fit(x_train))])+1)
         plt.ylim(np.min([np.min(y_train.values) , np.min(fit(x_train))])-1, np.max([np.max(y_train.values) , np.max(fit(x_train))])+1)
         plt.savefig(self.path.joinpath(OSMOSE_PATH.weather,"scatter_ecmwf_model.png"), bbox_inches="tight", pad_inches=0)
-        plt.close()
+        if show_fig:
+            plt.show()        
+        else:
+            plt.close()
         print(f"Saving figure {self.path.joinpath(OSMOSE_PATH.weather,'scatter_ecmwf_model.png')}")
               
         
@@ -153,7 +172,10 @@ class Weather():
         ax2.tick_params(axis='y', labelcolor=color)        
         ax1.autoscale(enable=True, axis='x', tight=True)
         plt.savefig(self.path.joinpath(OSMOSE_PATH.weather,"temporal_ecmwf_model.png"), bbox_inches="tight", pad_inches=0)
-        plt.close()
+        if show_fig:
+            plt.show()        
+        else:
+            plt.close()
         print(f"Saving figure {self.path.joinpath(OSMOSE_PATH.weather,'temporal_ecmwf_model.png')}")
                   
         
