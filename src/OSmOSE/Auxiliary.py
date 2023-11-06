@@ -1,4 +1,3 @@
-from OSmOSE.Dataset import Dataset
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -167,6 +166,7 @@ class Auxiliary():
         self.time_resolution_welch = time_resolution_welch
         self.sample_rate_welch = sample_rate_welch
         self.path_output_welch = self.path.joinpath(OSMOSE_PATH.welch)
+        self.era_path = os.path.join(self.path, OSMOSE_PATH.environment, 'era')
         
         # case of a moving hydrophone: search for a gps file in OSMOSE_PATH.instrument
         for path, _, files in os.walk(self.path.joinpath(OSMOSE_PATH.instrument)):
@@ -193,7 +193,6 @@ class Auxiliary():
             self.latitude, self.longitude, self.depth = pd.Series([csvFileArray["lat"][0]]*len(self.timestamps)), pd.Series([csvFileArray["lon"][0]]*len(self.timestamps)), pd.Series([csvFileArray["depth"][0]]*len(self.timestamps))
             self.df = pd.DataFrame.from_dict({'timestamp': self.timestamps, 'lat':self.latitude, 'lon':self.longitude, 'depth':self.depth})
                   
-        self.era_path = os.path.join(self.path, OSMOSE_PATH.environment, 'era')
 
 
 
@@ -242,10 +241,15 @@ class Auxiliary():
 
         return LTAS, time, Freq
     
+
+    def __str__(self):
+        
+        return str(self.df.describe())
     
 
     def join_welch(self, *, method='interpolation', time_off=np.inf, lat_off=np.inf, lon_off=np.inf,r=np.inf, variables=['u10', 'v10']):
 
+        # extract timestamps of welch spectra
         fns = glob(str(self.path_output_welch.joinpath(str(self.time_resolution_welch)+'_'+str(self.sample_rate_welch), '*.npz')))
         
         if len(fns)==0:
@@ -269,15 +273,28 @@ class Auxiliary():
         temp_df['timestamp'] = temp_df.time.apply(lambda x : datetime.datetime.strftime(datetime.datetime.fromtimestamp(x), '%Y-%m-%dT%H:%M:%S.%f'))
         temp_df = temp_df.sort_values('time')
         
+        
+        # perform joining to welch
         for name, column in self.df.iteritems():
-        	if name == 'timestamp':
-        		continue
+        	if (name == 'timestamp') or (name == 'fn'):
+            		continue
         	temp_df[name] = inter.interp1d(self.timestamps, self.df[name], bounds_error = False)(temp_df.time)
         self.df = temp_df
 
 
-
-
+    def join_other_csv_to_df(self,csv_name:str):
+        
+        cur_csv = pd.read_csv( self.path.joinpath(OSMOSE_PATH.auxiliary,csv_name) )
+        
+        timestamps = pd.Series(cur_csv['timestamp']).apply(lambda x : datetime.datetime.timestamp(datetime.datetime.strptime(x, '%Y-%m-%dT%H:%M:%S.%f%z'))).to_numpy()                    
+        
+        # perform joining to welch
+        for name, column in cur_csv.iteritems():
+        	if (name == 'timestamp') or (name == 'fn'):
+            		continue
+        	self.df[name] = inter.interp1d(timestamps, cur_csv[name], bounds_error = False)(self.df.time)
+        
+        
 
     def save_aux_data(self):
 
