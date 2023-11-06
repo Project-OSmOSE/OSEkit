@@ -128,6 +128,7 @@ def reshape(
     """
     set_umask()
     files = []
+    save_meta_res=False
 
     if isinstance(input_files, list):
         input_dir_path = Path(input_files[0]).parent
@@ -199,6 +200,8 @@ def reshape(
     proceed = force_reshape  # Default is False
 
     while i < len(files):
+        list_seg_name = []
+        list_seg_timestamp = []
         audio_data, sample_rate = sf.read(input_dir_path.joinpath(files[i]))
         file_duration = len(audio_data)//sample_rate
         file_type = sf.info(input_dir_path.joinpath(files[i])).subtype
@@ -253,7 +256,10 @@ def reshape(
                     f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S').replace('-','_').replace(':','_').replace('.','_').replace('+','_')}.wav"
                 )
                 result.append(outfilename.name)
-
+                
+                list_seg_name.append(outfilename.name)
+                list_seg_timestamp.append(datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f%z"))
+                
                 timestamp_list.append(
                     datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f%z")
                 )
@@ -269,6 +275,7 @@ def reshape(
                 )
                 os.chmod(outfilename, mode=FPDEFAULT)
 
+        
                 if verbose:
                     print(
                         f"{outfilename} written! File is {(len(output)/sample_rate)} seconds long. {(len(previous_audio_data)/sample_rate)} seconds left from slicing."
@@ -295,6 +302,9 @@ def reshape(
                         f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S').replace('-','_').replace(':','_').replace('.','_').replace('+','_')}.wav"
                     )
                     result.append(outfilename.name)
+
+                    list_seg_name.append(outfilename.name)
+                    list_seg_timestamp.append(datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f%z"))
                     
                     timestamp_list.append(
                         datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f%z")
@@ -313,10 +323,15 @@ def reshape(
 
             # If after we get out of the previous while loop we don't have any audio_data left, then we look at the next file.
             if len(audio_data) == 0:
+                if save_meta_res:
+                    df=pd.DataFrame({'list_seg_name':list_seg_name,'list_seg_timestamp':list_seg_timestamp})
+                    df.to_csv(f"{self.path.joinpath(OSMOSE_PATH.log,files[i])}.csv")
                 i += 1
                 continue
 
-            
+
+                
+
         #! AUDIO DURATION == CHUNK SIZE
         # Else if audio_data is already in the desired duration, output it
         if len(audio_data) == chunk_size * sample_rate:
@@ -386,6 +401,10 @@ def reshape(
         )
         result.append(outfilename.name)
 
+        list_seg_name.append(outfilename.name)
+        list_seg_timestamp.append(datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f%z"))
+                    
+                    
         timestamp_list.append(
             datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f%z")
         )
@@ -399,8 +418,10 @@ def reshape(
                 f"{outfilename} written! File is {(len(output)/sample_rate)} seconds long. {(len(previous_audio_data)/sample_rate)} seconds left from slicing."
             )
 
+
         i += 1
         t += 1
+
 
 
     #! AFTER MAIN LOOP
@@ -464,7 +485,6 @@ def reshape(
 
     # in particular, it is here that we delete files that have been resampled and copied in outputdir
     for remaining_file in [f for f in files if input_dir_path.joinpath(f).exists()]:
-        print('remaining_file',remaining_file)
         if overwrite and not implicit_output and output_dir_path == input_dir_path and last_file_behavior != "discard":
             print(f"Deleting {remaining_file}")
             input_dir_path.joinpath(remaining_file).unlink()
