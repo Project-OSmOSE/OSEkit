@@ -9,6 +9,7 @@ import shutil
 import glob
 from os import PathLike
 import sys
+import re
    
 try:
     import grp
@@ -76,7 +77,7 @@ class Dataset:
         self.__local = local
 
         if gps_coordinates is not None:
-            self.gps_coordinates = gps_coordinates
+            self.gps_coordinates = gps_coordinates          
             
         if depth is not None:
             self.depth = depth
@@ -250,7 +251,8 @@ class Dataset:
         bare_check: bool = False,
         auto_normalization: bool = False,
         force_upload: bool = False,
-        number_test_bad_files: int = 1
+        number_test_bad_files: int = 1,
+        dico_aux_substring:dict = {'instrument':['depth','gps'],'environment':['insitu']}
     ) -> Path:
         """
         Set up the architecture of the dataset.
@@ -313,6 +315,9 @@ class Dataset:
             raise ValueError(
                 f"Depth must be defined !"
             )  
+            
+        self.dico_aux_substring = dico_aux_substring
+
 
         if not self.__local:
             set_umask()
@@ -628,6 +633,7 @@ class Dataset:
         timestamp_files = []
 
         make_path(path_raw_audio.joinpath("original"), mode=DPDEFAULT)
+        make_path(self.path.joinpath(OSMOSE_PATH.other), mode=DPDEFAULT)
         make_path(self.path.joinpath(OSMOSE_PATH.instrument), mode=DPDEFAULT)
         make_path(self.path.joinpath(OSMOSE_PATH.environment), mode=DPDEFAULT)
 
@@ -640,12 +646,12 @@ class Dataset:
                             parent_dir_list.append(Path(path,f).parent) if Path(path,f).parent not in parent_dir_list else parent_dir_list                        
                     elif f=="timestamp.csv":
                         Path(path,f).rename(path_raw_audio.joinpath("original","timestamp.csv"))
-                    elif "depth" in f or "gps" in f:
-                        Path(path,f).rename(self.path.joinpath(OSMOSE_PATH.instrument,f))                    
-                    elif f.endswith(".csv"):
-                        Path(path,f).rename(self.path.joinpath(OSMOSE_PATH.auxiliary,f))
-                        
-        
+                    else:
+                        for key_dico in self.dico_aux_substring:
+                            if re.search('|'.join(self.dico_aux_substring[key_dico]), f):
+                                Path(path,f).rename(self.path.joinpath(OSMOSE_PATH.auxiliary,key_dico,f))                    
+    
+
         # if len(timestamp_files) > 1:
         #     res = "-1"
         #     choice = ""
@@ -663,12 +669,12 @@ class Dataset:
             #os.chmod(path_raw_audio.joinpath("original",audio.name), mode=FPDEFAULT)
             
         for parent_dir in parent_dir_list:
-            if len(os.listdir(parent_dir))==0:
+            if len(os.listdir(parent_dir))>0:
                 print(f'- Removing your subfolder: {parent_dir}, but be aware that you had the following non-wav data in your subfolder {parent_dir}: {os.listdir(parent_dir)} \n')
             else:
                 print(f'- Removing your subfolder: {parent_dir}\n')
                 
-            print(f'shutil.rmtree({parent_dir})')
+            shutil.rmtree(parent_dir)
             
         return path_raw_audio.joinpath("original")
         # if any(
