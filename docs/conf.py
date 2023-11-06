@@ -42,13 +42,13 @@ extensions = [  'sphinx_gallery.gen_gallery',
               ]
 
 from sphinx_gallery.sorting import ExplicitOrder # NOQA
-from sphinx_gallery.sorting import ExampleTitleSortKey  # NOQA
+from sphinx_gallery.sorting import FileNameSortKey  # see other ways to sort examples within a gallery but cannot set an explicit list https://sphinx-gallery.github.io/stable/gen_modules/sphinx_gallery.sorting.html#sphinx_gallery.sorting.ExplicitOrder
 sphinx_gallery_conf = {
      'examples_dirs': ['../basic_use_cases','../advanced_use_cases'],   # path to your example scripts
      'gallery_dirs': ['gallery_basic_use_cases','gallery_advanced_use_cases'],  
      'filename_pattern': '^((?!skip_).)*$',
      'subsection_order': ExplicitOrder(['../basic_use_cases/Dataset','../basic_use_cases/Spectrogram','../basic_use_cases/Auxiliary','../advanced_use_cases/Soundscape','../advanced_use_cases/Weather']),
-     'within_subsection_order': ExampleTitleSortKey,	
+     'within_subsection_order': FileNameSortKey,	
 }
     
 

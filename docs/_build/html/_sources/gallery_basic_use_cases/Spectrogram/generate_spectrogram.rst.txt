@@ -28,7 +28,7 @@ This code will show you how to compute spectrograms
 
 Prerequisites
 ------------------------
-Your dataset must be built before you can do any processing on it ; see the use case :ref:`sphx_glr_gallery_tutorials_Dataset_build_dataset.py` to do this.
+Your dataset must be built before you can do any processing on it ; see the use case :ref:`sphx_glr_gallery_basic_use_cases_Dataset_1_build_dataset.py` to do this.
 
 .. GENERATED FROM PYTHON SOURCE LINES 15-17
 
@@ -287,7 +287,7 @@ Visualize an example of spectrogram
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 12.713 seconds)
+   **Total running time of the script:** (0 minutes 12.408 seconds)
 
 
 .. _sphx_glr_download_gallery_basic_use_cases_Spectrogram_generate_spectrogram.py:

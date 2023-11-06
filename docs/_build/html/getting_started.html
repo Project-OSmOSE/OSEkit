@@ -25,7 +25,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Build and analyze an OSmOSE dataset" href="gallery_tutorials/Dataset/index.html" />
+    <link rel="next" title="Build and analyze an OSmOSE dataset" href="gallery_basic_use_cases/Dataset/index.html" />
     <link rel="prev" title="OSmOSE toolkit" href="index.html" /> 
 </head>
 
@@ -57,9 +57,9 @@
 <li class="toctree-l3"><a class="reference internal" href="#build-and-analyze-an-osmose-dataset">Build and analyze an OSmOSE dataset</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#generate-spectrograms">Generate spectrograms</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#join-with-auxiliary">Join with auxiliary</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="gallery_tutorials/Dataset/index.html">Build and analyze an OSmOSE dataset</a></li>
-<li class="toctree-l4"><a class="reference internal" href="gallery_tutorials/Spectrogram/index.html">Generate spectrograms</a></li>
-<li class="toctree-l4"><a class="reference internal" href="gallery_tutorials/Auxiliary/index.html">Join with auxiliary</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gallery_basic_use_cases/Dataset/index.html">Build and analyze an OSmOSE dataset</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gallery_basic_use_cases/Spectrogram/index.html">Generate spectrograms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gallery_basic_use_cases/Auxiliary/index.html">Join with auxiliary</a></li>
 </ul>
 </li>
 </ul>
@@ -117,7 +117,7 @@ conda<span class="w"> </span>activate<span class="w"> </span>osmose
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>We have made a <a class="reference internal" href="#conda"><span class="std std-ref">tutorial on Conda</span></a> if you are starting with it</p>
+<p>We have made a <a class="reference internal" href="tutorials.html#conda"><span class="std std-ref">tutorial on Conda</span></a> if you are starting with it</p>
 </div>
 <ol class="arabic simple" start="3">
 <li><p>Install the pip tool in your conda environment, use it to install the toolkit from the wheel file and delete this file</p></li>
@@ -180,35 +180,38 @@ rm<span class="w"> </span>&lt;toolkit_version.whl&gt;
 <h2>Basic use cases<a class="headerlink" href="#basic-use-cases" title="Link to this heading">¶</a></h2>
 <div class="sphx-glr-thumbnails"></div><section id="build-and-analyze-an-osmose-dataset">
 <h3>Build and analyze an OSmOSE dataset<a class="headerlink" href="#build-and-analyze-an-osmose-dataset" title="Link to this heading">¶</a></h3>
-<div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer" tooltip="This code will format your raw data into a OSmOSE dataset"><img alt="" src="_images/sphx_glr_build_dataset_thumb.png" />
-<p><a class="reference internal" href="gallery_tutorials/Dataset/build_dataset.html#sphx-glr-gallery-tutorials-dataset-build-dataset-py"><span class="std std-ref">Build a OSmOSE dataset</span></a></p>
-  <div class="sphx-glr-thumbnail-title">Build a OSmOSE dataset</div>
-</div><div class="sphx-glr-thumbcontainer" tooltip="Perform summary statistics and visualize your dataset metadata"><img alt="" src="_images/sphx_glr_explore_metadata_thumb.png" />
-<p><a class="reference internal" href="gallery_tutorials/Dataset/explore_metadata.html#sphx-glr-gallery-tutorials-dataset-explore-metadata-py"><span class="std std-ref">Explore dataset metadata</span></a></p>
+<div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer" tooltip="This code will show you how to format your raw audio data into a OSmOSE dataset, in the case of..."><img alt="" src="_images/sphx_glr_1_build_dataset_thumb.png" />
+<p><a class="reference internal" href="gallery_basic_use_cases/Dataset/1_build_dataset.html#sphx-glr-gallery-basic-use-cases-dataset-1-build-dataset-py"><span class="std std-ref">First time building a OSmOSE dataset</span></a></p>
+  <div class="sphx-glr-thumbnail-title">First time building a OSmOSE dataset</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="This code will show you how to build a OSmOSE dataset in case of a mobile hydrophone."><img alt="" src="_images/sphx_glr_2_mobile_hydrophone_thumb.png" />
+<p><a class="reference internal" href="gallery_basic_use_cases/Dataset/2_mobile_hydrophone.html#sphx-glr-gallery-basic-use-cases-dataset-2-mobile-hydrophone-py"><span class="std std-ref">In case of a mobile hydrophone</span></a></p>
+  <div class="sphx-glr-thumbnail-title">In case of a mobile hydrophone</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="Perform summary statistics and visualize your dataset metadata"><img alt="" src="_images/sphx_glr_3_explore_metadata_thumb.png" />
+<p><a class="reference internal" href="gallery_basic_use_cases/Dataset/3_explore_metadata.html#sphx-glr-gallery-basic-use-cases-dataset-3-explore-metadata-py"><span class="std std-ref">Explore dataset metadata</span></a></p>
   <div class="sphx-glr-thumbnail-title">Explore dataset metadata</div>
 </div></div></section>
 <section id="generate-spectrograms">
 <h3>Generate spectrograms<a class="headerlink" href="#generate-spectrograms" title="Link to this heading">¶</a></h3>
 <div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer" tooltip="This code will show you how to compute spectrograms"><img alt="" src="_images/sphx_glr_generate_spectrogram_thumb.png" />
-<p><a class="reference internal" href="gallery_tutorials/Spectrogram/generate_spectrogram.html#sphx-glr-gallery-tutorials-spectrogram-generate-spectrogram-py"><span class="std std-ref">Generation with default parameters</span></a></p>
+<p><a class="reference internal" href="gallery_basic_use_cases/Spectrogram/generate_spectrogram.html#sphx-glr-gallery-basic-use-cases-spectrogram-generate-spectrogram-py"><span class="std std-ref">Generation with default parameters</span></a></p>
   <div class="sphx-glr-thumbnail-title">Generation with default parameters</div>
 </div><div class="sphx-glr-thumbcontainer" tooltip="This code will show you how to tune more "><img alt="" src="_images/sphx_glr_tune_parameters_thumb.png" />
-<p><a class="reference internal" href="gallery_tutorials/Spectrogram/tune_parameters.html#sphx-glr-gallery-tutorials-spectrogram-tune-parameters-py"><span class="std std-ref">Tuning some parameters</span></a></p>
+<p><a class="reference internal" href="gallery_basic_use_cases/Spectrogram/tune_parameters.html#sphx-glr-gallery-basic-use-cases-spectrogram-tune-parameters-py"><span class="std std-ref">Tuning some parameters</span></a></p>
   <div class="sphx-glr-thumbnail-title">Tuning some parameters</div>
 </div></div></section>
 <section id="join-with-auxiliary">
 <h3>Join with auxiliary<a class="headerlink" href="#join-with-auxiliary" title="Link to this heading">¶</a></h3>
 <div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer" tooltip="This code will join welch spectra with variables from ERA5 within a pandas dataframe"><img alt="" src="_images/sphx_glr_joiner_auxiliary_thumb.png" />
-<p><a class="reference internal" href="gallery_tutorials/Auxiliary/joiner_auxiliary.html#sphx-glr-gallery-tutorials-auxiliary-joiner-auxiliary-py"><span class="std std-ref">Join welch spectra with ERA5 data</span></a></p>
+<p><a class="reference internal" href="gallery_basic_use_cases/Auxiliary/joiner_auxiliary.html#sphx-glr-gallery-basic-use-cases-auxiliary-joiner-auxiliary-py"><span class="std std-ref">Join welch spectra with ERA5 data</span></a></p>
   <div class="sphx-glr-thumbnail-title">Join welch spectra with ERA5 data</div>
 </div></div><div class="toctree-wrapper compound">
 </div>
 <div class="sphx-glr-footer sphx-glr-footer-gallery docutils container">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
-<p><a class="reference download internal" download="" href="_downloads/b0edd276a1bf382e83bc4d4161c0c367/gallery_tutorials_python.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">all</span> <span class="pre">examples</span> <span class="pre">in</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">gallery_tutorials_python.zip</span></code></a></p>
+<p><a class="reference download internal" download="" href="_downloads/2137bccace26de739c4a9c55e55401ff/gallery_basic_use_cases_python.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">all</span> <span class="pre">examples</span> <span class="pre">in</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">gallery_basic_use_cases_python.zip</span></code></a></p>
 </div>
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
-<p><a class="reference download internal" download="" href="_downloads/2dbf3e43b2eeab5f7f2d640f71029d63/gallery_tutorials_jupyter.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">all</span> <span class="pre">examples</span> <span class="pre">in</span> <span class="pre">Jupyter</span> <span class="pre">notebooks:</span> <span class="pre">gallery_tutorials_jupyter.zip</span></code></a></p>
+<p><a class="reference download internal" download="" href="_downloads/dab0225492d832fe67433f0d3504fc26/gallery_basic_use_cases_jupyter.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">all</span> <span class="pre">examples</span> <span class="pre">in</span> <span class="pre">Jupyter</span> <span class="pre">notebooks:</span> <span class="pre">gallery_basic_use_cases_jupyter.zip</span></code></a></p>
 </div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
@@ -274,7 +277,7 @@ datarmor0:</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="index.html" class="btn btn-neutral float-left" title="OSmOSE toolkit" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="gallery_tutorials/Dataset/index.html" class="btn btn-neutral float-right" title="Build and analyze an OSmOSE dataset" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="gallery_basic_use_cases/Dataset/index.html" class="btn btn-neutral float-right" title="Build and analyze an OSmOSE dataset" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

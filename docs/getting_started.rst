@@ -70,7 +70,7 @@ Most of the examples found in modules and in the use case gallery use these audi
   
 
 
-.. include:: gallery_tutorials/index.rst
+.. include:: gallery_basic_use_cases/index.rst
 
 
 .. include:: tutorials.rst

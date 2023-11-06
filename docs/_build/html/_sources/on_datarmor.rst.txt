@@ -179,7 +179,7 @@ Conda environment creation
 Below are listed the steps to create and build a conda environment that will be available in your Jupyter Hub sessions Note that there is possibly a delay between the creation and disposal of your environment.
 
 Pre-requirements
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
 Please first connect to Datarmor via :ref:`SSH connexion`. Once you are in your datahome, check that your `.condarc` file contains the following elements (run `cat .condarc`)
 
@@ -197,7 +197,7 @@ Launch an interactive qsub job following the procedure described in :ref:`Launch
 
 
 Procedure for conda environment creation / modification
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------------------------
 
 .. note::
 

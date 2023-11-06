@@ -84,8 +84,8 @@
 <h1>OSmOSE toolkit<a class="headerlink" href="#osmose-toolkit" title="Link to this heading">¶</a></h1>
 <p>OSmOSE toolkit is an open source suite of tools written in python and dedicated to the management and analysis of data in <a class="reference internal" href="glossary.html#term-Underwater-passive-acoustics"><span class="xref std std-term">underwater passive acoustics</span></a>. Among other key features, our toolkit has been adapted to be deployed on a cluster infrastructure; in OSmOSE, our production version runs on <a class="reference internal" href="glossary.html#term-Datarmor"><span class="xref std std-term">DATARMOR</span></a>, the cluster of <a class="reference external" href="https://en.ifremer.fr/">IFREMER</a>. Here are a few indications to help you going through our documentation. Jump to</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="on_datarmor.html#id1"><span class="std std-ref">Getting started</span></a> if you want to <strong>use as quickly as possible</strong> our toolkit in a <strong>standalone executable</strong> way. After installing its newest stable version, this section will illustrate our toolkit through tutorials covering <a class="reference internal" href="gallery_basic_use_cases/index.html#basic-use-cases"><span class="std std-ref">Basic use cases</span></a> ;</p></li>
-<li><p><a class="reference internal" href="getting_started.html#tutorials"><span class="std std-ref">Tutorials</span></a> if you <strong>start from scratch with tools like Github, Conda, bash and qsub</strong>. We have not reinvented the wheel of writing another tutorial about those famous tools, instead we have selected for you resources that we have found useful starting with, and we have gathered all our tricks and custom solutions for problems more specific to our project ;</p></li>
+<li><p><a class="reference internal" href="on_datarmor.html#id1"><span class="std std-ref">Getting started</span></a> if you want to <strong>use as quickly as possible</strong> our toolkit in a <strong>standalone executable</strong> way. After installing its newest stable version, this section will illustrate our toolkit through tutorials covering <a class="reference internal" href="getting_started.html#basic-use-cases"><span class="std std-ref">Basic use cases</span></a> ;</p></li>
+<li><p><a class="reference internal" href="tutorials.html#tutorials"><span class="std std-ref">Tutorials</span></a> if you <strong>start from scratch with tools like Github, Conda, bash and qsub</strong>. We have not reinvented the wheel of writing another tutorial about those famous tools, instead we have selected for you resources that we have found useful starting with, and we have gathered all our tricks and custom solutions for problems more specific to our project ;</p></li>
 <li><p><a class="reference internal" href="going_further.html#going-further"><span class="std std-ref">Going further</span></a> if you want to execute our codes in a <strong>git-based development environment</strong> with the intention of <strong>contributing</strong> or reusing them in another project. This section will also show you how you can build <strong>application-specific workflows</strong> with more <a class="reference internal" href="going_further.html#advanced-use-cases"><span class="std std-ref">Advanced use cases</span></a>;</p></li>
 <li><p><a class="reference internal" href="on_datarmor.html#on-datarmor"><span class="std std-ref">On Datarmor</span></a> if you want to run our toolkit on the <strong>Datarmor infrastructure</strong>. Note that this is only available to <strong>OSmOSE members</strong> for the moment. Please contact <a class="reference external" href="mailto:dorian&#46;cazau&#37;&#52;&#48;ensta-bretagne&#46;fr">Dorian Cazau</a> for information on how joining our team.</p></li>
 </ul>
@@ -137,7 +137,11 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="on_datarmor.html#conda-environment-creation">Conda environment creation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="on_datarmor.html#conda-environment-creation">Conda environment creation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="on_datarmor.html#pre-requirements">Pre-requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="on_datarmor.html#procedure-for-conda-environment-creation-modification">Procedure for conda environment creation / modification</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="on_datarmor.html#develop-and-contribute-using-github-and-poetry">Develop and contribute using github and poetry</a></li>
 </ul>
 </li>
@@ -199,6 +203,7 @@
 <li class="toctree-l3"><a class="reference internal" href="apidocs.html#OSmOSE.Auxiliary.Auxiliary.join_era"><code class="docutils literal notranslate"><span class="pre">Auxiliary.join_era()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="apidocs.html#OSmOSE.Auxiliary.Auxiliary.save_all_welch"><code class="docutils literal notranslate"><span class="pre">Auxiliary.save_all_welch()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="apidocs.html#OSmOSE.Auxiliary.Auxiliary.join_welch"><code class="docutils literal notranslate"><span class="pre">Auxiliary.join_welch()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="apidocs.html#OSmOSE.Auxiliary.Auxiliary.join_other_csv_to_df"><code class="docutils literal notranslate"><span class="pre">Auxiliary.join_other_csv_to_df()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="apidocs.html#OSmOSE.Auxiliary.Auxiliary.save_aux_data"><code class="docutils literal notranslate"><span class="pre">Auxiliary.save_aux_data()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="apidocs.html#OSmOSE.Auxiliary.Auxiliary.distance_to_shore"><code class="docutils literal notranslate"><span class="pre">Auxiliary.distance_to_shore()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="apidocs.html#OSmOSE.Auxiliary.Auxiliary.wind_fetch"><code class="docutils literal notranslate"><span class="pre">Auxiliary.wind_fetch()</span></code></a></li>

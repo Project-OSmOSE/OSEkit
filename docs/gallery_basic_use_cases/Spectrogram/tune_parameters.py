@@ -22,8 +22,8 @@ campaign_name = ""
 
 spectrogram = Spectrogram(dataset_path = Path(path_osmose_dataset, campaign_name, dataset_name))
 
-spectrogram.dataset_sr = 18000
-spectrogram.spectro_duration = 15
+spectrogram.dataset_sr = 50000
+spectrogram.spectro_duration = 30
 
 spectrogram.nfft = 1024
 spectrogram.window_size = 1024

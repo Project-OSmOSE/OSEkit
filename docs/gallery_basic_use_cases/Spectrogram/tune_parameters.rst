@@ -71,8 +71,8 @@ Define standard parameters for spectrogram computation
 
     spectrogram = Spectrogram(dataset_path = Path(path_osmose_dataset, campaign_name, dataset_name))
 
-    spectrogram.dataset_sr = 18000
-    spectrogram.spectro_duration = 15
+    spectrogram.dataset_sr = 50000
+    spectrogram.spectro_duration = 30
 
     spectrogram.nfft = 1024
     spectrogram.window_size = 1024
@@ -83,6 +83,13 @@ Define standard parameters for spectrogram computation
 
 
 
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+    No valid processed/adjust_metadata.csv found and no parameters provided. All attributes will be initialized to default values..  
 
 
 
@@ -107,11 +114,12 @@ Check size of spectrogram
 
  .. code-block:: none
 
-    your smallest tile has a duration of: 15.0 (s), with a number of spectra of 1312 
+    your smallest tile has a duration of: 30.0 (s), with a number of spectra of 7312 
+
+    Note that unless you have a 4K screen, unwanted numerical compression might occur when visualizing your spectrograms..
 
 
-
-    your resolutions : time =  0.011 (s) / frequency =  17.578 (Hz)
+    your resolutions : time =  0.004 (s) / frequency =  48.828 (Hz)
 
 
 
@@ -139,150 +147,77 @@ Initialize everything needed for spectrogram computation ; in particular, this m
 
  .. code-block:: none
 
-    Automatically reshaping audio files to fit the spectro duration value. Files will be 15 seconds long.
-    Generating spectrograms for 2021_12_04T06_40_00.wav
-    - data min : -0.043599591624315655 
-     - data max : 0.0408572184436705 
-     - data mean : -3.256038438041736e-05 
-     - data std : 0.008187055127703766
-    - min log spectro : -172.9915463895249 
-     - max log spectro : -8.792831518758613 
+    Generating spectrograms for 20211204_064000.wav
+    - data min : -0.05041514248009193 
+     - data max : 0.05087180175843474 
+     - data mean : -3.389725784813923e-05 
+     - data std : 0.00819057627276753
+    - min log spectro : -158.9179413631119 
+     - max log spectro : -5.262431065938616 
 
-    Generating spectrograms for 2021_12_04T06_40_15.wav
-    - data min : -0.04882523892434128 
-     - data max : 0.0487071332517277 
-     - data mean : -3.528930784192402e-05 
-     - data std : 0.00811411147225643
-    - min log spectro : -152.1867336201935 
-     - max log spectro : -6.681082899022445 
+    Generating spectrograms for 20211204_064500.wav
+    - data min : -0.03430079803717911 
+     - data max : 0.0366197702593772 
+     - data mean : -2.906596115100738e-05 
+     - data std : 0.007114513069441149
+    - min log spectro : -182.12791513456037 
+     - max log spectro : -11.948374191121523 
 
-    Generating spectrograms for 2021_12_04T06_50_00.wav
-    - data min : -0.033511807805999064 
-     - data max : 0.03378511587047679 
-     - data mean : -3.0569848501945664e-05 
-     - data std : 0.007233793129894892
-    - min log spectro : -149.18511017847976 
-     - max log spectro : -16.71863902418962 
+    Generating spectrograms for 20211204_065000.wav
+    - data min : -0.07174948617300494 
+     - data max : 0.0638473820621174 
+     - data mean : -3.394455412248411e-05 
+     - data std : 0.007829718926139706
+    - min log spectro : -165.80503473488795 
+     - max log spectro : -6.9875444798241695 
 
-    Generating spectrograms for 2021_12_04T06_50_15.wav
-    - data min : -0.07263694677527446 
-     - data max : 0.06125275820136163 
-     - data mean : -3.730065638181639e-05 
-     - data std : 0.008284730742198244
-    - min log spectro : -158.67639523879294 
-     - max log spectro : -8.68441891376687 
+    Generating spectrograms for 20211204_065500.wav
+    - data min : -0.2268965969119568 
+     - data max : 0.16253770952346766 
+     - data mean : -3.108689397928615e-05 
+     - data std : 0.012455880071785384
+    - min log spectro : -158.95082591908886 
+     - max log spectro : 7.170482163178578 
 
-    Generating spectrograms for 2021_12_04T07_00_00.wav
-    - data min : -0.0353791861746213 
-     - data max : 0.032017860200249285 
-     - data mean : -3.058869269670414e-05 
-     - data std : 0.006896311374136439
-    - min log spectro : -137.3532132851326 
-     - max log spectro : -16.55967468585012 
+    Generating spectrograms for 20211204_070000.wav
+    - data min : -0.037079987492122435 
+     - data max : 0.03271631739772594 
+     - data mean : -2.2722167477134425e-05 
+     - data std : 0.006921378620772827
+    - min log spectro : -154.287121629264 
+     - max log spectro : -12.885705273593988 
 
-    Generating spectrograms for 2021_12_04T06_45_00.wav
-    - data min : -0.03271694052703739 
-     - data max : 0.03550244405117467 
-     - data mean : -2.470931195863298e-05 
-     - data std : 0.007168413733075086
-    - min log spectro : -134.7586202758711 
-     - max log spectro : -16.799396474289022 
+    Generating spectrograms for 20211204_070500.wav
+    - data min : -0.03918317189308489 
+     - data max : 0.03924493241192095 
+     - data mean : -3.887921135058395e-05 
+     - data std : 0.0070792823782342
+    - min log spectro : -171.4808541415669 
+     - max log spectro : -11.389126682281939 
 
-    Generating spectrograms for 2021_12_04T06_45_15.wav
-    - data min : -0.032692184394880704 
-     - data max : 0.028990941280004096 
-     - data mean : -3.348295730210429e-05 
-     - data std : 0.0069611601087854495
-    - min log spectro : -148.48923552005738 
-     - max log spectro : -17.432529154500155 
+    Generating spectrograms for 20211204_071000.wav
+    - data min : -0.043214563880757895 
+     - data max : 0.045805557713708846 
+     - data mean : -2.8250201705676537e-05 
+     - data std : 0.006968460933037484
+    - min log spectro : -153.52733203877938 
+     - max log spectro : -12.43374778019119 
 
-    Generating spectrograms for 2021_12_04T07_00_15.wav
-    - data min : -0.03393691048092638 
-     - data max : 0.03207500968610353 
-     - data mean : -1.4907714119963936e-05 
-     - data std : 0.006842811109712114
-    - min log spectro : -146.8071845006292 
-     - max log spectro : -16.14939243921077 
+    Generating spectrograms for 20211204_071500.wav
+    - data min : -0.10037166278445415 
+     - data max : 0.09734695327877109 
+     - data mean : -3.201120923659414e-05 
+     - data std : 0.0117620413298528
+    - min log spectro : -171.4534381930622 
+     - max log spectro : -4.218041689363526 
 
-    Generating spectrograms for 2021_12_04T06_55_00.wav
-    - data min : -0.22344564529106045 
-     - data max : 0.1584035185104064 
-     - data mean : -3.0459480142493036e-05 
-     - data std : 0.015558977306660969
-    - min log spectro : -155.55863280371153 
-     - max log spectro : 1.5318814344393026 
-
-    Generating spectrograms for 2021_12_04T07_10_00.wav
-    - data min : -0.042873458835719 
-     - data max : 0.04607848884003839 
-     - data mean : -2.7528583020479752e-05 
-     - data std : 0.007092797925864307
-    - min log spectro : -141.246302487159 
-     - max log spectro : -15.506930718985119 
-
-    Generating spectrograms for 2021_12_04T06_55_15.wav
-    - data min : -0.04948294802461567 
-     - data max : 0.0724102864258771 
-     - data mean : -3.179966152878225e-05 
-     - data std : 0.008127737227802023
-    - min log spectro : -139.32829952935143 
-     - max log spectro : -7.673325870463714 
-
-    Generating spectrograms for 2021_12_04T07_10_15.wav
-    - data min : -0.032933465292427286 
-     - data max : 0.03590521275416265 
-     - data mean : -2.8949383472354138e-05 
-     - data std : 0.006741754713959076
-    - min log spectro : -148.61428688691382 
-     - max log spectro : -16.572049234059097 
-
-    Generating spectrograms for 2021_12_04T07_05_00.wav
-    - data min : -0.03440312222645359 
-     - data max : 0.034693545653262506 
-     - data mean : -3.6658858799508606e-05 
-     - data std : 0.007197493204620723
-    - min log spectro : -173.2026519655707 
-     - max log spectro : -15.155617931053625 
-
-    Generating spectrograms for 2021_12_04T07_20_00.wav
-    - data min : -0.032010778011500055 
-     - data max : 0.03458223234973341 
-     - data mean : -3.314539181087843e-05 
-     - data std : 0.007145486956007369
-    - min log spectro : -157.32920231026182 
-     - max log spectro : -15.478991058895971 
-
-    Generating spectrograms for 2021_12_04T07_15_00.wav
-    - data min : -0.09924625398421374 
-     - data max : 0.09158876466307328 
-     - data mean : -2.7759113660133463e-05 
-     - data std : 0.01204331800062843
-    - min log spectro : -157.82381488219394 
-     - max log spectro : -7.741832748322784 
-
-    Generating spectrograms for 2021_12_04T07_05_15.wav
-    - data min : -0.031218231758656827 
-     - data max : 0.03886586145252704 
-     - data mean : -4.107302409942018e-05 
-     - data std : 0.006843314685816063
-    - min log spectro : -167.01485756522047 
-     - max log spectro : -16.746542016124586 
-
-    Generating spectrograms for 2021_12_04T07_20_15.wav
-    - data min : -0.03378479822699975 
-     - data max : 0.029732829137727824 
-     - data mean : -3.313237826505332e-05 
-     - data std : 0.006786943301938468
-    - min log spectro : -146.91793691711547 
-     - max log spectro : -16.69733359871541 
-
-    Generating spectrograms for 2021_12_04T07_15_15.wav
-    - data min : -0.06430679719393462 
-     - data max : 0.08806874597417144 
-     - data mean : -3.627654021683887e-05 
-     - data std : 0.011381953559107818
-    - min log spectro : -173.6233388564238 
-     - max log spectro : -13.451690923726323 
+    Generating spectrograms for 20211204_072000.wav
+    - data min : -0.03496926811176782 
+     - data max : 0.035431722391122314 
+     - data mean : -3.3135518222332065e-05 
+     - data std : 0.007018086293843772
+    - min log spectro : -171.4503844405786 
+     - max log spectro : -10.93477701835103 
 
 
 
@@ -328,7 +263,7 @@ Visualize an example of spectrogram
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 21.035 seconds)
+   **Total running time of the script:** (0 minutes 42.709 seconds)
 
 
 .. _sphx_glr_download_gallery_basic_use_cases_Spectrogram_tune_parameters.py:

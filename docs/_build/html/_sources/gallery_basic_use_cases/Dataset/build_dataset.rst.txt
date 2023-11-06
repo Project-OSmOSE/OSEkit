@@ -18,8 +18,8 @@
 .. _sphx_glr_gallery_basic_use_cases_Dataset_build_dataset.py:
 
 
-Build a OSmOSE dataset
-=========================
+First time building a OSmOSE dataset
+=====================================
 
 This code will format your raw data into a OSmOSE dataset
 
@@ -30,7 +30,7 @@ Raw data preparation
 Before you can build your dataset: 
 
 - choose a dataset name (should not contain any special character, including '-'⁾ ; 
-- create the folder ``{local_working_dir}/dataset/{dataset_name}`` (or ``{local_working_dir}/dataset/{campaign_name}/{dataset_name}`` in case of a recording campaign); 
+- create the folder ``{local_working_dir}/dataset/{dataset_name}``, or ``{local_working_dir}/dataset/{campaign_name}/{dataset_name}`` in case your dataset is part of a recording campaign; 
 - place in this folder your audio data, they can be individual files or contain within multiple sub-folders ; 
 - if you have any csv files (either a ``timestamp.csv`` or ``*gps*.csv`` file) should also be placed in this folder.
 
@@ -69,7 +69,7 @@ Codes
 
 .. GENERATED FROM PYTHON SOURCE LINES 41-42
 
-Define dataset path and name
+You first have to set the `path_osmose_dataset`, which is where your dataset named `dataset_name` should be ; unless it is part of a recording campaign named `campaign_name`, your dataset should be present in `{path_osmose_dataset}/{campaign_name}/{dataset_name}`.
 
 .. GENERATED FROM PYTHON SOURCE LINES 42-47
 
@@ -89,42 +89,83 @@ Define dataset path and name
 
 .. GENERATED FROM PYTHON SOURCE LINES 48-49
 
-Define mandatory dataset metadata
+In our dataset, we have made mandatory the setting of two metadata variables, namely `gps_coordinates` (in decimal degree) and `depth` (in m) of the hydrophone. The variable `gps_coordinates` is the tuple (latitude , longitude) and `depth` is a positive integer.
 
-.. GENERATED FROM PYTHON SOURCE LINES 49-55
+.. GENERATED FROM PYTHON SOURCE LINES 49-52
 
 .. code-block:: default
 
-
-    date_template = "%Y%m%d_%H%M%S" # strftime format, used to build the dataset from scratch (ignore if the dataset is already built)
-    depth = 10
     gps_coordinates = (10,10)
-    gps_coordinates
+    depth = 10
 
 
 
 
 
-.. rst-class:: sphx-glr-script-out
-
- .. code-block:: none
-
-
-    (10, 10)
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 56-57
+.. GENERATED FROM PYTHON SOURCE LINES 53-54
+
+Lets' review now three optional parameters. You can set the `timezone` of your data if it happens to be different from UTC+00:00 (default value) ; its format MUST follow `"+02:00"` for UTC+02:00 for example.
+
+.. GENERATED FROM PYTHON SOURCE LINES 54-56
+
+.. code-block:: default
+
+    timezone = "+00:00" 
+
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 57-58
+
+The variable `date_template` should be used to help us extracting the timestamp from your audio filenames ; it should be set in a strftime format.
+
+.. GENERATED FROM PYTHON SOURCE LINES 58-60
+
+.. code-block:: default
+
+    date_template = "%Y%m%d_%H%M%S" 
+
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 61-62
+
+The variable `force_upload` allows you to upload your dataset on the platform despite detected anomalies.
+
+.. GENERATED FROM PYTHON SOURCE LINES 62-64
+
+.. code-block:: default
+
+    force_upload = False
+
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 65-66
 
 Run the method :meth:`OSmOSE.Dataset.Dataset.build` of the class :class:`OSmOSE.Dataset.Dataset`
 
-.. GENERATED FROM PYTHON SOURCE LINES 57-64
+.. GENERATED FROM PYTHON SOURCE LINES 66-72
 
 .. code-block:: default
 
-
-    dataset = Dataset(dataset_path = Path(path_osmose_dataset, campaign_name, dataset_name), gps_coordinates = gps_coordinates, depth = depth, timezone='+00:00')
-    dataset.build(date_template = date_template , force_upload=False, number_test_bad_files=1)
+    dataset = Dataset(dataset_path = Path(path_osmose_dataset, campaign_name, dataset_name), gps_coordinates = gps_coordinates, depth = depth, timezone=timezone)
+    dataset.build(date_template = date_template , force_upload=force_upload, number_test_bad_files=1)
 
 
 
@@ -137,7 +178,7 @@ Run the method :meth:`OSmOSE.Dataset.Dataset.build` of the class :class:`OSmOSE.
 
  .. code-block:: none
 
-    Scanning audio files:   0%|          | 0/9 [00:00<?, ?it/s]    Scanning audio files: 100%|██████████| 9/9 [00:00<00:00, 420.90it/s]
+    Scanning audio files:   0%|          | 0/9 [00:00<?, ?it/s]    Scanning audio files: 100%|██████████| 9/9 [00:00<00:00, 544.35it/s]
 
      DONE ! your dataset is on OSmOSE platform !
 
@@ -147,7 +188,7 @@ Run the method :meth:`OSmOSE.Dataset.Dataset.build` of the class :class:`OSmOSE.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 0.639 seconds)
+   **Total running time of the script:** (0 minutes 0.580 seconds)
 
 
 .. _sphx_glr_download_gallery_basic_use_cases_Dataset_build_dataset.py:
