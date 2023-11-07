@@ -192,11 +192,11 @@ def reshape(
     previous_audio_data = np.empty(0)
     sample_rate = 0
     i = 0
-    t = math.ceil(
-        sf.info(input_dir_path.joinpath(files[i])).duration
-        * (batch_ind_min)
-        / chunk_size
-    )
+    # t = math.ceil(
+    #     sf.info(input_dir_path.joinpath(files[i])).duration
+    #     * (batch_ind_min)
+    #     / chunk_size
+    # )
     proceed = force_reshape  # Default is False
 
     while i < len(files):
@@ -246,11 +246,11 @@ def reshape(
                 output = audio_data[: chunk_size * sample_rate]
                 previous_audio_data = audio_data[chunk_size * sample_rate :]
 
-                end_time = (
-                    (t + 1) * chunk_size
-                    if chunk_size * sample_rate <= len(output)
-                    else t * chunk_size + len(output) // sample_rate
-                )
+                # end_time = (
+                #     (t + 1) * chunk_size
+                #     if chunk_size * sample_rate <= len(output)
+                #     else t * chunk_size + len(output) // sample_rate
+                # )
 
                 outfilename = output_dir_path.joinpath(
                     f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S').replace('-','_').replace(':','_').replace('.','_').replace('+','_')}.wav"
@@ -281,7 +281,7 @@ def reshape(
                         f"{outfilename} written! File is {(len(output)/sample_rate)} seconds long. {(len(previous_audio_data)/sample_rate)} seconds left from slicing."
                     )
 				
-                t += 1
+                # t += 1
                 audio_data = previous_audio_data
 
                 if not merge_files and len(audio_data) < chunk_size * sample_rate:
@@ -420,7 +420,7 @@ def reshape(
 
 
         i += 1
-        t += 1
+        # t += 1
 
 
 
@@ -448,7 +448,7 @@ def reshape(
             )
 
         i += 1
-        t += 1
+        # t += 1
 
     if len(previous_audio_data) > 1:
         skip_last = False
