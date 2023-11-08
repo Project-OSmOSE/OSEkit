@@ -491,6 +491,17 @@ def reshape(
 
     path_csv = output_dir_path.joinpath("timestamp.csv")
 
+	input_timestamp = pd.DataFrame(
+	    {"filename": result, "timestamp": timestamp_list}
+	)
+	input_timestamp.sort_values(by=["timestamp"], inplace=True)
+	input_timestamp.drop_duplicates().to_csv(
+	    path_csv,
+	    index=False,
+	    na_rep="NaN"
+	)
+
+
     lock = FileLock(str(path_csv) + ".lock")
 
     with lock:
