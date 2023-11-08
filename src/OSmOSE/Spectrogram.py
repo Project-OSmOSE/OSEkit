@@ -25,6 +25,7 @@ from OSmOSE.cluster import (
     reshape,
     resample,
     compute_stats,
+    merge_timestamp_csv,
 )
 from OSmOSE.Dataset import Dataset
 from OSmOSE.utils import safe_read, make_path, set_umask, get_timestamp_of_audio_file
@@ -812,6 +813,7 @@ class Spectrogram(Dataset):
 
                         job_id = self.jb.submit_job(dependency=resample_job_id_list)
                         reshape_job_id_list += job_id
+                                                   
                 self.pending_jobs = reshape_job_id_list
 
                 for process in processes:
@@ -844,6 +846,20 @@ class Spectrogram(Dataset):
                 # The timestamp.csv is recreated by the reshaping step. We only need to copy it if we don't reshape.
                 shutil.copy(self.path_input_audio_file.joinpath("timestamp.csv"), self.audio_path.joinpath("timestamp.csv"))
 
+                        
+        self.jb.build_job_file(
+            script_path=Path(inspect.getfile(merge_timestamp_csv)).resolve(),
+            script_args=f"--input-files {input_files}",
+            jobname="OSmOSE_merge_timestamp_py",
+            preset="low",
+            mem="30G",
+            walltime="04:00:00",
+            logdir=self.path.joinpath("log")
+        )
+        
+        job_id = self.jb.submit_job(dependency=reshape_job_id_list)
+ 
+        
         #! ZSCORE NORMALIZATION
         norma_job_id_list = []
         if (
