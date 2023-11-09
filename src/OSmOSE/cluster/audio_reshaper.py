@@ -489,14 +489,13 @@ def reshape(
             print(f"Deleting {remaining_file}")
             input_dir_path.joinpath(remaining_file).unlink()
 
-    path_csv = output_dir_path.joinpath("timestamp.csv")
 
 	input_timestamp = pd.DataFrame(
 	    {"filename": result, "timestamp": timestamp_list}
 	)
 	input_timestamp.sort_values(by=["timestamp"], inplace=True)
 	input_timestamp.drop_duplicates().to_csv(
-	    path_csv,
+	    output_dir_path.joinpath(f"timestamp_{batch_ind_min}.csv"),
 	    index=False,
 	    na_rep="NaN"
 	)
@@ -510,6 +509,8 @@ def reshape(
             tmp_timestamp = pd.read_csv(path_csv)
             result += list(tmp_timestamp["filename"].values)
             timestamp_list += list(tmp_timestamp["timestamp"].values)
+
+        path_csv = output_dir_path.joinpath("timestamp.csv")
 
         input_timestamp = pd.DataFrame(
             {"filename": result, "timestamp": timestamp_list}
