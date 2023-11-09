@@ -585,6 +585,12 @@ class Spectrogram(Dataset):
         self.list_wav_to_process = [
             audio_file.name for audio_file in list_wav_withEvent
         ]
+        
+        too_short_files = sum(pd.read_csv(self.path_input_audio_file.joinpath("file_metadata.csv"))['duration'] < self.spectro_duration)
+        if too_short_files>0:
+            raise ValueError(
+                f"You have {too_short_files} audio files shorter than your analysis duration of {self.spectro_duration}"
+            )
 
 
         #! INITIALIZATION START
