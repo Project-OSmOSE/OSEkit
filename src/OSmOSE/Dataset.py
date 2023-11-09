@@ -10,6 +10,7 @@ import glob
 from os import PathLike
 import sys
 import re
+import soundfile as sf
    
 try:
     import grp
@@ -389,6 +390,7 @@ class Dataset:
                 
             try:
                 origin_sr, frames, sampwidth, channel_count,size = read_header(path_raw_audio.joinpath(cur_filename))
+                sf_meta = sf.info(path_raw_audio.joinpath(cur_filename))
 
             except Exception as e:
                 print(f"error message making status read header False : \n {e}")
@@ -417,8 +419,8 @@ class Dataset:
             audio_metadata=pd.concat([audio_metadata , 
                                       pd.DataFrame({"filename":cur_filename,
                                                     "timestamp":cur_timestamp,
-                                                    "duration":frames / float(origin_sr),
-                                                    "origin_sr":int(origin_sr),
+                                                    "duration": sf_meta.duration ,#frames / float(origin_sr),
+                                                    "origin_sr":int(sf_meta.samplerate),
                                                     "sampwidth":sampwidth,
                                                     "size":size / 1e6,
                                                     "duration_inter_file":None,
