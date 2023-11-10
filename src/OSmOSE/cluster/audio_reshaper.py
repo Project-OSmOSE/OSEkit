@@ -500,6 +500,7 @@ def reshape(
    	)
 
 
+    path_csv = output_dir_path.joinpath("timestamp.csv")
     lock = FileLock(str(path_csv) + ".lock")
 
     with lock:
@@ -508,8 +509,6 @@ def reshape(
             tmp_timestamp = pd.read_csv(path_csv)
             result += list(tmp_timestamp["filename"].values)
             timestamp_list += list(tmp_timestamp["timestamp"].values)
-
-        path_csv = output_dir_path.joinpath("timestamp.csv")
 
         input_timestamp = pd.DataFrame(
             {"filename": result, "timestamp": timestamp_list}
