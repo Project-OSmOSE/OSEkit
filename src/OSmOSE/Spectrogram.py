@@ -627,19 +627,23 @@ class Spectrogram(Dataset):
             "metadata.csv",
         )
 
-        if (
-            (final_path.exists() or temp_path.exists())
-            and audio_metadata_path.exists()
-            and audio_metadata_path.with_stem("timestamp").exists()
-            and not force_init
-        ):
-            audio_file_count = pd.read_csv(audio_metadata_path)["audio_file_count"][0]
-            if len(list(audio_metadata_path.parent.glob("*.wav")) == audio_file_count):
-                print(
-                    "It seems these spectrogram parameters are already initialized. If it is an error or you want to rerun the initialization, add the `force_init` argument."
-                )
-                return
-
+        # if (
+        #     (final_path.exists() or temp_path.exists())
+        #     and audio_metadata_path.exists()
+        #     and audio_metadata_path.with_stem("timestamp").exists()
+        #     and not force_init
+        # ):
+        #     audio_file_count = pd.read_csv(audio_metadata_path)["audio_file_count"][0]
+        #     if len(list(audio_metadata_path.parent.glob("*.wav")) == audio_file_count):
+        #         print(
+        #             "It seems these spectrogram parameters are already initialized. If it is an error or you want to rerun the initialization, add the `force_init` argument."
+        #         )
+        #         return
+        if audio_metadata_path.parent.exists():
+            print(
+                "It seems these spectrogram parameters are already initialized. If it is an error or you want to rerun the initialization, add the `force_init` argument."
+            )
+            return
 
 
         if self.path.joinpath(OSMOSE_PATH.processed, "subset_files.csv").is_file():
