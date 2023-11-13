@@ -498,28 +498,29 @@ def reshape(
    	    index=False,
    	    na_rep="NaN"
    	)
+    os.chmod(output_dir_path.joinpath(f"timestamp_{batch_ind_min}.csv"), mode=FPDEFAULT)
 
 
-    path_csv = output_dir_path.joinpath("timestamp.csv")
-    lock = FileLock(str(path_csv) + ".lock")
+    # path_csv = output_dir_path.joinpath("timestamp.csv")
+    # lock = FileLock(str(path_csv) + ".lock")
 
-    with lock:
-        # suppr doublons
-        if path_csv.exists():
-            tmp_timestamp = pd.read_csv(path_csv)
-            result += list(tmp_timestamp["filename"].values)
-            timestamp_list += list(tmp_timestamp["timestamp"].values)
+    # with lock:
+    #     # suppr doublons
+    #     if path_csv.exists():
+    #         tmp_timestamp = pd.read_csv(path_csv)
+    #         result += list(tmp_timestamp["filename"].values)
+    #         timestamp_list += list(tmp_timestamp["timestamp"].values)
 
-        input_timestamp = pd.DataFrame(
-            {"filename": result, "timestamp": timestamp_list}
-        )
-        input_timestamp.sort_values(by=["timestamp"], inplace=True)
-        input_timestamp.drop_duplicates().to_csv(
-            path_csv,
-            index=False,
-            na_rep="NaN"
-        )
-        os.chmod(path_csv, mode=FPDEFAULT)
+    #     input_timestamp = pd.DataFrame(
+    #         {"filename": result, "timestamp": timestamp_list}
+    #     )
+    #     input_timestamp.sort_values(by=["timestamp"], inplace=True)
+    #     input_timestamp.drop_duplicates().to_csv(
+    #         path_csv,
+    #         index=False,
+    #         na_rep="NaN"
+    #     )
+    #     os.chmod(path_csv, mode=FPDEFAULT)
 
     return [output_dir_path.joinpath(res) for res in result]
 
