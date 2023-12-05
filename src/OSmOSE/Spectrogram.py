@@ -127,11 +127,11 @@ class Spectrogram(Dataset):
         self.batch_number: int = batch_number
         self.dataset_sr: int = dataset_sr if dataset_sr is not None else orig_metadata['origin_sr'][0]
 
-        self.nfft: int = analysis_sheet["nfft"][0] if "nfft" in analysis_sheet else 1024
+        self.nfft: int = analysis_sheet["nfft"][0] if "nfft" in analysis_sheet else 2048
         self.window_size: int = (
             analysis_sheet["window_size"][0]
             if "window_size" in analysis_sheet
-            else 1024
+            else 2048
         )
         self.overlap: int = (
             analysis_sheet["overlap"][0] if "overlap" in analysis_sheet else 0
@@ -856,18 +856,41 @@ class Spectrogram(Dataset):
                 # The timestamp.csv is recreated by the reshaping step. We only need to copy it if we don't reshape.
                 shutil.copy(self.path_input_audio_file.joinpath("timestamp.csv"), self.audio_path.joinpath("timestamp.csv"))
 
-                        
-        self.jb.build_job_file(
-            script_path=Path(inspect.getfile(merge_timestamp_csv)).resolve(),
-            script_args=f"--input-files {input_files}",
-            jobname="OSmOSE_merge_timestamp_py",
-            preset="low",
-            mem="30G",
-            walltime="04:00:00",
-            logdir=self.path.joinpath("log")
-        )
-        
-        job_id = self.jb.submit_job(dependency=reshape_job_id_list)
+        # merge timestamps_*.csv aftewards
+        if not self.__local:
+            self.jb.build_job_file(
+                script_path=Path(inspect.getfile(merge_timestamp_csv)).resolve(),
+                script_args=f"--input-files {input_files}",
+                jobname="OSmOSE_merge_timestamp_py",
+                preset="low",
+                mem="30G",
+                walltime="04:00:00",
+                logdir=self.path.joinpath("log")
+            )            
+            job_id = self.jb.submit_job(dependency=reshape_job_id_list)
+        else:
+            
+            input_dir_path = self.audio_path
+            
+            list_audio = list(input_dir_path.glob("timestamp_*"))
+            
+            list_conca_timestamps=[]
+            list_conca_filename=[]
+            for ll in list(input_dir_path.glob("timestamp_*")):            
+                print(f"read and remove file {ll}")
+                list_conca_timestamps.append(list(pd.read_csv(ll)['timestamp'].values))
+                list_conca_filename.append(list(pd.read_csv(ll)['filename'].values))
+                os.remove(ll)
+                    
+            print(f"save file {str(input_dir_path.joinpath('timestamp.csv'))}")
+            df = pd.DataFrame({"filename": list(itertools.chain(*list_conca_filename)), "timestamp": list(itertools.chain(*list_conca_timestamps))})
+            df.sort_values(by=["timestamp"], inplace=True)
+            df.to_csv(
+                input_dir_path.joinpath("timestamp.csv"),
+                index=False
+            )
+            
+            
  
         
         #! ZSCORE NORMALIZATION
@@ -1504,13 +1527,17 @@ class Spectrogram(Dataset):
     def save_all_welch(self,list_npz_files:list,path_all_welch: Path):
 
         if isinstance(list_npz_files,list):
-            Sxx = np.empty((1, int(self.nfft/2) + 1))
             Time = []
+            ct=0
             for file_npz in tqdm(list_npz_files):
                 current_matrix=np.load(file_npz,allow_pickle=True)
                 os.remove(file_npz)
+                if ct==0:
+                    Sxx = np.empty(current_matrix['Sxx'].shape)
+                
                 Sxx = np.vstack((Sxx, current_matrix['Sxx']))
                 Time.append( current_matrix['Time'] )       
+                ct+=1
             Sxx=Sxx[1:,:]     
             Freq = current_matrix['Freq']
 
@@ -1759,7 +1786,7 @@ class Spectrogram(Dataset):
             plt.close()
 
         
-    def build_EPD(self,time_resolution:str,sample_rate:int):
+    def build_EPD(self,time_resolution:str,sample_rate:int,show_fig:bool=False):
 
         list_npz_files = list(self.path_output_welch.joinpath(str(time_resolution)+'_'+str(sample_rate)).glob('*npz'))
         if len(list_npz_files) == 0:            
@@ -1815,4 +1842,9 @@ class Spectrogram(Dataset):
             output_file = self.path.joinpath(OSMOSE_PATH.EPD,f'EPD.png')
             print(f"saving {output_file} ; Nber of welch: {all_welch.shape[0]}")
             plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
-            plt.close()
+            
+            if show_fig:
+                plt.show()
+            else:
+                plt.close()
+                
