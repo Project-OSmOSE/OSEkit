@@ -42,7 +42,7 @@ class Dataset:
         *,
         gps_coordinates: Union[str, list, Tuple] = None,
         depth: Union[str, int] = None,  
-        timezone: str = None,
+        timezone: str = '+00:00',
         owner_group: str = None,
         original_folder: str = None,
         local: bool = True,
@@ -76,16 +76,14 @@ class Dataset:
         self.owner_group = owner_group
         self.__gps_coordinates = []
         self.__local = local
+        self.timezone = timezone
 
         if gps_coordinates is not None:
             self.gps_coordinates = gps_coordinates          
             
         if depth is not None:
             self.depth = depth
-            
-        if timezone is not None:
-            self.timezone = timezone            
-            
+ 
         self.__original_folder = original_folder
 
         if skip_perms:
@@ -248,7 +246,7 @@ class Dataset:
         *,
         original_folder: str = None,
         owner_group: str = None,
-        date_template: str = None,
+        date_template: str = "%Y%m%d_%H%M%S",
         bare_check: bool = False,
         auto_normalization: bool = False,
         force_upload: bool = False,
@@ -344,10 +342,8 @@ class Dataset:
 
         if not path_timestamp_formatted.exists():
             user_timestamp = False
-            if not date_template:
-                raise FileNotFoundError(f"The timestamp.csv file has not been found in {path_raw_audio}. You can create it automatically but to do so you have to set the date template as argument.")
-            else:
-                write_timestamp(audio_path=path_raw_audio, date_template=date_template, timezone=self.timezone, verbose=False)
+            write_timestamp(audio_path=path_raw_audio, date_template=date_template, timezone=self.timezone, verbose=False)
+            #raise FileNotFoundError(f"The timestamp.csv file has not been found in {path_raw_audio}. You can create it automatically but to do so you have to set the date template as argument.")
         else:
             user_timestamp = True
         
