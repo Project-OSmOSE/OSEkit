@@ -168,11 +168,13 @@ class Auxiliary():
         self.path_output_welch = self.path.joinpath(OSMOSE_PATH.welch)
         self.era_path = os.path.join(self.path, OSMOSE_PATH.environment, 'era')
         
+        print(self.path.joinpath(OSMOSE_PATH.instrument))
         # case of a moving hydrophone: search for a gps file in OSMOSE_PATH.instrument
         for path, _, files in os.walk(self.path.joinpath(OSMOSE_PATH.instrument)):
             for f in files:
+                print(f)
                 if "gps" in f:       
-                    print(f"Moving hydrophone with gps track given in {Path(path,f)}. Now checking your timestamp format  \n")
+                    print(f"Mobile hydrophone with gps track given in {Path(path,f)}. Now checking your timestamp format  \n")
                     self.df = pd.read_csv(Path(path,f))                
                     self.timestamps = pd.Series(self.df['timestamp']).apply(lambda x : datetime.datetime.timestamp(datetime.datetime.strptime(x, '%Y-%m-%dT%H:%M:%S.%f%z'))).to_numpy()                    
                     self.latitude, self.longitude = self.df['lat'], self.df['lon']                      
@@ -248,7 +250,7 @@ class Auxiliary():
     
 
     def join_welch(self, *, method='interpolation', time_off=np.inf, lat_off=np.inf, lon_off=np.inf,r=np.inf, variables=['u10', 'v10']):
-
+        
         # extract timestamps of welch spectra
         fns = glob(str(self.path_output_welch.joinpath(str(self.time_resolution_welch)+'_'+str(self.sample_rate_welch), '*.npz')))
         
@@ -287,6 +289,11 @@ class Auxiliary():
         cur_csv = pd.read_csv( self.path.joinpath(OSMOSE_PATH.auxiliary,csv_name) )
         
         timestamps = pd.Series(cur_csv['timestamp']).apply(lambda x : datetime.datetime.timestamp(datetime.datetime.strptime(x, '%Y-%m-%dT%H:%M:%S.%f%z'))).to_numpy()                    
+
+        if min(self.timestamps) < min(timestamps) or max(self.timestamps) > max(timestamps):
+            print(f"Please check your insitu time boundaries [{datetime.datetime.fromtimestamp(min(timestamps))} -> {datetime.datetime.fromtimestamp(max(timestamps))}]; it seems that at least one timestamp from your audio dataset [{datetime.datetime.fromtimestamp(min(self.timestamps))} -> {datetime.datetime.fromtimestamp(max(self.timestamps))}] is either before or after the downloaded ERA data")
+            sys.exit(0)
+
         
         # perform joining to welch
         for name, column in cur_csv.iteritems():
