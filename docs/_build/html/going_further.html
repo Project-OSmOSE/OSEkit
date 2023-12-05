@@ -25,8 +25,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Soundscape" href="gallery_advanced_workflows/Soundscape/index.html" />
-    <link rel="prev" title="Join welch spectra with ERA5 data" href="gallery_basic_use_cases/Auxiliary/joiner_auxiliary.html" /> 
+    <link rel="next" title="From welch spectra to Soundcape figures" href="gallery_advanced_use_cases/Soundscape/index.html" />
+    <link rel="prev" title="Join with csv files and ERA5 data" href="gallery_basic_use_cases/Auxiliary/joiner_auxiliary.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -55,10 +55,10 @@
 <li class="toctree-l2"><a class="reference internal" href="#installation-with-github-and-poetry">Installation with github and poetry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#contribute">Contribute</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#advanced-use-cases">Advanced use cases</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#soundscape">Soundscape</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#from-welch-spectra-to-soundcape-figures">From welch spectra to Soundcape figures</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#weather">Weather</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="gallery_advanced_workflows/Soundscape/index.html">Soundscape</a></li>
-<li class="toctree-l4"><a class="reference internal" href="gallery_advanced_workflows/Weather/index.html">Weather</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gallery_advanced_use_cases/Soundscape/index.html">From welch spectra to Soundcape figures</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gallery_advanced_use_cases/Weather/index.html">Weather</a></li>
 </ul>
 </li>
 </ul>
@@ -100,7 +100,7 @@
 <h2>Installation with github and poetry<a class="headerlink" href="#installation-with-github-and-poetry" title="Link to this heading">¶</a></h2>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>We have made a <a class="reference internal" href="tutorials.html#github"><span class="std std-ref">tutorial on Github</span></a> if you are starting with it</p>
+<p>We have made a <a class="reference internal" href="getting_started.html#github"><span class="std std-ref">tutorial on Github</span></a> if you are starting with it</p>
 </div>
 <p>In this section we give you the instructions to install our toolkit from github using the <a class="reference external" href="https://python-poetry.org/">poetry</a> tool:</p>
 <ol class="arabic simple">
@@ -180,25 +180,28 @@ git<span class="w"> </span>checkout<span class="w"> </span><span class="m">112</
 </section>
 <section id="advanced-use-cases">
 <h2>Advanced use cases<a class="headerlink" href="#advanced-use-cases" title="Link to this heading">¶</a></h2>
-<div class="sphx-glr-thumbnails"></div><section id="soundscape">
-<h3>Soundscape<a class="headerlink" href="#soundscape" title="Link to this heading">¶</a></h3>
-<div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer" tooltip="This code will show you how to compute LTAS from audio file-level spectrograms"><img alt="" src="_images/sphx_glr_compute_LTAS_thumb1.png" />
-<p><a class="reference internal" href="gallery_advanced_workflows/Soundscape/compute_LTAS.html#sphx-glr-gallery-advanced-workflows-soundscape-compute-ltas-py"><span class="std std-ref">From spectrograms to LTAS (Long Term Averaged Spectrograms)</span></a></p>
-  <div class="sphx-glr-thumbnail-title">From spectrograms to LTAS (Long Term Averaged Spectrograms)</div>
+<div class="sphx-glr-thumbnails"></div><section id="from-welch-spectra-to-soundcape-figures">
+<h3>From welch spectra to Soundcape figures<a class="headerlink" href="#from-welch-spectra-to-soundcape-figures" title="Link to this heading">¶</a></h3>
+<div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer" tooltip="This code will show you how to compute LTAS from audio file-level welch spectra"><img alt="" src="_images/sphx_glr_1_generate_LTAS_thumb.png" />
+<p><a class="reference internal" href="gallery_advanced_use_cases/Soundscape/1_generate_LTAS.html#sphx-glr-gallery-advanced-use-cases-soundscape-1-generate-ltas-py"><span class="std std-ref">LTAS (Long Term Averaged Spectrograms)</span></a></p>
+  <div class="sphx-glr-thumbnail-title">LTAS (Long Term Averaged Spectrograms)</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="This code will show you how to compute EPD from audio file-level welch spectra"><img alt="" src="_images/sphx_glr_2_generate_EPD_thumb.png" />
+<p><a class="reference internal" href="gallery_advanced_use_cases/Soundscape/2_generate_EPD.html#sphx-glr-gallery-advanced-use-cases-soundscape-2-generate-epd-py"><span class="std std-ref">EPD (Empirical Plot Distribution)</span></a></p>
+  <div class="sphx-glr-thumbnail-title">EPD (Empirical Plot Distribution)</div>
 </div></div></section>
 <section id="weather">
 <h3>Weather<a class="headerlink" href="#weather" title="Link to this heading">¶</a></h3>
-<div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer" tooltip="This code builds a workflow to build a parametric model for wind speed estimation based on welc..."><img alt="" src="_images/sphx_glr_windspeed_estimation_thumb1.png" />
-<p><a class="reference internal" href="gallery_advanced_workflows/Weather/windspeed_estimation.html#sphx-glr-gallery-advanced-workflows-weather-windspeed-estimation-py"><span class="std std-ref">Workflow for wind speed estimation using ERA5 data</span></a></p>
+<div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer" tooltip="This code builds a workflow to build a parametric model for wind speed estimation based on welc..."><img alt="" src="_images/sphx_glr_windspeed_estimation_thumb.png" />
+<p><a class="reference internal" href="gallery_advanced_use_cases/Weather/windspeed_estimation.html#sphx-glr-gallery-advanced-use-cases-weather-windspeed-estimation-py"><span class="std std-ref">Workflow for wind speed estimation using ERA5 data</span></a></p>
   <div class="sphx-glr-thumbnail-title">Workflow for wind speed estimation using ERA5 data</div>
 </div></div><div class="toctree-wrapper compound">
 </div>
 <div class="sphx-glr-footer sphx-glr-footer-gallery docutils container">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
-<p><a class="reference download internal" download="" href="_downloads/8c5c3c54c584fae2a2b0013d7fc5f348/gallery_advanced_workflows_python.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">all</span> <span class="pre">examples</span> <span class="pre">in</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">gallery_advanced_workflows_python.zip</span></code></a></p>
+<p><a class="reference download internal" download="" href="_downloads/bb6e8f76b41e7488f4cb13df7a282dd5/gallery_advanced_use_cases_python.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">all</span> <span class="pre">examples</span> <span class="pre">in</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">gallery_advanced_use_cases_python.zip</span></code></a></p>
 </div>
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
-<p><a class="reference download internal" download="" href="_downloads/83ae228d505b1b6eb5c93992d4aa8368/gallery_advanced_workflows_jupyter.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">all</span> <span class="pre">examples</span> <span class="pre">in</span> <span class="pre">Jupyter</span> <span class="pre">notebooks:</span> <span class="pre">gallery_advanced_workflows_jupyter.zip</span></code></a></p>
+<p><a class="reference download internal" download="" href="_downloads/33033f1f0490560f61b14b77aee3f202/gallery_advanced_use_cases_jupyter.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">all</span> <span class="pre">examples</span> <span class="pre">in</span> <span class="pre">Jupyter</span> <span class="pre">notebooks:</span> <span class="pre">gallery_advanced_use_cases_jupyter.zip</span></code></a></p>
 </div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
@@ -210,8 +213,8 @@ git<span class="w"> </span>checkout<span class="w"> </span><span class="m">112</
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="gallery_basic_use_cases/Auxiliary/joiner_auxiliary.html" class="btn btn-neutral float-left" title="Join welch spectra with ERA5 data" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="gallery_advanced_workflows/Soundscape/index.html" class="btn btn-neutral float-right" title="Soundscape" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="gallery_basic_use_cases/Auxiliary/joiner_auxiliary.html" class="btn btn-neutral float-left" title="Join with csv files and ERA5 data" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="gallery_advanced_use_cases/Soundscape/index.html" class="btn btn-neutral float-right" title="From welch spectra to Soundcape figures" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

@@ -18,9 +18,9 @@
 .. _sphx_glr_gallery_basic_use_cases_Auxiliary_joiner_auxiliary.py:
 
 
-==============================================
-Join welch spectra with ERA5 data
-==============================================
+=====================================================
+Join with csv files and ERA5 data
+=====================================================
 
 This code will join welch spectra with variables from ERA5 within a pandas dataframe
 
@@ -28,7 +28,7 @@ This code will join welch spectra with variables from ERA5 within a pandas dataf
 
 ERA5 downloading
 ------------------------
-To use this code you will first need to download and format some ERA5 data : to do so, please use this `notebook <./download_ERA5.html>`__ . For OSmOSE members, this notebook can be directly executing
+To use this code you will first need to download and format some ERA5 data : to do so, please use this `notebook <./download_ERA5.html>`__. For OSmOSE members, this notebook can be directly executing
 on our `Google drive team  <https://drive.google.com/drive/folders/1QtNjUo1EaGEKSs4BY_E9iRUSWAlw4bOs>`_ 
 
 .. GENERATED FROM PYTHON SOURCE LINES 19-22
@@ -42,11 +42,25 @@ This code uses latitude and longitude coordinates of the hydrophone (which can b
 Codes
 ------------------------
 
-.. GENERATED FROM PYTHON SOURCE LINES 30-31
+.. GENERATED FROM PYTHON SOURCE LINES 28-31
+
+.. code-block:: default
+
+
+    # sphinx_gallery_thumbnail_path = '_static/thumbnail_joiner_auxiliary.png'
+
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 32-33
 
 Define dataset path and name
 
-.. GENERATED FROM PYTHON SOURCE LINES 31-42
+.. GENERATED FROM PYTHON SOURCE LINES 33-45
 
 .. code-block:: default
 
@@ -56,7 +70,7 @@ Define dataset path and name
 
 
     path_osmose_dataset = "/home6/cazaudo/Bureau/osmose_sample_datasets/"
-    dataset_name = "SES1"
+    dataset_name = "SES"
     campaign_name = ""
 
     date_template = "%Y%m%d_%H%M%S" 
@@ -68,16 +82,17 @@ Define dataset path and name
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 43-44
+
+.. GENERATED FROM PYTHON SOURCE LINES 46-47
 
 Select your set of welch spectra through their time resolution and sampling rate
 
-.. GENERATED FROM PYTHON SOURCE LINES 44-48
+.. GENERATED FROM PYTHON SOURCE LINES 47-51
 
 .. code-block:: default
 
 
-    time_resolution_welch = 300
+    time_resolution_welch = 60
     sample_rate_welch = 38400
 
 
@@ -87,22 +102,42 @@ Select your set of welch spectra through their time resolution and sampling rate
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 49-50
+.. GENERATED FROM PYTHON SOURCE LINES 52-53
 
-Run the Auxiliary class to perform joining
+Instanciate the class :class:`OSmOSE.Auxiliary.Auxiliary` 
 
-.. GENERATED FROM PYTHON SOURCE LINES 50-60
+.. GENERATED FROM PYTHON SOURCE LINES 53-56
 
 .. code-block:: default
 
 
     joiner = Auxiliary(path_osmose_dataset,dataset_name,time_resolution_welch,sample_rate_welch)
 
-    joiner.join_welch()
 
-    joiner.join_era()
 
-    joiner.save_aux_data()
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+    /home6/cazaudo/Bureau/osmose_sample_datasets/SES/data/auxiliary/instrument
+    gps_depth.csv
+    Mobile hydrophone with gps track given in /home6/cazaudo/Bureau/osmose_sample_datasets/SES/data/auxiliary/instrument/gps_depth.csv. Now checking your timestamp format  
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 57-58
+
+Anytime you can print the joiner instance to visualize the dataframe being joined
+
+.. GENERATED FROM PYTHON SOURCE LINES 58-61
+
+.. code-block:: default
+
+    print(joiner)
 
 
 
@@ -113,14 +148,110 @@ Run the Auxiliary class to perform joining
 
  .. code-block:: none
 
-    Moving hydrophone with gps track given in /home6/cazaudo/Bureau/osmose_sample_datasets/SES1/data/auxiliary/instrument/gps.csv. Now checking your timestamp format  
+           lon  lat  depth  acc
+    count 1800 1800   1800 1800
+    mean    67  -47    308    9
+    std      0    0    178    1
+    min     67  -47     -5    1
+    25%     67  -47    170    9
+    50%     67  -47    331    9
+    75%     67  -47    449   10
+    max     68  -47    775   10
 
-    /home6/cazaudo/Bureau/osmose_V0/src/OSmOSE/Auxiliary.py:272: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 62-64
+
+The method :meth:`OSmOSE.Auxiliary.Auxiliary.join_welch` will perform a first spatio-temporal join
+between welch spectra and instrument auxiliary data
+
+.. GENERATED FROM PYTHON SOURCE LINES 64-67
+
+.. code-block:: default
+
+
+    joiner.join_welch()
+
+
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+    /home6/cazaudo/Bureau/osmose_V0/src/OSmOSE/Auxiliary.py:280: FutureWarning: iteritems is deprecated and will be removed in a future version. Use .items instead.
       for name, column in self.df.iteritems():
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 68-70
+
+Use the method :meth:`OSmOSE.Auxiliary.Auxiliary.join_other_csv_to_df` to perform any subsequent spatio-temporal joins
+with variables contained in a csv file given in input
+
+.. GENERATED FROM PYTHON SOURCE LINES 70-73
+
+.. code-block:: default
+
+
+    #joiner.join_other_csv_to_df('environment/insitu_buoy.csv')
+
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 74-75
+
+Use the method :meth:`OSmOSE.Auxiliary.Auxiliary.join_era` to perform spatio-temporal join with ERA5 data
+
+.. GENERATED FROM PYTHON SOURCE LINES 75-78
+
+.. code-block:: default
+
+
+    joiner.join_era()
+
+
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
     Joining ERA5 data using the interpolation method.
-    Loading SES1.nc file...
-      0%|          | 0/6 [00:00<?, ?it/s]    Loading and formatting u10:  17%|█▋        | 1/6 [00:00<00:00, 104857.60it/s]    Loading and formatting u10:  33%|███▎      | 2/6 [00:00<00:00,  9.49it/s]        Loading and formatting v10:  33%|███▎      | 2/6 [00:00<00:00,  9.49it/s]    Loading and formatting v10:  50%|█████     | 3/6 [00:00<00:00,  6.71it/s]    Loading and formatting sst:  50%|█████     | 3/6 [00:00<00:00,  6.71it/s]    Loading and formatting sst:  67%|██████▋   | 4/6 [00:00<00:00,  5.79it/s]    Loading and formatting tp:  67%|██████▋   | 4/6 [00:00<00:00,  5.79it/s]     Loading and formatting tp:  83%|████████▎ | 5/6 [00:00<00:00,  5.49it/s]    Loading and formatting tcc:  83%|████████▎ | 5/6 [00:00<00:00,  5.49it/s]    Loading and formatting tcc: 100%|██████████| 6/6 [00:01<00:00,  5.13it/s]    Loading and formatting wmb: 100%|██████████| 6/6 [00:01<00:00,  5.13it/s]    Loading and formatting wmb: 100%|██████████| 6/6 [00:01<00:00,  4.72it/s]
-    Generated file /home6/cazaudo/Bureau/osmose_sample_datasets/SES1/processed/auxiliary/300_38400/aux_data.csv
+    Loading SES.nc file...
+      0%|          | 0/6 [00:00<?, ?it/s]    Loading and formatting u10:  17%|█▋        | 1/6 [00:00<00:00, 99864.38it/s]    Loading and formatting u10:  33%|███▎      | 2/6 [00:00<00:00,  6.68it/s]       Loading and formatting v10:  33%|███▎      | 2/6 [00:00<00:00,  6.68it/s]    Loading and formatting v10:  50%|█████     | 3/6 [00:00<00:00,  4.86it/s]    Loading and formatting sst:  50%|█████     | 3/6 [00:00<00:00,  4.86it/s]    Loading and formatting sst:  67%|██████▋   | 4/6 [00:00<00:00,  4.25it/s]    Loading and formatting tp:  67%|██████▋   | 4/6 [00:00<00:00,  4.25it/s]     Loading and formatting tp:  83%|████████▎ | 5/6 [00:01<00:00,  3.53it/s]    Loading and formatting tcc:  83%|████████▎ | 5/6 [00:01<00:00,  3.53it/s]    Loading and formatting tcc: 100%|██████████| 6/6 [00:01<00:00,  3.52it/s]    Loading and formatting wmb: 100%|██████████| 6/6 [00:01<00:00,  3.52it/s]    Loading and formatting wmb: 100%|██████████| 6/6 [00:01<00:00,  3.26it/s]
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 79-80
+
+Use the method :meth:`OSmOSE.Auxiliary.Auxiliary.save_aux_data` to save your joined data into a csv file
+
+.. GENERATED FROM PYTHON SOURCE LINES 80-83
+
+.. code-block:: default
+
+
+    joiner.save_aux_data()
+
+
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+    Generated file /home6/cazaudo/Bureau/osmose_sample_datasets/SES/processed/auxiliary/60_38400/aux_data.csv
 
 
 
@@ -128,7 +259,7 @@ Run the Auxiliary class to perform joining
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 5.918 seconds)
+   **Total running time of the script:** (0 minutes 5.643 seconds)
 
 
 .. _sphx_glr_download_gallery_basic_use_cases_Auxiliary_joiner_auxiliary.py:

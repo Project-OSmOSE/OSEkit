@@ -88,6 +88,8 @@ html_theme_options = {
     'logo_only': True,
     'style_nav_header_background': 'white',
     'display_version': True,
+    'globaltoc_collapse': True,
+    'globaltoc_maxdepth': None,
 }
 # html_theme_options = {'collapse_navigation': False, 'logo_only': False}
 using_rtd_theme = True

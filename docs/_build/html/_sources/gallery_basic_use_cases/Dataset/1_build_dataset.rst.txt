@@ -25,31 +25,35 @@ This code will show you how to format your raw audio data into a OSmOSE dataset,
 
 .. GENERATED FROM PYTHON SOURCE LINES 11-14
 
-Prerequisites
+Preambule
 ------------------------
-Your raw data must be structured as detailed below. Besides, in this tutorial we only deal with the case of a fixed hydrophone ; for a mobile hydrophone you should pursue with the tutorial :ref:`sphx_glr_gallery_basic_use_cases_Dataset_2_mobile_hydrophone.py`
+In our dataset, only three metadata are mandatory for the moment: the timestamp of each audio file, and the gps location and depth of the hydrophone. In this tutorial we will how they can be set in the case of a fixed hydrophone ; for a mobile hydrophone you should pursue with the tutorial :ref:`sphx_glr_gallery_basic_use_cases_Dataset_2_mobile_hydrophone.py`.
 
 .. GENERATED FROM PYTHON SOURCE LINES 17-24
 
-Raw data preparation
-------------------------
+How should I prepare my raw data ? 
+-------------------------------------
 Before you can build your dataset: 
 
 - choose a dataset name (should not contain any special character, including '-'⁾ ; 
 - create the folder ``{local_working_dir}/dataset/{dataset_name}``, or ``{local_working_dir}/dataset/{campaign_name}/{dataset_name}`` in case your dataset is part of a recording campaign; 
 - place in this folder your audio data, they can be individual files or contain within multiple sub-folders ; 
 
-.. GENERATED FROM PYTHON SOURCE LINES 26-28
+.. GENERATED FROM PYTHON SOURCE LINES 26-32
 
-**About timestamps** 
-All timestamps from your original data (from your audio filenames or from your csv files) MUST follow the same timestamp template which should be given in ``date_template`` 
+How my timestamps are set ? 
+--------------------------------------
+The two following solutions are possible depending on whether timestamps are contained in the audio filenames:
 
-.. GENERATED FROM PYTHON SOURCE LINES 31-33
+- if this is the case, you just have to pass us the "timestamp signature" through the variable ``date_template`` (eg "%Y%m%d_%H%M%S")
+- if not, you have to create the timestamp.csv file yourself following this `template <example_timestamp.csv>`__ ; in this file your timestamps can follow any signature as long as it is provided in the ``date_template`` variable. See :ref:`sphx_glr_gallery_basic_use_cases_Dataset_2_mobile_hydrophone.py` for a code example on another dataset.
+
+.. GENERATED FROM PYTHON SOURCE LINES 35-37
 
 Codes
 ------------------------
 
-.. GENERATED FROM PYTHON SOURCE LINES 33-40
+.. GENERATED FROM PYTHON SOURCE LINES 37-44
 
 .. code-block:: default
 
@@ -67,18 +71,17 @@ Codes
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 41-42
+.. GENERATED FROM PYTHON SOURCE LINES 45-46
 
-You first have to set the `path_osmose_dataset`, which is where your dataset named `dataset_name` should be ; unless it is part of a recording campaign named `campaign_name`, your dataset should be present in `{path_osmose_dataset}/{campaign_name}/{dataset_name}`.
+You first have to set the `path_osmose_dataset`, which is where your dataset named `dataset_name` should be ; unless it is part of a recording campaign named `campaign_name`, your dataset should then be placed in `{path_osmose_dataset}/{campaign_name}/{dataset_name}`.
 
-.. GENERATED FROM PYTHON SOURCE LINES 42-47
+.. GENERATED FROM PYTHON SOURCE LINES 46-50
 
 .. code-block:: default
 
-
     path_osmose_dataset = "/home6/cazaudo/Bureau/osmose_sample_datasets/"
-    dataset_name = "MPSU"
-    campaign_name = ""
+    dataset_name = "SPM"
+    campaign_name = "" # default value ; so no need to define it if your dataset is not part of a campaign
 
 
 
@@ -87,16 +90,16 @@ You first have to set the `path_osmose_dataset`, which is where your dataset nam
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 48-49
+.. GENERATED FROM PYTHON SOURCE LINES 51-52
 
 In our dataset, we have made mandatory the setting of two metadata variables, namely `gps_coordinates` (tuple of (latitude , longitude) coordinates in decimal degree) and `depth` (positive integer in meter) of the hydrophone. 
 
-.. GENERATED FROM PYTHON SOURCE LINES 49-52
+.. GENERATED FROM PYTHON SOURCE LINES 52-55
 
 .. code-block:: default
 
-    gps_coordinates = (10,10)
-    depth = 10
+    gps_coordinates = (46.89,-56.54)
+    depth = 20
 
 
 
@@ -105,32 +108,15 @@ In our dataset, we have made mandatory the setting of two metadata variables, na
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 53-54
+.. GENERATED FROM PYTHON SOURCE LINES 56-57
 
-Lets' review now three optional parameters. You can set the `timezone` of your data if it happens to be different from UTC+00:00 (default value) ; its format MUST follow `"+02:00"` for UTC+02:00 for example.
+Before building your dataset, let's review two optional parameters. If the timezone of your data happens to be different from the different value UTC+00:00, use the input argument `timezone` of :class:`OSmOSE.Dataset.Dataset` to make your timestamps timezone-aware, following the str format `"+02:00"` for UTC+02:00 for example.
 
-.. GENERATED FROM PYTHON SOURCE LINES 54-56
-
-.. code-block:: default
-
-    timezone = "+00:00" 
-
-
-
-
-
-
-
-
-.. GENERATED FROM PYTHON SOURCE LINES 57-58
-
-The variable `date_template` should be used to help us extracting the timestamp from your audio filenames ; it should be set in a strftime format.
-
-.. GENERATED FROM PYTHON SOURCE LINES 58-60
+.. GENERATED FROM PYTHON SOURCE LINES 57-59
 
 .. code-block:: default
 
-    date_template = "%Y%m%d_%H%M%S" 
+    timezone = "-03:00" 
 
 
 
@@ -139,33 +125,35 @@ The variable `date_template` should be used to help us extracting the timestamp 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 61-62
+.. GENERATED FROM PYTHON SOURCE LINES 60-61
 
-The variable `force_upload` allows you to upload your dataset on the platform despite detected anomalies.
+The variable `date_template` should be used to help us extracting the timestamp from your audio filenames. The default template is "%Y%m%d_%H%M%S", if you have a different one set its value in `date_template` with the same strftime format.
 
-.. GENERATED FROM PYTHON SOURCE LINES 62-64
-
-.. code-block:: default
-
-    force_upload = False
-
-
-
-
-
-
-
-
-.. GENERATED FROM PYTHON SOURCE LINES 65-66
-
-Run the method :meth:`OSmOSE.Dataset.Dataset.build` of the class :class:`OSmOSE.Dataset.Dataset`
-
-.. GENERATED FROM PYTHON SOURCE LINES 66-72
+.. GENERATED FROM PYTHON SOURCE LINES 61-63
 
 .. code-block:: default
 
-    dataset = Dataset(dataset_path = Path(path_osmose_dataset, campaign_name, dataset_name), gps_coordinates = gps_coordinates, depth = depth, timezone=timezone)
-    dataset.build(date_template = date_template , force_upload=force_upload)
+    date_template = "%Y_%m_%dT%H:%M:%S"
+
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 64-65
+
+Run the method :meth:`OSmOSE.Dataset.Dataset.build` of the class :class:`OSmOSE.Dataset.Dataset`, and that's it your dataset is now OSmOSE compatible !
+
+.. GENERATED FROM PYTHON SOURCE LINES 65-73
+
+.. code-block:: default
+
+    dataset = Dataset(dataset_path = Path(path_osmose_dataset, campaign_name, dataset_name), gps_coordinates = gps_coordinates, depth = depth, timezone = timezone)
+    dataset.build(date_template = date_template)
+
+
 
 
 
@@ -178,7 +166,7 @@ Run the method :meth:`OSmOSE.Dataset.Dataset.build` of the class :class:`OSmOSE.
 
  .. code-block:: none
 
-    Scanning audio files:   0%|          | 0/9 [00:00<?, ?it/s]    Scanning audio files: 100%|██████████| 9/9 [00:00<00:00, 465.78it/s]
+    Scanning audio files:   0%|          | 0/5 [00:00<?, ?it/s]    Scanning audio files: 100%|██████████| 5/5 [00:00<00:00, 350.50it/s]
 
      DONE ! your dataset is on OSmOSE platform !
 
@@ -188,7 +176,7 @@ Run the method :meth:`OSmOSE.Dataset.Dataset.build` of the class :class:`OSmOSE.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 0.745 seconds)
+   **Total running time of the script:** (0 minutes 0.675 seconds)
 
 
 .. _sphx_glr_download_gallery_basic_use_cases_Dataset_1_build_dataset.py:

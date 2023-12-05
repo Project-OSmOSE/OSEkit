@@ -181,7 +181,7 @@ Below are listed the steps to create and build a conda environment that will be 
 Pre-requirements
 ------------------------
 
-Please first connect to Datarmor via :ref:`SSH connexion`. Once you are in your datahome, check that your `.condarc` file contains the following elements (run `cat .condarc`)
+Please first connect to Datarmor via :ref:`SSH connexion`. Once you are in your datahome, check that your `~/.condarc` file contains the following elements (run `cat .condarc`)
 
 .. code:: bash
 
@@ -192,8 +192,7 @@ Please first connect to Datarmor via :ref:`SSH connexion`. Once you are in your 
 	  - /appli/conda-env/2.7
 	  - /appli/conda-env/3.6
 
-
-Launch an interactive qsub job following the procedure described in :ref:`Launch a qsub job`. Be careful of the memory asked, package installation might need memory higher than to the default 500 MB.
+If different, edit this file to insert those elements.
 
 
 Procedure for conda environment creation / modification
@@ -204,17 +203,15 @@ Procedure for conda environment creation / modification
 	We have made a :ref:`tutorial on Conda <Conda>` if you are starting with it
 
 
+1. Launch an interactive qsub job following the procedure described in :ref:`Launch a qsub job`. Be careful of the memory asked, package installation might need memory higher than the default 500 MB
 
-If at the end you do not find your Kernel in your jupyterhub sessions, especially those installed on your datawork and not datahome, insert in the file ~/.condarc the line “$DATAWORK/conda-env”  , this file should look like that:
-
-
-1. Activate conda commands in your shell
+2. Activate conda commands in a bash shell
 
 .. code:: bash
-
+	bash
 	. /appli/anaconda/latest/etc/profile.d/conda.sh
 
-2. Create your ENV_NAME conda environment
+3. Create your ENV_NAME conda environment
 
 .. code:: bash
 
@@ -233,9 +230,7 @@ If at the end you do not find your Kernel in your jupyterhub sessions, especiall
 
 	Reported bug : changing python version will need to set the environment path with `-p`, otherwise it will be installed in `/dcazau/$Datarmor/...` 
 
-
-
-You should now see the conda environment located in the `conda-env` folder within either your datahome or your datawork directory, running the command `conda info --envs` should give you for example
+4. Verify that your conda environment is present in the `conda-env` folder (in your datahome or your datawork directory) ; running the command `conda info --envs` should give you for example
 
 .. code:: bash
 
@@ -243,18 +238,19 @@ You should now see the conda environment located in the `conda-env` folder withi
 	                      /home/datawork-osmose/conda-env/osmose
 	osmose_dev_dcazau    /home3/datawork/dcazau/conda-env/osmose_dev_dcazau
 
+.. warning::
+	
+	Note that your new environment should also be present in `.conda/environments.txt` ; if not add it manually in this file, making sure to end the **environment path without a `/`**
 
-This list is present in ~/.conda/environments.txt files. If you do not see your environment, add it manually in this file; make sure to end the path with the directory name without a `/`.
 
-
-3. After activation of your environment, install the package `ipykernel` to be able to see your environment in the kernes available in jupyterhub
+5. After activation of your environment, install the package `ipykernel` to be able to see your environment in the kernes available in jupyterhub
 
 .. code:: bash
 
 	conda install ipykernel
 
 
-4. In case you created an environment in the `datawork-osmose`, do not forget to change its permissions so it can be read and executed by any member of OSmOSE
+6. In case you created an environment in the `datawork-osmose`, do not forget to change its permissions so it can be read and executed by any member of OSmOSE
 
 .. code:: bash
 

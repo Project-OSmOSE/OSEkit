@@ -2,10 +2,10 @@
 
 .. _sphx_glr_gallery_basic_use_cases_Dataset:
 
-Build and analyze an OSmOSE dataset
--------------------------------------
+.. _build_segment_resample_dataset_example:
 
-
+Build, segment, resample an OSmOSE dataset, and analyze its metadata
+-------------------------------------------------------------------------
 
 
 
@@ -52,14 +52,48 @@ Build and analyze an OSmOSE dataset
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This code will show you how to segment and resample your original audio dataset into an analysi...">
+
+.. only:: html
+
+  .. image:: /gallery_basic_use_cases/Dataset/images/thumb/sphx_glr_3_segment_resample_dataset_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_gallery_basic_use_cases_Dataset_3_segment_resample_dataset.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Segment and resample a dataset</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This code will show you how to deal with anomalies in raw data or their metadata, from corrupte...">
+
+.. only:: html
+
+  .. image:: /gallery_basic_use_cases/Dataset/images/thumb/sphx_glr_4_dealwith_anomalies_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_gallery_basic_use_cases_Dataset_4_dealwith_anomalies.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Dealing with data anomalies</div>
+    </div>
+
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="Perform summary statistics and visualize your dataset metadata">
 
 .. only:: html
 
-  .. image:: /gallery_basic_use_cases/Dataset/images/thumb/sphx_glr_3_explore_metadata_thumb.png
+  .. image:: /gallery_basic_use_cases/Dataset/images/thumb/sphx_glr_5_explore_metadata_thumb.png
     :alt:
 
-  :ref:`sphx_glr_gallery_basic_use_cases_Dataset_3_explore_metadata.py`
+  :ref:`sphx_glr_gallery_basic_use_cases_Dataset_5_explore_metadata.py`
 
 .. raw:: html
 
@@ -77,5 +111,7 @@ Build and analyze an OSmOSE dataset
 
    /gallery_basic_use_cases/Dataset/1_build_dataset
    /gallery_basic_use_cases/Dataset/2_mobile_hydrophone
-   /gallery_basic_use_cases/Dataset/3_explore_metadata
+   /gallery_basic_use_cases/Dataset/3_segment_resample_dataset
+   /gallery_basic_use_cases/Dataset/4_dealwith_anomalies
+   /gallery_basic_use_cases/Dataset/5_explore_metadata
 
