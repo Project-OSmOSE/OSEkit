@@ -860,7 +860,7 @@ class Spectrogram(Dataset):
         if not self.__local:
             self.jb.build_job_file(
                 script_path=Path(inspect.getfile(merge_timestamp_csv)).resolve(),
-                script_args=f"--input-files {input_files}",
+                script_args=f"--input-files {self.audio_path}",
                 jobname="OSmOSE_merge_timestamp_py",
                 preset="low",
                 mem="30G",
