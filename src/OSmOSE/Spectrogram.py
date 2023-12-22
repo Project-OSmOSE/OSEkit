@@ -856,39 +856,40 @@ class Spectrogram(Dataset):
                 # The timestamp.csv is recreated by the reshaping step. We only need to copy it if we don't reshape.
                 shutil.copy(self.path_input_audio_file.joinpath("timestamp.csv"), self.audio_path.joinpath("timestamp.csv"))
 
-        # merge timestamps_*.csv aftewards
-        if not self.__local:
-            self.jb.build_job_file(
-                script_path=Path(inspect.getfile(merge_timestamp_csv)).resolve(),
-                script_args=f"--input-files {self.audio_path}",
-                jobname="OSmOSE_merge_timestamp_py",
-                preset="low",
-                mem="30G",
-                walltime="04:00:00",
-                logdir=self.path.joinpath("log")
-            )            
-            job_id = self.jb.submit_job(dependency=reshape_job_id_list)
-        else:
-            
-            input_dir_path = self.audio_path
-            
-            list_audio = list(input_dir_path.glob("timestamp_*"))
-            
-            list_conca_timestamps=[]
-            list_conca_filename=[]
-            for ll in list(input_dir_path.glob("timestamp_*")):            
-                print(f"read and remove file {ll}")
-                list_conca_timestamps.append(list(pd.read_csv(ll)['timestamp'].values))
-                list_conca_filename.append(list(pd.read_csv(ll)['filename'].values))
-                os.remove(ll)
-                    
-            print(f"save file {str(input_dir_path.joinpath('timestamp.csv'))}")
-            df = pd.DataFrame({"filename": list(itertools.chain(*list_conca_filename)), "timestamp": list(itertools.chain(*list_conca_timestamps))})
-            df.sort_values(by=["timestamp"], inplace=True)
-            df.to_csv(
-                input_dir_path.joinpath("timestamp.csv"),
-                index=False
-            )
+        # merge timestamps_*.csv aftewards, only after reshaping!
+        if self.spectro_duration != int(audio_file_origin_duration):
+            if not self.__local:
+                self.jb.build_job_file(
+                    script_path=Path(inspect.getfile(merge_timestamp_csv)).resolve(),
+                    script_args=f"--input-files {self.audio_path}",
+                    jobname="OSmOSE_merge_timestamp_py",
+                    preset="low",
+                    mem="30G",
+                    walltime="04:00:00",
+                    logdir=self.path.joinpath("log")
+                )            
+                job_id = self.jb.submit_job(dependency=reshape_job_id_list)
+            else:
+
+                input_dir_path = self.audio_path
+
+                list_audio = list(input_dir_path.glob("timestamp_*"))
+
+                list_conca_timestamps=[]
+                list_conca_filename=[]
+                for ll in list(input_dir_path.glob("timestamp_*")):            
+                    print(f"read and remove file {ll}")
+                    list_conca_timestamps.append(list(pd.read_csv(ll)['timestamp'].values))
+                    list_conca_filename.append(list(pd.read_csv(ll)['filename'].values))
+                    os.remove(ll)
+
+                print(f"save file {str(input_dir_path.joinpath('timestamp.csv'))}")
+                df = pd.DataFrame({"filename": list(itertools.chain(*list_conca_filename)), "timestamp": list(itertools.chain(*list_conca_timestamps))})
+                df.sort_values(by=["timestamp"], inplace=True)
+                df.to_csv(
+                    input_dir_path.joinpath("timestamp.csv"),
+                    index=False
+                )
             
             
  
