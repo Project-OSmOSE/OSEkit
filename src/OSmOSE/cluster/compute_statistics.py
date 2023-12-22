@@ -9,7 +9,7 @@ import soundfile as sf
 import numpy as np
 from scipy import signal
 
-from OSmOSE.utils import set_umask, get_timestamp_of_audio_file
+from OSmOSE.utils.core_utils import set_umask, get_timestamp_of_audio_file
 
 def Write_zscore_norma_params(
     *,

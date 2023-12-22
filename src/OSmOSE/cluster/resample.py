@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 import subprocess
 import platform
-from OSmOSE.utils import set_umask
+from OSmOSE.utils.core_utils import set_umask
 
 def resample(
     *,

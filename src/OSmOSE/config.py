@@ -24,5 +24,6 @@ __global_path_dict = {
 
 OSMOSE_PATH = namedtuple("path_list", __global_path_dict.keys())(**__global_path_dict)
 
+TIMESTAMP_FORMAT_AUDIO_FILE = '%Y-%m-%dT%H:%M:%S.%f%z'
 FPDEFAULT = 0o664 # Default file permissions
 DPDEFAULT = (stat.S_ISGID | 0o775) # Default directory permissions

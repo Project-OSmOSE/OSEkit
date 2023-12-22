@@ -21,7 +21,7 @@ except ModuleNotFoundError:
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
-from OSmOSE.utils import read_header, check_n_files, make_path, set_umask
+from OSmOSE.utils.core_utils import read_header, check_n_files, make_path, set_umask
 from OSmOSE.timestamps import write_timestamp
 from OSmOSE.config import *
 
@@ -374,8 +374,8 @@ class Dataset:
             cur_timestamp, _ = self._format_timestamp(timestamp_csv[ind_dt],date_template,already_printed_1)
 
             # define final audio filename, especially we remove the sign '-' in filenames (because of our qsub_resample.sh)
-            if "-" in audio_file.name:
-                cur_filename = audio_file.name.replace("-", "_")
+            if ("-" in audio_file.name) or (":" in audio_file.name):
+                cur_filename = audio_file.name.replace("-", "_").replace(":", "_")
                 path_raw_audio.joinpath(audio_file.name).rename(
                     path_raw_audio.joinpath(cur_filename)
                 )
@@ -505,7 +505,7 @@ class Dataset:
             subset_path = OSMOSE_PATH.processed.joinpath("subset_files.csv")
             if subset_path.is_file():
                 xx = pd.read_csv(subset_path, header=None).values
-                pd.DataFrame([ff[0].replace("-", "_") for ff in xx]).to_csv(
+                pd.DataFrame([ff[0].replace("-", "_").replace(":", "_") for ff in xx]).to_csv(
                     subset_path,
                     index=False,
                     header=None
@@ -585,7 +585,7 @@ class Dataset:
                 date_template = date_template[:-1]            
         
         try:
-            check_right_format = datetime.strptime(cur_timestamp_not_formatted, '%Y-%m-%dT%H:%M:%S.%f%z')
+            check_right_format = datetime.strptime(cur_timestamp_not_formatted, TIMESTAMP_FORMAT_AUDIO_FILE)
             cur_timestamp_formatted = cur_timestamp_not_formatted
             format_OK = True
             
@@ -593,12 +593,12 @@ class Dataset:
                         
             if not already_printed_1:
                 already_printed_1 = True
-                print(f"Timestamp format {cur_timestamp_not_formatted} does not fit our template '%Y-%m-%dT%H:%M:%S.%f%z' let's reformat it")    
+                print(f"Timestamp format {cur_timestamp_not_formatted} does not fit our template {TIMESTAMP_FORMAT_AUDIO_FILE} let's reformat it")    
             if not date_template:
                 raise FileNotFoundError(f"You have to define a date_template please.")
             else:
                 date_obj = datetime.strptime(cur_timestamp_not_formatted+self.timezone, date_template+'%z')
-                cur_timestamp_formatted = datetime.strftime(date_obj,'%Y-%m-%dT%H:%M:%S.%f%z')
+                cur_timestamp_formatted = datetime.strftime(date_obj,TIMESTAMP_FORMAT_AUDIO_FILE)
                 
         return cur_timestamp_formatted, format_OK                
                 

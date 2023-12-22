@@ -8,10 +8,12 @@ from pathlib import Path
 from filelock import FileLock
 
 import soundfile as sf
+from librosa import resample
+
 import numpy as np
 import pandas as pd
 
-from OSmOSE.utils import make_path, set_umask
+from OSmOSE.utils.core_utils import make_path, set_umask
 from OSmOSE.config import *
 
 def substract_timestamps(
@@ -34,12 +36,12 @@ def substract_timestamps(
     if index == 0:
         return timedelta(seconds=0)
 
-    cur_timestamp: str = input_timestamp[input_timestamp["filename"] == files[index]][
+    cur_timestamp: str = input_timestamp[input_timestamp["filename"] == os.path.basename(files[index])][
         "timestamp"
     ].values[0]
     cur_timestamp: datetime = datetime.strptime(cur_timestamp, "%Y-%m-%dT%H:%M:%S.%f%z")
     next_timestamp: str = input_timestamp[
-        input_timestamp["filename"] == files[index + 1]
+        input_timestamp["filename"] == os.path.basename(files[index + 1])
     ]["timestamp"].values[0]
     next_timestamp: datetime = datetime.strptime(
         next_timestamp, "%Y-%m-%dT%H:%M:%S.%f%z"
@@ -54,6 +56,7 @@ def reshape(
     input_files: Union[str, list],
     chunk_size: int,
     *,
+    new_sr: int = -1,    
     output_dir_path: str = None,
     batch_ind_min: int = 0,
     batch_ind_max: int = -1,
@@ -65,7 +68,7 @@ def reshape(
     verbose: bool = False,
     overwrite: bool = True,
     force_reshape: bool = False,
-    merge_files: bool = True,
+    merge_files: bool = False,
     audio_file_overlap: int = 0    
 ) -> List[str]:
     """Reshape all audio files in the folder to be of the specified duration. If chunk_size is superior to the base duration of the files, they will be fused according to their order in the timestamp.csv file in the same folder.
@@ -132,7 +135,7 @@ def reshape(
 
     if isinstance(input_files, list):
         input_dir_path = Path(input_files[0]).parent
-        files = [Path(file).stem for file in input_files]
+        files = [Path(file) for file in input_files]
         if verbose:
             print(f"Input directory detected as {input_dir_path}")
     else:
@@ -184,7 +187,7 @@ def reshape(
         )
 
     if verbose:
-        print(f"Files to be reshaped: {','.join(files)}")
+        print(f"Files to be reshaped: {files}")
 
     result = []
     timestamp_list = []
@@ -202,7 +205,24 @@ def reshape(
     while i < len(files):
         list_seg_name = []
         list_seg_timestamp = []
-        audio_data, sample_rate = sf.read(input_dir_path.joinpath(files[i]))
+        
+        input_file = input_dir_path.joinpath(files[i])
+        
+        # Getting file information and data
+        with sf.SoundFile(input_file) as audio_file:
+            frames = audio_file.frames
+            sample_rate = audio_file.samplerate
+            subtype = audio_file.subtype
+            audio_data = audio_file.read()
+
+        if new_sr == -1: 
+            new_sr = sample_rate
+        # If the file sample rate is different from the target sample rate, we resample the audio data
+        elif new_sr != sample_rate:
+            new_samples = frames*new_sr//sample_rate
+            audio_data = resample(audio_data, orig_sr=sample_rate, target_sr=new_sr)
+            sample_rate = new_sr
+                    
         file_duration = len(audio_data)//sample_rate
         file_type = sf.info(input_dir_path.joinpath(files[i])).subtype
 
@@ -214,7 +234,7 @@ def reshape(
             input_dir_path.joinpath(files[i]).unlink()
 
         if i == 0:
-            timestamp = input_timestamp[input_timestamp["filename"] == files[i]][
+            timestamp = input_timestamp[input_timestamp["filename"] == os.path.basename(files[i])][
                 "timestamp"
             ].values[0]
             timestamp = datetime.strptime(
@@ -226,7 +246,7 @@ def reshape(
         ):
             audio_data = audio_data[: int(len(audio_data) - (offset_end * sample_rate))]
         elif previous_audio_data.size <= 1:
-            timestamp = to_timestamp(input_timestamp[input_timestamp["filename"] == files[i]][
+            timestamp = to_timestamp(input_timestamp[input_timestamp["filename"] == os.path.basename(files[i])][
                 "timestamp"
             ].values[0])
 
@@ -326,11 +346,8 @@ def reshape(
                 if save_meta_res:
                     df=pd.DataFrame({'list_seg_name':list_seg_name,'list_seg_timestamp':list_seg_timestamp})
                     df.to_csv(f"{self.path.joinpath(OSMOSE_PATH.log,files[i])}.csv")
-                i += 1
+                i += 1                
                 continue
-
-
-                
 
         #! AUDIO DURATION == CHUNK SIZE
         # Else if audio_data is already in the desired duration, output it
@@ -354,7 +371,7 @@ def reshape(
                 delta = substract_timestamps(input_timestamp, files, i).seconds - file_duration
                 if ( delta > max_delta_interval):
                     print(
-                        f"""Warning: You are trying to merge two audio files that are not chronologically consecutive.\n{files[i]} ends at {to_timestamp(input_timestamp[input_timestamp['filename'] == files[i]]['timestamp'].values[0]) + timedelta(seconds=file_duration)} and {files[i+1]} starts at {to_timestamp(input_timestamp[input_timestamp['filename'] == files[i+1]]['timestamp'].values[0])}.\nThere is {delta} seconds of difference between the two files, which is over the maximum tolerance of {max_delta_interval} seconds."""
+                        f"""Warning: You are trying to merge two audio files that are not chronologically consecutive.\n{files[i]} ends at {to_timestamp(input_timestamp[input_timestamp['filename'] == os.path.basename(files[i])]['timestamp'].values[0]) + timedelta(seconds=file_duration)} and {files[i+1]} starts at {to_timestamp(input_timestamp[input_timestamp['filename'] == os.path.basename(files[i+1])]['timestamp'].values[0])}.\nThere is {delta} seconds of difference between the two files, which is over the maximum tolerance of {max_delta_interval} seconds."""
                     )
                     if (
                         not proceed and sys.__stdin__.isatty()

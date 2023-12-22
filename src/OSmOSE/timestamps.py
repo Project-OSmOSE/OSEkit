@@ -6,7 +6,7 @@ import pandas as pd
 from pathlib import Path
 
 from OSmOSE.config import *
-from OSmOSE.utils import get_files
+from OSmOSE.utils.core_utils import get_files
 
 __converter = {
     "%Y": r"[12][0-9]{3}",
@@ -102,7 +102,7 @@ def write_timestamp(
             raise ValueError(f"The date template does not match any set of character in the file name {filename}\nMake sure you are not forgetting separator characters, or use the offset parameter.")
 
         date_obj = datetime.datetime.strptime(date_extracted+timezone, date_template+'%z')
-        dates_final = datetime.datetime.strftime(date_obj,'%Y-%m-%dT%H:%M:%S.%f%z')
+        dates_final = datetime.datetime.strftime(date_obj,TIMESTAMP_FORMAT_AUDIO_FILE)
 
         if i ==10:
             print(f"Timestamp extraction seems OK, here is an example: {filename.name} -> {dates_final} \n")

@@ -12,7 +12,7 @@ from warnings import warn
 from pathlib import Path
 from datetime import datetime, timedelta
 from importlib import resources
-from OSmOSE.utils import read_config, set_umask
+from OSmOSE.utils.core_utils import read_config, set_umask
 from OSmOSE.config import *
 
 JOB_CONFIG_TEMPLATE = namedtuple("job_config", ["job_scheduler","env_script","env_name","queue","nodes","walltime","ncpus","mem","outfile","errfile"])

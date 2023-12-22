@@ -336,5 +336,5 @@ def get_files(path,extensions):
 # be able to take as input the already loaded timestamps
 def get_timestamp_of_audio_file(path_timestamp_file:Path,audio_file_name:str) -> str:
     timestamps = pd.read_csv(path_timestamp_file)
-    # get timestamp of the audio file    
+    # get timestamp of the audio file     
     return str(timestamps["timestamp"][timestamps["filename"] == audio_file_name].values[0])
