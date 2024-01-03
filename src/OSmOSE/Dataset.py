@@ -128,7 +128,7 @@ class Dataset:
             If the coordinates are a string, it must be the name of a csv file located in `data/auxiliary/instrument/`, containing two columns: 'lat' and 'lon'
             Else, they can be either a list or a tuple of two float, the first being the latitude and second the longitude; or a
             list or a tuple containing two lists or tuples respectively of floats. In this case, the coordinates are not treated as a point but
-            as an area.
+            as an area. 
 
         Returns
         -------

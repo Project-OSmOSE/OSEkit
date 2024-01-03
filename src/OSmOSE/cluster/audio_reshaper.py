@@ -633,6 +633,12 @@ if __name__ == "__main__":
         default=0,
         help="Overlap between audio files after segmentation. Default is 0, meaning no overlap.",
     )
+    parser.add_argument(
+        "--new-sr",
+        type=int,
+        default=0,
+        help="Sampling rate",
+    )
     
     args = parser.parse_args()
 
@@ -648,6 +654,7 @@ if __name__ == "__main__":
         chunk_size=args.chunk_size,
         input_files=input_files,
         output_dir_path=args.output_dir,
+        new_sr=args.new_sr,
         batch_ind_min=args.batch_ind_min,
         batch_ind_max=args.batch_ind_max,
         offset_beginning=args.offset_beginning,
