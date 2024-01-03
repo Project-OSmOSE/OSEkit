@@ -9,6 +9,7 @@ from pathlib import Path
 import multiprocessing as mp
 from filelock import FileLock
 import glob
+from IPython.display import Image
 
 from tqdm import tqdm
 import itertools
@@ -24,7 +25,6 @@ from matplotlib import pyplot as plt
 from OSmOSE.job import Job_builder
 from OSmOSE.cluster import (
     reshape,
-    resample,
     compute_stats,
     merge_timestamp_csv,
 )
@@ -110,7 +110,7 @@ class Spectrogram(Dataset):
         # elif not dataset_sr:
         #     raise ValueError('If you dont know your sr, please use the build() method first')
         processed_path = self.path.joinpath(OSMOSE_PATH.spectrogram)
-        metadata_path = processed_path.joinpath("adjust_metadata.csv")
+        metadata_path = processed_path.joinpath("adjustment_spectros","adjust_metadata.csv")
         if metadata_path.exists():
             self.__analysis_file = True
             analysis_sheet = pd.read_csv(metadata_path, header=0)
@@ -571,8 +571,16 @@ class Spectrogram(Dataset):
         # remove temp directories from adjustment spectrograms
         for path in glob.glob(str(self.path.joinpath(OSMOSE_PATH.raw_audio,'temp_*'))):
             shutil.rmtree(path)                  
-        if os.path.exists(self.path.joinpath(OSMOSE_PATH.spectrogram).joinpath("adjustment_spectros")):
-            shutil.rmtree(self.path.joinpath(OSMOSE_PATH.spectrogram).joinpath("adjustment_spectros"))
+        if os.path.exists(self.path.joinpath("log")):
+            shutil.rmtree(self.path.joinpath("log"))
+            os.mkdir(self.path.joinpath("log"))
+            
+        # weird stuff currently to change soon: on datarmor you do batch processing with pbs jobs in which local instances run , which take their spectrogram parameters from the "adjust_metadata.csv". This explains why first we cannot rmtree folders adjustment_spectros , and why we exec save_spectro_metadata(True) to create it if not existing yet (rare case but if spectro generation is laucnhed without any adjustment..)
+        if not self.path.joinpath(OSMOSE_PATH.spectrogram,"adjustment_spectros","adjust_metadata.csv").exists():        
+            self.save_spectro_metadata(True)
+        #if os.path.exists(self.path.joinpath(OSMOSE_PATH.spectrogram).joinpath("adjustment_spectros")):
+        #    shutil.rmtree(self.path.joinpath(OSMOSE_PATH.spectrogram).joinpath("adjustment_spectros"))
+        
             
         self.__build_path()
 
@@ -615,7 +623,7 @@ class Spectrogram(Dataset):
             print("WARNING: the audio file overlap has been set to 0 because you work on the origin dataset, so that no segmentation will be done.")
 
         """List containing the last job ids to grab outside of the class."""
-        self.pending_jobs = []
+        #self.pending_jobs = []
 
         # Stop initialization if already done
         # final_path = self.path.joinpath(
@@ -717,8 +725,9 @@ class Spectrogram(Dataset):
         # Reshape audio files to fit the maximum spectrogram size, whether it is greater or smaller.
         reshape_job_id_list = []
         processes = []
+        self.pending_jobs = []
 
-        if int(self.spectro_duration) != int(audio_file_origin_duration):
+        if (int(self.spectro_duration) != int(audio_file_origin_duration)) or (self.dataset_sr != origin_sr):
             # We might reshape the files and create the folder. Note: reshape function might be memory-heavy and deserve a proper qsub job.
             if self.spectro_duration > int(
                 audio_file_origin_duration
@@ -731,138 +740,82 @@ class Spectrogram(Dataset):
                 f"Automatically reshaping audio files to fit the spectro duration value. Files will be {self.spectro_duration} seconds long."
             )
 
-            if reshape_method == "classic":
-                # build job, qsub, stuff
+            input_files = self.path_input_audio_file
 
-                input_files = self.path_input_audio_file
+            nb_reshaped_files = (
+                audio_file_origin_duration * audio_file_count
+            ) / self.spectro_duration
+            metadata["audio_file_count"] = int(nb_reshaped_files)
+            next_offset_beginning = 0
+            offset_end = 0
+            i_max = -1
 
-                nb_reshaped_files = (
-                    audio_file_origin_duration * audio_file_count
-                ) / self.spectro_duration
-                metadata["audio_file_count"] = int(nb_reshaped_files)
+            for batch in range(self.batch_number):
+
+                if i_max >= len(self.list_wav_to_process) - 1:
+                    continue
+
+                offset_beginning = next_offset_beginning 
                 next_offset_beginning = 0
-                offset_end = 0
-                i_max = -1
-                
-                for batch in range(self.batch_number):
-                    
-                    if i_max >= len(self.list_wav_to_process) - 1:
-                        continue
 
-                    offset_beginning = next_offset_beginning 
-                    next_offset_beginning = 0
+                i_min = i_max + (1 if not offset_beginning else 0)
+                i_max = (
+                    i_min + batch_size
+                    if batch < self.batch_number - 1
+                    and i_min + batch_size < len(self.list_wav_to_process)
+                    else len(self.list_wav_to_process) - 1
+                )  # If it is the last batch, take all files
 
-                    i_min = i_max + (1 if not offset_beginning else 0)
-                    i_max = (
-                        i_min + batch_size
-                        if batch < self.batch_number - 1
-                        and i_min + batch_size < len(self.list_wav_to_process)
-                        else len(self.list_wav_to_process) - 1
-                    )  # If it is the last batch, take all files
-
-                    if merge_on_reshape:
-                        while (
-                            (
-                                (i_max - i_min + 1) * audio_file_origin_duration
-                                - offset_end
-                                - offset_beginning  # Determines if the offset would require more than one file
-                            )
-                            % self.spectro_duration
-                            > audio_file_origin_duration
-                            and i_max < len(self.list_wav_to_process)
-                        ) or (
-                            i_max - i_min + offset_end - offset_beginning + 1
-                        ) * audio_file_origin_duration < self.spectro_duration:
-                            i_max += 1
-
-                        last_file_behavior = (
-                            "pad"
-                            if batch == self.batch_number - 1
-                            or i_max == len(self.list_wav_to_process) - 1
-                            else "discard"
-                        )
-
-                        offset_end = (
-                            (i_max - i_min + 1) * audio_file_origin_duration
-                            - offset_beginning
-                        ) % self.spectro_duration
-                        if offset_end:
-                            next_offset_beginning = audio_file_origin_duration - offset_end
-                        else:
-                            offset_end = 0  # ? ack
-                            
-                    if self.__local:
-                        process = mp.Process(
-                            target=reshape,
-                            kwargs={
-                                "input_files": input_files,
-                                "chunk_size": int(self.spectro_duration),
-                                "output_dir_path": self.audio_path,
-                                "offset_beginning": int(offset_beginning),
-                                "offset_end": int(offset_end),
-                                "batch_ind_min": i_min,
-                                "batch_ind_max": i_max,
-                                "last_file_behavior": last_file_behavior,
-                                "timestamp_path": self.path_input_audio_file.joinpath("timestamp.csv"),
-                                "merge_files": merge_on_reshape,
-                                "audio_file_overlap": self.audio_file_overlap
-                            },
-                        )
-
-                        process.start()
-                        processes.append(process)
-                    else:
-                        self.jb.build_job_file(
-                            script_path=Path(inspect.getfile(reshape)).resolve(),
-                            script_args=f"--input-files {input_files} --chunk-size {int(self.spectro_duration)} --audio-file-overlap {int(self.audio_file_overlap)} --batch-ind-min {i_min}\
-                                        --batch-ind-max {i_max} --output-dir {self.audio_path} --timestamp-path {self.path_input_audio_file.joinpath('timestamp.csv')}\
-                                        --offset-beginning {int(offset_beginning)} --offset-end {int(offset_end)}\
-                                        --last-file-behavior {last_file_behavior} {'--force' if force_init else ''}\
-                                        {'--overwrite' if resample_done else ''} {'--no-merge' if not merge_on_reshape else ''}",
-                            jobname="OSmOSE_reshape_py",
-                            preset="low",
-                            mem="30G",
-                            walltime="04:00:00",
-                            logdir=self.path.joinpath("log")
-                        )
-
-                        job_id = self.jb.submit_job(dependency=resample_job_id_list)
-                        reshape_job_id_list += job_id
-                                                   
-                self.pending_jobs = reshape_job_id_list
-
-                for process in processes:
-                    process.join()
-
-            elif reshape_method == "legacy":
-                silence_arg = "-s" if pad_silence else ""
-                for batch in range(self.batch_number):
-                    i_min = batch * batch_size
-                    i_max = (
-                        i_min + batch_size
-                        if batch < self.batch_number - 1
-                        else len(self.list_wav_to_process)
-                    )  # If it is the last batch, take all files
-                    self.jb.build_job_file(
-                        script_path=Path(__file__).parent.joinpath("cluster", "reshaper.sh"),
-                        script_args=f"-d {self.path} -i {self.path_input_audio_file.name} -t {dataset_sr} \
-                                    -m {i_min} -x {i_max} -o {self.audio_path} -n {self.spectro_duration} {silence_arg}",
-                        jobname="OSmOSE_reshape_bash",
-                        preset="low",
-                        mem="20G",
-                        logdir=self.path.joinpath("log")
+                if self.__local:
+                    process = mp.Process(
+                        target=reshape,
+                        kwargs={
+                            "input_files": input_files,
+                            "chunk_size": int(self.spectro_duration),
+                            "new_sr": int(self.dataset_sr),                            
+                            "output_dir_path": self.audio_path,
+                            "offset_beginning": int(offset_beginning),
+                            "offset_end": int(offset_end),
+                            "batch_ind_min": i_min,
+                            "batch_ind_max": i_max,
+                            "last_file_behavior": last_file_behavior,
+                            "timestamp_path": self.path_input_audio_file.joinpath("timestamp.csv"),
+                            "merge_files": merge_on_reshape,
+                            "audio_file_overlap": self.audio_file_overlap
+                        },
                     )
 
-                    job_id = self.jb.submit_job(dependency=resample_job_id_list)
+                    process.start()
+                    processes.append(process)
+                else:
+                    self.jb.build_job_file(
+                        script_path=Path(inspect.getfile(reshape)).resolve(),
+                        script_args=f"--input-files {input_files} --chunk-size {int(self.spectro_duration)} --new-sr {int(self.dataset_sr)} --audio-file-overlap {int(self.audio_file_overlap)} --batch-ind-min {i_min}\
+                                    --batch-ind-max {i_max} --output-dir {self.audio_path} --timestamp-path {self.path_input_audio_file.joinpath('timestamp.csv')}\
+                                    --offset-beginning {int(offset_beginning)} --offset-end {int(offset_end)}\
+                                    --last-file-behavior {last_file_behavior} {'--force' if force_init else ''}\
+                                    {'--no-merge' if not merge_on_reshape else ''}",
+                        jobname="OSmOSE_reshape_py",
+                        preset="low",
+                        mem="30G",
+                        walltime="04:00:00",
+                        logdir=self.path.joinpath("log"),
+                        env_name='osmose_dev_dcazau'
+                    )
+
+                    job_id = self.jb.submit_job()
                     reshape_job_id_list += job_id
-                    self.pending_jobs = reshape_job_id_list
+
+            for process in processes:
+                process.join()
+
         else:
             if self.path_input_audio_file != self.audio_path and not self.audio_path.joinpath("timestamp.csv"):
                 # The timestamp.csv is recreated by the reshaping step. We only need to copy it if we don't reshape.
                 shutil.copy(self.path_input_audio_file.joinpath("timestamp.csv"), self.audio_path.joinpath("timestamp.csv"))
 
         # merge timestamps_*.csv aftewards, only after reshaping!
-        if self.spectro_duration != int(audio_file_origin_duration):
+        if (int(self.spectro_duration) != int(audio_file_origin_duration)) or (self.dataset_sr != origin_sr):
             if not self.__local:
                 self.jb.build_job_file(
                     script_path=Path(inspect.getfile(merge_timestamp_csv)).resolve(),
@@ -874,6 +827,9 @@ class Spectrogram(Dataset):
                     logdir=self.path.joinpath("log")
                 )            
                 job_id = self.jb.submit_job(dependency=reshape_job_id_list)
+
+                self.pending_jobs = job_id
+                
             else:
 
                 input_dir_path = self.audio_path
@@ -945,10 +901,10 @@ class Spectrogram(Dataset):
                         logdir=self.path.joinpath("log")
                     )
 
-                    job_id = self.jb.submit_job(dependency=resample_job_id_list)
+                    job_id = self.jb.submit_job()
                     norma_job_id_list += job_id
             
-            self.pending_jobs = norma_job_id_list
+            #self.pending_jobs = norma_job_id_list
 
             for process in processes:
                 process.join()
@@ -995,7 +951,7 @@ class Spectrogram(Dataset):
         analysis_sheet = pd.DataFrame.from_records([data])
 
         if adjust_bool:
-            meta_path = self.path.joinpath(OSMOSE_PATH.spectrogram,"adjust_metadata.csv")
+            meta_path = self.path.joinpath(OSMOSE_PATH.spectrogram,"adjustment_spectros","adjust_metadata.csv")
         else:
             meta_path = self.path.joinpath(
                 OSMOSE_PATH.spectrogram,
@@ -1504,6 +1460,9 @@ class Spectrogram(Dataset):
         plt.close()
 
         os.chmod(output_file, mode=FPDEFAULT)
+        
+        if adjust:
+            display(Image(output_file))
 
         #print(f"Successfully generated {output_file.name}.")
 
