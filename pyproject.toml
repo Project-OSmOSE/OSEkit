@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "osmose"
-version = "0.1.2"
-description = "Ocean acoustic studies toolkit."
-authors = ["Rumengol"]
+version = "0.2.0"
+description = "OSmOSE toolkit"
+authors = ["OSmOSE team"]
 readme = "README.md"
 packages = [
     { include = "OSmOSE", from = "src" },
