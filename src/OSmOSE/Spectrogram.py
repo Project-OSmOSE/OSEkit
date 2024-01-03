@@ -429,7 +429,7 @@ class Spectrogram(Dataset):
 
     # endregion
 
-    def __build_path(self, adjust: bool = False, dry: bool = False):
+    def __build_path(self, adjust: bool = False, dry: bool = False, force_init: bool=False):
         """Build some internal paths according to the expected architecture and might create them.
 
         Parameter
@@ -443,7 +443,7 @@ class Spectrogram(Dataset):
         processed_path = self.path.joinpath(OSMOSE_PATH.spectrogram)
         audio_foldername = f"{str(self.spectro_duration)}_{str(self.dataset_sr)}"
         self.audio_path = self.path.joinpath(OSMOSE_PATH.raw_audio, audio_foldername)
-
+        
         self.__spectro_foldername = (
                 f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}"
             )
@@ -459,11 +459,22 @@ class Spectrogram(Dataset):
         self.path_output_LTAS = self.path.joinpath(OSMOSE_PATH.LTAS)
         self.path_output_EPD = self.path.joinpath(OSMOSE_PATH.EPD)
         self.path_output_SPLfiltered = self.path.joinpath(OSMOSE_PATH.SPLfiltered)
+            
+        make_path(self.path.joinpath(OSMOSE_PATH.spectrogram,"adjustment_spectros"), mode=DPDEFAULT)
+          
         
         # Create paths
         if not dry:
+            if self.audio_path.exists() and force_init:
+                print(f"removing existing directory {self.audio_path}.. this can take a bit of time")                
+                shutil.rmtree(self.audio_path)                
             make_path(self.audio_path, mode=DPDEFAULT)
+            
+            if self.path_output_spectrogram.exists() and force_init:
+                print(f"removing existing directory {self.path_output_spectrogram}.. this can take a bit of time")   
+                shutil.rmtree(self.path_output_spectrogram)     
             make_path(self.path_output_spectrogram, mode=DPDEFAULT)
+            
             if not adjust:
                 make_path(self.path_output_spectrogram_matrix, mode=DPDEFAULT)
                 make_path(self.path.joinpath(OSMOSE_PATH.statistics), mode=DPDEFAULT)
@@ -574,16 +585,16 @@ class Spectrogram(Dataset):
         if os.path.exists(self.path.joinpath("log")):
             shutil.rmtree(self.path.joinpath("log"))
             os.mkdir(self.path.joinpath("log"))
-            
+                                    
+        self.__build_path(force_init=force_init)
+
         # weird stuff currently to change soon: on datarmor you do batch processing with pbs jobs in which local instances run , which take their spectrogram parameters from the "adjust_metadata.csv". This explains why first we cannot rmtree folders adjustment_spectros , and why we exec save_spectro_metadata(True) to create it if not existing yet (rare case but if spectro generation is laucnhed without any adjustment..)
         if not self.path.joinpath(OSMOSE_PATH.spectrogram,"adjustment_spectros","adjust_metadata.csv").exists():        
             self.save_spectro_metadata(True)
         #if os.path.exists(self.path.joinpath(OSMOSE_PATH.spectrogram).joinpath("adjustment_spectros")):
         #    shutil.rmtree(self.path.joinpath(OSMOSE_PATH.spectrogram).joinpath("adjustment_spectros"))
         
-            
-        self.__build_path()
-
+        
         if dataset_sr:
             self.dataset_sr = dataset_sr
 
@@ -598,7 +609,6 @@ class Spectrogram(Dataset):
             audio_file.name for audio_file in list_wav_withEvent
         ]
         
-
         #! INITIALIZATION START
         # Load variables from raw metadata
         metadata = pd.read_csv(self.path_input_audio_file.joinpath("metadata.csv"))
@@ -639,6 +649,7 @@ class Spectrogram(Dataset):
             "metadata.csv",
         )
 
+            
         # if (
         #     (final_path.exists() or temp_path.exists())
         #     and audio_metadata_path.exists()
