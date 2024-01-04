@@ -211,19 +211,24 @@ Procedure for conda environment creation / modification
 	bash
 	. /appli/anaconda/latest/etc/profile.d/conda.sh
 
-3. Create your ENV_NAME conda environment
+3. Create your ENV_NAME conda environment, for example here in the version python 3.10 
 
 .. code:: bash
 
-	conda create --name ENV_NAME
+	conda create --name ENV_NAME python=3.10
 
 .. note::
 
-	By default on Datarmor, this command will create you an environment in your local home directory (of the form `/home3/datahome/dcazau/conda-env`), making it only usable by yourself. In case you would like a conda environment usable for the OSmOSE group, you will have to change your environment location by setting the parameter `-p`. You can also use a specific python version with the parameter `python`, here is an example
+	By default on Datarmor, this command will create an environment in your local home directory (of the form `/home3/datahome/dcazau/conda-env`), making it only usable by yourself. In case you would like a conda environment usable by the OSmOSE group, you will have to change your environment location by setting the parameter `-p`
 
 	.. code:: bash
 
 		conda create --p /home/datawork-osmose/conda-env/ENV_NAME python=3.10 
+
+Note that this is mandatory in case you want to use your conda environment within pbs jobs, through the argument `env_name` of method `jb.build_job_file`. If you had already installed a conda environment in your datahome and you want to use it in the `datawork-osmose`, you can use the `clone` command as follows (for example here for the environment `osmose_stable_test`)
+
+	.. code:: bash
+		conda create --prefix=/home/datawork-osmose/conda-env/osmose_stable_test --clone /home3/datawork/dcazau/conda-env/osmose_stable_test
 
 
 .. warning::
@@ -240,7 +245,7 @@ Procedure for conda environment creation / modification
 
 .. warning::
 	
-	Note that your new environment should also be present in `.conda/environments.txt` ; if not add it manually in this file, making sure to end the **environment path without a `/`**
+	Note that your new environment should also be present in ` .conda/environments.txt` ; if not add it manually in this file, making sure to end the **environment path without a `/`**
 
 
 5. After activation of your environment, install the package `ipykernel` to be able to see your environment in the kernes available in jupyterhub
