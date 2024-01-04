@@ -632,8 +632,8 @@ class Spectrogram(Dataset):
             self.audio_file_overlap = 0
             print("WARNING: the audio file overlap has been set to 0 because you work on the origin dataset, so that no segmentation will be done.")
 
-        """List containing the last job ids to grab outside of the class."""
-        #self.pending_jobs = []
+        """List containing the last job ids to grab outside of the class."""        
+	self.pending_jobs = []
 
         # Stop initialization if already done
         # final_path = self.path.joinpath(
@@ -736,7 +736,6 @@ class Spectrogram(Dataset):
         # Reshape audio files to fit the maximum spectrogram size, whether it is greater or smaller.
         reshape_job_id_list = []
         processes = []
-        self.pending_jobs = []
 
         if (int(self.spectro_duration) != int(audio_file_origin_duration)) or (self.dataset_sr != origin_sr):
             # We might reshape the files and create the folder. Note: reshape function might be memory-heavy and deserve a proper qsub job.
