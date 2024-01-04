@@ -633,7 +633,7 @@ class Spectrogram(Dataset):
             print("WARNING: the audio file overlap has been set to 0 because you work on the origin dataset, so that no segmentation will be done.")
 
         """List containing the last job ids to grab outside of the class."""        
-	self.pending_jobs = []
+        self.pending_jobs = []
 
         # Stop initialization if already done
         # final_path = self.path.joinpath(
@@ -1841,3 +1841,4 @@ class Spectrogram(Dataset):
             else:
                 plt.close()
                 
+
