@@ -539,6 +539,7 @@ class Spectrogram(Dataset):
         force_init: bool = False,
         date_template: str = None,
         merge_on_reshape: bool = False,
+        env_name: str = None,
         last_file_behavior: Literal["pad","truncate","discard"] = "pad"
     ) -> None:
         """Prepares everything (path, variables, files) for spectrogram generation. This needs to be run before the spectrograms are generated.
@@ -810,7 +811,7 @@ class Spectrogram(Dataset):
                         mem="30G",
                         walltime="04:00:00",
                         logdir=self.path.joinpath("log"),
-                        env_name='osmose_dev_dcazau'
+                        env_name=env_name
                     )
 
                     job_id = self.jb.submit_job()
@@ -834,7 +835,8 @@ class Spectrogram(Dataset):
                     preset="low",
                     mem="30G",
                     walltime="04:00:00",
-                    logdir=self.path.joinpath("log")
+                    logdir=self.path.joinpath("log"),
+                    env_name=env_name
                 )            
                 job_id = self.jb.submit_job(dependency=reshape_job_id_list)
 
