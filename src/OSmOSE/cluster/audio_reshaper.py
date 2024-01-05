@@ -201,6 +201,7 @@ def reshape(
     #     / chunk_size
     # )
     proceed = force_reshape  # Default is False
+    only_resample = False
 
     while i < len(files):
         list_seg_name = []
@@ -222,9 +223,22 @@ def reshape(
             new_samples = frames*new_sr//sample_rate
             audio_data = resample(audio_data, orig_sr=sample_rate, target_sr=new_sr)
             sample_rate = new_sr
-                    
+                
         file_duration = len(audio_data)//sample_rate
         file_type = sf.info(input_dir_path.joinpath(files[i])).subtype
+        
+        # in that case you only want to resample        
+        if int(pd.read_csv(input_dir_path.joinpath("metadata.csv"), header=0)["audio_file_origin_duration"][0]) == int(chunk_size):
+            print(f'mode only resampling , processing file: {files[i]}')
+            outfilename = output_dir_path.joinpath(files[i])            
+            sf.write(
+                outfilename, audio_data, sample_rate, format="WAV", subtype=file_type
+            )
+            os.chmod(outfilename, mode=FPDEFAULT)
+            only_resample = True
+            i+=1
+            continue
+                               
 
         if not merge_files and file_duration < chunk_size:
             raise ValueError("When not merging files, the file duration must be smaller than the target duration.")
@@ -440,82 +454,82 @@ def reshape(
         # t += 1
 
 
-
-    #! AFTER MAIN LOOP
-    while len(previous_audio_data) >= chunk_size * sample_rate:
-        output = previous_audio_data[: chunk_size * sample_rate]
-        previous_audio_data = previous_audio_data[chunk_size * sample_rate :]
-
-        outfilename = output_dir_path.joinpath(
-            f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S').replace(':','_').replace('.','_').replace('+','_')}.wav"
-        )
-        result.append(outfilename.name)
-
-        timestamp_list.append(
-            datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f%z")
-        )
-        timestamp += timedelta(seconds=chunk_size)
-
-        sf.write(outfilename, output, sample_rate, format="WAV", subtype=file_type)
-        os.chmod(outfilename, mode=FPDEFAULT)
-
-        if verbose:
-            print(
-                f"{outfilename} written! File is {(len(output)/sample_rate)} seconds long. {(len(previous_audio_data)/sample_rate)} seconds left from slicing."
-            )
-
-        i += 1
-        # t += 1
-
-    if len(previous_audio_data) > 1:
-        skip_last = False
-        match last_file_behavior:
-            case "truncate":
-                output = previous_audio_data
-                previous_audio_data = np.empty(0)
-            case "pad":
-                fill = np.zeros((chunk_size * sample_rate) - len(previous_audio_data))
-                output = np.concatenate((previous_audio_data, fill))
-                previous_audio_data = np.empty(0)
-            case "discard":
-                skip_last = True
-
-        if not skip_last:
+    if not only_resample:
+        #! AFTER MAIN LOOP
+        while len(previous_audio_data) >= chunk_size * sample_rate:
+            output = previous_audio_data[: chunk_size * sample_rate]
+            previous_audio_data = previous_audio_data[chunk_size * sample_rate :]
 
             outfilename = output_dir_path.joinpath(
-                f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S').replace('-','_').replace(':','_').replace('.','_').replace('+','_')}.wav"
+                f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S').replace(':','_').replace('.','_').replace('+','_')}.wav"
             )
             result.append(outfilename.name)
 
             timestamp_list.append(
                 datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f%z")
             )
-            timestamp += timedelta(seconds=len(output))
+            timestamp += timedelta(seconds=chunk_size)
 
             sf.write(outfilename, output, sample_rate, format="WAV", subtype=file_type)
             os.chmod(outfilename, mode=FPDEFAULT)
 
             if verbose:
                 print(
-                    f"{outfilename} written! File is {(len(output)/sample_rate)} seconds long. {len(previous_audio_data)/sample_rate} seconds left from slicing."
+                    f"{outfilename} written! File is {(len(output)/sample_rate)} seconds long. {(len(previous_audio_data)/sample_rate)} seconds left from slicing."
                 )
 
-    # in particular, it is here that we delete files that have been resampled and copied in outputdir
-    for remaining_file in [f for f in files if input_dir_path.joinpath(f).exists()]:
-        if overwrite and not implicit_output and output_dir_path == input_dir_path and last_file_behavior != "discard":
-            print(f"Deleting {remaining_file}")
-            input_dir_path.joinpath(remaining_file).unlink()
+            i += 1
+            # t += 1
 
-    input_timestamp = pd.DataFrame(
-   	    {"filename": result, "timestamp": timestamp_list}
-   	)
-    input_timestamp.sort_values(by=["timestamp"], inplace=True)
-    input_timestamp.drop_duplicates().to_csv(
-   	    output_dir_path.joinpath(f"timestamp_{batch_ind_min}.csv"),
-   	    index=False,
-   	    na_rep="NaN"
-   	)
-    os.chmod(output_dir_path.joinpath(f"timestamp_{batch_ind_min}.csv"), mode=FPDEFAULT)
+        if len(previous_audio_data) > 1:
+            skip_last = False
+            match last_file_behavior:
+                case "truncate":
+                    output = previous_audio_data
+                    previous_audio_data = np.empty(0)
+                case "pad":
+                    fill = np.zeros((chunk_size * sample_rate) - len(previous_audio_data))
+                    output = np.concatenate((previous_audio_data, fill))
+                    previous_audio_data = np.empty(0)
+                case "discard":
+                    skip_last = True
+
+            if not skip_last:
+
+                outfilename = output_dir_path.joinpath(
+                    f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S').replace('-','_').replace(':','_').replace('.','_').replace('+','_')}.wav"
+                )
+                result.append(outfilename.name)
+
+                timestamp_list.append(
+                    datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f%z")
+                )
+                timestamp += timedelta(seconds=len(output))
+
+                sf.write(outfilename, output, sample_rate, format="WAV", subtype=file_type)
+                os.chmod(outfilename, mode=FPDEFAULT)
+
+                if verbose:
+                    print(
+                        f"{outfilename} written! File is {(len(output)/sample_rate)} seconds long. {len(previous_audio_data)/sample_rate} seconds left from slicing."
+                    )
+
+        # in particular, it is here that we delete files that have been resampled and copied in outputdir
+        for remaining_file in [f for f in files if input_dir_path.joinpath(f).exists()]:
+            if overwrite and not implicit_output and output_dir_path == input_dir_path and last_file_behavior != "discard":
+                print(f"Deleting {remaining_file}")
+                input_dir_path.joinpath(remaining_file).unlink()
+
+        input_timestamp = pd.DataFrame(
+            {"filename": result, "timestamp": timestamp_list}
+        )
+        input_timestamp.sort_values(by=["timestamp"], inplace=True)
+        input_timestamp.drop_duplicates().to_csv(
+            output_dir_path.joinpath(f"timestamp_{batch_ind_min}.csv"),
+            index=False,
+            na_rep="NaN"
+        )
+        os.chmod(output_dir_path.joinpath(f"timestamp_{batch_ind_min}.csv"), mode=FPDEFAULT)
 
 
     # path_csv = output_dir_path.joinpath("timestamp.csv")
@@ -539,7 +553,7 @@ def reshape(
     #     )
     #     os.chmod(path_csv, mode=FPDEFAULT)
 
-    return [output_dir_path.joinpath(res) for res in result]
+        return [output_dir_path.joinpath(res) for res in result]
 
 
 if __name__ == "__main__":
@@ -669,5 +683,3 @@ if __name__ == "__main__":
         audio_file_overlap=args.audio_file_overlap
     )
 
-    if args.verbose:
-        print(f"All {len(files)} reshaped audio files written in {files[0].parent}.")
