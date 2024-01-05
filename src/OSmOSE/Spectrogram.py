@@ -820,13 +820,12 @@ class Spectrogram(Dataset):
             for process in processes:
                 process.join()
 
-        else:
-            if self.path_input_audio_file != self.audio_path and not self.audio_path.joinpath("timestamp.csv"):
-                # The timestamp.csv is recreated by the reshaping step. We only need to copy it if we don't reshape.
-                shutil.copy(self.path_input_audio_file.joinpath("timestamp.csv"), self.audio_path.joinpath("timestamp.csv"))
+        if self.path_input_audio_file != self.audio_path and int(self.spectro_duration) == int(audio_file_origin_duration):
+            # The timestamp.csv is recreated by the reshaping step. We only need to copy it if we don't reshape.
+            shutil.copy(self.path_input_audio_file.joinpath("timestamp.csv"), self.audio_path.joinpath("timestamp.csv"))
 
         # merge timestamps_*.csv aftewards, only after reshaping!
-        if (int(self.spectro_duration) != int(audio_file_origin_duration)) or (self.dataset_sr != origin_sr):
+        if int(self.spectro_duration) != int(audio_file_origin_duration):
             if not self.__local:
                 self.jb.build_job_file(
                     script_path=Path(inspect.getfile(merge_timestamp_csv)).resolve(),
