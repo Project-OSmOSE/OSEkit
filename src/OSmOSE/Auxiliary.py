@@ -168,11 +168,9 @@ class Auxiliary():
         self.path_output_welch = self.path.joinpath(OSMOSE_PATH.welch)
         self.era_path = os.path.join(self.path, OSMOSE_PATH.environment, 'era')
         
-        print(self.path.joinpath(OSMOSE_PATH.instrument))
         # case of a moving hydrophone: search for a gps file in OSMOSE_PATH.instrument
         for path, _, files in os.walk(self.path.joinpath(OSMOSE_PATH.instrument)):
             for f in files:
-                print(f)
                 if "gps" in f:       
                     print(f"Mobile hydrophone with gps track given in {Path(path,f)}. Now checking your timestamp format  \n")
                     self.df = pd.read_csv(Path(path,f))                
@@ -250,7 +248,7 @@ class Auxiliary():
     
 
     def join_welch(self, *, method='interpolation', time_off=np.inf, lat_off=np.inf, lon_off=np.inf,r=np.inf, variables=['u10', 'v10']):
-        
+                
         # extract timestamps of welch spectra
         fns = glob(str(self.path_output_welch.joinpath(str(self.time_resolution_welch)+'_'+str(self.sample_rate_welch), '*.npz')))
         

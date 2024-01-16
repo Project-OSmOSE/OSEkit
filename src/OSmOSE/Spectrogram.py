@@ -586,7 +586,12 @@ class Spectrogram(Dataset):
         if os.path.exists(self.path.joinpath("log")):
             shutil.rmtree(self.path.joinpath("log"))
             os.mkdir(self.path.joinpath("log"))
-                                    
+
+        # remove the welch directory if existing
+    	if self.path_output_welch.joinpath(str(int(self.spectro_duration))+'_'+str(int(self.dataset_sr))).exists():
+	    shutil.rmtree(self.path_output_welch.joinpath(str(int(self.spectro_duration))+'_'+str(int(self.dataset_sr))))
+            make_path(self.path_output_welch.joinpath(str(int(self.spectro_duration))+'_'+str(int(self.dataset_sr))), mode=DPDEFAULT)
+                        
         self.__build_path(force_init=force_init)
 
         # weird stuff currently to change soon: on datarmor you do batch processing with pbs jobs in which local instances run , which take their spectrogram parameters from the "adjust_metadata.csv". This explains why first we cannot rmtree folders adjustment_spectros , and why we exec save_spectro_metadata(True) to create it if not existing yet (rare case but if spectro generation is laucnhed without any adjustment..)
@@ -1254,7 +1259,6 @@ class Spectrogram(Dataset):
         )[np.newaxis, :]
 
         # lowest tuile resolution
-        print(f"self.save_for_LTAS {self.save_for_LTAS}")
         if not adjust and self.save_for_LTAS:
             
             # whatever the file duration , we send all welch in folder self.spectro_duration_dataset_sr  ;  OLD SOLUTION : here we use duration (read from current audio files) rather than self.spectro_duration to have the exact audio file duration; so that when different audio file durations are present, their respective welch spectra will be put into different folders
@@ -1265,7 +1269,6 @@ class Spectrogram(Dataset):
             output_matrix = output_path_welch_resolution.joinpath(
                 output_file.name
             ).with_suffix(".npz")
-            print(f"output_matrix {output_matrix}")
             
             if not output_matrix.exists():
                 np.savez(
@@ -1308,7 +1311,6 @@ class Spectrogram(Dataset):
          
         
         # highest tuile resolution
-        print(f"not adjust and self.save_for_LTAS and (nber_tiles_lowest_zoom_level>1) {not adjust and self.save_for_LTAS and (nber_tiles_lowest_zoom_level>1)}")
         if False:
             if not adjust and self.save_for_LTAS and (nber_tiles_lowest_zoom_level>1):
 
