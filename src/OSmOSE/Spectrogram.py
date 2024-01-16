@@ -1254,16 +1254,18 @@ class Spectrogram(Dataset):
         )[np.newaxis, :]
 
         # lowest tuile resolution
+        print(f"self.save_for_LTAS {self.save_for_LTAS}")
         if not adjust and self.save_for_LTAS:
             
             # whatever the file duration , we send all welch in folder self.spectro_duration_dataset_sr  ;  OLD SOLUTION : here we use duration (read from current audio files) rather than self.spectro_duration to have the exact audio file duration; so that when different audio file durations are present, their respective welch spectra will be put into different folders
             output_path_welch_resolution = self.path_output_welch.joinpath(str(int(self.spectro_duration))+'_'+str(int(self.dataset_sr)))
             if not output_path_welch_resolution.exists():
                 make_path(output_path_welch_resolution, mode=DPDEFAULT)
-                            
+                                        
             output_matrix = output_path_welch_resolution.joinpath(
                 output_file.name
             ).with_suffix(".npz")
+            print(f"output_matrix {output_matrix}")
             
             if not output_matrix.exists():
                 np.savez(
@@ -1306,26 +1308,28 @@ class Spectrogram(Dataset):
          
         
         # highest tuile resolution
-        if not adjust and self.save_for_LTAS and (nber_tiles_lowest_zoom_level>1):
+        print(f"not adjust and self.save_for_LTAS and (nber_tiles_lowest_zoom_level>1) {not adjust and self.save_for_LTAS and (nber_tiles_lowest_zoom_level>1)}")
+        if False:
+            if not adjust and self.save_for_LTAS and (nber_tiles_lowest_zoom_level>1):
 
-            # whatever the file duration , we send all welch in folder self.spectro_duration_dataset_sr  ;  OLD SOLUTION : here we use duration (read from current audio files) rather than self.spectro_duration to have the exact audio file duration; so that when different audio file durations are present, their respective welch spectra will be put into different folders
-            output_path_welch_resolution = self.path_output_welch.joinpath(str(int(self.spectro_duration))+'_'+str(int(self.dataset_sr)))
-            if not output_path_welch_resolution.exists():
-                make_path(output_path_welch_resolution, mode=DPDEFAULT)
-                                                    
-            output_matrix = output_path_welch_resolution.joinpath(
-                output_file.name
-            ).with_suffix(".npz")
-            
-            if not output_matrix.exists():
-                np.savez(
-                    output_matrix,
-                    Sxx=Sxx_int.mean(axis=1),
-                    Freq=Freq,
-                    Time=current_timestamp,
-                )
+                # whatever the file duration , we send all welch in folder self.spectro_duration_dataset_sr  ;  OLD SOLUTION : here we use duration (read from current audio files) rather than self.spectro_duration to have the exact audio file duration; so that when different audio file durations are present, their respective welch spectra will be put into different folders
+                output_path_welch_resolution = self.path_output_welch.joinpath(str(int(self.spectro_duration))+'_'+str(int(self.dataset_sr)))
+                if not output_path_welch_resolution.exists():
+                    make_path(output_path_welch_resolution, mode=DPDEFAULT)
 
-                os.chmod(output_matrix, mode=FPDEFAULT)  
+                output_matrix = output_path_welch_resolution.joinpath(
+                    output_file.name
+                ).with_suffix(".npz")
+
+                if not output_matrix.exists():
+                    np.savez(
+                        output_matrix,
+                        Sxx=Sxx_int.mean(axis=1),
+                        Freq=Freq,
+                        Time=current_timestamp,
+                    )
+
+                    os.chmod(output_matrix, mode=FPDEFAULT)  
                 
                 
 
@@ -1527,7 +1531,7 @@ class Spectrogram(Dataset):
                 current_matrix=np.load(file_npz,allow_pickle=True)
                 os.remove(file_npz)
                 if ct==0:
-                    Sxx = np.empty(current_matrix['Sxx'].shape)
+                    Sxx = np.empty((1,current_matrix['Sxx'].shape[1]))
                 
                 Sxx = np.vstack((Sxx, current_matrix['Sxx']))
                 Time.append( current_matrix['Time'] )       
@@ -1842,4 +1846,3 @@ class Spectrogram(Dataset):
             else:
                 plt.close()
                 
-
