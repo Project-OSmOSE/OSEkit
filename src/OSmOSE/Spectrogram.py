@@ -588,8 +588,8 @@ class Spectrogram(Dataset):
             os.mkdir(self.path.joinpath("log"))
 
         # remove the welch directory if existing
-    	if self.path_output_welch.joinpath(str(int(self.spectro_duration))+'_'+str(int(self.dataset_sr))).exists():
-	    shutil.rmtree(self.path_output_welch.joinpath(str(int(self.spectro_duration))+'_'+str(int(self.dataset_sr))))
+        if self.path_output_welch.joinpath(str(int(self.spectro_duration))+'_'+str(int(self.dataset_sr))).exists():
+            shutil.rmtree(self.path_output_welch.joinpath(str(int(self.spectro_duration))+'_'+str(int(self.dataset_sr))))
             make_path(self.path_output_welch.joinpath(str(int(self.spectro_duration))+'_'+str(int(self.dataset_sr))), mode=DPDEFAULT)
                         
         self.__build_path(force_init=force_init)
