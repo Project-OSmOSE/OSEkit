@@ -5,6 +5,7 @@ import soundfile as sf
 import shutil
 import csv
 from OSmOSE.config import OSMOSE_PATH
+from scipy.signal import chirp
 
 def capture_csv(monkeypatch):
     pass
@@ -36,25 +37,31 @@ def input_dataset(tmp_path: Path):
     rate = 44100  # samples per second
     duration = 3
     rng = np.random.default_rng()
-
+    
     for i in range(10):
-        data = rng.standard_normal(duration * rate)
+        if i==0:# make first signal deterministic
+            t = np.linspace(0, duration, int(duration * rate))
+            data = chirp(t, f0=6, f1=1, t1=duration, method='linear')            
+        else:
+            data = rng.standard_normal(duration * rate)
+            
         data[data > 1] = 1
         data[data < -1] = -1
-        wav_file = orig_audio_dir.joinpath(f"test-{i}.wav")
+        wav_file = orig_audio_dir.joinpath(f"20220101_1200{str(3*i).zfill(2)}.wav")
         sf.write(wav_file, data, rate, format="WAV", subtype="FLOAT")
 
-        with open(
-            orig_audio_dir.joinpath("timestamp.csv"), "a", newline=""
-        ) as timestampf:
-            writer = csv.writer(timestampf)
-            writer.writerow(
-                [
-                    wav_file.name,
-                    f"2022-01-01T12:00:{str(3*i).zfill(2)}.000Z",
-                    #"UTC",
-                ]
-            )
+        # with open(
+        #     orig_audio_dir.joinpath("timestamp.csv"), "a", newline=""
+        # ) as timestampf:
+        #     writer = csv.writer(timestampf)
+        #     if i==0:
+        #         writer.writerow(["filename","timestamp"])
+        #     writer.writerow(
+        #         [
+        #             wav_file.name,
+        #             f"2022-01-01T12:00:{str(3*i).zfill(2)}.000Z",
+        #         ]
+        #     )
 
     yield dict(
         zip(
@@ -151,20 +158,19 @@ def input_reshape(input_dir: Path):
         wav_file = input_dir.joinpath(f"test{i}.wav")
         shutil.copyfile(input_dir.joinpath("test.wav"), wav_file)
 
-    with open(input_dir.joinpath("timestamp.csv"), "w", newline="") as timestampf:
-        writer = csv.writer(timestampf)
-        writer.writerow(
-            ["test.wav", "2022-01-01T11:59:57.000Z"]#, "UTC"]
-        )
-        writer.writerows(
-            [
-                [
-                    f"test{i}.wav",
-                    f"2022-01-01T12:00:{str(3*i).zfill(2)}.000Z",
-                    #"UTC",
-                ]
-                for i in range(9)
-            ]
-        )
-
     return input_dir
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

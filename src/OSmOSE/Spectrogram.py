@@ -489,7 +489,7 @@ class Spectrogram(Dataset):
         Nbwin = int((Nbech - self.window_size) / Noffset)
         Freq = np.fft.rfftfreq(self.nfft, d=1 / self.dataset_sr)
         Time = np.linspace(0, Nbech / self.dataset_sr, Nbwin)
-        
+
         temporal_resolution = round(Time[1] - Time[0], 3)   
         frequency_resolution  = round(Freq[1] - Freq[0], 3)
         
