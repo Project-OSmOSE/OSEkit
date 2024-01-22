@@ -50,19 +50,6 @@ def input_dataset(tmp_path: Path):
         wav_file = orig_audio_dir.joinpath(f"20220101_1200{str(3*i).zfill(2)}.wav")
         sf.write(wav_file, data, rate, format="WAV", subtype="FLOAT")
 
-        # with open(
-        #     orig_audio_dir.joinpath("timestamp.csv"), "a", newline=""
-        # ) as timestampf:
-        #     writer = csv.writer(timestampf)
-        #     if i==0:
-        #         writer.writerow(["filename","timestamp"])
-        #     writer.writerow(
-        #         [
-        #             wav_file.name,
-        #             f"2022-01-01T12:00:{str(3*i).zfill(2)}.000Z",
-        #         ]
-        #     )
-
     yield dict(
         zip(
             ["main_dir", "main_audio_dir", "orig_audio_dir", "process_dir"],
