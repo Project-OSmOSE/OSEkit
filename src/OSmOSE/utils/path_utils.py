@@ -2,6 +2,8 @@ from pathlib import Path
 from OSmOSE.config import *
 import os
 import sys
+
+
 def make_path(path: Path, *, mode=DPDEFAULT) -> Path:
     """Create a path folder by folder with correct permissions.
 

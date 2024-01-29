@@ -58,13 +58,25 @@ def list_not_built_datasets(datasets_folder_path: str) -> None:
         dataset_directory = ds_folder.joinpath(dataset_directory)
         if os.access(dataset_directory, os.R_OK):
             metadata_path = next(
-                dataset_directory.joinpath(OSMOSE_PATH.raw_audio).rglob("metadata.csv"), None
+                dataset_directory.joinpath(OSMOSE_PATH.raw_audio).rglob("metadata.csv"),
+                None,
             )
             timestamp_path = next(
-                dataset_directory.joinpath(OSMOSE_PATH.raw_audio).rglob("timestamp.csv"), None
+                dataset_directory.joinpath(OSMOSE_PATH.raw_audio).rglob(
+                    "timestamp.csv"
+                ),
+                None,
             )
-            
-            if not(metadata_path and metadata_path.exists() and timestamp_path and timestamp_path.exists() and not dataset_directory.joinpath(OSMOSE_PATH.raw_audio,"original").exists()):
+
+            if not (
+                metadata_path
+                and metadata_path.exists()
+                and timestamp_path
+                and timestamp_path.exists()
+                and not dataset_directory.joinpath(
+                    OSMOSE_PATH.raw_audio, "original"
+                ).exists()
+            ):
                 list_not_built_datasets.append(dataset_directory)
         else:
             list_unknown_datasets.append(dataset_directory)
@@ -149,7 +161,7 @@ def read_config(raw_config: Union[str, dict, Path]) -> NamedTuple:
 #     return template(**dictionary)
 
 
-def read_header(file: str) -> Tuple[int, float, int, int,int]:
+def read_header(file: str) -> Tuple[int, float, int, int, int]:
     """Read the first bytes of a wav file and extract its characteristics.
     At the very least, only the first 44 bytes are read. If the `data` chunk is not right after the header chunk,
     the subsequent chunks will be read until the `data` chunk is found. If there is no `data` chunk, all the file will be read.
@@ -201,14 +213,14 @@ def read_header(file: str) -> Tuple[int, float, int, int,int]:
         sampwidth = (sampwidth + 7) // 8
         framesize = channels * sampwidth
         frames = subchunk2size / framesize
-        
+
         # if (size - 72) > subchunk2size:
         #     print(
         #         f"Warning : the size indicated in the header is not the same as the actual file size. This might mean that the file is truncated or otherwise corrupt.\
         #         \nSupposed size: {size} bytes \nActual size: {subchunk2size} bytes."
         #     )
 
-        return samplerate, frames, sampwidth,channels, size
+        return samplerate, frames, sampwidth, channels, size
 
 
 def safe_read(
@@ -281,7 +293,7 @@ def check_n_files(
     if n > len(file_list):
         n = len(file_list)
 
-    #if "float" in str(sf.info(file_list[0])): # to understand
+    # if "float" in str(sf.info(file_list[0])): # to understand
     bad_files = []
     print(f"Testing whether samples are within [-1,1] for the following audio files:")
     for audio_file in random.sample(file_list, n):
@@ -294,9 +306,6 @@ def check_n_files(
     print(f"\n")
 
     return len(bad_files)
-
-    
-    
 
 
 # Will move to pathutils
@@ -321,11 +330,12 @@ def make_path(path: Path, *, mode=DPDEFAULT) -> Path:
 
     return path
 
+
 def set_umask():
     os.umask(0o002)
 
 
-def get_files(path,extensions):
+def get_files(path, extensions):
     all_files = []
     for ext in extensions:
         all_files.extend(Path(path).glob(ext))
@@ -334,7 +344,9 @@ def get_files(path,extensions):
 
 # TO DO : function not optimized in case you use it in a for loop , because it will reload .csv for each audiofile , should
 # be able to take as input the already loaded timestamps
-def get_timestamp_of_audio_file(path_timestamp_file:Path,audio_file_name:str) -> str:
+def get_timestamp_of_audio_file(path_timestamp_file: Path, audio_file_name: str) -> str:
     timestamps = pd.read_csv(path_timestamp_file)
-    # get timestamp of the audio file     
-    return str(timestamps["timestamp"][timestamps["filename"] == audio_file_name].values[0])
+    # get timestamp of the audio file
+    return str(
+        timestamps["timestamp"][timestamps["filename"] == audio_file_name].values[0]
+    )

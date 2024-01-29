@@ -6,7 +6,6 @@ This code will show you how to deal with anomalies in raw data or their metadata
 """
 
 
-
 # %%
 # Preambule : what is called an anomaly ?
 # --------------------------------------------
@@ -36,16 +35,16 @@ This code will show you how to deal with anomalies in raw data or their metadata
 # %%
 # Heavy scan
 
-# - it will load all audio files and collect all 
+# - it will load all audio files and collect all
 # - run with pbs jobs
 # - perform all tests
 
 # %%
 # Light anomaly tests
 
-# 4. len(np.unique) > 1 sur duration (round to second) 
-# 5. len(np.unique) > 1 sur sample_rate 
-# 6. len(np.unique) > 1 sur inter_duration (round to second) 
+# 4. len(np.unique) > 1 sur duration (round to second)
+# 5. len(np.unique) > 1 sur sample_rate
+# 6. len(np.unique) > 1 sur inter_duration (round to second)
 
 # %%
 # Strong anomaly tests
@@ -57,7 +56,7 @@ This code will show you how to deal with anomalies in raw data or their metadata
 
 # %%
 # Strong anomaly test failing, the following operations are done:
-    
+
 # - interrupt upload
 # - print the failing test(s) and the filename(s) concerned
 # - block the use of force_upload
@@ -71,8 +70,6 @@ This code will show you how to deal with anomalies in raw data or their metadata
 # - print the failing test(s) and the filename(s) concerned
 # - suggest using force_upload
 # - orient the user to the notebook «visualize and understand my audio metadata»
-
-
 
 
 # %%
@@ -91,19 +88,21 @@ path_osmose_dataset = "/home6/cazaudo/Bureau/osmose_sample_datasets/"
 dataset_name = "Cetiroise"
 campaign_name = ""
 
-gps_coordinates = (48.44,-5.05)
+gps_coordinates = (48.44, -5.05)
 depth = 20
 
-dataset = Dataset(dataset_path = Path(path_osmose_dataset, campaign_name, dataset_name), gps_coordinates = gps_coordinates, depth = depth)
+dataset = Dataset(
+    dataset_path=Path(path_osmose_dataset, campaign_name, dataset_name),
+    gps_coordinates=gps_coordinates,
+    depth=depth,
+)
 
 #####################################################
 # When trying to build this dataset, it will not work directly.
-dataset.build(date_template = "%Y_%m_%d_%H_%M_%S" )
+dataset.build(date_template="%Y_%m_%d_%H_%M_%S")
 
 #####################################################
 # The variable `force_upload` allows you to upload your dataset on the platform despite detected anomalies.
 force_upload = True
 
-dataset.build(date_template = "%Y_%m_%d_%H_%M_%S" , force_upload = force_upload)
-
-
+dataset.build(date_template="%Y_%m_%d_%H_%M_%S", force_upload=force_upload)
