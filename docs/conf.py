@@ -13,58 +13,68 @@
 from pathlib import Path
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../src/'))
+
+sys.path.insert(0, os.path.abspath("../src/"))
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'OSmOSE toolkit'
-copyright = '2023, OSmOSE team'
-author = 'OSmOSE team'
+project = "OSmOSE toolkit"
+copyright = "2023, OSmOSE team"
+author = "OSmOSE team"
 
 
 add_module_names = False
 
-#		'myst_parser',
+# 		'myst_parser',
 
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = [  'sphinx_gallery.gen_gallery',
-	        'sphinx.ext.autodoc',
-               'sphinx.ext.doctest',
-               'sphinx.ext.intersphinx',
-		'sphinx.ext.autosectionlabel',
-	      'sphinx_copybutton'
-               #'sphinx_design',
-              ]
+extensions = [
+    "sphinx_gallery.gen_gallery",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.doctest",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.autosectionlabel",
+    "sphinx_copybutton"
+    #'sphinx_design',
+]
 
-from sphinx_gallery.sorting import ExplicitOrder # NOQA
-from sphinx_gallery.sorting import FileNameSortKey  # see other ways to sort examples within a gallery but cannot set an explicit list https://sphinx-gallery.github.io/stable/gen_modules/sphinx_gallery.sorting.html#sphinx_gallery.sorting.ExplicitOrder
+from sphinx_gallery.sorting import ExplicitOrder  # NOQA
+from sphinx_gallery.sorting import (
+    FileNameSortKey,
+)  # see other ways to sort examples within a gallery but cannot set an explicit list https://sphinx-gallery.github.io/stable/gen_modules/sphinx_gallery.sorting.html#sphinx_gallery.sorting.ExplicitOrder
+
 sphinx_gallery_conf = {
-     'examples_dirs': ['../basic_use_cases','../advanced_use_cases'],   # path to your example scripts
-     'gallery_dirs': ['gallery_basic_use_cases','gallery_advanced_use_cases'],  
-     'filename_pattern': '^((?!skip_).)*$',
-     'subsection_order': ExplicitOrder(['../basic_use_cases/Dataset','../basic_use_cases/Spectrogram','../basic_use_cases/Auxiliary','../advanced_use_cases/Soundscape','../advanced_use_cases/Weather']),
-     'within_subsection_order': FileNameSortKey,	
+    "examples_dirs": [
+        "../basic_use_cases",
+        "../advanced_use_cases",
+    ],  # path to your example scripts
+    "gallery_dirs": ["gallery_basic_use_cases", "gallery_advanced_use_cases"],
+    "filename_pattern": "^((?!skip_).)*$",
+    "subsection_order": ExplicitOrder(
+        [
+            "../basic_use_cases/Dataset",
+            "../basic_use_cases/Spectrogram",
+            "../basic_use_cases/Auxiliary",
+            "../advanced_use_cases/Soundscape",
+            "../advanced_use_cases/Weather",
+        ]
+    ),
+    "within_subsection_order": FileNameSortKey,
 }
-    
-
-
-
 
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
-
-
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -73,10 +83,10 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # a list of builtin themes.
 #
 
-#html_theme = "alabaster"
+# html_theme = "alabaster"
 import sphinx_rtd_theme
 
-html_theme = 'sphinx_rtd_theme'
+html_theme = "sphinx_rtd_theme"
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 
@@ -85,11 +95,11 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # documentation.
 #
 html_theme_options = {
-    'logo_only': True,
-    'style_nav_header_background': 'white',
-    'display_version': True,
-    'globaltoc_collapse': True,
-    'globaltoc_maxdepth': None,
+    "logo_only": True,
+    "style_nav_header_background": "white",
+    "display_version": True,
+    "globaltoc_collapse": True,
+    "globaltoc_maxdepth": None,
 }
 # html_theme_options = {'collapse_navigation': False, 'logo_only': False}
 using_rtd_theme = True
@@ -97,16 +107,10 @@ using_rtd_theme = True
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 
-html_logo = '_static/osmose_logo.png'
-
-
-
-
-
-
+html_logo = "_static/osmose_logo.png"
 
 
 # nb_execution_mode = "cache"
@@ -117,7 +121,7 @@ exclude_patterns = ["_build", "**.ipynb_checkpoints"]
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-#html_static_path = ["_static"]
+# html_static_path = ["_static"]
 
 html_css_files = [
     "css/custom.css",

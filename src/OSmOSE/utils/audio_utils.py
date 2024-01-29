@@ -2,8 +2,10 @@ import struct
 from OSmOSE.config import SUPPORTED_AUDIO_FORMAT
 from typing import Tuple
 
+
 def is_audio(filename):
     return any([filename.endswith(ext) for ext in SUPPORTED_AUDIO_FORMAT])
+
 
 def read_header(file: str) -> Tuple[int, float, int, int]:
     """Read the first bytes of a wav file and extract its characteristics.
