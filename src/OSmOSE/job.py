@@ -15,7 +15,23 @@ from importlib import resources
 from OSmOSE.utils.core_utils import read_config, set_umask
 from OSmOSE.config import *
 
-JOB_CONFIG_TEMPLATE = namedtuple("job_config", ["job_scheduler","env_script","env_name","queue","nodes","walltime","ncpus","mem","outfile","errfile"])
+JOB_CONFIG_TEMPLATE = namedtuple(
+    "job_config",
+    [
+        "job_scheduler",
+        "env_script",
+        "env_name",
+        "queue",
+        "nodes",
+        "walltime",
+        "ncpus",
+        "mem",
+        "outfile",
+        "errfile",
+    ],
+)
+
+
 class Job_builder:
     def __init__(self, config_file: str = None):
         if config_file is None:
@@ -72,14 +88,19 @@ class Job_builder:
     def finished_jobs(self):
         self.update_job_status()
         return self.__finished_jobs
-    
+
     @property
     def cancelled_jobs(self):
         return self.__cancelled_jobs
-    
+
     @property
     def all_jobs(self):
-        return self.prepared_jobs + self.ongoing_jobs + self.finished_jobs + self.cancelled_jobs
+        return (
+            self.prepared_jobs
+            + self.ongoing_jobs
+            + self.finished_jobs
+            + self.cancelled_jobs
+        )
 
     # READ-WRITE properties
     @property
@@ -202,7 +223,7 @@ class Job_builder:
         mem: str = None,
         outfile: str = None,
         errfile: str = None,
-        logdir: Path = None
+        logdir: Path = None,
     ) -> str:
         """Build a job file corresponding to your job scheduler.
 
@@ -275,11 +296,10 @@ class Job_builder:
         else:
             logdir.mkdir(mode=DPDEFAULT, exist_ok=True)
             jobdir = logdir
-        
 
         job_file = ["#!/bin/bash"]
 
-        date_id = datetime.now().strftime('%H-%M-%S')
+        date_id = datetime.now().strftime("%H-%M-%S")
         # region Build header
         #! HEADER
         # Getting all header variables from the parameters or the configuration defaults
@@ -382,7 +402,9 @@ class Job_builder:
         job_file.append(f"python {script_path} {script_args}")
 
         #! FOOTER
-        outfilename = f"{jobname}_{date_id}_{job_scheduler}_{len(os.listdir(jobdir))}.pbs"
+        outfilename = (
+            f"{jobname}_{date_id}_{job_scheduler}_{len(os.listdir(jobdir))}.pbs"
+        )
 
         job_file_path = jobdir.joinpath(outfilename)
 
@@ -399,7 +421,12 @@ class Job_builder:
         except ValueError:
             pass
 
-        job_info = {"job_name": jobname, "path": job_file_path, "outfile": outfile, "errfile": errfile}
+        job_info = {
+            "job_name": jobname,
+            "path": job_file_path,
+            "outfile": outfile,
+            "errfile": errfile,
+        }
 
         self.__prepared_jobs.append(job_info)
 
@@ -438,13 +465,15 @@ class Job_builder:
         # TODO: Think about the issue when a job have too many dependencies and workaround.
 
         for i, jobinfo in enumerate(jobinfo_list):
-            #open(job_dir.joinpath(f"tmp_{jobarray_uuid}_{i}.joblock"), "w").close() # Create a temp file with a unique uuid
+            # open(job_dir.joinpath(f"tmp_{jobarray_uuid}_{i}.joblock"), "w").close() # Create a temp file with a unique uuid
             if "torque" in str(jobinfo["path"]).lower():
-                cmd = ["qsub", f"-W depend=afterok:{dependency}", str(jobinfo["path"])] if dependency else ["qsub", str(jobinfo["path"])]
+                cmd = (
+                    ["qsub", f"-W depend=afterok:{dependency}", str(jobinfo["path"])]
+                    if dependency
+                    else ["qsub", str(jobinfo["path"])]
+                )
                 jobid = (
-                    subprocess.run(
-                        cmd, stdout=subprocess.PIPE
-                    )
+                    subprocess.run(cmd, stdout=subprocess.PIPE)
                     .stdout.decode("utf-8")
                     .rstrip("\n")
                 )
@@ -494,13 +523,19 @@ class Job_builder:
         if len(self.prepared_jobs) > 0:
             res += "==== PREPARED JOBS ====\n\n"
         for job_info in self.prepared_jobs:
-            created_at = datetime.strptime(today + job_info["outfile"].stem[-11:-3], "%d%m%y%H-%M-%S")
-            res += f"{job_info['job_name']} (created at {created_at}) : ready to start.\n"
+            created_at = datetime.strptime(
+                today + job_info["outfile"].stem[-11:-3], "%d%m%y%H-%M-%S"
+            )
+            res += (
+                f"{job_info['job_name']} (created at {created_at}) : ready to start.\n"
+            )
 
         if len(self.ongoing_jobs) > 0:
             res += "==== ONGOING JOBS ====\n\n"
         for job_info in self.ongoing_jobs:
-            created_at = datetime.strptime(today + job_info["outfile"].stem[-11:-3], "%d%m%y%H-%M-%S")
+            created_at = datetime.strptime(
+                today + job_info["outfile"].stem[-11:-3], "%d%m%y%H-%M-%S"
+            )
             delta = datetime.now() - created_at
             strftime = f"{'%H hours, ' if delta.seconds >= 3600 else ''}{'%M minutes and ' if delta.seconds >= 60 else ''}%S seconds"
             elapsed_time = datetime.strftime(epoch + delta, strftime)
@@ -509,12 +544,19 @@ class Job_builder:
         if len(self.finished_jobs) > 0:
             res += "==== FINISHED JOBS ====\n\n"
         for job_info in self.finished_jobs:
-            created_at = datetime.strptime(today + job_info["outfile"].stem[-11:-3], "%d%m%y%H-%M-%S")
+            created_at = datetime.strptime(
+                today + job_info["outfile"].stem[-11:-3], "%d%m%y%H-%M-%S"
+            )
 
             if not job_info["outfile"].exists():
                 res += f"{job_info['job_name']} (created at {created_at}) : Output file still writing..."
             else:
-                delta = datetime.fromtimestamp(time.mktime(time.localtime(job_info["outfile"].stat().st_ctime))) - created_at
+                delta = (
+                    datetime.fromtimestamp(
+                        time.mktime(time.localtime(job_info["outfile"].stat().st_ctime))
+                    )
+                    - created_at
+                )
                 strftime = f"{'%H hours, ' if delta.seconds >= 3600 else ''}{'%M minutes and ' if delta.seconds >= 60 else ''}%S seconds"
                 elapsed_time = datetime.strftime(epoch + delta, strftime)
                 res += f"{job_info['job_name']} (created at {created_at}) : finished in {elapsed_time}.\n"
@@ -522,11 +564,15 @@ class Job_builder:
         if len(self.cancelled_jobs) > 0:
             res += "==== CANCELLED JOBS ====\n\n"
             for jobinfo in self.cancelled_jobs:
-                res+= f"{jobinfo['job_name']}"
+                res += f"{jobinfo['job_name']}"
         print(res)
 
     def read_output_file(
-        self, *, job_name: str = None, outtype: Literal["out", "err"] = "out", job_file_name: str = None
+        self,
+        *,
+        job_name: str = None,
+        outtype: Literal["out", "err"] = "out",
+        job_file_name: str = None,
     ):
         """Read the content of a specific job output file, or the first in the finished list.
 
@@ -545,13 +591,15 @@ class Job_builder:
         if not job_file_name:
             job_id = 0
             if job_name:
-                job_id = get_dict_index_in_list(self.finished_jobs, "job_name", job_name.rstrip())
+                job_id = get_dict_index_in_list(
+                    self.finished_jobs, "job_name", job_name.rstrip()
+                )
             elif len(self.finished_jobs) == 0:
                 print(
                     f"There are no finished jobs in this context. Wait until the {len(self.ongoing_jobs)} ongoing jobs are done before reading the output. Otherwise, you can specify which file you wish to read."
                 )
                 return
-            
+
             job_file_name = (
                 self.finished_jobs[job_id]["outfile"]
                 if outtype == "out"
@@ -561,12 +609,16 @@ class Job_builder:
         with open(job_file_name, "r") as f:
             print("".join(f.readlines()))
 
-    def delete_job(self, job_identifier:str):
+    def delete_job(self, job_identifier: str):
         try:
-            job_id = get_dict_index_in_list(self.ongoing_jobs, "job_name", job_identifier.rstrip())
+            job_id = get_dict_index_in_list(
+                self.ongoing_jobs, "job_name", job_identifier.rstrip()
+            )
         except ValueError:
-            job_id = get_dict_index_in_list(self.ongoing_jobs, "id", job_identifier.rstrip())
-        
+            job_id = get_dict_index_in_list(
+                self.ongoing_jobs, "id", job_identifier.rstrip()
+            )
+
         jobinfo = self.ongoing_jobs[job_id]
         if "Torque" in str(jobinfo["path"]):
             subprocess.run(["qdel", jobinfo["id"]])
@@ -574,11 +626,11 @@ class Job_builder:
             subprocess.run(["scancel", jobinfo["id"]])
         self.__ongoing_jobs.remove(jobinfo)
         self.__cancelled_jobs.append(jobinfo)
-        
+
 
 def get_dict_index_in_list(item_list: list, key: str, value: any) -> int:
     for i, d in enumerate(item_list):
         if d[key] == value:
             return i
-    
+
     raise ValueError(f"The value {value} appears nowhere in the {key} list.")

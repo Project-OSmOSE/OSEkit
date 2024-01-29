@@ -6,7 +6,6 @@ This code will show you how to format your raw audio data into a OSmOSE dataset,
 """
 
 
-
 # %%
 # Preambule
 # ------------------------
@@ -14,16 +13,16 @@ This code will show you how to format your raw audio data into a OSmOSE dataset,
 
 
 # %%
-# How should I prepare my raw data ? 
+# How should I prepare my raw data ?
 # -------------------------------------
-# Before you can build your dataset: 
+# Before you can build your dataset:
 #
-# - choose a dataset name (should not contain any special character, including '-'⁾ ; 
-# - create the folder ``{local_working_dir}/dataset/{dataset_name}``, or ``{local_working_dir}/dataset/{campaign_name}/{dataset_name}`` in case your dataset is part of a recording campaign; 
-# - place in this folder your audio data, they can be individual files or contain within multiple sub-folders ; 
+# - choose a dataset name (should not contain any special character, including '-'⁾ ;
+# - create the folder ``{local_working_dir}/dataset/{dataset_name}``, or ``{local_working_dir}/dataset/{campaign_name}/{dataset_name}`` in case your dataset is part of a recording campaign;
+# - place in this folder your audio data, they can be individual files or contain within multiple sub-folders ;
 
-# %% 
-# How my timestamps are set ? 
+# %%
+# How my timestamps are set ?
 # --------------------------------------
 # The two following solutions are possible depending on whether timestamps are contained in the audio filenames:
 #
@@ -45,16 +44,16 @@ from OSmOSE import Dataset
 # You first have to set the `path_osmose_dataset`, which is where your dataset named `dataset_name` should be ; unless it is part of a recording campaign named `campaign_name`, your dataset should then be placed in `{path_osmose_dataset}/{campaign_name}/{dataset_name}`.
 path_osmose_dataset = "/home6/cazaudo/Bureau/osmose_sample_datasets/"
 dataset_name = "SPM"
-campaign_name = "" # default value ; so no need to define it if your dataset is not part of a campaign
+campaign_name = ""  # default value ; so no need to define it if your dataset is not part of a campaign
 
 #####################################################
-# In our dataset, we have made mandatory the setting of two metadata variables, namely `gps_coordinates` (tuple of (latitude , longitude) coordinates in decimal degree) and `depth` (positive integer in meter) of the hydrophone. 
-gps_coordinates = (46.89,-56.54)
+# In our dataset, we have made mandatory the setting of two metadata variables, namely `gps_coordinates` (tuple of (latitude , longitude) coordinates in decimal degree) and `depth` (positive integer in meter) of the hydrophone.
+gps_coordinates = (46.89, -56.54)
 depth = 20
 
 #####################################################
 # Before building your dataset, let's review two optional parameters. If the timezone of your data happens to be different from the different value UTC+00:00, use the input argument `timezone` of :class:`OSmOSE.Dataset.Dataset` to make your timestamps timezone-aware, following the str format `"+02:00"` for UTC+02:00 for example.
-timezone = "-03:00" 
+timezone = "-03:00"
 
 #####################################################
 # The variable `date_template` should be used to help us extracting the timestamp from your audio filenames. The default template is "%Y%m%d_%H%M%S", if you have a different one set its value in `date_template` with the same strftime format.
@@ -62,11 +61,10 @@ date_template = "%Y_%m_%dT%H:%M:%S"
 
 #####################################################
 # Run the method :meth:`OSmOSE.Dataset.Dataset.build` of the class :class:`OSmOSE.Dataset.Dataset`, and that's it your dataset is now OSmOSE compatible !
-dataset = Dataset(dataset_path = Path(path_osmose_dataset, campaign_name, dataset_name), gps_coordinates = gps_coordinates, depth = depth, timezone = timezone)
-dataset.build(date_template = date_template)
-
-
-
-
-
-
+dataset = Dataset(
+    dataset_path=Path(path_osmose_dataset, campaign_name, dataset_name),
+    gps_coordinates=gps_coordinates,
+    depth=depth,
+    timezone=timezone,
+)
+dataset.build(date_template=date_template)

@@ -7,6 +7,7 @@ from OSmOSE.config import OSMOSE_PATH
 import numpy as np
 import soundfile as sf
 
+
 @pytest.mark.unit
 @pytest.mark.filterwarnings("ignore:3 NaN detected")
 def test_safe_read(input_dir):
@@ -31,6 +32,7 @@ def test_safe_read(input_dir):
 
     assert np.array_equal(expected, safe_read(input_dir.joinpath("nan.wav"))[0])
 
+
 @pytest.mark.unit
 def test_read_header(input_dir):
     sr = 44100
@@ -42,4 +44,3 @@ def test_read_header(input_dir):
     assert (sr, frames, sampwidth, channels, size) == read_header(
         input_dir.joinpath("test.wav")
     )
-

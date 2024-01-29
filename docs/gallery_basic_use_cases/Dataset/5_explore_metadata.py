@@ -20,7 +20,11 @@ audio_duration = 21600
 
 #####################################################
 # Load as dataframe your metadata
-metadata_dataset = pd.read_csv(Path(path_osmose_dataset, campaign_name, dataset_name).joinpath("data","audio",f"{audio_duration}_{dataset_sr}","file_metadata.csv"))
+metadata_dataset = pd.read_csv(
+    Path(path_osmose_dataset, campaign_name, dataset_name).joinpath(
+        "data", "audio", f"{audio_duration}_{dataset_sr}", "file_metadata.csv"
+    )
+)
 
 
 #####################################################
@@ -30,5 +34,4 @@ metadata_dataset.describe()
 
 #####################################################
 # Plot histogram of durations
-metadata_dataset['duration'].hist()
-
+metadata_dataset["duration"].hist()

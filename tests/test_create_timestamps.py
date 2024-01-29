@@ -2,6 +2,7 @@ import OSmOSE.timestamps as tm
 import re
 import pytest
 
+
 @pytest.mark.unit
 def test_convert_template_to_re():
     raw_all = "".join(tm.__converter.keys())
@@ -17,4 +18,3 @@ def test_convert_template_to_re():
     assert re.search(simple_res, invalid_simple_text) == None
     complex_res = tm.convert_template_to_re(complex_template)
     assert re.search(complex_res, complex_text)[0] == "y_2017-m_02, 11AM%"
-
