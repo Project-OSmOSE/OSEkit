@@ -164,8 +164,8 @@ get_cfosat_time = lambda x: calendar.timegm(time.strptime(x, "%Y%m%dT%H%M%S"))
 get_datarmor_time = lambda x: calendar.timegm(
     time.strptime(x, "%Y-%m-%dT%H:%M:%S.000%z")
 )
-get_era_time = (
-    lambda x: calendar.timegm(x.timetuple()) if isinstance(x, datetime.datetime) else x
+get_era_time = lambda x: (
+    calendar.timegm(x.timetuple()) if isinstance(x, datetime.datetime) else x
 )
 
 
@@ -764,14 +764,12 @@ class Auxiliary:
             )
             interp = j.rect_interpolation_era(self.stamps, var)
             temp_variable = np.full([len(self.timestamps)], np.nan)
-            temp_variable[
-                (~np.isnan(self.longitude)) | (~np.isnan(self.latitude))
-            ] = j.apply_interp(interp, temp_timestamps, temp_lat, temp_lon)
+            temp_variable[(~np.isnan(self.longitude)) | (~np.isnan(self.latitude))] = (
+                j.apply_interp(interp, temp_timestamps, temp_lat, temp_lon)
+            )
             variable = "interp_" + variable
             self.df[variable] = temp_variable
-        self.df["interp_era"] = np.sqrt(
-            self.df.interp_u10**2 + self.df.interp_v10**2
-        )
+        self.df["interp_era"] = np.sqrt(self.df.interp_u10**2 + self.df.interp_v10**2)
         del var
 
     def cube_era(

@@ -186,9 +186,9 @@ def reshape(
     if not files:
         files = list(
             input_timestamp["filename"][
-                batch_ind_min : batch_ind_max + 1
-                if batch_ind_max > 0
-                else input_timestamp.size
+                batch_ind_min : (
+                    batch_ind_max + 1 if batch_ind_max > 0 else input_timestamp.size
+                )
             ]
         )
 

@@ -20,7 +20,6 @@ def Write_zscore_norma_params(
     batch_ind_min: int = 0,
     batch_ind_max: int = -1,
 ):
-
     """Computes the normalization parameters for the Zscore normalisation of the dataset and writes it to a csv.
 
     This function can also be called from the command line. Type `get_zscore_params.py -h` to see the list of arguments.

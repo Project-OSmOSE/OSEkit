@@ -12,13 +12,15 @@ def list_datasets(path_osmose_dataset):
 
 def check_available_file_resolution(path_osmose_dataset, campaign_ID, dataset_ID):
 
-    base_path = os.path.join(path_osmose_dataset, campaign_ID, dataset_ID, 'data', 'audio')
+    base_path = os.path.join(
+        path_osmose_dataset, campaign_ID, dataset_ID, "data", "audio"
+    )
     dirname = os.listdir(base_path)
 
-    print(f'Dataset : {campaign_ID}/{dataset_ID}')
-    print('Available Resolution (LengthFile_samplerate) :', end='\n')
+    print(f"Dataset : {campaign_ID}/{dataset_ID}")
+    print("Available Resolution (LengthFile_samplerate) :", end="\n")
 
-    [print(f' {d}') for d in dirname]
+    [print(f" {d}") for d in dirname]
     return dirname
 
 
@@ -29,27 +31,39 @@ def extract_config(path_osmose_dataset, list_campaign_ID, list_dataset_ID, out_d
 
     for campaign_ID, dataset_ID in zip(list_campaign_ID, list_dataset_ID):
 
-        dataset_resolution = check_available_file_resolution(path_osmose_dataset, campaign_ID, dataset_ID)
+        dataset_resolution = check_available_file_resolution(
+            path_osmose_dataset, campaign_ID, dataset_ID
+        )
 
         for dr in dataset_resolution:
             #  audio config files
-            path1 = os.path.join(path_osmose_dataset, campaign_ID, dataset_ID, 'data', 'audio', dr)
-            files1 = glob.glob(os.path.join(path1, '**.csv'))
+            path1 = os.path.join(
+                path_osmose_dataset, campaign_ID, dataset_ID, "data", "audio", dr
+            )
+            files1 = glob.glob(os.path.join(path1, "**.csv"))
 
-            full_path1 = os.path.join(out_dir, 'export_' + dataset_ID, dr)
+            full_path1 = os.path.join(out_dir, "export_" + dataset_ID, dr)
             if not os.path.exists(full_path1):
                 os.makedirs(full_path1)
             [shutil.copy(file, full_path1) for file in files1]
 
         #  spectro config files
-        path2 = os.path.join(path_osmose_dataset, campaign_ID, dataset_ID, 'processed', 'spectrogram')
+        path2 = os.path.join(
+            path_osmose_dataset, campaign_ID, dataset_ID, "processed", "spectrogram"
+        )
         files2 = []
         for root, dirs, files in os.walk(path2):
-            files2.extend([os.path.join(root, file) for file in files if file.lower().endswith('.csv')])
+            files2.extend(
+                [
+                    os.path.join(root, file)
+                    for file in files
+                    if file.lower().endswith(".csv")
+                ]
+            )
 
-        full_path2 = os.path.join(out_dir, 'export_' + dataset_ID, 'spectro')
+        full_path2 = os.path.join(out_dir, "export_" + dataset_ID, "spectro")
         if not os.path.exists(full_path2):
             os.makedirs(full_path2)
         [shutil.copy(file, full_path2) for file in files2]
 
-    print(f'\nFiles exported to {out_dir}')
+    print(f"\nFiles exported to {out_dir}")
