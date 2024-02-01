@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import pandas as pd
 from typing import List
+import os
 
 
 def substract_timestamps(
@@ -49,3 +50,41 @@ def to_timestamp(string: str) -> datetime:
 
 def from_timestamp(date: datetime) -> str:
     return datetime.strftime(date, "%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
+
+def get_timestamps(
+    path_osmose_dataset: str, campaign_name: str, dataset_name: str, resolution: str
+) -> pd.DataFrame:
+    """Read infos from APLOSE timestamp csv file
+    Parameters
+    -------
+        path_osmose_dataset: 'str'
+            usually '/home/datawork-osmose/dataset/'
+
+        campaign_name: 'str'
+            Name of the campaign
+        dataset_name: 'str'
+            Name of the dataset
+        resolution: 'str'
+            Resolution of the dataset
+    Returns
+    -------
+        df: pd.DataFrame
+            The timestamp file is read and returned as a DataFrame
+    """
+
+    csv = os.path.join(
+        path_osmose_dataset,
+        campaign_name,
+        dataset_name,
+        "data",
+        "audio",
+        resolution,
+        "timestamp.csv",
+    )
+
+    if os.path.exists(csv):
+        df = pd.read_csv(csv)
+        return df
+    else:
+        raise ValueError(f"{csv} does not exist")
