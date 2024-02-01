@@ -664,7 +664,7 @@ def extract_datetime(
             For more information on strftime template, see https://strftime.org/
     Returns
     -------
-        date_obj: pd.datetime
+        date_obj: pd.Timestamp
             datetime corresponding to the datetime found in var
     """
 
