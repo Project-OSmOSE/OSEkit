@@ -330,19 +330,19 @@ def get_timestamp_of_audio_file(path_timestamp_file: Path, audio_file_name: str)
     )
 
 
-def t_rounder(t: pd.datetime, res: int) -> pd.datetime:
+def t_rounder(t: pd.Timestamp, res: int) -> pd.Timestamp:
     """Rounds a Timestamp according to the user specified resolution : 10s / 1min / 10 min / 1h / 24h
 
     Parameters
     -------
-        t: pd.datetime
+        t: pd.Timestamp
             Timestamp to round
         res: 'int'
             integer corresponding to the new resolution in seconds
 
     Returns
     -------
-        t: pd.datetime
+        t: pd.Timestamp
             rounded Timestamp
     """
 
