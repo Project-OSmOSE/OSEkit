@@ -13,7 +13,8 @@ from librosa import resample
 import numpy as np
 import pandas as pd
 
-from OSmOSE.utils.core_utils import make_path, set_umask
+from OSmOSE.utils.core_utils import set_umask
+from OSmOSE.utils.path_utils import make_path
 from OSmOSE.config import *
 
 
