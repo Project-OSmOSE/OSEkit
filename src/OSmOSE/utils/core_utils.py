@@ -7,7 +7,7 @@ import shutil
 import struct
 from collections import namedtuple
 import sys
-from typing import Union, NamedTuple, Tuple
+from typing import Union, NamedTuple, Tuple, List
 
 import pandas as pd
 
