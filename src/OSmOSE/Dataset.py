@@ -22,7 +22,8 @@ except ModuleNotFoundError:
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
-from OSmOSE.utils.core_utils import read_header, check_n_files, make_path, set_umask
+from OSmOSE.utils.core_utils import read_header, check_n_files, set_umask
+from OSmOSE.utils.path_utils import make_path
 from OSmOSE.timestamps import write_timestamp
 from OSmOSE.config import *
 
