@@ -544,7 +544,7 @@ def list_aplose(path_osmose: str):
 
 def check_available_file_resolution(
     path_osmose: str, campaign_ID: str, dataset_ID: str
-) -> List[str]:
+):
     """Lists the file resolution for a given dataset
 
     Parameters
