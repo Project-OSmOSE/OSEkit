@@ -7,7 +7,8 @@ import shutil
 import struct
 from collections import namedtuple
 import sys
-from typing import Union, NamedTuple, Tuple
+from typing import Union, NamedTuple, Tuple, List
+import pytz
 
 import pandas as pd
 
@@ -308,29 +309,6 @@ def check_n_files(
     return len(bad_files)
 
 
-# Will move to pathutils
-def make_path(path: Path, *, mode=DPDEFAULT) -> Path:
-    """Create a path folder by folder with correct permissions.
-
-    If a folder in the path already exists, it will not be modified (even if the specified mode differs).
-
-    Parameters
-    ----------
-        path: `Path`
-            The complete path to create.
-        mode: `int`, optional, keyword-only
-            The permission code of the complete path. The default is 0o755, meaning the owner has all permissions over the files of the path,
-            and the owner group and others only have read and execute rights, but not writing.
-    """
-
-    for parent in path.parents[::-1]:
-        parent.mkdir(mode=mode, exist_ok=True)
-
-    path.mkdir(mode=mode, exist_ok=True)
-
-    return path
-
-
 def set_umask():
     os.umask(0o002)
 
@@ -350,3 +328,395 @@ def get_timestamp_of_audio_file(path_timestamp_file: Path, audio_file_name: str)
     return str(
         timestamps["timestamp"][timestamps["filename"] == audio_file_name].values[0]
     )
+
+
+def t_rounder(t: pd.Timestamp, res: int) -> pd.Timestamp:
+    """Rounds a Timestamp according to the user specified resolution : 10s / 1min / 10 min / 1h / 24h
+
+    Parameters
+    -------
+        t: pd.Timestamp
+            Timestamp to round
+        res: 'int'
+            integer corresponding to the new resolution in seconds
+
+    Returns
+    -------
+        t: pd.Timestamp
+            rounded Timestamp
+    """
+
+    if res == 600:  # 10min
+        minute = t.minute
+        minute = math.floor(minute / 10) * 10
+        t = t.replace(minute=minute, second=0, microsecond=0)
+    elif res == 10:  # 10s
+        seconde = t.second
+        seconde = math.floor(seconde / 10) * 10
+        t = t.replace(second=seconde, microsecond=0)
+    elif res == 60:  # 1min
+        t = t.replace(second=0, microsecond=0)
+    elif res == 3600:  # 1h
+        t = t.replace(minute=0, second=0, microsecond=0)
+    elif res == 86400:  # 24h
+        t = t.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif res == 3:
+        t = t.replace(microsecond=0)
+    else:
+        raise ValueError(f"res={res}s: Resolution not available")
+    return t
+
+
+def list_dataset(path_osmose: str, campaign_folder: str = None):
+    """Lists all the datasets available, i.e. built datasets, under given path.
+    A dataset is defined as built if it contains the following folders : 'data', 'log', 'processed', 'other'.
+    The function check in the immediate directories of the given path and one level deeper
+    in case a campaign folder is present, i.e. a folder that contains several datasets.
+    If user only wants to print the datasets under a specific campaign only, then 'campaign_folder' argument
+    should be provided and the function will only check for dataset structure under this folder.
+
+    Parameter
+    ---------
+    path_osmose: 'str'
+        usually '/home/datawork-osmose/dataset/'
+
+    path_osmose: 'str'
+        campaign name to check for dataset strucure, if provided
+
+    Returns
+    -------
+    The list of the datasets and theirs associated campaign is being printed
+    In case of denied read permissions, the list of datasets with no permission will be printed with its owner
+    """
+
+    dataset, denied_dataset, campaign, owner = [], [], [], []
+    if campaign_folder is not None:
+        path_osmose = os.path.join(path_osmose, campaign_folder)
+
+    # Iterate over immediate subdirectories of the root directory
+    for entry in os.scandir(path_osmose):
+        if entry.is_dir():
+            try:
+                subdirectories = set(os.listdir(entry.path))
+                if all(
+                    subdir in subdirectories
+                    for subdir in ["data", "log", "processed", "other"]
+                ):
+                    dataset.append(os.path.basename(entry.path))
+                    if campaign_folder is not None:
+                        campaign.append(campaign_folder)
+                    else:
+                        campaign.append("/")
+
+                if campaign_folder is None:
+                    # If the immediate subdirectory doesn't contain the required subdirectories,
+                    # check one level deeper (campaigns directories)
+                    for sub_entry in os.scandir(entry.path):
+                        if sub_entry.is_dir():
+                            try:
+                                sub_subdirectories = set(os.listdir(sub_entry.path))
+                                if all(
+                                    subdir in sub_subdirectories
+                                    for subdir in ["data", "log", "processed", "other"]
+                                ):
+                                    dataset.append(os.path.basename(sub_entry.path))
+                                    campaign.append(Path(sub_entry.path).parts[-2])
+                            except PermissionError:
+                                denied_dataset.append(sub_entry.path)
+                                owner_id = os.stat(sub_entry.path).st_uid
+                                owner_name = pwd.getpwuid(owner_id).pw_name
+                                owner.append(owner_name)
+
+            except PermissionError:
+                denied_dataset.append(entry.path)
+                owner_id = os.stat(entry.path).st_uid
+                owner_name = pwd.getpwuid(owner_id).pw_name
+                owner.append(owner_name)
+                continue
+
+    if dataset != []:
+        print("Built datasets:")
+        combined = list(zip(dataset, campaign))
+        combined.sort()
+        dataset, campaign = zip(*combined)
+        for cp, ds in zip(campaign, dataset):
+            print(f"  - campaign: {cp} -- dataset: {ds}")
+    else:
+        raise ValueError(f"No dataset available under {path_osmose}")
+
+    if denied_dataset != []:
+        print("\nNo permission to read:")
+        combined = list(zip(denied_dataset, owner))
+        combined.sort()
+        denied_dataset, owner = zip(*combined)
+        for ds, ow in zip(denied_dataset, owner):
+            print(f"  - {ds} -- Owner ID: {ow}")
+
+
+def list_aplose(path_osmose: str):
+    """Checks whether an APLOSE annotation file is stored in a dataset folder.
+    The search for an aPLOSE file is performed under one of the following directory structures:
+        - campaign_name/dataset_name/processed/aplose/csv_result_file
+        - dataset_name/processed/aplose/csv_result_file
+    If either structure is found, it will be printed.
+
+    Parameter
+    ---------
+    path_osmose: 'str'
+        usually '/home/datawork-osmose/dataset/'
+
+    Returns
+    -------
+    The list of the datasets and theirs associated campaign and APLOSE annotation file is being printed
+    In case of denied read permissions, the list of datasets with no permission will be printed with its owner
+    """
+
+    campaign_path, aplose_path, aplose_file, no_permission, owner = [], [], [], [], []
+
+    # Iterate over directories directly under path_osmose_dataset
+    for dir_name in os.listdir(path_osmose):
+        dir_path = os.path.join(path_osmose, dir_name)
+
+        # Check if the item is a directory
+        if os.path.isdir(dir_path):
+            try:
+                processed_dir_path = os.path.join(dir_path, "processed")
+
+                # Check if 'processed' directory exists
+                if os.path.isdir(processed_dir_path):
+                    aplose_dir_path = os.path.join(processed_dir_path, "aplose")
+                    if os.path.exists(aplose_dir_path):
+                        csv_path = glob.glob(
+                            os.path.join(aplose_dir_path, "**_results**.csv")
+                        )
+                        for csv in csv_path:
+                            campaign_path.append("/")
+                            aplose_path.append(dir_name)
+                            aplose_file.append(os.path.basename(csv))
+                else:
+                    # If 'processed' directory doesn't exist, look one level deeper
+                    for subdir_name in os.listdir(dir_path):
+                        subdir_path = os.path.join(dir_path, subdir_name)
+                        processed_subdir_path = os.path.join(subdir_path, "processed")
+
+                        # Check if the item is a directory
+                        if os.path.isdir(processed_subdir_path):
+                            try:
+                                # Check if 'processed' directory exists
+                                if os.path.isdir(processed_subdir_path):
+                                    aplose_subdir_path = os.path.join(
+                                        processed_subdir_path, "aplose"
+                                    )
+                                    if os.path.exists(aplose_subdir_path):
+                                        csv_path = glob.glob(
+                                            os.path.join(
+                                                aplose_dir_path, "**_results**.csv"
+                                            )
+                                        )
+                                        for csv in csv_path:
+                                            campaign_path.append(
+                                                Path(aplose_subdir_path).parts[-4]
+                                            )
+                                            aplose_path.append(subdir_name)
+                                            aplose_file.append(os.path.basename(csv))
+
+                            except PermissionError:
+                                owner_id = os.stat(subdir_path).st_uid
+                                owner_name = pwd.getpwuid(owner_id).pw_name
+                                owner.append(owner_name)
+                                no_permission.append(subdir_path)
+
+            except PermissionError:
+                owner_id = os.stat(dir_path).st_uid
+                owner_name = pwd.getpwuid(owner_id).pw_name
+                owner.append(owner_name)
+                no_permission.append(dir_path)
+
+    # Print datasets with no read permission
+    print("\nNo permission to read:")
+    for ds, ow in zip(no_permission, owner):
+        print(f"  - {ds} -- Owner ID: {ow}")
+
+    # Print campaigns -- datasets -- APLOSE files
+    print("\nAvailable APLOSE annotation files:")
+    for campaign, ds, f in zip(campaign_path, aplose_path, aplose_file):
+        print(f"  - campaign: {campaign} -- dataset: {ds} -- file: {f}")
+
+
+def check_available_file_resolution(
+    path_osmose: str, campaign_ID: str, dataset_ID: str
+):
+    """Lists the file resolution for a given dataset
+
+    Parameters
+    ---------
+    path_osmose: 'str'
+        usually '/home/datawork-osmose/dataset/'
+
+    campaign_ID: 'str'
+        Name of the campaign, can be '' if the dataset is directly stored under path_osmose
+
+    dataset_ID: 'str'
+        Name of the dataset
+
+    Returns
+    -------
+    The list of the dataset resolutions is being printed and returned as a list of str
+    """
+
+    base_path = os.path.join(path_osmose, campaign_ID, dataset_ID, "data", "audio")
+    resolution = os.listdir(base_path)
+
+    print(f"\nDataset : {campaign_ID}/{dataset_ID}")
+    print("Available Resolution (LengthFile_samplerate) :", end="\n")
+
+    [print(f" {r}") for r in resolution]
+
+    return resolution
+
+
+def extract_config(
+    path_osmose: str,
+    list_campaign_ID: List[str],
+    list_dataset_ID: List[str],
+    out_dir: str,
+):
+    """Extracts the configuration file of a list of datasets that have been built
+    and whose spectrograms have been computed.
+    A directory per audio resolution is being created and a directory
+    for the spectrogram configuration as well.
+
+    Parameters
+    ---------
+    path_osmose: 'str'
+        usually '/home/datawork-osmose/dataset/'
+
+    list_campaign_ID: List[str]
+        List of the campaigns, can be '' if datasets are directly stored under path_osmose
+
+    list_dataset_ID: 'str'
+        List of the datasets
+
+    out_dir: 'str'
+        Directory where the files are exported
+
+    Returns
+    -------
+    """
+
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+
+    for campaign_ID, dataset_ID in zip(list_campaign_ID, list_dataset_ID):
+
+        dataset_resolution = check_available_file_resolution(
+            path_osmose, campaign_ID, dataset_ID
+        )
+
+        for dr in dataset_resolution:
+            ### audio config files
+            path1 = os.path.join(
+                path_osmose, campaign_ID, dataset_ID, "data", "audio", dr
+            )
+            files1 = glob.glob(os.path.join(path1, "**.csv"))
+
+            full_path1 = os.path.join(out_dir, "export_" + dataset_ID, dr)
+            if not os.path.exists(full_path1):
+                os.makedirs(full_path1)
+            [shutil.copy(file, full_path1) for file in files1]
+
+        ### spectro config files
+        path2 = os.path.join(
+            path_osmose, campaign_ID, dataset_ID, "processed", "spectrogram"
+        )
+        files2 = []
+        for root, dirs, files in os.walk(path2):
+            files2.extend(
+                [
+                    os.path.join(root, file)
+                    for file in files
+                    if file.lower().endswith(".csv")
+                ]
+            )
+
+        full_path2 = os.path.join(out_dir, "export_" + dataset_ID, "spectro")
+        if not os.path.exists(full_path2):
+            os.makedirs(full_path2)
+        [shutil.copy(file, full_path2) for file in files2]
+
+    print(f"\nFiles exported to {out_dir}")
+
+
+def extract_datetime(
+    var: str, tz: pytz._FixedOffset = None, formats=None
+) -> Union[pd.Timestamp, str]:
+    """Extracts datetime from filename based on the date format
+
+    Parameters
+    -------
+        var: 'str'
+            name of the wav file
+        tz: pytz._FixedOffset
+            timezone info
+        formats: 'str'
+            The date template in strftime format.
+            For example, `2017/02/24` has the template `%Y/%m/%d`
+            For more information on strftime template, see https://strftime.org/
+    Returns
+    -------
+        date_obj: pd.Timestamp
+            datetime corresponding to the datetime found in var
+    """
+
+    if formats is None:
+        # add more format if necessary
+        formats = [
+            r"\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}",
+            r"\d{2}\d{2}\d{2}\d{2}\d{2}\d{2}",
+            r"\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}",
+            r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}",
+            r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}",
+            r"\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}",
+            r"\d{4}_\d{2}_\d{2}T\d{2}_\d{2}_\d{2}",
+            r"\d{4}\d{2}\d{2}T\d{2}\d{2}\d{2}",
+        ]
+    match = None
+    for f in formats:
+        match = re.search(f, var)
+        if match:
+            break
+    if match:
+        dt_string = match.group()
+        if f == r"\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}":
+            dt_format = "%Y-%m-%dT%H-%M-%S"
+        elif f == r"\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}":
+            dt_format = "%Y-%m-%d_%H-%M-%S"
+        elif f == r"\d{2}\d{2}\d{2}\d{2}\d{2}\d{2}":
+            dt_format = "%y%m%d%H%M%S"
+        elif f == r"\d{2}\d{2}\d{2}_\d{2}\d{2}\d{2}":
+            dt_format = "%y%m%d_%H%M%S"
+        elif f == r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}":
+            dt_format = "%Y-%m-%d %H:%M:%S"
+        elif f == r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}":
+            dt_format = "%Y-%m-%dT%H:%M:%S"
+        elif f == r"\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}":
+            dt_format = "%Y_%m_%d_%H_%M_%S"
+        elif f == r"\d{4}_\d{2}_\d{2}T\d{2}_\d{2}_\d{2}":
+            dt_format = "%Y_%m_%dT%H_%M_%S"
+        elif f == r"\d{4}\d{2}\d{2}T\d{2}\d{2}\d{2}":
+            dt_format = "%Y%m%dT%H%M%S"
+
+        date_obj = pd.to_datetime(dt_string, format=dt_format)
+
+        if tz is None:
+            return date_obj
+        elif type(tz) is dt.timezone:
+            offset_minutes = tz.utcoffset(None).total_seconds() / 60
+            pytz_fixed_offset = pytz.FixedOffset(int(offset_minutes))
+            date_obj = pytz_fixed_offset.localize(date_obj)
+        else:
+            date_obj = tz.localize(date_obj)
+
+        return date_obj
+    else:
+        raise ValueError(f"{var}: No datetime found")

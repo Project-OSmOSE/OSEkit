@@ -164,8 +164,8 @@ get_cfosat_time = lambda x: calendar.timegm(time.strptime(x, "%Y%m%dT%H%M%S"))
 get_datarmor_time = lambda x: calendar.timegm(
     time.strptime(x, "%Y-%m-%dT%H:%M:%S.000%z")
 )
-get_era_time = (
-    lambda x: calendar.timegm(x.timetuple()) if isinstance(x, datetime.datetime) else x
+get_era_time = lambda x: (
+    calendar.timegm(x.timetuple()) if isinstance(x, datetime.datetime) else x
 )
 
 

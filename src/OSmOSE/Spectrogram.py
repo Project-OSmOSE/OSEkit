@@ -29,9 +29,9 @@ from OSmOSE.cluster import (
     merge_timestamp_csv,
 )
 from OSmOSE.Dataset import Dataset
+from OSmOSE.utils.path_utils import make_path
 from OSmOSE.utils.core_utils import (
     safe_read,
-    make_path,
     set_umask,
     get_timestamp_of_audio_file,
 )

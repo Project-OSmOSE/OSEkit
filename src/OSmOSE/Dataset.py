@@ -22,7 +22,8 @@ except ModuleNotFoundError:
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
-from OSmOSE.utils.core_utils import read_header, check_n_files, make_path, set_umask
+from OSmOSE.utils.core_utils import read_header, check_n_files, set_umask
+from OSmOSE.utils.path_utils import make_path
 from OSmOSE.timestamps import write_timestamp
 from OSmOSE.config import *
 
@@ -762,9 +763,11 @@ class Dataset:
                     if f.endswith((".wav", ".WAV", "*.mp3", ".*flac")):
                         audio_files.append(Path(path, f))
                         if str(Path(path, f).parent) != str(self.path):
-                            parent_dir_list.append(Path(path, f).parent) if Path(
-                                path, f
-                            ).parent not in parent_dir_list else parent_dir_list
+                            (
+                                parent_dir_list.append(Path(path, f).parent)
+                                if Path(path, f).parent not in parent_dir_list
+                                else parent_dir_list
+                            )
                     elif f == "timestamp.csv":
                         Path(path, f).rename(
                             path_raw_audio.joinpath("original", "timestamp.csv")

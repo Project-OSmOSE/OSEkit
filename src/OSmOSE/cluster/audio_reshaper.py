@@ -13,7 +13,8 @@ from librosa import resample
 import numpy as np
 import pandas as pd
 
-from OSmOSE.utils.core_utils import make_path, set_umask
+from OSmOSE.utils.core_utils import set_umask
+from OSmOSE.utils.path_utils import make_path
 from OSmOSE.config import *
 
 
@@ -186,9 +187,9 @@ def reshape(
     if not files:
         files = list(
             input_timestamp["filename"][
-                batch_ind_min : batch_ind_max + 1
-                if batch_ind_max > 0
-                else input_timestamp.size
+                batch_ind_min : (
+                    batch_ind_max + 1 if batch_ind_max > 0 else input_timestamp.size
+                )
             ]
         )
 
