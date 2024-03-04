@@ -511,7 +511,7 @@ def single_seasonality(
     date1: pd.Timestamp,
     date2: pd.Timestamp,
     timebin: int,
-    reso_bin: int,
+    reso_bin: str,
     res_min: int,
     time_locator: str,
     scale: str,
@@ -654,12 +654,14 @@ def single_seasonality(
         y_pos = [n_annot_max * p / 100 for p in bars]
         ax.set_yticks(y_pos, bars)
         ax.set_ylim([0, n_annot_max])
-        if reso_bin == "Minutes":
+        if reso_bin == "minute":
             ax.set_ylabel(
                 "Detection rate % \n({0} min)".format(res_min), fontsize=20, color="w"
             )
-        else:
-            ax.set_ylabel("Detection rate % per month", fontsize=20, color="w")
+        elif reso_bin == "month":
+            ax.set_ylabel(
+                "Detection rate % per month", fontsize=20, color="w"
+            )
     elif scale == "raw":
         pass
     else:
