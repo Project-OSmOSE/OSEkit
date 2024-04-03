@@ -11,10 +11,9 @@ from typing import Union, NamedTuple, Tuple, List
 import pytz
 import glob
 import math
-
 import pandas as pd
-
 import json
+import pwd
 
 try:
     import tomllib
@@ -392,7 +391,7 @@ def list_dataset(path_osmose: str, campaign_folder: str = None):
     """
 
     dataset, denied_dataset, campaign, owner = [], [], [], []
-    if campaign_folder is not None:
+    if campaign_folder != "":
         path_osmose = os.path.join(path_osmose, campaign_folder)
 
     # Iterate over immediate subdirectories of the root directory
@@ -405,12 +404,12 @@ def list_dataset(path_osmose: str, campaign_folder: str = None):
                     for subdir in ["data", "log", "processed", "other"]
                 ):
                     dataset.append(os.path.basename(entry.path))
-                    if campaign_folder is not None:
+                    if campaign_folder != "":
                         campaign.append(campaign_folder)
                     else:
                         campaign.append("/")
 
-                if campaign_folder is None:
+                if campaign_folder == "":
                     # If the immediate subdirectory doesn't contain the required subdirectories,
                     # check one level deeper (campaigns directories)
                     for sub_entry in os.scandir(entry.path):
