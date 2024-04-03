@@ -405,12 +405,12 @@ def list_dataset(path_osmose: str, campaign_folder: str = None):
                     for subdir in ["data", "log", "processed", "other"]
                 ):
                     dataset.append(os.path.basename(entry.path))
-                    if campaign_folder is not None:
+                    if campaign_folder != '':
                         campaign.append(campaign_folder)
                     else:
                         campaign.append("/")
 
-                if campaign_folder is None:
+                if campaign_folder == '':
                     # If the immediate subdirectory doesn't contain the required subdirectories,
                     # check one level deeper (campaigns directories)
                     for sub_entry in os.scandir(entry.path):
