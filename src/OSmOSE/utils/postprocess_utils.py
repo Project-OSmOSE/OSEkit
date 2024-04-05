@@ -16,7 +16,13 @@ from OSmOSE.utils.core_utils import (
     extract_datetime,
     check_available_file_resolution,
 )
-
+from os.path import join
+import random
+import pandas as pd
+import glob
+import tempfile
+from OSmOSE.cluster import reshape
+from OSmOSE import Spectrogram
 
 def sorting_detections(
     file: List[str],
@@ -664,3 +670,39 @@ def single_seasonality(
         pass
     else:
         raise ValueError(f"Error scale: {scale}")
+
+
+def previz_spectrogram(spectrogram: Spectrogram, number_of_previz: int =1)-> None:
+    orig_metadata = pd.read_csv(spectrogram._get_original_after_build().joinpath("metadata.csv"), header=0)
+    orig_dura = orig_metadata['audio_file_origin_duration'][0]
+    orig_sr = orig_metadata['origin_sr'][0]
+    audio_path = join(spectrogram.path,'data','audio')
+    files_path = join(audio_path,f'{orig_dura}_{orig_sr}','*.wav')
+    origin_files = glob.glob(files_path,recursive=True)
+
+    # temp_adjustment_output_dir = join(audio_path,f'temp_{spectrogram.spectro_duration}_{dataset_sr}')
+    if spectrogram.data_normalization == "zscore" and spectrogram.spectro_normalization != "spectrum":
+        spectrogram.spectro_normalization = "spectrum"
+        print("WARNING: the spectrogram normalization has been changed to spectrum because the data will be normalized using zscore.")
+
+    if len(origin_files)>0:
+        with tempfile.TemporaryDirectory() as temp_adjustment_output_dir:
+            random_wav_file = random.choice(origin_files)     
+            # Reshape the selected random .wav file
+            reshaped = reshape(
+                input_files=[random_wav_file],
+                chunk_size=spectrogram.spectro_duration,
+                new_sr=spectrogram.dataset_sr,
+                output_dir_path=temp_adjustment_output_dir,
+                offset_beginning=0,
+                offset_end=0,
+                last_file_behavior="pad"
+            )
+
+            files_adjust = glob.glob(temp_adjustment_output_dir + '/*.wav')
+            # Process the reshaped file
+            for audio_file in random.sample(files_adjust,number_of_previz):
+                spectrogram.process_file(audio_file, adjust=True)
+
+            # Save the spectrogram metadata
+            spectrogram.save_spectro_metadata(True)
