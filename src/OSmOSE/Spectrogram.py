@@ -662,6 +662,8 @@ class Spectrogram(Dataset):
                     f"You have {too_short_files} audio files shorter than your analysis duration of {self.spectro_duration}"
                 )
 
+        """
+        Useless since new normalization methods
         if (
             self.data_normalization == "zscore"
             and self.spectro_normalization != "spectrum"
@@ -670,6 +672,7 @@ class Spectrogram(Dataset):
             print(
                 "WARNING: the spectrogram normalization has been changed to spectrum because the data will be normalized using zscore."
             )
+        """
 
         # when audio_file_overlap has been set to > 0 whereas the dataset is equal to the origin one
         if (
@@ -1234,8 +1237,11 @@ class Spectrogram(Dataset):
                     f"The file {audio_file} must be in {self.audio_path} in order to be processed."
                 )
 
-            if self.data_normalization in ["zscore", "none"]:
-                self.spectro_normalization = "spectrum"
+            """
+            #Useless with new spectro normalization
+            #if self.data_normalization in ["zscore", "none"]:
+            #    self.spectro_normalization = "spectrum"
+            """
 
             #! Determination of zscore normalization parameters
             if self.data_normalization == "zscore" and Zscore != "original":
@@ -1475,14 +1481,14 @@ class Spectrogram(Dataset):
         win = np.hamming(self.window_size)
         if self.nfft < (self.window_size):
             if self.spectro_normalization == "density":
-                scale_psd = 2.0
+                scale_psd = 1.0
             if self.spectro_normalization == "spectrum":
-                scale_psd = 2.0 * sample_rate
+                scale_psd = 1.0
         else:
             if self.spectro_normalization == "density":
                 scale_psd = 2.0 / (((win * win).sum()) * sample_rate)
             if self.spectro_normalization == "spectrum":
-                scale_psd = 2.0 / ((win * win).sum())
+                scale_psd = 2.0 / (win.sum() ** 2)
 
         Nbech = np.size(data)
         Noffset = self.window_size - Noverlap
@@ -1500,17 +1506,23 @@ class Spectrogram(Dataset):
                     window="hamming",
                     nperseg=int(self.nfft),
                     noverlap=int(self.nfft / 2),
-                    scaling="density",
+                    scaling=self.spectro_normalization,
                 )
             else:
                 x_win = data[idwin * Noffset : idwin * Noffset + self.window_size] * win
                 Sxx[:, idwin] = np.abs(np.fft.rfft(x_win, n=self.nfft)) ** 2
             Sxx[:, idwin] *= scale_psd
 
-        if self.spectro_normalization == "density":
+        if self.data_normalization == "instrument":
             log_spectro = 10 * np.log10((Sxx / (1e-12)) + (1e-20))
-        if self.spectro_normalization == "spectrum":
-            log_spectro = 10 * np.log10(Sxx + (1e-20))
+
+        if self.data_normalization == "zscore":
+            if self.spectro_normalization == "density":
+                Sxx *= sample_rate / 2  # value around 0dB
+                log_spectro = 10 * np.log10(Sxx + (1e-20))
+            if self.spectro_normalization == "spectrum":
+                Sxx *= self.window_size / 2  # value around 0dB
+                log_spectro = 10 * np.log10(Sxx + (1e-20))
 
         # save spectrogram matrices (intensity, time and freq) in a npz file
         if self.save_matrix:
