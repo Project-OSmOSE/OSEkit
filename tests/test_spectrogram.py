@@ -12,7 +12,6 @@ import pytest
 
 @pytest.mark.integ
 def test_initialize_2s(input_dataset):
-
     dataset = Dataset(
         input_dataset["main_dir"], gps_coordinates=(1, 1), depth=10, timezone="+03:00"
     )
@@ -72,7 +71,6 @@ def test_initialize_2s(input_dataset):
 
 @pytest.mark.integ
 def test_number_image_matrix(input_dataset):
-
     dataset = Dataset(
         input_dataset["main_dir"], gps_coordinates=(1, 1), depth=10, timezone="+03:00"
     )
@@ -135,7 +133,6 @@ def test_number_image_matrix(input_dataset):
 
 @pytest.mark.integ
 def test_numerical_values(input_dataset):
-
     dataset = Dataset(
         input_dataset["main_dir"], gps_coordinates=(1, 1), depth=10, timezone="+03:00"
     )

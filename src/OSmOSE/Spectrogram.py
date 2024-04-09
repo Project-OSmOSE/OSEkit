@@ -495,7 +495,6 @@ class Spectrogram(Dataset):
                 make_path(self.path.joinpath(OSMOSE_PATH.statistics), mode=DPDEFAULT)
 
     def extract_spectro_params(self):
-
         tile_duration = self.spectro_duration / 2 ** (self.zoom_level)
         data = np.zeros([int(tile_duration * self.dataset_sr), 1])
         Noverlap = int(self.window_size * self.overlap / 100)
@@ -812,7 +811,6 @@ class Spectrogram(Dataset):
             i_max = -1
 
             for batch in range(self.batch_number):
-
                 if i_max >= len(self.list_wav_to_process) - 1:
                     continue
 
@@ -899,7 +897,6 @@ class Spectrogram(Dataset):
                 self.pending_jobs = job_id
 
             else:
-
                 input_dir_path = self.audio_path
 
                 list_audio = list(input_dir_path.glob("timestamp_*"))
@@ -992,7 +989,6 @@ class Spectrogram(Dataset):
         os.chmod(new_meta_path, mode=FPDEFAULT)
 
     def save_spectro_metadata(self, adjust_bool: bool):
-
         temporal_resolution, frequency_resolution, Nbwin = self.extract_spectro_params()
 
         data = {
@@ -1243,7 +1239,6 @@ class Spectrogram(Dataset):
 
             #! Determination of zscore normalization parameters
             if self.data_normalization == "zscore" and Zscore != "original":
-
                 df = pd.DataFrame()
                 for dd in self.path.joinpath(OSMOSE_PATH.statistics).glob(
                     "SummaryStats*"
@@ -1381,7 +1376,6 @@ class Spectrogram(Dataset):
 
         # lowest tuile resolution
         if not adjust and self.save_for_LTAS:
-
             # whatever the file duration , we send all welch in folder self.spectro_duration_dataset_sr  ;  OLD SOLUTION : here we use duration (read from current audio files) rather than self.spectro_duration to have the exact audio file duration; so that when different audio file durations are present, their respective welch spectra will be put into different folders
             output_path_welch_resolution = self.path_output_welch.joinpath(
                 str(int(self.spectro_duration)) + "_" + str(int(self.dataset_sr))
@@ -1435,7 +1429,6 @@ class Spectrogram(Dataset):
         # highest tuile resolution
         if False:
             if not adjust and self.save_for_LTAS and (nber_tiles_lowest_zoom_level > 1):
-
                 # whatever the file duration , we send all welch in folder self.spectro_duration_dataset_sr  ;  OLD SOLUTION : here we use duration (read from current audio files) rather than self.spectro_duration to have the exact audio file duration; so that when different audio file durations are present, their respective welch spectra will be put into different folders
                 output_path_welch_resolution = self.path_output_welch.joinpath(
                     str(int(self.spectro_duration)) + "_" + str(int(self.dataset_sr))
@@ -1655,7 +1648,6 @@ class Spectrogram(Dataset):
         #     pool.map(map_process_file, self.list_wav_to_process)
 
     def save_all_welch(self, list_npz_files: list, path_all_welch: Path):
-
         if isinstance(list_npz_files, list):
             Time = []
             ct = 0
@@ -1679,7 +1671,6 @@ class Spectrogram(Dataset):
             )  # careful data not sorted here! we should save them based on dataframe df below
 
         else:
-
             os.rename(list_npz_files, path_all_welch)
             os.remove(list_npz_files)
 
@@ -1689,7 +1680,6 @@ class Spectrogram(Dataset):
         return Sxx, Time, Freq
 
     def build_LTAS(self, time_resolution: int, sample_rate: int, time_scale: str = "D"):
-
         list_npz_files = list(
             self.path_output_welch.joinpath(
                 str(time_resolution) + "_" + str(sample_rate)
@@ -1702,7 +1692,6 @@ class Spectrogram(Dataset):
             )
 
         else:
-
             if not self.path_output_LTAS.exists():
                 make_path(self.path_output_LTAS, mode=DPDEFAULT)
 
@@ -1726,7 +1715,6 @@ class Spectrogram(Dataset):
             df.index = pd.to_datetime(df.index)
 
             if time_scale == "all":
-
                 cur_LTAS = df.values
 
                 # if cur_LTAS.shape[0]>2500:
@@ -1759,11 +1747,9 @@ class Spectrogram(Dataset):
                 )
 
             else:
-
                 time_vector = pd.date_range(time[0], time[-1], freq=time_scale)
 
                 for ind_period in range(len(time_vector) - 1):
-
                     current_df = df[
                         (df.index > time_vector[ind_period])
                         & (df.index <= time_vector[ind_period + 1])
@@ -1813,7 +1799,6 @@ class Spectrogram(Dataset):
         time_scale: str,
         raw_time_vector,
     ):
-
         # Plotting spectrogram
         my_dpi = 100
         fact_x = 1.3
@@ -1865,7 +1850,6 @@ class Spectrogram(Dataset):
         Freq_min: Union[list, int] = [0],
         Freq_max: Union[list, int] = None,
     ):
-
         # assign default value for Freq_max, equivalent to no HF filtering
         if (Freq_max == None) or (not isinstance(Freq_min, list)):
             Freq_max = [self.dataset_sr / 2]
@@ -1884,7 +1868,6 @@ class Spectrogram(Dataset):
             )
 
         else:
-
             if not self.path_output_SPLfiltered.exists():
                 make_path(self.path_output_SPLfiltered, mode=DPDEFAULT)
 
@@ -1981,7 +1964,6 @@ class Spectrogram(Dataset):
             plt.close()
 
     def build_EPD(self, time_resolution: str, sample_rate: int, show_fig: bool = False):
-
         list_npz_files = list(
             self.path_output_welch.joinpath(
                 str(time_resolution) + "_" + str(sample_rate)
@@ -1993,7 +1975,6 @@ class Spectrogram(Dataset):
             )
 
         else:
-
             if not self.path_output_EPD.exists():
                 make_path(self.path_output_EPD, mode=DPDEFAULT)
 

@@ -548,7 +548,6 @@ def reshape(
                     skip_last = True
 
             if not skip_last:
-
                 outfilename = output_dir_path.joinpath(
                     f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S').replace('-','_').replace(':','_').replace('.','_').replace('+','_')}.wav"
                 )

@@ -284,7 +284,6 @@ def reshape_timebin(df: pd.DataFrame, timebin_new: int = None) -> pd.DataFrame:
         labels = [labels]
     for annotator in annotators:
         for label in labels:
-
             df_detect_prov = df[
                 (df["annotator"] == annotator) & (df["annotation"] == label)
             ]
