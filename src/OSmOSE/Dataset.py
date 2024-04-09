@@ -149,10 +149,8 @@ class Dataset:
             Tuple[Tuple[float, float], Tuple[float, float]],
         ],
     ):
-
         match new_coordinates:
             case str():
-
                 aux_data_path = next(self.path.rglob(new_coordinates), False)
 
                 if aux_data_path:
@@ -198,10 +196,8 @@ class Dataset:
             int,
         ],
     ):
-
         match new_depth:
             case str():
-
                 aux_data_path = next(self.path.rglob(new_depth), False)
                 if aux_data_path:
                     csvFileArray = pd.read_csv(aux_data_path)
@@ -573,7 +569,6 @@ class Dataset:
                 os.remove(path_raw_audio.joinpath("timestamp.csv"))
 
         else:  # no anomalies
-
             # rebuild the timestamp.csv file (necessary as we might have changed filenames) and set permissions
             df = pd.DataFrame(
                 {
@@ -663,11 +658,9 @@ class Dataset:
         date_template: str,
         already_printed_1: int,
     ):
-
         format_OK = False
 
         if isinstance(cur_timestamp_not_formatted, PathLike):
-
             already_printed_1 = False
             list_cur_timestamp_formatted = []
             dataF = pd.read_csv(cur_timestamp_not_formatted)
@@ -705,7 +698,6 @@ class Dataset:
             format_OK = True
 
         except Exception as e:
-
             if not already_printed_1:
                 already_printed_1 = True
                 print(

@@ -370,7 +370,7 @@ def t_rounder(t: pd.Timestamp, res: int) -> pd.Timestamp:
 
 def list_dataset(path_osmose: str, campaign_folder: str = None):
     """Lists all the datasets available, i.e. built datasets, under given path.
-    A dataset is defined as built if it contains the following folders : 'data', 'log', 'processed', 'other'.
+    A dataset is defined as built if it contains the following folders : 'data', 'processed' (THIS DEFINITION MIGHT NEED TO BE IMPOVED).
     The function check in the immediate directories of the given path and one level deeper
     in case a campaign folder is present, i.e. a folder that contains several datasets.
     If user only wants to print the datasets under a specific campaign only, then 'campaign_folder' argument
@@ -399,10 +399,7 @@ def list_dataset(path_osmose: str, campaign_folder: str = None):
         if entry.is_dir():
             try:
                 subdirectories = set(os.listdir(entry.path))
-                if all(
-                    subdir in subdirectories
-                    for subdir in ["data", "log", "processed", "other"]
-                ):
+                if all(subdir in subdirectories for subdir in ["data", "processed"]):
                     dataset.append(os.path.basename(entry.path))
                     if campaign_folder != "":
                         campaign.append(campaign_folder)
@@ -418,7 +415,7 @@ def list_dataset(path_osmose: str, campaign_folder: str = None):
                                 sub_subdirectories = set(os.listdir(sub_entry.path))
                                 if all(
                                     subdir in sub_subdirectories
-                                    for subdir in ["data", "log", "processed", "other"]
+                                    for subdir in ["data", "processed"]
                                 ):
                                     dataset.append(os.path.basename(sub_entry.path))
                                     campaign.append(Path(sub_entry.path).parts[-2])
@@ -437,9 +434,9 @@ def list_dataset(path_osmose: str, campaign_folder: str = None):
 
     if dataset != []:
         print("Built datasets:")
-        combined = list(zip(dataset, campaign))
+        combined = list(zip(campaign, dataset))
         combined.sort()
-        dataset, campaign = zip(*combined)
+        campaign, dataset = zip(*combined)
         for cp, ds in zip(campaign, dataset):
             print(f"  - campaign: {cp} -- dataset: {ds}")
     else:
@@ -609,7 +606,6 @@ def extract_config(
         os.makedirs(out_dir)
 
     for campaign_ID, dataset_ID in zip(list_campaign_ID, list_dataset_ID):
-
         dataset_resolution = check_available_file_resolution(
             path_osmose, campaign_ID, dataset_ID
         )
