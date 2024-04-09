@@ -679,8 +679,6 @@ def previz_spectrogram(spectrogram: Spectrogram, number_of_previz: int =1)-> Non
     audio_path = join(spectrogram.path,'data','audio')
     files_path = join(audio_path,f'{orig_dura}_{orig_sr}','*.wav')
     origin_files = glob.glob(files_path,recursive=True)
-
-    # temp_adjustment_output_dir = join(audio_path,f'temp_{spectrogram.spectro_duration}_{dataset_sr}')
     if spectrogram.data_normalization == "zscore" and spectrogram.spectro_normalization != "spectrum":
         spectrogram.spectro_normalization = "spectrum"
         print("WARNING: the spectrogram normalization has been changed to spectrum because the data will be normalized using zscore.")
