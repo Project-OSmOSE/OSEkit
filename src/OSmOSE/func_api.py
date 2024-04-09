@@ -31,7 +31,6 @@ def make_cds_file(key, udi, path_to_api):
 
 
 def return_cdsapi(filename, key, variable, year, month, day, time, area):
-
     filename = filename + ".nc"
 
     c = cdsapi.Client()
@@ -57,7 +56,6 @@ def return_cdsapi(filename, key, variable, year, month, day, time, area):
 
 
 def format_nc(filename):
-
     downloaded_cds = filename + ".nc"
     fh = Dataset(downloaded_cds, mode="r")
 
@@ -134,7 +132,6 @@ def final_creation(
 
 
 def mise_en_forme_old(filename):
-
     downloaded_cds = filename + ".nc"
     fh = Dataset(downloaded_cds, mode="r")
 

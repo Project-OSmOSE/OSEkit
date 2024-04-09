@@ -236,7 +236,6 @@ class Auxiliary:
 
         # case of a fixed hydrophone
         if "latitude" not in vars(self).keys():  # ie self.latitude not defined yet
-
             # get metadata from original folder
             metadata_path = next(
                 self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("metadata.csv"), None
@@ -282,7 +281,6 @@ class Auxiliary:
         r=np.inf,
         variables=["u10", "v10"],
     ):
-
         self.latitude = self.df.lat
         self.longitude = self.df.lon
         self.timestamps = self.df.time
@@ -311,7 +309,6 @@ class Auxiliary:
             self.cylinder_era(time_off=time_off, r=r, variables=variables)
 
     def save_all_welch(self, list_npz_files: list, path_all_welch: Path):
-
         LTAS = np.empty((1, int(self.nfft / 2) + 1))
         time = []
         for file_npz in tqdm(list_npz_files):
@@ -338,7 +335,6 @@ class Auxiliary:
         return LTAS, time, Freq
 
     def __str__(self):
-
         return str(self.df.describe())
 
     def join_welch(
@@ -351,7 +347,6 @@ class Auxiliary:
         r=np.inf,
         variables=["u10", "v10"],
     ):
-
         # extract timestamps of welch spectra
         fns = glob(
             str(
@@ -419,7 +414,6 @@ class Auxiliary:
         self.df = temp_df
 
     def join_other_csv_to_df(self, csv_name: str):
-
         cur_csv = pd.read_csv(self.path.joinpath(OSMOSE_PATH.auxiliary, csv_name))
 
         timestamps = (
@@ -449,7 +443,6 @@ class Auxiliary:
             )(self.df.time)
 
     def save_aux_data(self):
-
         make_path(
             self.path.joinpath(
                 OSMOSE_PATH.processed_auxiliary,
