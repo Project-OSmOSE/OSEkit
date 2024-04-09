@@ -26,14 +26,12 @@ class Weather:
         sample_rate_welch,
         local=True,
     ):
-
         self.path = Path(os.path.join(osmose_path_dataset, dataset))
         self.dataset = dataset
         self.time_resolution_welch = time_resolution_welch
         self.sample_rate_welch = sample_rate_welch
 
     def save_all_welch(self):
-
         # get metadata from sepctrogram folder
         metadata_path = next(
             self.path.joinpath(
@@ -60,7 +58,6 @@ class Weather:
         )
 
         if not path_all_welch.exists():
-
             LTAS = np.empty((1, int(metadata_spectrogram["nfft"][0] / 2) + 1))
             time = []
             for file_npz in tqdm(list(df["fn"].values)):
@@ -93,7 +90,6 @@ class Weather:
         percentile_outliers: int = None,
         threshold_SPL: [int, list] = None,
     ):
-
         if not self.path.joinpath(OSMOSE_PATH.weather).exists():
             make_path(self.path.joinpath(OSMOSE_PATH.weather), mode=DPDEFAULT)
 
@@ -274,7 +270,6 @@ class Weather:
         )
 
     def append_SPL_filtered(self, freq_min: int, freq_max: int):
-
         # get metadata from sepctrogram folder
         metadata_path = next(
             self.path.joinpath(
@@ -331,7 +326,6 @@ class Weather:
 
 class benchmark_weather:
     def __init__(self, osmose_path_dataset, dataset, local=True):
-
         if not isinstance(dataset, list):
             print(f"Dataset should be multiple and defined within a list")
             sys.exit(0)
@@ -343,7 +337,6 @@ class benchmark_weather:
             make_path(self.path.joinpath(OSMOSE_PATH.weather), mode=DPDEFAULT)
 
     def compare_wind_speed_models(self):
-
         my_dpi = 80
         fact_x = 0.5
         fact_y = 0.9
@@ -365,7 +358,6 @@ class benchmark_weather:
 
         ct = 0
         for dd in self.dataset:
-
             f = open(
                 self.path.joinpath(dd, OSMOSE_PATH.weather, "polynomial_law.txt"), "r"
             )

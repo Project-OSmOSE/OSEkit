@@ -33,7 +33,6 @@ def test_reshape_errors(input_dir):
 
 @pytest.mark.unit
 def test_reshape_smaller(input_dataset: Path, output_dir: Path):
-
     dataset = Dataset(
         input_dataset["main_dir"], gps_coordinates=(1, 1), depth=10, timezone="+03:00"
     )
@@ -60,7 +59,6 @@ def test_reshape_smaller(input_dataset: Path, output_dir: Path):
 
 @pytest.mark.unit
 def test_reshape_with_new_sr(input_dataset: Path, output_dir):
-
     dataset = Dataset(
         input_dataset["main_dir"], gps_coordinates=(1, 1), depth=10, timezone="+03:00"
     )
@@ -89,7 +87,6 @@ def test_reshape_with_new_sr(input_dataset: Path, output_dir):
 
 @pytest.mark.unit
 def test_reshape_truncate_last(input_dataset: Path, output_dir):
-
     dataset = Dataset(
         input_dataset["main_dir"], gps_coordinates=(1, 1), depth=10, timezone="+03:00"
     )
