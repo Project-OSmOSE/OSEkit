@@ -186,11 +186,12 @@ Please first connect to Datarmor via :ref:`SSH connexion`. Once you are in your 
 .. code:: bash
 
 	envs_dirs:
-	  - $DATAWORK/conda-env
-	  - $HOME/conda-env
+	  - /home/datawork-osmose/conda-env
+	  - /home3/datahome/dcazau/conda-env
 	  - /appli/conda-env
 	  - /appli/conda-env/2.7
 	  - /appli/conda-env/3.6
+
 
 If different, edit this file to insert those elements.
 
