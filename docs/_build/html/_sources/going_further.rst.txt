@@ -102,7 +102,7 @@ Here is the general workflow for contributing to our project:
 
 
 
-.. include:: gallery_advanced_workflows/index.rst
+.. include:: gallery_advanced_use_cases/index.rst
 
 
 

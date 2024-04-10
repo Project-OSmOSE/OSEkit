@@ -12,29 +12,28 @@ from argparse import ArgumentParser
 import os
 
 
-def merge_timestamp_csv(input_files: str ):
-
+def merge_timestamp_csv(input_files: str):
     input_dir_path = Path(input_files)
-    
+
     list_audio = list(input_dir_path.glob("timestamp_*"))
-    
-    list_conca_timestamps=[]
-    list_conca_filename=[]
+
+    list_conca_timestamps = []
+    list_conca_filename = []
     for ll in list(input_dir_path.glob("timestamp_*")):
-    
         print(f"read and remove file {ll}")
-        list_conca_timestamps.append(list(pd.read_csv(ll)['timestamp'].values))
-        list_conca_filename.append(list(pd.read_csv(ll)['filename'].values))
+        list_conca_timestamps.append(list(pd.read_csv(ll)["timestamp"].values))
+        list_conca_filename.append(list(pd.read_csv(ll)["filename"].values))
         os.remove(ll)
-            
+
     print(f"save file {str(input_dir_path.joinpath('timestamp.csv'))}")
-    df = pd.DataFrame({"filename": list(itertools.chain(*list_conca_filename)), "timestamp": list(itertools.chain(*list_conca_timestamps))})
-    df.sort_values(by=["timestamp"], inplace=True)
-    df.to_csv(
-        input_dir_path.joinpath("timestamp.csv"),
-        index=False
+    df = pd.DataFrame(
+        {
+            "filename": list(itertools.chain(*list_conca_filename)),
+            "timestamp": list(itertools.chain(*list_conca_timestamps)),
+        }
     )
-    
+    df.sort_values(by=["timestamp"], inplace=True)
+    df.to_csv(input_dir_path.joinpath("timestamp.csv"), index=False)
 
 
 if __name__ == "__main__":
@@ -55,6 +54,3 @@ if __name__ == "__main__":
     )
 
     files = merge_timestamp_csv(input_files=input_files)
-
-
-    

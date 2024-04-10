@@ -26,7 +26,7 @@ from OSmOSE.Weather import Weather
 
 
 path_osmose_dataset = "/home6/cazaudo/Bureau/osmose_sample_datasets/"
-dataset_name = "SES1"
+dataset_name = "SES"
 campaign_name = ""
 
 date_template = "%Y%m%d_%H%M%S" 
@@ -34,7 +34,7 @@ date_template = "%Y%m%d_%H%M%S"
 #####################################################
 # Select your set of welch spectra through their time resolution and sampling rate
 
-time_resolution_welch = 300
+time_resolution_welch = 60
 sample_rate_welch = 38400
 
 #####################################################

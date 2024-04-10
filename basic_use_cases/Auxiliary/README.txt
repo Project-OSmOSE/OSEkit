@@ -1,4 +1,5 @@
-Join with auxiliary
--------------------------------------
+Spatiotemporal join between acoustics and auxiliary data
+--------------------------------------------------------------
+
 
 

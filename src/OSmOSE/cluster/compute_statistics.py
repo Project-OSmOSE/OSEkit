@@ -9,7 +9,8 @@ import soundfile as sf
 import numpy as np
 from scipy import signal
 
-from OSmOSE.utils import set_umask, get_timestamp_of_audio_file
+from OSmOSE.utils.core_utils import set_umask, get_timestamp_of_audio_file
+
 
 def Write_zscore_norma_params(
     *,
@@ -17,9 +18,8 @@ def Write_zscore_norma_params(
     output_file: Path,
     hp_filter_min_freq: int,
     batch_ind_min: int = 0,
-    batch_ind_max: int = -1
+    batch_ind_max: int = -1,
 ):
-
     """Computes the normalization parameters for the Zscore normalisation of the dataset and writes it to a csv.
 
     This function can also be called from the command line. Type `get_zscore_params.py -h` to see the list of arguments.
@@ -50,7 +50,7 @@ def Write_zscore_norma_params(
     wav_list = all_files[
         batch_ind_min : batch_ind_max if batch_ind_max != -1 else len(all_files)
     ]
-    
+
     print(f"Computing statistics over {len(wav_list)} files.")
 
     list_summaryStats = []
@@ -68,17 +68,22 @@ def Write_zscore_norma_params(
             btype="bandpass",
         )
         data = signal.sosfilt(bpcoef, data)
-        
-        current_timestamp = get_timestamp_of_audio_file(Path(input_dir).joinpath('timestamp.csv') , wav.name)        
 
-        list_summaryStats.append([wav.name, current_timestamp, np.mean(data), np.std(data)])
+        current_timestamp = get_timestamp_of_audio_file(
+            Path(input_dir).joinpath("timestamp.csv"), wav.name
+        )
+
+        list_summaryStats.append(
+            [wav.name, current_timestamp, np.mean(data), np.std(data)]
+        )
 
     with open(output_file, "w", newline="") as f:
         write = csv.writer(f)
-        write.writerow(["filename","timestamp", "mean", "std"])
+        write.writerow(["filename", "timestamp", "mean", "std"])
         write.writerows(list_summaryStats)
 
     print(f"{output_file} written.")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -128,4 +133,3 @@ if __name__ == "__main__":
         batch_ind_min=args.batch_ind_min,
         batch_ind_max=args.batch_ind_max,
     )
-

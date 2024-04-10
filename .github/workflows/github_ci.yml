@@ -39,4 +39,4 @@ jobs:
         poetry run coverage report
     - name: Format with black
       run: |
-        poetry run black .
+        poetry run black --check .

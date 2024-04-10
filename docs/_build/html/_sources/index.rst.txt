@@ -28,7 +28,7 @@ Table of contents
 =====================
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 1
 
    getting_started
    going_further
@@ -36,7 +36,6 @@ Table of contents
    glossary
    apidocs
    
-
 
 
 

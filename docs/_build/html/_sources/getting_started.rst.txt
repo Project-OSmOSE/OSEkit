@@ -24,13 +24,13 @@ The quickest and safest way to start using our toolkit is to install its latest 
 	We have made a :ref:`tutorial on Conda <Conda>` if you are starting with it
 
 
-3. Install the pip tool in your conda environment, use it to install the toolkit from the wheel file and delete this file
+3. Install the pip tool in your conda environment, go to the folder `folder_wheel` where the wheel file is located and use it to install the toolkit from the wheel file 
 
 .. code-block:: bash
 
 	conda install pip
+        cd <folder_wheel>
 	pip install <toolkit_version.whl>
-        rm <toolkit_version.whl>
 
 .. note:: 
 	If it happens that the toolkit version has not changed, use instead
@@ -68,8 +68,6 @@ Most of the examples found in modules and in the use case gallery use these audi
 
 
   
-
-
 .. include:: gallery_basic_use_cases/index.rst
 
 
