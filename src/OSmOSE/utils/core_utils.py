@@ -746,4 +746,3 @@ def add_entry_for_APLOSE(path: str, file: str, info: pd.DataFrame):
             meta.to_csv(dataset_csv, index=False)
     else:
         dataset_info.to_csv(dataset_csv, index=False)
-
