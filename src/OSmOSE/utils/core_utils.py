@@ -719,7 +719,7 @@ def extract_datetime(
         raise ValueError(f"{var}: No datetime found")
 
 
-def add_entry_for_APLOSE(path: str, file: str, info: pd.DataFrame()):
+def add_entry_for_APLOSE(path: str, file: str, info: pd.DataFrame):
     """Add entry for APLOSE dataset csv file
 
     Parameters
