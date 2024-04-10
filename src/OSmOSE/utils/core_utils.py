@@ -717,3 +717,32 @@ def extract_datetime(
         return date_obj
     else:
         raise ValueError(f"{var}: No datetime found")
+
+
+def add_entry_for_APLOSE(path: str, file: str, info: pd.DataFrame):
+    """Add entry for APLOSE dataset csv file
+
+    Parameters
+    -------
+        path: 'str'
+            path to the file
+        file: 'str'
+            csv file
+        info: 'DataFrame'
+            info of the entry
+            'campaign' / 'dataset' / 'spectro_duration' / 'dataset_sr' / 'files_type' / 'identifier'
+    Returns
+    -------
+
+    """
+    dataset_csv = Path(path, file)
+
+    if dataset_csv.exists():
+        meta = pd.read_csv(dataset_csv)
+        if dataset_info["identifier"][0] not in meta["identifier"].values:
+            meta = pd.concat([meta, dataset_info], ignore_index=True).sort_values(
+                by=["project", "dataset"], ascending=True
+            )
+            meta.to_csv(dataset_csv, index=False)
+    else:
+        dataset_info.to_csv(dataset_csv, index=False)
