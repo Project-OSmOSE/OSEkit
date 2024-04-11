@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Going further &mdash; OSmOSE toolkit  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="_static/sg_gallery.css" type="text/css" />
+      <link rel="stylesheet" href="_static/sg_gallery-binder.css" type="text/css" />
+      <link rel="stylesheet" href="_static/sg_gallery-dataframe.css" type="text/css" />
+      <link rel="stylesheet" href="_static/sg_gallery-rendered-html.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+        <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="From welch spectra to Soundcape figures" href="gallery_advanced_use_cases/Soundscape/index.html" />
+    <link rel="prev" title="Join with csv files and ERA5 data" href="gallery_basic_use_cases/Auxiliary/joiner_auxiliary.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="_static/osmose_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting started</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Going further</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#installation-with-github-and-poetry">Installation with github and poetry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#contribute">Contribute</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#advanced-use-cases">Advanced use cases</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#from-welch-spectra-to-soundcape-figures">From welch spectra to Soundcape figures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#weather">Weather</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="gallery_advanced_use_cases/Soundscape/index.html">From welch spectra to Soundcape figures</a></li>
+<li class="toctree-l4"><a class="reference internal" href="gallery_advanced_use_cases/Weather/index.html">Weather</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="on_datarmor.html">On Datarmor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="apidocs.html">API Documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: white" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">OSmOSE toolkit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Going further</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/going_further.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="going-further">
+<h1>Going further<a class="headerlink" href="#going-further" title="Link to this heading">¶</a></h1>
+<section id="installation-with-github-and-poetry">
+<h2>Installation with github and poetry<a class="headerlink" href="#installation-with-github-and-poetry" title="Link to this heading">¶</a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>We have made a <a class="reference internal" href="getting_started.html#github"><span class="std std-ref">tutorial on Github</span></a> if you are starting with it</p>
+</div>
+<p>In this section we give you the instructions to install our toolkit from github using the <a class="reference external" href="https://python-poetry.org/">poetry</a> tool:</p>
+<ol class="arabic simple">
+<li><p>First clone our Github project repository</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/Project-OSmOSE/osmose-toolkit.git
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p>Create and activate a Conda virtual environment in python 3.10 with the name you want (here osmose_dev)</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>--name<span class="w"> </span>osmose_dev<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.10<span class="w"> </span>-y
+conda<span class="w"> </span>activate<span class="w"> </span>osmose_dev
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p>Install poetry and use it to install our toolkit</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>install<span class="w"> </span>poetry
+poetry<span class="w"> </span>install
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="xref py py-obj docutils literal notranslate"><span class="pre">poetry</span> <span class="pre">install</span></code> will use the file <code class="xref py py-obj docutils literal notranslate"><span class="pre">pyproject.toml</span></code> so be sure to execute this command from its directory. Besides, if <code class="xref py py-obj docutils literal notranslate"><span class="pre">poetry</span> <span class="pre">install</span></code> fails with the message <code class="docutils literal notranslate"><span class="pre">ImportError:</span> <span class="pre">cannot</span> <span class="pre">import</span> <span class="pre">name</span> <span class="pre">'PyProjectException'</span></code>, run this line instead:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>install<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span><span class="nv">poetry</span><span class="o">==</span><span class="m">1</span>.3.2
+</pre></div>
+</div>
+</div>
+<p>The toolkit is now installed in editable mode! You can call it just like any regular python package as long as you are in its conda environment</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">OSmOSE</span> <span class="k">as</span> <span class="nn">osm</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">osm</span><span class="o">.</span><span class="n">Dataset</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Note that on the contrary of the installation procedure given in <a class="reference internal" href="on_datarmor.html#id1"><span class="std std-ref">Getting started</span></a>, the OSmOSE toolkit is now installed in editable mode, meaning that any change made to the package’s file will be reflected immediately on the environment, without needing to reload it.</p>
+</section>
+<section id="contribute">
+<h2>Contribute<a class="headerlink" href="#contribute" title="Link to this heading">¶</a></h2>
+<p>Here is the general workflow for contributing to our project:</p>
+<ol class="arabic simple">
+<li><p>Install our toolkit in local following instructions in <a class="reference internal" href="#installation-with-github-and-poetry"><span class="std std-ref">Installation with github and poetry</span></a> ;</p></li>
+<li><p>To be able to push/pull codes to/from github, add remote to your origin folder</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>remote<span class="w"> </span>add<span class="w"> </span>origin<span class="w"> </span>git@github.com:Project-OSmOSE/osmose-toolkit.git
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p>Review our Github <a class="reference external" href="https://github.com/Project-OSmOSE/osmose-toolkit/issues">issues</a> : find an open issue to tackle and /or ask if you can help write a new feature (follow standard procedures such as: short description, assignees, status, label…) ;</p></li>
+<li><p>Develop and validate your contribution in local using a branch checkout from our main branch and dedicated to your issue. As is often the case, no pushes are accepted on our main branch. Note that after creating your issue, under Development in the right panel, you can directly “Create a branch for this issue or link a pull request.” that willl provide you a command of the form</p></li>
+</ol>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>fetch<span class="w"> </span>origin
+git<span class="w"> </span>checkout<span class="w"> </span><span class="m">112</span>-create-a-double-fs-spectrogram-concatenated-horizontally
+</pre></div>
+</div>
+<ol class="arabic simple" start="5">
+<li><p>(Optional) If intended to be deployed on Datarmor, you will have to also validate your contribution on it (see section <a class="reference internal" href="on_datarmor.html#on-datarmor"><span class="std std-ref">On Datarmor</span></a> for details) ;</p></li>
+<li><dl class="simple">
+<dt>You can suggest changing in the version of the toolkit through the parameter <code class="xref py py-obj docutils literal notranslate"><span class="pre">version</span></code> in <code class="xref py py-obj docutils literal notranslate"><span class="pre">pyproject.toml</span></code>, depending on the importance of the changes:</dt><dd><ul class="simple">
+<li><p>small patch : change patch version (x.x.X)</p></li>
+<li><p>non breaking changes : change minor version (x.X.x)</p></li>
+<li><p>breaking changes : change major version (X.x.x)</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>Push your branch to our Github project and create a pull-request so it can be properly peer-reviewed ;</p></li>
+<li><p>Use <code class="xref py py-obj docutils literal notranslate"><span class="pre">poetry</span> <span class="pre">build</span></code> and upload generated files (present locally in the folder <code class="xref py py-obj docutils literal notranslate"><span class="pre">/dist</span></code>) in the corresponding package version on github <a class="reference external" href="https://github.com/Project-OSmOSE/osmose-toolkit/releases/tag/v0.1.0">here</a></p></li>
+</ol>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Beyond this workflow, you can find in this <a class="reference external" href="https://opensource.guide/how-to-contribute/">guide</a> a more exhaustive list of possible contributions for an open source project, do not hesite to make us original propositions. This <a class="reference external" href="https://www.dataschool.io/how-to-contribute-on-github/">document</a> provides a more detailed step-by-step guide on how to make contributinons on github, and this <a class="reference external" href="https://developer.mozilla.org/en-US/docs/MDN/Community/Issues">one</a> is a guideline of best practices on github.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">orphan<span class="colon">:</span></dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+</section>
+<section id="advanced-use-cases">
+<h2>Advanced use cases<a class="headerlink" href="#advanced-use-cases" title="Link to this heading">¶</a></h2>
+<div class="sphx-glr-thumbnails"></div><section id="from-welch-spectra-to-soundcape-figures">
+<h3>From welch spectra to Soundcape figures<a class="headerlink" href="#from-welch-spectra-to-soundcape-figures" title="Link to this heading">¶</a></h3>
+<div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer" tooltip="This code will show you how to compute LTAS from audio file-level welch spectra"><img alt="" src="_images/sphx_glr_1_generate_LTAS_thumb.png" />
+<p><a class="reference internal" href="gallery_advanced_use_cases/Soundscape/1_generate_LTAS.html#sphx-glr-gallery-advanced-use-cases-soundscape-1-generate-ltas-py"><span class="std std-ref">LTAS (Long Term Averaged Spectrograms)</span></a></p>
+  <div class="sphx-glr-thumbnail-title">LTAS (Long Term Averaged Spectrograms)</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="This code will show you how to compute EPD from audio file-level welch spectra"><img alt="" src="_images/sphx_glr_2_generate_EPD_thumb.png" />
+<p><a class="reference internal" href="gallery_advanced_use_cases/Soundscape/2_generate_EPD.html#sphx-glr-gallery-advanced-use-cases-soundscape-2-generate-epd-py"><span class="std std-ref">EPD (Empirical Plot Distribution)</span></a></p>
+  <div class="sphx-glr-thumbnail-title">EPD (Empirical Plot Distribution)</div>
+</div></div></section>
+<section id="weather">
+<h3>Weather<a class="headerlink" href="#weather" title="Link to this heading">¶</a></h3>
+<div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer" tooltip="This code builds a workflow to build a parametric model for wind speed estimation based on welc..."><img alt="" src="_images/sphx_glr_windspeed_estimation_thumb.png" />
+<p><a class="reference internal" href="gallery_advanced_use_cases/Weather/windspeed_estimation.html#sphx-glr-gallery-advanced-use-cases-weather-windspeed-estimation-py"><span class="std std-ref">Workflow for wind speed estimation using ERA5 data</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Workflow for wind speed estimation using ERA5 data</div>
+</div></div><div class="toctree-wrapper compound">
+</div>
+<div class="sphx-glr-footer sphx-glr-footer-gallery docutils container">
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="_downloads/bb6e8f76b41e7488f4cb13df7a282dd5/gallery_advanced_use_cases_python.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">all</span> <span class="pre">examples</span> <span class="pre">in</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">gallery_advanced_use_cases_python.zip</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="_downloads/33033f1f0490560f61b14b77aee3f202/gallery_advanced_use_cases_jupyter.zip"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">all</span> <span class="pre">examples</span> <span class="pre">in</span> <span class="pre">Jupyter</span> <span class="pre">notebooks:</span> <span class="pre">gallery_advanced_use_cases_jupyter.zip</span></code></a></p>
+</div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="gallery_basic_use_cases/Auxiliary/joiner_auxiliary.html" class="btn btn-neutral float-left" title="Join with csv files and ERA5 data" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="gallery_advanced_use_cases/Soundscape/index.html" class="btn btn-neutral float-right" title="From welch spectra to Soundcape figures" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, OSmOSE team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -8,8 +8,8 @@ SUPPORTED_AUDIO_FORMAT = [".wav"]
 __global_path_dict = {
     "raw_audio": Path("data", "audio"),
     "auxiliary": Path("data", "auxiliary"),
-    "instrument": Path("data", "auxiliary","instrument"),
-    "environment": Path("data", "auxiliary","environment"),
+    "instrument": Path("data", "auxiliary", "instrument"),
+    "environment": Path("data", "auxiliary", "environment"),
     "processed": Path("processed"),
     "spectrogram": Path("processed", "spectrogram"),
     "statistics": Path("processed", "dataset_statistics"),
@@ -18,10 +18,12 @@ __global_path_dict = {
     "EPD": Path("processed", "EPD"),
     "SPLfiltered": Path("processed", "SPLfiltered"),
     "processed_auxiliary": Path("processed", "auxiliary"),
-    "weather": Path("appli","weather"),
+    "weather": Path("appli", "weather"),
+    "other": Path("other"),
 }
 
 OSMOSE_PATH = namedtuple("path_list", __global_path_dict.keys())(**__global_path_dict)
 
-FPDEFAULT = 0o664 # Default file permissions
-DPDEFAULT = (stat.S_ISGID | 0o775) # Default directory permissions
+TIMESTAMP_FORMAT_AUDIO_FILE = "%Y-%m-%dT%H:%M:%S.%f%z"
+FPDEFAULT = 0o664  # Default file permissions
+DPDEFAULT = stat.S_ISGID | 0o775  # Default directory permissions

@@ -10,33 +10,38 @@ from pykdtree.kdtree import KDTree
 ########################################################################################
 
 
-get_era_time = lambda x: calendar.timegm(x.timetuple()) if isinstance(x, datetime.datetime) else x
-g = lambda x: calendar.timegm(time.strptime(str(x)[:-11], '%Y-%m-%dT%H'))
+get_era_time = lambda x: (
+    calendar.timegm(x.timetuple()) if isinstance(x, datetime.datetime) else x
+)
+g = lambda x: calendar.timegm(time.strptime(str(x)[:-11], "%Y-%m-%dT%H"))
 
 
-def rect_interpolation_era(stamps, var, method='linear'):
+def rect_interpolation_era(stamps, var, method="linear"):
     # Enter the stamps array, the desired single level to interpolate
     # “linear”, “nearest”, “slinear”, “cubic”, “quintic” and “pchip”.
-    t, x, y = list(map(get_era_time, np.unique(stamps[:, :, :, 0]))), list(
-        reversed(np.unique(stamps[:, :, :, 1]).astype('float64'))), np.unique(stamps[:, :, :, 2]).astype('float64')
+    t, x, y = (
+        list(map(get_era_time, np.unique(stamps[:, :, :, 0]))),
+        list(reversed(np.unique(stamps[:, :, :, 1]).astype("float64"))),
+        np.unique(stamps[:, :, :, 2]).astype("float64"),
+    )
     try:
         return inter.RegularGridInterpolator((t, x, y), var, method=method)
     except ValueError:
-        return inter.RegularGridInterpolator((t, x, y), var, method='linear')
+        return inter.RegularGridInterpolator((t, x, y), var, method="linear")
 
 
-def time_interpolation_era(stamps, var, method='linear'):
+def time_interpolation_era(stamps, var, method="linear"):
     t = list(map(get_era_time, np.unique(stamps[:, :, :, 0])))
     interp = inter.interp1d(t, var, kind=method)
     return interp
 
 
-def time_interpolation(time, var, method='linear'):
+def time_interpolation(time, var, method="linear"):
     interp = inter.interp1d(time, var, kind=method)
     return interp
 
 
-def interpolation_gps(time, latitude, longitude, depth=None, method='linear'):
+def interpolation_gps(time, latitude, longitude, depth=None, method="linear"):
     interp_lat = inter.interp1d(time, latitude, kind=method)
     interp_lon = inter.interp1d(time, longitude, kind=method)
     if isinstance(depth, type(None)):

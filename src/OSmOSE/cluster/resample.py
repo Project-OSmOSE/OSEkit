@@ -2,7 +2,8 @@ import argparse
 from pathlib import Path
 import subprocess
 import platform
-from OSmOSE.utils import set_umask
+from OSmOSE.utils.core_utils import set_umask
+
 
 def resample(
     *,
@@ -27,7 +28,7 @@ def resample(
         batch_ind_max: `int`, keyword-only
             The index of the last file of the batch. The default is -1, meaning the last file of the input directory.
     """
-    
+
     set_umask()
     if platform.system() == "Windows":
         print("Sox is unavailable on Windows")
@@ -43,8 +44,10 @@ def resample(
     # tfm.set_output_format(rate=target_sr)
 
     for audio_file in audio_files_list:
-        subprocess.run(f"sox {str(audio_file)} -r {str(target_sr)} -t wavpcm {str(Path(output_dir, audio_file.name))}", shell=True)
-
+        subprocess.run(
+            f"sox {str(audio_file)} -r {str(target_sr)} -t wavpcm {str(Path(output_dir, audio_file.name))}",
+            shell=True,
+        )
 
         print(f"{audio_file.name} resampled to {target_sr}!")
     #     tfm.build_file(
