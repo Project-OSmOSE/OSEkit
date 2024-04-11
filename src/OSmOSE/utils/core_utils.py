@@ -739,10 +739,10 @@ def add_entry_for_APLOSE(path: str, file: str, info: pd.DataFrame):
 
     if dataset_csv.exists():
         meta = pd.read_csv(dataset_csv)
-        if dataset_info["identifier"][0] not in meta["identifier"].values:
-            meta = pd.concat([meta, dataset_info], ignore_index=True).sort_values(
+        if info["identifier"][0] not in meta["identifier"].values:
+            meta = pd.concat([meta, info], ignore_index=True).sort_values(
                 by=["project", "dataset"], ascending=True
             )
             meta.to_csv(dataset_csv, index=False)
     else:
-        dataset_info.to_csv(dataset_csv, index=False)
+        info.to_csv(dataset_csv, index=False)
