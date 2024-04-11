@@ -6,7 +6,6 @@ Basic use cases
 
 
 
-
 .. raw:: html
 
     <div class="sphx-glr-thumbnails">
@@ -16,10 +15,9 @@ Basic use cases
 
     </div>
 
-Build and analyze an OSmOSE dataset
--------------------------------------
 
-
+Build, segment, resample an OSmOSE dataset, and analyze its metadata
+-------------------------------------------------------------------------
 
 
 
@@ -66,14 +64,48 @@ Build and analyze an OSmOSE dataset
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="This code will show you how to segment and resample your original audio dataset into an analysi...">
+
+.. only:: html
+
+  .. image:: /gallery_basic_use_cases/Dataset/images/thumb/sphx_glr_3_segment_resample_dataset_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_gallery_basic_use_cases_Dataset_3_segment_resample_dataset.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Segment and resample a dataset</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This code will show you how to deal with anomalies in raw data or their metadata, from corrupte...">
+
+.. only:: html
+
+  .. image:: /gallery_basic_use_cases/Dataset/images/thumb/sphx_glr_4_dealwith_anomalies_thumb.png
+    :alt:
+
+  :ref:`sphx_glr_gallery_basic_use_cases_Dataset_4_dealwith_anomalies.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Dealing with data anomalies</div>
+    </div>
+
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="Perform summary statistics and visualize your dataset metadata">
 
 .. only:: html
 
-  .. image:: /gallery_basic_use_cases/Dataset/images/thumb/sphx_glr_3_explore_metadata_thumb.png
+  .. image:: /gallery_basic_use_cases/Dataset/images/thumb/sphx_glr_5_explore_metadata_thumb.png
     :alt:
 
-  :ref:`sphx_glr_gallery_basic_use_cases_Dataset_3_explore_metadata.py`
+  :ref:`sphx_glr_gallery_basic_use_cases_Dataset_5_explore_metadata.py`
 
 .. raw:: html
 
@@ -86,7 +118,7 @@ Build and analyze an OSmOSE dataset
     </div>
 
 Generate spectrograms
---------------------------------
+---------------------------------
 
 
 
@@ -103,10 +135,10 @@ Generate spectrograms
 
 .. only:: html
 
-  .. image:: /gallery_basic_use_cases/Spectrogram/images/thumb/sphx_glr_generate_spectrogram_thumb.png
+  .. image:: /gallery_basic_use_cases/Spectrogram/images/thumb/sphx_glr_1_generate_spectrogram_thumb.png
     :alt:
 
-  :ref:`sphx_glr_gallery_basic_use_cases_Spectrogram_generate_spectrogram.py`
+  :ref:`sphx_glr_gallery_basic_use_cases_Spectrogram_1_generate_spectrogram.py`
 
 .. raw:: html
 
@@ -116,14 +148,14 @@ Generate spectrograms
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This code will show you how to tune more ">
+    <div class="sphx-glr-thumbcontainer" tooltip="This code will show you how to tune more spectrogram parameters">
 
 .. only:: html
 
-  .. image:: /gallery_basic_use_cases/Spectrogram/images/thumb/sphx_glr_tune_parameters_thumb.png
+  .. image:: /gallery_basic_use_cases/Spectrogram/images/thumb/sphx_glr_2_tune_parameters_thumb.png
     :alt:
 
-  :ref:`sphx_glr_gallery_basic_use_cases_Spectrogram_tune_parameters.py`
+  :ref:`sphx_glr_gallery_basic_use_cases_Spectrogram_2_tune_parameters.py`
 
 .. raw:: html
 
@@ -135,8 +167,9 @@ Generate spectrograms
 
     </div>
 
-Join with auxiliary
--------------------------------------
+Spatiotemporal join between acoustics and auxiliary data
+--------------------------------------------------------------
+
 
 
 
@@ -160,7 +193,7 @@ Join with auxiliary
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">Join welch spectra with ERA5 data</div>
+      <div class="sphx-glr-thumbnail-title">Join with csv files and ERA5 data</div>
     </div>
 
 

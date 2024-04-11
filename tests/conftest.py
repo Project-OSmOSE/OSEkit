@@ -5,6 +5,8 @@ import soundfile as sf
 import shutil
 import csv
 from OSmOSE.config import OSMOSE_PATH
+from scipy.signal import chirp
+
 
 def capture_csv(monkeypatch):
     pass
@@ -12,15 +14,15 @@ def capture_csv(monkeypatch):
 
 @pytest.fixture
 def input_dataset(tmp_path: Path):
-    """Fixture to create an input dataset. 
-    
+    """Fixture to create an input dataset.
+
     Creates the basic structure of a dataset in a temporary direction, as well as 10 audio files of 3 seconds of random noise at a sample rate of 44100,
      as well as the timestamp.csv file, from 2022-01-01T12:00:00 to 2022-01-01T12:00:30
     Returns
     -------
-        The paths to the dataset's folders, in order : 
+        The paths to the dataset's folders, in order :
         - root directory
-        - main audio directory 
+        - main audio directory
         - original audio sub-directory
         - main spectrogram directory."""
     main_dir = tmp_path.joinpath("sample_dataset")
@@ -38,23 +40,16 @@ def input_dataset(tmp_path: Path):
     rng = np.random.default_rng()
 
     for i in range(10):
-        data = rng.standard_normal(duration * rate)
+        if i == 0:  # make first signal deterministic
+            t = np.linspace(0, duration, int(duration * rate))
+            data = chirp(t, f0=6, f1=1, t1=duration, method="linear")
+        else:
+            data = rng.standard_normal(duration * rate)
+
         data[data > 1] = 1
         data[data < -1] = -1
-        wav_file = orig_audio_dir.joinpath(f"test-{i}.wav")
+        wav_file = orig_audio_dir.joinpath(f"20220101_1200{str(3*i).zfill(2)}.wav")
         sf.write(wav_file, data, rate, format="WAV", subtype="FLOAT")
-
-        with open(
-            orig_audio_dir.joinpath("timestamp.csv"), "a", newline=""
-        ) as timestampf:
-            writer = csv.writer(timestampf)
-            writer.writerow(
-                [
-                    wav_file.name,
-                    f"2022-01-01T12:00:{str(3*i).zfill(2)}.000Z",
-                    #"UTC",
-                ]
-            )
 
     yield dict(
         zip(
@@ -67,7 +62,7 @@ def input_dataset(tmp_path: Path):
 @pytest.fixture
 def input_dir(tmp_path):
     """Creates a temporary input directory with a single audio file.
-    
+
     The file is 3 seconds of random noise at a sample rate of 44100.
     Returns
     -------
@@ -92,7 +87,7 @@ def input_dir(tmp_path):
 @pytest.fixture
 def output_dir(tmp_path: Path):
     """Creates an empty temporary output directory.
-    
+
     Returns
     -------
         The directory path"""
@@ -106,9 +101,9 @@ def output_dir(tmp_path: Path):
 @pytest.fixture
 def input_spectrogram(input_dataset):
     """Creates an input dataset and analysis parameters.
-    
+
     See input_dataset for the details of the input dataset.
-    
+
     Returns
     -------
         input_dataset: `Path`
@@ -140,9 +135,9 @@ def input_spectrogram(input_dataset):
 @pytest.fixture
 def input_reshape(input_dir: Path):
     """Creates 10 audio files in a temporary directory and the corresponding timestamp.csv.
-    
+
     The files are all copies of the file created by the input_dir fixture.
-    
+
     Returns
     -------
         input_dir: `Path`
@@ -150,21 +145,5 @@ def input_reshape(input_dir: Path):
     for i in range(9):
         wav_file = input_dir.joinpath(f"test{i}.wav")
         shutil.copyfile(input_dir.joinpath("test.wav"), wav_file)
-
-    with open(input_dir.joinpath("timestamp.csv"), "w", newline="") as timestampf:
-        writer = csv.writer(timestampf)
-        writer.writerow(
-            ["test.wav", "2022-01-01T11:59:57.000Z"]#, "UTC"]
-        )
-        writer.writerows(
-            [
-                [
-                    f"test{i}.wav",
-                    f"2022-01-01T12:00:{str(3*i).zfill(2)}.000Z",
-                    #"UTC",
-                ]
-                for i in range(9)
-            ]
-        )
 
     return input_dir

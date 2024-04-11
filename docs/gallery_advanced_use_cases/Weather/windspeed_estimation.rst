@@ -49,7 +49,7 @@ Define dataset path and name
 
 
     path_osmose_dataset = "/home6/cazaudo/Bureau/osmose_sample_datasets/"
-    dataset_name = "SES1"
+    dataset_name = "SES"
     campaign_name = ""
 
     date_template = "%Y%m%d_%H%M%S" 
@@ -70,7 +70,7 @@ Select your set of welch spectra through their time resolution and sampling rate
 .. code-block:: default
 
 
-    time_resolution_welch = 300
+    time_resolution_welch = 60
     sample_rate_welch = 38400
 
 
@@ -107,10 +107,10 @@ Run the Weather class to do the workflow
  .. code-block:: none
 
     Your complete welch npz is already built! move on..
-      0%|          | 0/175 [00:00<?, ?it/s]     27%|██▋       | 47/175 [00:00<00:00, 464.33it/s]     54%|█████▎    | 94/175 [00:00<00:00, 459.54it/s]     85%|████████▌ | 149/175 [00:00<00:00, 498.76it/s]    100%|██████████| 175/175 [00:00<00:00, 492.90it/s]
-    Saving figure /home6/cazaudo/Bureau/osmose_sample_datasets/SES1/appli/weather/scatter_wind_model.png
-    Saving figure /home6/cazaudo/Bureau/osmose_sample_datasets/SES1/appli/weather/scatter_ecmwf_model.png
-    Saving figure /home6/cazaudo/Bureau/osmose_sample_datasets/SES1/appli/weather/temporal_ecmwf_model.png
+      0%|          | 0/869 [00:00<?, ?it/s]      9%|▉         | 77/869 [00:00<00:01, 761.10it/s]     18%|█▊        | 154/869 [00:00<00:00, 716.98it/s]     26%|██▌       | 226/869 [00:00<00:00, 681.08it/s]     34%|███▍      | 295/869 [00:00<00:00, 626.29it/s]     41%|████▏     | 359/869 [00:00<00:00, 580.63it/s]     48%|████▊     | 420/869 [00:00<00:00, 588.75it/s]     63%|██████▎   | 550/869 [00:00<00:00, 800.90it/s]     81%|████████  | 704/869 [00:00<00:00, 1022.45it/s]     99%|█████████▊| 856/869 [00:00<00:00, 1170.34it/s]    100%|██████████| 869/869 [00:00<00:00, 880.21it/s] 
+    Saving figure /home6/cazaudo/Bureau/osmose_sample_datasets/SES/appli/weather/scatter_wind_model.png
+    Saving figure /home6/cazaudo/Bureau/osmose_sample_datasets/SES/appli/weather/scatter_ecmwf_model.png
+    Saving figure /home6/cazaudo/Bureau/osmose_sample_datasets/SES/appli/weather/temporal_ecmwf_model.png
 
 
 
@@ -160,7 +160,7 @@ Visualize an example of results
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 2.921 seconds)
+   **Total running time of the script:** (0 minutes 2.072 seconds)
 
 
 .. _sphx_glr_download_gallery_advanced_use_cases_Weather_windspeed_estimation.py:

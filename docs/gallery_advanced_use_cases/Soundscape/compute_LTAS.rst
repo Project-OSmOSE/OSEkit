@@ -26,19 +26,17 @@ This code will show you how to compute LTAS from audio file-level spectrograms
 .. GENERATED FROM PYTHON SOURCE LINES 12-15
 
 Prerequisites
-------------------------
-You first need to compute audio file-level spectrograms before computing LTAS ; see the use case :ref:`sphx_glr_gallery_tutorials_Spectrogram_generate_spectrogram.py` to do this.
+===============
+You first need to compute audio file-level spectrograms before computing LTAS ; see the use case :ref:`sphx_glr_gallery_basic_use_cases_Spectrogram_2_tune_parameters.py` to do this.
 
 .. GENERATED FROM PYTHON SOURCE LINES 17-19
 
 Codes
-------------------------
+===============
 
-.. GENERATED FROM PYTHON SOURCE LINES 19-27
+.. GENERATED FROM PYTHON SOURCE LINES 19-31
 
 .. code-block:: default
-
-
 
 
 
@@ -46,46 +44,43 @@ Codes
     from OSmOSE import Spectrogram
     import glob
 
-
-
-
-
-
-
-
-.. GENERATED FROM PYTHON SOURCE LINES 28-29
-
-Define dataset path and name
-
-.. GENERATED FROM PYTHON SOURCE LINES 29-34
-
-.. code-block:: default
-
-
     path_osmose_dataset = "/home6/cazaudo/Bureau/osmose_sample_datasets/"
-    dataset_name = "MPSU"
+    dataset_name = "SPM"
     campaign_name = ""
-
-
-
-
-
-
-
-
-.. GENERATED FROM PYTHON SOURCE LINES 35-36
-
-Define standard parameters for LTAS computation
-
-.. GENERATED FROM PYTHON SOURCE LINES 36-46
-
-.. code-block:: default
-
 
     spectrogram = Spectrogram(dataset_path = Path(path_osmose_dataset, campaign_name, dataset_name))
 
-    dataset_sr = 50000
-    time_res = 30
+
+
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 32-41
+
+Parameters of LTAS 
+----------------------------
+Generate sequential LTAS : Sequential means that your welch spectra are processed over successive time period of fixed duration defined by the variable `time_scale` in the cell below (eg, this period can be set to one week, such that one soundscape figure will be generated for each successive week). `time_scale` can be set to the following values:
+
+- H for hours
+- D for days 
+- M for months
+- Y for years
+- set `time_scale='all'` to generate a LTAS over your entire dataset.
+
+.. GENERATED FROM PYTHON SOURCE LINES 43-45
+
+`time_resolution` and `sample_rate` allow us to identify your welch folder which sould be located in `processed/welch/` with a folder name following `{time_resolution}_{sample_rate}`.
+`Freq_min` (in Hz, default value 0)  and `Freq_max` (in Hz, default value fs/2) are respectively minimum and maximum frequencies to pass-band filter welch spectra (only available for SPL)
+
+.. GENERATED FROM PYTHON SOURCE LINES 45-53
+
+.. code-block:: default
+
+
+    dataset_sr = 4000
+    time_res = 60
     time_scale = 'all'
 
     spectrogram.build_LTAS(time_resolution=time_res , sample_rate = dataset_sr, time_scale=time_scale)
@@ -99,19 +94,19 @@ Define standard parameters for LTAS computation
 
  .. code-block:: none
 
-      0%|          | 0/9 [00:00<?, ?it/s]    100%|██████████| 9/9 [00:00<00:00, 1501.78it/s]
-    /home6/cazaudo/Bureau/osmose_V0/src/OSmOSE/Spectrogram.py:1620: UserWarning: Converting to PeriodArray/Index representation will drop timezone information.
+    /home6/cazaudo/Bureau/osmose_V0/src/OSmOSE/Spectrogram.py:1679: UserWarning: Converting to PeriodArray/Index representation will drop timezone information.
       date = time_vector.to_period(label_smoother[time_scale])
-    saving LTAS_all.png / Nber of welch: 9
+    saving /home6/cazaudo/Bureau/osmose_sample_datasets/SPM/processed/LTAS/LTAS_all.png ; Nber of welch: 230
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 47-48
+.. GENERATED FROM PYTHON SOURCE LINES 54-56
 
 Visualize an example of LTAS 
+------------------------------
 
-.. GENERATED FROM PYTHON SOURCE LINES 48-66
+.. GENERATED FROM PYTHON SOURCE LINES 56-72
 
 .. code-block:: default
 
@@ -122,7 +117,7 @@ Visualize an example of LTAS
     from matplotlib import image as mpimg
   
     image = mpimg.imread(spectrogram_path[0])
-    plt.imshow(image)
+    plt.imshow(image, interpolation='nearest', aspect='auto')
 
     ax = plt.gca()
     ax.xaxis.set_tick_params(labelbottom=False)
@@ -131,8 +126,6 @@ Visualize an example of LTAS
     ax.set_yticks([])
 
     plt.show()
-
-
 
 
 
@@ -148,7 +141,7 @@ Visualize an example of LTAS
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (0 minutes 0.485 seconds)
+   **Total running time of the script:** (0 minutes 1.184 seconds)
 
 
 .. _sphx_glr_download_gallery_advanced_use_cases_Soundscape_compute_LTAS.py:

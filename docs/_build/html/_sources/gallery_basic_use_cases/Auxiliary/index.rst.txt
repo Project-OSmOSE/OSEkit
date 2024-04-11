@@ -2,8 +2,9 @@
 
 .. _sphx_glr_gallery_basic_use_cases_Auxiliary:
 
-Join with auxiliary
--------------------------------------
+Spatiotemporal join between acoustics and auxiliary data
+--------------------------------------------------------------
+
 
 
 
@@ -27,7 +28,7 @@ Join with auxiliary
 
 .. raw:: html
 
-      <div class="sphx-glr-thumbnail-title">Join welch spectra with ERA5 data</div>
+      <div class="sphx-glr-thumbnail-title">Join with csv files and ERA5 data</div>
     </div>
 
 

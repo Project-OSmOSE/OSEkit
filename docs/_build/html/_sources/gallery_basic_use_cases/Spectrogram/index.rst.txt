@@ -3,7 +3,7 @@
 .. _sphx_glr_gallery_basic_use_cases_Spectrogram:
 
 Generate spectrograms
---------------------------------
+---------------------------------
 
 
 
@@ -20,10 +20,10 @@ Generate spectrograms
 
 .. only:: html
 
-  .. image:: /gallery_basic_use_cases/Spectrogram/images/thumb/sphx_glr_generate_spectrogram_thumb.png
+  .. image:: /gallery_basic_use_cases/Spectrogram/images/thumb/sphx_glr_1_generate_spectrogram_thumb.png
     :alt:
 
-  :ref:`sphx_glr_gallery_basic_use_cases_Spectrogram_generate_spectrogram.py`
+  :ref:`sphx_glr_gallery_basic_use_cases_Spectrogram_1_generate_spectrogram.py`
 
 .. raw:: html
 
@@ -33,14 +33,14 @@ Generate spectrograms
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="This code will show you how to tune more ">
+    <div class="sphx-glr-thumbcontainer" tooltip="This code will show you how to tune more spectrogram parameters">
 
 .. only:: html
 
-  .. image:: /gallery_basic_use_cases/Spectrogram/images/thumb/sphx_glr_tune_parameters_thumb.png
+  .. image:: /gallery_basic_use_cases/Spectrogram/images/thumb/sphx_glr_2_tune_parameters_thumb.png
     :alt:
 
-  :ref:`sphx_glr_gallery_basic_use_cases_Spectrogram_tune_parameters.py`
+  :ref:`sphx_glr_gallery_basic_use_cases_Spectrogram_2_tune_parameters.py`
 
 .. raw:: html
 
@@ -56,6 +56,6 @@ Generate spectrograms
 .. toctree::
    :hidden:
 
-   /gallery_basic_use_cases/Spectrogram/generate_spectrogram
-   /gallery_basic_use_cases/Spectrogram/tune_parameters
+   /gallery_basic_use_cases/Spectrogram/1_generate_spectrogram
+   /gallery_basic_use_cases/Spectrogram/2_tune_parameters
 
