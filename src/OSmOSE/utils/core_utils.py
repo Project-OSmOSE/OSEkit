@@ -154,7 +154,7 @@ def list_dataset(path_osmose: str, campaign: str = None) -> None:
 
     if list_built_datasets:
         built_formatted = "\n".join(
-        [f"  - {dataset.name}" for dataset in list_built_datasets]
+            [f"  - {dataset.name}" for dataset in list_built_datasets]
         )
         print(f"""List of the built datasets under {ds_folder}:\n\n{built_formatted}""")
     else:
@@ -169,25 +169,17 @@ def list_dataset(path_osmose: str, campaign: str = None) -> None:
         )
 
 
-def list_aplose(path_osmose: str):
-    """Checks whether an APLOSE annotation file is stored in a dataset folder.
-    The search for an aPLOSE file is performed under one of the following directory structures:
-        - campaign_name/dataset_name/processed/aplose/csv_result_file
-        - dataset_name/processed/aplose/csv_result_file
-    If either structure is found, it will be printed.
+def list_aplose(path_osmose: str, campaign: str = ""):
+    """Prints the available APLOSE datasets containing result files (result and task_status).
 
     Parameter
     ---------
-    path_osmose: 'str'
-        usually '/home/datawork-osmose/dataset/'
+    dataset_folder_path: str
+        The path to the directory containing the campaign / datasets.
+    campaign: str
+        Name of the campaign folder containing the datasets."""
 
-    Returns
-    -------
-    The list of the datasets and theirs associated campaign and APLOSE annotation file is being printed
-    In case of denied read permissions, the list of datasets with no permission will be printed with its owner
-    """
-
-    ds_folder = Path(datasets_folder_path, campaign)
+    ds_folder = Path(path_osmose, campaign)
 
     dataset_list = [
         directory
@@ -213,7 +205,9 @@ def list_aplose(path_osmose: str):
             None,
         )
 
-        task_status_path = result_path.replace('results', 'task_status') if result_path else None
+        task_status_path = (
+            result_path.replace("results", "task_status") if result_path else None
+        )
 
         if os.access(dataset_directory, os.R_OK):
             if (
@@ -230,9 +224,16 @@ def list_aplose(path_osmose: str):
 
     if list_aplose_datasets:
         aplose_formatted = "\n".join(
-        [f"  - {dataset.name}\n\tresult file: {r.name}\n\ttask status file: {ts.name}" for dataset, r, ts in zip(list_aplose_datasets, list_aplose_result, list_aplose_task_status)]
+            [
+                f"  - {dataset.name}\n\tresult file: {r.name}\n\ttask status file: {ts.name}"
+                for dataset, r, ts in zip(
+                    list_aplose_datasets, list_aplose_result, list_aplose_task_status
+                )
+            ]
         )
-        print(f"""List of the datasets with APLOSE result files under {ds_folder}:\n\n{aplose_formatted}""")
+        print(
+            f"""List of the datasets with APLOSE result files under {ds_folder}:\n\n{aplose_formatted}"""
+        )
     else:
         print(f"No dataset with APLOSE result files found under '{ds_folder}'")
 
