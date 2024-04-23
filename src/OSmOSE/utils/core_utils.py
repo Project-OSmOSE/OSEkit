@@ -33,7 +33,7 @@ def display_folder_storage_infos(dir_path: str) -> None:
     print("Available storage space (TB):", round(usage.free / (1024**4), 1))
 
 
-def list_not_built_datasets(path_osmose: str, campaign: str = None) -> None:
+def list_not_built_dataset(path_osmose: str, campaign: str = None) -> None:
     """Prints the available datasets that have not been built by the `Dataset.build()` function.
 
     Parameter
@@ -55,8 +55,8 @@ def list_not_built_datasets(path_osmose: str, campaign: str = None) -> None:
         dataset_list, key=lambda path: str(path).lower()
     )  # case insensitive alphabetical sorting of datasets
 
-    list_not_built_datasets = []
-    list_unknown_datasets = []
+    list_not_built_dataset = []
+    list_unknown_dataset = []
 
     for dataset_directory in dataset_list:
         dataset_directory = ds_folder.joinpath(dataset_directory)
@@ -81,18 +81,18 @@ def list_not_built_datasets(path_osmose: str, campaign: str = None) -> None:
                     OSMOSE_PATH.raw_audio, "original"
                 ).exists()
             ):
-                list_not_built_datasets.append(dataset_directory)
+                list_not_built_dataset.append(dataset_directory)
         else:
-            list_unknown_datasets.append(dataset_directory)
+            list_unknown_dataset.append(dataset_directory)
 
     not_built_formatted = "\n".join(
-        [f"  - {dataset.name}" for dataset in list_not_built_datasets]
+        [f"  - {dataset.name}" for dataset in list_not_built_dataset]
     )
     print(f"""List of the datasets that are not built yet:\n\n{not_built_formatted}""")
 
-    if list_unknown_datasets:
+    if list_unknown_dataset:
         unreachable_formatted = "\n".join(
-            [f"  - {dataset.name}" for dataset in list_unknown_datasets]
+            [f"  - {dataset.name}" for dataset in list_unknown_dataset]
         )
         print(
             f"""List of unreachable datasets (probably due to insufficient permissions):\n\n{unreachable_formatted}"""
@@ -121,8 +121,8 @@ def list_dataset(path_osmose: str, campaign: str = None) -> None:
         dataset_list, key=lambda path: str(path).lower()
     )  # case insensitive alphabetical sorting of datasets
 
-    list_built_datasets = []
-    list_unknown_datasets = []
+    list_built_dataset = []
+    list_unknown_dataset = []
 
     for dataset_directory in dataset_list:
         dataset_directory = ds_folder.joinpath(dataset_directory)
@@ -147,22 +147,22 @@ def list_dataset(path_osmose: str, campaign: str = None) -> None:
                     OSMOSE_PATH.raw_audio, "original"
                 ).exists()
             ):
-                list_built_datasets.append(dataset_directory)
+                list_built_dataset.append(dataset_directory)
 
         else:
-            list_unknown_datasets.append(dataset_directory)
+            list_unknown_dataset.append(dataset_directory)
 
-    if list_built_datasets:
+    if list_built_dataset:
         built_formatted = "\n".join(
-            [f"  - {dataset.name}" for dataset in list_built_datasets]
+            [f"  - {dataset.name}" for dataset in list_built_dataset]
         )
         print(f"""List of the built datasets under {ds_folder}:\n\n{built_formatted}""")
     else:
         print(f"No dataset found under '{ds_folder}'")
 
-    if list_unknown_datasets:
+    if list_unknown_dataset:
         unreachable_formatted = "\n".join(
-            [f"  - {dataset.name}" for dataset in list_unknown_datasets]
+            [f"  - {dataset.name}" for dataset in list_unknown_dataset]
         )
         print(
             f"""List of unreachable datasets (probably due to insufficient permissions):\n\n{unreachable_formatted}"""
@@ -191,8 +191,8 @@ def list_aplose(path_osmose: str, campaign: str = ""):
         dataset_list, key=lambda path: str(path).lower()
     )  # case insensitive alphabetical sorting of datasets
 
-    list_aplose_datasets = []
-    list_unknown_datasets = []
+    list_built_dataset = []
+    list_unknown_dataset = []
     list_aplose_result = []
     list_aplose_task_status = []
 
@@ -216,18 +216,18 @@ def list_aplose(path_osmose: str, campaign: str = ""):
                 and task_status_path
                 and Path(task_status_path).exists()
             ):
-                list_aplose_datasets.append(dataset_directory)
+                list_built_dataset.append(dataset_directory)
                 list_aplose_result.append(Path(result_path))
                 list_aplose_task_status.append(Path(task_status_path))
         else:
-            list_unknown_datasets.append(dataset_directory)
+            list_unknown_dataset.append(dataset_directory)
 
-    if list_aplose_datasets:
+    if list_built_dataset:
         aplose_formatted = "\n".join(
             [
                 f"  - {dataset.name}\n\tresult file: {r.name}\n\ttask status file: {ts.name}"
                 for dataset, r, ts in zip(
-                    list_aplose_datasets, list_aplose_result, list_aplose_task_status
+                    list_built_dataset, list_aplose_result, list_aplose_task_status
                 )
             ]
         )
@@ -237,9 +237,9 @@ def list_aplose(path_osmose: str, campaign: str = ""):
     else:
         print(f"No dataset with APLOSE result files found under '{ds_folder}'")
 
-    if list_unknown_datasets:
+    if list_unknown_dataset:
         unreachable_formatted = "\n".join(
-            [f"  - {dataset.name}" for dataset in list_unknown_datasets]
+            [f"  - {dataset.name}" for dataset in list_unknown_dataset]
         )
         print(
             f"""List of unreachable datasets (probably due to insufficient permissions):\n\n{unreachable_formatted}"""
