@@ -33,7 +33,7 @@ def display_folder_storage_infos(dir_path: str) -> None:
     print("Available storage space (TB):", round(usage.free / (1024**4), 1))
 
 
-def list_not_built_datasets(datasets_folder_path: str, campaign: str = None) -> None:
+def list_not_built_datasets(path_osmose: str, campaign: str = None) -> None:
     """Prints the available datasets that have not been built by the `Dataset.build()` function.
 
     Parameter
@@ -43,7 +43,7 @@ def list_not_built_datasets(datasets_folder_path: str, campaign: str = None) -> 
     campaign: str
         Name of the campaign folder containing the datasets."""
 
-    ds_folder = Path(datasets_folder_path, campaign)
+    ds_folder = Path(path_osmose, campaign)
 
     dataset_list = [
         directory
@@ -109,7 +109,7 @@ def list_dataset(path_osmose: str, campaign: str = None) -> None:
     campaign: str
         Name of the campaign folder containing the datasets."""
 
-    ds_folder = Path(datasets_folder_path, campaign)
+    ds_folder = Path(path_osmose, campaign)
 
     dataset_list = [
         directory
