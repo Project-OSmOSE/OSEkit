@@ -25,7 +25,7 @@ import numpy as np
 from OSmOSE.config import *
 
 
-def display_folder_storage_infos(dir_path: str) -> None:
+def display_folder_storage_info(dir_path: str) -> None:
     usage = shutil.disk_usage(dir_path)
     print("Total storage space (TB):", round(usage.total / (1024**4), 1))
     print("Used storage space (TB):", round(usage.used / (1024**4), 1))
@@ -33,15 +33,17 @@ def display_folder_storage_infos(dir_path: str) -> None:
     print("Available storage space (TB):", round(usage.free / (1024**4), 1))
 
 
-def list_not_built_datasets(datasets_folder_path: str) -> None:
+def list_not_built_dataset(path_osmose: str, campaign: str = None) -> None:
     """Prints the available datasets that have not been built by the `Dataset.build()` function.
 
     Parameter
     ---------
     dataset_folder_path: str
-        The path to the directory containing the datasets."""
+        The path to the directory containing the campaigns/datasets.
+    campaign: str
+        Name of the campaign folder containing the datasets."""
 
-    ds_folder = Path(datasets_folder_path)
+    ds_folder = Path(path_osmose, campaign)
 
     dataset_list = [
         directory
@@ -53,8 +55,8 @@ def list_not_built_datasets(datasets_folder_path: str) -> None:
         dataset_list, key=lambda path: str(path).lower()
     )  # case insensitive alphabetical sorting of datasets
 
-    list_not_built_datasets = []
-    list_unknown_datasets = []
+    list_not_built_dataset = []
+    list_unknown_dataset = []
 
     for dataset_directory in dataset_list:
         dataset_directory = ds_folder.joinpath(dataset_directory)
@@ -79,21 +81,169 @@ def list_not_built_datasets(datasets_folder_path: str) -> None:
                     OSMOSE_PATH.raw_audio, "original"
                 ).exists()
             ):
-                list_not_built_datasets.append(dataset_directory)
+                list_not_built_dataset.append(dataset_directory)
         else:
-            list_unknown_datasets.append(dataset_directory)
+            list_unknown_dataset.append(dataset_directory)
 
     not_built_formatted = "\n".join(
-        [f"  - {dataset.name}" for dataset in list_not_built_datasets]
+        [f"  - {dataset.name}" for dataset in list_not_built_dataset]
     )
-    print(f"""List of the datasets that aren't built yet:\n{not_built_formatted}""")
+    print(f"""List of the datasets that are not built yet:\n\n{not_built_formatted}""")
 
-    unreachable_formatted = "\n".join(
-        [f"  - {dataset.name}" for dataset in list_unknown_datasets]
-    )
-    print(
-        f"""List of unreachable datasets (probably due to insufficient permissions) :\n{unreachable_formatted}"""
-    )
+    if list_unknown_dataset:
+        unreachable_formatted = "\n".join(
+            [f"  - {dataset.name}" for dataset in list_unknown_dataset]
+        )
+        print(
+            f"""List of unreachable datasets (probably due to insufficient permissions):\n\n{unreachable_formatted}"""
+        )
+
+
+def list_dataset(path_osmose: str, campaign: str = None) -> None:
+    """Prints the available datasets that have been built by the `Dataset.build()` function.
+
+    Parameter
+    ---------
+    dataset_folder_path: str
+        The path to the directory containing the campaigns/datasets.
+    campaign: str
+        Name of the campaign folder containing the datasets."""
+
+    ds_folder = Path(path_osmose, campaign)
+
+    dataset_list = [
+        directory
+        for directory in ds_folder.iterdir()
+        if ds_folder.joinpath(directory).is_dir()
+    ]
+
+    dataset_list = sorted(
+        dataset_list, key=lambda path: str(path).lower()
+    )  # case insensitive alphabetical sorting of datasets
+
+    list_built_dataset = []
+    list_unknown_dataset = []
+
+    for dataset_directory in dataset_list:
+        dataset_directory = ds_folder.joinpath(dataset_directory)
+        if os.access(dataset_directory, os.R_OK):
+            metadata_path = next(
+                dataset_directory.joinpath(OSMOSE_PATH.raw_audio).rglob("metadata.csv"),
+                None,
+            )
+            timestamp_path = next(
+                dataset_directory.joinpath(OSMOSE_PATH.raw_audio).rglob(
+                    "timestamp.csv"
+                ),
+                None,
+            )
+
+            if (
+                metadata_path
+                and metadata_path.exists()
+                and timestamp_path
+                and timestamp_path.exists()
+                and not dataset_directory.joinpath(
+                    OSMOSE_PATH.raw_audio, "original"
+                ).exists()
+            ):
+                list_built_dataset.append(dataset_directory)
+
+        else:
+            list_unknown_dataset.append(dataset_directory)
+
+    if list_built_dataset:
+        built_formatted = "\n".join(
+            [f"  - {dataset.name}" for dataset in list_built_dataset]
+        )
+        print(f"""List of the built datasets under {ds_folder}:\n\n{built_formatted}""")
+    else:
+        print(f"No dataset found under '{ds_folder}'")
+
+    if list_unknown_dataset:
+        unreachable_formatted = "\n".join(
+            [f"  - {dataset.name}" for dataset in list_unknown_dataset]
+        )
+        print(
+            f"""List of unreachable datasets (probably due to insufficient permissions):\n\n{unreachable_formatted}"""
+        )
+
+
+def list_aplose(path_osmose: str, campaign: str = ""):
+    """Prints the available APLOSE datasets containing result files (result and task_status).
+
+    Parameter
+    ---------
+    dataset_folder_path: str
+        The path to the directory containing the campaign / datasets.
+    campaign: str
+        Name of the campaign folder containing the datasets."""
+
+    ds_folder = Path(path_osmose, campaign)
+
+    dataset_list = [
+        directory
+        for directory in ds_folder.iterdir()
+        if ds_folder.joinpath(directory).is_dir()
+    ]
+
+    dataset_list = sorted(
+        dataset_list, key=lambda path: str(path).lower()
+    )  # case insensitive alphabetical sorting of datasets
+
+    list_built_dataset = []
+    list_unknown_dataset = []
+    list_aplose_result = []
+    list_aplose_task_status = []
+
+    for dataset_directory in dataset_list:
+
+        aplose_path = Path(dataset_directory, OSMOSE_PATH.aplose)
+
+        result_path = next(
+            iter(glob.glob(os.path.join(aplose_path, "**_results**.csv"))),
+            None,
+        )
+
+        task_status_path = (
+            result_path.replace("results", "task_status") if result_path else None
+        )
+
+        if os.access(dataset_directory, os.R_OK):
+            if (
+                result_path
+                and Path(result_path).exists()
+                and task_status_path
+                and Path(task_status_path).exists()
+            ):
+                list_built_dataset.append(dataset_directory)
+                list_aplose_result.append(Path(result_path))
+                list_aplose_task_status.append(Path(task_status_path))
+        else:
+            list_unknown_dataset.append(dataset_directory)
+
+    if list_built_dataset:
+        aplose_formatted = "\n".join(
+            [
+                f"  - {dataset.name}\n\tresult file: {r.name}\n\ttask status file: {ts.name}"
+                for dataset, r, ts in zip(
+                    list_built_dataset, list_aplose_result, list_aplose_task_status
+                )
+            ]
+        )
+        print(
+            f"""List of the datasets with APLOSE result files under {ds_folder}:\n\n{aplose_formatted}"""
+        )
+    else:
+        print(f"No dataset with APLOSE result files found under '{ds_folder}'")
+
+    if list_unknown_dataset:
+        unreachable_formatted = "\n".join(
+            [f"  - {dataset.name}" for dataset in list_unknown_dataset]
+        )
+        print(
+            f"""List of unreachable datasets (probably due to insufficient permissions):\n\n{unreachable_formatted}"""
+        )
 
 
 def read_config(raw_config: Union[str, dict, Path]) -> NamedTuple:
@@ -366,179 +516,6 @@ def t_rounder(t: pd.Timestamp, res: int) -> pd.Timestamp:
     else:
         raise ValueError(f"res={res}s: Resolution not available")
     return t
-
-
-def list_dataset(path_osmose: str, campaign_folder: str = None):
-    """Lists all the datasets available, i.e. built datasets, under given path.
-    A dataset is defined as built if it contains the following folders : 'data', 'processed' (THIS DEFINITION MIGHT NEED TO BE IMPOVED).
-    The function check in the immediate directories of the given path and one level deeper
-    in case a campaign folder is present, i.e. a folder that contains several datasets.
-    If user only wants to print the datasets under a specific campaign only, then 'campaign_folder' argument
-    should be provided and the function will only check for dataset structure under this folder.
-
-    Parameter
-    ---------
-    path_osmose: 'str'
-        usually '/home/datawork-osmose/dataset/'
-
-    path_osmose: 'str'
-        campaign name to check for dataset strucure, if provided
-
-    Returns
-    -------
-    The list of the datasets and theirs associated campaign is being printed
-    In case of denied read permissions, the list of datasets with no permission will be printed with its owner
-    """
-
-    dataset, denied_dataset, campaign, owner = [], [], [], []
-    if campaign_folder != "":
-        path_osmose = os.path.join(path_osmose, campaign_folder)
-
-    # Iterate over immediate subdirectories of the root directory
-    for entry in os.scandir(path_osmose):
-        if entry.is_dir():
-            try:
-                subdirectories = set(os.listdir(entry.path))
-                if all(subdir in subdirectories for subdir in ["data", "processed"]):
-                    dataset.append(os.path.basename(entry.path))
-                    if campaign_folder != "":
-                        campaign.append(campaign_folder)
-                    else:
-                        campaign.append("/")
-
-                if campaign_folder == "":
-                    # If the immediate subdirectory doesn't contain the required subdirectories,
-                    # check one level deeper (campaigns directories)
-                    for sub_entry in os.scandir(entry.path):
-                        if sub_entry.is_dir():
-                            try:
-                                sub_subdirectories = set(os.listdir(sub_entry.path))
-                                if all(
-                                    subdir in sub_subdirectories
-                                    for subdir in ["data", "processed"]
-                                ):
-                                    dataset.append(os.path.basename(sub_entry.path))
-                                    campaign.append(Path(sub_entry.path).parts[-2])
-                            except PermissionError:
-                                denied_dataset.append(sub_entry.path)
-                                owner_id = os.stat(sub_entry.path).st_uid
-                                owner_name = pwd.getpwuid(owner_id).pw_name
-                                owner.append(owner_name)
-
-            except PermissionError:
-                denied_dataset.append(entry.path)
-                owner_id = os.stat(entry.path).st_uid
-                owner_name = pwd.getpwuid(owner_id).pw_name
-                owner.append(owner_name)
-                continue
-
-    if dataset != []:
-        print("Built datasets:")
-        combined = list(zip(campaign, dataset))
-        combined.sort()
-        campaign, dataset = zip(*combined)
-        for cp, ds in zip(campaign, dataset):
-            print(f"  - campaign: {cp} -- dataset: {ds}")
-    else:
-        raise ValueError(f"No dataset available under {path_osmose}")
-
-    if denied_dataset != []:
-        print("\nNo permission to read:")
-        combined = list(zip(denied_dataset, owner))
-        combined.sort()
-        denied_dataset, owner = zip(*combined)
-        for ds, ow in zip(denied_dataset, owner):
-            print(f"  - {ds} -- Owner ID: {ow}")
-
-
-def list_aplose(path_osmose: str):
-    """Checks whether an APLOSE annotation file is stored in a dataset folder.
-    The search for an aPLOSE file is performed under one of the following directory structures:
-        - campaign_name/dataset_name/processed/aplose/csv_result_file
-        - dataset_name/processed/aplose/csv_result_file
-    If either structure is found, it will be printed.
-
-    Parameter
-    ---------
-    path_osmose: 'str'
-        usually '/home/datawork-osmose/dataset/'
-
-    Returns
-    -------
-    The list of the datasets and theirs associated campaign and APLOSE annotation file is being printed
-    In case of denied read permissions, the list of datasets with no permission will be printed with its owner
-    """
-
-    campaign_path, aplose_path, aplose_file, no_permission, owner = [], [], [], [], []
-
-    # Iterate over directories directly under path_osmose_dataset
-    for dir_name in os.listdir(path_osmose):
-        dir_path = os.path.join(path_osmose, dir_name)
-
-        # Check if the item is a directory
-        if os.path.isdir(dir_path):
-            try:
-                processed_dir_path = os.path.join(dir_path, "processed")
-
-                # Check if 'processed' directory exists
-                if os.path.isdir(processed_dir_path):
-                    aplose_dir_path = os.path.join(processed_dir_path, "aplose")
-                    if os.path.exists(aplose_dir_path):
-                        csv_path = glob.glob(
-                            os.path.join(aplose_dir_path, "**_results**.csv")
-                        )
-                        for csv in csv_path:
-                            campaign_path.append("/")
-                            aplose_path.append(dir_name)
-                            aplose_file.append(os.path.basename(csv))
-                else:
-                    # If 'processed' directory doesn't exist, look one level deeper
-                    for subdir_name in os.listdir(dir_path):
-                        subdir_path = os.path.join(dir_path, subdir_name)
-                        processed_subdir_path = os.path.join(subdir_path, "processed")
-
-                        # Check if the item is a directory
-                        if os.path.isdir(processed_subdir_path):
-                            try:
-                                # Check if 'processed' directory exists
-                                if os.path.isdir(processed_subdir_path):
-                                    aplose_subdir_path = os.path.join(
-                                        processed_subdir_path, "aplose"
-                                    )
-                                    if os.path.exists(aplose_subdir_path):
-                                        csv_path = glob.glob(
-                                            os.path.join(
-                                                aplose_dir_path, "**_results**.csv"
-                                            )
-                                        )
-                                        for csv in csv_path:
-                                            campaign_path.append(
-                                                Path(aplose_subdir_path).parts[-4]
-                                            )
-                                            aplose_path.append(subdir_name)
-                                            aplose_file.append(os.path.basename(csv))
-
-                            except PermissionError:
-                                owner_id = os.stat(subdir_path).st_uid
-                                owner_name = pwd.getpwuid(owner_id).pw_name
-                                owner.append(owner_name)
-                                no_permission.append(subdir_path)
-
-            except PermissionError:
-                owner_id = os.stat(dir_path).st_uid
-                owner_name = pwd.getpwuid(owner_id).pw_name
-                owner.append(owner_name)
-                no_permission.append(dir_path)
-
-    # Print datasets with no read permission
-    print("\nNo permission to read:")
-    for ds, ow in zip(no_permission, owner):
-        print(f"  - {ds} -- Owner ID: {ow}")
-
-    # Print campaigns -- datasets -- APLOSE files
-    print("\nAvailable APLOSE annotation files:")
-    for campaign, ds, f in zip(campaign_path, aplose_path, aplose_file):
-        print(f"  - campaign: {campaign} -- dataset: {ds} -- file: {f}")
 
 
 def check_available_file_resolution(

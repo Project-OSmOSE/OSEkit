@@ -18,6 +18,7 @@ __global_path_dict = {
     "EPD": Path("processed", "EPD"),
     "SPLfiltered": Path("processed", "SPLfiltered"),
     "processed_auxiliary": Path("processed", "auxiliary"),
+    "aplose": Path("processed", "aplose"),
     "weather": Path("appli", "weather"),
     "other": Path("other"),
 }
