@@ -25,7 +25,7 @@ import numpy as np
 from OSmOSE.config import *
 
 
-def display_folder_storage_infos(dir_path: str) -> None:
+def display_folder_storage_info(dir_path: str) -> None:
     usage = shutil.disk_usage(dir_path)
     print("Total storage space (TB):", round(usage.total / (1024**4), 1))
     print("Used storage space (TB):", round(usage.used / (1024**4), 1))
