@@ -1,8 +1,8 @@
 <br>
 <br>
 <div align='center'>
-<a href="https://github.com/Project-OSmOSE/osekit">
-    <img src="https://github.com/Project-OSmOSE/osekit/blob/main/docs/logo/osmose_logo.png" alt="osmose logo" title="OSmOSE" height="120" style="padding-bottom:1em !important;" />
+<a href="https://github.com/Project-OSmOSE/OSEkit">
+    <img src="https://github.com/Project-OSmOSE/OSEkit/blob/main/docs/logo/osmose_logo.png" alt="osmose logo" title="OSmOSE" height="120" style="padding-bottom:1em !important;" />
 </a>
 
 <br>
@@ -31,7 +31,7 @@ OSEkit is an open source suite of tools written in python and dedicated to the m
 
 ### Getting into it
 
-All details to start using our toolkit and make the most out of it are given in our [documentation](https://project-osmose.github.io/osekit/); you will then be redirected to more specific parts of it depending on your profile and intentions:)
+All details to start using our toolkit and make the most out of it are given in our [documentation](https://project-osmose.github.io/OSEkit/); you will then be redirected to more specific parts of it depending on your profile and intentions:)
 
 <br>
 
