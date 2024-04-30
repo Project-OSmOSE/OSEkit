@@ -13,9 +13,9 @@ import glob
 import math
 import pandas as pd
 import json
-import pwd
 
 try:
+    import pwd
     import tomllib
 except ModuleNotFoundError:
     import tomli as tomllib
