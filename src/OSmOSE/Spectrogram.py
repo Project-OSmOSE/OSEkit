@@ -38,6 +38,7 @@ from OSmOSE.utils.core_utils import (
 from OSmOSE.config import *
 from OSmOSE.scales.scale_serializer import ScaleSerializer
 
+
 class Spectrogram(Dataset):
     """Main class for spectrogram-related computations. Can resample, reshape and normalize audio files before generating spectrograms."""
 
@@ -228,7 +229,7 @@ class Spectrogram(Dataset):
         )
 
         self.jb = Job_builder()
-        self.custom_scale : str = None
+        self.custom_scale: str = None
 
         plt.switch_backend("agg")
 
@@ -1586,17 +1587,19 @@ class Spectrogram(Dataset):
         if not self.custom_scale:
             plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
         else:
-            if self.custom_scale == "log" : 
+            if self.custom_scale == "log":
                 plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
-                plt.yscale('log')   
-                plt.ylim(freq[freq > 0].min(), self.dataset_sr/2)
-            else:       
-                custom_scale = ScaleSerializer().get_scale(self.custom_scale,self.dataset_sr)
+                plt.yscale("log")
+                plt.ylim(freq[freq > 0].min(), self.dataset_sr / 2)
+            else:
+                custom_scale = ScaleSerializer().get_scale(
+                    self.custom_scale, self.dataset_sr
+                )
                 freq_custom = np.vectorize(custom_scale.map_freq2scale)(freq)
                 plt.pcolormesh(time, freq_custom, log_spectro, cmap=color_map)
 
         plt.clim(vmin=self.dynamic_min, vmax=self.dynamic_max)
-        
+
         # plt.colorbar()
         if adjust:
             fig.axes[0].get_xaxis().set_visible(True)
