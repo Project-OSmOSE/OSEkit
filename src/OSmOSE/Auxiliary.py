@@ -3,170 +3,15 @@ import numpy as np
 import pandas as pd
 import os, sys
 from glob import glob
-import scipy.signal as sg
 from OSmOSE import jointure as j
 from importlib import resources
-import soundfile as sf
-import grp
 from tqdm import tqdm
 import netCDF4 as nc
-import calendar, time, datetime
-from bisect import bisect_left
+import datetime
 from OSmOSE.utils import read_config
 from OSmOSE.config import *
 from OSmOSE.utils import make_path
 from scipy import interpolate as inter
-
-
-def haversine(lat1, lat2, lon1, lon2):
-    lat1 = np.array(lat1).astype("float64")
-    lat2 = np.array(lat2).astype("float64")
-    lon1 = np.array(lon1).astype("float64")
-    lon2 = np.array(lon2).astype("float64")
-    return (
-        2
-        * 6371
-        * np.arcsin(
-            np.sqrt(
-                np.sin((np.pi / 180) * (lat2 - lat1) / 2) ** 2
-                + np.cos((np.pi / 180) * lat1)
-                * np.cos((np.pi / 180) * lat2)
-                * np.sin((np.pi / 180) * (lon2 - lon1) / 2) ** 2
-            )
-        )
-    )
-
-
-def get_nc_time(x):
-    try:
-        return calendar.timegm(
-            time.strptime("".join(x.astype(str)), "%Y-%m-%dT%H:%M:%SZ")
-        )
-    except ValueError:
-        return np.nan
-
-
-def take_closest(array, elem):
-    """
-    Assumes array is sorted. Returns closest value to elem.
-    If two numbers are equally close, return the smallest number.
-    """
-    pos = bisect_left(array, elem)
-    if pos == 0:
-        return 0
-    if pos == len(array):
-        return len(array) - 1
-    return pos - 1
-
-
-def get_wind_fetch(dist, dir_u, dir_v):
-    """
-    scale used for wind fetch is 0.04° = 5 km
-    This ensures that shore distance in km yields a distance in ° that is less than the true distance.
-    """
-    angle = np.arctan(dir_v / dir_u).astype("float16")
-    return 0.04 / 5 * dist.astype("float16") * np.cos(angle), 0.04 / 5 * dist.astype(
-        "float16"
-    ) * np.sin(angle)
-
-
-def mod_pos(x, name):
-    if name == "lat":
-        return (x + 90) % 180 - 90
-    if name == "lon":
-        return (x + 180) % 360 - 180
-
-
-def nearest_shore(x, y):
-    shore_distance = np.full([len(x)], np.nan)
-    x, y = np.round(x * 100 // 4 * 4 / 100 + 0.02, 2), np.round(
-        y * 100 // 4 * 4 / 100 + 0.02, 2
-    )
-    _x, _y = x[(~np.isnan(x)) | (~np.isnan(y))], y[(~np.isnan(x)) | (~np.isnan(y))]
-    lat_ind = np.rint(-9000 / 0.04 * (_y) + 20245500).astype(int)
-    lat_ind2 = np.rint(-9000 / 0.04 * (_y - 0.04) + 20245500).astype(int)
-    lon_ind = (_x / 0.04 + 4499.5).astype(int)
-    sub_dist2shore = np.stack(
-        [dist2shore_ds[ind1:ind2] for ind1, ind2 in zip(lat_ind, lat_ind2)]
-    )
-    shore_temp = np.array(
-        [sub_dist2shore[i, lon_ind[i], -1] for i in range(len(lon_ind))]
-    )
-    shore_distance[(~np.isnan(x)) | (~np.isnan(y))] = shore_temp
-    return shore_distance
-
-
-def numerical_gps(df):
-    if len(df) == 6:
-        return calendar.timegm(
-            datetime.datetime(
-                int(df["year"]),
-                int(df["month"]),
-                int(df["day"]),
-                int(df["hour"]),
-                int(df["minute"]),
-                int(df["second"]),
-            ).timetuple()
-        )
-    return calendar.timegm(
-        datetime.datetime(
-            int(df["year"]), int(df["month"]), int(df["day"]), int(df["hour"])
-        ).timetuple()
-    )
-
-
-def numerical_time(date):
-    try:
-        return calendar.timegm(time.strptime(str(date)[:-5], "%Y-%m-%dT%H:%M:%S"))
-    except ValueError:
-        return calendar.timegm(time.strptime(str(date)[:-4], "%Y%m%d%H"))
-
-
-def window_rms(sig, window_size=512):
-    sig_sqr = np.power(sig, 2)
-    window = np.ones(window_size) / float(window_size)
-    return np.sqrt(np.convolve(sig_sqr, window, "same"))
-
-
-def norm(sig):
-    return (sig - np.nanmean(sig)) / (np.nanstd(sig) + 1e-10)
-
-
-def norm_uneven(sig1, sig2):
-    concatenation = np.concatenate((sig1.flatten(), sig2.flatten()))
-    mean, std = np.nanmean(concatenation), np.nanstd(concatenation)
-    return (sig1 - mean) / (std + 1e-10), (sig2 - mean) / (std + 1e-10)
-
-
-def inter_spl(spl, scale, freq):
-    idx_low = len(spl[scale <= freq])
-    idx_high = idx_low + 1
-    return (spl[idx_high] - spl[idx_low]) / (scale[idx_high] - scale[idx_low]) * (
-        freq - scale[idx_low]
-    ) + spl[idx_low]
-
-
-def check_era(path, dataset):
-    if os.path.isdir(
-        os.path.join(path, dataset, "data", "auxiliary", "weather", "era")
-    ):
-        print("Era is already downloaded, you're free to continue")
-        return None
-    else:
-        os.makedirs(os.path.join(path, dataset, "data", "auxiliary", "weather", "era"))
-        print(
-            f"Please upload ERA data in {os.path.join(path, 'weather', 'era')} \nIf you have not downloaded ERA data yet see https://github.com/Project-OSmOSE/osmose-datarmor/tree/package/local_notebooks"
-        )
-        return None
-
-
-get_cfosat_time = lambda x: calendar.timegm(time.strptime(x, "%Y%m%dT%H%M%S"))
-get_datarmor_time = lambda x: calendar.timegm(
-    time.strptime(x, "%Y-%m-%dT%H:%M:%S.000%z")
-)
-get_era_time = lambda x: (
-    calendar.timegm(x.timetuple()) if isinstance(x, datetime.datetime) else x
-)
 
 
 class Auxiliary:
@@ -926,3 +771,155 @@ class Auxiliary:
             + self.df[f"cylinder_{time_off}_{r}_v10"] ** 2
         )
         del var
+
+
+'''def haversine(lat1, lat2, lon1, lon2):
+    lat1 = np.array(lat1).astype("float64")
+    lat2 = np.array(lat2).astype("float64")
+    lon1 = np.array(lon1).astype("float64")
+    lon2 = np.array(lon2).astype("float64")
+    return (
+        2
+        * 6371
+        * np.arcsin(
+            np.sqrt(
+                np.sin((np.pi / 180) * (lat2 - lat1) / 2) ** 2
+                + np.cos((np.pi / 180) * lat1)
+                * np.cos((np.pi / 180) * lat2)
+                * np.sin((np.pi / 180) * (lon2 - lon1) / 2) ** 2
+            )
+        )
+    )
+
+
+def get_nc_time(x):
+    try:
+        return calendar.timegm(
+            time.strptime("".join(x.astype(str)), "%Y-%m-%dT%H:%M:%SZ")
+        )
+    except ValueError:
+        return np.nan
+
+
+def take_closest(array, elem):
+    """
+    Assumes array is sorted. Returns closest value to elem.
+    If two numbers are equally close, return the smallest number.
+    """
+    pos = bisect_left(array, elem)
+    if pos == 0:
+        return 0
+    if pos == len(array):
+        return len(array) - 1
+    return pos - 1
+
+
+def get_wind_fetch(dist, dir_u, dir_v):
+    """
+    scale used for wind fetch is 0.04° = 5 km
+    This ensures that shore distance in km yields a distance in ° that is less than the true distance.
+    """
+    angle = np.arctan(dir_v / dir_u).astype("float16")
+    return 0.04 / 5 * dist.astype("float16") * np.cos(angle), 0.04 / 5 * dist.astype(
+        "float16"
+    ) * np.sin(angle)
+
+
+def mod_pos(x, name):
+    if name == "lat":
+        return (x + 90) % 180 - 90
+    if name == "lon":
+        return (x + 180) % 360 - 180
+
+
+def nearest_shore(x, y):
+    shore_distance = np.full([len(x)], np.nan)
+    x, y = np.round(x * 100 // 4 * 4 / 100 + 0.02, 2), np.round(
+        y * 100 // 4 * 4 / 100 + 0.02, 2
+    )
+    _x, _y = x[(~np.isnan(x)) | (~np.isnan(y))], y[(~np.isnan(x)) | (~np.isnan(y))]
+    lat_ind = np.rint(-9000 / 0.04 * (_y) + 20245500).astype(int)
+    lat_ind2 = np.rint(-9000 / 0.04 * (_y - 0.04) + 20245500).astype(int)
+    lon_ind = (_x / 0.04 + 4499.5).astype(int)
+    sub_dist2shore = np.stack(
+        [dist2shore_ds[ind1:ind2] for ind1, ind2 in zip(lat_ind, lat_ind2)]
+    )
+    shore_temp = np.array(
+        [sub_dist2shore[i, lon_ind[i], -1] for i in range(len(lon_ind))]
+    )
+    shore_distance[(~np.isnan(x)) | (~np.isnan(y))] = shore_temp
+    return shore_distance
+
+
+def numerical_gps(df):
+    if len(df) == 6:
+        return calendar.timegm(
+            datetime.datetime(
+                int(df["year"]),
+                int(df["month"]),
+                int(df["day"]),
+                int(df["hour"]),
+                int(df["minute"]),
+                int(df["second"]),
+            ).timetuple()
+        )
+    return calendar.timegm(
+        datetime.datetime(
+            int(df["year"]), int(df["month"]), int(df["day"]), int(df["hour"])
+        ).timetuple()
+    )
+
+
+def numerical_time(date):
+    try:
+        return calendar.timegm(time.strptime(str(date)[:-5], "%Y-%m-%dT%H:%M:%S"))
+    except ValueError:
+        return calendar.timegm(time.strptime(str(date)[:-4], "%Y%m%d%H"))
+
+
+def window_rms(sig, window_size=512):
+    sig_sqr = np.power(sig, 2)
+    window = np.ones(window_size) / float(window_size)
+    return np.sqrt(np.convolve(sig_sqr, window, "same"))
+
+
+def norm(sig):
+    return (sig - np.nanmean(sig)) / (np.nanstd(sig) + 1e-10)
+
+
+def norm_uneven(sig1, sig2):
+    concatenation = np.concatenate((sig1.flatten(), sig2.flatten()))
+    mean, std = np.nanmean(concatenation), np.nanstd(concatenation)
+    return (sig1 - mean) / (std + 1e-10), (sig2 - mean) / (std + 1e-10)
+
+
+def inter_spl(spl, scale, freq):
+    idx_low = len(spl[scale <= freq])
+    idx_high = idx_low + 1
+    return (spl[idx_high] - spl[idx_low]) / (scale[idx_high] - scale[idx_low]) * (
+        freq - scale[idx_low]
+    ) + spl[idx_low]
+
+
+def check_era(path, dataset):
+    if os.path.isdir(
+        os.path.join(path, dataset, "data", "auxiliary", "weather", "era")
+    ):
+        print("Era is already downloaded, you're free to continue")
+        return None
+    else:
+        os.makedirs(os.path.join(path, dataset, "data", "auxiliary", "weather", "era"))
+        print(
+            f"Please upload ERA data in {os.path.join(path, 'weather', 'era')} \nIf you have not downloaded ERA data yet see https://github.com/Project-OSmOSE/osmose-datarmor/tree/package/local_notebooks"
+        )
+        return None
+
+
+get_cfosat_time = lambda x: calendar.timegm(time.strptime(x, "%Y%m%dT%H%M%S"))
+get_datarmor_time = lambda x: calendar.timegm(
+    time.strptime(x, "%Y-%m-%dT%H:%M:%S.000%z")
+)
+get_era_time = lambda x: (
+    calendar.timegm(x.timetuple()) if isinstance(x, datetime.datetime) else x
+)
+'''
