@@ -923,6 +923,8 @@ class Spectrogram(Dataset):
                 )
                 df.sort_values(by=["timestamp"], inplace=True)
                 df.to_csv(input_dir_path.joinpath("timestamp.csv"), index=False)
+        elif self.dataset_sr != origin_sr:
+            self.pending_jobs = reshape_job_id_list
 
         #! ZSCORE NORMALIZATION
         norma_job_id_list = []
