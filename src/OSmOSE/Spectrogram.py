@@ -441,6 +441,14 @@ class Spectrogram(Dataset):
     def time_resolution(self, value):
         self.__time_resolution = value
 
+    @property
+    def custom_scale(self):
+        return self.__custom_scale
+
+    @custom_scale.setter
+    def custom_scale(self, value):
+        self.__custom_scale = value
+
     # endregion
 
     def __build_path(
