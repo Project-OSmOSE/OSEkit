@@ -228,8 +228,13 @@ class Spectrogram(Dataset):
             else 0
         )
 
+        self.custom_scale: str = (
+            analysis_sheet["custom_scale"][0]
+            if "custom_scale" in analysis_sheet
+            else "linear"
+        )
+        
         self.jb = Job_builder()
-        self.custom_scale: str = None
 
         plt.switch_backend("agg")
 
