@@ -77,6 +77,7 @@ class Dataset:
         self.__name = self.__path.stem
         self.owner_group = owner_group
         self.__gps_coordinates = []
+        self.__depth = None
         self.__local = local
         self.timezone = timezone
 
@@ -166,6 +167,8 @@ class Dataset:
 
             case tuple():
                 self.__gps_coordinates = new_coordinates
+            case list():
+                self.__gps_coordinates = new_coordinates
             case _:
                 raise TypeError(
                     f"GPS coordinates must be either a list of coordinates or the name of csv containing the coordinates, but {type(new_coordinates)} found."
@@ -204,7 +207,7 @@ class Dataset:
                     self.__depth = int(np.mean(csvFileArray["depth"]))
                 else:
                     raise FileNotFoundError(
-                        f"The {new_coordinates} has been found no where within {self.path}"
+                        f"The {new_depth} has been found no where within {self.path}"
                     )
 
             case int():
