@@ -77,6 +77,7 @@ class Dataset:
         self.__name = self.__path.stem
         self.owner_group = owner_group
         self.__gps_coordinates = []
+        self.__depth = None
         self.__local = local
         self.timezone = timezone
 
@@ -165,6 +166,8 @@ class Dataset:
                     )
 
             case tuple():
+                self.__gps_coordinates = new_coordinates
+            case list():
                 self.__gps_coordinates = new_coordinates
             case _:
                 raise TypeError(

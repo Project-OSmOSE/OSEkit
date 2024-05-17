@@ -23,8 +23,8 @@ class Auxiliary(Spectrogram):
 		self,
 		dataset_path: str,
 		*,
-		gps_coordinates: Union[str, List, Tuple] = None,
-		depth: Union[str, int] = None,
+		gps_coordinates: Union[str, List, Tuple, bool] = True,
+		depth: Union[str, int, bool] = True,
 		dataset_sr: int = None,
 		owner_group: str = None,
 		analysis_params: dict = None,
@@ -32,7 +32,7 @@ class Auxiliary(Spectrogram):
 		local: bool = True,
 		
 		era : Union[str, bool] = False,
-		annotation=False,
+		annotation : Union[str, bool] = False,
 		other: dict = None
 		):
 		
@@ -41,8 +41,8 @@ class Auxiliary(Spectrogram):
 		       dataset_path (str): The path to the dataset.
 		       dataset_sr (int, optional): The dataset sampling rate. Default is None.
 		       analysis_params (dict, optional): Additional analysis parameters. Default is None.
-		       gps (bool, optional): Whether GPS data is included. Default is False. If string, enter the filename (csv) where gps data is stored.
-		       depth (bool, optional): Whether depth data is included. Default is False. If string, enter the filename (csv) where depth data is stored.
+		       gps_coordinates (str, list, tuple, bool, optional): Whether GPS data is included. Default is True. If string, enter the filename (csv) where gps data is stored.
+		       depth (str, int, bool, optional): Whether depth data is included. Default is True. If string, enter the filename (csv) where depth data is stored.
 		       era (bool, optional): Whether era data is included. Default is False. If string, enter the filename (Network Common Data Form) where era data is stored.
 		       annotation (bool, optional): Whether annotation data is included. Default is False.
 		       other (dict, optional): Additional data (csv format) to join to acoustic data. Default is None. Key is name of data to join to acoustic dataset, value is the absolute path where to find the csv.
@@ -52,122 +52,133 @@ class Auxiliary(Spectrogram):
 		       data will be processed and included.
 		"""
 		
-		super.__init__(dataset_path, gps_coordinates, depth, dataset_sr, owner_group, 	analysis_params, batch_number, local)
+		super().__init__(dataset_path, gps_coordinates=gps_coordinates, depth=depth, dataset_sr=dataset_sr, owner_group=owner_group, analysis_params=analysis_params, batch_number=batch_number, local=local)
 				
 		# Load reference data that will be used to join all other data
 		self.df = pd.read_csv(self.audio_path.joinpath('timestamp.csv'))
 		self.metadata = pd.read_csv(self._get_original_after_build().joinpath("metadata.csv"), header=0)
-		self.depth = 'depth.csv' if True else depth
-		self.gps = 'gps.csv' if True else gps_coordinates
+		self._depth, self._gps_coordinates = depth, gps_coordinates
+		if self._depth :
+			self.depth = 'depth.csv' if depth==True else depth
+		if self._gps_coordinates :
+			self.gps_coordinates = 'gps.csv' if gps_coordinates==True else gps_coordinates
 		self.era = era
 		if self.era == True:
 			fns = glob.glob(self.path.joinpath(OSMOSE_PATH.era, '*nc'))
 			assert len(fns) == 1, "Make sur there is one (and only one) nc file in your era folder"
 			self.era = fns[0]		
-		self._other = other if other is not None else {}	
-			
-		def __repr__(self):
-			elems = []
-			if self.gps :
-				elems.append('gps')
-			if self.depth :
-				elems.append('depth')
-			if self.era :
-				elems.append('era')
-			if self.annotation :
-				elems.append('annotation')
-			if self.other:
-				elems.extend(self.other.keys())
-			return f"This class will join {', '.join(str(i) for i in elems)}"
-			
-		def join_depth(self):
-			"""
-			Code to join depth data to reference dataframe.
-			The depth files should contain times in both Datetime and epoch format and a depth column
-			"""
-			
-			if type(self.depth) == str :
-				#Load depth data and make sure format is correct
-				temp_df = pd.read_csv(self.path.joinpath(OSMOSE_PATH.instrument, self.depth))
-				assert ('epoch' in temp_df.columns) and ('depth' in temp_df.columns), "Make sure the depth file has both an 'epoch' and 'depth' column."
-				# Join data using a 1D interpolation
-				self.df['depth'] = interpolate.interp1d(temp_df.epoch, temp_df.depth, bounds_error = False)(self.df.epoch)
-				
-			elif type(self.depth) == int :
-				self.df['depth'] = self.depth
-				
-				
-		def join_gps(self):
-			"""
-			Code to join gps data to reference dataframe.
-			The gps files should contain times in both Datetime and epoch format and a depth column
-			"""
-			
-			if type(self.gps) == str:
-				#Load depth data and make sure format is correct
-				temp_df = pd.read_csv(self.path.joinpath(OSMOSE_PATH.instrument, self.depth))
-				assert ('epoch' in temp_df.columns) and ('lat' in temp_df.columns) and ('lon' in temp_df.columns), "Make sure the depth file has both an 'epoch' and 'lat'/'lon' columns."
-				# Join data using a 1D interpolation
-				self.df['lat'] = interpolate.interp1d(temp_df.epoch, temp_df.lat, bounds_error = False)(self.df.epoch)
-				self.df['lon'] = interpolate.interp1d(temp_df.epoch, temp_df.lon, bounds_error = False)(self.df.epoch)
-				
-			elif type(self.gps) in [list, tuple] :
-				self.df['lat'] = self.gps[0]
-				self.df['lon'] = self.gps[1]
+		self.other = other if other is not None else {}	
+		if annotation : 
+			self.other['annotation'] = annotation
 
-		def join_other(self, csv_path: str = None, variable_name : Union(str, List, Tuple) = None):
-			'''
-			Parameters:
-			       csv_path (str): Absolute path to new csv file (containing epoch column) you want to join to auxiliary dataframe 
-			       variable_name (str, List, Tuple) : Variable names (and future column names) you want to join to auxiliary dataframe
-			'''
-			
-			if variable_name and csv_path:
-				variable_name = list(variable_name) if variable_name is not str else [variable_name]
-				self.other = {**self.other, **{key: csv_path for key in variable_name}}
-			
-			for key in self.other.keys():
-				_csv = pd.read_csv(self.other[key])
-				self.df[key] = interpolate.interp1d(_csv.epoch, _csv[key], bounds_error=False)(self.df.epoch)
-
-
-		def interpolation_era(self):
-			"""Computes interpolated variables values from ERA5 mesh points.
-			ERA5 is suited for a scipy's 3D grid interpolation in time, latitude and longitude.
-			As this method is quick, it is computed for all available variables.
-			Results are saved in self.df as 'interp_{variable}'
-			"""
-			ds = nc.Dataset(self.path.joinpath(OSMOSE_PATH.era, self.era))
-			variables = list(ds.variables.keys())[3:]
-			
-			#Handle ERA time
-			era_time = ds.variables['time'][:].data
-			def transf_temps(time) :
-				time_str = float(time)/24 + date.toordinal(date(1900,1,1))
-				return date.fromordinal(int(time_str))
-			hours = np.array(era_time)%24
-			days = list(map(transf_temps, era_time))
-			timestamps = np.array([datetime(elem.year, elem.month, elem.day, hour).timestamp() for elem, hour in list(zip(days, hours))])
-			
-			pbar = tqdm(total=len(variables), position=0, leave=True)
-			for variable in variables:
-				pbar.update(1); pbar.set_description("Loading and formatting %s" % variable)
-				self.df[variable] = interpolate.RegularGridInterpolator((timestamps, ds['lat'][:], ds['lon'][:]), ds[variable][:])((self.df.epoch, self.df.lat, self.df.lon))
-
+	
+	def __str__(self):
+		print(f'For the {self.name} dataset')
+		elems = []
+		if self._gps_coordinates :
+			elems.append('gps')
+		if self._depth :
+			elems.append('depth')
+		if self.era :
+			elems.append('era')
+		if self.other:
+			elems.extend(self.other.keys())
+		if len(elems) != 0:
+			aux_str = 'This class will join : \n' 
+			for elem in elems :
+				aux_str += f'   - {elem}\n'
+			return aux_str
+		else: 
+			return 'You have not selected any data to join to your dataset ! '
+	
+	def join_depth(self):
+		"""
+		Code to join depth data to reference dataframe.
+		The depth files should contain times in both Datetime and epoch format and a depth column
+		"""
 		
-		def automatic_join():
-			''' Automatically join all the available data'''
-			if self.depth :
-				self.join_depth()
-			if self.gps :
-				self.join_gps()
-			if self.era:
-				self.interpolation_era()
-			if self.other :
-				self.join_other()
+		if type(self.depth) == str :
+			#Load depth data and make sure format is correct
+			temp_df = pd.read_csv(self.path.joinpath(OSMOSE_PATH.instrument, self.depth))
+			assert ('epoch' in temp_df.columns) and ('depth' in temp_df.columns), "Make sure the depth file has both an 'epoch' and 'depth' column."
+			# Join data using a 1D interpolation
+			self.df['depth'] = interpolate.interp1d(temp_df.epoch, temp_df.depth, bounds_error = False)(self.df.epoch)
+			
+		elif type(self.depth) == int :
+			self.df['depth'] = self.depth
+			
+			
+	def join_gps(self):
+		"""
+		Code to join gps data to reference dataframe.
+		The gps files should contain times in both Datetime and epoch format and a depth column
+		"""
+		
+		if type(self.gps_coordinates) == str:
+			#Load depth data and make sure format is correct
+			temp_df = pd.read_csv(self.path.joinpath(OSMOSE_PATH.instrument, self.gps_coordinates))
+			assert ('epoch' in temp_df.columns) and ('lat' in temp_df.columns) and ('lon' in temp_df.columns), "Make sure the depth file has both an 'epoch' and 'lat'/'lon' columns."
+			# Join data using a 1D interpolation
+			self.df['lat'] = interpolate.interp1d(temp_df.epoch, temp_df.lat, bounds_error = False)(self.df.epoch)
+			self.df['lon'] = interpolate.interp1d(temp_df.epoch, temp_df.lon, bounds_error = False)(self.df.epoch)
+			
+		elif type(self.gps_coordinates) in [list, tuple] :
+			self.df['lat'] = self.gps_coordinates[0]
+			self.df['lon'] = self.gps_coordinates[1]
+
+	def join_other(self, csv_path: str = None, variable_name : Union[str, List, Tuple] = None):
+		'''
+		Parameters:
+		       csv_path (str): Absolute path to new csv file (containing epoch column) you want to join to auxiliary dataframe 
+		       variable_name (str, List, Tuple) : Variable names (and future column names) you want to join to auxiliary dataframe
+		'''
+		
+		if variable_name and csv_path:
+			variable_name = list(variable_name) if variable_name is not str else [variable_name]
+			self.other = {**self.other, **{key: csv_path for key in variable_name}}
+		
+		for key in self.other.keys():
+			_csv = pd.read_csv(self.other[key])
+			self.df[key] = interpolate.interp1d(_csv.epoch, _csv[key], bounds_error=False)(self.df.epoch)
+
+
+	def interpolation_era(self):
+		"""Computes interpolated variables values from ERA5 mesh points.
+		ERA5 is suited for a scipy's 3D grid interpolation in time, latitude and longitude.
+		As this method is quick, it is computed for all available variables.
+		Results are saved in self.df as 'interp_{variable}'
+		"""
+		ds = nc.Dataset(self.path.joinpath(OSMOSE_PATH.era, self.era))
+		variables = list(ds.variables.keys())[3:]
+		
+		#Handle ERA time
+		era_time = ds.variables['time'][:].data
+		def transf_temps(time) :
+			time_str = float(time)/24 + date.toordinal(date(1900,1,1))
+			return date.fromordinal(int(time_str))
+		hours = np.array(era_time)%24
+		days = list(map(transf_temps, era_time))
+		timestamps = np.array([datetime(elem.year, elem.month, elem.day, hour).timestamp() for elem, hour in list(zip(days, hours))])
+		
+		pbar = tqdm(total=len(variables), position=0, leave=True)
+		for variable in variables:
+			pbar.update(1); pbar.set_description("Loading and formatting %s" % variable)
+			self.df[variable] = interpolate.RegularGridInterpolator((timestamps, ds['lat'][:], ds['lon'][:]), ds[variable][:])((self.df.epoch, self.df.lat, self.df.lon))
+
+	
+	def automatic_join(self):
+		''' Automatically join all the available data'''
+		if self._depth :
+			self.join_depth()
+		if self._gps_coordinates :
+			self.join_gps()
+		if self.era:
+			self.interpolation_era()
+		if self.other :
+			self.join_other()
 
 '''def nearest_era(
-self, *, time_off=600, lat_off=0.5, lon_off=0.5, variables=["u10", "v10"]
+elf, *, time_off=600, lat_off=0.5, lon_off=0.5, variables=["u10", "v10"]
 ):
 """joins nearest mesh point values to dataset.
 

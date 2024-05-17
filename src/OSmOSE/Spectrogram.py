@@ -120,13 +120,13 @@ class Spectrogram(Dataset):
         metadata_path = processed_path.joinpath(
             "adjustment_spectros", "adjust_metadata.csv"
         )
-        if metadata_path.exists():
+        if analysis_params:
+            self.__analysis_file = False
+            # We put the value in a list so that values[0] returns the right value below.
+            analysis_sheet = {key: [value] for (key, value) in analysis_params.items()}
+        elif metadata_path.exists():
             self.__analysis_file = True
             analysis_sheet = pd.read_csv(metadata_path, header=0)
-        elif analysis_params:
-            self.__analysis_file = False
-            # We put the value in a list so that value[0] returns the right value below.
-            analysis_sheet = {key: [value] for (key, value) in analysis_params.items()}
         else:
             analysis_sheet = {}
             self.__analysis_file = False
