@@ -23,16 +23,14 @@ class Auxiliary(Spectrogram):
 		self,
 		dataset_path: str,
 		*,
-		gps_coordinates: Union[str, list, Tuple] = None,
+		gps_coordinates: Union[str, List, Tuple] = None,
 		depth: Union[str, int] = None,
 		dataset_sr: int = None,
 		owner_group: str = None,
 		analysis_params: dict = None,
 		batch_number: int = 5,
 		local: bool = True,
-
-		gps : Union[str, bool] = False,
-		depth : Union[str, bool] = False,
+		
 		era : Union[str, bool] = False,
 		annotation=False,
 		other: dict = None
@@ -60,7 +58,7 @@ class Auxiliary(Spectrogram):
 		self.df = pd.read_csv(self.audio_path.joinpath('timestamp.csv'))
 		self.metadata = pd.read_csv(self._get_original_after_build().joinpath("metadata.csv"), header=0)
 		self.depth = 'depth.csv' if True else depth
-		self.gps = 'gps.csv' if True else gps
+		self.gps = 'gps.csv' if True else gps_coordinates
 		self.era = era
 		if self.era == True:
 			fns = glob.glob(self.path.joinpath(OSMOSE_PATH.era, '*nc'))
@@ -79,7 +77,7 @@ class Auxiliary(Spectrogram):
 			if self.annotation :
 				elems.append('annotation')
 			if self.other:
-				elems.extend(self._other.keys())
+				elems.extend(self.other.keys())
 			return f"This class will join {', '.join(str(i) for i in elems)}"
 			
 		def join_depth(self):
@@ -87,26 +85,35 @@ class Auxiliary(Spectrogram):
 			Code to join depth data to reference dataframe.
 			The depth files should contain times in both Datetime and epoch format and a depth column
 			"""
-			#Load depth data and make sure format is correct
-			temp_df = pd.read_csv(self.path.joinpath(OSMOSE_PATH.instrument, self.depth))
-			assert ('epoch' in temp_df.columns) and ('depth' in temp_df.columns), "Make sure the depth file has both an 'epoch' and 'depth' column."
 			
-			# Join data using a 1D interpolation
-			self.df['depth'] = interpolate.interp1d(temp_df.epoch, temp_df.depth, bounds_error = False)(self.df.epoch)
-
+			if type(self.depth) == str :
+				#Load depth data and make sure format is correct
+				temp_df = pd.read_csv(self.path.joinpath(OSMOSE_PATH.instrument, self.depth))
+				assert ('epoch' in temp_df.columns) and ('depth' in temp_df.columns), "Make sure the depth file has both an 'epoch' and 'depth' column."
+				# Join data using a 1D interpolation
+				self.df['depth'] = interpolate.interp1d(temp_df.epoch, temp_df.depth, bounds_error = False)(self.df.epoch)
+				
+			elif type(self.depth) == int :
+				self.df['depth'] = self.depth
+				
+				
 		def join_gps(self):
 			"""
 			Code to join gps data to reference dataframe.
 			The gps files should contain times in both Datetime and epoch format and a depth column
 			"""
-			#Load depth data and make sure format is correct
-			temp_df = pd.read_csv(self.path.joinpath(OSMOSE_PATH.instrument, self.depth))
-			assert ('epoch' in temp_df.columns) and ('lat' in temp_df.columns) and ('lon' in temp_df.columns), "Make sure the depth file has both an 'epoch' and 'lat'/'lon' columns."
 			
-			# Join data using a 1D interpolation
-			self.df['lat'] = interpolate.interp1d(temp_df.epoch, temp_df.lat, bounds_error = False)(self.df.epoch)
-			self.df['lon'] = interpolate.interp1d(temp_df.epoch, temp_df.lon, bounds_error = False)(self.df.epoch)
-
+			if type(self.gps) == str:
+				#Load depth data and make sure format is correct
+				temp_df = pd.read_csv(self.path.joinpath(OSMOSE_PATH.instrument, self.depth))
+				assert ('epoch' in temp_df.columns) and ('lat' in temp_df.columns) and ('lon' in temp_df.columns), "Make sure the depth file has both an 'epoch' and 'lat'/'lon' columns."
+				# Join data using a 1D interpolation
+				self.df['lat'] = interpolate.interp1d(temp_df.epoch, temp_df.lat, bounds_error = False)(self.df.epoch)
+				self.df['lon'] = interpolate.interp1d(temp_df.epoch, temp_df.lon, bounds_error = False)(self.df.epoch)
+				
+			elif type(self.gps) in [list, tuple] :
+				self.df['lat'] = self.gps[0]
+				self.df['lon'] = self.gps[1]
 
 		def join_other(self, csv_path: str = None, variable_name : Union(str, List, Tuple) = None):
 			'''
@@ -147,6 +154,17 @@ class Auxiliary(Spectrogram):
 				pbar.update(1); pbar.set_description("Loading and formatting %s" % variable)
 				self.df[variable] = interpolate.RegularGridInterpolator((timestamps, ds['lat'][:], ds['lon'][:]), ds[variable][:])((self.df.epoch, self.df.lat, self.df.lon))
 
+		
+		def automatic_join():
+			''' Automatically join all the available data'''
+			if self.depth :
+				self.join_depth()
+			if self.gps :
+				self.join_gps()
+			if self.era:
+				self.interpolation_era()
+			if self.other :
+				self.join_other()
 
 '''def nearest_era(
 self, *, time_off=600, lat_off=0.5, lon_off=0.5, variables=["u10", "v10"]
