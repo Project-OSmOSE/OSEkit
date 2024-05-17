@@ -923,13 +923,15 @@ class Spectrogram(Dataset):
                 )
                 df.sort_values(by=["timestamp"], inplace=True)
                 df.to_csv(input_dir_path.joinpath("timestamp.csv"), index=False)
+        elif self.dataset_sr != origin_sr:
+            self.pending_jobs = reshape_job_id_list
 
         #! ZSCORE NORMALIZATION
         norma_job_id_list = []
         if (
             # os.listdir(self.path.joinpath(OSMOSE_PATH.statistics))
             self.data_normalization == "zscore"
-            and self.zscore_duration is not None
+            and self.zscore_duration is not "original"
             and (
                 len(os.listdir(self.path.joinpath(OSMOSE_PATH.statistics))) == 0
                 or force_init

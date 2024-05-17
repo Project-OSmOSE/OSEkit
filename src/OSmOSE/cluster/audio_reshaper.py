@@ -240,8 +240,7 @@ def reshape(
                 "audio_file_origin_duration"
             ][0]
         ) == int(chunk_size):
-            print(f"mode only resampling , processing file: {files[i]}")
-            outfilename = output_dir_path.joinpath(files[i])
+            outfilename = output_dir_path.joinpath(os.path.basename(files[i]))
             sf.write(
                 outfilename, audio_data, sample_rate, format="WAV", subtype=file_type
             )
