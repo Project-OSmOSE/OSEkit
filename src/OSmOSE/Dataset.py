@@ -204,7 +204,7 @@ class Dataset:
                     self.__depth = int(np.mean(csvFileArray["depth"]))
                 else:
                     raise FileNotFoundError(
-                        f"The {new_coordinates} has been found no where within {self.path}"
+                        f"The {new_depth} has been found no where within {self.path}"
                     )
 
             case int():
