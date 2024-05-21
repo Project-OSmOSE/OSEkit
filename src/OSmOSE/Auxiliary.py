@@ -32,7 +32,7 @@ class Auxiliary(Spectrogram):
 		local: bool = True,
 		
 		era : Union[str, bool] = False,
-		annotation : Union[str, bool] = False,
+		annotation : Union[dict, bool] = False,
 		other: dict = None
 		):
 		
@@ -44,8 +44,8 @@ class Auxiliary(Spectrogram):
 		       gps_coordinates (str, list, tuple, bool, optional): Whether GPS data is included. Default is True. If string, enter the filename (csv) where gps data is stored.
 		       depth (str, int, bool, optional): Whether depth data is included. Default is True. If string, enter the filename (csv) where depth data is stored.
 		       era (bool, optional): Whether era data is included. Default is False. If string, enter the filename (Network Common Data Form) where era data is stored.
-		       annotation (bool, optional): Whether annotation data is included. Default is False.
-		       other (dict, optional): Additional data (csv format) to join to acoustic data. Default is None. Key is name of data to join to acoustic dataset, value is the absolute path where to find the csv.
+		       annotation (bool, optional): Annotation data is included. Dictionary containing key (column name of annotation data) and absolute path of csv file where annotation data is stored. Default is False. 
+		       other (dict, optional): Additional data (csv format) to join to acoustic data. Key is name of data (column name) to join to acoustic dataset, value is the absolute path where to find the csv. Default is None.
 		Notes:
 		       The parameters `gps`, `depth`, `era`, `annotation`, and `other` are used as flags
 		       to indicate the presence of data to join to the corresponding spectrogram generation. When set to True, the respective
@@ -69,7 +69,7 @@ class Auxiliary(Spectrogram):
 			self.era = fns[0]		
 		self.other = other if other is not None else {}	
 		if annotation : 
-			self.other['annotation'] = annotation
+			self.other = {**self.other, **annotation}
 
 	
 	def __str__(self):
