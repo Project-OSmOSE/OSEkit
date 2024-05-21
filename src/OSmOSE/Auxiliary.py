@@ -10,6 +10,18 @@ from OSmOSE.Spectrogram import Spectrogram
 from scipy import interpolate 
 
 
+
+def check_epoch(df):
+	if 'epoch' in df.columns :
+		return df
+	else :
+		try :
+			df['epoch'] = df.timestamp.apply(lambda x : datetime.strptime(x[:26], '%Y-%m-%dT%H:%M:%S.%f').timestamp())
+			return df
+		except ValueError :
+			print('Please check that you have either a timestamp column (format ISO 8601 Micro s) or an epoch column')
+			return df
+
 class Auxiliary(Spectrogram):
 	'''
 	This class joins environmental and instrument data to acoustic data. 
@@ -97,12 +109,10 @@ class Auxiliary(Spectrogram):
 		The depth files should contain times in both Datetime and epoch format and a depth column
 		"""
 		
-		if type(self.depth) == str :
-			#Load depth data and make sure format is correct
-			temp_df = pd.read_csv(self.path.joinpath(OSMOSE_PATH.instrument, self.depth))
-			assert ('epoch' in temp_df.columns) and ('depth' in temp_df.columns), "Make sure the depth file has both an 'epoch' and 'depth' column."
+		if isinstance(self.depth, pd.DataFrame) :
+			assert ('epoch' in self.depth.columns) and ('depth' in self.depth.columns), "Make sure the depth file has both an 'epoch' and 'depth' column."
 			# Join data using a 1D interpolation
-			self.df['depth'] = interpolate.interp1d(temp_df.epoch, temp_df.depth, bounds_error = False)(self.df.epoch)
+			self.df['depth'] = interpolate.interp1d(self.depth.epoch, self.depth.depth, bounds_error = False)(self.df.epoch)
 			
 		elif type(self.depth) == int :
 			self.df['depth'] = self.depth
@@ -114,13 +124,11 @@ class Auxiliary(Spectrogram):
 		The gps files should contain times in both Datetime and epoch format and a depth column
 		"""
 		
-		if type(self.gps_coordinates) == str:
-			#Load depth data and make sure format is correct
-			temp_df = pd.read_csv(self.path.joinpath(OSMOSE_PATH.instrument, self.gps_coordinates))
-			assert ('epoch' in temp_df.columns) and ('lat' in temp_df.columns) and ('lon' in temp_df.columns), "Make sure the depth file has both an 'epoch' and 'lat'/'lon' columns."
+		if isinstance(self.gps_coordinates, pd.DataFrame):
+			assert ('epoch' in self.gps_coordinates.columns) and ('lat' in self.gps_coordinates.columns) and ('lon' in self.gps_coordinates.columns), "Make sure the depth file has both an 'epoch' and 'lat'/'lon' columns."
 			# Join data using a 1D interpolation
-			self.df['lat'] = interpolate.interp1d(temp_df.epoch, temp_df.lat, bounds_error = False)(self.df.epoch)
-			self.df['lon'] = interpolate.interp1d(temp_df.epoch, temp_df.lon, bounds_error = False)(self.df.epoch)
+			self.df['lat'] = interpolate.interp1d(self.gps_coordinates.epoch, self.gps_coordinates.lat, bounds_error = False)(self.df.epoch)
+			self.df['lon'] = interpolate.interp1d(self.gps_coordinates.epoch, self.gps_coordinates.lon, bounds_error = False)(self.df.epoch)
 			
 		elif type(self.gps_coordinates) in [list, tuple] :
 			self.df['lat'] = self.gps_coordinates[0]
@@ -176,6 +184,7 @@ class Auxiliary(Spectrogram):
 			self.interpolation_era()
 		if self.other :
 			self.join_other()
+
 
 '''def nearest_era(
 elf, *, time_off=600, lat_off=0.5, lon_off=0.5, variables=["u10", "v10"]

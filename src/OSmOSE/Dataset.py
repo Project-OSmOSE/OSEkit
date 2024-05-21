@@ -155,11 +155,13 @@ class Dataset:
                 aux_data_path = next(self.path.rglob(new_coordinates), False)
 
                 if aux_data_path:
+                    self.__gps_coordinates = pd.read_csv(aux_data_path)
+                    '''
                     csvFileArray = pd.read_csv(aux_data_path)
                     self.__gps_coordinates = [
                         np.mean(csvFileArray["lat"]),
                         np.mean(csvFileArray["lon"]),
-                    ]
+                    ]'''
                 else:
                     raise FileNotFoundError(
                         f"The {new_coordinates} has been found no where within {self.path}"
@@ -203,8 +205,10 @@ class Dataset:
             case str():
                 aux_data_path = next(self.path.rglob(new_depth), False)
                 if aux_data_path:
+                    self.__depth = pd.read_csv(aux_data_path)
+                    '''
                     csvFileArray = pd.read_csv(aux_data_path)
-                    self.__depth = int(np.mean(csvFileArray["depth"]))
+                    self.__depth = int(np.mean(csvFileArray["depth"]))'''
                 else:
                     raise FileNotFoundError(
                         f"The {new_depth} has been found no where within {self.path}"
