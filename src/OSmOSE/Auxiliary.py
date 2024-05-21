@@ -139,6 +139,7 @@ class Auxiliary(Spectrogram):
 
 	def join_other(self, csv_path: str = None, variable_name : Union[str, List, Tuple] = None):
 		'''
+		Method to join data using solely temporal interpolation.
 		Parameters:
 		       csv_path (str): Absolute path to new csv file (containing epoch column) you want to join to auxiliary dataframe 
 		       variable_name (str, List, Tuple) : Variable names (and future column names) you want to join to auxiliary dataframe
@@ -150,10 +151,7 @@ class Auxiliary(Spectrogram):
 		
 		for key in self.other.keys():
 			_csv = pd.read_csv(self.other[key])
-			if set(['lat', 'lon', 'epoch']).issubset(_csv.columns):
-				self.df[key] = interpolate.RegularGridInterpolator((_csv.epoch, _csv.lat, _csv.lon), _csv[key])((self.df.epoch, self.df.lat, self.df.lon))
-			else :
-				self.df[key] = interpolate.interp1d(_csv.epoch, _csv[key], bounds_error=False)(self.df.epoch)
+			self.df[key] = interpolate.interp1d(_csv.epoch, _csv[key], bounds_error=False)(self.df.epoch)
 
 
 	def interpolation_era(self):
