@@ -147,7 +147,10 @@ class Auxiliary(Spectrogram):
 		
 		for key in self.other.keys():
 			_csv = pd.read_csv(self.other[key])
-			self.df[key] = interpolate.interp1d(_csv.epoch, _csv[key], bounds_error=False)(self.df.epoch)
+			if set(['lat', 'lon', 'epoch']).issubset(_csv.columns):
+				self.df[key] = interpolate.RegularGridInterpolator((_csv.epoch, _csv.lat, _csv.lon), _csv[key])((self.df.epoch, self.df.lat, self.df.lon))
+			else :
+				self.df[key] = interpolate.interp1d(_csv.epoch, _csv[key], bounds_error=False)(self.df.epoch)
 
 
 	def interpolation_era(self):
