@@ -1,3 +1,0 @@
-bathymetry = '/home6/grosmaan/Documents/codes/osmose_codes/datawork-osmose/dataset/auxiliary/GEBCO_2022_sub_ice_topo.nc'
-shore_dist = '/home6/grosmaan/Documents/codes/osmose_codes/datawork-osmose/dataset/auxiliary/dist2coast.txt'
-
