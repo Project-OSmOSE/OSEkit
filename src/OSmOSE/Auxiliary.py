@@ -15,6 +15,7 @@ from scipy import interpolate
 
 
 def check_epoch(df):
+	"Function that adds epoch column to dataframe"
 	if 'epoch' in df.columns :
 		return df
 	else :
