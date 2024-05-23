@@ -7,7 +7,7 @@ from glob import glob
 from tqdm import tqdm
 import netCDF4 as nc
 from typing import Union, Tuple, List
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from OSmOSE.utils.timestamp_utils import check_epoch
 from OSmOSE.config import *
 from OSmOSE.Spectrogram import Spectrogram
@@ -181,18 +181,14 @@ class Auxiliary(Spectrogram):
 		variables = list(ds.variables.keys())[3:]
 		
 		#Handle ERA time
-		era_time = ds.variables['time'][:].data
-		def transf_temps(time) :
-			time_str = float(time)/24 + date.toordinal(date(1900,1,1))
-			return date.fromordinal(int(time_str))
-		hours = np.array(era_time)%24
-		days = list(map(transf_temps, era_time))
-		timestamps = np.array([datetime(elem.year, elem.month, elem.day, hour).timestamp() for elem, hour in list(zip(days, hours))])
+		era_time = pd.DataFrame(ds.variables['time'][:].data)
+		era_datetime = era_time[0].apply(lambda x : datetime(1900,1,1)+timedelta(hours=int(x)))
+		timestamps = era_datetime.apply(lambda x : x.timestamp()).to_numpy()
 		
 		pbar = tqdm(total=len(variables), position=0, leave=True)
 		for variable in variables:
 			pbar.update(1); pbar.set_description("Loading and formatting %s" % variable)
-			self.df[variable] = interpolate.RegularGridInterpolator((timestamps, ds['latitude'][:], ds['longitude'][:]), ds[variable][:])((self.df.epoch, self.df.lat, self.df.lon))
+			self.df[variable] = interpolate.RegularGridInterpolator((timestamps, ds['latitude'][:], ds['longitude'][:]), ds[variable][:], bounds_error = False)((self.df.epoch, self.df.lat, self.df.lon))
 
 	
 	def automatic_join(self):
