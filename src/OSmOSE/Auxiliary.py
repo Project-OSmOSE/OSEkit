@@ -8,23 +8,14 @@ from tqdm import tqdm
 import netCDF4 as nc
 from typing import Union, Tuple, List
 from datetime import datetime, date
+from OSmOSE.utils.timestamp_utils import check_epoch
 from OSmOSE.config import *
 from OSmOSE.Spectrogram import Spectrogram
 from scipy import interpolate 
 
 
 
-def check_epoch(df):
-	"Function that adds epoch column to dataframe"
-	if 'epoch' in df.columns :
-		return df
-	else :
-		try :
-			df['epoch'] = df.timestamp.apply(lambda x : datetime.strptime(x[:26], '%Y-%m-%dT%H:%M:%S.%f').timestamp())
-			return df
-		except ValueError :
-			print('Please check that you have either a timestamp column (format ISO 8601 Micro s) or an epoch column')
-			return df
+
 
 class Auxiliary(Spectrogram):
 	'''
@@ -71,18 +62,43 @@ class Auxiliary(Spectrogram):
 		super().__init__(dataset_path, gps_coordinates=gps_coordinates, depth=depth, dataset_sr=dataset_sr, owner_group=owner_group, analysis_params=analysis_params, batch_number=batch_number, local=local)
 				
 		# Load reference data that will be used to join all other data
-		self.df = pd.read_csv(self.audio_path.joinpath('timestamp.csv'))
+		self.df = check_epoch(pd.read_csv(self.audio_path.joinpath('timestamp.csv')))
 		self.metadata = pd.read_csv(self._get_original_after_build().joinpath("metadata.csv"), header=0)
 		self._depth, self._gps_coordinates = depth, gps_coordinates
-		if self._depth :
-			self.depth = 'depth.csv' if depth==True else depth
-		if self._gps_coordinates :
-			self.gps_coordinates = 'gps.csv' if gps_coordinates==True else gps_coordinates
-		self.era = era
-		if self.era == True:
-			fns = glob.glob(self.path.joinpath(OSMOSE_PATH.era, '*nc'))
-			assert len(fns) == 1, "Make sur there is one (and only one) nc file in your era folder"
-			self.era = fns[0]		
+		match depth :
+			case True :
+				try :
+					self.depth = 'depth.csv'
+				except FileNotFoundError: 
+					print('depth file not found, defaulting to depth from metadata file')
+					self.depth = self.metadata.depth.item()
+			case int() | float() :
+				self.depth = int(depth)
+			case str() :
+				self.depth = depth
+			case _ :
+				self.depth = self.metadata.depth.item()
+		match gps_coordinates :
+			case True :
+				try:
+					self.gps_coordinates = 'gps.csv'
+				except FileNotFoundError:
+					print('gps file not found, defaulting to gps data from metadata file')
+					self.gps_coordinates = tuple(self.metadata[['lat','lon']].values[0])
+			case list() | tuple() | str() :
+				self.gps_coordinates = gps_coordinates
+			case _:
+				self.gps_coordinates = tuple(self.metadata[['lat','lon']].values[0])
+		match era:
+			case str() :
+				self.era = era if os.path.isabs(era) else self.path.joinpath(OSMOSE_PATH.environment, era)
+				assert os.path.isfile(self.era), 'ERA file was not found'
+			case True:
+				fns = glob(str(self.path.joinpath(OSMOSE_PATH.environment, '*nc')))
+				assert len(fns) == 1, "Make sur there is one (and only one) nc file in your era folder"
+				self.era = fns[0]		
+			case _ :
+				self.era = False
 		self.other = other if other is not None else {}	
 		if annotation : 
 			self.other = {**self.other, **annotation}
@@ -151,7 +167,7 @@ class Auxiliary(Spectrogram):
 			self.other = {**self.other, **{key: csv_path for key in variable_name}}
 		
 		for key in self.other.keys():
-			_csv = pd.read_csv(self.other[key])
+			_csv = check_epoch(pd.read_csv(self.other[key]))
 			self.df[key] = interpolate.interp1d(_csv.epoch, _csv[key], bounds_error=False)(self.df.epoch)
 
 
@@ -161,7 +177,7 @@ class Auxiliary(Spectrogram):
 		As this method is quick, it is computed for all available variables.
 		Results are saved in self.df as 'interp_{variable}'
 		"""
-		ds = nc.Dataset(self.path.joinpath(OSMOSE_PATH.era, self.era))
+		ds = nc.Dataset(self.era)
 		variables = list(ds.variables.keys())[3:]
 		
 		#Handle ERA time
@@ -176,7 +192,7 @@ class Auxiliary(Spectrogram):
 		pbar = tqdm(total=len(variables), position=0, leave=True)
 		for variable in variables:
 			pbar.update(1); pbar.set_description("Loading and formatting %s" % variable)
-			self.df[variable] = interpolate.RegularGridInterpolator((timestamps, ds['lat'][:], ds['lon'][:]), ds[variable][:])((self.df.epoch, self.df.lat, self.df.lon))
+			self.df[variable] = interpolate.RegularGridInterpolator((timestamps, ds['latitude'][:], ds['longitude'][:]), ds[variable][:])((self.df.epoch, self.df.lat, self.df.lon))
 
 	
 	def automatic_join(self):
