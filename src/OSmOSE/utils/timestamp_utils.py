@@ -4,6 +4,20 @@ from typing import List
 import os
 
 
+
+def check_epoch(df):
+        "Function that adds epoch column to dataframe"
+        if 'epoch' in df.columns :
+                return df
+        else :
+                try :
+                        df['epoch'] = df.timestamp.apply(lambda x : datetime.strptime(x[:26], '%Y-%m-%dT%H:%M:%S.%f').timestamp())
+                        return df
+                except ValueError :
+                        print('Please check that you have either a timestamp column (format ISO 8601 Micro s) or an epoch column')
+                        return df
+
+
 def substract_timestamps(
     input_timestamp: pd.DataFrame, files: List[str], index: int
 ) -> timedelta:
