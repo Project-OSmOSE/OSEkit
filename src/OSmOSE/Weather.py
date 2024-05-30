@@ -1,21 +1,16 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Oct  4 16:06:18 2023
-
-@author: cazaudo
-"""
-from pathlib import Path
-import os
+from config_weather import empirical
 from OSmOSE.config import *
-from OSmOSE.utils import make_path
 from OSmOSE.Auxiliary import Auxiliary
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-from tqdm import tqdm
-import sys
-import itertools
+from typing import Union, Tuple, List
+from sklearn.model_selection import StratifiedKFold
+from scipy.optimize import curve_fit
+import sklearn.metrics as metrics
+import tabulate
+
+def beaufort(x):
+    return next((i for i, limit in enumerate([0.3, 1.6, 3.4, 5.5, 8, 10.8, 13.9, 17.2, 20.8, 24.5, 28.5, 32.7]) 
+                 if x < limit), 12)
 
 
 class Weather(Auxiliary):
@@ -24,8 +19,9 @@ class Weather(Auxiliary):
 	def __init__(
 		self,
 		dataset_path: str,
-		method: str = 'Default',
-		ground_truth = 'era'
+		method: str = None,
+		ground_truth = 'era',
+		weather_params : dict = None,
 		*,
 		gps_coordinates: Union[str, List, Tuple, bool] = True,
 		depth: Union[str, int, bool] = True,
@@ -42,38 +38,85 @@ class Weather(Auxiliary):
 		
 		"""		
 		Parameters:
-		       dataset_path (str): The path to the dataset.
-			   method (str) : Method or more generally processing pipeline and model  used to estimate wind speed. Found in wind_models.toml
-			   ground_truth (str) : Column name from auxiliary data that stores wind speed data that will be used as ground truth. 
-		       dataset_sr (int, optional): The dataset sampling rate. Default is None.
-		       analysis_params (dict, optional): Additional analysis parameters. Default is None.
-		       gps_coordinates (str, list, tuple, bool, optional): Whether GPS data is included. Default is True. If string, enter the filename (csv) where gps data is stored.
-		       depth (str, int, bool, optional): Whether depth data is included. Default is True. If string, enter the filename (csv) where depth data is stored.
-		       era (bool, optional): Whether era data is included. Default is False. If string, enter the filename (Network Common Data Form) where era data is stored.
-		       annotation (bool, optional): Annotation data is included. Dictionary containing key (column name of annotation data) and absolute path of csv file where annotation data is stored. Default is False. 
-		       other (dict, optional): Additional data (csv format) to join to acoustic data. Key is name of data (column name) to join to acoustic dataset, value is the absolute path where to find the csv. Default is None.
+			dataset_path (str): The path to the dataset.
+			method (str) : Method or more generally processing pipeline and model used to estimate wind speed. Found in config_weather.py.
+			ground_truth (str) : Column name from auxiliary data that stores wind speed data that will be used as ground truth. 
+			dataset_sr (int, optional): The dataset sampling rate. Default is None.
+			weather_params (dict) : Enter your own parameters for wind estimation. Will be taken into account if method = None.
+				- frequency : 'int'        
+				- samplerate : 'int'
+				- preprocessing
+					- nfft : 'int'
+					- window_size : 'int'
+					- spectro_duration : 'int'
+					- window : 'str'
+					- overlap : 'float'
+				- function : func
+				- averaging_duration : 'int'
+				- parameters
+					- a : 'float'
+					- b : 'float'
+					- ...
+			analysis_params (dict, optional): Additional analysis parameters. Default is None.
+			gps_coordinates (str, list, tuple, bool, optional): Whether GPS data is included. Default is True. If string, enter the filename (csv) where gps data is stored.
+			depth (str, int, bool, optional): Whether depth data is included. Default is True. If string, enter the filename (csv) where depth data is stored.
+			era (bool, optional): Whether era data is included. Default is False. If string, enter the filename (Network Common Data Form) where era data is stored.
+			annotation (bool, optional): Annotation data is included. Dictionary containing key (column name of annotation data) and absolute path of csv file where annotation data is stored. Default is False. 
+			other (dict, optional): Additional data (csv format) to join to acoustic data. Key is name of data (column name) to join to acoustic dataset, value is the absolute path where to find the csv. Default is None.
 		"""
-		
+				
+		if method :
+			self.method = empirical[method]
+			analysis_params['nfft'] = self.method['preprocessing']['nfft']
+			analysis_params['window_size'] = self.method['preprocessing']['window_size']
+			analysis_params['spectro_duration'] = self.method['preprocessing']['spectro_duration']
+			dataset_sr = self.method['samplerate']
+		else :
+			self.method = weather_params
+			
 		super().__init__(dataset_path, gps_coordinates=gps_coordinates, depth=depth, dataset_sr=dataset_sr, 
 				   owner_group=owner_group, analysis_params=analysis_params, batch_number=batch_number, local=local,
 				   era = era, annotation=annotation, other=other)
 		
-		self.ground_truth = ground_truth
-		self.method = method
+		self.ground_truth = ground_truth		
 		if self.ground_truth not in self.df :
 			print(f"Ground truth data '{self.ground_truth}' was not found in joined dataframe.\nPlease call the correct joining method or automatic_join()")
 
 
-
-        '''
-		WEATHER CLASS NEEDS TO TAKE IN A METHOD (ie Pensieri/Hildebrand or custom...) as main parameter
-		THEN : CHECK IF A DATASET HAS BEEN BUILD WITH CORRECT PROCESSING SETTINGS
-		Otherwise - call Spectrogram class to build such dataset
-		If a dataset has been build you can continue weather application
+	def skf_fit(self, n_splits = 5, scaling_factor = 0.2):
+		'''
+		Parameters :
+			n_splits: Number of stratified K folds used for training, defaults to 5
+			scaling_factor: Percentage of variability around initial parameters, defaults to 0.2
 		'''
 
+		popt_tot, popv_tot = [], []
+		mae, mse, r2, var, std = [], [], [], [], []
+		self.df['classes'] = self.df[self.ground_truth].apply(beaufort)
+		self.df['estimation'] = np.nan
+		skf = StratifiedKFold(n_splits=n_splits)
+		bounds = np.array([[value-scaling_factor*abs(value), value+scaling_factor*abs(value)] for value in self.method['parameters'].values()]).T
+		for i, (train_index, test_index) in enumerate(skf.split(self.df[self.method['frequency']], self.df.classes)):
+			trainset = self.df.iloc[train_index]
+			testset = self.df.iloc[test_index]
+			popt, popv = curve_fit(self.func, trainset[self.method['frequency']].to_numpy(), 
+						  trainset[self.ground_truth].to_numpy(), bounds = bounds, maxfev = 25000)
+			popt_tot.append(popt)
+			popv_tot.append(popv)
+			estimation = self.func(testset[self.method['frequency']].to_numpy(), *popt)
+			mae.append(metrics.mean_absolute_error(testset[self.ground_truth], estimation))
+			mse.append(metrics.mean_squared_error(testset[self.ground_truth], estimation, squared=False))
+			r2.append(metrics.r2_score(testset[self.ground_truth], estimation))
+			var.append(np.var(abs(testset[self.ground_truth])-abs(estimation)))
+			std.append(np.std(abs(testset[self.ground_truth])-abs(estimation)))
+			self.df.loc[test_index, 'estimation'] = estimation
+		self.popt, self.popv = np.mean(popt_tot, axis=0), np.mean(popv_tot, axis=0)
+		print('Model has been fitted, your estimation has been added to the joined dataset')
+		print(f'The fitted parameters are : {self.popt}')
+		print(tabulate([np.mean(mae), np.mean(mse), np.mean(r2), np.mean(var), np.mean(std)], headers=['mae','mse','r2','var','std']))
+		
 
-    def save_all_welch(self):
+'''    def save_all_welch(self):
         # get metadata from sepctrogram folder
         metadata_path = next(
             self.path.joinpath(
@@ -434,3 +477,4 @@ class benchmark_weather:
             pad_inches=0,
         )
         plt.close()
+'''

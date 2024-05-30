@@ -66,7 +66,9 @@ class Auxiliary(Spectrogram):
 			self.df = check_epoch(pd.read_csv(self.audio_path.joinpath('timestamp.csv')))
 			print(f"Current reference timestamp.csv has the following columns : {', '.join(df.columns)}")
 		except FileNotFoundError :
-			print('Dataset corresponding to analysis params was not found. Please call the build method first')
+			print('Dataset corresponding to analysis params was not found. Please call the build method first.\nParams are :')
+			print('Dataset sampling rate : ', dataset_sr)
+			print('Spectrogram duration : ', analysis_params['spectro_duration'])
 			self.df = pd.DataFrame()
 		self.metadata = pd.read_csv(self._get_original_after_build().joinpath("metadata.csv"), header=0)
 		self._depth, self._gps_coordinates = depth, gps_coordinates
