@@ -1,0 +1,61 @@
+[Hildebrand]
+	model = "logarithmic"
+
+	[Hildebrand.metadata]
+	samplerate = 200000
+	frequency = 8000
+
+	[Hildebrand.preprocessing]
+	sample_number = 
+	duration = 3600
+	window_size = 2000
+
+	fft_output = 2000
+	window = "hanning"
+	overlap = 0
+
+	[Hildebrand.parameters]
+	a = 78
+	b = 1.5
+	c = 1
+
+
+[Pensieri]
+	model = "quadratic"
+
+	[Pensieri.metadata]
+	samplerate = 100000
+	frequency = 8000
+
+	[Pensieri.preprocessing]
+	window_size = 1024
+	sample_number = 8
+	duration = 4.5
+
+	window = "hanning"
+	fft_output = 512
+	overlap = 0
+
+	[Pensieri.parameters]
+	a = 0.044642
+	b = -3.2917
+	c = 63.016
+	d = 0
+
+
+             - nfft : `int`
+                - window_size : `int`
+                - overlap : `int`
+                - colormap : `str`
+                - zoom_level : `int`
+                - dynamic_min : `int`
+                - dynamic_max : `int`
+                - number_adjustment_spectrogram : `int`
+                - spectro_duration : `int`
+                - zscore_duration : `float` or `str`
+                - hp_filter_min_freq : `int`
+                - sensitivity_dB : `int`
+                - peak_voltage : `float`
+                - spectro_normalization : `str`
+                - data_normalization : `str`
+                - gain_dB : `int`
