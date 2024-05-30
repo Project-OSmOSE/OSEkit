@@ -256,7 +256,7 @@ class Spectrogram(Dataset):
 
     @property
     def nfft(self):
-        """int: The number of Fast Fourier Transform used to generate the spectrograms."""
+        """int: The number of points used in the Fast Fourier Transform."""
         return self.__nfft
 
     @nfft.setter
@@ -265,7 +265,7 @@ class Spectrogram(Dataset):
 
     @property
     def window_size(self):
-        """int: The window size of the generated spectrograms."""
+        """int: Size of the window applied to the signal."""
         return self.__window_size
 
     @window_size.setter
@@ -274,7 +274,7 @@ class Spectrogram(Dataset):
 
     @property
     def overlap(self):
-        """int: The overlap percentage between two spectrogram windows."""
+        """int: The overlap percentage between two successive windows."""
         return self.__overlap
 
     @overlap.setter
@@ -423,7 +423,7 @@ class Spectrogram(Dataset):
 
     @property
     def frequency_resolution(self) -> float:
-        """Frequency resolution of the spectrogram, calculated by dividing the sample rate by the number of nfft."""
+        """Frequency resolution of the spectrogram, calculated by dividing the samplerate by nfft."""
         return self.dataset_sr / self.nfft
 
     @property
