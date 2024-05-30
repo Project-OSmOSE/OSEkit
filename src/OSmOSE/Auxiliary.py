@@ -62,7 +62,12 @@ class Auxiliary(Spectrogram):
 		super().__init__(dataset_path, gps_coordinates=gps_coordinates, depth=depth, dataset_sr=dataset_sr, owner_group=owner_group, analysis_params=analysis_params, batch_number=batch_number, local=local)
 				
 		# Load reference data that will be used to join all other data
-		self.df = check_epoch(pd.read_csv(self.audio_path.joinpath('timestamp.csv')))
+		try :
+			self.df = check_epoch(pd.read_csv(self.audio_path.joinpath('timestamp.csv')))
+			print(f"Current reference timestamp.csv has the following columns : {', '.join(df.columns)}")
+		except FileNotFoundError :
+			print('Dataset corresponding to analysis params was not found. Please call the build method first')
+			self.df = pd.DataFrame()
 		self.metadata = pd.read_csv(self._get_original_after_build().joinpath("metadata.csv"), header=0)
 		self._depth, self._gps_coordinates = depth, gps_coordinates
 		match depth :
@@ -102,7 +107,7 @@ class Auxiliary(Spectrogram):
 		self.other = other if other is not None else {}	
 		if annotation : 
 			self.other = {**self.other, **annotation}
-
+			
 	
 	def __str__(self):
 		print(f'For the {self.name} dataset')

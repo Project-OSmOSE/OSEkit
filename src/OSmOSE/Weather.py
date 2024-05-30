@@ -25,6 +25,7 @@ class Weather(Auxiliary):
 		self,
 		dataset_path: str,
 		method: str = 'Default',
+		ground_truth = 'era'
 		*,
 		gps_coordinates: Union[str, List, Tuple, bool] = True,
 		depth: Union[str, int, bool] = True,
@@ -43,6 +44,7 @@ class Weather(Auxiliary):
 		Parameters:
 		       dataset_path (str): The path to the dataset.
 			   method (str) : Method or more generally processing pipeline and model  used to estimate wind speed. Found in wind_models.toml
+			   ground_truth (str) : Column name from auxiliary data that stores wind speed data that will be used as ground truth. 
 		       dataset_sr (int, optional): The dataset sampling rate. Default is None.
 		       analysis_params (dict, optional): Additional analysis parameters. Default is None.
 		       gps_coordinates (str, list, tuple, bool, optional): Whether GPS data is included. Default is True. If string, enter the filename (csv) where gps data is stored.
@@ -55,7 +57,12 @@ class Weather(Auxiliary):
 		super().__init__(dataset_path, gps_coordinates=gps_coordinates, depth=depth, dataset_sr=dataset_sr, 
 				   owner_group=owner_group, analysis_params=analysis_params, batch_number=batch_number, local=local,
 				   era = era, annotation=annotation, other=other)
-			
+		
+		self.ground_truth = ground_truth
+		self.method = method
+		if self.ground_truth not in self.df :
+			print(f"Ground truth data '{self.ground_truth}' was not found in joined dataframe.\nPlease call the correct joining method or automatic_join()")
+
 
 
         '''
