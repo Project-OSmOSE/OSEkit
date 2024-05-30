@@ -80,6 +80,7 @@ Joining datasets
 
 The Auxiliary class automatically joins environmental and instrument data to acoustic data. By default, the processed acoustic dataset serves as the reference dataset and other data will be joined to corresponding time and localization. So far, only csv files and ERA5 re-analysis netCDF files can be joined to your acoustic data. The API functions to download ERA data can be found in the module but an internet access is necessary. 
 
-.. image:: figures/trajectory_with_wind_speed.png
+.. image:: figures/trajectory_wind_speed.png
   :width: 400
+  :align: center
   :alt: Elephant seal trajectory with wind speed (m/s) as a color map
