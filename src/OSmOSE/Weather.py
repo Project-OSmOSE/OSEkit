@@ -8,28 +8,55 @@ Created on Wed Oct  4 16:06:18 2023
 from pathlib import Path
 import os
 from OSmOSE.config import *
+from OSmOSE.utils import make_path
+from OSmOSE.Auxiliary import Auxiliary
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from OSmOSE.utils import make_path
 from tqdm import tqdm
 import sys
 import itertools
 
 
-class Weather:
-    def __init__(
-        self,
-        osmose_path_dataset,
-        dataset,
-        time_resolution_welch,
-        sample_rate_welch,
-        local=True,
-    ):
-        self.path = Path(os.path.join(osmose_path_dataset, dataset))
-        self.dataset = dataset
-        self.time_resolution_welch = time_resolution_welch
-        self.sample_rate_welch = sample_rate_welch
+class Weather(Auxiliary):
+	
+	
+	def __init__(
+		self,
+		dataset_path: str,
+		method: str = 'Default',
+		*,
+		gps_coordinates: Union[str, List, Tuple, bool] = True,
+		depth: Union[str, int, bool] = True,
+		dataset_sr: int = None,
+		owner_group: str = None,
+		analysis_params: dict = None,
+		batch_number: int = 5,
+		local: bool = True,
+		
+		era : Union[str, bool] = False,
+		annotation : Union[dict, bool] = False,
+		other: dict = None
+		):
+		
+		"""		
+		Parameters:
+		       dataset_path (str): The path to the dataset.
+			   method (str) : Method or more generally processing pipeline and model  used to estimate wind speed. Found in wind_models.toml
+		       dataset_sr (int, optional): The dataset sampling rate. Default is None.
+		       analysis_params (dict, optional): Additional analysis parameters. Default is None.
+		       gps_coordinates (str, list, tuple, bool, optional): Whether GPS data is included. Default is True. If string, enter the filename (csv) where gps data is stored.
+		       depth (str, int, bool, optional): Whether depth data is included. Default is True. If string, enter the filename (csv) where depth data is stored.
+		       era (bool, optional): Whether era data is included. Default is False. If string, enter the filename (Network Common Data Form) where era data is stored.
+		       annotation (bool, optional): Annotation data is included. Dictionary containing key (column name of annotation data) and absolute path of csv file where annotation data is stored. Default is False. 
+		       other (dict, optional): Additional data (csv format) to join to acoustic data. Key is name of data (column name) to join to acoustic dataset, value is the absolute path where to find the csv. Default is None.
+		"""
+		
+		super().__init__(dataset_path, gps_coordinates=gps_coordinates, depth=depth, dataset_sr=dataset_sr, 
+				   owner_group=owner_group, analysis_params=analysis_params, batch_number=batch_number, local=local,
+				   era = era, annotation=annotation, other=other)
+			
+
 
     def save_all_welch(self):
         # get metadata from sepctrogram folder
@@ -261,7 +288,8 @@ class Weather:
             bbox_inches="tight",
             pad_inches=0,
         )
-        if show_fig:
+        if show_fig:from OSmOSE.utils import make_path
+
             plt.show()
         else:
             plt.close()
