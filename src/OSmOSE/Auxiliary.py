@@ -64,7 +64,8 @@ class Auxiliary(Spectrogram):
 		# Load reference data that will be used to join all other data
 		try :
 			self.df = check_epoch(pd.read_csv(self.audio_path.joinpath('timestamp.csv')))
-			print(f"Current reference timestamp.csv has the following columns : {', '.join(df.columns)}")
+			self.df['timestamp'] = pd.to_datetime(self.df['timestamp'], format='%Y-%m-%dT%H:%M:%S.000000+0000')
+			print(f"Current reference timestamp.csv has the following columns : {', '.join(self.df.columns)}")
 		except FileNotFoundError :
 			print('Dataset corresponding to analysis params was not found. Please call the build method first.\nParams are :')
 			print('Dataset sampling rate : ', dataset_sr)
@@ -196,7 +197,8 @@ class Auxiliary(Spectrogram):
 		for variable in variables:
 			pbar.update(1); pbar.set_description("Loading and formatting %s" % variable)
 			self.df[variable] = interpolate.RegularGridInterpolator((timestamps, ds['latitude'][:], ds['longitude'][:]), ds[variable][:], bounds_error = False)((self.df.epoch, self.df.lat, self.df.lon))
-
+		if 'u10' and 'v10' in self.df :
+			self.df['era'] = np.sqrt(self.df.u10**2 + self.df.v10**2)
 	
 	def automatic_join(self):
 		''' Automatically join all the available data'''

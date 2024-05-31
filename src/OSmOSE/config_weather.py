@@ -1,3 +1,5 @@
+import numpy as np
+
 
 def logarithmic(x, a, b, offset):
 	return 10**(((x-offset) + 10*a*np.log10(8000)) / (20*b))

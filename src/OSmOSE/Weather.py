@@ -1,4 +1,4 @@
-from config_weather import empirical
+from OSmOSE.config_weather import empirical
 from OSmOSE.config import *
 from OSmOSE.Auxiliary import Auxiliary
 import numpy as np
@@ -6,7 +6,10 @@ from typing import Union, Tuple, List
 from sklearn.model_selection import StratifiedKFold
 from scipy.optimize import curve_fit
 import sklearn.metrics as metrics
-import tabulate
+import pandas as pd
+from glob import glob
+#import plotly.express as px
+#import plotly.graph_objects as go
 
 def beaufort(x):
     return next((i for i, limit in enumerate([0.3, 1.6, 3.4, 5.5, 8, 10.8, 13.9, 17.2, 20.8, 24.5, 28.5, 32.7]) 
@@ -25,9 +28,7 @@ class Weather(Auxiliary):
 		*,
 		gps_coordinates: Union[str, List, Tuple, bool] = True,
 		depth: Union[str, int, bool] = True,
-		dataset_sr: int = None,
 		owner_group: str = None,
-		analysis_params: dict = None,
 		batch_number: int = 5,
 		local: bool = True,
 		
@@ -74,13 +75,59 @@ class Weather(Auxiliary):
 		else :
 			self.method = weather_params
 			
-		super().__init__(dataset_path, gps_coordinates=gps_coordinates, depth=depth, dataset_sr=dataset_sr, 
-				   owner_group=owner_group, analysis_params=analysis_params, batch_number=batch_number, local=local,
+		super().__init__(dataset_path, gps_coordinates=gps_coordinates, depth=depth, dataset_sr=weather_params['samplerate'], 
+				   owner_group=owner_group, analysis_params=weather_params['preprocessing'], batch_number=batch_number, local=local,
 				   era = era, annotation=annotation, other=other)
 		
 		self.ground_truth = ground_truth		
 		if self.ground_truth not in self.df :
 			print(f"Ground truth data '{self.ground_truth}' was not found in joined dataframe.\nPlease call the correct joining method or automatic_join()")
+
+	def __str__(self):
+		if 'wind_model_stats' in dir(self):
+			print('Model has been trained with following parameters : \n')
+			for key, value in self.method.items():
+				print(f"{key} : {value}")
+			print('ground truth : ', self.ground_truth)
+			print('-----------\nThe model has the following performance :')
+			for key, value in self.wind_model_stats.items():
+				print(f"{key} : {value}")
+			return "You can plot your estimation using the plot_estimation() method"
+		else :
+			print('Model has not been fitted to any data yet.\nWill be fitted with following parameters : \n')
+			for key, value in self.method.items():
+				print(f"{key:<{6}} : {value}")
+			return "To fit your model, please call skf_fit() for example"
+			
+
+
+	def fetch_data(self, feature='welch'):
+		'''
+		This methods adds noise level at selected frequency to the joined dataframe
+		Parameters !
+			feature (str) : Type of processed features to fetch from : 'LTAS', 'spectrogram', 'welch'
+		'''
+		_noise_level, _time = [], []
+		match feature :
+			case 'welch':
+				fns = glob(str(self.path_output_welch)+'/*')
+				for fn in fns :
+					_data = np.load(fn, allow_pickle = True)
+					freq_ind = np.argmin(abs(_data['Freq']-self.method['frequency']))
+					_time.extend(_data['Time'])
+					_noise_level.extend(np.log10(_data['Sxx'][:, freq_ind]))
+			case 'spectrogram' | 'LTAS':
+				fns = glob(str(self.path_output_spectrogram_matrix)+'/*')
+				for fn in fns :
+					_data = np.load(fn, allow_pickle = True)
+					freq_ind = np.argmin(abs(_data['Freq']-self.method['frequency']))
+					_time.extend(pd.to_datetime(fn.split('/')[-1][:19], format = '%Y_%m_%dT%H_%M_%S'))
+					_noise_level.extend(np.mean(_data['Sxx'][:, freq_ind]))
+
+		print(f"Model is fitted at {self.method['frequency']} Hz, defaulting to {_data['Freq'][freq_ind]} Hz")
+		_temp = pd.DataFrame().from_dict({'timestamp':_time, self.method['frequency'] : _noise_level}).sort_values('timestamp')
+		_temp['timestamp'] = _temp['timestamp'].dt.tz_localize(None)
+		self.df = pd.merge(self.df, _temp, on='timestamp')
 
 
 	def skf_fit(self, n_splits = 5, scaling_factor = 0.2):
@@ -95,26 +142,37 @@ class Weather(Auxiliary):
 		self.df['classes'] = self.df[self.ground_truth].apply(beaufort)
 		self.df['estimation'] = np.nan
 		skf = StratifiedKFold(n_splits=n_splits)
-		bounds = np.array([[value-scaling_factor*abs(value), value+scaling_factor*abs(value)] for value in self.method['parameters'].values()]).T
+		bounds = np.hstack((np.array([[value-scaling_factor*abs(value), value+scaling_factor*abs(value)] for value in self.method['parameters'].values()]).T, [[-np.inf],[np.inf]]))
 		for i, (train_index, test_index) in enumerate(skf.split(self.df[self.method['frequency']], self.df.classes)):
-			trainset = self.df.iloc[train_index]
-			testset = self.df.iloc[test_index]
-			popt, popv = curve_fit(self.func, trainset[self.method['frequency']].to_numpy(), 
+			trainset = self.df.iloc[train_index].dropna(subset = [self.method['frequency'], self.ground_truth])
+			testset = self.df.iloc[test_index].dropna(subset = [self.method['frequency'], self.ground_truth])
+			popt, popv = curve_fit(self.method['function'], trainset[self.method['frequency']].to_numpy(), 
 						  trainset[self.ground_truth].to_numpy(), bounds = bounds, maxfev = 25000)
 			popt_tot.append(popt)
 			popv_tot.append(popv)
-			estimation = self.func(testset[self.method['frequency']].to_numpy(), *popt)
+			estimation = self.method['function'](testset[self.method['frequency']].to_numpy(), *popt)
 			mae.append(metrics.mean_absolute_error(testset[self.ground_truth], estimation))
 			mse.append(metrics.mean_squared_error(testset[self.ground_truth], estimation, squared=False))
 			r2.append(metrics.r2_score(testset[self.ground_truth], estimation))
 			var.append(np.var(abs(testset[self.ground_truth])-abs(estimation)))
 			std.append(np.std(abs(testset[self.ground_truth])-abs(estimation)))
-			self.df.loc[test_index, 'estimation'] = estimation
+			self.df.loc[testset.index, 'estimation'] = estimation
 		self.popt, self.popv = np.mean(popt_tot, axis=0), np.mean(popv_tot, axis=0)
 		print('Model has been fitted, your estimation has been added to the joined dataset')
 		print(f'The fitted parameters are : {self.popt}')
-		print(tabulate([np.mean(mae), np.mean(mse), np.mean(r2), np.mean(var), np.mean(std)], headers=['mae','mse','r2','var','std']))
+		self.wind_model_stats = {'mae':np.mean(mae), 'rmse':np.mean(mse), 'r2':np.mean(r2), 'var':np.mean(var), 'std':np.mean(std)}
 		
+
+"""	def plot_estimation(self):
+
+		fig = go.Figure()
+		fig.add_trace(go.Scatter(x=df['timestamp'], y=self.ground_truth, mode='markers', marker=dict(size=3), name='Ground Truth'))
+		fig.add_trace(go.Scatter(x=df['timestamp'], y=df['estimation'], mode='markers', marker=dict(size=4), name='Estimation'))
+		fig.update_layout(title='Wind Speed and Estimation Over Time', xaxis_title='Timestamp', yaxis_title='Weather estimation', width=800, height=600)
+		fig.show()
+
+"""
+
 
 '''    def save_all_welch(self):
         # get metadata from sepctrogram folder
@@ -126,7 +184,7 @@ class Weather(Auxiliary):
             None,
         )
         metadata_spectrogram = pd.read_csv(metadata_path)
-
+	
         df = pd.read_csv(
             self.path.joinpath(
                 OSMOSE_PATH.processed_auxiliary,
