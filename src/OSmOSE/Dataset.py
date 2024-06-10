@@ -22,6 +22,7 @@ except ModuleNotFoundError:
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
+from OSmOSE.utils.timestamp_utils import check_epoch
 from OSmOSE.utils.core_utils import read_header, check_n_files, set_umask
 from OSmOSE.utils.path_utils import make_path
 from OSmOSE.timestamps import write_timestamp
@@ -77,6 +78,7 @@ class Dataset:
         self.__name = self.__path.stem
         self.owner_group = owner_group
         self.__gps_coordinates = []
+        self.__depth = None
         self.__local = local
         self.timezone = timezone
 
@@ -154,17 +156,21 @@ class Dataset:
                 aux_data_path = next(self.path.rglob(new_coordinates), False)
 
                 if aux_data_path:
+                    self.__gps_coordinates = check_epoch(pd.read_csv(aux_data_path))
+                    '''
                     csvFileArray = pd.read_csv(aux_data_path)
                     self.__gps_coordinates = [
                         np.mean(csvFileArray["lat"]),
                         np.mean(csvFileArray["lon"]),
-                    ]
+                    ]'''
                 else:
                     raise FileNotFoundError(
                         f"The {new_coordinates} has been found no where within {self.path}"
                     )
 
             case tuple():
+                self.__gps_coordinates = new_coordinates
+            case list():
                 self.__gps_coordinates = new_coordinates
             case _:
                 raise TypeError(
@@ -200,11 +206,13 @@ class Dataset:
             case str():
                 aux_data_path = next(self.path.rglob(new_depth), False)
                 if aux_data_path:
+                    self.__depth = check_epoch(pd.read_csv(aux_data_path))
+                    '''
                     csvFileArray = pd.read_csv(aux_data_path)
-                    self.__depth = int(np.mean(csvFileArray["depth"]))
+                    self.__depth = int(np.mean(csvFileArray["depth"]))'''
                 else:
                     raise FileNotFoundError(
-                        f"The {new_coordinates} has been found no where within {self.path}"
+                        f"The {new_depth} has been found no where within {self.path}"
                     )
 
             case int():

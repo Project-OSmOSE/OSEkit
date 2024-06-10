@@ -121,13 +121,13 @@ class Spectrogram(Dataset):
         metadata_path = processed_path.joinpath(
             "adjustment_spectros", "adjust_metadata.csv"
         )
-        if metadata_path.exists():
+        if analysis_params:
+            self.__analysis_file = False
+            # We put the value in a list so that values[0] returns the right value below.
+            analysis_sheet = {key: [value] for (key, value) in analysis_params.items()}
+        elif metadata_path.exists():
             self.__analysis_file = True
             analysis_sheet = pd.read_csv(metadata_path, header=0)
-        elif analysis_params:
-            self.__analysis_file = False
-            # We put the value in a list so that value[0] returns the right value below.
-            analysis_sheet = {key: [value] for (key, value) in analysis_params.items()}
         else:
             analysis_sheet = {}
             self.__analysis_file = False
@@ -263,7 +263,7 @@ class Spectrogram(Dataset):
 
     @property
     def nfft(self):
-        """int: The number of Fast Fourier Transform used to generate the spectrograms."""
+        """int: The number of points used in the Fast Fourier Transform."""
         return self.__nfft
 
     @nfft.setter
@@ -272,7 +272,7 @@ class Spectrogram(Dataset):
 
     @property
     def window_size(self):
-        """int: The window size of the generated spectrograms."""
+        """int: Size of the window applied to the signal."""
         return self.__window_size
 
     @window_size.setter
@@ -281,7 +281,7 @@ class Spectrogram(Dataset):
 
     @property
     def overlap(self):
-        """int: The overlap percentage between two spectrogram windows."""
+        """int: The overlap percentage between two successive windows."""
         return self.__overlap
 
     @overlap.setter
@@ -430,7 +430,7 @@ class Spectrogram(Dataset):
 
     @property
     def frequency_resolution(self) -> float:
-        """Frequency resolution of the spectrogram, calculated by dividing the sample rate by the number of nfft."""
+        """Frequency resolution of the spectrogram, calculated by dividing the samplerate by nfft."""
         return self.dataset_sr / self.nfft
 
     @property
@@ -479,7 +479,7 @@ class Spectrogram(Dataset):
             audio_foldername, self.__spectro_foldername, "matrix"
         )
 
-        self.path_output_welch = self.path.joinpath(OSMOSE_PATH.welch)
+        self.path_output_welch = self.path.joinpath(OSMOSE_PATH.welch).joinpath(audio_foldername)
         self.path_output_LTAS = self.path.joinpath(OSMOSE_PATH.LTAS)
         self.path_output_EPD = self.path.joinpath(OSMOSE_PATH.EPD)
         self.path_output_SPLfiltered = self.path.joinpath(OSMOSE_PATH.SPLfiltered)
