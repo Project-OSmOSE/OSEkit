@@ -469,7 +469,7 @@ class Spectrogram(Dataset):
         self.audio_path = self.path.joinpath(OSMOSE_PATH.raw_audio, audio_foldername)
 
         self.__spectro_foldername = (
-            f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}"
+            f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}_{self.__custom_frequency_scale}"
         )
 
         self.path_output_spectrogram = processed_path.joinpath(
@@ -1047,7 +1047,7 @@ class Spectrogram(Dataset):
             meta_path = self.path.joinpath(
                 OSMOSE_PATH.spectrogram,
                 f"{str(self.spectro_duration)}_{str(self.dataset_sr)}",
-                f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",
+                f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}_{self.__custom_frequency_scale}",
                 "metadata.csv",
             )
 
@@ -1599,7 +1599,7 @@ class Spectrogram(Dataset):
         )
 
         color_map = plt.cm.get_cmap(self.colormap)  # .reversed()
-        if not self.custom_frequency_scale:
+        if self.custom_frequency_scale == "linear":
             plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
         else:
             if self.custom_frequency_scale == "log":
