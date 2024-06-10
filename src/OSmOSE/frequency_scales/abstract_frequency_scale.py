@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class AbstractScale(abc.ABC):
+class AbstractFrequencyScale(abc.ABC):
     sr: int = 312500
 
     @abc.abstractmethod

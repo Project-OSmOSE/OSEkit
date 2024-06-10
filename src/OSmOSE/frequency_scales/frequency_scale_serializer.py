@@ -1,21 +1,25 @@
-from OSmOSE.scales.custom_scale import CustomScale
+from OSmOSE.frequency_scales.custom_frequency_scale import CustomFrequencyScale
 
 
-class ScaleSerializer:
+class FrequencyScaleSerializer:
     def __init__(self):
         self.configurations = {
             "porp_delph": (
-                CustomScale,
+                CustomFrequencyScale,
                 {"frequencies": (22000, 100000), "coefficients": (0.5, 0.2, 0.3)},
             ),
             "Audible": (
-                CustomScale,
+                CustomFrequencyScale,
                 {"frequencies": (22000, 100000), "coefficients": (1, 0, 0)},
             ),
             "Dual_LF_HF": (
-                CustomScale,
+                CustomFrequencyScale,
                 {"frequencies": (22000, 100000), "coefficients": (0.5, 0, 0.5)},
             ),
+            "test": (
+                CustomFrequencyScale,
+                {"frequencies": (2, 4000), "coefficients": (0.5, 0, 0.5)},
+            ),            
             # Add more configurations here
         }
 

@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-from OSmOSE.scales.abstract_scale import AbstractScale
+from OSmOSE.frequency_scales.abstract_frequency_scale import AbstractFrequencyScale
 from typing import Tuple
 
 
 @dataclass
-class CustomScale(AbstractScale):
+class CustomFrequencyScale(AbstractFrequencyScale):
     """Defines three frequency bands [0,f1],[f1,f2],[f2,sr/2].
     Each band is rescaled to take a given % of the display.
     Respectively stretched to coef1 % coef2 % and coef3 % of the y-axis
@@ -14,7 +14,7 @@ class CustomScale(AbstractScale):
         8000-22050 Hz : 10%  (e.g sr = 44100 Hz)
     """
 
-    frequencies: Tuple[int, int] = (22000, 100000)
+    frequencies: Tuple[int, int] = (1, 14000)
     coefficients: Tuple[float, float, float] = (0.5, 0.2, 0.3)
 
     def __post_init__(self):

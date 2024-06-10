@@ -36,7 +36,7 @@ from OSmOSE.utils.core_utils import (
     get_timestamp_of_audio_file,
 )
 from OSmOSE.config import *
-from OSmOSE.scales.scale_serializer import ScaleSerializer
+from OSmOSE.frequency_scales.frequency_scale_serializer import FrequencyScaleSerializer
 
 
 class Spectrogram(Dataset):
@@ -228,9 +228,9 @@ class Spectrogram(Dataset):
             else 0
         )
 
-        self.custom_scale: str = (
-            analysis_sheet["custom_scale"][0]
-            if "custom_scale" in analysis_sheet
+        self.custom_frequency_scale: str = (
+            analysis_sheet["custom_frequency_scale"][0]
+            if "custom_frequency_scale" in analysis_sheet
             else "linear"
         )
         
@@ -442,12 +442,12 @@ class Spectrogram(Dataset):
         self.__time_resolution = value
 
     @property
-    def custom_scale(self):
-        return self.__custom_scale
+    def custom_frequency_scale(self):
+        return self.__custom_frequency_scale
 
-    @custom_scale.setter
-    def custom_scale(self, value):
-        self.__custom_scale = value
+    @custom_frequency_scale.setter
+    def custom_frequency_scale(self, value):
+        self.__custom_frequency_scale = value
 
     # endregion
 
@@ -1599,18 +1599,18 @@ class Spectrogram(Dataset):
         )
 
         color_map = plt.cm.get_cmap(self.colormap)  # .reversed()
-        if not self.custom_scale:
+        if not self.custom_frequency_scale:
             plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
         else:
-            if self.custom_scale == "log":
+            if self.custom_frequency_scale == "log":
                 plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
                 plt.yscale("log")
                 plt.ylim(freq[freq > 0].min(), self.dataset_sr / 2)
             else:
-                custom_scale = ScaleSerializer().get_scale(
-                    self.custom_scale, self.dataset_sr
+                custom_frequency_scale = FrequencyScaleSerializer().get_scale(
+                    self.custom_frequency_scale, self.dataset_sr
                 )
-                freq_custom = np.vectorize(custom_scale.map_freq2scale)(freq)
+                freq_custom = np.vectorize(custom_frequency_scale.map_freq2scale)(freq)
                 plt.pcolormesh(time, freq_custom, log_spectro, cmap=color_map)
 
         plt.clim(vmin=self.dynamic_min, vmax=self.dynamic_max)
