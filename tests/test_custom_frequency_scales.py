@@ -1,5 +1,5 @@
-from OSmOSE.scales.custom_scale import CustomScale
-from OSmOSE.scales.scale_serializer import ScaleSerializer
+from OSmOSE.frequency_scales.custom_frequency_scale import CustomFrequencyScale
+from OSmOSE.frequency_scales.frequency_scale_serializer import FrequencyScaleSerializer
 import numpy as np
 import pytest
 
@@ -8,16 +8,16 @@ important_freqs = [22050, 44100, 156250, 312500]
 
 
 def test_scale_serializer():
-    serializer = ScaleSerializer()
+    serializer = FrequencyScaleSerializer()
 
     assert isinstance(
-        serializer.get_scale("porp_delph", sr=312500), CustomScale
+        serializer.get_scale("porp_delph", sr=312500), CustomFrequencyScale
     ), "Error in porp_delph scale"
     assert isinstance(
-        serializer.get_scale("Audible", sr=312500), CustomScale
+        serializer.get_scale("Audible", sr=312500), CustomFrequencyScale
     ), "Error in Audible scale"
     assert isinstance(
-        serializer.get_scale("Dual_LF_HF", sr=312500), CustomScale
+        serializer.get_scale("Dual_LF_HF", sr=312500), CustomFrequencyScale
     ), "Error in Dual_LF_HF scale"
 
     try:
@@ -31,8 +31,8 @@ def test_scale_serializer():
 def test_custom_scales():
     for config in configs_to_test:
         print(config)
-        scale = ScaleSerializer().get_scale(config, sr=312500)
-        assert isinstance(scale, CustomScale)
+        scale = FrequencyScaleSerializer().get_scale(config, sr=312500)
+        assert isinstance(scale, CustomFrequencyScale)
         assert np.isclose(scale.map_freq2scale(0), 0, rtol=1e-12)
         # Test frequency to scale mapping
         assert np.isclose(
