@@ -37,18 +37,18 @@ def test_initialize_2s(input_dataset):
     spectro_paths = [
         OSMOSE_PATH.spectrogram.joinpath(
             f"{spectrogram.spectro_duration}_{spectrogram.dataset_sr}",
-            f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}",
+            f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}_{spectrogram.custom_frequency_scale}",
             "image",
         ),
         OSMOSE_PATH.spectrogram.joinpath(
             f"{spectrogram.spectro_duration}_{spectrogram.dataset_sr}",
-            f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}",
+            f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}_{spectrogram.custom_frequency_scale}",
             "matrix",
         ),
         OSMOSE_PATH.spectrogram.joinpath("adjustment_spectros", "adjust_metadata.csv"),
         OSMOSE_PATH.spectrogram.joinpath(
             f"{spectrogram.spectro_duration}_{spectrogram.dataset_sr}",
-            f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}",
+            f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}_{spectrogram.custom_frequency_scale}",
             "metadata.csv",
         ),
     ]
@@ -64,7 +64,7 @@ def test_initialize_2s(input_dataset):
     assert spectrogram.path_output_spectrogram == spectrogram.path.joinpath(
         OSMOSE_PATH.spectrogram,
         f"{spectrogram.spectro_duration}_{spectrogram.dataset_sr}",
-        f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}",
+        f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}_{spectrogram.custom_frequency_scale}",
         "image",
     )
 
@@ -109,7 +109,7 @@ def test_number_image_matrix(input_dataset):
                 dataset.path.joinpath(
                     OSMOSE_PATH.spectrogram,
                     f"{spectrogram.spectro_duration}_{spectrogram.dataset_sr}",
-                    f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}",
+                    f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}_{spectrogram.custom_frequency_scale}",
                     "image",
                 ).glob("*.png")
             )
@@ -120,7 +120,7 @@ def test_number_image_matrix(input_dataset):
                 dataset.path.joinpath(
                     OSMOSE_PATH.spectrogram,
                     f"{spectrogram.spectro_duration}_{spectrogram.dataset_sr}",
-                    f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}",
+                    f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}_{spectrogram.custom_frequency_scale}",
                     "image",
                 ).glob("*.png")
             )
