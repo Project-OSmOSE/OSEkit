@@ -931,7 +931,7 @@ class Spectrogram(Dataset):
         if (
             # os.listdir(self.path.joinpath(OSMOSE_PATH.statistics))
             self.data_normalization == "zscore"
-            and self.zscore_duration is not "original"
+            and self.zscore_duration != "original"
             and (
                 len(os.listdir(self.path.joinpath(OSMOSE_PATH.statistics))) == 0
                 or force_init
