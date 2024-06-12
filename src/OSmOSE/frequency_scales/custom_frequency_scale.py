@@ -14,7 +14,7 @@ class CustomFrequencyScale(AbstractFrequencyScale):
         8000-22050 Hz : 10%  (e.g sr = 44100 Hz)
     """
 
-    frequencies: Tuple[int, int] = (1, 14000)
+    frequencies: Tuple[int, int] = (22000, 100000)
     coefficients: Tuple[float, float, float] = (0.5, 0.2, 0.3)
 
     def __post_init__(self):
