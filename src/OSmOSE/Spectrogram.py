@@ -36,6 +36,7 @@ from OSmOSE.utils.core_utils import (
     get_timestamp_of_audio_file,
 )
 from OSmOSE.config import *
+from OSmOSE.frequency_scales.frequency_scale_serializer import FrequencyScaleSerializer
 
 
 class Spectrogram(Dataset):
@@ -227,6 +228,12 @@ class Spectrogram(Dataset):
             else 0
         )
 
+        self.custom_frequency_scale: str = (
+            analysis_sheet["custom_frequency_scale"][0]
+            if "custom_frequency_scale" in analysis_sheet
+            else "linear"
+        )
+        
         self.jb = Job_builder()
 
         plt.switch_backend("agg")
@@ -434,6 +441,14 @@ class Spectrogram(Dataset):
     def time_resolution(self, value):
         self.__time_resolution = value
 
+    @property
+    def custom_frequency_scale(self):
+        return self.__custom_frequency_scale
+
+    @custom_frequency_scale.setter
+    def custom_frequency_scale(self, value):
+        self.__custom_frequency_scale = value
+
     # endregion
 
     def __build_path(
@@ -454,7 +469,7 @@ class Spectrogram(Dataset):
         self.audio_path = self.path.joinpath(OSMOSE_PATH.raw_audio, audio_foldername)
 
         self.__spectro_foldername = (
-            f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}"
+            f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",#_{self.custom_frequency_scale}"
         )
 
         self.path_output_spectrogram = processed_path.joinpath(
@@ -1021,6 +1036,7 @@ class Spectrogram(Dataset):
             "frequency_resolution": frequency_resolution,
             "temporal_resolution": temporal_resolution,
             "audio_file_dataset_overlap": self.audio_file_overlap,
+            "custom_frequency_scale": self.custom_frequency_scale,
         }
         analysis_sheet = pd.DataFrame.from_records([data])
 
@@ -1032,7 +1048,7 @@ class Spectrogram(Dataset):
             meta_path = self.path.joinpath(
                 OSMOSE_PATH.spectrogram,
                 f"{str(self.spectro_duration)}_{str(self.dataset_sr)}",
-                f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",
+                f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",#"_{self.custom_frequency_scale}",
                 "metadata.csv",
             )
 
@@ -1584,8 +1600,22 @@ class Spectrogram(Dataset):
         )
 
         color_map = plt.cm.get_cmap(self.colormap)  # .reversed()
-        plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
+        if self.custom_frequency_scale == "linear":
+            plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
+        else:
+            if self.custom_frequency_scale == "log":
+                plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
+                plt.yscale("log")
+                plt.ylim(freq[freq > 0].min(), self.dataset_sr / 2)
+            else:
+                custom_frequency_scale = FrequencyScaleSerializer().get_scale(
+                    self.custom_frequency_scale, self.dataset_sr
+                )
+                freq_custom = np.vectorize(custom_frequency_scale.map_freq2scale)(freq)
+                plt.pcolormesh(time, freq_custom, log_spectro, cmap=color_map)
+
         plt.clim(vmin=self.dynamic_min, vmax=self.dynamic_max)
+
         # plt.colorbar()
         if adjust:
             fig.axes[0].get_xaxis().set_visible(True)
