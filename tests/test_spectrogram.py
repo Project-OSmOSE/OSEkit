@@ -5,7 +5,7 @@ import numpy as np
 import soundfile as sf
 
 from OSmOSE import Spectrogram, Dataset
-from OSmOSE.config import OSMOSE_PATH
+from OSmOSE.config import OSMOSE_PATH, SUPPORTED_AUDIO_FORMAT
 import soundfile as sf
 import pytest
 
@@ -77,9 +77,11 @@ def test_number_image_matrix(input_dataset):
     dataset.build()
 
     assert dataset.path.joinpath(OSMOSE_PATH.raw_audio, f"3_44100").exists()
+    num_file = 0
+    for ext in SUPPORTED_AUDIO_FORMAT:
+        num_file += len(list(dataset.path.joinpath(OSMOSE_PATH.raw_audio, "3_44100").glob(f"*{ext}")))
     assert (
-        len(list(dataset.path.joinpath(OSMOSE_PATH.raw_audio, "3_44100").glob("*.wav")))
-        == 10
+        num_file == 10
     )
 
     spectrogram = Spectrogram(dataset_path=dataset.path)
@@ -101,7 +103,7 @@ def test_number_image_matrix(input_dataset):
     )
 
     spectrogram.save_spectro_metadata(False)
-    spectrogram.process_all_files(list_wav_to_process=list_wav)
+    spectrogram.process_all_files(list_audio_to_process=list_wav)
 
     if spectrogram.zoom_level > 0:
         assert len(list_wav) * (1 + 2**spectrogram.zoom_level) == len(
@@ -151,7 +153,7 @@ def test_numerical_values(input_dataset):
     spectrogram.initialize()
 
     spectrogram.process_all_files(
-        list_wav_to_process=list(
+        list_audio_to_process=list(
             dataset.path.joinpath("data", "audio", "3_44100").glob("*.wav")
         )
     )
