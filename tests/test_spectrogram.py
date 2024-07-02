@@ -85,12 +85,10 @@ def test_number_image_matrix(input_dataset):
     assert dataset.path.joinpath(OSMOSE_PATH.raw_audio, f"3_44100").exists()
     num_file = 0
     for ext in SUPPORTED_AUDIO_FORMAT:
-        num_file += len(
-            list(
-                dataset.path.joinpath(OSMOSE_PATH.raw_audio, "3_44100").glob(f"*{ext}")
-            )
-        )
-    assert num_file == 10
+        num_file += len(list(dataset.path.joinpath(OSMOSE_PATH.raw_audio, "3_44100").glob(f"*{ext}")))
+    assert (
+        num_file == 10
+    )
 
     spectrogram = Spectrogram(dataset_path=dataset.path)
 
