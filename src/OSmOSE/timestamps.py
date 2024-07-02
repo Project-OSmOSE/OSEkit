@@ -71,10 +71,18 @@ def write_timestamp(
         verbose: `bool`, optional, keyword-only
             If set to True, print all messages. default is False
     """
-    list_audio_file = sorted([file for file in Path(audio_path).glob("*.wav")])
+    list_audio_file = []
+    msg = ""
+    for ext in SUPPORTED_AUDIO_FORMAT:
+        list_audio_file_ext = sorted(Path(audio_path).glob(f'*{ext}'))
+        [list_audio_file.append(file) for file in list_audio_file_ext]
+        if len(list_audio_file_ext) > 0:
+            msg = msg + f"{len(list_audio_file_ext)} {ext[1:]}, "
+    print(f"{len(list_audio_file)} audio files found:", msg[:-2])
 
     if len(list_audio_file) == 0:
         list_audio_file_WAV = sorted([file for file in Path(audio_path).glob("*.WAV")])
+        list_audio_file_FLAC = sorted([file for file in Path(audio_path).glob("*.FLAC")])
 
         if len(list_audio_file_WAV) > 0:
             print(
@@ -83,10 +91,16 @@ def write_timestamp(
 
             for file_name in list_audio_file_WAV:
                 os.rename(file_name, Path(audio_path).joinpath(file_name.stem + ".wav"))
+        if len(list_audio_file_FLAC) > 0:
+            print(
+                "Your audio files have a .FLAC extension, we are changing it to the standard .flac extension."
+            )
 
-        elif len(get_files(Path(audio_path), ("*.mp3", "*.flac"))) > 0:
+            for file_name in list_audio_file_FLAC:
+                os.rename(file_name, Path(audio_path).joinpath(file_name.stem + ".flac"))
+        elif len(get_files(Path(audio_path), ("*.mp3",))) > 0:
             raise FileNotFoundError(
-                "Your audio files do not have the right extension, we only accept wav audio files for the moment."
+                "Your audio files do not have the right extension, we only accept wav and flac audio files for the moment."
             )
 
         else:

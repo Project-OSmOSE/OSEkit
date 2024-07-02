@@ -3,6 +3,7 @@ from pathlib import Path
 import subprocess
 import platform
 from OSmOSE.utils.core_utils import set_umask
+from OSmOSE.config import *
 
 
 def resample(
@@ -33,7 +34,10 @@ def resample(
     if platform.system() == "Windows":
         print("Sox is unavailable on Windows")
         return
-    all_files = sorted(input_dir.glob("*wav"))
+    all_files = []
+    for ext in SUPPORTED_AUDIO_FORMAT:
+        all_files_ext = sorted(input_dir.glob(f"*{ext}"))
+        [all_files.append(f) for f in all_files_ext]
 
     # If batch_ind_max is -1, we go to the end of the list.
     audio_files_list = all_files[
