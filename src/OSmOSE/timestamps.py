@@ -74,7 +74,7 @@ def write_timestamp(
     list_audio_file = []
     msg = ""
     for ext in SUPPORTED_AUDIO_FORMAT:
-        list_audio_file_ext = sorted(Path(audio_path).glob(f'*{ext}'))
+        list_audio_file_ext = sorted(Path(audio_path).glob(f"*{ext}"))
         [list_audio_file.append(file) for file in list_audio_file_ext]
         if len(list_audio_file_ext) > 0:
             msg = msg + f"{len(list_audio_file_ext)} {ext[1:]}, "
@@ -82,7 +82,9 @@ def write_timestamp(
 
     if len(list_audio_file) == 0:
         list_audio_file_WAV = sorted([file for file in Path(audio_path).glob("*.WAV")])
-        list_audio_file_FLAC = sorted([file for file in Path(audio_path).glob("*.FLAC")])
+        list_audio_file_FLAC = sorted(
+            [file for file in Path(audio_path).glob("*.FLAC")]
+        )
 
         if len(list_audio_file_WAV) > 0:
             print(
@@ -97,7 +99,9 @@ def write_timestamp(
             )
 
             for file_name in list_audio_file_FLAC:
-                os.rename(file_name, Path(audio_path).joinpath(file_name.stem + ".flac"))
+                os.rename(
+                    file_name, Path(audio_path).joinpath(file_name.stem + ".flac")
+                )
         elif len(get_files(Path(audio_path), ("*.mp3",))) > 0:
             raise FileNotFoundError(
                 "Your audio files do not have the right extension, we only accept wav and flac audio files for the moment."

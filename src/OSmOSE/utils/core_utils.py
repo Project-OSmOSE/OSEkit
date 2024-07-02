@@ -339,14 +339,16 @@ def read_header(file: str) -> Tuple[int, float, int, int, int]:
     with open(file, "rb") as fh:
         header = fh.read(4)
 
-        if header == b'RIFF':
+        if header == b"RIFF":
             # WAV file processing
             _, size, _ = struct.unpack("<4sI4s", header + fh.read(8))
             chunk_header = fh.read(8)
             subchunkid, _ = struct.unpack("<4sI", chunk_header)
 
             if subchunkid == b"fmt ":
-                _, channels, samplerate, _, _, sampwidth = struct.unpack("HHIIHH", fh.read(16))
+                _, channels, samplerate, _, _, sampwidth = struct.unpack(
+                    "HHIIHH", fh.read(16)
+                )
 
             chunkOffset = fh.tell()
             found_data = False
@@ -359,7 +361,9 @@ def read_header(file: str) -> Tuple[int, float, int, int, int]:
                 chunkOffset = chunkOffset + subchunk2size + 8
 
             if not found_data:
-                print("No data chunk found while reading the header. Will fallback on the header size.")
+                print(
+                    "No data chunk found while reading the header. Will fallback on the header size."
+                )
                 subchunk2size = size - 36
 
             sampwidth = (sampwidth + 7) // 8
@@ -368,21 +372,25 @@ def read_header(file: str) -> Tuple[int, float, int, int, int]:
 
             return samplerate, frames, sampwidth, channels, size
 
-        elif header == b'fLaC':
+        elif header == b"fLaC":
             # FLAC file processing
             is_last = False
             while not is_last:
                 block_header = fh.read(4)
                 block_type = block_header[0] & 0x7F
                 is_last = (block_header[0] & 0x80) != 0
-                block_size = struct.unpack('>I', b'\x00' + block_header[1:])[0]
+                block_size = struct.unpack(">I", b"\x00" + block_header[1:])[0]
 
                 if block_type == 0:  # STREAMINFO block
                     block_data = fh.read(block_size)
-                    samplerate = struct.unpack('>I', b'\x00' + block_data[10:13])[0] >> 4
+                    samplerate = (
+                        struct.unpack(">I", b"\x00" + block_data[10:13])[0] >> 4
+                    )
                     channels = ((block_data[12] & 0x0E) >> 1) + 1
-                    sampwidth = (((block_data[12] & 0x01) << 4) | ((block_data[13] & 0xF0) >> 4)) + 1
-                    size = struct.unpack('>Q', b'\x00' * 4 + block_data[14:18])[0]
+                    sampwidth = (
+                        ((block_data[12] & 0x01) << 4) | ((block_data[13] & 0xF0) >> 4)
+                    ) + 1
+                    size = struct.unpack(">Q", b"\x00" * 4 + block_data[14:18])[0]
                     frames = size / samplerate
 
                     return samplerate, frames, sampwidth, channels, size

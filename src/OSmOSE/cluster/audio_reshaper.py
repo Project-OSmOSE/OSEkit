@@ -215,7 +215,7 @@ def reshape(
         list_seg_timestamp = []
 
         input_file = input_dir_path.joinpath(files[i])
-        fmt = input_file.suffixes[-1].replace('.', '')
+        fmt = input_file.suffixes[-1].replace(".", "")
 
         # Getting file information and data
         with sf.SoundFile(input_file) as audio_file:

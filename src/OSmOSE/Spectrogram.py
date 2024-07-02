@@ -233,7 +233,7 @@ class Spectrogram(Dataset):
             if "custom_frequency_scale" in analysis_sheet
             else "linear"
         )
-        
+
         self.jb = Job_builder()
 
         plt.switch_backend("agg")
@@ -468,9 +468,7 @@ class Spectrogram(Dataset):
         audio_foldername = f"{str(self.spectro_duration)}_{str(self.dataset_sr)}"
         self.audio_path = self.path.joinpath(OSMOSE_PATH.raw_audio, audio_foldername)
 
-        self.__spectro_foldername = (
-            f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}"#,_{self.custom_frequency_scale}"
-        )
+        self.__spectro_foldername = f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}"  # ,_{self.custom_frequency_scale}"
 
         self.path_output_spectrogram = processed_path.joinpath(
             audio_foldername, self.__spectro_foldername, "image"
@@ -479,7 +477,9 @@ class Spectrogram(Dataset):
             audio_foldername, self.__spectro_foldername, "matrix"
         )
 
-        self.path_output_welch = self.path.joinpath(OSMOSE_PATH.welch).joinpath(audio_foldername)
+        self.path_output_welch = self.path.joinpath(OSMOSE_PATH.welch).joinpath(
+            audio_foldername
+        )
         self.path_output_LTAS = self.path.joinpath(OSMOSE_PATH.LTAS)
         self.path_output_EPD = self.path.joinpath(OSMOSE_PATH.EPD)
         self.path_output_SPLfiltered = self.path.joinpath(OSMOSE_PATH.SPLfiltered)
@@ -650,7 +650,9 @@ class Spectrogram(Dataset):
         self.path_input_audio_file = self._get_original_after_build()
         list_audio_withEvent_comp = []
         for ext in SUPPORTED_AUDIO_FORMAT:
-            list_audio_withEvent_comp_ext = sorted(self.path_input_audio_file.glob(f"*{ext}"))
+            list_audio_withEvent_comp_ext = sorted(
+                self.path_input_audio_file.glob(f"*{ext}")
+            )
             [list_audio_withEvent_comp.append(f) for f in list_audio_withEvent_comp_ext]
 
         if batch_ind_max == -1:
@@ -1051,7 +1053,7 @@ class Spectrogram(Dataset):
             meta_path = self.path.joinpath(
                 OSMOSE_PATH.spectrogram,
                 f"{str(self.spectro_duration)}_{str(self.dataset_sr)}",
-                f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",#"_{self.custom_frequency_scale}",
+                f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",  # "_{self.custom_frequency_scale}",
                 "metadata.csv",
             )
 
@@ -1066,7 +1068,7 @@ class Spectrogram(Dataset):
         for ext in SUPPORTED_AUDIO_FORMAT:
             list_audio_ext = sorted(self.path_input_audio_file.glob(f"*{ext}"))
             list_audio.append(f for f in list_audio_ext)
-        
+
         csv_path = self.audio_path.joinpath(f"wav_list_{len(list_audio)}.csv")
 
         if csv_path.exists():
@@ -1368,7 +1370,8 @@ class Spectrogram(Dataset):
             audio_file_ext = output_file.suffixes[-1]
             current_timestamp = pd.to_datetime(
                 get_timestamp_of_audio_file(
-                    self.audio_path.joinpath("timestamp.csv"), audio_file_name + audio_file_ext
+                    self.audio_path.joinpath("timestamp.csv"),
+                    audio_file_name + audio_file_ext,
                 )
             )
             list_timestamps = []
