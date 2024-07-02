@@ -226,8 +226,11 @@ class Spectrogram(Dataset):
             else "linear"
         )
 
+<<<<<<< HEAD
         self.verbose: bool = verbose
 
+=======
+>>>>>>> 697c346 (initial_commit2)
         self.jb = Job_builder()
 
         plt.switch_backend("agg")
@@ -458,9 +461,13 @@ class Spectrogram(Dataset):
         audio_foldername = f"{str(self.spectro_duration)}_{str(self.dataset_sr)}"
         self.audio_path = self.path.joinpath(OSMOSE_PATH.raw_audio, audio_foldername)
 
+<<<<<<< HEAD
         self.__spectro_foldername = (
             f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}"
         )
+=======
+        self.__spectro_foldername = f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}"  # ,_{self.custom_frequency_scale}"
+>>>>>>> 697c346 (initial_commit2)
 
         self.path_output_spectrogram = processed_path.joinpath(
             audio_foldername, self.__spectro_foldername, "image"
@@ -630,7 +637,9 @@ class Spectrogram(Dataset):
         self.path_input_audio_file = self._get_original_after_build()
         list_audio_withEvent_comp = []
         for ext in SUPPORTED_AUDIO_FORMAT:
-            list_audio_withEvent_comp_ext = sorted(self.path_input_audio_file.glob(f"*{ext}"))
+            list_audio_withEvent_comp_ext = sorted(
+                self.path_input_audio_file.glob(f"*{ext}")
+            )
             [list_audio_withEvent_comp.append(f) for f in list_audio_withEvent_comp_ext]
 
         if batch_ind_max == -1:
@@ -940,7 +949,11 @@ class Spectrogram(Dataset):
             meta_path = self.path.joinpath(
                 OSMOSE_PATH.spectrogram,
                 f"{str(self.spectro_duration)}_{str(self.dataset_sr)}",
+<<<<<<< HEAD
                 f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",
+=======
+                f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",  # "_{self.custom_frequency_scale}",
+>>>>>>> 697c346 (initial_commit2)
                 "metadata.csv",
             )
 
@@ -1253,7 +1266,8 @@ class Spectrogram(Dataset):
             audio_file_ext = output_file.suffixes[-1]
             current_timestamp = pd.to_datetime(
                 get_timestamp_of_audio_file(
-                    self.audio_path.joinpath("timestamp.csv"), audio_file_name + audio_file_ext
+                    self.audio_path.joinpath("timestamp.csv"),
+                    audio_file_name + audio_file_ext,
                 )
             )
             list_timestamps = []
