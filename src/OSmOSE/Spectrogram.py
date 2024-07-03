@@ -1412,9 +1412,8 @@ class Spectrogram(Dataset):
         # lowest tuile resolution
         if not adjust and self.save_for_LTAS:
             # whatever the file duration , we send all welch in folder self.spectro_duration_dataset_sr  ;  OLD SOLUTION : here we use duration (read from current audio files) rather than self.spectro_duration to have the exact audio file duration; so that when different audio file durations are present, their respective welch spectra will be put into different folders
-            output_path_welch_resolution = self.path_output_welch.joinpath(
-                str(int(self.spectro_duration)) + "_" + str(int(self.dataset_sr))
-            )
+            output_path_welch_resolution = self.path_output_welch
+
             if not output_path_welch_resolution.exists():
                 make_path(output_path_welch_resolution, mode=DPDEFAULT)
 
@@ -1610,7 +1609,7 @@ class Spectrogram(Dataset):
             f"- min log spectro : {np.amin(log_spectro)} \n - max log spectro : {np.amax(log_spectro)} \n"
         )
 
-        color_map = plt.cm.get_cmap(self.colormap)  # .reversed()
+        color_map = plt.get_cmap(self.colormap)  # .reversed()
         if self.custom_frequency_scale == "linear":
             plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
         else:

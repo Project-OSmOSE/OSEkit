@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-
 import pytest
 from OSmOSE import Dataset
 

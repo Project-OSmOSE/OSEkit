@@ -197,7 +197,6 @@ def list_aplose(path_osmose: str, campaign: str = ""):
     list_aplose_task_status = []
 
     for dataset_directory in dataset_list:
-
         aplose_path = Path(dataset_directory, OSMOSE_PATH.aplose)
 
         result_path = next(
