@@ -1504,6 +1504,7 @@ class Spectrogram(Dataset):
             )
 
         color_map = plt.get_cmap(self.colormap)
+
         if self.custom_frequency_scale == "linear":
             plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
         else:
