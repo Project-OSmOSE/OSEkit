@@ -2,8 +2,10 @@ import os
 import platform
 import pandas as pd
 import numpy as np
+import soundfile as sf
+
 from OSmOSE import Spectrogram, Dataset
-from OSmOSE.config import OSMOSE_PATH, SUPPORTED_AUDIO_FORMAT
+from OSmOSE.config import OSMOSE_PATH
 import soundfile as sf
 import pytest
 
@@ -16,14 +18,10 @@ def test_initialize_2s(input_dataset):
     dataset.build()
 
     assert dataset.path.joinpath(OSMOSE_PATH.raw_audio, f"3_44100").exists()
-    num_file = 0
-    for ext in SUPPORTED_AUDIO_FORMAT:
-        num_file += len(
-            list(
-                dataset.path.joinpath(OSMOSE_PATH.raw_audio, "3_44100").glob(f"*{ext}")
-            )
-        )
-    assert num_file == 10
+    assert (
+        len(list(dataset.path.joinpath(OSMOSE_PATH.raw_audio, "3_44100").glob("*.wav")))
+        == 10
+    )
 
     spectrogram = Spectrogram(dataset_path=dataset.path)
 
@@ -39,21 +37,18 @@ def test_initialize_2s(input_dataset):
     spectro_paths = [
         OSMOSE_PATH.spectrogram.joinpath(
             f"{spectrogram.spectro_duration}_{spectrogram.dataset_sr}",
-            # f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}_{spectrogram.custom_frequency_scale}",
-            f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}",
+            f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}_{spectrogram.custom_frequency_scale}",
             "image",
         ),
         OSMOSE_PATH.spectrogram.joinpath(
             f"{spectrogram.spectro_duration}_{spectrogram.dataset_sr}",
-            # f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}_{spectrogram.custom_frequency_scale}",
-            f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}",
+            f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}_{spectrogram.custom_frequency_scale}",
             "matrix",
         ),
         OSMOSE_PATH.spectrogram.joinpath("adjustment_spectros", "adjust_metadata.csv"),
         OSMOSE_PATH.spectrogram.joinpath(
             f"{spectrogram.spectro_duration}_{spectrogram.dataset_sr}",
-            # f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}_{spectrogram.custom_frequency_scale}",
-            f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}",
+            f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}_{spectrogram.custom_frequency_scale}",
             "metadata.csv",
         ),
     ]
@@ -69,8 +64,7 @@ def test_initialize_2s(input_dataset):
     assert spectrogram.path_output_spectrogram == spectrogram.path.joinpath(
         OSMOSE_PATH.spectrogram,
         f"{spectrogram.spectro_duration}_{spectrogram.dataset_sr}",
-        # f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}_{spectrogram.custom_frequency_scale}",
-        f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}",
+        f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}_{spectrogram.custom_frequency_scale}",
         "image",
     )
 
@@ -83,14 +77,10 @@ def test_number_image_matrix(input_dataset):
     dataset.build()
 
     assert dataset.path.joinpath(OSMOSE_PATH.raw_audio, f"3_44100").exists()
-    num_file = 0
-    for ext in SUPPORTED_AUDIO_FORMAT:
-        num_file += len(
-            list(
-                dataset.path.joinpath(OSMOSE_PATH.raw_audio, "3_44100").glob(f"*{ext}")
-            )
-        )
-    assert num_file == 10
+    assert (
+        len(list(dataset.path.joinpath(OSMOSE_PATH.raw_audio, "3_44100").glob("*.wav")))
+        == 10
+    )
 
     spectrogram = Spectrogram(dataset_path=dataset.path)
 
@@ -104,42 +94,39 @@ def test_number_image_matrix(input_dataset):
 
     spectrogram.initialize()
 
-    list_audio = []
-    for ext in SUPPORTED_AUDIO_FORMAT:
-        list_audio_ext = spectrogram.path.joinpath(
+    list_wav = list(
+        spectrogram.path.joinpath(
             "data", "audio", f"{spectrogram.spectro_duration}_{spectrogram.dataset_sr}"
-        ).glob(f"*{ext}")
-        [list_audio.append(f) for f in list_audio_ext]
+        ).glob("*.wav")
+    )
 
     spectrogram.save_spectro_metadata(False)
-    spectrogram.process_all_files(list_audio_to_process=list_audio)
+    spectrogram.process_all_files(list_wav_to_process=list_wav)
 
     if spectrogram.zoom_level > 0:
-        assert len(list_audio) * (1 + 2**spectrogram.zoom_level) == len(
+        assert len(list_wav) * (1 + 2**spectrogram.zoom_level) == len(
             list(
                 dataset.path.joinpath(
                     OSMOSE_PATH.spectrogram,
                     f"{spectrogram.spectro_duration}_{spectrogram.dataset_sr}",
-                    # f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}_{spectrogram.custom_frequency_scale}",
-                    f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}",
+                    f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}_{spectrogram.custom_frequency_scale}",
                     "image",
                 ).glob("*.png")
             )
         )
     else:
-        assert len(list_audio) == len(
+        assert len(list_wav) == len(
             list(
                 dataset.path.joinpath(
                     OSMOSE_PATH.spectrogram,
                     f"{spectrogram.spectro_duration}_{spectrogram.dataset_sr}",
-                    # f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}_{spectrogram.custom_frequency_scale}",
-                    f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}",
+                    f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}_{spectrogram.custom_frequency_scale}",
                     "image",
                 ).glob("*.png")
             )
         )
 
-    for file in list_audio:
+    for file in list_wav:
         assert sf.info(file).samplerate == spectrogram.dataset_sr
         assert sf.info(file).duration == 3.0
 
@@ -163,14 +150,11 @@ def test_numerical_values(input_dataset):
 
     spectrogram.initialize()
 
-    list_audio = []
-    for ext in SUPPORTED_AUDIO_FORMAT:
-        list_audio_ext = spectrogram.path.joinpath(
-            "data", "audio", f"{spectrogram.spectro_duration}_{spectrogram.dataset_sr}"
-        ).glob(f"*{ext}")
-        [list_audio.append(f) for f in list_audio_ext]
-
-    spectrogram.process_all_files(list_audio_to_process=list_audio)
+    spectrogram.process_all_files(
+        list_wav_to_process=list(
+            dataset.path.joinpath("data", "audio", "3_44100").glob("*.wav")
+        )
+    )
 
     # test 3s welch spectra against PamGuide reference values
     list_welch = list(dataset.path.joinpath(OSMOSE_PATH.welch, "3_44100").glob("*.npz"))

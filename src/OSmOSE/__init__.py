@@ -5,11 +5,4 @@ from OSmOSE.Spectrogram import Spectrogram
 import OSmOSE.utils as utils
 from OSmOSE.Auxiliary import Auxiliary
 
-__all__ = [
-    "Auxiliary",
-    "Dataset",
-    "write_timestamp",
-    "Job_builder",
-    "Spectrogram",
-    "utils",
-]
+__all__ = ["Auxiliary", "Dataset", "write_timestamp", "Job_builder", "Spectrogram", "utils"]

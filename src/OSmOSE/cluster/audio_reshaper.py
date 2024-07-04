@@ -215,7 +215,6 @@ def reshape(
         list_seg_timestamp = []
 
         input_file = input_dir_path.joinpath(files[i])
-        fmt = input_file.suffixes[-1].replace(".", "")
 
         # Getting file information and data
         with sf.SoundFile(input_file) as audio_file:
@@ -243,7 +242,7 @@ def reshape(
         ) == int(chunk_size):
             outfilename = output_dir_path.joinpath(os.path.basename(files[i]))
             sf.write(
-                outfilename, audio_data, sample_rate, format=fmt, subtype=file_type
+                outfilename, audio_data, sample_rate, format="WAV", subtype=file_type
             )
             os.chmod(outfilename, mode=FPDEFAULT)
             only_resample = True
@@ -308,7 +307,7 @@ def reshape(
                 # )
 
                 outfilename = output_dir_path.joinpath(
-                    f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S').replace('-','_').replace(':','_').replace('.','_').replace('+','_')}.{fmt}"
+                    f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S').replace('-','_').replace(':','_').replace('.','_').replace('+','_')}.wav"
                 )
                 result.append(outfilename.name)
 
@@ -333,7 +332,7 @@ def reshape(
                     timestamp += timedelta(seconds=chunk_size)
 
                 sf.write(
-                    outfilename, output, sample_rate, format=fmt, subtype=file_type
+                    outfilename, output, sample_rate, format="WAV", subtype=file_type
                 )
                 os.chmod(outfilename, mode=FPDEFAULT)
 
@@ -362,7 +361,7 @@ def reshape(
                             break
 
                     outfilename = output_dir_path.joinpath(
-                        f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S').replace('-','_').replace(':','_').replace('.','_').replace('+','_')}.{fmt}"
+                        f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S').replace('-','_').replace(':','_').replace('.','_').replace('+','_')}.wav"
                     )
                     result.append(outfilename.name)
 
@@ -380,7 +379,7 @@ def reshape(
                         outfilename,
                         output,
                         sample_rate,
-                        format=fmt,
+                        format="WAV",
                         subtype=file_type,
                     )
                     os.chmod(outfilename, mode=FPDEFAULT)
@@ -482,7 +481,7 @@ def reshape(
                 previous_audio_data = nextdata[rest:]
 
         outfilename = output_dir_path.joinpath(
-            f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S').replace('-','_').replace(':','_').replace('.','_').replace('+','_')}.{fmt}"
+            f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S').replace('-','_').replace(':','_').replace('.','_').replace('+','_')}.wav"
         )
         result.append(outfilename.name)
 
@@ -494,7 +493,7 @@ def reshape(
         timestamp_list.append(datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S.%f%z"))
         timestamp += timedelta(seconds=chunk_size)
 
-        sf.write(outfilename, output, sample_rate, format=fmt, subtype=file_type)
+        sf.write(outfilename, output, sample_rate, format="WAV", subtype=file_type)
         os.chmod(outfilename, mode=FPDEFAULT)
 
         if verbose:
@@ -512,7 +511,7 @@ def reshape(
             previous_audio_data = previous_audio_data[chunk_size * sample_rate :]
 
             outfilename = output_dir_path.joinpath(
-                f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S').replace(':','_').replace('.','_').replace('+','_')}.{fmt}"
+                f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S').replace(':','_').replace('.','_').replace('+','_')}.wav"
             )
             result.append(outfilename.name)
 
@@ -521,7 +520,7 @@ def reshape(
             )
             timestamp += timedelta(seconds=chunk_size)
 
-            sf.write(outfilename, output, sample_rate, format=fmt, subtype=file_type)
+            sf.write(outfilename, output, sample_rate, format="WAV", subtype=file_type)
             os.chmod(outfilename, mode=FPDEFAULT)
 
             if verbose:
@@ -549,7 +548,7 @@ def reshape(
 
             if not skip_last:
                 outfilename = output_dir_path.joinpath(
-                    f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S').replace('-','_').replace(':','_').replace('.','_').replace('+','_')}.{fmt}"
+                    f"{datetime.strftime(timestamp, '%Y-%m-%dT%H:%M:%S').replace('-','_').replace(':','_').replace('.','_').replace('+','_')}.wav"
                 )
                 result.append(outfilename.name)
 
@@ -559,7 +558,7 @@ def reshape(
                 timestamp += timedelta(seconds=len(output))
 
                 sf.write(
-                    outfilename, output, sample_rate, format=fmt, subtype=file_type
+                    outfilename, output, sample_rate, format="WAV", subtype=file_type
                 )
                 os.chmod(outfilename, mode=FPDEFAULT)
 

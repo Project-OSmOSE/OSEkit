@@ -6,6 +6,7 @@ Join with csv files and ERA5 data
 This code will join welch spectra with variables from ERA5 within a pandas dataframe
 """
 
+
 # %%
 # ERA5 downloading
 # ------------------------

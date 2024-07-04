@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+
 import pytest
 from OSmOSE import Dataset
 
@@ -39,6 +40,5 @@ def test_build(input_dataset):
             "resume_test_anomalies.txt",
             "timestamp.csv",
         ]
-        + [f"20220101_1200{str(3*i).zfill(2)}.wav" for i in range(5)]
-        + [f"20220101_1200{str(3*i).zfill(2)}.flac" for i in range(5, 10)]
+        + [f"20220101_1200{str(3*i).zfill(2)}.wav" for i in range(10)]
     )
