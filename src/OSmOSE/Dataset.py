@@ -97,7 +97,6 @@ class Dataset:
 
         pd.set_option("display.float_format", lambda x: "%.0f" % x)
 
-    # region Properties
     @property
     def name(self):
         """str: The Dataset name. It is readonly."""
@@ -365,7 +364,6 @@ class Dataset:
                 timezone=self.timezone,
                 verbose=False,
             )
-            # raise FileNotFoundError(f"The timestamp.csv file has not been found in {path_raw_audio}. You can create it automatically but to do so you have to set the date template as argument.")
         else:
             user_timestamp = True
 
@@ -454,14 +452,6 @@ class Dataset:
                 )
                 continue
 
-            # # define duration_inter_file; does not have a value for the last timestamp
-            # if ind_dt > 0:
-            #     duration_inter_file = (datetime.strptime(
-            #         timestamp_csv[ind_dt], '%Y-%m-%dT%H:%M:%S.%f%z'
-            #     ) - datetime.strptime(timestamp_csv[ind_dt-1], '%Y-%m-%dT%H:%M:%S.%f%z')).total_seconds()
-            # else:
-            #     duration_inter_file = None
-
             # append audio metadata read from header in the dataframe audio_metadata
             audio_metadata = pd.concat(
                 [
@@ -470,7 +460,7 @@ class Dataset:
                         {
                             "filename": cur_filename,
                             "timestamp": cur_timestamp,
-                            "duration": sf_meta.duration,  # frames / float(origin_sr),
+                            "duration": sf_meta.duration,  
                             "origin_sr": int(sf_meta.samplerate),
                             "sampwidth": sampwidth,
                             "size": size / 1e6,
@@ -623,7 +613,6 @@ class Dataset:
                 "audio_file_count": len(audio_metadata["filename"].values),
                 "start_date": timestamp_csv[0],
                 "end_date": timestamp_csv[-1],
-                # "duty_cycle": dutyCycle_percent,
                 "audio_file_origin_duration": int(
                     mean(audio_metadata["duration"].values)
                 ),
@@ -783,18 +772,6 @@ class Dataset:
                                     )
                                 )
 
-        # if len(timestamp_files) > 1:
-        #     res = "-1"
-        #     choice = ""
-        #     for i, ts in enumerate(timestamp_files):
-        #         choice += f"{i+1}: {ts}\n"
-        #     while int(res) not in range(1,len(timestamp_files) +1):
-        #         res = input(f"Multiple timestamp.csv detected. Choose which one should be considered the original:\n{choice}")
-
-        #         timestamp_files[int(res)-1].rename(path_raw_audio.joinpath("original","timestamp.csv"))
-        # elif len(timestamp_files) == 1:
-        #     timestamp_files[0].rename(path_raw_audio.joinpath("original","timestamp.csv"))
-
         for audio in audio_files:
             audio.rename(path_raw_audio.joinpath("original", audio.name))
             # os.chmod(path_raw_audio.joinpath("original",audio.name), mode=FPDEFAULT)
@@ -810,34 +787,6 @@ class Dataset:
             shutil.rmtree(parent_dir)
 
         return path_raw_audio.joinpath("original")
-        # if any(
-        #     file.endswith(".wav") for file in os.listdir(self.path)
-        # ):  # If there are audio files in the dataset folder
-        #     make_path(path_raw_audio.joinpath("original"), mode=DPDEFAULT)
-
-        #     for audiofile in os.listdir(self.path):
-        #         if audiofile.endswith(".wav"):
-        #             self.path.joinpath(audiofile).rename(
-        #                 path_raw_audio.joinpath("original", audiofile)
-        #             )
-        #     return path_raw_audio.joinpath("original")
-        # elif path_raw_audio.exists():
-        #     if path_raw_audio.joinpath("original").is_dir():
-        #         return path_raw_audio.joinpath("original")
-        #     elif len(list(path_raw_audio.iterdir())) == 1:
-        #         return path_raw_audio.joinpath(next(path_raw_audio.iterdir()))
-        # elif (
-        #     len(next(os.walk(self.path))[1]) == 1
-        # ):  # If there is exactly one folder in the dataset folder
-        #     make_path(path_raw_audio, mode=DPDEFAULT)
-        #     orig_folder = self.path.joinpath(next(os.walk(self.path))[1][0])
-        #     new_path = orig_folder.rename(path_raw_audio.joinpath(orig_folder.name))
-        #     return new_path
-
-        # else:
-        #     raise ValueError(
-        #         f"No folder has been found in {path_raw_audio}. Please create the raw audio file folder and try again."
-        #     )
 
     def _get_original_after_build(self) -> Path:
         """Find the original folder path after the dataset has been built.
