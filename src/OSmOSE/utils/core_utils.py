@@ -197,7 +197,6 @@ def list_aplose(path_osmose: str, campaign: str = ""):
     list_aplose_task_status = []
 
     for dataset_directory in dataset_list:
-
         aplose_path = Path(dataset_directory, OSMOSE_PATH.aplose)
 
         result_path = next(
@@ -314,13 +313,13 @@ def read_config(raw_config: Union[str, dict, Path]) -> NamedTuple:
 
 
 def read_header(file: str) -> Tuple[int, float, int, int, int]:
-    """Read the first bytes of a wav file and extract its characteristics.
+    """Read the first bytes of a wav/flac file and extract its characteristics.
     At the very least, only the first 44 bytes are read. If the `data` chunk is not right after the header chunk,
     the subsequent chunks will be read until the `data` chunk is found. If there is no `data` chunk, all the file will be read.
     Parameter
     ---------
     file: str
-        The absolute path of the wav file whose header will be read.
+        The absolute path of the audio file whose header will be read.
     Returns
     -------
     samplerate : `int`
@@ -337,42 +336,68 @@ def read_header(file: str) -> Tuple[int, float, int, int, int]:
     if the file has been corrupted or the writing process has been interrupted before completion.
     """
     with open(file, "rb") as fh:
-        _, size, _ = struct.unpack("<4sI4s", fh.read(12))
-        chunk_header = fh.read(8)
-        subchunkid, _ = struct.unpack("<4sI", chunk_header)
+        header = fh.read(4)
 
-        if subchunkid == b"fmt ":
-            _, channels, samplerate, _, _, sampwidth = struct.unpack(
-                "HHIIHH", fh.read(16)
-            )
+        if header == b"RIFF":
+            # WAV file processing
+            _, size, _ = struct.unpack("<4sI4s", header + fh.read(8))
+            chunk_header = fh.read(8)
+            subchunkid, _ = struct.unpack("<4sI", chunk_header)
 
-        chunkOffset = fh.tell()
-        found_data = False
-        while chunkOffset < size and not found_data:
-            fh.seek(chunkOffset)
-            subchunk2id, subchunk2size = struct.unpack("<4sI", fh.read(8))
-            if subchunk2id == b"data":
-                found_data = True
+            if subchunkid == b"fmt ":
+                _, channels, samplerate, _, _, sampwidth = struct.unpack(
+                    "HHIIHH", fh.read(16)
+                )
 
-            chunkOffset = chunkOffset + subchunk2size + 8
+            chunkOffset = fh.tell()
+            found_data = False
+            while chunkOffset < size and not found_data:
+                fh.seek(chunkOffset)
+                subchunk2id, subchunk2size = struct.unpack("<4sI", fh.read(8))
+                if subchunk2id == b"data":
+                    found_data = True
 
-        if not found_data:
-            print(
-                "No data chunk found while reading the header. Will fallback on the header size."
-            )
-            subchunk2size = size - 36
+                chunkOffset = chunkOffset + subchunk2size + 8
 
-        sampwidth = (sampwidth + 7) // 8
-        framesize = channels * sampwidth
-        frames = subchunk2size / framesize
+            if not found_data:
+                print(
+                    "No data chunk found while reading the header. Will fallback on the header size."
+                )
+                subchunk2size = size - 36
 
-        # if (size - 72) > subchunk2size:
-        #     print(
-        #         f"Warning : the size indicated in the header is not the same as the actual file size. This might mean that the file is truncated or otherwise corrupt.\
-        #         \nSupposed size: {size} bytes \nActual size: {subchunk2size} bytes."
-        #     )
+            sampwidth = (sampwidth + 7) // 8
+            framesize = channels * sampwidth
+            frames = subchunk2size / framesize
 
-        return samplerate, frames, sampwidth, channels, size
+            return samplerate, frames, sampwidth, channels, size
+
+        elif header == b"fLaC":
+            # FLAC file processing
+            is_last = False
+            while not is_last:
+                block_header = fh.read(4)
+                block_type = block_header[0] & 0x7F
+                is_last = (block_header[0] & 0x80) != 0
+                block_size = struct.unpack(">I", b"\x00" + block_header[1:])[0]
+
+                if block_type == 0:  # STREAMINFO block
+                    block_data = fh.read(block_size)
+                    samplerate = (
+                        struct.unpack(">I", b"\x00" + block_data[10:13])[0] >> 4
+                    )
+                    channels = ((block_data[12] & 0x0E) >> 1) + 1
+                    sampwidth = (
+                        ((block_data[12] & 0x01) << 4) | ((block_data[13] & 0xF0) >> 4)
+                    ) + 1
+                    size = struct.unpack(">Q", b"\x00" * 4 + block_data[14:18])[0]
+                    frames = size / samplerate
+
+                    return samplerate, frames, sampwidth, channels, size
+                    break
+                else:
+                    fh.seek(block_size, 1)  # Skip this block
+        else:
+            raise ValueError("Unsupported file format")
 
 
 def safe_read(

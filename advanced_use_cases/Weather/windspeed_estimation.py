@@ -6,7 +6,6 @@ Workflow for wind speed estimation using ERA5 data
 This code builds a workflow to build a parametric model for wind speed estimation based on welch spectra and ERA5 wind speed data
 """
 
-
 # %%
 # Prerequisites
 # ------------------------

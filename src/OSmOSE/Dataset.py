@@ -157,12 +157,12 @@ class Dataset:
 
                 if aux_data_path:
                     self.__gps_coordinates = check_epoch(pd.read_csv(aux_data_path))
-                    '''
+                    """
                     csvFileArray = pd.read_csv(aux_data_path)
                     self.__gps_coordinates = [
                         np.mean(csvFileArray["lat"]),
                         np.mean(csvFileArray["lon"]),
-                    ]'''
+                    ]"""
                 else:
                     raise FileNotFoundError(
                         f"The {new_coordinates} has been found no where within {self.path}"
@@ -207,9 +207,9 @@ class Dataset:
                 aux_data_path = next(self.path.rglob(new_depth), False)
                 if aux_data_path:
                     self.__depth = check_epoch(pd.read_csv(aux_data_path))
-                    '''
+                    """
                     csvFileArray = pd.read_csv(aux_data_path)
-                    self.__depth = int(np.mean(csvFileArray["depth"]))'''
+                    self.__depth = int(np.mean(csvFileArray["depth"]))"""
                 else:
                     raise FileNotFoundError(
                         f"The {new_depth} has been found no where within {self.path}"
@@ -760,7 +760,7 @@ class Dataset:
                     not Path(path, f).parent.name == "original"
                     and not Path(path, f).parent.name == "auxiliary"
                 ):
-                    if f.endswith((".wav", ".WAV", "*.mp3", ".*flac")):
+                    if f.endswith((".wav", ".WAV", ".mp3", ".flac", ".FLAC")):
                         audio_files.append(Path(path, f))
                         if str(Path(path, f).parent) != str(self.path):
                             (

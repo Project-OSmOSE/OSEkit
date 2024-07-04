@@ -233,7 +233,7 @@ class Spectrogram(Dataset):
             if "custom_frequency_scale" in analysis_sheet
             else "linear"
         )
-        
+
         self.jb = Job_builder()
 
         plt.switch_backend("agg")
@@ -468,9 +468,7 @@ class Spectrogram(Dataset):
         audio_foldername = f"{str(self.spectro_duration)}_{str(self.dataset_sr)}"
         self.audio_path = self.path.joinpath(OSMOSE_PATH.raw_audio, audio_foldername)
 
-        self.__spectro_foldername = (
-            f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",#_{self.custom_frequency_scale}"
-        )
+        self.__spectro_foldername = f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}"  # ,_{self.custom_frequency_scale}"
 
         self.path_output_spectrogram = processed_path.joinpath(
             audio_foldername, self.__spectro_foldername, "image"
@@ -479,7 +477,9 @@ class Spectrogram(Dataset):
             audio_foldername, self.__spectro_foldername, "matrix"
         )
 
-        self.path_output_welch = self.path.joinpath(OSMOSE_PATH.welch).joinpath(audio_foldername)
+        self.path_output_welch = self.path.joinpath(OSMOSE_PATH.welch).joinpath(
+            audio_foldername
+        )
         self.path_output_LTAS = self.path.joinpath(OSMOSE_PATH.LTAS)
         self.path_output_EPD = self.path.joinpath(OSMOSE_PATH.EPD)
         self.path_output_SPLfiltered = self.path.joinpath(OSMOSE_PATH.SPLfiltered)
@@ -648,14 +648,19 @@ class Spectrogram(Dataset):
             self.dataset_sr = dataset_sr
 
         self.path_input_audio_file = self._get_original_after_build()
-        list_wav_withEvent_comp = sorted(self.path_input_audio_file.glob("*wav"))
+        list_audio_withEvent_comp = []
+        for ext in SUPPORTED_AUDIO_FORMAT:
+            list_audio_withEvent_comp_ext = sorted(
+                self.path_input_audio_file.glob(f"*{ext}")
+            )
+            [list_audio_withEvent_comp.append(f) for f in list_audio_withEvent_comp_ext]
 
         if batch_ind_max == -1:
-            batch_ind_max = len(list_wav_withEvent_comp)
-        list_wav_withEvent = list_wav_withEvent_comp[batch_ind_min:batch_ind_max]
+            batch_ind_max = len(list_audio_withEvent_comp)
+        list_audio_withEvent = list_audio_withEvent_comp[batch_ind_min:batch_ind_max]
 
-        self.list_wav_to_process = [
-            audio_file.name for audio_file in list_wav_withEvent
+        self.list_audio_to_process = [
+            audio_file.name for audio_file in list_audio_withEvent
         ]
 
         #! INITIALIZATION START
@@ -740,11 +745,11 @@ class Spectrogram(Dataset):
                 self.path.joinpath(OSMOSE_PATH.processed, "subset_files.csv"),
                 header=None,
             )[0].values
-            self.list_wav_to_process = list(
-                set(subset).intersection(set(self.list_wav_to_process))
+            self.list_audio_to_process = list(
+                set(subset).intersection(set(self.list_audio_to_process))
             )
 
-        batch_size = len(self.list_wav_to_process) // self.batch_number
+        batch_size = len(self.list_audio_to_process) // self.batch_number
 
         # #! RESAMPLING
         # resample_job_id_list = []
@@ -762,7 +767,7 @@ class Spectrogram(Dataset):
         #         i_max = (
         #             i_min + batch_size
         #             if batch < self.batch_number - 1
-        #             else len(self.list_wav_to_process)
+        #             else len(self.list_audio_to_process)
         #         )  # If it is the last batch, take all files
 
         #         if self.__local:
@@ -829,7 +834,7 @@ class Spectrogram(Dataset):
             i_max = -1
 
             for batch in range(self.batch_number):
-                if i_max >= len(self.list_wav_to_process) - 1:
+                if i_max >= len(self.list_audio_to_process) - 1:
                     continue
 
                 offset_beginning = next_offset_beginning
@@ -839,8 +844,8 @@ class Spectrogram(Dataset):
                 i_max = (
                     i_min + batch_size
                     if batch < self.batch_number - 1
-                    and i_min + batch_size < len(self.list_wav_to_process)
-                    else len(self.list_wav_to_process) - 1
+                    and i_min + batch_size < len(self.list_audio_to_process)
+                    else len(self.list_audio_to_process) - 1
                 )  # If it is the last batch, take all files
 
                 if self.__local:
@@ -961,7 +966,7 @@ class Spectrogram(Dataset):
                 i_max = (
                     i_min + batch_size
                     if batch < self.batch_number - 1
-                    else len(self.list_wav_to_process)
+                    else len(self.list_audio_to_process)
                 )  # If it is the last batch, take all files
 
                 if self.__local:
@@ -1048,7 +1053,7 @@ class Spectrogram(Dataset):
             meta_path = self.path.joinpath(
                 OSMOSE_PATH.spectrogram,
                 f"{str(self.spectro_duration)}_{str(self.dataset_sr)}",
-                f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",#"_{self.custom_frequency_scale}",
+                f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",  # "_{self.custom_frequency_scale}",
                 "metadata.csv",
             )
 
@@ -1059,7 +1064,11 @@ class Spectrogram(Dataset):
         os.chmod(meta_path, mode=FPDEFAULT)
 
     def audio_file_list_csv(self) -> Path:
-        list_audio = list(self.audio_path.glob("*.wav"))
+        list_audio = []
+        for ext in SUPPORTED_AUDIO_FORMAT:
+            list_audio_ext = sorted(self.path_input_audio_file.glob(f"*{ext}"))
+            list_audio.append(f for f in list_audio_ext)
+
         csv_path = self.audio_path.joinpath(f"wav_list_{len(list_audio)}.csv")
 
         if csv_path.exists():
@@ -1358,9 +1367,11 @@ class Spectrogram(Dataset):
 
         if not adjust:
             audio_file_name = output_file.stem
+            audio_file_ext = output_file.suffixes[-1]
             current_timestamp = pd.to_datetime(
                 get_timestamp_of_audio_file(
-                    self.audio_path.joinpath("timestamp.csv"), audio_file_name + ".wav"
+                    self.audio_path.joinpath("timestamp.csv"),
+                    audio_file_name + audio_file_ext,
                 )
             )
             list_timestamps = []
@@ -1401,9 +1412,8 @@ class Spectrogram(Dataset):
         # lowest tuile resolution
         if not adjust and self.save_for_LTAS:
             # whatever the file duration , we send all welch in folder self.spectro_duration_dataset_sr  ;  OLD SOLUTION : here we use duration (read from current audio files) rather than self.spectro_duration to have the exact audio file duration; so that when different audio file durations are present, their respective welch spectra will be put into different folders
-            output_path_welch_resolution = self.path_output_welch.joinpath(
-                str(int(self.spectro_duration)) + "_" + str(int(self.dataset_sr))
-            )
+            output_path_welch_resolution = self.path_output_welch
+
             if not output_path_welch_resolution.exists():
                 make_path(output_path_welch_resolution, mode=DPDEFAULT)
 
@@ -1599,7 +1609,7 @@ class Spectrogram(Dataset):
             f"- min log spectro : {np.amin(log_spectro)} \n - max log spectro : {np.amax(log_spectro)} \n"
         )
 
-        color_map = plt.cm.get_cmap(self.colormap)  # .reversed()
+        color_map = plt.get_cmap(self.colormap)  # .reversed()
         if self.custom_frequency_scale == "linear":
             plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
         else:
@@ -1668,14 +1678,14 @@ class Spectrogram(Dataset):
         *,
         save_matrix: bool = False,
         save_for_LTAS: bool = True,
-        list_wav_to_process: list = [],
+        list_audio_to_process: list = [],
     ):
         """Process all the files in the dataset and generates the spectrograms. It uses the python multiprocessing library
         to parallelise the computation, so it is less efficient to use this method rather than the job scheduler if run on a cluster.
         """
 
-        if len(list_wav_to_process) > 0:
-            self.list_wav_to_process = list_wav_to_process
+        if len(list_audio_to_process) > 0:
+            self.list_audio_to_process = list_audio_to_process
 
         kwargs = {
             "save_matrix": save_matrix,
@@ -1685,11 +1695,11 @@ class Spectrogram(Dataset):
 
         map_process_file = partial(self.process_file, **kwargs)
 
-        for ll in self.list_wav_to_process:
+        for ll in self.list_audio_to_process:
             self.process_file(ll, overwrite=True)
 
         # with mp.Pool(processes=mp.cpu_count()) as pool:
-        #     pool.map(map_process_file, self.list_wav_to_process)
+        #     pool.map(map_process_file, self.list_audio_to_process)
 
     def save_all_welch(self, list_npz_files: list, path_all_welch: Path):
         if isinstance(list_npz_files, list):
