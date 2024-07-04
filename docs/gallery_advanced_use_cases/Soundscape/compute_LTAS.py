@@ -5,7 +5,6 @@ From spectrograms to LTAS (Long Term Averaged Spectrograms)
 This code will show you how to compute LTAS from audio file-level spectrograms
 """
 
-
 # %%
 # Prerequisites
 # ===============

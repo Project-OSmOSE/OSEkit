@@ -5,7 +5,6 @@ Dealing with data anomalies
 This code will show you how to deal with anomalies in raw data or their metadata, from corrupted files to differences in sample frequency.
 """
 
-
 # %%
 # Preambule : what is called an anomaly ?
 # --------------------------------------------

@@ -5,7 +5,6 @@ LTAS (Long Term Averaged Spectrograms)
 This code will show you how to compute LTAS from audio file-level welch spectra
 """
 
-
 # %%
 # Prerequisites
 # ===============

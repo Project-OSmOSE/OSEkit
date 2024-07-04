@@ -31,13 +31,12 @@ class Weather:
         self.time_resolution_welch = time_resolution_welch
         self.sample_rate_welch = sample_rate_welch
 
-        '''
+        """
 		WEATHER CLASS NEEDS TO TAKE IN A METHOD (ie Pensieri/Hildebrand or custom...) as main parameter
 		THEN : CHECK IF A DATASET HAS BEEN BUILD WITH CORRECT PROCESSING SETTINGS
 		Otherwise - call Spectrogram class to build such dataset
 		If a dataset has been build you can continue weather application
-		'''
-
+		"""
 
     def save_all_welch(self):
         # get metadata from sepctrogram folder

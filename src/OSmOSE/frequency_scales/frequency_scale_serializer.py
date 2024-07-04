@@ -19,7 +19,7 @@ class FrequencyScaleSerializer:
             "test": (
                 CustomFrequencyScale,
                 {"frequencies": (2, 4000), "coefficients": (0.5, 0, 0.5)},
-            ),            
+            ),
             # Add more configurations here
         }
 

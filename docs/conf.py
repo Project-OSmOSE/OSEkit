@@ -39,7 +39,7 @@ extensions = [
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
     "sphinx.ext.autosectionlabel",
-    "sphinx_copybutton"
+    "sphinx_copybutton",
     #'sphinx_design',
 ]
 
