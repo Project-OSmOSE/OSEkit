@@ -3,18 +3,16 @@ import inspect
 import os
 import shutil
 import sys
-from typing import List, Tuple, Union, Literal
+from typing import Tuple, Union, Literal
 from math import log10
 from pathlib import Path
 import multiprocessing as mp
-from filelock import FileLock
 import glob
 from IPython.display import Image
 
 from tqdm import tqdm
 import itertools
 
-import re
 from datetime import timedelta, datetime
 
 import pandas as pd
@@ -111,12 +109,10 @@ class Spectrogram(Dataset):
 
         self.__local = local
 
-        # if self.is_built:
         orig_metadata = pd.read_csv(
             self._get_original_after_build().joinpath("metadata.csv"), header=0
         )
-        # elif not dataset_sr:
-        #     raise ValueError('If you dont know your sr, please use the build() method first')
+
         processed_path = self.path.joinpath(OSMOSE_PATH.spectrogram)
         metadata_path = processed_path.joinpath(
             "adjustment_spectros", "adjust_metadata.csv"
@@ -170,11 +166,6 @@ class Spectrogram(Dataset):
             int(analysis_sheet["spectro_duration"][0])
             if analysis_sheet is not None and "spectro_duration" in analysis_sheet
             else int(orig_metadata["audio_file_origin_duration"][0])
-            #     else (
-            #         int(orig_metadata["audio_file_origin_duration"][0])
-            #         if self.is_built
-            #         else -1
-            #     )
         )
 
         self.zscore_duration: Union[float, str] = (
@@ -249,8 +240,6 @@ class Spectrogram(Dataset):
         plt.rc("figure", titlesize=ticksize)  # fontsize of the figure title
 
         self.__build_path(dry=True)
-
-    # region Spectrogram properties
 
     @property
     def dataset_sr(self):
@@ -449,8 +438,6 @@ class Spectrogram(Dataset):
     def custom_frequency_scale(self, value):
         self.__custom_frequency_scale = value
 
-    # endregion
-
     def __build_path(
         self, adjust: bool = False, dry: bool = False, force_init: bool = False
     ):
@@ -468,7 +455,9 @@ class Spectrogram(Dataset):
         audio_foldername = f"{str(self.spectro_duration)}_{str(self.dataset_sr)}"
         self.audio_path = self.path.joinpath(OSMOSE_PATH.raw_audio, audio_foldername)
 
-        self.__spectro_foldername = f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}"  # ,_{self.custom_frequency_scale}"
+        self.__spectro_foldername = (
+            f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}"
+        )
 
         self.path_output_spectrogram = processed_path.joinpath(
             audio_foldername, self.__spectro_foldername, "image"
@@ -489,7 +478,6 @@ class Spectrogram(Dataset):
             mode=DPDEFAULT,
         )
 
-        # Create paths
         if not dry:
             if self.audio_path.exists() and force_init:
                 print(
@@ -601,15 +589,6 @@ class Spectrogram(Dataset):
         date_template : `str`, optiona, keyword-only
             When initializing a spectrogram of a dataset that has not been built, providing a date_template will generate the timestamp.csv.
         """
-        # # Mandatory init
-        # if not self.is_built:
-        #     try:
-        #         self.build(date_template=date_template)
-        #     except Exception as e:
-        #         print(
-        #             f"Unhandled error during dataset building. The spectrogram initialization will be cancelled. The error may be resolved by building the dataset separately first. Description of the error: {str(e)}"
-        #         )
-        #         return
 
         # remove temp directories from adjustment spectrograms
         for path in glob.glob(str(self.path.joinpath(OSMOSE_PATH.raw_audio, "temp_*"))):
@@ -641,8 +620,6 @@ class Spectrogram(Dataset):
             OSMOSE_PATH.spectrogram, "adjustment_spectros", "adjust_metadata.csv"
         ).exists():
             self.save_spectro_metadata(True)
-        # if os.path.exists(self.path.joinpath(OSMOSE_PATH.spectrogram).joinpath("adjustment_spectros")):
-        #    shutil.rmtree(self.path.joinpath(OSMOSE_PATH.spectrogram).joinpath("adjustment_spectros"))
 
         if dataset_sr:
             self.dataset_sr = dataset_sr
@@ -663,7 +640,6 @@ class Spectrogram(Dataset):
             audio_file.name for audio_file in list_audio_withEvent
         ]
 
-        #! INITIALIZATION START
         # Load variables from raw metadata
         metadata = pd.read_csv(self.path_input_audio_file.joinpath("metadata.csv"))
         audio_file_origin_duration = metadata["audio_file_origin_duration"][0]
@@ -682,18 +658,6 @@ class Spectrogram(Dataset):
                     f"You have {too_short_files} audio files shorter than your analysis duration of {self.spectro_duration}"
                 )
 
-        """
-        Useless since new normalization methods
-        if (
-            self.data_normalization == "zscore"
-            and self.spectro_normalization != "spectrum"
-        ):
-            self.spectro_normalization = "spectrum"
-            print(
-                "WARNING: the spectrogram normalization has been changed to spectrum because the data will be normalized using zscore."
-            )
-        """
-
         # when audio_file_overlap has been set to > 0 whereas the dataset is equal to the origin one
         if (
             self.audio_file_overlap > 0
@@ -708,32 +672,12 @@ class Spectrogram(Dataset):
         """List containing the last job ids to grab outside of the class."""
         self.pending_jobs = []
 
-        # Stop initialization if already done
-        # final_path = self.path.joinpath(
-        #     OSMOSE_PATH.spectrogram,
-        #     f"{str(self.spectro_duration)}_{str(self.dataset_sr)}",
-        #     f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",
-        #     "metadata.csv",
-        # )
-        # temp_path = self.path.joinpath(OSMOSE_PATH.spectrogram, "adjust_metadata.csv")
         audio_metadata_path = self.path.joinpath(
             OSMOSE_PATH.raw_audio,
             f"{str(self.spectro_duration)}_{str(self.dataset_sr)}",
             "metadata.csv",
         )
 
-        # if (
-        #     (final_path.exists() or temp_path.exists())
-        #     and audio_metadata_path.exists()
-        #     and audio_metadata_path.with_stem("timestamp").exists()
-        #     and not force_init
-        # ):
-        #     audio_file_count = pd.read_csv(audio_metadata_path)["audio_file_count"][0]
-        #     if len(list(audio_metadata_path.parent.glob("*.wav")) == audio_file_count):
-        #         print(
-        #             "It seems these spectrogram parameters are already initialized. If it is an error or you want to rerun the initialization, add the `force_init` argument."
-        #         )
-        #         return
         if audio_metadata_path.exists():
             print(
                 "It seems these spectrogram parameters are already initialized. If it is an error or you want to rerun the initialization, add the `force_init` argument."
@@ -751,60 +695,6 @@ class Spectrogram(Dataset):
 
         batch_size = len(self.list_audio_to_process) // self.batch_number
 
-        # #! RESAMPLING
-        # resample_job_id_list = []
-        # processes = []
-        # resample_done = False
-
-        # if self.dataset_sr != origin_sr and (next(self.audio_path.glob(".wav"),None) is None or force_init):
-
-        #     if self.spectro_duration == int(audio_file_origin_duration):
-        #         shutil.copyfile(self.path_input_audio_file.joinpath("timestamp.csv"), self.audio_path.joinpath("timestamp.csv"))
-
-        #     resample_done = True
-        #     for batch in range(self.batch_number):
-        #         i_min = batch * batch_size
-        #         i_max = (
-        #             i_min + batch_size
-        #             if batch < self.batch_number - 1
-        #             else len(self.list_audio_to_process)
-        #         )  # If it is the last batch, take all files
-
-        #         if self.__local:
-        #             process = mp.Process(
-        #                 target=resample,
-        #                 kwargs={
-        #                     "input_dir": self.path_input_audio_file,
-        #                     "output_dir": self.audio_path,
-        #                     "target_sr": self.dataset_sr,
-        #                     "batch_ind_min": i_min,
-        #                     "batch_ind_max": i_max,
-        #                 },
-        #             )
-
-        #             process.start()
-        #             processes.append(process)
-        #         else:
-        #             self.jb.build_job_file(
-        #                 script_path=Path(inspect.getfile(resample)).resolve(),
-        #                 script_args=f"--input-dir {self.path_input_audio_file} --target-sr {self.dataset_sr} --batch-ind-min {i_min} --batch-ind-max {i_max} --output-dir {self.audio_path}",
-        #                 jobname="OSmOSE_resample",
-        #                 preset="low",
-        #                 mem="30G",
-        #                 walltime="04:00:00",
-        #                 logdir=self.path.joinpath("log")
-        #             )
-        #             # TODO: use importlib.resources
-
-        #             job_id = self.jb.submit_job()
-        #             resample_job_id_list += job_id
-
-        #     self.pending_jobs = resample_job_id_list
-        #     for process in processes:
-        #         process.join()
-
-        #! RESHAPING
-        # Reshape audio files to fit the maximum spectrogram size, whether it is greater or smaller.
         reshape_job_id_list = []
         processes = []
 
@@ -922,8 +812,6 @@ class Spectrogram(Dataset):
             else:
                 input_dir_path = self.audio_path
 
-                list_audio = list(input_dir_path.glob("timestamp_*"))
-
                 list_conca_timestamps = []
                 list_conca_filename = []
                 for ll in list(input_dir_path.glob("timestamp_*")):
@@ -999,8 +887,6 @@ class Spectrogram(Dataset):
                     job_id = self.jb.submit_job()
                     norma_job_id_list += job_id
 
-            # self.pending_jobs = norma_job_id_list
-
             for process in processes:
                 process.join()
 
@@ -1053,7 +939,7 @@ class Spectrogram(Dataset):
             meta_path = self.path.joinpath(
                 OSMOSE_PATH.spectrogram,
                 f"{str(self.spectro_duration)}_{str(self.dataset_sr)}",
-                f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",  # "_{self.custom_frequency_scale}",
+                f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",
                 "metadata.csv",
             )
 
@@ -1242,7 +1128,6 @@ class Spectrogram(Dataset):
                 == sum(2**i for i in range(self.zoom_level + 1))
                 and check_existing_matrix()
             ):
-                # if overwrite:
                 print(
                     f"Existing files detected for audio file {audio_file}! They will be overwritten."
                 )
@@ -1255,9 +1140,6 @@ class Spectrogram(Dataset):
                         f"{Path(audio_file).stem}*"
                     ):
                         old_matrix.unlink()
-                # else:
-                #     print(f"The spectrograms for the file {audio_file} have already been generated, skipping...")
-                #     return
 
             if audio_file not in os.listdir(self.audio_path):
                 raise FileNotFoundError(
@@ -1591,9 +1473,7 @@ class Spectrogram(Dataset):
         log_spectro : `np.NDArray[signed int]`
         output_file : `str`
             The name of the spectrogram file."""
-        # if output_file.exists():
-        #     print(f"The spectrogram {output_file.name} has already been generated, skipping...")
-        #     return
+
         # Plotting spectrogram
         my_dpi = 100
         fact_x = 1.3
@@ -1609,7 +1489,7 @@ class Spectrogram(Dataset):
             f"- min log spectro : {np.amin(log_spectro)} \n - max log spectro : {np.amax(log_spectro)} \n"
         )
 
-        color_map = plt.get_cmap(self.colormap)  # .reversed()
+        color_map = plt.get_cmap(self.colormap)
         if self.custom_frequency_scale == "linear":
             plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
         else:
@@ -1626,7 +1506,6 @@ class Spectrogram(Dataset):
 
         plt.clim(vmin=self.dynamic_min, vmax=self.dynamic_max)
 
-        # plt.colorbar()
         if adjust:
             fig.axes[0].get_xaxis().set_visible(True)
             fig.axes[0].get_yaxis().set_visible(True)
@@ -1650,28 +1529,6 @@ class Spectrogram(Dataset):
 
         if adjust:
             display(Image(output_file))
-
-        # print(f"Successfully generated {output_file.name}.")
-
-        # metadata_input = self.path.joinpath(
-        #     OSMOSE_PATH.spectrogram, "adjust_metadata.csv"
-        # )
-
-        # # Horrible. To change.
-        # try:
-        #     if metadata_output.exists():
-        #         metadata_output.unlink()
-        #     shutil.copyfile(metadata_input, metadata_output)
-        #     #print(f"Written {metadata_output}")
-        # except:
-        #     pass
-        # try:
-        #     if not self.adjust and metadata_input.exists() and not metadata_output.exists():
-        #         metadata_input.rename(metadata_output)
-        # except:
-        #     pass
-
-    # endregion
 
     def process_all_files(
         self,
@@ -1727,9 +1584,6 @@ class Spectrogram(Dataset):
         else:
             os.rename(list_npz_files, path_all_welch)
             os.remove(list_npz_files)
-
-        # else:
-        #    time = [tt.item() for tt in time] # suprinsingly , doing simply = list(time) was droping the Timestamp dtype, to be investigated in more depth...
 
         return Sxx, Time, Freq
 
