@@ -460,7 +460,7 @@ class Dataset:
                         {
                             "filename": cur_filename,
                             "timestamp": cur_timestamp,
-                            "duration": sf_meta.duration,  
+                            "duration": sf_meta.duration,
                             "origin_sr": int(sf_meta.samplerate),
                             "sampwidth": sampwidth,
                             "size": size / 1e6,
