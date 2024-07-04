@@ -455,7 +455,9 @@ class Spectrogram(Dataset):
         audio_foldername = f"{str(self.spectro_duration)}_{str(self.dataset_sr)}"
         self.audio_path = self.path.joinpath(OSMOSE_PATH.raw_audio, audio_foldername)
 
-        self.__spectro_foldername = f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}"  
+        self.__spectro_foldername = (
+            f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}"
+        )
 
         self.path_output_spectrogram = processed_path.joinpath(
             audio_foldername, self.__spectro_foldername, "image"
@@ -587,7 +589,7 @@ class Spectrogram(Dataset):
         date_template : `str`, optiona, keyword-only
             When initializing a spectrogram of a dataset that has not been built, providing a date_template will generate the timestamp.csv.
         """
-        
+
         # remove temp directories from adjustment spectrograms
         for path in glob.glob(str(self.path.joinpath(OSMOSE_PATH.raw_audio, "temp_*"))):
             shutil.rmtree(path)
@@ -937,7 +939,7 @@ class Spectrogram(Dataset):
             meta_path = self.path.joinpath(
                 OSMOSE_PATH.spectrogram,
                 f"{str(self.spectro_duration)}_{str(self.dataset_sr)}",
-                f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",  
+                f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",
                 "metadata.csv",
             )
 
@@ -1487,7 +1489,7 @@ class Spectrogram(Dataset):
             f"- min log spectro : {np.amin(log_spectro)} \n - max log spectro : {np.amax(log_spectro)} \n"
         )
 
-        color_map = plt.get_cmap(self.colormap)  
+        color_map = plt.get_cmap(self.colormap)
         if self.custom_frequency_scale == "linear":
             plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
         else:
