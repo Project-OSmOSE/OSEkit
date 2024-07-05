@@ -67,9 +67,7 @@ BallenyIslands2015      2011-09-19 11:00      Balleny Islands 2015      1000
 Most of the examples found in modules and in the use case gallery use these audio recordings. To test and run the scripts, we recommend downloading these files to your local hard drive. The files can be downloaded from the GitHub `repository <https://github.com/project-OSmOSE>`_
 
 
-  
-.. include:: gallery_basic_use_cases/index.rst
-
+ 
 
 .. include:: tutorials.rst
 
