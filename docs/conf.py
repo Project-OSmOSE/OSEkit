@@ -34,7 +34,6 @@ add_module_names = False
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "sphinx_gallery.gen_gallery",
     "sphinx.ext.autodoc",
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
@@ -43,7 +42,7 @@ extensions = [
     #'sphinx_design',
 ]
 
-
+#    "sphinx_gallery.gen_gallery",
 
 
 # Add any paths that contain templates here, relative to this directory.
