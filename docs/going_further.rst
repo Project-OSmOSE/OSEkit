@@ -103,7 +103,7 @@ Here is the general workflow for contributing to our project:
 			
 	pytest tests/
 
-To execute a specific test run the following line :
+To execute a specific test run the following line (the -s allows you to see print output in console):
 
 .. code:: bash
 			
