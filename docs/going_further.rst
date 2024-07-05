@@ -91,9 +91,28 @@ Here is the general workflow for contributing to our project:
 	- non breaking changes : change minor version (x.X.x)
 	- breaking changes : change major version (X.x.x)
 
-7. Push your branch to our Github project and create a pull-request so it can be properly peer-reviewed ;
+7. Do not forget to format your codes with the Black package as follows (otherwise your contribution will fail its integration on Github anyway) :
 
-8. Use `poetry build` and upload generated files (present locally in the folder `~/dist`) in the corresponding package version on github `here <https://github.com/Project-OSmOSE/osmose-toolkit/releases/tag/v0.1.0>`_ 
+.. code:: bash
+			
+	poetry run black .
+
+8. Similarly, it is better you run locally the OSEkit pytest suite prior to push your contribution (otherwise your contribution will fail its integration on Github anyway) :
+
+.. code:: bash
+			
+	pytest tests/
+
+To execute a specific test run the following line :
+
+.. code:: bash
+			
+	pytest -s tests/test_spectrogram.py::test_number_image_matrix
+
+
+9. Push your branch to our Github project and create a pull-request so it can be properly peer-reviewed ;
+
+10. Once your PR merged, use `poetry build` and upload generated files (present locally in the folder `~/dist`) in the corresponding package version on github `here <https://github.com/Project-OSmOSE/osmose-toolkit/releases/tag/v0.1.0>`_ 
 
 
 .. note::
@@ -101,8 +120,6 @@ Here is the general workflow for contributing to our project:
 	Beyond this workflow, you can find in this `guide <https://opensource.guide/how-to-contribute/>`_ a more exhaustive list of possible contributions for an open source project, do not hesite to make us original propositions. This `document <https://www.dataschool.io/how-to-contribute-on-github/>`_ provides a more detailed step-by-step guide on how to make contributinons on github, and this `one <https://developer.mozilla.org/en-US/docs/MDN/Community/Issues>`_ is a guideline of best practices on github.
 
 
-
-.. include:: gallery_advanced_use_cases/index.rst
 
 
 
