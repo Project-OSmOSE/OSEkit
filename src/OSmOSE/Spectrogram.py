@@ -1128,18 +1128,21 @@ class Spectrogram(Dataset):
                 == sum(2**i for i in range(self.zoom_level + 1))
                 and check_existing_matrix()
             ):
-                print(
-                    f"Existing files detected for audio file {audio_file}! They will be overwritten."
-                )
-                for old_file in self.path_output_spectrogram.glob(
-                    f"{Path(audio_file).stem}*"
-                ):
-                    old_file.unlink()
-                if save_matrix:
-                    for old_matrix in self.path_output_spectrogram_matrix.glob(
+                if overwrite:
+                    print(
+                        f"Existing files detected for audio file {audio_file}! They will be overwritten."
+                    )
+                    for old_file in self.path_output_spectrogram.glob(
                         f"{Path(audio_file).stem}*"
                     ):
-                        old_matrix.unlink()
+                        old_file.unlink()
+                    if save_matrix:
+                        for old_matrix in self.path_output_spectrogram_matrix.glob(
+                            f"{Path(audio_file).stem}*"
+                        ):
+                            old_matrix.unlink()
+                else:
+                    print(f"The spectrograms for the file {audio_file} have already been generated, skipping...")
 
             if audio_file not in os.listdir(self.audio_path):
                 raise FileNotFoundError(
