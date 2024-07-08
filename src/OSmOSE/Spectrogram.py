@@ -1145,6 +1145,7 @@ class Spectrogram(Dataset):
                     print(
                         f"The spectrograms for the file {audio_file} have already been generated, skipping..."
                     )
+                    return
 
             if audio_file not in os.listdir(self.audio_path):
                 raise FileNotFoundError(
