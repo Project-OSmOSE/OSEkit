@@ -226,7 +226,7 @@ class Spectrogram(Dataset):
             else "linear"
         )
 
-        self.verbose : bool = verbose
+        self.verbose: bool = verbose
 
         self.jb = Job_builder()
 
