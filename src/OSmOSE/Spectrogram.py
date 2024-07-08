@@ -1142,7 +1142,9 @@ class Spectrogram(Dataset):
                         ):
                             old_matrix.unlink()
                 else:
-                    print(f"The spectrograms for the file {audio_file} have already been generated, skipping...")
+                    print(
+                        f"The spectrograms for the file {audio_file} have already been generated, skipping..."
+                    )
 
             if audio_file not in os.listdir(self.audio_path):
                 raise FileNotFoundError(
