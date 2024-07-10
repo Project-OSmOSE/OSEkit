@@ -51,6 +51,7 @@ class Spectrogram(Dataset):
         analysis_params: dict = None,
         batch_number: int = 5,
         local: bool = True,
+        verbose: bool = True,
     ) -> None:
         """Instanciates a spectrogram object.
 
@@ -224,6 +225,8 @@ class Spectrogram(Dataset):
             if "custom_frequency_scale" in analysis_sheet
             else "linear"
         )
+
+        self.verbose: bool = verbose
 
         self.jb = Job_builder()
 
@@ -1237,10 +1240,10 @@ class Spectrogram(Dataset):
             elif self.zscore_duration == "original":
                 print("apply zscore original")
                 data = (data - np.mean(data)) / np.std(data)
-
-        print(
-            f"- data min : {np.min(data)} \n - data max : {np.max(data)} \n - data mean : {np.mean(data)} \n - data std : {np.std(data)}"
-        )
+        if self.verbose:
+            print(
+                f"- data min : {np.min(data)} \n - data max : {np.max(data)} \n - data mean : {np.mean(data)} \n - data std : {np.std(data)}"
+            )
 
         duration = len(data) / int(sample_rate)
 
@@ -1484,10 +1487,10 @@ class Spectrogram(Dataset):
             figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi),
             dpi=my_dpi,
         )
-
-        print(
-            f"- min log spectro : {np.amin(log_spectro)} \n - max log spectro : {np.amax(log_spectro)} \n"
-        )
+        if self.verbose:
+            print(
+                f"- min log spectro : {np.amin(log_spectro)} \n - max log spectro : {np.amax(log_spectro)} \n"
+            )
 
         color_map = plt.get_cmap(self.colormap)
         if self.custom_frequency_scale == "linear":
