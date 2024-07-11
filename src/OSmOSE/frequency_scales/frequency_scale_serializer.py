@@ -10,7 +10,7 @@ class FrequencyScaleSerializer:
             ),
             "Audible": (
                 CustomFrequencyScale,
-                {"frequencies": (22000, 100000), "coefficients": (1, 0, 0)},
+                {"frequencies": (22000, 22000), "coefficients": (1, 0, 0)},
             ),
             "Dual_LF_HF": (
                 CustomFrequencyScale,
