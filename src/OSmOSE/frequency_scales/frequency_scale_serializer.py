@@ -6,7 +6,7 @@ class FrequencyScaleSerializer:
         self.configurations = {
             "porp_delph": (
                 CustomFrequencyScale,
-                {"frequencies": (22000, 100000), "coefficients": (0.5, 0.2, 0.3)},
+                {"frequencies": (30000, 80000), "coefficients": (0.5, 0.2, 0.3)},
             ),
             "Audible": (
                 CustomFrequencyScale,
