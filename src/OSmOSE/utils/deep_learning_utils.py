@@ -4,6 +4,47 @@ from torch import nn, tensor, utils, device, cuda, optim, long, save
 from torch.autograd import Variable
 
 
+################################################################################################################
+#  RUN FUNCTIONS
+################################################################################################################
+
+def train_rnn(model, rnn, dataloader, test_loader, criterion, optimizer, num_epochs):
+	accuracy = []
+	for epoch in range(num_epochs):
+		acc_batch = []
+		for batch in dataloader:
+			optimizer.zero_grad()
+			data, labels = batch
+			outputs = model(data)
+			loss = criterion(outputs.squeeze(dim = 1), labels)
+			loss.backward()
+			optimizer.step()
+
+			outputs, labels = outputs.squeeze(dim = 1).detach().numpy(), labels.numpy()
+			acc_batch.append(np.sum(abs(outputs-labels) < 1)/len(labels))
+
+		accuracy.append(np.mean(acc_batch))
+		if (epoch+1) % 1 == 0:
+			test_rnn(model, rnn, test_loader, epoch)
+			model.train()
+		torch.save(model.state_dict(), 'current_training')
+
+def test_rnn(model, rnn, dataloader, epoch):
+	model.eval()
+	acc_test = []
+	all_preds, all_labels = [], []
+	with torch.no_grad():
+		for batch in dataloader:
+			data, labels = batch	
+			outputs = model(data)
+			outputs, labels = outputs.squeeze().detach().numpy(), labels.numpy()
+			all_preds.extend(outputs)
+			all_labels.extend(labels)
+			acc_test.append(np.sum(abs(outputs-labels) < 1)/len(labels))	
+		np.save(os.path.join(os.path.expanduser('~'), str(seq_length) + '_wind_LSTM'), np.vstack((all_preds, all_labels)))
+
+
+
 #################################################################################################################
 # DATALOADERS
 #################################################################################################################
