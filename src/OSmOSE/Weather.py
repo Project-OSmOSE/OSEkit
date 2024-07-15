@@ -8,8 +8,9 @@ from scipy.optimize import curve_fit
 import sklearn.metrics as metrics
 import pandas as pd
 from glob import glob
-#import plotly.express as px
-#import plotly.graph_objects as go
+from torch import nn, tensor, utils, device, cuda, optim, long, save
+
+
 
 def beaufort(x):
     return next((i for i, limit in enumerate([0.3, 1.6, 3.4, 5.5, 8, 10.8, 13.9, 17.2, 20.8, 24.5, 28.5, 32.7]) 
@@ -161,7 +162,23 @@ class Weather(Auxiliary):
 		print('Model has been fitted, your estimation has been added to the joined dataset')
 		print(f'The fitted parameters are : {self.popt}')
 		self.wind_model_stats = {'mae':np.mean(mae), 'rmse':np.mean(mse), 'r2':np.mean(r2), 'var':np.mean(var), 'std':np.mean(std)}
+
+	def lstm_fit(self, seq_length = 10, **kwargs) :
+		default = {'learning_rate':0.001,'epochs':75,'weight_decay':0.000,'hidden_dim':512}
+		params = {**default, **kwargs}
+		# set the device (CPU or GPU)
+		device = 'cuda' if torch.cuda.is_available() else 'cpu'
+		# create the model and move it to the specified device
+		model = dl_utils.RNNModel(1, params['hidden_dim'], 1, 1)
+		model.to(device)
+		# create the loss function and optimizer
+		criterion = nn.MSELoss()
+		optimizer = optim.Adam(model.parameters(), lr=params['learning_rate'], weight_decay=params['weight_decay'])
 		
+		train_loader = utils.data.DataLoader(dl_utils.Wind_Speed(trainset, self.method['frequency'], self.ground_truth, seq_length=seq_length), batch_size = 64, shuffle = True)
+		test_loader = utils.data.DataLoader(dl_utils.Wind_Speed(testset, self.method['frequency'], self.ground_truth, seq_length=seq_length), batch_size = 64, shuffle=False)
+		train(model, train_loader, test_loader, criterion, optimizer, num_epochs = params['epochs'])		
+
 
 """	def plot_estimation(self):
 
