@@ -49,12 +49,6 @@ def input_dataset(tmp_path: Path):
         data[data > 1] = 1
         data[data < -1] = -1
 
-        wav_file = orig_audio_dir.joinpath(f"20220101_1200{str(3*i).zfill(2)}.wav")
-        if i > 5:
-            sf.write(wav_file, data, rate, format="WAV", subtype="FLOAT")
-        else:
-            sf.write(wav_file, data, rate, format="FLAC", subtype="FLOAT")
-
         if i < 5:
             wav_file = orig_audio_dir.joinpath(f"20220101_1200{str(3*i).zfill(2)}.wav")
             sf.write(wav_file, data, rate, format="wav", subtype="FLOAT")
