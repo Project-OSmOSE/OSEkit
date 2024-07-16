@@ -74,6 +74,11 @@ class Dataset:
         >>> from OSmOSE import Dataset
         >>> dataset = Dataset(Path("home","user","my_dataset"), coordinates = [49.2, -5], owner_group = "gosmose")
         """
+        assert isinstance(dataset_path, Path) or isinstance(
+            dataset_path, str
+        ), f"Expected value to be a Path or a string, but got {type(dataset_path).__name__}"
+        # assert gps_coordinates
+
         self.__path = Path(dataset_path)
         self.__name = self.__path.stem
         self.owner_group = owner_group
