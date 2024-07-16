@@ -227,11 +227,7 @@ class Spectrogram(Dataset):
             else "linear"
         )
 
-<<<<<<< HEAD
         self.verbose: bool = verbose
-
-=======
->>>>>>> 697c346 (initial_commit2)
         self.jb = Job_builder()
 
         plt.switch_backend("agg")
@@ -462,13 +458,9 @@ class Spectrogram(Dataset):
         audio_foldername = f"{str(self.spectro_duration)}_{str(self.dataset_sr)}"
         self.audio_path = self.path.joinpath(OSMOSE_PATH.raw_audio, audio_foldername)
 
-<<<<<<< HEAD
         self.__spectro_foldername = (
             f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}"
         )
-=======
-        self.__spectro_foldername = f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}"  # ,_{self.custom_frequency_scale}"
->>>>>>> 697c346 (initial_commit2)
 
         self.path_output_spectrogram = processed_path.joinpath(
             audio_foldername, self.__spectro_foldername, "image"
@@ -942,11 +934,7 @@ class Spectrogram(Dataset):
             meta_path = self.path.joinpath(
                 OSMOSE_PATH.spectrogram,
                 f"{str(self.spectro_duration)}_{str(self.dataset_sr)}",
-<<<<<<< HEAD
                 f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",
-=======
-                f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}",  # "_{self.custom_frequency_scale}",
->>>>>>> 697c346 (initial_commit2)
                 "metadata.csv",
             )
 

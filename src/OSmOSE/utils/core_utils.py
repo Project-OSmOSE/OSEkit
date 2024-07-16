@@ -372,10 +372,6 @@ def read_header(file: str) -> Tuple[int, float, int, int, int]:
             return samplerate, frames, sampwidth, channels, size
 
         elif header == b"fLaC":
-<<<<<<< HEAD
-
-=======
->>>>>>> 697c346 (initial_commit2)
             # FLAC file processing
             is_last = False
             while not is_last:
