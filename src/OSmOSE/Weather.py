@@ -1,14 +1,17 @@
 from OSmOSE.config_weather import empirical
 from OSmOSE.config import *
 from OSmOSE.Auxiliary import Auxiliary
+from OSmOSE.utils import deep_learning_utils as dl_utils
 import numpy as np
 from typing import Union, Tuple, List
+import torch
+from torch import nn, tensor, utils, device, cuda, optim, long, save
 from sklearn.model_selection import StratifiedKFold
 from scipy.optimize import curve_fit
+from scipy.signal import medfilt
 import sklearn.metrics as metrics
 import pandas as pd
 from glob import glob
-from torch import nn, tensor, utils, device, cuda, optim, long, save
 
 
 
@@ -99,13 +102,21 @@ class Weather(Auxiliary):
 			for key, value in self.method.items():
 				print(f"{key:<{6}} : {value}")
 			return "To fit your model, please call skf_fit() for example"
-			
+	
 
+	def median_filtering(self, kernel_size = 5):
+		'''
+		Whether or not to apply scipy's median filtering to data
+		'''
+		self.df['filtered'] = medfilt(self.df[self.method['frequency']], kernel_size = kernel_size)
+		self.method['frequency'] = 'filtered'
+
+	
 
 	def fetch_data(self, feature='welch'):
 		'''
 		This methods adds noise level at selected frequency to the joined dataframe
-		Parameters !
+		Parameters :
 			feature (str) : Type of processed features to fetch from : 'LTAS', 'spectrogram', 'welch'
 		'''
 		_noise_level, _time = [], []
@@ -163,22 +174,31 @@ class Weather(Auxiliary):
 		print(f'The fitted parameters are : {self.popt}')
 		self.wind_model_stats = {'mae':np.mean(mae), 'rmse':np.mean(mse), 'r2':np.mean(r2), 'var':np.mean(var), 'std':np.mean(std)}
 
-	def lstm_fit(self, seq_length = 10, **kwargs) :
-		default = {'learning_rate':0.001,'epochs':75,'weight_decay':0.000,'hidden_dim':512}
-		params = {**default, **kwargs}
-		# set the device (CPU or GPU)
-		device = 'cuda' if torch.cuda.is_available() else 'cpu'
-		# create the model and move it to the specified device
-		model = dl_utils.RNNModel(1, params['hidden_dim'], 1, 1)
-		model.to(device)
-		# create the loss function and optimizer
-		criterion = nn.MSELoss()
-		optimizer = optim.Adam(model.parameters(), lr=params['learning_rate'], weight_decay=params['weight_decay'])
-		
-		train_loader = utils.data.DataLoader(dl_utils.Wind_Speed(trainset, self.method['frequency'], self.ground_truth, seq_length=seq_length), batch_size = 64, shuffle = True)
-		test_loader = utils.data.DataLoader(dl_utils.Wind_Speed(testset, self.method['frequency'], self.ground_truth, seq_length=seq_length), batch_size = 64, shuffle=False)
-		train(model, train_loader, test_loader, criterion, optimizer, num_epochs = params['epochs'])		
 
+	def lstm_fit(self, seq_length = 10, **kwargs) :
+		default = {'learning_rate':0.001,'epochs':75,'weight_decay':0.000,'hidden_dim':512, 'n_splits':5, 'n_cross_validation':1}
+		params = {**default, **kwargs}
+		self.df['classes'] = self.df[self.ground_truth].apply(beaufort)
+		self.df['lstm_estimation'] = np.nan
+		self.df.dropna(subset = [self.method['frequency'], self.ground_truth], inplace = True)
+		skf = StratifiedKFold(n_splits=params['n_splits'])
+		split = skf.split(self.df[self.method['frequency']], self.df.classes)
+		for i in range(min(params['n_splits'], params['n_cross_validation'])):
+			# set the device (CPU or GPU)
+			device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+			# create the model and move it to the specified device
+			model = dl_utils.RNNModel(1, params['hidden_dim'], 1, 1)
+			model.to(device)
+			# create the loss function and optimizer
+			criterion = nn.MSELoss()
+			optimizer = optim.Adam(model.parameters(), lr=params['learning_rate'], weight_decay=params['weight_decay'])
+
+			train_indices, test_indices = next(split)
+			trainset, testset = self.df.loc[train_indices], self.df.loc[test_indices]
+			train_loader = utils.data.DataLoader(dl_utils.Wind_Speed(trainset, self.method['frequency'], self.ground_truth, seq_length=seq_length), batch_size = 64, shuffle = True)
+			test_loader = utils.data.DataLoader(dl_utils.Wind_Speed(testset, self.method['frequency'], self.ground_truth, seq_length=seq_length), batch_size = 64, shuffle=False)
+			estimation = dl_utils.train_rnn(model, train_loader, test_loader, criterion, optimizer, num_epochs = params['epochs'], device = device)		
+			self.df.loc[test_indices, 'lstm_estimation'] = estimation
 
 """	def plot_estimation(self):
 
