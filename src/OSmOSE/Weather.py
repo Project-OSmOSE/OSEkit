@@ -27,7 +27,7 @@ class Weather(Auxiliary):
 		self,
 		dataset_path: str,
 		method: str = None,
-		ground_truth = 'era',
+		ground_truth : str = 'era',
 		weather_params : dict = None,
 		*,
 		gps_coordinates: Union[str, List, Tuple, bool] = True,
