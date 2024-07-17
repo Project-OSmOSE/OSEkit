@@ -15,47 +15,6 @@ from scipy import interpolate
 
 
 class Auxiliary(Spectrogram):
-    """
-    This class joins environmental and instrument data to acoustic data.
-    The acoustic data is first fetched using the dataset path, the data's samplerate and the analysis parameters.
-    If no analysis parameters are provided then data will be joined to corresponding raw audio files.
-    """
-
-    # CHECK THAT ALL TIMEZONES ARE THE SAME PLEASE (UTC 00)
-
-    def __init__(
-        self,
-        dataset_path: str,
-        *,
-        gps_coordinates: Union[str, List, Tuple, bool] = True,
-        depth: Union[str, int, bool] = True,
-        dataset_sr: int = None,
-        owner_group: str = None,
-        analysis_params: dict = None,
-        batch_number: int = 5,
-        local: bool = True,
-        era: Union[str, bool] = False,
-        annotation: Union[dict, bool] = False,
-        other: dict = None,
-    ):
-        """
-        Parameters:
-               dataset_path (str): The path to the dataset.
-               dataset_sr (int, optional): The dataset sampling rate. Default is None.
-               analysis_params (dict, optional): Additional analysis parameters. Default is None.
-               gps_coordinates (str, list, tuple, bool, optional): Whether GPS data is included. Default is True. If string, enter the filename (csv) where gps data is stored.
-               depth (str, int, bool, optional): Whether depth data is included. Default is True. If string, enter the filename (csv) where depth data is stored.
-               era (bool, optional): Whether era data is included. Default is False. If string, enter the filename (Network Common Data Form) where era data is stored.
-               annotation (bool, optional): Annotation data is included. Dictionary containing key (column name of annotation data) and absolute path of csv file where annotation data is stored. Default is False.
-               other (dict, optional): Additional data (csv format) to join to acoustic data. Key is name of data (column name) to join to acoustic dataset, value is the absolute path where to find the csv. Default is None.
-        Notes:
-               The parameters `gps`, `depth`, `era`, `annotation`, and `other` are used as flags
-               to indicate the presence of data to join to the corresponding spectrogram generation. When set to True, the respective
-               data will be processed and included.
-        """
-
-<<<<<<< HEAD
-class Auxiliary(Spectrogram):
 	'''
 	This class joins environmental and instrument data to acoustic data. 
 	The acoustic data is first fetched using the dataset path, the data's samplerate and the analysis parameters.
