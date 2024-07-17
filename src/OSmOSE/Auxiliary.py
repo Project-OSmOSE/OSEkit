@@ -54,7 +54,6 @@ class Auxiliary(Spectrogram):
                data will be processed and included.
         """
 
-<<<<<<< HEAD
 class Auxiliary(Spectrogram):
 	'''
 	This class joins environmental and instrument data to acoustic data. 
