@@ -61,7 +61,7 @@ class Auxiliary(Spectrogram):
 		# Load reference data that will be used to join all other data
 		try :
 			self.df = check_epoch(pd.read_csv(self.audio_path.joinpath('timestamp.csv')))
-			self.df['timestamp'] = pd.to_datetime(self.df['timestamp'], format='%Y-%m-%dT%H:%M:%S.000000+0000')
+			#self.df['timestamp'] = pd.to_datetime(self.df['timestamp'], format='%Y-%m-%dT%H:%M:%S.000000+0000')
 			print(f"Current reference timestamp.csv has the following columns : {', '.join(self.df.columns)}")
 		except FileNotFoundError :
 			print('Dataset corresponding to analysis params was not found. Please call the build method first.\nParams are :')
