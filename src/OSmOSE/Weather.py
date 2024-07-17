@@ -112,7 +112,6 @@ class Weather(Auxiliary):
 		self.method['frequency'] = 'filtered'
 
 	
-
 	def fetch_data(self, feature='welch'):
 		'''
 		This methods adds noise level at selected frequency to the joined dataframe
@@ -200,15 +199,13 @@ class Weather(Auxiliary):
 			estimation = dl_utils.train_rnn(model, train_loader, test_loader, criterion, optimizer, num_epochs = params['epochs'], device = device)		
 			self.df.loc[test_indices, 'lstm_estimation'] = estimation
 
-"""	def plot_estimation(self):
+	def plot_estimation(self):
 
 		fig = go.Figure()
 		fig.add_trace(go.Scatter(x=df['timestamp'], y=self.ground_truth, mode='markers', marker=dict(size=3), name='Ground Truth'))
 		fig.add_trace(go.Scatter(x=df['timestamp'], y=df['estimation'], mode='markers', marker=dict(size=4), name='Estimation'))
 		fig.update_layout(title='Wind Speed and Estimation Over Time', xaxis_title='Timestamp', yaxis_title='Weather estimation', width=800, height=600)
 		fig.show()
-
-"""
 
 
 '''    def save_all_welch(self):
