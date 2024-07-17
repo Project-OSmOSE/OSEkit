@@ -2,7 +2,7 @@ import numpy as np
 
 
 def logarithmic(x, a, b, offset):
-	return 10**(((x-offset) + 10*a*np.log10(8000)) / (20*b))
+	return 10**(((x-offset) + 10*a*np.log10(8000)) / (20*b+1e-8))
 
 def quadratic(x, a, b, c, offset):
 	return a*(x-offset)**2 + b*(x-offset) + c
