@@ -208,8 +208,19 @@ class Auxiliary(Spectrogram):
 		if self.other :
 			self.join_other()
 
-	def save_file(self):
-		self.df.to_csv(self.path.joinpath(OSMOSE_PATH.auxiliary, self.audio_foldername) + '.csv')
+	def save_file(self, filename = None) :
+		if filename : 
+			self.df.to_csv(self.path.joinpath(OSMOSE_PATH.auxiliary))
+		else :
+			if os.path.exists(self.path.joinpath(OSMOSE_PATH.auxiliary, self.audio_foldername) + '.csv'):
+				_existing = pd.read_csv(self.path.joinpath(OSMOSE_PATH.auxiliary, self.audio_foldername) + '.csv')
+				try :
+					_temp = pd.concat((_existing, self.df[self.df.columns.to_numpy()[self.df.columns.to_numpy() not in _exisiting.columns.to_numpy()]]), axis = 1)
+					_temp.to_csv(self.path.joinpath(OSMOSE_PATH.auxiliary, self.audio_foldername) + '.csv')
+				except :
+					print(f"Joined data corresponding to {self.audio_foldername} already exists. \nPlease enter filename to save data.")
+			else :
+				self.df.to_csv(self.path.joinpath(OSMOSE_PATH.auxiliary, self.audio_foldername) + '.csv')
 
 
 
