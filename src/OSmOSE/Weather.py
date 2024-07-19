@@ -12,6 +12,7 @@ from scipy.signal import medfilt
 import sklearn.metrics as metrics
 import pandas as pd
 from glob import glob
+from tqdm import tqdm
 
 
 
@@ -122,14 +123,18 @@ class Weather(Auxiliary):
 		match feature :
 			case 'welch':
 				fns = glob(str(self.path_output_welch)+'/*')
-				for fn in fns :
+				pbar = tqdm(fns)
+				for fn in pbar :
+					pbar.set_description(fn)
 					_data = np.load(fn, allow_pickle = True)
 					freq_ind = np.argmin(abs(_data['Freq']-self.method['frequency']))
 					_time.extend(_data['Time'])
 					_noise_level.extend(np.log10(_data['Sxx'][:, freq_ind]))
 			case 'spectrogram' | 'LTAS':
 				fns = glob(str(self.path_output_spectrogram_matrix)+'/*')
-				for fn in fns :
+				pbar = tqdm(fns)
+				for fn in pbar :
+					pbar.set_description(fn)
 					_data = np.load(fn, allow_pickle = True)
 					freq_ind = np.argmin(abs(_data['Freq']-self.method['frequency']))
 					_time.extend(pd.to_datetime(fn.split('/')[-1][:19], format = '%Y_%m_%dT%H_%M_%S'))

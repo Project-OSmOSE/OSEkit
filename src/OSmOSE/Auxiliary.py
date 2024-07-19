@@ -208,6 +208,10 @@ class Auxiliary(Spectrogram):
 		if self.other :
 			self.join_other()
 
+	def save_file(self):
+		self.df.to_csv(self.path.joinpath(OSMOSE_PATH.auxiliary, self.audio_foldername) + '.csv')
+
+
 
 def make_cds_file(key, udi, path):
     os.chdir(os.path.expanduser("~"))

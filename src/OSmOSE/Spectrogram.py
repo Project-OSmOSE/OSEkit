@@ -455,21 +455,21 @@ class Spectrogram(Dataset):
         """
         set_umask()
         processed_path = self.path.joinpath(OSMOSE_PATH.spectrogram)
-        audio_foldername = f"{str(self.spectro_duration)}_{str(self.dataset_sr)}"
-        self.audio_path = self.path.joinpath(OSMOSE_PATH.raw_audio, audio_foldername)
+        self.audio_foldername = f"{str(self.spectro_duration)}_{str(self.dataset_sr)}"
+        self.audio_path = self.path.joinpath(OSMOSE_PATH.raw_audio, self.audio_foldername)
 
         self.__spectro_foldername = (
             f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}"
         )
 
         self.path_output_spectrogram = processed_path.joinpath(
-            audio_foldername, self.__spectro_foldername, "image"
+            self.audio_foldername, self.__spectro_foldername, "image"
         )
         self.path_output_spectrogram_matrix = processed_path.joinpath(
-            audio_foldername, self.__spectro_foldername, "matrix"
+            self.audio_foldername, self.__spectro_foldername, "matrix"
         )
 
-        self.path_output_welch = self.path.joinpath(OSMOSE_PATH.welch, audio_foldername)
+        self.path_output_welch = self.path.joinpath(OSMOSE_PATH.welch, self.audio_foldername)
         self.path_output_LTAS = self.path.joinpath(OSMOSE_PATH.LTAS)
         self.path_output_EPD = self.path.joinpath(OSMOSE_PATH.EPD)
         self.path_output_SPLfiltered = self.path.joinpath(OSMOSE_PATH.SPLfiltered)
