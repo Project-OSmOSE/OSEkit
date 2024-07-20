@@ -34,7 +34,7 @@ class Auxiliary(Spectrogram):
 		analysis_params: dict = None,
 		batch_number: int = 5,
 		local: bool = True,
-		
+		acoustic : bool = False,
 		era : Union[str, bool] = False,
 		annotation : Union[dict, bool] = False,
 		other: dict = None
@@ -68,6 +68,7 @@ class Auxiliary(Spectrogram):
 			print('Dataset sampling rate : ', dataset_sr)
 			print('Spectrogram duration : ', analysis_params['spectro_duration'])
 			self.df = pd.DataFrame()
+		self.acoustic = acoustic
 		self.metadata = pd.read_csv(self._get_original_after_build().joinpath("metadata.csv"), header=0)
 		self._depth, self._gps_coordinates = depth, gps_coordinates
 		match depth :
@@ -118,6 +119,8 @@ class Auxiliary(Spectrogram):
 			elems.append('depth')
 		if self.era :
 			elems.append('era')
+		if self.acoustic : 
+			elems.append('acoustic')
 		if self.other:
 			elems.extend(self.other.keys())
 		if len(elems) != 0:
@@ -158,6 +161,38 @@ class Auxiliary(Spectrogram):
 		elif type(self.gps_coordinates) in [list, tuple] :
 			self.df['lat'] = self.gps_coordinates[0]
 			self.df['lon'] = self.gps_coordinates[1]
+	
+	def join_acoustic(self, feature='welch'):
+		'''
+		This methods adds noise level at selected frequency to the joined dataframe
+		Parameters :
+			feature (str) : Type of processed features to fetch from : 'LTAS', 'spectrogram', 'welch'
+		'''
+		_noise_level, _time = [], []
+		match feature :
+			case 'welch':
+				fns = glob(str(self.path_output_welch)+'/*')
+				pbar = tqdm(fns)
+				for fn in pbar :
+					pbar.set_description(fn)
+					_data = np.load(fn, allow_pickle = True)
+					freq_ind = np.argmin(abs(_data['Freq']-self.method['frequency']))
+					_time.extend(_data['Time'])
+					_noise_level.extend(np.log10(_data['Sxx'][:, freq_ind]))
+			case 'spectrogram' | 'LTAS':
+				fns = glob(str(self.path_output_spectrogram_matrix)+'/*')
+				pbar = tqdm(fns)
+				for fn in pbar :
+					pbar.set_description(fn)
+					_data = np.load(fn, allow_pickle = True)
+					freq_ind = np.argmin(abs(_data['Freq']-self.method['frequency']))
+					_time.extend(pd.to_datetime(fn.split('/')[-1][:19], format = '%Y_%m_%dT%H_%M_%S'))
+					_noise_level.extend(np.mean(_data['Sxx'][:, freq_ind]))
+
+		print(f"Model is fitted at {self.method['frequency']} Hz, defaulting to {_data['Freq'][freq_ind]} Hz")
+		_temp = pd.DataFrame().from_dict({'timestamp':_time, self.method['frequency'] : _noise_level}).sort_values('timestamp')
+		_temp['timestamp'] = _temp['timestamp'].dt.tz_localize(None)
+		self.df = pd.merge(self.df, _temp, on='timestamp')
 
 	def join_other(self, csv_path: str = None, variable_name : Union[str, List, Tuple] = None):
 		'''
@@ -205,6 +240,8 @@ class Auxiliary(Spectrogram):
 			self.join_gps()
 		if self.era:
 			self.interpolation_era()
+		if.self.acoustic : 
+			self.join_acoustic()
 		if self.other :
 			self.join_other()
 
