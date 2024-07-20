@@ -108,7 +108,7 @@ class Auxiliary(Spectrogram):
 		self.other = other if other is not None else {}	
 		if annotation : 
 			self.other = {**self.other, **annotation}
-			
+		self.joined_path = self.path / OSMOSE_PATH.auxiliary / (self.audio_foldername + '.csv')
 	
 	def __str__(self):
 		print(f'For the {self.name} dataset')
@@ -162,13 +162,14 @@ class Auxiliary(Spectrogram):
 			self.df['lat'] = self.gps_coordinates[0]
 			self.df['lon'] = self.gps_coordinates[1]
 	
-	def join_acoustic(self, feature='welch'):
+
+	def join_acoustic(self, fcs = [], feature='welch'):
 		'''
 		This methods adds noise level at selected frequency to the joined dataframe
 		Parameters :
 			feature (str) : Type of processed features to fetch from : 'LTAS', 'spectrogram', 'welch'
 		'''
-		_noise_level, _time = [], []
+		_noise_level, _time = [[] for fc in fcs], []
 		match feature :
 			case 'welch':
 				fns = glob(str(self.path_output_welch)+'/*')
@@ -176,23 +177,24 @@ class Auxiliary(Spectrogram):
 				for fn in pbar :
 					pbar.set_description(fn)
 					_data = np.load(fn, allow_pickle = True)
-					freq_ind = np.argmin(abs(_data['Freq']-self.method['frequency']))
 					_time.extend(_data['Time'])
-					_noise_level.extend(np.log10(_data['Sxx'][:, freq_ind]))
+					for i, fc in enumerate(fcs) : 
+						freq_ind = np.argmin(abs(_data['Freq']-fc))
+						_noise_level[i].extend(np.log10(_data['Sxx'][:, freq_ind]))
 			case 'spectrogram' | 'LTAS':
 				fns = glob(str(self.path_output_spectrogram_matrix)+'/*')
 				pbar = tqdm(fns)
 				for fn in pbar :
 					pbar.set_description(fn)
 					_data = np.load(fn, allow_pickle = True)
-					freq_ind = np.argmin(abs(_data['Freq']-self.method['frequency']))
 					_time.extend(pd.to_datetime(fn.split('/')[-1][:19], format = '%Y_%m_%dT%H_%M_%S'))
-					_noise_level.extend(np.mean(_data['Sxx'][:, freq_ind]))
-
-		print(f"Model is fitted at {self.method['frequency']} Hz, defaulting to {_data['Freq'][freq_ind]} Hz")
-		_temp = pd.DataFrame().from_dict({'timestamp':_time, self.method['frequency'] : _noise_level}).sort_values('timestamp')
+					for i, fc in enumerate(fcs) :
+						freq_ind = np.argmin(abs(_data['Freq']-fc))
+						_noise_level[i].extend(np.mean(_data['Sxx'][:, freq_ind]))
+		_temp = pd.DataFrame().from_dict({**{'timestamp':_time}, **{fcs[i] : _noise_level[i] for i in range(len(fcs))}}).sort_values('timestamp')
 		_temp['timestamp'] = _temp['timestamp'].dt.tz_localize(None)
 		self.df = pd.merge(self.df, _temp, on='timestamp')
+
 
 	def join_other(self, csv_path: str = None, variable_name : Union[str, List, Tuple] = None):
 		'''
@@ -232,6 +234,7 @@ class Auxiliary(Spectrogram):
 		if 'u10' and 'v10' in self.df :
 			self.df['era'] = np.sqrt(self.df.u10**2 + self.df.v10**2)
 	
+
 	def automatic_join(self):
 		''' Automatically join all the available data'''
 		if self._depth :
@@ -245,19 +248,21 @@ class Auxiliary(Spectrogram):
 		if self.other :
 			self.join_other()
 
+
 	def save_file(self, filename = None) :
 		if filename : 
-			self.df.to_csv(self.path.joinpath(OSMOSE_PATH.auxiliary), index = None)
+			self.df.to_csv(self.path.joinpath(OSMOSE_PATH.auxiliary, filename), index = None)
+			self.joined_path = self.path.joinpath(OSMOSE_PATH.auxiliary, filename)
 		else :
-			if os.path.exists(self.path.joinpath(OSMOSE_PATH.auxiliary, self.audio_foldername) + '.csv'):
-				_existing = pd.read_csv(self.path.joinpath(OSMOSE_PATH.auxiliary, self.audio_foldername) + '.csv')
+			if os.path.exists(self.joined_path):
+				_existing = pd.read_csv(self.joined_path)
 				try :
-					_temp = pd.concat((_existing, self.df[self.df.columns.to_numpy()[[col not in _exisiting.columns.to_numpy() for col in self.df.columns.to_numpy()]]]), axis = 1)
-					_temp.to_csv(self.path.joinpath(OSMOSE_PATH.auxiliary, self.audio_foldername) + '.csv', index = None)
+					_temp = pd.concat((_existing, self.df[self.df.columns.to_numpy()[[str(col) not in _existing.columns.to_numpy() for col in self.df.columns.to_numpy()]]]), axis = 1)
+					_temp.to_csv(self.joined_path, index = None)
 				except :
 					print(f"Joined data corresponding to {self.audio_foldername} already exists. \nPlease enter filename to save data.")
 			else :
-				self.df.to_csv(self.path.joinpath(OSMOSE_PATH.auxiliary, self.audio_foldername) + '.csv', index = None)
+				self.df.to_csv(self.joined_path, index = None)
 
 
 
