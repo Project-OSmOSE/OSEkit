@@ -16,7 +16,7 @@ def capture_csv(monkeypatch):
 def input_dataset(tmp_path: Path):
     """Fixture to create an input dataset.
 
-    Creates the basic structure of a dataset in a temporary direction, as well as 10 audio files of 3 seconds of random noise at a sample rate of 44100,
+    Creates the basic structure of a dataset in a temporary direction, as well as 10 audio files (5 wav and 5 flac) of 3 seconds of random noise at a sample rate of 44100,
      as well as the timestamp.csv file, from 2022-01-01T12:00:00 to 2022-01-01T12:00:30
     Returns
     -------
@@ -48,9 +48,15 @@ def input_dataset(tmp_path: Path):
 
         data[data > 1] = 1
         data[data < -1] = -1
-        wav_file = orig_audio_dir.joinpath(f"20220101_1200{str(3*i).zfill(2)}.wav")
-        sf.write(wav_file, data, rate, format="WAV", subtype="FLOAT")
 
+        if i < 5:
+            wav_file = orig_audio_dir.joinpath(f"20220101_1200{str(3*i).zfill(2)}.wav")
+            sf.write(wav_file, data, rate, format="wav", subtype="FLOAT")
+        else:
+            flac_file = orig_audio_dir.joinpath(
+                f"20220101_1200{str(3*i).zfill(2)}.flac"
+            )
+            sf.write(flac_file, data, rate, format="flac", subtype="PCM_24")
     yield dict(
         zip(
             ["main_dir", "main_audio_dir", "orig_audio_dir", "process_dir"],

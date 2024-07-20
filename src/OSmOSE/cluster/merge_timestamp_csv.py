@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Nov  8 09:32:54 2023
-
-@author: cazaudo
-"""
 from pathlib import Path
 import pandas as pd
 import itertools

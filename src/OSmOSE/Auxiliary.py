@@ -15,8 +15,6 @@ from scipy import interpolate
 
 
 
-
-
 class Auxiliary(Spectrogram):
 	'''
 	This class joins environmental and instrument data to acoustic data. 
@@ -267,6 +265,5 @@ def return_cdsapi(filename, key, variables, years, months, days, hours, area):
               'grid':[0.25, 0.25],
             },
             filename,
-            )
+        )
         r.download(filename)
-                                    
