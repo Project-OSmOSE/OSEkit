@@ -240,7 +240,7 @@ class Auxiliary(Spectrogram):
 			self.join_gps()
 		if self.era:
 			self.interpolation_era()
-		if.self.acoustic : 
+		if self.acoustic : 
 			self.join_acoustic()
 		if self.other :
 			self.join_other()
