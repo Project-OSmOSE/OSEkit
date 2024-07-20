@@ -11,8 +11,7 @@ from datetime import datetime, date, timedelta
 from OSmOSE.utils.timestamp_utils import check_epoch
 from OSmOSE.config import *
 from OSmOSE.Spectrogram import Spectrogram
-from scipy import interpolate 
-
+from scipy import interpolate
 
 
 class Auxiliary(Spectrogram):
@@ -60,7 +59,15 @@ class Auxiliary(Spectrogram):
 		super().__init__(dataset_path, gps_coordinates=gps_coordinates, depth=depth, dataset_sr=dataset_sr, owner_group=owner_group, analysis_params=analysis_params, batch_number=batch_number, local=local)
 				
 		# Load reference data that will be used to join all other data
-		self.df = check_epoch(pd.read_csv(self.audio_path.joinpath('timestamp.csv')))
+		try :
+			self.df = check_epoch(pd.read_csv(self.audio_path.joinpath('timestamp.csv')))
+			#self.df['timestamp'] = pd.to_datetime(self.df['timestamp'], format='%Y-%m-%dT%H:%M:%S.000000+0000')
+			print(f"Current reference timestamp.csv has the following columns : {', '.join(self.df.columns)}")
+		except FileNotFoundError :
+			print('Dataset corresponding to analysis params was not found. Please call the build method first.\nParams are :')
+			print('Dataset sampling rate : ', dataset_sr)
+			print('Spectrogram duration : ', analysis_params['spectro_duration'])
+			self.df = pd.DataFrame()
 		self.metadata = pd.read_csv(self._get_original_after_build().joinpath("metadata.csv"), header=0)
 		self._depth, self._gps_coordinates = depth, gps_coordinates
 		match depth :
@@ -100,7 +107,7 @@ class Auxiliary(Spectrogram):
 		self.other = other if other is not None else {}	
 		if annotation : 
 			self.other = {**self.other, **annotation}
-
+			
 	
 	def __str__(self):
 		print(f'For the {self.name} dataset')
@@ -187,7 +194,8 @@ class Auxiliary(Spectrogram):
 		for variable in variables:
 			pbar.update(1); pbar.set_description("Loading and formatting %s" % variable)
 			self.df[variable] = interpolate.RegularGridInterpolator((timestamps, ds['latitude'][:], ds['longitude'][:]), ds[variable][:], bounds_error = False)((self.df.epoch, self.df.lat, self.df.lon))
-
+		if 'u10' and 'v10' in self.df :
+			self.df['era'] = np.sqrt(self.df.u10**2 + self.df.v10**2)
 	
 	def automatic_join(self):
 		''' Automatically join all the available data'''
@@ -200,70 +208,157 @@ class Auxiliary(Spectrogram):
 		if self.other :
 			self.join_other()
 
+	def save_file(self, filename = None) :
+		if filename : 
+			self.df.to_csv(self.path.joinpath(OSMOSE_PATH.auxiliary), index = None)
+		else :
+			if os.path.exists(self.path.joinpath(OSMOSE_PATH.auxiliary, self.audio_foldername) + '.csv'):
+				_existing = pd.read_csv(self.path.joinpath(OSMOSE_PATH.auxiliary, self.audio_foldername) + '.csv')
+				try :
+					_temp = pd.concat((_existing, self.df[self.df.columns.to_numpy()[[col not in _exisiting.columns.to_numpy() for col in self.df.columns.to_numpy()]]]), axis = 1)
+					_temp.to_csv(self.path.joinpath(OSMOSE_PATH.auxiliary, self.audio_foldername) + '.csv', index = None)
+				except :
+					print(f"Joined data corresponding to {self.audio_foldername} already exists. \nPlease enter filename to save data.")
+			else :
+				self.df.to_csv(self.path.joinpath(OSMOSE_PATH.auxiliary, self.audio_foldername) + '.csv', index = None)
+
+
 
 def make_cds_file(key, udi, path):
-        os.chdir(os.path.expanduser("~"))
-        try :
-           os.remove('.cdsapirc')
-        except FileNotFoundError :
+    os.chdir(os.path.expanduser("~"))
+    try:
+        os.remove(".cdsapirc")
+    except FileNotFoundError:
+        pass
+
+    cmd1 = "echo url: https://cds.climate.copernicus.eu/api/v2 >> .cdsapirc"
+    cmd2 = "echo key: {}:{} >> .cdsapirc".format(udi, key)
+    os.system(cmd1)
+    os.system(cmd2)
+
+    if path == None:
+        try:
+            os.mkdir("api")
+        except FileExistsError:
             pass
+        path_to_api = os.path.join(os.path.expanduser("~"), "api/")
+    else:
+        try:
+            os.mkdir(os.path.join(path + "api"))
+        except FileExistsError:
+            pass
+        path_to_api = os.path.join(path, "api")
 
-        cmd1 = "echo url: https://cds.climate.copernicus.eu/api/v2 >> .cdsapirc"
-        cmd2 = "echo key: {}:{} >> .cdsapirc".format(udi, key)
-        os.system(cmd1)
-        os.system(cmd2)
-
-        if path == None:
-                try :
-                   os.mkdir('api')
-                except FileExistsError:
-                    pass
-                path_to_api = os.path.join(os.path.expanduser("~"), "api/")
-        else :
-                try :
-                   os.mkdir(os.path.join(path+'api'))
-                except FileExistsError:
-                    pass
-                path_to_api = os.path.join(path, 'api')
-
-        os.chdir(path_to_api)
-        os.getcwd()
-
+    os.chdir(path_to_api)
+    os.getcwd()
 
 
 def return_cdsapi(filename, key, variables, years, months, days, hours, area):
+    print("You have selected : \n")
+    sel = [print(variables) for data in variables]
+    print("\nfor the following times")
+    print(f"Years : {years} \n Months : {months} \n Days : {days} \n Hours : {hours}")
 
-        print('You have selected : \n')
-        sel = [print(variables) for data in variables]
-        print('\nfor the following times')
-        print(f'Years : {years} \n Months : {months} \n Days : {days} \n Hours : {hours}')
-
-        print('\nYour boundaries are : North {}°, South {}°, East {}°, West {}°'.format(area[0], area[2],
-                                                                                 area[3], area[1]))
-
-        filename = filename + '.nc'
-
-        c = cdsapi.Client()
-
-        if days == 'all':
-                days = ['01', '02', '03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31']
-        if months == 'all':
-                months = ['01','02','03','04','05','06','07','08','09','10','11','12']
-        if hours == 'all':
-                hours = ['00:00','01:00','02:00','03:00','04:00','05:00','06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00','23:00']
-
-        r = c.retrieve('reanalysis-era5-single-levels',
-            {
-              'product_type' : 'reanalysis',
-              'variable' : variables,
-              'year' : years,
-              'month' : months,
-              'day' : days,
-              'time' : hours,
-              'area' : area,
-              'format' : 'netcdf',
-              'grid':[0.25, 0.25],
-            },
-            filename,
+    print(
+        "\nYour boundaries are : North {}°, South {}°, East {}°, West {}°".format(
+            area[0], area[2], area[3], area[1]
         )
-        r.download(filename)
+    )
+
+    filename = filename + ".nc"
+
+    c = cdsapi.Client()
+
+    if days == "all":
+        days = [
+            "01",
+            "02",
+            "03",
+            "04",
+            "05",
+            "06",
+            "07",
+            "08",
+            "09",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23",
+            "24",
+            "25",
+            "26",
+            "27",
+            "28",
+            "29",
+            "30",
+            "31",
+        ]
+    if months == "all":
+        months = [
+            "01",
+            "02",
+            "03",
+            "04",
+            "05",
+            "06",
+            "07",
+            "08",
+            "09",
+            "10",
+            "11",
+            "12",
+        ]
+    if hours == "all":
+        hours = [
+            "00:00",
+            "01:00",
+            "02:00",
+            "03:00",
+            "04:00",
+            "05:00",
+            "06:00",
+            "07:00",
+            "08:00",
+            "09:00",
+            "10:00",
+            "11:00",
+            "12:00",
+            "13:00",
+            "14:00",
+            "15:00",
+            "16:00",
+            "17:00",
+            "18:00",
+            "19:00",
+            "20:00",
+            "21:00",
+            "22:00",
+            "23:00",
+        ]
+
+    r = c.retrieve(
+        "reanalysis-era5-single-levels",
+        {
+            "product_type": "reanalysis",
+            "variable": variables,
+            "year": years,
+            "month": months,
+            "day": days,
+            "time": hours,
+            "area": area,
+            "format": "netcdf",
+            "grid": [0.25, 0.25],
+        },
+        filename,
+    )
+    r.download(filename)
