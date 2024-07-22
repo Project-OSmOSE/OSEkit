@@ -182,7 +182,8 @@ class Auxiliary(Spectrogram):
 					for i, fc in enumerate(fcs) : 
 						freq_ind = np.argmin(abs(_data['Freq']-fc))
 						_noise_level[i].extend(np.log10(_data['Sxx'][:, freq_ind]))
-					full_band.extend(np.mean(np.log10(_data['Sxx']), axis = 1))
+					if 'full_band' not in self.df:
+						full_band.extend(np.mean(np.log10(_data['Sxx']), axis = 1))
 			case 'spectrogram' | 'LTAS':
 				fns = glob(str(self.path_output_spectrogram_matrix)+'/*')
 				pbar = tqdm(fns)
@@ -193,7 +194,8 @@ class Auxiliary(Spectrogram):
 					for i, fc in enumerate(fcs) :
 						freq_ind = np.argmin(abs(_data['Freq']-fc))
 						_noise_level[i].extend(np.mean(_data['Sxx'][:, freq_ind]))
-					full_band.extend(np.mean(_data['Sxx'], axis = 1))
+					if 'full_band' not in self.df :
+						full_band.extend(np.mean(_data['Sxx'], axis = 1))
 		_temp = pd.DataFrame().from_dict({**{'timestamp':_time}, **{'full_band':full_band}, **{fcs[i] : _noise_level[i] for i in range(len(fcs))}}).sort_values('timestamp')
 		_temp['timestamp'] = _temp['timestamp'].dt.tz_localize(None)
 		self.df = pd.merge(self.df, _temp, on='timestamp')
