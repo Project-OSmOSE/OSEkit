@@ -182,7 +182,7 @@ class Auxiliary(Spectrogram):
 		else:
 			shore_distance = nearest_shore(dist2shore_ds, self.df.lon.to_numpy(), self.df.lat.to_numpy())
 			shore_distance = shore_distance.astype("float16")
-			self.df["shore_dist"] = self.shore_distance	
+			self.df["shore_dist"] = shore_distance	
 
 
 	def join_bathymetry(self):
