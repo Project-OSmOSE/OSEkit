@@ -180,7 +180,7 @@ class Auxiliary(Spectrogram):
 			shore_distance = nearest_shore(dist2shore_ds, self.df.lat.iloc[:1], self.df.lon[:1])
 			self.df['shore_distance'] = np.tile(shore_distance, len(self.df)).astype("float16")
 		else:
-			shore_distance = nearest_shore(dist2shore_ds, self.df.longitude.to_numpy(), self.df.latitude.to_numpy())
+			shore_distance = nearest_shore(dist2shore_ds, self.df.lon.to_numpy(), self.df.lat.to_numpy())
 			shore_distance = shore_distance.astype("float16")
 			self.df["shore_dist"] = self.shore_distance	
 
