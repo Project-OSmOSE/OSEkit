@@ -1,6 +1,9 @@
 import struct
 from OSmOSE.config import SUPPORTED_AUDIO_FORMAT
-from typing import Tuple
+from typing import Tuple, Union, List
+from pathlib import Path
+import glob
+import os
 
 
 def is_audio(filename):
@@ -73,3 +76,17 @@ def read_header(file: str) -> Tuple[int, float, int, int]:
             )
 
         return samplerate, frames, channels, sampwidth
+
+
+def get_audio_file(file_path: Union[str, Path]) -> List[Path]:
+
+    assert any(
+        [isinstance(file_path, str), isinstance(file_path, Path)]
+    ), "A Path or string must be provided"
+
+    audio_path = []
+    for ext in SUPPORTED_AUDIO_FORMAT:
+        audio_path_ext = glob.glob(os.path.join(file_path, f"*{ext}"))
+        [audio_path.append(Path(f)) for f in audio_path_ext]
+
+    return sorted(audio_path)

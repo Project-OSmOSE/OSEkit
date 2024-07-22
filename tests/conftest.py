@@ -16,7 +16,7 @@ def capture_csv(monkeypatch):
 def input_dataset(tmp_path: Path):
     """Fixture to create an input dataset.
 
-    Creates the basic structure of a dataset in a temporary direction, as well as 10 audio files (wav) of 3 seconds of random noise at a sample rate of 44100,
+    Creates the basic structure of a dataset in a temporary direction, as well as 10 audio files (5 wav and 5 flac) of 3 seconds of random noise at a sample rate of 44100,
      as well as the timestamp.csv file, from 2022-01-01T12:00:00 to 2022-01-01T12:00:30
     Returns
     -------

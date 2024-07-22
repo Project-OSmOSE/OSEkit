@@ -33,6 +33,7 @@ from OSmOSE.utils.core_utils import (
     set_umask,
     get_timestamp_of_audio_file,
 )
+from OSmOSE.utils.audio_utils import get_audio_file
 from OSmOSE.config import *
 from OSmOSE.frequency_scales.frequency_scale_serializer import FrequencyScaleSerializer
 
@@ -227,7 +228,6 @@ class Spectrogram(Dataset):
         )
 
         self.verbose: bool = verbose
-
         self.jb = Job_builder()
 
         plt.switch_backend("agg")
@@ -601,24 +601,20 @@ class Spectrogram(Dataset):
             os.mkdir(self.path.joinpath("log"))
 
         # remove the welch directory if existing
-        if self.path_output_welch.joinpath(
-            str(int(self.spectro_duration)) + "_" + str(int(self.dataset_sr))
-        ).exists():
-            shutil.rmtree(
-                self.path_output_welch.joinpath(
-                    str(int(self.spectro_duration)) + "_" + str(int(self.dataset_sr))
-                )
-            )
+        if self.path_output_welch.exists():
+            shutil.rmtree(self.path_output_welch)
             make_path(
-                self.path_output_welch.joinpath(
-                    str(int(self.spectro_duration)) + "_" + str(int(self.dataset_sr))
-                ),
+                self.path_output_welch,
                 mode=DPDEFAULT,
             )
 
         self.__build_path(force_init=force_init)
 
-        # weird stuff currently to change soon: on datarmor you do batch processing with pbs jobs in which local instances run , which take their spectrogram parameters from the "adjust_metadata.csv". This explains why first we cannot rmtree folders adjustment_spectros , and why we exec save_spectro_metadata(True) to create it if not existing yet (rare case but if spectro generation is laucnhed without any adjustment..)
+        # weird stuff currently to change soon: on datarmor you do batch processing with pbs jobs in which local instances run,
+        # which take their spectrogram parameters from the "adjust_metadata.csv".
+        # This explains why first we cannot rmtree folders adjustment_spectros, and why we exec save_spectro_metadata(True)
+        # to create it if not existing yet (rare case but if spectro generation is laucnhed without any adjustment..)
+
         if not self.path.joinpath(
             OSMOSE_PATH.spectrogram, "adjustment_spectros", "adjust_metadata.csv"
         ).exists():
@@ -628,12 +624,8 @@ class Spectrogram(Dataset):
             self.dataset_sr = dataset_sr
 
         self.path_input_audio_file = self._get_original_after_build()
-        list_audio_withEvent_comp = []
-        for ext in SUPPORTED_AUDIO_FORMAT:
-            list_audio_withEvent_comp_ext = sorted(
-                self.path_input_audio_file.glob(f"*{ext}")
-            )
-            [list_audio_withEvent_comp.append(f) for f in list_audio_withEvent_comp_ext]
+
+        list_audio_withEvent_comp = get_audio_file(self.path_input_audio_file)
 
         if batch_ind_max == -1:
             batch_ind_max = len(list_audio_withEvent_comp)
@@ -953,10 +945,7 @@ class Spectrogram(Dataset):
         os.chmod(meta_path, mode=FPDEFAULT)
 
     def audio_file_list_csv(self) -> Path:
-        list_audio = []
-        for ext in SUPPORTED_AUDIO_FORMAT:
-            list_audio_ext = sorted(self.path_input_audio_file.glob(f"*{ext}"))
-            list_audio.append(f for f in list_audio_ext)
+        list_audio = get_audio_file(self.path_input_audio_file)
 
         csv_path = self.audio_path.joinpath(f"wav_list_{len(list_audio)}.csv")
 
@@ -1131,18 +1120,24 @@ class Spectrogram(Dataset):
                 == sum(2**i for i in range(self.zoom_level + 1))
                 and check_existing_matrix()
             ):
-                print(
-                    f"Existing files detected for audio file {audio_file}! They will be overwritten."
-                )
-                for old_file in self.path_output_spectrogram.glob(
-                    f"{Path(audio_file).stem}*"
-                ):
-                    old_file.unlink()
-                if save_matrix:
-                    for old_matrix in self.path_output_spectrogram_matrix.glob(
+                if overwrite:
+                    print(
+                        f"Existing files detected for audio file {audio_file}! They will be overwritten."
+                    )
+                    for old_file in self.path_output_spectrogram.glob(
                         f"{Path(audio_file).stem}*"
                     ):
-                        old_matrix.unlink()
+                        old_file.unlink()
+                    if save_matrix:
+                        for old_matrix in self.path_output_spectrogram_matrix.glob(
+                            f"{Path(audio_file).stem}*"
+                        ):
+                            old_matrix.unlink()
+                else:
+                    print(
+                        f"The spectrograms for the file {audio_file} have already been generated, skipping..."
+                    )
+                    return
 
             if audio_file not in os.listdir(self.audio_path):
                 raise FileNotFoundError(
@@ -1493,6 +1488,7 @@ class Spectrogram(Dataset):
             )
 
         color_map = plt.get_cmap(self.colormap)
+
         if self.custom_frequency_scale == "linear":
             plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
         else:
