@@ -459,7 +459,7 @@ class Spectrogram(Dataset):
         self.audio_path = self.path.joinpath(OSMOSE_PATH.raw_audio, audio_foldername)
 
         self.__spectro_foldername = (
-            f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}"
+            f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}_{self.custom_frequency_scale}"
         )
 
         self.path_output_spectrogram = processed_path.joinpath(
