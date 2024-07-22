@@ -32,7 +32,7 @@ def test_initialize_2s(input_dataset):
     spectrogram.window_size = 128
     spectrogram.nfft = 128
     spectrogram.overlap = 0
-    spectrogram.custom_frequency_scale = 'linear'
+    spectrogram.custom_frequency_scale = "linear"
 
     spectrogram.initialize()
     spectrogram.save_spectro_metadata(False)
