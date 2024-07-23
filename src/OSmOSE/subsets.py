@@ -265,13 +265,3 @@ class SubsetGenerator:
             "spectro_metadata": str(spectro_metadata),
             "timestamp_metadata": str(timestamp_metadata),
         }, all_audio_files
-
-
-# Example usage
-path_to_test = Path(
-    r"C:\Users\paul.carvaillo\Desktop\CODE_MMERMAID\mmermaid-acoustic\dataset\MyFirstCampaign\MyFirstDataset_done\processed\spectrogram\15_44100\1024_1024_50_linear\list_of_positive_samples.txt"
-)
-subset_gen = SubsetGenerator(path_to_list_of_files=path_to_test)
-subset_gen.copy_subset(
-    output_path=r"C:\Users\paul.carvaillo\Desktop\CODE_MMERMAID\mmermaid-acoustic\dataset\MyFirstCampaign\test_subset"
-)
