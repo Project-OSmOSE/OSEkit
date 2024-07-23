@@ -14,7 +14,7 @@ from OSmOSE.Spectrogram import Spectrogram
 from scipy import interpolate
 
 
-class Auxiliary(Spectrogram):
+class Join(Spectrogram):
     """
     This class joins environmental and instrument data to acoustic data.
     The acoustic data is first fetched using the dataset path, the data's samplerate and the analysis parameters.
