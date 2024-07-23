@@ -72,7 +72,7 @@ class SubsetGenerator():
         # https://stackoverflow.com/questions/15663695/shutil-copytree-without-files
         return [f for f in files if isfile(join(dir, f))]
     
-    def copy_subset(self, output_path="", replace_original_metadata = True, remote_copy = False):
+    def copy_subset(self, output_path="", replace_original_metadata = True, remote_copy = False, labels = True):
         log.info('Creating an empty tree structure...')
         copytree(src=self.path_to_list_of_files.parents[4], dst=output_path, ignore=self.ignore_files, dirs_exist_ok=True)
 
@@ -91,6 +91,11 @@ class SubsetGenerator():
                 dest = spectro_path / 'image' / (str(f)[:-4]+'_1_0.png')
                 copy2(src,dest)
                 bar()
+                if labels:
+                    src = Path(self.subset_config['spectro_metadata']).parent / 'labels' / (str(f)[:-4] + '.txt')
+                    dest = spectro_path / 'labels' / (str(f)[:-4]+'.txt')
+                    copy2(src,dest)
+
         log.info('Copying subset audio & image files to new directory...DONE')
 
         log.info('Writing subset metadata files...')
