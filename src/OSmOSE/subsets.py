@@ -180,7 +180,7 @@ class SubsetGenerator:
         src = Path(self.subset_config["audio_metadata"]).parent / "subset_metadata.csv"
         dest = audio_path / metadata_file
         copy2(src, dest)
-        
+
         # txt files
         src = (
             Path(self.subset_config["spectro_metadata"]).parent
@@ -265,3 +265,4 @@ class SubsetGenerator:
             "spectro_metadata": str(spectro_metadata),
             "timestamp_metadata": str(timestamp_metadata),
         }, all_audio_files
+
