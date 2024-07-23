@@ -6,3 +6,4 @@ dist
 ongoing_jobs
 log_job
 .coverage
+/_site

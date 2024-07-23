@@ -647,9 +647,10 @@ class Spectrogram(Dataset):
                 < self.spectro_duration
             )
             if too_short_files > 0:
-                raise ValueError(
-                    f"You have {too_short_files} audio files shorter than your analysis duration of {self.spectro_duration}"
-                )
+                if reshape_method == "none":
+                    raise ValueError(
+                        f"You have {too_short_files} audio files shorter than your analysis duration of {self.spectro_duration}"
+                    )
 
         # when audio_file_overlap has been set to > 0 whereas the dataset is equal to the origin one
         if (
@@ -699,7 +700,7 @@ class Spectrogram(Dataset):
                 audio_file_origin_duration
             ) and reshape_method in ["none", "legacy"]:
                 raise ValueError(
-                    "Spectrogram size cannot be greater than file duration. If you want to automatically reshape your audio files to fit the spectrogram size, consider setting the reshape method to 'reshape'."
+                    "Spectrogram size cannot be greater than file duration. If you want to automatically reshape your audio files to fit the spectrogram size, consider setting the reshape method to 'classic'."
                 )
 
             print(
