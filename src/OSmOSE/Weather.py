@@ -214,6 +214,23 @@ class Weather(Auxiliary):
 
 
 '''    def save_all_welch(self):
+=======
+class Weather:
+    def __init__(
+        self,
+        osmose_path_dataset,
+        dataset,
+        time_resolution_welch,
+        sample_rate_welch,
+        local=True,
+    ):
+        self.path = Path(os.path.join(osmose_path_dataset, dataset))
+        self.dataset = dataset
+        self.time_resolution_welch = time_resolution_welch
+        self.sample_rate_welch = sample_rate_welch
+
+    def save_all_welch(self):
+>>>>>>> origin/join
         # get metadata from sepctrogram folder
         metadata_path = next(
             self.path.joinpath(

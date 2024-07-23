@@ -5,6 +5,7 @@ import os
 import calendar
 from glob import glob
 from tqdm import tqdm
+from pykdtree.kdtree import KDTree
 import netCDF4 as nc
 from typing import Union, Tuple, List
 from datetime import datetime, date, timedelta
@@ -34,7 +35,9 @@ class Auxiliary(Spectrogram):
 		analysis_params: dict = None,
 		batch_number: int = 5,
 		local: bool = True,
-		
+		acoustic : bool = False,
+		bathymetry : bool = True,
+		distance_to_shore : bool = True,
 		era : Union[str, bool] = False,
 		annotation : Union[dict, bool] = False,
 		other: dict = None
@@ -68,6 +71,7 @@ class Auxiliary(Spectrogram):
 			print('Dataset sampling rate : ', dataset_sr)
 			print('Spectrogram duration : ', analysis_params['spectro_duration'])
 			self.df = pd.DataFrame()
+		self.acoustic, self.bathymetry, self.distance_to_shore = acoustic, bathymetry, distance_to_shore
 		self.metadata = pd.read_csv(self._get_original_after_build().joinpath("metadata.csv"), header=0)
 		self._depth, self._gps_coordinates = depth, gps_coordinates
 		match depth :
@@ -107,7 +111,8 @@ class Auxiliary(Spectrogram):
 		self.other = other if other is not None else {}	
 		if annotation : 
 			self.other = {**self.other, **annotation}
-			
+		self.joined_path = self.path / OSMOSE_PATH.auxiliary / (self.audio_foldername + '.csv')
+
 	
 	def __str__(self):
 		print(f'For the {self.name} dataset')
@@ -118,6 +123,8 @@ class Auxiliary(Spectrogram):
 			elems.append('depth')
 		if self.era :
 			elems.append('era')
+		if self.acoustic : 
+			elems.append('acoustic')
 		if self.other:
 			elems.extend(self.other.keys())
 		if len(elems) != 0:
@@ -159,6 +166,72 @@ class Auxiliary(Spectrogram):
 			self.df['lat'] = self.gps_coordinates[0]
 			self.df['lon'] = self.gps_coordinates[1]
 
+	def join_distance_to_shore(self):
+		"""
+		Function that computes the distance between the hydrophone and the closest shore.
+		Precision is 0.04°, data is from NASA
+		Make sure to call format_gps before running method
+		"""
+	
+		dist2shore_ds = np.loadtxt("/home/datawork-osmose/dataset/auxiliary/dist2coast.txt").astype("float16")
+		if len(np.unique(self.df.lat)) == 1:
+			shore_distance = nearest_shore(dist2shore_ds, self.df.lat.iloc[:1], self.df.lon[:1])
+			self.df['shore_distance'] = np.tile(shore_distance, len(self.df)).astype("float16")
+		else:
+			shore_distance = nearest_shore(dist2shore_ds, self.df.lon.to_numpy(), self.df.lat.to_numpy())
+			shore_distance = shore_distance.astype("float16")
+			self.df["shore_dist"] = shore_distance	
+
+
+	def join_bathymetry(self):
+		bathymetry_ds = nc.Dataset('/home/datawork-osmose/dataset/auxiliary/GEBCO_2022_sub_ice_topo.nc')
+		latitude, longitude = self.df.lat.to_numpy(), self.df.lon.to_numpy()
+		temp_lat, temp_lon = latitude[~np.isnan(latitude)], longitude[~np.isnan(longitude)]
+		pos_lat, pos_dist = nearest_point(temp_lat, bathymetry_ds['lat'][:])
+		pos_lon, pos_dist = nearest_point(temp_lon, bathymetry_ds['lon'][:])
+		bathymetry = np.full(len(self.df), np.nan)
+		bathymetry[~np.isnan(latitude)] = [bathymetry_ds['elevation'][i,j] for i,j in zip(pos_lat, pos_lon)] 
+		self.df['bathy'] = bathymetry
+
+
+	def join_acoustic(self, fcs = [], feature='welch'):
+		'''
+		This methods adds noise level at selected frequency to the joined dataframe
+		Parameters :
+			feature (str) : Type of processed features to fetch from : 'LTAS', 'spectrogram', 'welch'
+		'''
+		_noise_level, _time = [[] for fc in fcs], []
+		full_band = []
+		match feature :
+			case 'welch':
+				fns = glob(str(self.path_output_welch)+'/*')
+				pbar = tqdm(fns)
+				for fn in pbar :
+					pbar.set_description(fn)
+					_data = np.load(fn, allow_pickle = True)
+					_time.extend(_data['Time'])
+					for i, fc in enumerate(fcs) : 
+						freq_ind = np.argmin(abs(_data['Freq']-fc))
+						_noise_level[i].extend(np.log10(_data['Sxx'][:, freq_ind]))
+					if 'full_band' not in self.df:
+						full_band.extend(np.mean(np.log10(_data['Sxx']), axis = 1))
+			case 'spectrogram' | 'LTAS':
+				fns = glob(str(self.path_output_spectrogram_matrix)+'/*')
+				pbar = tqdm(fns)
+				for fn in pbar :
+					pbar.set_description(fn)
+					_data = np.load(fn, allow_pickle = True)
+					_time.extend(pd.to_datetime(fn.split('/')[-1][:19], format = '%Y_%m_%dT%H_%M_%S'))
+					for i, fc in enumerate(fcs) :
+						freq_ind = np.argmin(abs(_data['Freq']-fc))
+						_noise_level[i].extend(np.mean(_data['Sxx'][:, freq_ind]))
+					if 'full_band' not in self.df :
+						full_band.extend(np.mean(_data['Sxx'], axis = 1))
+		_temp = pd.DataFrame().from_dict({**{'timestamp':_time}, **{'full_band':full_band}, **{fcs[i] : _noise_level[i] for i in range(len(fcs))}}).sort_values('timestamp')
+		_temp['timestamp'] = _temp['timestamp'].dt.tz_localize(None)
+		self.df = pd.merge(self.df, _temp, on='timestamp')
+
+
 	def join_other(self, csv_path: str = None, variable_name : Union[str, List, Tuple] = None):
 		'''
 		Method to join data using solely temporal interpolation.
@@ -184,8 +257,6 @@ class Auxiliary(Spectrogram):
 		"""
 		ds = nc.Dataset(self.era)
 		variables = list(ds.variables.keys())[3:]
-		
-		#Handle ERA time
 		era_time = pd.DataFrame(ds.variables['time'][:].data)
 		era_datetime = era_time[0].apply(lambda x : datetime(1900,1,1)+timedelta(hours=int(x)))
 		timestamps = era_datetime.apply(lambda x : x.timestamp()).to_numpy()
@@ -203,26 +274,49 @@ class Auxiliary(Spectrogram):
 			self.join_depth()
 		if self._gps_coordinates :
 			self.join_gps()
+		if self.bathymetry :
+			self.join_bathymetry()
+		if self.distance_to_shore:
+			self.join_distance_to_shore()
 		if self.era:
 			self.interpolation_era()
+		if self.acoustic : 
+			self.join_acoustic()
 		if self.other :
 			self.join_other()
 
+
 	def save_file(self, filename = None) :
 		if filename : 
-			self.df.to_csv(self.path.joinpath(OSMOSE_PATH.auxiliary), index = None)
+			self.df.to_csv(self.path.joinpath(OSMOSE_PATH.auxiliary, filename), index = None)
+			self.joined_path = self.path.joinpath(OSMOSE_PATH.auxiliary, filename)
 		else :
-			if os.path.exists(self.path.joinpath(OSMOSE_PATH.auxiliary, self.audio_foldername) + '.csv'):
-				_existing = pd.read_csv(self.path.joinpath(OSMOSE_PATH.auxiliary, self.audio_foldername) + '.csv')
+			if os.path.exists(self.joined_path):
+				_existing = pd.read_csv(self.joined_path)
 				try :
-					_temp = pd.concat((_existing, self.df[self.df.columns.to_numpy()[[col not in _existing.columns.to_numpy() for col in self.df.columns.to_numpy()]]]), axis = 1)
-					_temp.to_csv(self.path.joinpath(OSMOSE_PATH.auxiliary, self.audio_foldername) + '.csv', index = None)
+					_temp = pd.concat((_existing, self.df[self.df.columns.to_numpy()[[str(col) not in _existing.columns.to_numpy() for col in self.df.columns.to_numpy()]]]), axis = 1)
+					_temp.to_csv(self.joined_path, index = None)
 				except :
 					print(f"Joined data corresponding to {self.audio_foldername} already exists. \nPlease enter filename to save data.")
 			else :
-				self.df.to_csv(self.path.joinpath(OSMOSE_PATH.auxiliary, self.audio_foldername) + '.csv', index = None)
+				self.df.to_csv(self.joined_path, index = None)
 
+def nearest_shore(dist2shore_ds, x,y):
+	shore_distance = np.full([len(x)], np.nan)
+	x, y = np.round(x*100//4*4/100+0.02, 2), np.round(y*100//4*4/100+0.02, 2)
+	_x, _y = x[(~np.isnan(x)) | (~np.isnan(y))], y[(~np.isnan(x)) | (~np.isnan(y))]
+	lat_ind = np.rint(-9000/0.04*(_y)+20245500).astype(int)
+	lat_ind2 = np.rint(-9000/0.04*(_y-0.04)+20245500).astype(int)
+	lon_ind = (_x/0.04+4499.5).astype(int)
+	sub_dist2shore = np.stack([dist2shore_ds[ind1 : ind2]  for ind1, ind2 in zip(lat_ind, lat_ind2)])
+	shore_temp = np.array([sub_dist2shore[i, lon_ind[i], -1] for i in range(len(lon_ind))])
+	shore_distance[(~np.isnan(x)) | (~np.isnan(y))] = shore_temp
+	return shore_distance
 
+def nearest_point(data, var):
+	tree = KDTree(var)
+	neighbor_dists, neighbor_indices = tree.query(data)
+	return neighbor_indices, neighbor_dists
 
 def make_cds_file(key, udi, path):
     os.chdir(os.path.expanduser("~"))
