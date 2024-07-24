@@ -1,11 +1,11 @@
+import torch
+from torch import nn, tensor, utils, device, cuda, optim, long, save
 from OSmOSE.config_weather import empirical
 from OSmOSE.config import *
 from OSmOSE.Auxiliary import Auxiliary
 from OSmOSE.utils import deep_learning_utils as dl_utils
 import numpy as np
 from typing import Union, Tuple, List
-import torch
-from torch import nn, tensor, utils, device, cuda, optim, long, save
 from sklearn.model_selection import StratifiedKFold
 from scipy.optimize import curve_fit
 from scipy.signal import medfilt
@@ -87,6 +87,7 @@ class Weather(Auxiliary):
 		self.ground_truth = ground_truth		
 		if self.ground_truth not in self.df :
 			print(f"Ground truth data '{self.ground_truth}' was not found in joined dataframe.\nPlease call the correct joining method or automatic_join()")
+		self.popt = {}
 
 	def __str__(self):
 		if 'wind_model_stats' in dir(self):
@@ -113,70 +114,56 @@ class Weather(Auxiliary):
 		self.method['frequency'] = 'filtered'
 
 	
-	def fetch_data(self, feature='welch'):
-		'''
-		This methods adds noise level at selected frequency to the joined dataframe
-		Parameters :
-			feature (str) : Type of processed features to fetch from : 'LTAS', 'spectrogram', 'welch'
-		'''
-		_noise_level, _time = [], []
-		match feature :
-			case 'welch':
-				fns = glob(str(self.path_output_welch)+'/*')
-				pbar = tqdm(fns)
-				for fn in pbar :
-					pbar.set_description(fn)
-					_data = np.load(fn, allow_pickle = True)
-					freq_ind = np.argmin(abs(_data['Freq']-self.method['frequency']))
-					_time.extend(_data['Time'])
-					_noise_level.extend(np.log10(_data['Sxx'][:, freq_ind]))
-			case 'spectrogram' | 'LTAS':
-				fns = glob(str(self.path_output_spectrogram_matrix)+'/*')
-				pbar = tqdm(fns)
-				for fn in pbar :
-					pbar.set_description(fn)
-					_data = np.load(fn, allow_pickle = True)
-					freq_ind = np.argmin(abs(_data['Freq']-self.method['frequency']))
-					_time.extend(pd.to_datetime(fn.split('/')[-1][:19], format = '%Y_%m_%dT%H_%M_%S'))
-					_noise_level.extend(np.mean(_data['Sxx'][:, freq_ind]))
+	def temporal_fit(self, **kwargs):
+		default = {'split':0.8, 'scaling_factor':0.2, 'maxfev':25000}
+		params = {**default, **kwargs}
+		if 'bounds' not in params.keys():
+			params['bounds'] = np.hstack((np.array([[value-params['scaling_factor']*abs(value), value+params['scaling_factor']*abs(value)] for value in self.method['parameters'].values()]).T, [[-np.inf],[np.inf]]))
+		self.df['temporal_estimation'] = np.nan
+		trainset = self.df.iloc[:int(params['split']*len(self.df))].dropna(subset = [self.method['frequency'], self.ground_truth])
+		testset = self.df.iloc[int(params['split']*len(self.df)):].dropna(subset = [self.method['frequency'], self.ground_truth])
+		popt, popv = curve_fit(self.method['function'], trainset[self.method['frequency']].to_numpy(), trainset[self.ground_truth].to_numpy(), bounds = params['bounds'], maxfev=params['maxfev'])
+		estimation = self.method['function'](testset[self.method['frequency']].to_numpy(), *popt)
+		mae = metrics.mean_absolute_error(testset[self.ground_truth], estimation)
+		rmse = metrics.root_mean_squared_error(testset[self.ground_truth], estimation)
+		r2 = metrics.r2_score(testset[self.ground_truth], estimation)
+		var = np.var(abs(testset[self.ground_truth])-abs(estimation))
+		std = np.std(abs(testset[self.ground_truth])-abs(estimation))
+		self.df.loc[testset.index, 'temporal_estimation'] = estimation
+		self.popt['temporal_fit'] = popt
+		self.wind_model_stats = {'temporal_mae':mae, 'temporal_rmse':rmse, 'temporal_r2':r2, 'temporal_var':var, 'temporal_std':std}
 
-		print(f"Model is fitted at {self.method['frequency']} Hz, defaulting to {_data['Freq'][freq_ind]} Hz")
-		_temp = pd.DataFrame().from_dict({'timestamp':_time, self.method['frequency'] : _noise_level}).sort_values('timestamp')
-		_temp['timestamp'] = _temp['timestamp'].dt.tz_localize(None)
-		self.df = pd.merge(self.df, _temp, on='timestamp')
-
-
-	def skf_fit(self, n_splits = 5, scaling_factor = 0.2):
+	def skf_fit(self, **kwargs):
 		'''
 		Parameters :
 			n_splits: Number of stratified K folds used for training, defaults to 5
 			scaling_factor: Percentage of variability around initial parameters, defaults to 0.2
 		'''
-
+		default = {'n_splits':5, 'scaling_factor':0.2, 'maxfev':25000}
+		params = {**default, **kwargs}
+		if 'bounds' not in params.keys():
+			params['bounds'] = np.hstack((np.array([[value-params['scaling_factor']*abs(value), value+params['scaling_factor']*abs(value)] for value in self.method['parameters'].values()]).T, [[-np.inf],[np.inf]]))
 		popt_tot, popv_tot = [], []
-		mae, mse, r2, var, std = [], [], [], [], []
+		mae, rmse, r2, var, std = [], [], [], [], []
 		self.df['classes'] = self.df[self.ground_truth].apply(beaufort)
-		self.df['estimation'] = np.nan
-		skf = StratifiedKFold(n_splits=n_splits)
-		bounds = np.hstack((np.array([[value-scaling_factor*abs(value), value+scaling_factor*abs(value)] for value in self.method['parameters'].values()]).T, [[-np.inf],[np.inf]]))
+		self.df['skf_estimation'] = np.nan
+		skf = StratifiedKFold(n_splits=params['n_splits'])
 		for i, (train_index, test_index) in enumerate(skf.split(self.df[self.method['frequency']], self.df.classes)):
 			trainset = self.df.iloc[train_index].dropna(subset = [self.method['frequency'], self.ground_truth])
 			testset = self.df.iloc[test_index].dropna(subset = [self.method['frequency'], self.ground_truth])
 			popt, popv = curve_fit(self.method['function'], trainset[self.method['frequency']].to_numpy(), 
-						  trainset[self.ground_truth].to_numpy(), bounds = bounds, maxfev = 25000)
+						  trainset[self.ground_truth].to_numpy(), bounds = params['bounds'], maxfev = params['maxfev'])
 			popt_tot.append(popt)
 			popv_tot.append(popv)
 			estimation = self.method['function'](testset[self.method['frequency']].to_numpy(), *popt)
 			mae.append(metrics.mean_absolute_error(testset[self.ground_truth], estimation))
-			mse.append(metrics.mean_squared_error(testset[self.ground_truth], estimation, squared=False))
+			rmse.append(metrics.root_mean_squared_error(testset[self.ground_truth], estimation))
 			r2.append(metrics.r2_score(testset[self.ground_truth], estimation))
 			var.append(np.var(abs(testset[self.ground_truth])-abs(estimation)))
 			std.append(np.std(abs(testset[self.ground_truth])-abs(estimation)))
-			self.df.loc[testset.index, 'estimation'] = estimation
-		self.popt, self.popv = np.mean(popt_tot, axis=0), np.mean(popv_tot, axis=0)
-		print('Model has been fitted, your estimation has been added to the joined dataset')
-		print(f'The fitted parameters are : {self.popt}')
-		self.wind_model_stats = {'mae':np.mean(mae), 'rmse':np.mean(mse), 'r2':np.mean(r2), 'var':np.mean(var), 'std':np.mean(std)}
+			self.df.loc[testset.index, 'skf_estimation'] = estimation
+		self.popt['skf_fit'] = np.mean(popt_tot, axis=0)
+		self.wind_model_stats = {'skf_mae':np.mean(mae), 'skf_rmse':np.mean(rmse), 'skf_r2':np.mean(r2), 'skf_var':np.mean(var), 'skf_std':np.mean(std)}
 
 
 	def lstm_fit(self, seq_length = 10, **kwargs) :
@@ -211,6 +198,15 @@ class Weather(Auxiliary):
 		fig.add_trace(go.Scatter(x=df['timestamp'], y=df['estimation'], mode='markers', marker=dict(size=4), name='Estimation'))
 		fig.update_layout(title='Wind Speed and Estimation Over Time', xaxis_title='Timestamp', yaxis_title='Weather estimation', width=800, height=600)
 		fig.show()
+
+	@classmethod
+	def from_joined_dataframe(cls, path, method, ground_truth):
+		instance = cls.__new__(cls)
+		instance.df = check_epoch(pd.read_csv(path))
+		instance.method = method
+		instance.ground_truth = ground_truth
+		instance.popt = {}
+		return instance
 
 
 '''    def save_all_welch(self):

@@ -227,7 +227,10 @@ class Auxiliary(Spectrogram):
 						_noise_level[i].extend(np.mean(_data['Sxx'][:, freq_ind]))
 					if 'full_band' not in self.df :
 						full_band.extend(np.mean(_data['Sxx'], axis = 1))
-		_temp = pd.DataFrame().from_dict({**{'timestamp':_time}, **{'full_band':full_band}, **{fcs[i] : _noise_level[i] for i in range(len(fcs))}}).sort_values('timestamp')
+		if 'full_band' not in self.df :
+			_temp = pd.DataFrame().from_dict({**{'timestamp':_time}, **{'full_band':full_band}, **{fcs[i] : _noise_level[i] for i in range(len(fcs))}}).sort_values('timestamp')
+		else : 
+			_temp = pd.DataFrame().from_dict({**{'timestamp':_time}, **{fcs[i] : _noise_level[i] for i in range(len(fcs))}}).sort_values('timestamp')
 		_temp['timestamp'] = _temp['timestamp'].dt.tz_localize(None)
 		self.df = pd.merge(self.df, _temp, on='timestamp')
 
