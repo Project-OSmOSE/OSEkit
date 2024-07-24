@@ -4,7 +4,7 @@ import os
 import shutil
 import sys
 from typing import Tuple, Union, Literal
-from math import log10
+from math import log10, ceil
 from pathlib import Path
 import multiprocessing as mp
 import glob
@@ -99,7 +99,7 @@ class Spectrogram(Dataset):
             If additional information is given, it will be ignored. Note that if there is an `analysis/analysis_sheet.csv` file, it will
             always have the priority.
         batch_number : `int`, optional, keyword_only
-            The number of batches the dataset files will be split into when submitting parallel jobs (the default is 10).
+            The number of batches the dataset files will be split into when submitting parallel jobs (the default is 5).
         local : `bool`, optional, keyword_only
             Indicates whether or not the program is run locally. If it is the case, it will not create jobs and will handle the paralelisation
             alone. The default is False.
@@ -635,17 +635,16 @@ class Spectrogram(Dataset):
 
         # Load variables from raw metadata
         metadata = pd.read_csv(self.path_input_audio_file.joinpath("metadata.csv"))
-        audio_file_origin_duration = metadata["audio_file_origin_duration"][0]
+        file_metadata = pd.read_csv(
+            self.path_input_audio_file.joinpath("file_metadata.csv")
+        )
+        # audio_file_origin_duration = metadata["audio_file_origin_duration"][0]
+        audio_file_origin_duration = file_metadata["duration"]
         origin_sr = metadata["origin_sr"][0]
         audio_file_count = metadata["audio_file_count"][0]
 
-        if int(self.spectro_duration) != int(audio_file_origin_duration):
-            too_short_files = sum(
-                pd.read_csv(self.path_input_audio_file.joinpath("file_metadata.csv"))[
-                    "duration"
-                ]
-                < self.spectro_duration
-            )
+        if int(self.spectro_duration) != int(audio_file_origin_duration.mean()):
+            too_short_files = sum(audio_file_origin_duration < self.spectro_duration)
             if too_short_files > 0:
                 if reshape_method == "none":
                     raise ValueError(
@@ -656,7 +655,7 @@ class Spectrogram(Dataset):
         if (
             self.audio_file_overlap > 0
             and self.dataset_sr == origin_sr
-            and int(self.spectro_duration) == int(audio_file_origin_duration)
+            and int(self.spectro_duration) == int(audio_file_origin_duration.mean())
         ):
             self.audio_file_overlap = 0
             print(
@@ -692,12 +691,12 @@ class Spectrogram(Dataset):
         reshape_job_id_list = []
         processes = []
 
-        if (int(self.spectro_duration) != int(audio_file_origin_duration)) or (
+        if (int(self.spectro_duration) != int(audio_file_origin_duration.mean())) or (
             self.dataset_sr != origin_sr
         ):
             # We might reshape the files and create the folder. Note: reshape function might be memory-heavy and deserve a proper qsub job.
             if self.spectro_duration > int(
-                audio_file_origin_duration
+                audio_file_origin_duration.mean()
             ) and reshape_method in ["none", "legacy"]:
                 raise ValueError(
                     "Spectrogram size cannot be greater than file duration. If you want to automatically reshape your audio files to fit the spectrogram size, consider setting the reshape method to 'classic'."
@@ -709,10 +708,14 @@ class Spectrogram(Dataset):
 
             input_files = self.path_input_audio_file
 
+            # nb_reshaped_files = (
+            #     audio_file_origin_duration * audio_file_count
+            # ) / self.spectro_duration
             nb_reshaped_files = (
-                audio_file_origin_duration * audio_file_count
+                audio_file_origin_duration.sum()
             ) / self.spectro_duration
-            metadata["audio_file_count"] = int(nb_reshaped_files)
+            # metadata["audio_file_count"] = int(nb_reshaped_files)
+            metadata["audio_file_count"] = ceil(nb_reshaped_files)
             next_offset_beginning = 0
             offset_end = 0
             i_max = -1
@@ -750,6 +753,7 @@ class Spectrogram(Dataset):
                             ),
                             "merge_files": merge_on_reshape,
                             "audio_file_overlap": self.audio_file_overlap,
+                            "verbose": self.verbose,
                         },
                     )
 
@@ -779,7 +783,7 @@ class Spectrogram(Dataset):
 
         if self.path_input_audio_file != self.audio_path and int(
             self.spectro_duration
-        ) == int(audio_file_origin_duration):
+        ) == int(audio_file_origin_duration.mean()):
             # The timestamp.csv is recreated by the reshaping step. We only need to copy it if we don't reshape.
             shutil.copy(
                 self.path_input_audio_file.joinpath("timestamp.csv"),
@@ -787,7 +791,7 @@ class Spectrogram(Dataset):
             )
 
         # merge timestamps_*.csv aftewards, only after reshaping!
-        if int(self.spectro_duration) != int(audio_file_origin_duration):
+        if int(self.spectro_duration) != int(audio_file_origin_duration.mean()):
             if not self.__local:
                 self.jb.build_job_file(
                     script_path=Path(inspect.getfile(merge_timestamp_csv)).resolve(),
@@ -1325,7 +1329,7 @@ class Spectrogram(Dataset):
                 ][:, :: 2 ** (self.zoom_level - zoom_level)]
 
                 if self.spectro_normalization == "density":
-                    log_spectro = 10 * np.log10(Sxx_int / (1e-12))
+                    log_spectro = 10 * np.log10((Sxx_int + 1e-100) / (1e-12))
                 if self.spectro_normalization == "spectrum":
                     log_spectro = 10 * np.log10(Sxx_int)
 

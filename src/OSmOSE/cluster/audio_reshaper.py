@@ -228,7 +228,7 @@ def reshape(
             new_sr = sample_rate
         # If the file sample rate is different from the target sample rate, we resample the audio data
         elif new_sr != sample_rate:
-            new_samples = frames * new_sr // sample_rate
+            # new_samples = frames * new_sr // sample_rate #MD not sure this is used
             audio_data = resample(audio_data, orig_sr=sample_rate, target_sr=new_sr)
             sample_rate = new_sr
 
@@ -273,10 +273,12 @@ def reshape(
                 timestamp, "%Y-%m-%dT%H:%M:%S.%f%z"
             ) + timedelta(seconds=offset_beginning)
             audio_data = audio_data[int(offset_beginning * sample_rate) :]
+
         elif (
             i == len(files) - 1 and offset_end != 0 and not last_file_behavior == "pad"
         ):
             audio_data = audio_data[: int(len(audio_data) - (offset_end * sample_rate))]
+
         elif previous_audio_data.size <= 1:
             timestamp = to_timestamp(
                 input_timestamp[
@@ -288,7 +290,8 @@ def reshape(
             raise ValueError(
                 "When not merging files, the file duration must be smaller than the target duration."
             )
-        # Need to check if size > 1 because numpy arrays are never empty urgh
+
+        # Need to check if size > 1 because numpy arrays are never empty ugh
         if previous_audio_data.size > 1:
             audio_data = np.concatenate((previous_audio_data, audio_data))
             previous_audio_data = np.empty(0)
@@ -469,6 +472,14 @@ def reshape(
                     ):
                         print(f"Deleting {files[i+1]}")
                         input_dir_path.joinpath(files[i + 1]).unlink()
+
+                    # We resample nextdata before concatenating it with the rest of audio data if necessary
+                    if new_sr != next_sample_rate:
+                        nextdata = resample(
+                            nextdata, orig_sr=next_sample_rate, target_sr=new_sr
+                        )
+                        next_sample_rate = new_sr
+
                     rest = (chunk_size * next_sample_rate) - len(audio_data)
                     audio_data = np.concatenate(
                         (
