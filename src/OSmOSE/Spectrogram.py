@@ -32,6 +32,7 @@ from OSmOSE.utils.core_utils import (
     safe_read,
     set_umask,
     get_timestamp_of_audio_file,
+    select_audio_file,
 )
 from OSmOSE.utils.audio_utils import get_audio_file
 from OSmOSE.config import *
@@ -636,7 +637,8 @@ class Spectrogram(Dataset):
         # Load variables from raw metadata
         metadata = pd.read_csv(self.path_input_audio_file.joinpath("metadata.csv"))
         file_metadata = pd.read_csv(
-            self.path_input_audio_file.joinpath("file_metadata.csv")
+            self.path_input_audio_file.joinpath("file_metadata.csv"),
+            parse_dates=['timestamp']
         )
         # audio_file_origin_duration = metadata["audio_file_origin_duration"][0]
         audio_file_origin_duration = file_metadata["duration"]
@@ -685,7 +687,22 @@ class Spectrogram(Dataset):
             self.list_audio_to_process = list(
                 set(subset).intersection(set(self.list_audio_to_process))
             )
+#################################################################################################################################################################
+#################################################################################################################################################################
+#################################################################################################################################################################
+#################################################################################################################################################################
 
+
+        # new timestamps calculation
+        datetime_begin = pd.Timestamp('2022-06-27 21:00:00 +0200')
+        datetime_end = pd.Timestamp('2022-06-28 08:00:00 +0200')
+        df_file = select_audio_file(file_metadata=file_metadata,
+                                    dt_begin=datetime_begin,
+                                    dt_end=datetime_end,
+                                    duration=self.spectro_duration,
+                                    date_template=date_template,
+                                    )
+        
         batch_size = len(self.list_audio_to_process) // self.batch_number
 
         reshape_job_id_list = []
@@ -708,14 +725,7 @@ class Spectrogram(Dataset):
 
             input_files = self.path_input_audio_file
 
-            # nb_reshaped_files = (
-            #     audio_file_origin_duration * audio_file_count
-            # ) / self.spectro_duration
-            nb_reshaped_files = (
-                audio_file_origin_duration.sum()
-            ) / self.spectro_duration
-            # metadata["audio_file_count"] = int(nb_reshaped_files)
-            metadata["audio_file_count"] = ceil(nb_reshaped_files)
+            metadata["audio_file_count"] = len(df_file)
             next_offset_beginning = 0
             offset_end = 0
             i_max = -1
@@ -734,6 +744,49 @@ class Spectrogram(Dataset):
                     and i_min + batch_size < len(self.list_audio_to_process)
                     else len(self.list_audio_to_process) - 1
                 )  # If it is the last batch, take all files
+
+                # we select here the original audio to send to the reshaper based on which new audio file are to be created in this batch
+                flattened_unique_list = []
+                for sublist in df_file['selection_idx'][i_min:i_max]:
+                    for item in sublist:
+                        if item not in flattened_unique_list:
+                            flattened_unique_list.append(item)
+                batch_ind_min = min(flattened_unique_list)
+                batch_ind_max = max(flattened_unique_list)
+                
+                process = mp.Process(
+                    target=reshape,
+                    kwargs={
+                        "input_files": input_files,
+                        "chunk_size": int(self.spectro_duration),
+                        "new_sr": int(self.dataset_sr),
+                        "df_file": df_file,
+                        "datetime_begin": df_file['dt_start'][i_min],
+                        "output_dir_path": self.audio_path,
+                        "offset_beginning": int(offset_beginning),
+                        "offset_end": int(offset_end),
+                        "batch_ind_min": i_min,
+                        "batch_ind_max": i_max,
+                        "last_file_behavior": "discard",
+                        "timestamp_path": self.path_input_audio_file.joinpath(
+                            "timestamp.csv"
+                        ),
+                        "merge_files": merge_on_reshape,
+                        "audio_file_overlap": self.audio_file_overlap,
+                        "verbose": self.verbose,
+                    },
+                )
+
+                process.start()
+                processes.append(process)
+
+#################################################################################################################################################################
+#################################################################################################################################################################
+#################################################################################################################################################################
+#################################################################################################################################################################
+#################################################################################################################################################################
+#################################################################################################################################################################
+#################################################################################################################################################################
 
                 if self.__local:
                     process = mp.Process(

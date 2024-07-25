@@ -748,3 +748,88 @@ def add_entry_for_APLOSE(path: str, file: str, info: pd.DataFrame):
             meta.to_csv(dataset_csv, index=False)
     else:
         info.to_csv(dataset_csv, index=False)
+
+
+def select_audio_file(
+        *,
+        file_metadata: pd.DataFrame,
+        dt_begin: pd.Timestamp,
+        dt_end: pd.Timestamp,
+        duration: int,
+        date_template: str,
+) -> pd.DataFrame:
+
+    """This function is used to create the list of the new user-defined timestamps dt_beginand dt_end.
+    Then for each new time interval, it selects the orignal audio files that have data comprised in the interval
+
+    Parameters:
+    -----------
+        file_metadata: `DataFrame`
+            file_metadata.csv file as a DataFrame
+
+        dt_begin: `pd.Timestamp`
+        dt_end: `pd.Timestamp`
+            user defined Timestamps of beginning / end for the spectrograms to produce
+
+        duration: `int`
+            duration in seconds of the desired spectrogram to produce
+        
+        date_template: `str`
+
+    Returns:
+    --------
+        A DataFrame with the new begin/end timestamps and the list of associated original audio files
+    """
+
+    df_file = []
+    for i, file in enumerate(file_metadata['filename']):
+        dt_start_file = file_metadata['timestamp'].iloc[i]
+        nb_sec = file_metadata['duration'].iloc[i]
+        dt_end_file = dt_start_file + pd.Timedelta(seconds=nb_sec)
+        df_file.append([file, dt_start_file, dt_end_file])
+    df_file = pd.DataFrame(df_file, columns=['filename', 'dt_start', 'dt_end'])
+
+    # list of new datetimes
+    new_datetime = list(pd.date_range(start=dt_begin,
+                                      end=dt_end,
+                                      freq=f'{duration}s',
+                                      ))
+    datetime_begin_new = new_datetime[:-1]
+    datetime_end_new = new_datetime[1:]
+
+    # selection of original audio files for each new interval [datetime_begin_new, datetime_end_new]
+    # to do: handle case where selection_temp is empty
+    selection = []
+    selection_idx = []
+    selection_datetime_begin = []
+    selection_datetime_end = []
+    for i in range(len(datetime_begin_new)):
+        selection_temp = []
+        selection_temp_idx = []
+        selection_temp_datetime_begin = []
+        selection_temp_datetime_end = []
+        for j in range(len(df_file)):
+            is_in_range = datetime_begin_new[i] <= df_file['dt_start'][j] <= datetime_end_new[i] or datetime_begin_new[i] <= df_file['dt_end'][j] <= datetime_end_new[i]
+            if is_in_range:
+                selection_temp.append(df_file['filename'][j])
+                selection_temp_datetime_begin.append(df_file['dt_start'][j])
+                selection_temp_datetime_end.append(df_file['dt_end'][j])
+                selection_temp_idx.append(j)
+        selection.append(selection_temp)
+        selection_idx.append(selection_temp_idx)
+        selection_datetime_begin.append(selection_temp_datetime_begin)
+        selection_datetime_end.append(selection_temp_datetime_end)
+
+    filename_new = [dt.strftime(date_template) for dt in datetime_begin_new]
+
+    df_file_new = pd.DataFrame({
+        'filename': filename_new,
+        'dt_start': datetime_begin_new,
+        'dt_end': datetime_end_new,
+        'selection': selection,
+        'selection_idx': selection_idx,
+        'selection_datetime_begin': selection_datetime_begin,
+        'selection_datetime_end': selection_datetime_end,
+    })
+
+    return df_file_new
