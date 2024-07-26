@@ -7,7 +7,7 @@ import shutil
 import struct
 from collections import namedtuple
 import sys
-from typing import Union, NamedTuple, Tuple, List
+from typing import Union, NamedTuple, Tuple, List, Literal
 import pytz
 import glob
 import math
@@ -757,6 +757,7 @@ def select_audio_file(
         dt_end: pd.Timestamp,
         duration: int,
         date_template: str,
+        last_file_behavior: Literal["pad", "truncate", "discard"] = "pad",
 ) -> pd.DataFrame:
 
     """This function is used to create the list of the new user-defined timestamps dt_beginand dt_end.
@@ -794,6 +795,10 @@ def select_audio_file(
                                       end=dt_end,
                                       freq=f'{duration}s',
                                       ))
+    # append manually dt_end if user wants to keep the last segment which is < duration
+    if new_datetime[-1] != dt_end and last_file_behavior != "discard":
+        new_datetime.append(dt_end)
+
     datetime_begin_new = new_datetime[:-1]
     datetime_end_new = new_datetime[1:]
 
@@ -809,7 +814,9 @@ def select_audio_file(
         selection_temp_datetime_begin = []
         selection_temp_datetime_end = []
         for j in range(len(df_file)):
-            is_in_range = datetime_begin_new[i] <= df_file['dt_start'][j] <= datetime_end_new[i] or datetime_begin_new[i] <= df_file['dt_end'][j] <= datetime_end_new[i]
+            is_in_range = datetime_begin_new[i] <= df_file['dt_start'][j] <= datetime_end_new[i] or\
+            datetime_begin_new[i] <= df_file['dt_end'][j] <= datetime_end_new[i] or\
+            (df_file['dt_start'][j] <= datetime_begin_new[i] and df_file['dt_end'][j] >= datetime_end_new[i])
             if is_in_range:
                 selection_temp.append(df_file['filename'][j])
                 selection_temp_datetime_begin.append(df_file['dt_start'][j])

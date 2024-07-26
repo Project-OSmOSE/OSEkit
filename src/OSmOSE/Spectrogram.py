@@ -135,6 +135,7 @@ class Spectrogram(Dataset):
             )
 
         self.batch_number: int = batch_number
+
         self.dataset_sr: int = (
             dataset_sr if dataset_sr is not None else orig_metadata["origin_sr"][0]
         )
@@ -548,18 +549,17 @@ class Spectrogram(Dataset):
             "(Hz)",
         )
 
-    # TODO: some cleaning
     def initialize(
         self,
         *,
+        datetime_begin: pd.Timestamp = None,
+        datetime_end: pd.Timestamp = None,
         dataset_sr: int = None,
         reshape_method: Literal["legacy", "classic", "none"] = "classic",
         batch_ind_min: int = 0,
         batch_ind_max: int = -1,
-        pad_silence: bool = False,
         force_init: bool = False,
         date_template: str = None,
-        merge_on_reshape: bool = False,
         env_name: str = None,
         last_file_behavior: Literal["pad", "truncate", "discard"] = "pad",
     ) -> None:
@@ -568,6 +568,10 @@ class Spectrogram(Dataset):
 
         Parameters
         ----------
+        datetime_begin : `Timestamp`,
+            The begin datetime of the audio files used to generate the spectrograms.
+        datetime_begin : `Timestamp`,
+            The end datetime of the audio files used to generate the spectrograms.
         dataset_sr : `int`, optional, keyword-only
             The sampling frequency of the audio files used to generate the spectrograms. If set, will overwrite the Spectrogram.dataset_sr attribute.
         reshape_method : {"legacy", "classic", "none"}, optional, keyword-only
@@ -584,8 +588,6 @@ class Spectrogram(Dataset):
             for very specific use cases. Most of the time, you want to initialize the whole dataset (the default is 0).
         batch_ind_max : `int`, optional, keyword-only
             The index of the last file to consider (the default is -1, meaning consider every file).
-        pad_silence : `bool`, optional, keyword-only
-            When using the legacy reshaping method, whether there should be a silence padding or not (default is False).
         force_init : `bool`, optional, keyword-only
             Force every parameter of the initialization.
         date_template : `str`, optiona, keyword-only
@@ -687,31 +689,26 @@ class Spectrogram(Dataset):
             self.list_audio_to_process = list(
                 set(subset).intersection(set(self.list_audio_to_process))
             )
-#################################################################################################################################################################
-#################################################################################################################################################################
-#################################################################################################################################################################
-#################################################################################################################################################################
 
-
-        # new timestamps calculation
-        datetime_begin = pd.Timestamp('2022-06-27 21:00:00 +0200')
-        datetime_end = pd.Timestamp('2022-06-28 08:00:00 +0200')
+        #################################################################################################################################################################
+        #################################################################################################################################################################
+        # new timestamps calculation and original audio selection
+        # todo : warning si les datetime utilisés ne correspondent à aucune selection d'audio original et autre warning du genre
         df_file = select_audio_file(file_metadata=file_metadata,
                                     dt_begin=datetime_begin,
                                     dt_end=datetime_end,
                                     duration=self.spectro_duration,
                                     date_template=date_template,
+                                    last_file_behavior=last_file_behavior,
                                     )
-        
-        batch_size = len(self.list_audio_to_process) // self.batch_number
 
-        reshape_job_id_list = []
-        processes = []
+        batch_size = len(df_file) // self.batch_number
 
         if (int(self.spectro_duration) != int(audio_file_origin_duration.mean())) or (
             self.dataset_sr != origin_sr
         ):
-            # We might reshape the files and create the folder. Note: reshape function might be memory-heavy and deserve a proper qsub job.
+            # We might reshape the files and create the folder
+            # Note: reshape function might be memory-heavy and deserve a proper qsub job.
             if self.spectro_duration > int(
                 audio_file_origin_duration.mean()
             ) and reshape_method in ["none", "legacy"]:
@@ -726,34 +723,19 @@ class Spectrogram(Dataset):
             input_files = self.path_input_audio_file
 
             metadata["audio_file_count"] = len(df_file)
-            next_offset_beginning = 0
-            offset_end = 0
+            processes = []
             i_max = -1
 
             for batch in range(self.batch_number):
-                if i_max >= len(self.list_audio_to_process) - 1:
-                    continue
 
-                offset_beginning = next_offset_beginning
-                next_offset_beginning = 0
-
-                i_min = i_max + (1 if not offset_beginning else 0)
+                i_min = i_max + 1
                 i_max = (
                     i_min + batch_size
                     if batch < self.batch_number - 1
-                    and i_min + batch_size < len(self.list_audio_to_process)
-                    else len(self.list_audio_to_process) - 1
+                    and i_min + batch_size < len(df_file)
+                    else len(df_file)
                 )  # If it is the last batch, take all files
 
-                # we select here the original audio to send to the reshaper based on which new audio file are to be created in this batch
-                flattened_unique_list = []
-                for sublist in df_file['selection_idx'][i_min:i_max]:
-                    for item in sublist:
-                        if item not in flattened_unique_list:
-                            flattened_unique_list.append(item)
-                batch_ind_min = min(flattened_unique_list)
-                batch_ind_max = max(flattened_unique_list)
-                
                 process = mp.Process(
                     target=reshape,
                     kwargs={
@@ -761,18 +743,13 @@ class Spectrogram(Dataset):
                         "chunk_size": int(self.spectro_duration),
                         "new_sr": int(self.dataset_sr),
                         "df_file": df_file,
-                        "datetime_begin": df_file['dt_start'][i_min],
                         "output_dir_path": self.audio_path,
-                        "offset_beginning": int(offset_beginning),
-                        "offset_end": int(offset_end),
                         "batch_ind_min": i_min,
                         "batch_ind_max": i_max,
-                        "last_file_behavior": "discard",
+                        "last_file_behavior": last_file_behavior,
                         "timestamp_path": self.path_input_audio_file.joinpath(
                             "timestamp.csv"
                         ),
-                        "merge_files": merge_on_reshape,
-                        "audio_file_overlap": self.audio_file_overlap,
                         "verbose": self.verbose,
                     },
                 )
@@ -780,14 +757,13 @@ class Spectrogram(Dataset):
                 process.start()
                 processes.append(process)
 
-#################################################################################################################################################################
-#################################################################################################################################################################
-#################################################################################################################################################################
-#################################################################################################################################################################
-#################################################################################################################################################################
-#################################################################################################################################################################
-#################################################################################################################################################################
+            for process in processes:
+                process.join()
 
+            return
+    #################################################################################################################################################################
+    #################################################################################################################################################################
+    '''
                 if self.__local:
                     process = mp.Process(
                         target=reshape,
@@ -949,6 +925,8 @@ class Spectrogram(Dataset):
             new_meta_path.unlink()
         metadata.to_csv(new_meta_path, index=False)
         os.chmod(new_meta_path, mode=FPDEFAULT)
+        '''
+
 
     def save_spectro_metadata(self, adjust_bool: bool):
         temporal_resolution, frequency_resolution, Nbwin = self.extract_spectro_params()
