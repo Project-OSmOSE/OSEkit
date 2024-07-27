@@ -86,7 +86,7 @@ class Weather(Auxiliary):
 		self.ground_truth = ground_truth		
 		if self.ground_truth not in self.df :
 			print(f"Ground truth data '{self.ground_truth}' was not found in joined dataframe.\nPlease call the correct joining method or automatic_join()")
-		self.popt = {}
+		self.popt, self.wind_model_stats = {}, {}
 
 	def __str__(self):
 		if 'wind_model_stats' in dir(self):
@@ -130,7 +130,7 @@ class Weather(Auxiliary):
 		std = np.std(abs(testset[self.ground_truth])-abs(estimation))
 		self.df.loc[testset.index, 'temporal_estimation'] = estimation
 		self.popt['temporal_fit'] = popt
-		self.wind_model_stats = {'temporal_mae':mae, 'temporal_rmse':rmse, 'temporal_r2':r2, 'temporal_var':var, 'temporal_std':std}
+		self.wind_model_stats.update({'temporal_mae':mae, 'temporal_rmse':rmse, 'temporal_r2':r2, 'temporal_var':var, 'temporal_std':std})
 
 	def skf_fit(self, **kwargs):
 		'''
@@ -162,7 +162,7 @@ class Weather(Auxiliary):
 			std.append(np.std(abs(testset[self.ground_truth])-abs(estimation)))
 			self.df.loc[testset.index, 'skf_estimation'] = estimation
 		self.popt['skf_fit'] = np.mean(popt_tot, axis=0)
-		self.wind_model_stats = {'skf_mae':np.mean(mae), 'skf_rmse':np.mean(rmse), 'skf_r2':np.mean(r2), 'skf_var':np.mean(var), 'skf_std':np.mean(std)}
+		self.wind_model_stats.update({'skf_mae':np.mean(mae), 'skf_rmse':np.mean(rmse), 'skf_r2':np.mean(r2), 'skf_var':np.mean(var), 'skf_std':np.mean(std)})
 
 
 	def lstm_fit(self, seq_length = 10, **kwargs) :
