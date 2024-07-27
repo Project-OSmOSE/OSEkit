@@ -1,10 +1,10 @@
-from tqdm import tqdm
-import numpy as np
 import torch
 from torch import nn, tensor, utils, device, cuda, optim, long, save
 from torch.utils import data
 from torch.autograd import Variable
 import os
+import numpy as np
+from tqdm import tqdm
 
 ################################################################################################################
 #  RUN FUNCTIONS
@@ -36,7 +36,7 @@ def train_rnn(model, dataloader, test_loader, criterion, optimizer, num_epochs, 
 			low_acc, estimation = test_rnn(model, test_loader, epoch, device, low_acc, estimation)
 			pbar.set_description(f'Evaluation accuracy : {low_acc}')
 			model.train()
-		torch.save(model.state_dict(), 'current_training')
+		torch.save(model.state_dict(), f'model_{epoch}')
 	return estimation
 
 def test_rnn(model, dataloader, epoch, device, low_acc, estimation):

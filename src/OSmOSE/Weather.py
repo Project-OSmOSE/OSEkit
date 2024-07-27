@@ -4,6 +4,7 @@ from OSmOSE.config_weather import empirical
 from OSmOSE.config import *
 from OSmOSE.Auxiliary import Auxiliary
 from OSmOSE.utils import deep_learning_utils as dl_utils
+from OSmOSE.utils.timestamp_utils import *
 import numpy as np
 from typing import Union, Tuple, List
 from sklearn.model_selection import StratifiedKFold
