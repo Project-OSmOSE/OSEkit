@@ -16,11 +16,9 @@ from glob import glob
 from tqdm import tqdm
 
 
-
 def beaufort(x):
     return next((i for i, limit in enumerate([0.3, 1.6, 3.4, 5.5, 8, 10.8, 13.9, 17.2, 20.8, 24.5, 28.5, 32.7]) 
                  if x < limit), 12)
-
 
 class Weather(Auxiliary):
 	
