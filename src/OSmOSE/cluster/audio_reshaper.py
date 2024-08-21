@@ -26,12 +26,62 @@ def reshape(
     new_sr: int = -1,
     batch_ind_min: int = 0,
     batch_ind_max: int = -1,
-    max_delta_interval: int = 5,
     last_file_behavior: Literal["truncate", "pad", "discard"] = "pad",
     verbose: bool = False,
     overwrite: bool = True,
 ) -> List[str]:
+    """Reshape all audio files in the folder to be of the specified duration from datetime_begin to datetime_end. If chunk_size is superior to the base duration of the files, they will be fused according to their order in the timestamp.csv file in the same folder.
 
+    Parameters:
+    -----------
+        input_files: `str` or `list(str)`
+            Either the directory containing the audio files and the timestamp.csv file, in which case all audio files will be considered,
+            OR a list of audio files all located in the same directory alongside a timestamp.csv, in which case only they will be used.
+
+        chunk_size: `int`
+            The target duration for all the reshaped files, in seconds.
+
+        file_metadata_path: `str` or `Path`
+            The path to the file_metadata.csv file
+
+        timestamp_path: `str` or `Path`
+            The path to the timestamp.csv file
+
+        datetime_begin: `str`
+            A datetime formatted string corresponding to the beginning of the reshaped audio files
+
+        datetime_end: `str`
+            A datetime formatted string corresponding to the end of the reshaped audio files
+
+        output_dir_path: `str`, optional, keyword-only
+            The directory where the newly created audio files will be created. If none is provided,
+            it will be the same as the input directory. This is not recommended.
+
+        batch_ind_min: `int`, optional, keyword-only
+            The first file of the list to be processed. Default is 0.
+
+        batch_ind_max: `int`, optional, keyword-only
+            The last file of the list to be processed. Default is -1, meaning the entire list is processed.
+
+        last_file_behavior: `{"truncate","pad","discard"}, optional, keyword-only
+            Tells the reshaper what to do with if the last data of the last file is too small to fill a whole file.
+            This parameter is only active if `batch_ind_max` is `-1`
+            - `truncate` creates a truncated file with the remaining data, which will have a different duration than the others.
+            - `pad` creates a file of the same duration than the others, where the missing data is filled with 0.
+            - `discard` ignores the remaining data. The last seconds/minutes/hours of audio will be lost in the reshaping.
+        The default method is `pad`.
+
+        verbose: `bool`, optional, keyword-only
+            Whether to display informative messages or not.
+
+        overwrite: `bool`, optional, keyword-only
+            Deletes the content of `output_dir_path` before writing the results. If it is implicitly the `input_files` directory,
+            nothing happens. WARNING: If `output_dir_path` is explicitly set to be the same as `input_files`, then it will be overwritten!
+
+    Returns:
+    --------
+        The list of the path of newly created audio files.
+    """
     set_umask()
 
     # datetimes check
@@ -375,7 +425,6 @@ if __name__ == "__main__":
         batch_ind_min=args.batch_ind_min,
         batch_ind_max=args.batch_ind_max,
         timestamp_path=Path(args.timestamp_path),
-        max_delta_interval=args.max_delta_interval,
         last_file_behavior=args.last_file_behavior,
         verbose=args.verbose,
         overwrite=args.overwrite,
