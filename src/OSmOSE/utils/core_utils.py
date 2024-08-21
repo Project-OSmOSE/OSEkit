@@ -751,14 +751,13 @@ def add_entry_for_APLOSE(path: str, file: str, info: pd.DataFrame):
 
 
 def select_audio_file(
-        *,
-        file_metadata: pd.DataFrame,
-        dt_begin: pd.Timestamp,
-        dt_end: pd.Timestamp,
-        duration: int,
-        last_file_behavior: Literal["pad", "truncate", "discard"] = "pad",
+    *,
+    file_metadata: pd.DataFrame,
+    dt_begin: pd.Timestamp,
+    dt_end: pd.Timestamp,
+    duration: int,
+    last_file_behavior: Literal["pad", "truncate", "discard"] = "pad",
 ) -> pd.DataFrame:
-
     """This function is used to create the list of the new user-defined timestamps dt_beginand dt_end.
     Then for each new time interval, it selects the orignal audio files that have data comprised in the interval
 
@@ -766,11 +765,9 @@ def select_audio_file(
     -----------
         file_metadata: `DataFrame`
             file_metadata.csv file as a DataFrame
-
         dt_begin: `pd.Timestamp`
         dt_end: `pd.Timestamp`
             user defined Timestamps of beginning / end for the spectrograms to produce
-
         duration: `int`
             duration in seconds of the desired spectrogram to produce
 
@@ -780,18 +777,21 @@ def select_audio_file(
     """
 
     df_file = []
-    for i, file in enumerate(file_metadata['filename']):
-        dt_start_file = file_metadata['timestamp'].iloc[i]
-        nb_sec = file_metadata['duration'].iloc[i]
+    for i, file in enumerate(file_metadata["filename"]):
+        dt_start_file = file_metadata["timestamp"].iloc[i]
+        nb_sec = file_metadata["duration"].iloc[i]
         dt_end_file = dt_start_file + pd.Timedelta(seconds=nb_sec)
         df_file.append([file, dt_start_file, dt_end_file])
-    df_file = pd.DataFrame(df_file, columns=['filename', 'dt_start', 'dt_end'])
+    df_file = pd.DataFrame(df_file, columns=["filename", "dt_start", "dt_end"])
 
     # list of new datetimes
-    new_datetime = list(pd.date_range(start=dt_begin,
-                                      end=dt_end,
-                                      freq=f'{duration}s',
-                                      ))
+    new_datetime = list(
+        pd.date_range(
+            start=dt_begin,
+            end=dt_end,
+            freq=f"{duration}s",
+        )
+    )
     # append manually dt_end if user wants to keep the last segment which is < duration
     if new_datetime[-1] != dt_end and last_file_behavior != "discard":
         new_datetime.append(dt_end)
@@ -811,29 +811,41 @@ def select_audio_file(
         selection_temp_datetime_begin = []
         selection_temp_datetime_end = []
         for j in range(len(df_file)):
-            is_in_range = datetime_begin_new[i] <= df_file['dt_start'][j] <= datetime_end_new[i] or\
-            datetime_begin_new[i] <= df_file['dt_end'][j] <= datetime_end_new[i] or\
-            (df_file['dt_start'][j] <= datetime_begin_new[i] and df_file['dt_end'][j] >= datetime_end_new[i])
+            is_in_range = (
+                datetime_begin_new[i] <= df_file["dt_start"][j] <= datetime_end_new[i]
+                or datetime_begin_new[i] <= df_file["dt_end"][j] <= datetime_end_new[i]
+                or (
+                    df_file["dt_start"][j] <= datetime_begin_new[i]
+                    and df_file["dt_end"][j] >= datetime_end_new[i]
+                )
+            )
             if is_in_range:
-                selection_temp.append(df_file['filename'][j])
-                selection_temp_datetime_begin.append(df_file['dt_start'][j])
-                selection_temp_datetime_end.append(df_file['dt_end'][j])
+                selection_temp.append(df_file["filename"][j])
+                selection_temp_datetime_begin.append(df_file["dt_start"][j])
+                selection_temp_datetime_end.append(df_file["dt_end"][j])
                 selection_temp_idx.append(j)
         selection.append(selection_temp)
         selection_idx.append(selection_temp_idx)
         selection_datetime_begin.append(selection_temp_datetime_begin)
         selection_datetime_end.append(selection_temp_datetime_end)
 
-    filename_new = [dt.strftime('%Y_%m_%d-%H_%M_%S') for dt in datetime_begin_new]
+    # if selection is an empty list, then no audio file are comprised between dt_begin and dt_end
+    if not any(selection):
+        raise ValueError(f"No audio files selected between {dt_begin} and {dt_end}")
+        return
 
-    df_file_new = pd.DataFrame({
-        'filename': filename_new,
-        'dt_start': datetime_begin_new,
-        'dt_end': datetime_end_new,
-        'selection': selection,
-        'selection_idx': selection_idx,
-        'selection_datetime_begin': selection_datetime_begin,
-        'selection_datetime_end': selection_datetime_end,
-    })
+    filename_new = [dt.strftime("%Y_%m_%d-%H_%M_%S") for dt in datetime_begin_new]
+
+    df_file_new = pd.DataFrame(
+        {
+            "filename": filename_new,
+            "dt_start": datetime_begin_new,
+            "dt_end": datetime_end_new,
+            "selection": selection,
+            "selection_idx": selection_idx,
+            "selection_datetime_begin": selection_datetime_begin,
+            "selection_datetime_end": selection_datetime_end,
+        }
+    )
 
     return df_file_new

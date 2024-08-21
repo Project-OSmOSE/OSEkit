@@ -581,12 +581,11 @@ class Spectrogram(Dataset):
         force_init : `bool`, optional, keyword-only
             Force every parameter of the initialization.
         """
-        #test datetime is not none
-        
+
         # remove temp directories from adjustment spectrograms
         for path in glob.glob(str(self.path.joinpath(OSMOSE_PATH.raw_audio, "temp_*"))):
             shutil.rmtree(path)
-            
+
         # remove existing log directory and create a new empty one
         if os.path.exists(self.path.joinpath(OSMOSE_PATH.log)):
             shutil.rmtree(self.path.joinpath(OSMOSE_PATH.log))
@@ -633,7 +632,7 @@ class Spectrogram(Dataset):
         metadata = pd.read_csv(self.path_input_audio_file.joinpath("metadata.csv"))
         file_metadata = pd.read_csv(
             self.path_input_audio_file.joinpath("file_metadata.csv"),
-            parse_dates=['timestamp']
+            parse_dates=["timestamp"],
         )
         audio_metadata_path = self.path.joinpath(
             OSMOSE_PATH.raw_audio,
@@ -652,7 +651,7 @@ class Spectrogram(Dataset):
             )
             return
 
-        # idk what is the use of this
+        # MD: idk what is the use of this
         if self.path.joinpath(OSMOSE_PATH.processed, "subset_files.csv").is_file():
             subset = pd.read_csv(
                 self.path.joinpath(OSMOSE_PATH.processed, "subset_files.csv"),
@@ -662,18 +661,17 @@ class Spectrogram(Dataset):
                 set(subset).intersection(set(self.list_audio_to_process))
             )
 
-        #################################################################################################################################################################
-        # new timestamps calculation and original audio selection
-        # todo : warning si les datetime utilisés ne correspondent à aucune selection d'audio original et autre warning du genre
-        datetime_begin = datetime_begin.replace(' ', 'T')
-        datetime_end = datetime_end.replace(' ', 'T')
+        datetime_begin = datetime_begin.replace(" ", "T")
+        datetime_end = datetime_end.replace(" ", "T")
 
-        df_file = select_audio_file(file_metadata=file_metadata,
-                                    dt_begin=pd.Timestamp(datetime_begin),
-                                    dt_end=pd.Timestamp(datetime_end),
-                                    duration=self.spectro_duration,
-                                    last_file_behavior=last_file_behavior,
-                                    )
+        # new timestamps calculation to determine the size of a batch
+        df_file = select_audio_file(
+            file_metadata=file_metadata,
+            dt_begin=pd.Timestamp(datetime_begin),
+            dt_end=pd.Timestamp(datetime_end),
+            duration=self.spectro_duration,
+            last_file_behavior=last_file_behavior,
+        )
 
         # size of a batch
         batch_size = len(df_file) // self.batch_number
@@ -700,15 +698,19 @@ class Spectrogram(Dataset):
                     if batch < self.batch_number - 1
                     and i_min + batch_size < len(df_file)
                     else len(df_file)
-                )  # If it is the last batch, take all files
+                )  # If it is the last batch, takes all files
 
                 if self.__local:
                     process = mp.Process(
                         target=reshape,
                         kwargs={
                             "input_files": input_files,
-                            "file_metadata_path": self.path_input_audio_file.joinpath("file_metadata.csv"),
-                            "timestamp_path": self.path_input_audio_file.joinpath("timestamp.csv"),
+                            "file_metadata_path": self.path_input_audio_file.joinpath(
+                                "file_metadata.csv"
+                            ),
+                            "timestamp_path": self.path_input_audio_file.joinpath(
+                                "timestamp.csv"
+                            ),
                             "output_dir_path": self.audio_path,
                             "datetime_begin": datetime_begin,
                             "datetime_end": datetime_end,
@@ -751,58 +753,43 @@ class Spectrogram(Dataset):
 
             for process in processes:
                 process.join()
-    #################################################################################################################################################################
-
-        # if self.path_input_audio_file != self.audio_path and int(
-        #     self.spectro_duration
-        # ) == int(audio_file_origin_duration.mean()):
-        #     # The timestamp.csv is recreated by the reshaping step. We only need to copy it if we don't reshape.
-        #     shutil.copy(
-        #         self.path_input_audio_file.joinpath("timestamp.csv"),
-        #         self.audio_path.joinpath("timestamp.csv"),
-        #     )
 
         # merge timestamps_*.csv after reshaping
-        if int(self.spectro_duration) != int(audio_file_origin_duration.mean()):
-            if not self.__local:
-                self.jb.build_job_file(
-                    script_path=Path(inspect.getfile(merge_timestamp_csv)).resolve(),
-                    script_args=f"--input-files {self.audio_path}",
-                    jobname="OSmOSE_merge_timestamp_py",
-                    preset="low",
-                    mem="30G",
-                    walltime="04:00:00",
-                    logdir=self.path.joinpath("log"),
-                    env_name=env_name,
-                )
-                job_id = self.jb.submit_job(dependency=reshape_job_id_list)
+        if not self.__local:
+            self.jb.build_job_file(
+                script_path=Path(inspect.getfile(merge_timestamp_csv)).resolve(),
+                script_args=f"--input-files {self.audio_path}",
+                jobname="OSmOSE_merge_timestamp_py",
+                preset="low",
+                mem="30G",
+                walltime="04:00:00",
+                logdir=self.path.joinpath("log"),
+                env_name=env_name,
+            )
+            job_id = self.jb.submit_job(dependency=reshape_job_id_list)
 
-                self.pending_jobs = job_id
+            self.pending_jobs = job_id
 
-            else:
-                input_dir_path = self.audio_path
+        else:
+            input_dir_path = self.audio_path
 
-                list_conca_timestamps = []
-                list_conca_filename = []
-                for ll in list(input_dir_path.glob("timestamp_*")):
-                    print(f"read and remove file {ll}")
-                    list_conca_timestamps.append(
-                        list(pd.read_csv(ll)["timestamp"].values)
-                    )
-                    list_conca_filename.append(list(pd.read_csv(ll)["filename"].values))
-                    os.remove(ll)
+            list_conca_timestamps = []
+            list_conca_filename = []
+            for ll in list(input_dir_path.glob("timestamp_*")):
+                print(f"read and remove file {ll}")
+                list_conca_timestamps.append(list(pd.read_csv(ll)["timestamp"].values))
+                list_conca_filename.append(list(pd.read_csv(ll)["filename"].values))
+                os.remove(ll)
 
-                print(f"save file {str(input_dir_path.joinpath('timestamp.csv'))}")
-                df = pd.DataFrame(
-                    {
-                        "filename": list(itertools.chain(*list_conca_filename)),
-                        "timestamp": list(itertools.chain(*list_conca_timestamps)),
-                    }
-                )
-                df.sort_values(by=["timestamp"], inplace=True)
-                df.to_csv(input_dir_path.joinpath("timestamp.csv"), index=False)
-        elif self.dataset_sr != origin_sr:
-            self.pending_jobs = reshape_job_id_list
+            print(f"save file {str(input_dir_path.joinpath('timestamp.csv'))}")
+            df = pd.DataFrame(
+                {
+                    "filename": list(itertools.chain(*list_conca_filename)),
+                    "timestamp": list(itertools.chain(*list_conca_timestamps)),
+                }
+            )
+            df.sort_values(by=["timestamp"], inplace=True)
+            df.to_csv(input_dir_path.joinpath("timestamp.csv"), index=False)
 
         # ZSCORE NORMALIZATION
         norma_job_id_list = []
@@ -873,7 +860,6 @@ class Spectrogram(Dataset):
             new_meta_path.unlink()
         metadata.to_csv(new_meta_path, index=False)
         os.chmod(new_meta_path, mode=FPDEFAULT)
-
 
     def save_spectro_metadata(self, adjust_bool: bool):
         temporal_resolution, frequency_resolution, Nbwin = self.extract_spectro_params()

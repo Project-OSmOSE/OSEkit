@@ -34,7 +34,10 @@ def test_initialize_2s(input_dataset):
     spectrogram.overlap = 0
     spectrogram.custom_frequency_scale = "linear"
 
-    spectrogram.initialize()
+    spectrogram.initialize(
+        datetime_begin="2022-01-01T12:00:00+0300",
+        datetime_end="2022-01-01T12:00:30+0300",
+    )
     spectrogram.save_spectro_metadata(False)
 
     spectro_paths = [
@@ -99,7 +102,10 @@ def test_number_image_matrix(input_dataset):
     spectrogram.nfft = 512
     spectrogram.overlap = 20
 
-    spectrogram.initialize()
+    spectrogram.initialize(
+        datetime_begin="2022-01-01T12:00:00+0300",
+        datetime_end="2022-01-01T12:00:30+0300",
+    )
 
     list_audio = []
     for ext in SUPPORTED_AUDIO_FORMAT:
