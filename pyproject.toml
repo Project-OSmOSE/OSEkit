@@ -10,6 +10,10 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.10"
+sphinx = "^7.0.0"
+sphinx-rtd-theme = "^2.0.0"
+sphinx-copybutton = "^0.5.2"
+myst-parser = "^4.0.0"
 soundfile = "0.12.1"
 pandas = "^1.5.3"
 coverage = "^7.0.5"
