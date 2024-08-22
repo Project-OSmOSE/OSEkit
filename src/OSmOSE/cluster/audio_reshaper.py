@@ -88,12 +88,15 @@ def reshape(
 
     # datetimes check
     regex = r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}[+-]\d{4}$"
+    regex2 = r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$"  # there might be a more proper way to do this
 
     if (
         datetime_begin
         and not isinstance(datetime_begin, pd.Timestamp)
         and not re.match(pattern=regex, string=datetime_begin)
+        and not re.match(pattern=regex2, string=datetime_begin)
     ):
+        print(datetime_begin)
         raise ValueError(
             f"The datetime string '{datetime_begin}' is not in a valid format. Please consider using the following format: 'YYYY-MM-DDTHH:MM:SS+/-HHMM'."
         )
@@ -108,7 +111,8 @@ def reshape(
     if (
         datetime_end
         and not isinstance(datetime_end, pd.Timestamp)
-        and not re.match(regex, datetime_end)
+        and not re.match(pattern=regex, string=datetime_end)
+        and not re.match(pattern=regex2, string=datetime_end)
     ):
         raise ValueError(
             f"The datetime string '{datetime_end}' is not in a valid format. Please consider using the following format: 'YYYY-MM-DDTHH:MM:SS+/-HHMM'"
