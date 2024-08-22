@@ -48,10 +48,12 @@ def reshape(
             The path to the timestamp.csv file
 
         datetime_begin: `str`
-            A datetime formatted string corresponding to the beginning of the reshaped audio files
+            A datetime formatted string corresponding to the beginning of the reshaped audio files.
+            If not specified, the begin datetime of the first audio file is selected.
 
         datetime_end: `str`
-            A datetime formatted string corresponding to the end of the reshaped audio files
+            A datetime formatted string corresponding to the end of the reshaped audio files.
+            If not specified, the end datetime of the last audio file is selected.
 
         output_dir_path: `str`, optional, keyword-only
             The directory where the newly created audio files will be created. If none is provided,
@@ -85,16 +87,15 @@ def reshape(
     set_umask()
 
     # datetimes check
-    if not datetime_begin or not datetime_end:
-        raise ValueError(
-            "The begin and end datetimes must be a valid date and time string format. Please consider using the following format: 'YYYY-MM-DDTHH:MM:SS±HHMM'"
-        )
+    regex = r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:[+-]\d{2}:\d{2}|\d{4})$"
 
-    regex = r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}[+-]\d{4}$"
-
-    if not re.match(regex, datetime_begin):
+    if (
+        datetime_begin
+        and not isinstance(datetime_begin, pd.Timestamp)
+        and not re.match(pattern=regex, string=datetime_begin)
+    ):
         raise ValueError(
-            f"The datetime string '{datetime_begin}' is not in the valid format 'YYYY-MM-DDTHH:MM:SS±HHMM'."
+            f"The datetime string '{datetime_begin}' is not in a valid format. Please consider using the following format: 'YYYY-MM-DDTHH:MM:SS±HHMM'."
         )
 
     try:
@@ -104,9 +105,13 @@ def reshape(
             f"Failed to parse datetime string '{datetime_begin}': {e}. Please provide a valid format."
         )
 
-    if not re.match(regex, datetime_end):
+    if (
+        datetime_end
+        and not isinstance(datetime_end, pd.Timestamp)
+        and not re.match(regex, datetime_end)
+    ):
         raise ValueError(
-            f"The datetime string '{datetime_end}' is not in the valid format 'YYYY-MM-DDTHH:MM:SS±HHMM'."
+            f"The datetime string '{datetime_end}' is not in a valid format. Please consider using the following format: 'YYYY-MM-DDTHH:MM:SS±HHMM'"
         )
 
     try:
@@ -169,7 +174,14 @@ def reshape(
             input_dir_path.joinpath("file_metadata.csv"), parse_dates=["timestamp"]
         )
 
-    print(type(file_metadata["timestamp"].iloc[0]))
+    # if datetime begin/end are not provided, takes the datetime of first audio file/datetime + duration of last audio file
+    if not datetime_begin:
+        datetime_begin = file_metadata["timestamp"].iloc[0]
+
+    if not datetime_end:
+        datetime_end = file_metadata["timestamp"].iloc[-1] + pd.Timedelta(
+            file_metadata["duration"].iloc[-1], unit="s"
+        )
 
     # DataFrame creation with the new audio files to be created and the original audio files needed to create each of those new audio
     df_file = select_audio_file(
@@ -336,20 +348,20 @@ if __name__ == "__main__":
         help="Path to file metadata",
     )
     required.add_argument(
-        "--datetime-begin",
-        type=str,
-        help="Datetime string to begin the reshape at",
-    )
-    required.add_argument(
-        "--datetime-end",
-        type=str,
-        help="Datetime string to end the reshape at",
-    )
-    required.add_argument(
         "--chunk-size",
         "-s",
         type=int,
         help="The time in seconds of the reshaped files.",
+    )
+    parser.add_argument(
+        "--datetime-begin",
+        type=str,
+        help="Datetime string to begin the reshape at",
+    )
+    parser.add_argument(
+        "--datetime-end",
+        type=str,
+        help="Datetime string to end the reshape at",
     )
     parser.add_argument(
         "--output-dir",
@@ -369,12 +381,6 @@ if __name__ == "__main__":
         type=int,
         default=-1,
         help="The last file of the list to be processed. Default is -1, meaning the entire list is processed.",
-    )
-    parser.add_argument(
-        "--max-delta-interval",
-        type=int,
-        default=5,
-        help="The maximum number of second allowed for a delta between two timestamp_list to still be considered the same. Default is 5s up and down.",
     )
     parser.add_argument(
         "--verbose",

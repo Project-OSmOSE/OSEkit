@@ -661,8 +661,15 @@ class Spectrogram(Dataset):
                 set(subset).intersection(set(self.list_audio_to_process))
             )
 
-        datetime_begin = datetime_begin.replace(" ", "T")
-        datetime_end = datetime_end.replace(" ", "T")
+        # if datetime begin/end are not provided, takes the datetime of first audio file/datetime + duration of last audio file
+        if not datetime_begin:
+            datetime_begin = str(file_metadata["timestamp"].iloc[0])
+
+        if not datetime_end:
+            datetime_end = str(
+                file_metadata["timestamp"].iloc[-1]
+                + pd.Timedelta(file_metadata["duration"].iloc[-1], unit="s")
+            )
 
         # new timestamps calculation to determine the size of a batch
         df_file = select_audio_file(
@@ -725,6 +732,7 @@ class Spectrogram(Dataset):
 
                     process.start()
                     processes.append(process)
+
                 else:
                     self.jb.build_job_file(
                         script_path=Path(inspect.getfile(reshape)).resolve(),
@@ -740,7 +748,7 @@ class Spectrogram(Dataset):
                                 --batch-ind-max {i_max}\
                                 --last-file-behavior {last_file_behavior}\
                                 {'--verbose' if self.verbose else ''}",
-                        jobname="OSmOSE_reshape_py",
+                        jobname={"OSmOSE_reshape_batch"},
                         preset="low",
                         mem="30G",
                         walltime="04:00:00",
@@ -759,7 +767,7 @@ class Spectrogram(Dataset):
             self.jb.build_job_file(
                 script_path=Path(inspect.getfile(merge_timestamp_csv)).resolve(),
                 script_args=f"--input-files {self.audio_path}",
-                jobname="OSmOSE_merge_timestamp_py",
+                jobname="OSmOSE_merge_timestamp",
                 preset="low",
                 mem="30G",
                 walltime="04:00:00",
