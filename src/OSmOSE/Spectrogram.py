@@ -748,7 +748,7 @@ class Spectrogram(Dataset):
                                 --batch-ind-max {i_max}\
                                 --last-file-behavior {last_file_behavior}\
                                 {'--verbose' if self.verbose else ''}",
-                        jobname={"OSmOSE_reshape_batch"},
+                        jobname=f"OSmOSE_reshape_{batch}",
                         preset="low",
                         mem="30G",
                         walltime="04:00:00",

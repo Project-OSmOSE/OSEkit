@@ -17,7 +17,7 @@ def test_reshape_errors(input_dir):
 
     assert (
         str(e.value)
-        == f"The datetime string '/not/a/datetime' is not in a valid format. Please consider using the following format: 'YYYY-MM-DDTHH:MM:SS±HHMM'."
+        == f"The datetime string '/not/a/datetime' is not in a valid format. Please consider using the following format: 'YYYY-MM-DDTHH:MM:SS+/-HHMM'."
     )
 
     with pytest.raises(ValueError) as e:

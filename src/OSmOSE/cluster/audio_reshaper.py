@@ -87,7 +87,7 @@ def reshape(
     set_umask()
 
     # datetimes check
-    regex = r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:[+-]\d{2}:\d{2}|\d{4})$"
+    regex = r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}[+-]\d{4}$"
 
     if (
         datetime_begin
@@ -95,7 +95,7 @@ def reshape(
         and not re.match(pattern=regex, string=datetime_begin)
     ):
         raise ValueError(
-            f"The datetime string '{datetime_begin}' is not in a valid format. Please consider using the following format: 'YYYY-MM-DDTHH:MM:SS±HHMM'."
+            f"The datetime string '{datetime_begin}' is not in a valid format. Please consider using the following format: 'YYYY-MM-DDTHH:MM:SS+/-HHMM'."
         )
 
     try:
@@ -111,7 +111,7 @@ def reshape(
         and not re.match(regex, datetime_end)
     ):
         raise ValueError(
-            f"The datetime string '{datetime_end}' is not in a valid format. Please consider using the following format: 'YYYY-MM-DDTHH:MM:SS±HHMM'"
+            f"The datetime string '{datetime_end}' is not in a valid format. Please consider using the following format: 'YYYY-MM-DDTHH:MM:SS+/-HHMM'"
         )
 
     try:
@@ -344,8 +344,8 @@ if __name__ == "__main__":
     )
     required.add_argument(
         "--file-metadata-path",
-        type=str,
         help="Path to file metadata",
+        default=None,
     )
     required.add_argument(
         "--chunk-size",
