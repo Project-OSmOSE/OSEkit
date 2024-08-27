@@ -628,7 +628,7 @@ class Spectrogram(Dataset):
             audio_file.name for audio_file in list_audio_withEvent
         ]
 
-        # Load variables from metadata files
+        # Load variables from metadata origin files
         metadata = pd.read_csv(self.path_input_audio_file.joinpath("metadata.csv"))
         file_metadata = pd.read_csv(
             self.path_input_audio_file.joinpath("file_metadata.csv"),
@@ -672,16 +672,16 @@ class Spectrogram(Dataset):
             )
 
         # new timestamps calculation to determine the size of a batch
-        df_file = select_audio_file(
-            file_metadata=file_metadata,
-            dt_begin=pd.Timestamp(datetime_begin),
-            dt_end=pd.Timestamp(datetime_end),
-            duration=self.spectro_duration,
-            last_file_behavior=last_file_behavior,
+        new_file = list(
+            pd.date_range(
+                start=pd.Timestamp(datetime_begin),
+                end=pd.Timestamp(datetime_end),
+                freq=f"{self.spectro_duration}s",
+            )
         )
 
         # size of a batch
-        batch_size = len(df_file) // self.batch_number
+        batch_size = (len(new_file) - 1) // self.batch_number
 
         # if a resample or a segmentation or both is necessary
         if (int(self.spectro_duration) != int(audio_file_origin_duration.mean())) or (
@@ -692,7 +692,6 @@ class Spectrogram(Dataset):
             )
 
             input_files = self.path_input_audio_file
-            metadata["audio_file_count"] = len(df_file)
             processes = []
             reshape_job_id_list = []
             i_max = -1
@@ -703,9 +702,9 @@ class Spectrogram(Dataset):
                 i_max = (
                     i_min + batch_size
                     if batch < self.batch_number - 1
-                    and i_min + batch_size < len(df_file)
-                    else len(df_file)
-                )  # If it is the last batch, takes all files
+                    and i_min + batch_size < len(new_file)
+                    else len(new_file)
+                )
 
                 if self.__local:
                     process = mp.Process(
@@ -858,10 +857,13 @@ class Spectrogram(Dataset):
             for process in processes:
                 process.join()
 
-        # metadata.csv
+        # write metadata.csv for segmented audio files
         metadata["audio_file_dataset_duration"] = self.spectro_duration
         metadata["dataset_sr"] = self.dataset_sr
         metadata["audio_file_dataset_overlap"] = self.audio_file_overlap
+        metadata["audio_file_count"] = len(new_file) - 1
+        metadata["start_date"] = datetime_begin
+        metadata["end_date"] = datetime_end
         new_meta_path = self.audio_path.joinpath("metadata.csv")
 
         if new_meta_path.exists():
@@ -1064,55 +1066,56 @@ class Spectrogram(Dataset):
                 )
                 pass
 
-            self.__build_path(adjust)
             self.save_matrix = save_matrix
             self.save_for_LTAS = save_for_LTAS
-
             self.adjust = adjust
+
+            self.__build_path(self.adjust)
+
             Zscore = self.zscore_duration if not adjust else "original"
 
             audio_file = Path(audio_file).name
             output_file = self.path_output_spectrogram.joinpath(audio_file)
 
-            def check_existing_matrix():
-                return (
-                    len(
-                        list(
-                            self.path_output_spectrogram_matrix.glob(
-                                f"{Path(audio_file).stem}*"
-                            )
-                        )
-                    )
-                    == 2**self.zoom_level
-                    if save_matrix
-                    else True
-                )
+            # def check_existing_matrix():
+            #     return (
+            #         len(
+            #             list(
+            #                 self.path_output_spectrogram_matrix.glob(
+            #                     f"{Path(audio_file).stem}*"
+            #                 )
+            #             )
+            #         )
+            #         == 2**self.zoom_level
+            #         if save_matrix
+            #         else True
+            #     )
+            # if (
+            #     len(
+            #         list(self.path_output_spectrogram.glob(f"{Path(audio_file).stem}*"))
+            #     )
+            #     == sum(2**i for i in range(self.zoom_level + 1))
+            #     and check_existing_matrix()
+            # ):
 
-            if (
-                len(
-                    list(self.path_output_spectrogram.glob(f"{Path(audio_file).stem}*"))
+            if overwrite:
+                print(
+                    f"Existing files detected for audio file {audio_file}! They will be overwritten."
                 )
-                == sum(2**i for i in range(self.zoom_level + 1))
-                and check_existing_matrix()
-            ):
-                if overwrite:
-                    print(
-                        f"Existing files detected for audio file {audio_file}! They will be overwritten."
-                    )
-                    for old_file in self.path_output_spectrogram.glob(
+                for old_file in self.path_output_spectrogram.glob(
+                    f"{Path(audio_file).stem}*"
+                ):
+                    old_file.unlink()
+                if save_matrix:
+                    for old_matrix in self.path_output_spectrogram_matrix.glob(
                         f"{Path(audio_file).stem}*"
                     ):
-                        old_file.unlink()
-                    if save_matrix:
-                        for old_matrix in self.path_output_spectrogram_matrix.glob(
-                            f"{Path(audio_file).stem}*"
-                        ):
-                            old_matrix.unlink()
-                else:
-                    print(
-                        f"The spectrograms for the file {audio_file} have already been generated, skipping..."
-                    )
-                    return
+                        old_matrix.unlink()
+            else:
+                print(
+                    f"The spectrograms for the file {audio_file} have already been generated, skipping..."
+                )
+                return
 
             if audio_file not in os.listdir(self.audio_path):
                 raise FileNotFoundError(
@@ -1208,11 +1211,14 @@ class Spectrogram(Dataset):
             if (len(self.zscore_duration) > 0) and (self.zscore_duration != "original"):
                 data = (data - self.__zscore_mean) / self.__zscore_std
             elif self.zscore_duration == "original":
-                print("apply zscore original")
+                print("Apply zscore original")
                 data = (data - np.mean(data)) / np.std(data)
         if self.verbose:
             print(
-                f"- data min : {np.min(data)} \n - data max : {np.max(data)} \n - data mean : {np.mean(data)} \n - data std : {np.std(data)}"
+                f"- data min : {np.min(data):.3f}\n"
+                f"- data max : {np.max(data):.3f}\n"
+                f"- data mean : {np.mean(data):.3f}\n"
+                f"- data std : {np.std(data):.3f}\n"
             )
 
         duration = len(data) / int(sample_rate)
@@ -1233,6 +1239,7 @@ class Spectrogram(Dataset):
 
         Sxx_complete_lowest_level = np.empty((int(self.nfft / 2) + 1, 1))
         Sxx_mean_lowest_tuile = np.empty((1, int(self.nfft / 2) + 1))
+
         for tile in range(0, nber_tiles_lowest_zoom_level):
             start = tile * tile_duration
             end = start + tile_duration
@@ -1266,7 +1273,10 @@ class Spectrogram(Dataset):
 
         # lowest tuile resolution
         if not adjust and self.save_for_LTAS:
-            # whatever the file duration , we send all welch in folder self.spectro_duration_dataset_sr  ;  OLD SOLUTION : here we use duration (read from current audio files) rather than self.spectro_duration to have the exact audio file duration; so that when different audio file durations are present, their respective welch spectra will be put into different folders
+            # whatever the file duration, we send all welch in folder self.spectro_duration_dataset_sr  ;
+            # OLD SOLUTION : here we use duration (read from current audio files) rather than self.spectro_duration to have
+            # the exact audio file duration; so that when different audio file durations are present,
+            # their respective welch spectra will be put into different folders
             output_path_welch_resolution = self.path_output_welch
 
             if not output_path_welch_resolution.exists():
@@ -1318,7 +1328,10 @@ class Spectrogram(Dataset):
         # highest tuile resolution
         if False:
             if not adjust and self.save_for_LTAS and (nber_tiles_lowest_zoom_level > 1):
-                # whatever the file duration , we send all welch in folder self.spectro_duration_dataset_sr  ;  OLD SOLUTION : here we use duration (read from current audio files) rather than self.spectro_duration to have the exact audio file duration; so that when different audio file durations are present, their respective welch spectra will be put into different folders
+                # whatever the file duration , we send all welch in folder self.spectro_duration_dataset_sr  ;
+                # OLD SOLUTION : here we use duration (read from current audio files) rather than self.spectro_duration to have
+                # the exact audio file duration; so that when different audio file durations are present,
+                # their respective welch spectra will be put into different folders
                 output_path_welch_resolution = self.path_output_welch.joinpath(
                     str(int(self.spectro_duration)) + "_" + str(int(self.dataset_sr))
                 )
@@ -1459,7 +1472,8 @@ class Spectrogram(Dataset):
         )
         if self.verbose:
             print(
-                f"- min log spectro : {np.amin(log_spectro)} \n - max log spectro : {np.amax(log_spectro)} \n"
+                f"- min log spectro : {np.amin(log_spectro):.3f}\n"
+                f"- max log spectro : {np.amax(log_spectro):.3f}\n"
             )
 
         color_map = plt.get_cmap(self.colormap)

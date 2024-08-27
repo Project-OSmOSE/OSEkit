@@ -12,6 +12,7 @@ from librosa import resample
 from OSmOSE.utils.core_utils import set_umask, select_audio_file
 from OSmOSE.utils.path_utils import make_path
 from OSmOSE.config import DPDEFAULT, FPDEFAULT
+from OSmOSE.utils import get_audio_file
 
 
 def reshape(
@@ -139,6 +140,7 @@ def reshape(
             print(f"Input directory detected as {input_dir_path}")
     else:
         input_dir_path = Path(input_files)
+        files = get_audio_file(file_path=input_dir_path)
 
     if not input_dir_path.is_dir():
         raise ValueError(
@@ -177,6 +179,12 @@ def reshape(
         file_metadata = pd.read_csv(
             input_dir_path.joinpath("file_metadata.csv"), parse_dates=["timestamp"]
         )
+
+    # filter file_metadata DataFrame based on files to process
+    filename = [file.name for file in files]
+    file_metadata = file_metadata[file_metadata["filename"].isin(filename)].reset_index(
+        drop=True
+    )
 
     # if datetime begin/end are not provided, takes the datetime of first audio file/datetime + duration of last audio file
     if not datetime_begin:
@@ -347,11 +355,6 @@ if __name__ == "__main__":
         help="The files to be reshaped, as either the path to a directory containing audio files and a timestamp.csv or a list of filenames all in the same directory alongside a timestamp.csv.",
     )
     required.add_argument(
-        "--file-metadata-path",
-        help="Path to file metadata",
-        default=None,
-    )
-    required.add_argument(
         "--chunk-size",
         "-s",
         type=int,
@@ -408,6 +411,11 @@ if __name__ == "__main__":
         "--timestamp-path", default=None, help="Path to the original timestamp file."
     )
     parser.add_argument(
+        "--file-metadata-path",
+        help="Path to file metadata",
+        default=None,
+    )
+    parser.add_argument(
         "--new-sr",
         type=int,
         default=0,
@@ -426,7 +434,8 @@ if __name__ == "__main__":
 
     files = reshape(
         chunk_size=args.chunk_size,
-        file_metadata_path=args.file_metadata_path,
+        file_metadata_path=Path(args.file_metadata_path),
+        timestamp_path=Path(args.timestamp_path),
         input_files=input_files,
         output_dir_path=args.output_dir,
         new_sr=args.new_sr,
@@ -434,7 +443,6 @@ if __name__ == "__main__":
         datetime_end=args.datetime_end,
         batch_ind_min=args.batch_ind_min,
         batch_ind_max=args.batch_ind_max,
-        timestamp_path=Path(args.timestamp_path),
         last_file_behavior=args.last_file_behavior,
         verbose=args.verbose,
         overwrite=args.overwrite,

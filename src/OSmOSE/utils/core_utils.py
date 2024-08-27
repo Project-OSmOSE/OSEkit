@@ -792,6 +792,7 @@ def select_audio_file(
             freq=f"{duration}s",
         )
     )
+
     # append manually dt_end if user wants to keep the last segment which is < duration
     if new_datetime[-1] != dt_end and last_file_behavior != "discard":
         new_datetime.append(dt_end)
