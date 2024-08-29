@@ -703,7 +703,7 @@ class Spectrogram(Dataset):
                     i_min + batch_size
                     if batch < self.batch_number - 1
                     and i_min + batch_size < len(new_file)
-                    else len(new_file)
+                    else len(new_file) - 1
                 )
 
                 if self.__local:

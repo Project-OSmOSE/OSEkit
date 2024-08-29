@@ -7,3 +7,4 @@ ongoing_jobs
 log_job
 .coverage
 /_site
+/src/OSmOSE/__pycache__

@@ -340,14 +340,24 @@ def read_header(file: str) -> Tuple[int, float, int, int, int]:
 
         if header == b"RIFF":
             # WAV file processing
-            _, size, _ = struct.unpack("<4sI4s", header + fh.read(8))
-            chunk_header = fh.read(8)
-            subchunkid, _ = struct.unpack("<4sI", chunk_header)
+            _, size, wave_format = struct.unpack("<4sI4s", header + fh.read(8))
 
-            if subchunkid == b"fmt ":
-                _, channels, samplerate, _, _, sampwidth = struct.unpack(
-                    "HHIIHH", fh.read(16)
-                )
+            while True:
+                chunk_header = fh.read(8)
+                if len(chunk_header) < 8:
+                    break  # Reached the end of the file or a corrupted file
+
+                subchunkid, subchunk_size = struct.unpack("<4sI", chunk_header)
+
+                if subchunkid == b"fmt ":
+                    # Process the fmt chunk
+                    fmt_chunk_data = fh.read(subchunk_size)
+                    _, channels, samplerate, _, _, sampwidth = struct.unpack(
+                        "<HHIIHH", fmt_chunk_data[:16]
+                    )
+                    break
+                else:
+                    fh.seek(subchunk_size, 1)
 
             chunkOffset = fh.tell()
             found_data = False
