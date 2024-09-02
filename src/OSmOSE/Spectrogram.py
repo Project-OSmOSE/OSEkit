@@ -1251,7 +1251,7 @@ class Spectrogram(Dataset):
 
         # lowest tuile resolution
         if not adjust and self.save_for_LTAS:
-            # whatever the file duration, we send all welch in folder self.spectro_duration_dataset_sr  ;
+            # whatever the file duration, we send all welch in folder self.spectro_duration_dataset_sr;
             # OLD SOLUTION : here we use duration (read from current audio files) rather than self.spectro_duration to have
             # the exact audio file duration; so that when different audio file durations are present,
             # their respective welch spectra will be put into different folders
@@ -1291,7 +1291,7 @@ class Spectrogram(Dataset):
                 if self.spectro_normalization == "density":
                     log_spectro = 10 * np.log10((Sxx_int + 1e-100) / (1e-12))
                 if self.spectro_normalization == "spectrum":
-                    log_spectro = 10 * np.log10(Sxx_int)
+                    log_spectro = 10 * np.log10(Sxx_int + 1e-100)
 
                 self.generate_and_save_figures(
                     time=segment_times_int,
