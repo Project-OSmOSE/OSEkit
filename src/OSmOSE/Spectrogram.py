@@ -113,13 +113,12 @@ class Spectrogram(Dataset):
         self.__local = local
 
         orig_metadata = pd.read_csv(
-            self._get_original_after_build().joinpath("metadata.csv"), header=0
+            self._get_original_after_build() / "metadata.csv", header=0
         )
 
-        processed_path = self.path.joinpath(OSMOSE_PATH.spectrogram)
-        metadata_path = processed_path.joinpath(
-            "adjustment_spectros", "adjust_metadata.csv"
-        )
+        processed_path = self.path / OSMOSE_PATH.spectrogram
+        metadata_path = processed_path / "adjustment_spectros" / "adjust_metadata.csv"
+
         if analysis_params:
             self.__analysis_file = False
             # We put the value in a list so that values[0] returns the right value below.
@@ -456,28 +455,26 @@ class Spectrogram(Dataset):
                 If set to True, will not create the folders and just return the file path.
         """
         set_umask()
-        processed_path = self.path.joinpath(OSMOSE_PATH.spectrogram)
+        processed_path = self.path / OSMOSE_PATH.spectrogram
         audio_foldername = f"{str(self.spectro_duration)}_{str(self.dataset_sr)}"
-        self.audio_path = self.path.joinpath(OSMOSE_PATH.raw_audio, audio_foldername)
+        self.audio_path = self.path / OSMOSE_PATH.raw_audio / audio_foldername
 
         self.__spectro_foldername = f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}_{self.custom_frequency_scale}"
 
-        self.path_output_spectrogram = processed_path.joinpath(
-            audio_foldername, self.__spectro_foldername, "image"
+        self.path_output_spectrogram = (
+            processed_path / audio_foldername / self.__spectro_foldername / "image"
         )
-        self.path_output_spectrogram_matrix = processed_path.joinpath(
-            audio_foldername, self.__spectro_foldername, "matrix"
+        self.path_output_spectrogram_matrix = (
+            processed_path / audio_foldername / self.__spectro_foldername / "matrix"
         )
 
-        self.path_output_welch = self.path.joinpath(OSMOSE_PATH.welch).joinpath(
-            audio_foldername
-        )
-        self.path_output_LTAS = self.path.joinpath(OSMOSE_PATH.LTAS)
-        self.path_output_EPD = self.path.joinpath(OSMOSE_PATH.EPD)
-        self.path_output_SPLfiltered = self.path.joinpath(OSMOSE_PATH.SPLfiltered)
+        self.path_output_welch = self.path / OSMOSE_PATH.welch / audio_foldername
+        self.path_output_LTAS = self.path / OSMOSE_PATH.LTAS
+        self.path_output_EPD = self.path / OSMOSE_PATH.EPD
+        self.path_output_SPLfiltered = self.path / OSMOSE_PATH.SPLfiltered
 
         make_path(
-            self.path.joinpath(OSMOSE_PATH.spectrogram, "adjustment_spectros"),
+            self.path / OSMOSE_PATH.spectrogram / "adjustment_spectros",
             mode=DPDEFAULT,
         )
 
@@ -498,7 +495,7 @@ class Spectrogram(Dataset):
 
             if not adjust:
                 make_path(self.path_output_spectrogram_matrix, mode=DPDEFAULT)
-                make_path(self.path.joinpath(OSMOSE_PATH.statistics), mode=DPDEFAULT)
+                make_path(self.path / OSMOSE_PATH.statistics, mode=DPDEFAULT)
 
     def extract_spectro_params(self):
         tile_duration = self.spectro_duration / 2 ** (self.zoom_level)
@@ -582,13 +579,13 @@ class Spectrogram(Dataset):
         """
 
         # remove temp directories from adjustment spectrograms
-        for path in glob.glob(str(self.path.joinpath(OSMOSE_PATH.raw_audio, "temp_*"))):
+        for path in glob.glob(str(self.path / OSMOSE_PATH.raw_audio / "temp_*")):
             shutil.rmtree(path)
 
         # remove existing log directory and create a new empty one
-        if os.path.exists(self.path.joinpath(OSMOSE_PATH.log)):
-            shutil.rmtree(self.path.joinpath(OSMOSE_PATH.log))
-            os.mkdir(self.path.joinpath(OSMOSE_PATH.log))
+        if os.path.exists(self.path / OSMOSE_PATH.log):
+            shutil.rmtree(self.path / OSMOSE_PATH.log)
+            os.mkdir(self.path / OSMOSE_PATH.log)
 
         # remove welch directory if existing
         if self.path_output_welch.exists():
@@ -606,8 +603,11 @@ class Spectrogram(Dataset):
         # This explains why first we cannot rmtree folders adjustment_spectros, and why we exec save_spectro_metadata(True)
         # to create it if not existing yet (rare case but if spectro generation is laucnhed without any adjustment..)
 
-        if not self.path.joinpath(
-            OSMOSE_PATH.spectrogram, "adjustment_spectros", "adjust_metadata.csv"
+        if not (
+            self.path
+            / OSMOSE_PATH.spectrogram
+            / "adjustment_spectros"
+            / "adjust_metadata.csv"
         ).exists():
             self.save_spectro_metadata(True)
 
@@ -628,15 +628,16 @@ class Spectrogram(Dataset):
         ]
 
         # Load variables from metadata origin files
-        metadata = pd.read_csv(self.path_input_audio_file.joinpath("metadata.csv"))
+        metadata = pd.read_csv(self.path_input_audio_file / "metadata.csv")
         file_metadata = pd.read_csv(
-            self.path_input_audio_file.joinpath("file_metadata.csv"),
+            self.path_input_audio_file / "file_metadata.csv",
             parse_dates=["timestamp"],
         )
-        audio_metadata_path = self.path.joinpath(
-            OSMOSE_PATH.raw_audio,
-            f"{str(self.spectro_duration)}_{str(self.dataset_sr)}",
-            "metadata.csv",
+        audio_metadata_path = (
+            self.path
+            / OSMOSE_PATH.raw_audio
+            / f"{str(self.spectro_duration)}_{str(self.dataset_sr)}"
+            / "metadata.csv"
         )
         audio_file_origin_duration = file_metadata["duration"]
         origin_sr = metadata["origin_sr"][0]
@@ -651,9 +652,9 @@ class Spectrogram(Dataset):
             return
 
         # process only a subset of the dataset
-        if self.path.joinpath(OSMOSE_PATH.processed, "subset_files.csv").is_file():
+        if (self.path / OSMOSE_PATH.processed / "subset_files.csv").is_file():
             subset = pd.read_csv(
-                self.path.joinpath(OSMOSE_PATH.processed, "subset_files.csv"),
+                self.path / OSMOSE_PATH.processed / "subset_files.csv",
                 header=None,
             )[0].values
             self.list_audio_to_process = list(
@@ -715,12 +716,10 @@ class Spectrogram(Dataset):
                         target=reshape,
                         kwargs={
                             "input_files": input_files,
-                            "file_metadata_path": self.path_input_audio_file.joinpath(
-                                "file_metadata.csv"
-                            ),
-                            "timestamp_path": self.path_input_audio_file.joinpath(
-                                "timestamp.csv"
-                            ),
+                            "file_metadata_path": self.path_input_audio_file
+                            / "file_metadata.csv",
+                            "timestamp_path": self.path_input_audio_file
+                            / "timestamp.csv",
                             "output_dir_path": self.audio_path,
                             "datetime_begin": datetime_begin,
                             "datetime_end": datetime_end,
@@ -742,8 +741,8 @@ class Spectrogram(Dataset):
                     self.jb.build_job_file(
                         script_path=Path(inspect.getfile(reshape)).resolve(),
                         script_args=f"--input-files {input_files}\
-                                --file-metadata-path {self.path_input_audio_file.joinpath('file_metadata.csv')}\
-                                --timestamp-path {self.path_input_audio_file.joinpath('timestamp.csv')}\
+                                --file-metadata-path {self.path_input_audio_file / 'file_metadata.csv'}\
+                                --timestamp-path {self.path_input_audio_file / 'timestamp.csv'}\
                                 --output-dir {self.audio_path}\
                                 --datetime-begin {datetime_begin}\
                                 --datetime-end {datetime_end}\
@@ -759,7 +758,7 @@ class Spectrogram(Dataset):
                         preset="low",
                         mem="30G",
                         walltime="04:00:00",
-                        logdir=self.path.joinpath(OSMOSE_PATH.log),
+                        logdir=self.path / OSMOSE_PATH.log,
                         env_name=env_name,
                     )
 
@@ -778,7 +777,7 @@ class Spectrogram(Dataset):
                 preset="low",
                 mem="30G",
                 walltime="04:00:00",
-                logdir=self.path.joinpath("log"),
+                logdir=self.path / "log",
                 env_name=env_name,
             )
             job_id = self.jb.submit_job(dependency=reshape_job_id_list)
@@ -796,7 +795,7 @@ class Spectrogram(Dataset):
                 list_conca_filename.append(list(pd.read_csv(ll)["filename"].values))
                 os.remove(ll)
 
-            print(f"save file {str(input_dir_path.joinpath('timestamp.csv'))}")
+            print(f"save file {str(input_dir_path / 'timestamp.csv')}")
             df = pd.DataFrame(
                 {
                     "filename": list(itertools.chain(*list_conca_filename)),
@@ -804,23 +803,17 @@ class Spectrogram(Dataset):
                 }
             )
             df.sort_values(by=["timestamp"], inplace=True)
-            df.to_csv(input_dir_path.joinpath("timestamp.csv"), index=False)
+            df.to_csv(input_dir_path / "timestamp.csv", index=False)
 
         # ZSCORE NORMALIZATION
         norma_job_id_list = []
         if (
-            # os.listdir(self.path.joinpath(OSMOSE_PATH.statistics))
             self.data_normalization == "zscore"
             and self.zscore_duration != "original"
-            and (
-                len(os.listdir(self.path.joinpath(OSMOSE_PATH.statistics))) == 0
-                or force_init
-            )
+            and (len(os.listdir(self.path / OSMOSE_PATH.statistics)) == 0 or force_init)
         ):
-            shutil.rmtree(
-                self.path.joinpath(OSMOSE_PATH.statistics), ignore_errors=True
-            )
-            make_path(self.path.joinpath(OSMOSE_PATH.statistics), mode=DPDEFAULT)
+            shutil.rmtree(self.path / OSMOSE_PATH.statistics, ignore_errors=True)
+            make_path(self.path / OSMOSE_PATH.statistics, mode=DPDEFAULT)
             for batch in range(self.batch_number):
                 i_min = batch * batch_size
                 i_max = (
@@ -834,10 +827,9 @@ class Spectrogram(Dataset):
                         target=compute_stats,
                         kwargs={
                             "input_dir": self.audio_path,
-                            "output_file": self.path.joinpath(
-                                OSMOSE_PATH.statistics,
-                                "SummaryStats_" + str(i_min) + ".csv",
-                            ),
+                            "output_file": self.path
+                            / OSMOSE_PATH.statistics
+                            / f"SummaryStats_{i_min}.csv",
                             "hp_filter_min_freq": self.hp_filter_min_freq,
                             "batch_ind_min": i_min,
                             "batch_ind_max": i_max,
@@ -853,10 +845,10 @@ class Spectrogram(Dataset):
                             --hp-filter-min-freq {self.hp_filter_min_freq}\
                             --batch-ind-min {i_min}\
                             --batch-ind-max {i_max}\
-                            --output-file {self.path.joinpath(OSMOSE_PATH.statistics, 'SummaryStats_' + str(i_min) + '.csv')}",
+                            --output-file {self.path / OSMOSE_PATH.statistics / f'SummaryStats_{i_min}.csv'}",
                         jobname="OSmOSE_get_zscore_params",
                         preset="low",
-                        logdir=self.path.joinpath(OSMOSE_PATH.log),
+                        logdir=self.path / OSMOSE_PATH.log,
                     )
 
                     job_id = self.jb.submit_job()
@@ -872,7 +864,7 @@ class Spectrogram(Dataset):
         metadata["audio_file_count"] = len(new_file) - 1
         metadata["start_date"] = datetime_begin
         metadata["end_date"] = datetime_end
-        new_meta_path = self.audio_path.joinpath("metadata.csv")
+        new_meta_path = self.audio_path / "metadata.csv"
 
         if new_meta_path.exists():
             new_meta_path.unlink()
@@ -912,15 +904,19 @@ class Spectrogram(Dataset):
         analysis_sheet = pd.DataFrame.from_records([data])
 
         if adjust_bool:
-            meta_path = self.path.joinpath(
-                OSMOSE_PATH.spectrogram, "adjustment_spectros", "adjust_metadata.csv"
+            meta_path = (
+                self.path
+                / OSMOSE_PATH.spectrogram
+                / "adjustment_spectros"
+                / "adjust_metadata.csv"
             )
         else:
-            meta_path = self.path.joinpath(
-                OSMOSE_PATH.spectrogram,
-                f"{str(self.spectro_duration)}_{str(self.dataset_sr)}",
-                f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}_{self.custom_frequency_scale}",
-                "metadata.csv",
+            meta_path = (
+                self.path
+                / OSMOSE_PATH.spectrogram
+                / f"{str(self.spectro_duration)}_{str(self.dataset_sr)}"
+                / f"{str(self.nfft)}_{str(self.window_size)}_{str(self.overlap)}_{self.custom_frequency_scale}"
+                / "metadata.csv"
             )
 
         if meta_path.exists():
@@ -932,7 +928,7 @@ class Spectrogram(Dataset):
     def audio_file_list_csv(self) -> Path:
         list_audio = get_audio_file(self.path_input_audio_file)
 
-        csv_path = self.audio_path.joinpath(f"wav_list_{len(list_audio)}.csv")
+        csv_path = self.audio_path / f"wav_list_{len(list_audio)}.csv"
 
         if csv_path.exists():
             return csv_path
@@ -1040,11 +1036,11 @@ class Spectrogram(Dataset):
         if adjust:
             audio_file = Path(audio_file)
 
-            self.path_output_spectrogram = self.path.joinpath(
-                OSMOSE_PATH.spectrogram
-            ).joinpath("adjustment_spectros", "image")
+            self.path_output_spectrogram = (
+                self.path / OSMOSE_PATH.spectrogram / "adjustment_spectros" / "image"
+            )
 
-            output_file = self.path_output_spectrogram.joinpath(audio_file.name)
+            output_file = self.path_output_spectrogram / audio_file.name
 
             make_path(self.path_output_spectrogram, mode=DPDEFAULT)
 
@@ -1057,14 +1053,12 @@ class Spectrogram(Dataset):
             set_umask()
             try:
                 if clean_adjust_folder and (
-                    self.path_output_spectrogram.parent.parent.joinpath(
-                        "adjustment_spectros"
+                    (
+                        self.path_output_spectrogram.parents[1] / "adjustment_spectros"
                     ).exists()
                 ):
                     shutil.rmtree(
-                        self.path_output_spectrogram.parent.parent.joinpath(
-                            "adjustment_spectros"
-                        ),
+                        self.path_output_spectrogram.parents[1] / "adjustment_spectros",
                         ignore_errors=True,
                     )
                     print("adjustment_spectros folder deleted.")
@@ -1083,7 +1077,7 @@ class Spectrogram(Dataset):
             Zscore = self.zscore_duration if not adjust else "original"
 
             audio_file = Path(audio_file).name
-            output_file = self.path_output_spectrogram.joinpath(audio_file)
+            output_file = self.path_output_spectrogram / audio_file
 
             if overwrite:
                 for old_file in self.path_output_spectrogram.glob(
@@ -1118,9 +1112,7 @@ class Spectrogram(Dataset):
             #! Determination of zscore normalization parameters
             if self.data_normalization == "zscore" and Zscore != "original":
                 df = pd.DataFrame()
-                for dd in self.path.joinpath(OSMOSE_PATH.statistics).glob(
-                    "SummaryStats*"
-                ):
+                for dd in (self.path / OSMOSE_PATH.statistics).glob("SummaryStats*"):
                     df = pd.concat([df, pd.read_csv(dd, header=0)])
 
                 df.set_index("timestamp", inplace=True)
@@ -1149,7 +1141,7 @@ class Spectrogram(Dataset):
                     self.__summStats["filename"] == audio_file
                 ]["std_avg"].values[0]
 
-            audio_file = self.audio_path.joinpath(audio_file)
+            audio_file = self.audio_path / audio_file
 
         #! File processing
         data, sample_rate = safe_read(audio_file)
@@ -1218,7 +1210,7 @@ class Spectrogram(Dataset):
             audio_file_ext = output_file.suffixes[-1]
             current_timestamp = pd.to_datetime(
                 get_timestamp_of_audio_file(
-                    self.audio_path.joinpath("timestamp.csv"),
+                    self.audio_path / "timestamp.csv",
                     audio_file_name + audio_file_ext,
                 )
             )
@@ -1241,9 +1233,8 @@ class Spectrogram(Dataset):
             Sxx, Freq = self.gen_spectro(
                 data=sample_data,
                 sample_rate=sample_rate,
-                output_file=output_file.parent.joinpath(
-                    f"{output_file.stem}_{nber_tiles_lowest_zoom_level}_{str(tile)}.png"
-                ),
+                output_file=output_file.parent
+                / f"{output_file.stem}_{nber_tiles_lowest_zoom_level}_{str(tile)}.png",
             )
 
             Sxx_complete_lowest_level = np.hstack((Sxx_complete_lowest_level, Sxx))
@@ -1269,8 +1260,8 @@ class Spectrogram(Dataset):
             if not output_path_welch_resolution.exists():
                 make_path(output_path_welch_resolution, mode=DPDEFAULT)
 
-            output_matrix = output_path_welch_resolution.joinpath(
-                output_file.name
+            output_matrix = (
+                output_path_welch_resolution / output_file.name
             ).with_suffix(".npz")
 
             if not output_matrix.exists():
@@ -1306,9 +1297,8 @@ class Spectrogram(Dataset):
                     time=segment_times_int,
                     freq=Freq,
                     log_spectro=log_spectro,
-                    output_file=output_file.parent.joinpath(
-                        f"{output_file.stem}_{str(2 ** zoom_level)}_{str(tile)}.png"
-                    ),
+                    output_file=output_file.parent
+                    / f"{output_file.stem}_{str(2 ** zoom_level)}_{str(tile)}.png",
                     adjust=adjust,
                 )
 
@@ -1319,14 +1309,15 @@ class Spectrogram(Dataset):
                 # OLD SOLUTION : here we use duration (read from current audio files) rather than self.spectro_duration to have
                 # the exact audio file duration; so that when different audio file durations are present,
                 # their respective welch spectra will be put into different folders
-                output_path_welch_resolution = self.path_output_welch.joinpath(
-                    str(int(self.spectro_duration)) + "_" + str(int(self.dataset_sr))
+                output_path_welch_resolution = (
+                    self.path_output_welch
+                    / f"{int(self.spectro_duration)}_{int(self.dataset_sr)}"
                 )
                 if not output_path_welch_resolution.exists():
                     make_path(output_path_welch_resolution, mode=DPDEFAULT)
 
-                output_matrix = output_path_welch_resolution.joinpath(
-                    output_file.name
+                output_matrix = (
+                    output_path_welch_resolution / output_file.name
                 ).with_suffix(".npz")
 
                 if not output_matrix.exists():
@@ -1411,8 +1402,8 @@ class Spectrogram(Dataset):
         if self.save_matrix:
             make_path(self.path_output_spectrogram_matrix, mode=DPDEFAULT)
 
-            output_matrix = self.path_output_spectrogram_matrix.joinpath(
-                output_file.name
+            output_matrix = (
+                self.path_output_spectrogram_matrix / output_file.name
             ).with_suffix(".npz")
 
             if not output_matrix.exists():
@@ -1564,23 +1555,24 @@ class Spectrogram(Dataset):
 
     def build_LTAS(self, time_resolution: int, sample_rate: int, time_scale: str = "D"):
         list_npz_files = list(
-            self.path_output_welch.joinpath(
-                str(time_resolution) + "_" + str(sample_rate)
-            ).glob("*npz")
-        )
+            self.path_output_welch / f"{time_resolution}_{sample_rate}"
+        ).glob("*npz")
 
         if len(list_npz_files) == 0:
             raise FileNotFoundError(
-                f"No intermediary welch spectra to aggregate in the folder {self.path_output_welch.joinpath(str(time_resolution)+'_'+str(sample_rate))} ; please run a complete generation of spectrograms first!"
+                f"No intermediary welch spectra to aggregate in the folder {self.path_output_welch / f'{time_resolution}_{sample_rate}'} ; please run a complete generation of spectrograms first!"
             )
 
         else:
             if not self.path_output_LTAS.exists():
                 make_path(self.path_output_LTAS, mode=DPDEFAULT)
 
-            path_all_welch = self.path_output_welch.joinpath(
-                str(time_resolution) + "_" + str(sample_rate), "all_welch.npz"
+            path_all_welch = (
+                self.path_output_welch
+                / f"{time_resolution}_{sample_rate}"
+                / "all_welch.npz"
             )
+
             if os.path.exists(path_all_welch):
                 data = np.load(path_all_welch, allow_pickle=True)
                 Sxx = data["Sxx"]
@@ -1624,7 +1616,7 @@ class Spectrogram(Dataset):
                     df.index[-1],
                     Freq,
                     log_spectro.T,
-                    self.path.joinpath(OSMOSE_PATH.LTAS, f"LTAS_all.png"),
+                    self.path / OSMOSE_PATH.LTAS / "LTAS_all.png",
                     "all",
                     df.index,
                 )
@@ -1651,10 +1643,9 @@ class Spectrogram(Dataset):
                         current_time_period[-1],
                         Freq,
                         log_spectro,
-                        self.path.joinpath(
-                            OSMOSE_PATH.LTAS,
-                            f"LTAS_{datetime.strftime(time_vector[ind_period], '%Y_%m_%dT%H_%M_%S')}.png",
-                        ),
+                        self.path
+                        / OSMOSE_PATH.LTAS
+                        / f"LTAS_{datetime.strftime(time_vector[ind_period], '%Y_%m_%dT%H_%M_%S')}.png",
                         time_scale,
                         current_time_period,
                     )
@@ -1741,9 +1732,7 @@ class Spectrogram(Dataset):
             Freq_min = [Freq_min]
 
         list_npz_files = list(
-            self.path_output_welch.joinpath(
-                str(time_resolution) + "_" + str(sample_rate)
-            ).glob("*npz")
+            (self.path_output_welch / f"{time_resolution}_{sample_rate}").glob("*npz")
         )
         if len(list_npz_files) == 0:
             raise FileNotFoundError(
@@ -1754,9 +1743,12 @@ class Spectrogram(Dataset):
             if not self.path_output_SPLfiltered.exists():
                 make_path(self.path_output_SPLfiltered, mode=DPDEFAULT)
 
-            path_all_welch = self.path_output_welch.joinpath(
-                str(time_resolution) + "_" + str(sample_rate), "all_welch.npz"
+            path_all_welch = (
+                self.path_output_welch
+                / f"{time_resolution}_{sample_rate}"
+                / "all_welch.npz"
             )
+
             if os.path.exists(path_all_welch):
                 data = np.load(path_all_welch, allow_pickle=True)
                 Sxx = data["Sxx"]
@@ -1810,10 +1802,12 @@ class Spectrogram(Dataset):
 
                 lst_legend.append(f"[{cur_freq_min}-{cur_freq_max}] Hz")
 
-                output_file_npz = self.path.joinpath(
-                    OSMOSE_PATH.SPLfiltered,
-                    f"SPLfiltered_{cur_freq_min}_{cur_freq_max}.npz",
+                output_file_npz = (
+                    self.path
+                    / OSMOSE_PATH.SPLfiltered
+                    / f"SPLfiltered_{cur_freq_min}_{cur_freq_max}.npz"
                 )
+
                 np.savez(
                     output_file_npz,
                     SPL=SPL_filtered,
@@ -1837,9 +1831,8 @@ class Spectrogram(Dataset):
             ax.tick_params(axis="x", rotation=20)
 
             # save as png figure
-            output_file = self.path.joinpath(
-                OSMOSE_PATH.SPLfiltered, f"SPLfiltered.png"
-            )
+            output_file = self.path / OSMOSE_PATH.SPLfiltered / "SPLfiltered.png"
+
             print(
                 "saving", output_file, "; Nber of time points:", str(len(SPL_filtered))
             )
@@ -1848,9 +1841,7 @@ class Spectrogram(Dataset):
 
     def build_EPD(self, time_resolution: str, sample_rate: int, show_fig: bool = False):
         list_npz_files = list(
-            self.path_output_welch.joinpath(
-                str(time_resolution) + "_" + str(sample_rate)
-            ).glob("*npz")
+            (self.path_output_welch / f"{time_resolution}_{sample_rate}").glob("*npz")
         )
         if len(list_npz_files) == 0:
             raise FileNotFoundError(
@@ -1861,9 +1852,12 @@ class Spectrogram(Dataset):
             if not self.path_output_EPD.exists():
                 make_path(self.path_output_EPD, mode=DPDEFAULT)
 
-            path_all_welch = self.path_output_welch.joinpath(
-                str(time_resolution) + "_" + str(sample_rate), "all_welch.npz"
+            path_all_welch = (
+                self.path_output_welch
+                / f"{time_resolution}_{sample_rate}"
+                / "all_welch.npz"
             )
+
             if os.path.exists(path_all_welch):
                 data = np.load(path_all_welch, allow_pickle=True)
                 Sxx = data["Sxx"]
@@ -1904,7 +1898,7 @@ class Spectrogram(Dataset):
             plt.xlabel("Frequency (Hz)")
 
             # save as png figure
-            output_file = self.path.joinpath(OSMOSE_PATH.EPD, f"EPD.png")
+            output_file = self.path / OSMOSE_PATH.EPD / "EPD.png"
             print(f"saving {output_file} ; Nber of welch: {all_welch.shape[0]}")
             plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
 

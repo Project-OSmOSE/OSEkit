@@ -1,10 +1,11 @@
+__pycache__/
 .pytest-cache
-__pycache__
+.coverage
+/_site
 *.git
 dist
 .vscode
 ongoing_jobs
 log_job
-.coverage
-/_site
-/src/OSmOSE/__pycache__
+
+
