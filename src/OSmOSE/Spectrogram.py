@@ -558,7 +558,6 @@ class Spectrogram(Dataset):
         batch_ind_min: int = 0,
         batch_ind_max: int = -1,
         force_init: bool = False,
-        date_template: str = None,
         env_name: str = None,
         last_file_behavior: Literal["pad", "truncate", "discard"] = "pad",
     ) -> None:
@@ -651,7 +650,7 @@ class Spectrogram(Dataset):
             )
             return
 
-        # MD: idk what is the use of this
+        # process only a subset of the dataset
         if self.path.joinpath(OSMOSE_PATH.processed, "subset_files.csv").is_file():
             subset = pd.read_csv(
                 self.path.joinpath(OSMOSE_PATH.processed, "subset_files.csv"),
@@ -663,13 +662,15 @@ class Spectrogram(Dataset):
 
         # if datetime begin/end are not provided, takes the datetime of first audio file/datetime + duration of last audio file
         if not datetime_begin:
-            datetime_begin = str(file_metadata["timestamp"].iloc[0])
+            datetime_begin = (file_metadata["timestamp"].iloc[0]).strftime(
+                "%Y-%m-%dT%H:%M:%S%z"
+            )
 
         if not datetime_end:
-            datetime_end = str(
+            datetime_end = (
                 file_metadata["timestamp"].iloc[-1]
                 + pd.Timedelta(file_metadata["duration"].iloc[-1], unit="s")
-            )
+            ).strftime("%Y-%m-%dT%H:%M:%S%z")
 
         # new timestamps calculation to determine the size of a batch
         new_file = list(
@@ -682,6 +683,9 @@ class Spectrogram(Dataset):
 
         # size of a batch
         batch_size = (len(new_file) - 1) // self.batch_number
+        if batch_size == 0:
+            self.batch_number = 1
+            batch_size = (len(new_file) - 1) // self.batch_number
 
         # if a resample or a segmentation or both is necessary
         if (int(self.spectro_duration) != int(audio_file_origin_duration.mean())) or (
@@ -700,10 +704,10 @@ class Spectrogram(Dataset):
 
                 i_min = i_max + 1
                 i_max = (
-                    i_min + batch_size
+                    i_min + batch_size - 1
                     if batch < self.batch_number - 1
                     and i_min + batch_size < len(new_file)
-                    else len(new_file) - 1
+                    else len(new_file) - 2
                 )
 
                 if self.__local:
@@ -720,8 +724,10 @@ class Spectrogram(Dataset):
                             "output_dir_path": self.audio_path,
                             "datetime_begin": datetime_begin,
                             "datetime_end": datetime_end,
-                            "chunk_size": int(self.spectro_duration),
+                            "segment_size": int(self.spectro_duration),
                             "new_sr": int(self.dataset_sr),
+                            "batch": batch,
+                            "batch_num": self.batch_number,
                             "batch_ind_min": i_min,
                             "batch_ind_max": i_max,
                             "last_file_behavior": last_file_behavior,
@@ -741,8 +747,10 @@ class Spectrogram(Dataset):
                                 --output-dir {self.audio_path}\
                                 --datetime-begin {datetime_begin}\
                                 --datetime-end {datetime_end}\
-                                --chunk-size {int(self.spectro_duration)}\
+                                --segment-size {int(self.spectro_duration)}\
                                 --new-sr {int(self.dataset_sr)}\
+                                --batch {batch}\
+                                --batch-num {self.batch_number}\
                                 --batch-ind-min {i_min}\
                                 --batch-ind-max {i_max}\
                                 --last-file-behavior {last_file_behavior}\
@@ -1077,34 +1085,13 @@ class Spectrogram(Dataset):
             audio_file = Path(audio_file).name
             output_file = self.path_output_spectrogram.joinpath(audio_file)
 
-            # def check_existing_matrix():
-            #     return (
-            #         len(
-            #             list(
-            #                 self.path_output_spectrogram_matrix.glob(
-            #                     f"{Path(audio_file).stem}*"
-            #                 )
-            #             )
-            #         )
-            #         == 2**self.zoom_level
-            #         if save_matrix
-            #         else True
-            #     )
-            # if (
-            #     len(
-            #         list(self.path_output_spectrogram.glob(f"{Path(audio_file).stem}*"))
-            #     )
-            #     == sum(2**i for i in range(self.zoom_level + 1))
-            #     and check_existing_matrix()
-            # ):
-
             if overwrite:
-                print(
-                    f"Existing files detected for audio file {audio_file}! They will be overwritten."
-                )
                 for old_file in self.path_output_spectrogram.glob(
                     f"{Path(audio_file).stem}*"
                 ):
+                    print(
+                        f"Existing files detected for audio file {audio_file}! They will be overwritten."
+                    )
                     old_file.unlink()
                 if save_matrix:
                     for old_matrix in self.path_output_spectrogram_matrix.glob(

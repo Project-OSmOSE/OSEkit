@@ -1,7 +1,6 @@
 import os
 import re
 import pandas as pd
-from datetime import datetime
 from typing import List, Union, Literal
 from argparse import ArgumentParser
 from pathlib import Path
@@ -9,7 +8,7 @@ import numpy as np
 import soundfile as sf
 from librosa import resample
 
-from OSmOSE.utils.core_utils import set_umask, select_audio_file
+from OSmOSE.utils.core_utils import set_umask
 from OSmOSE.utils.path_utils import make_path
 from OSmOSE.config import DPDEFAULT, FPDEFAULT
 from OSmOSE.utils import get_audio_file
@@ -17,7 +16,7 @@ from OSmOSE.utils import get_audio_file
 
 def reshape(
     input_files: Union[str, list],
-    chunk_size: int,
+    segment_size: int,
     *,
     file_metadata_path: Union[str, Path] = None,
     timestamp_path: Union[str, Path] = None,
@@ -25,168 +24,98 @@ def reshape(
     datetime_begin: str = None,
     datetime_end: str = None,
     new_sr: int = -1,
+    batch: int = 0,
+    batch_num: int = 1,
     batch_ind_min: int = 0,
     batch_ind_max: int = -1,
     last_file_behavior: Literal["truncate", "pad", "discard"] = "pad",
     verbose: bool = False,
     overwrite: bool = True,
 ) -> List[str]:
-    """Reshape all audio files in the folder to be of the specified duration from datetime_begin to datetime_end. If chunk_size is superior to the base duration of the files, they will be fused according to their order in the timestamp.csv file in the same folder.
-
-    Parameters:
-    -----------
-        input_files: `str` or `list(str)`
-            Either the directory containing the audio files and the timestamp.csv file, in which case all audio files will be considered,
-            OR a list of audio files all located in the same directory alongside a timestamp.csv, in which case only they will be used.
-
-        chunk_size: `int`
-            The target duration for all the reshaped files, in seconds.
-
-        file_metadata_path: `str` or `Path`
-            The path to the file_metadata.csv file
-
-        timestamp_path: `str` or `Path`
-            The path to the timestamp.csv file
-
-        datetime_begin: `str`
-            A datetime formatted string corresponding to the beginning of the reshaped audio files.
-            If not specified, the begin datetime of the first audio file is selected.
-
-        datetime_end: `str`
-            A datetime formatted string corresponding to the end of the reshaped audio files.
-            If not specified, the end datetime of the last audio file is selected.
-
-        output_dir_path: `str`, optional, keyword-only
-            The directory where the newly created audio files will be created. If none is provided,
-            it will be the same as the input directory. This is not recommended.
-
-        batch_ind_min: `int`, optional, keyword-only
-            The first file of the list to be processed. Default is 0.
-
-        batch_ind_max: `int`, optional, keyword-only
-            The last file of the list to be processed. Default is -1, meaning the entire list is processed.
-
-        last_file_behavior: `{"truncate","pad","discard"}, optional, keyword-only
-            Tells the reshaper what to do with if the last data of the last file is too small to fill a whole file.
-            This parameter is only active if `batch_ind_max` is `-1`
-            - `truncate` creates a truncated file with the remaining data, which will have a different duration than the others.
-            - `pad` creates a file of the same duration than the others, where the missing data is filled with 0.
-            - `discard` ignores the remaining data. The last seconds/minutes/hours of audio will be lost in the reshaping.
-        The default method is `pad`.
-
-        verbose: `bool`, optional, keyword-only
-            Whether to display informative messages or not.
-
-        overwrite: `bool`, optional, keyword-only
-            Deletes the content of `output_dir_path` before writing the results. If it is implicitly the `input_files` directory,
-            nothing happens. WARNING: If `output_dir_path` is explicitly set to be the same as `input_files`, then it will be overwritten!
-
-    Returns:
-    --------
-        The list of the path of newly created audio files.
     """
+    Reshape all audio files in the folder to be of the specified duration and/or sampling rate.
+    The begin and end datetime can be specified as well by the user,
+    if not, the begin datetime of the first original audio file and the end datetime of the last audio file will be used
+    """
+
     set_umask()
 
-    # datetimes check
+    # Validate datetimes format
     regex = r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}[+-]\d{4}$"
-    regex2 = r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$"  # there might be a more proper way to do this
+    regex2 = r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$"
+    datetime_format_error = (
+        "Please use the following format: 'YYYY-MM-DDTHH:MM:SS+/-HHMM'."
+    )
 
-    if (
-        datetime_begin
-        and not isinstance(datetime_begin, pd.Timestamp)
-        and not re.match(pattern=regex, string=datetime_begin)
-        and not re.match(pattern=regex2, string=datetime_begin)
-    ):
-        print(datetime_begin)
-        raise ValueError(
-            f"The datetime string '{datetime_begin}' is not in a valid format. Please consider using the following format: 'YYYY-MM-DDTHH:MM:SS+/-HHMM'."
-        )
+    if datetime_begin:
+        if not re.match(regex, datetime_begin) and not re.match(regex2, datetime_begin):
+            raise ValueError(
+                f"Invalid format for datetime_begin. {datetime_format_error}"
+            )
+        datetime_begin = pd.Timestamp(datetime_begin)
 
-    try:
-        pd.Timestamp(datetime_begin)
-    except ValueError as e:
-        raise ValueError(
-            f"Failed to parse datetime string '{datetime_begin}': {e}. Please provide a valid format."
-        )
+    if datetime_end:
+        if not re.match(regex, datetime_end) and not re.match(regex2, datetime_end):
+            raise ValueError(
+                f"Invalid format for datetime_end. {datetime_format_error}"
+            )
+        datetime_end = pd.Timestamp(datetime_end)
 
-    if (
-        datetime_end
-        and not isinstance(datetime_end, pd.Timestamp)
-        and not re.match(pattern=regex, string=datetime_end)
-        and not re.match(pattern=regex2, string=datetime_end)
-    ):
-        raise ValueError(
-            f"The datetime string '{datetime_end}' is not in a valid format. Please consider using the following format: 'YYYY-MM-DDTHH:MM:SS+/-HHMM'"
-        )
-
-    try:
-        pd.Timestamp(datetime_end)
-    except ValueError as e:
-        raise ValueError(
-            f"Failed to parse datetime string '{datetime_end}': {e}. Please provide a valid format."
-        )
-
-    # last_file_behavior check
+    # Validate last_file_behavior
     if last_file_behavior not in ["truncate", "pad", "discard"]:
         raise ValueError(
-            f"Bad value {last_file_behavior} for last_file_behavior parameter. Must be one of truncate, pad or discard."
+            f"Invalid last_file_behavior: '{last_file_behavior}'. Must be one of 'truncate', 'pad', or 'discard'."
         )
 
-    # input_files / input_dir_path checks
+    # Prepare file paths
     if isinstance(input_files, list):
         input_dir_path = Path(input_files[0]).parent
         files = [Path(file) for file in input_files]
-        if verbose:
-            print(f"Input directory detected as {input_dir_path}")
     else:
         input_dir_path = Path(input_files)
         files = get_audio_file(file_path=input_dir_path)
 
     if not input_dir_path.is_dir():
         raise ValueError(
-            f"The input files must either be a valid folder path or a list of file path, not {str(input_dir_path)}."
+            f"The input files must either be a valid folder path or a list of file path, not {input_dir_path}."
         )
 
-    if not input_dir_path.joinpath("timestamp.csv").exists() and (
+    if not (input_dir_path / "timestamp.csv").exists() and (
         not timestamp_path or not timestamp_path.exists()
     ):
         raise FileNotFoundError(
-            f"The timestamp.csv file must be present in the directory {input_dir_path} and correspond to the audio files in the same location, or be specified in the argument."
+            f"The timestamp.csv file must be present in the directory {Path(input_dir_path)} and correspond to the audio files in the same location, or be specified in the argument."
         )
 
-    # output_dir_path check
+    # Output directory
     if not output_dir_path:
-        print("No output directory provided. Will use the input directory instead.")
         output_dir_path = input_dir_path
         if overwrite:
-            print(
-                "Cannot overwrite input directory when the output directory is implicit! Choose a different output directory instead."
+            raise ValueError(
+                "Cannot overwrite input directory when the output directory is implicit!"
             )
     output_dir_path = Path(output_dir_path)
     make_path(output_dir_path, mode=DPDEFAULT)
 
-    # read timestamp.csv
+    # Load timestamp and metadata
     input_timestamp = pd.read_csv(
         timestamp_path
         if timestamp_path and timestamp_path.exists()
-        else input_dir_path.joinpath("timestamp.csv")
+        else input_dir_path / "timestamp.csv"
     )
 
-    # read file_metadata.csv
     if file_metadata_path and file_metadata_path.exists():
         file_metadata = pd.read_csv(file_metadata_path, parse_dates=["timestamp"])
     else:
         file_metadata = pd.read_csv(
-            input_dir_path.joinpath("file_metadata.csv"), parse_dates=["timestamp"]
+            input_dir_path / "file_metadata.csv", parse_dates=["timestamp"]
         )
 
-    # filter file_metadata DataFrame based on files to process
     filename = [file.name for file in files]
     file_metadata = file_metadata[file_metadata["filename"].isin(filename)].reset_index(
         drop=True
     )
 
-    # if datetime begin/end are not provided, takes the datetime of first audio file/datetime + duration of last audio file
     if not datetime_begin:
         datetime_begin = file_metadata["timestamp"].iloc[0]
 
@@ -195,155 +124,221 @@ def reshape(
             file_metadata["duration"].iloc[-1], unit="s"
         )
 
-    # DataFrame creation with the new audio files to be created and the original audio files needed to create each of those new audio
-    df_file = select_audio_file(
-        file_metadata=file_metadata,
-        dt_begin=pd.Timestamp(datetime_begin),
-        dt_end=pd.Timestamp(datetime_end),
-        duration=chunk_size,
-        last_file_behavior=last_file_behavior,
-    )
-
-    # selection of a subset (or batch) of the DataFrame according to provided indexes
-    df_file_batch = df_file[
-        batch_ind_min : (batch_ind_max + 1 if batch_ind_max > 0 else len(df_file))
-    ].reset_index(drop=True)
-
+    segment_duration = pd.Timedelta(seconds=segment_size)
     result = []
     timestamp_list = []
-    list_seg_name = []
-    list_seg_timestamp = []
+    previous_segment = np.empty(shape=[0])
+    initial_padding = np.empty(shape=[0])
+    f = 0  # written file
 
-    for i in range(len(df_file_batch)):
-
-        if verbose:
-            print(f"New file: {df_file_batch['filename'][i]}")
-            print(f"Selected original files: {df_file_batch['selection'][i]}")
-
-        if any(df_file_batch["selection"][i]):
-
-            files = df_file_batch["selection"][i]
-
-            # first we resample if necessary then we concatenate data necessary to construct the new audio file
-            audio_data = np.empty(shape=[0])
-            for f in files:
-                input_file = input_dir_path.joinpath(f)
-                fmt = input_file.suffixes[-1].replace(".", "")
-
-                # getting file information and data
-                with sf.SoundFile(input_file) as audio_file:
-                    sample_rate = audio_file.samplerate
-                    subtype = audio_file.subtype
-                    audio_data_slice = audio_file.read()
-
-                if new_sr == -1:
-                    new_sr = sample_rate
-
-                # if the file sample rate is different from the target sample rate, we resample the audio data
-                elif new_sr != sample_rate:
-                    audio_data_slice = resample(
-                        audio_data_slice, orig_sr=sample_rate, target_sr=new_sr
+    # In the case of a single batch where batch_ind_max = -1, assign its true value otherwise the main for loop does not work
+    if batch == 0 and batch_ind_min == 0 and batch_ind_max == -1:
+        batch_ind_max = (
+            len(
+                list(
+                    pd.date_range(
+                        start=pd.Timestamp(datetime_begin),
+                        end=pd.Timestamp(datetime_end)
+                        - pd.Timedelta(value=int(f"{segment_size}"), unit="s"),
+                        freq=f"{segment_size}s",
                     )
-                    sample_rate = new_sr
+                )
+            )
+            - 1
+        )
 
-                audio_data = np.concatenate((audio_data, audio_data_slice))
+    # Iterate over each segment
+    for i in range((batch_ind_max - batch_ind_min) + 1):
 
-            # now we check if the data begins before / after the begin datetime of the new audio file
-            # case 1 : it begins after, then we need to pad the begining of new file with zeros
-            if df_file_batch["dt_start"][i] < min(
-                df_file_batch["selection_datetime_begin"][i]
-            ):
-                offset_beginning = (
-                    min(df_file_batch["selection_datetime_begin"][i])
-                    - df_file_batch["dt_start"][i]
-                ).total_seconds()
-                fill = np.zeros(int(offset_beginning * sample_rate))
-                audio_data = np.concatenate((fill, audio_data))[
-                    : chunk_size * sample_rate
-                ]
-            # case 2  : it begins before, then we need to cut out the useless data anterior to begining of new file
-            # note : the case where it begins right on the same time is taken care of here
-            elif df_file_batch["dt_start"][i] >= min(
-                df_file_batch["selection_datetime_begin"][i]
-            ):
-                offset_beginning = (
-                    df_file_batch["dt_start"][i]
-                    - min(df_file_batch["selection_datetime_begin"][i])
-                ).total_seconds()
-                audio_data = audio_data[int(offset_beginning * sample_rate) :]
+        audio_data = np.empty(shape=[0])
 
-                # case where the audio file ends right on the same datetime than the begin datetime, then audio_data is empty
-                if len(audio_data) == 0:
-                    continue
+        segment_datetime_begin = datetime_begin + (
+            (i + batch_ind_min) * segment_duration
+        )
+        segment_datetime_end = min(
+            segment_datetime_begin + segment_duration, datetime_end
+        )
 
-            # if audio_data is longer than desired duration we cut out the end to get the desired duration
-            if len(audio_data) > chunk_size * sample_rate:
-                audio_data = audio_data[: chunk_size * sample_rate]
+        for index, row in file_metadata.iterrows():
 
-            # if it is the last batch, the last original audio might be too short, then we pad with zeros if "pad" is selected
-            # OR we shorten it because the duration if the last new audio file is < than the duration
+            file_datetime_begin = row["timestamp"]
+            file_datetime_end = row["timestamp"] + pd.Timedelta(seconds=row["duration"])
+
+            # Check if original audio file overlaps with the current segment
             if (
-                len(audio_data) < chunk_size * sample_rate
-                or (
-                    df_file_batch["dt_end"][i] - df_file_batch["dt_start"][i]
-                ).total_seconds()
-                < chunk_size
+                file_datetime_end > segment_datetime_begin
+                and file_datetime_begin < segment_datetime_end
             ):
+                with sf.SoundFile(input_dir_path / row["filename"]) as audio_file:
+                    file_sample_rate = audio_file.samplerate
 
-                dur = (
-                    df_file_batch["dt_end"][i] - df_file_batch["dt_start"][i]
-                ).total_seconds()
-                audio_data = audio_data[: int(dur * sample_rate)]
+                    # Determine the part of the file that fits into the segment
+                    if file_datetime_begin < segment_datetime_begin:
+                        # File starts before the segment, so we skip the initial part of the file
+                        start_offset = int(
+                            (
+                                segment_datetime_begin - file_datetime_begin
+                            ).total_seconds()
+                            * file_sample_rate
+                        )
+                    elif file_datetime_begin >= segment_datetime_begin:
+                        # File does not start before the segment, no offset
+                        start_offset = 0
 
-                if last_file_behavior == "pad":
-                    offset_end = (chunk_size * sample_rate) - len(audio_data)
-                    fill = np.zeros(int(offset_end))
-                    audio_data = np.concatenate((audio_data, fill))
-                elif last_file_behavior == "discard":
-                    # todo: check if this works
-                    print(f"Last file is discarded as it is shorter than {chunk_size}s")
-                    return
-                elif last_file_behavior == "truncate":
-                    # todo: check if this works
-                    print("truncate l214")
-                    continue
+                        # First segment begins after first original file : zero padding
+                        if f == 0 and previous_segment.shape == np.zeros(shape=0).shape:
+                            initial_padding = np.zeros(
+                                shape=int(
+                                    (
+                                        file_datetime_begin - segment_datetime_begin
+                                    ).total_seconds()
+                                    * file_sample_rate
+                                )
+                            )
 
-            # at this point audio_data should have the desired size, then we proceed and write the new wav file
-            outfilename = output_dir_path.joinpath(
-                f"{df_file_batch['filename'][i].replace('-','_').replace(':','_').replace('.','_').replace('+','_')}.{fmt}"
-            )
-            result.append(outfilename.name)
+                    if file_datetime_end > segment_datetime_end:
+                        # File ends after the segment, so we cut off the end part of the file
+                        end_offset = int(
+                            (segment_datetime_end - file_datetime_begin).total_seconds()
+                            * file_sample_rate
+                        )
+                    else:
+                        # File ends before the segment, we read the rest of the audio file
+                        end_offset = len(audio_file)
 
-            list_seg_name.append(outfilename.name)
-            list_seg_timestamp.append(
-                datetime.strftime(
-                    df_file_batch["dt_start"][i], "%Y-%m-%dT%H:%M:%S.%f%z"
+                    # Read the appropriate section of the file
+                    audio_file.seek(start_offset)
+                    audio_data = audio_file.read(frames=end_offset - start_offset)
+
+                    # Initial padding
+                    if initial_padding.shape != np.zeros(shape=0).shape:
+                        audio_data = np.concatenate((initial_padding, audio_data))
+                        initial_padding = np.zeros(shape=0)
+
+                    # Resampling
+                    segment_sample_rate = file_sample_rate if new_sr == -1 else -1
+
+                    if file_sample_rate != segment_sample_rate:
+                        audio_data = resample(
+                            audio_data, orig_sr=file_sample_rate, target_sr=new_sr
+                        )
+                        segment_sample_rate = new_sr
+
+                    audio_data = np.concatenate((previous_segment, audio_data))
+
+                    expected_frames = int(segment_size * segment_sample_rate)
+
+                    # The segment is shorter than expected
+                    if len(audio_data) < expected_frames:
+
+                        # Not last batch
+                        if batch + 1 < batch_num:
+                            # Not last segment
+                            if i <= (batch_ind_max - batch_ind_min):
+                                previous_segment = audio_data
+                                continue
+
+                        # Last batch
+                        elif batch + 1 == batch_num:
+
+                            # Last batch but not last segment
+                            if i <= (batch_ind_max - batch_ind_min):
+
+                                # Not last original audio file
+                                if index + 1 < len(file_metadata):
+                                    previous_segment = audio_data
+                                    continue
+
+                                # Last original audio file
+                                elif index + 1 == len(file_metadata):
+                                    padding = np.zeros(
+                                        expected_frames - len(audio_data),
+                                        dtype=np.float32,
+                                    )
+                                    audio_data = np.concatenate((audio_data, padding))
+                                    previous_segment = np.empty(shape=[0])
+
+                            # Last batch and last segment
+                            else:
+                                if last_file_behavior == "pad":
+                                    padding = np.zeros(
+                                        expected_frames - len(audio_data),
+                                        dtype=np.float32,
+                                    )
+                                    audio_data = np.concatenate((audio_data, padding))
+                                elif last_file_behavior == "truncate":
+                                    continue
+                                elif last_file_behavior == "discard":
+                                    break
+
+                    # The segment is the expected length
+                    elif len(audio_data) == expected_frames:
+                        previous_segment = np.empty(shape=[0])
+                        continue
+
+                    # The segment is longer than the expected length
+                    else:
+                        previous_segment = audio_data[expected_frames:]
+                        audio_data = audio_data[:expected_frames]
+
+            elif file_datetime_begin > segment_datetime_end:
+                if index + 1 == len(file_metadata):
+                    if audio_data.shape == np.empty(shape=[0]).shape:
+                        print(
+                            f"No data available for file {segment_datetime_begin.strftime('%Y_%m_%d_%H_%M_%S')}.wav. Skipping...\n"
+                        )
+            else:
+                if index + 1 == len(file_metadata):
+                    if audio_data.shape == np.empty(shape=[0]).shape:
+                        print(
+                            f"No data available for file {segment_datetime_begin.strftime('%Y_%m_%d_%H_%M_%S')}.wav. Skipping...\n"
+                        )
+
+        # Define the output file name and save the audio segment
+        outfilename = (
+            output_dir_path
+            / f"{segment_datetime_begin.strftime('%Y_%m_%d_%H_%M_%S')}.wav"
+        )
+        result.append(outfilename.name)
+        timestamp_list.append(segment_datetime_begin.strftime("%Y-%m-%dT%H:%M:%S.%f%z"))
+
+        if not overwrite and os.path.exists(outfilename):
+            if verbose:
+                print(
+                    f"File {outfilename} already exists and overwrite is set to False. Skipping...\n"
                 )
-            )
+            continue
 
-            timestamp_list.append(
-                datetime.strftime(
-                    df_file_batch["dt_start"][i], "%Y-%m-%dT%H:%M:%S.%f%z"
-                )
+        if audio_data.shape != np.empty(shape=[0]).shape:
+            sf.write(
+                outfilename,
+                audio_data,
+                segment_sample_rate,
             )
-
-            sf.write(outfilename, audio_data, sample_rate, format=fmt, subtype=subtype)
             os.chmod(outfilename, mode=FPDEFAULT)
+
+            # Increment the number of written file
+            f += 1
 
             if verbose:
                 print(
-                    f"{outfilename} written! File is {(len(audio_data)/sample_rate)} seconds long."
+                    f"Saved file from {segment_datetime_begin} to {segment_datetime_end} as {outfilename}\n"
                 )
 
     # writing infos to timestamp_*.csv
     input_timestamp = pd.DataFrame({"filename": result, "timestamp": timestamp_list})
     input_timestamp.sort_values(by=["timestamp"], inplace=True)
     input_timestamp.drop_duplicates().to_csv(
-        output_dir_path.joinpath(f"timestamp_{batch_ind_min}.csv"),
+        output_dir_path / f"timestamp_{batch}.csv",
         index=False,
         na_rep="NaN",
     )
-    os.chmod(output_dir_path.joinpath(f"timestamp_{batch_ind_min}.csv"), mode=FPDEFAULT)
+    os.chmod((output_dir_path / f"timestamp_{batch}.csv"), mode=FPDEFAULT)
+    print(f"Saved timestamp csv file as timestamp_{batch}.csv\n")
+
+    print(f"Reshape for batch_{batch} completed")
+
+    return
 
 
 if __name__ == "__main__":
@@ -355,7 +350,7 @@ if __name__ == "__main__":
         help="The files to be reshaped, as either the path to a directory containing audio files and a timestamp.csv or a list of filenames all in the same directory alongside a timestamp.csv.",
     )
     required.add_argument(
-        "--chunk-size",
+        "--segment-size",
         "-s",
         type=int,
         help="The time in seconds of the reshaped files.",
@@ -383,6 +378,16 @@ if __name__ == "__main__":
         help="The first file of the list to be processed. Default is 0.",
     )
     parser.add_argument(
+        "--batch",
+        type=int,
+        help="Batch index",
+    )
+    parser.add_argument(
+        "--batch-num",
+        type=int,
+        help="Batch number",
+    )
+    parser.add_argument(
         "--batch-ind-max",
         "-max",
         type=int,
@@ -405,7 +410,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--last-file-behavior",
         default="pad",
-        help="Tells the program what to do with the remaining data that are shorter than the chunk size. Possible arguments are pad (the default), which pads with silence until the last file has the same length as the others; truncate to create a shorter file with only the leftover data; discard to not do anything with the last data and throw it away.",
+        help="Tells the program what to do with the remaining data that are shorter than the segment size. Possible arguments are pad (the default), which pads with silence until the last file has the same length as the others; truncate to create a shorter file with only the leftover data; discard to not do anything with the last data and throw it away.",
     )
     parser.add_argument(
         "--timestamp-path", default=None, help="Path to the original timestamp file."
@@ -433,7 +438,7 @@ if __name__ == "__main__":
     print("Parameters :", args)
 
     files = reshape(
-        chunk_size=args.chunk_size,
+        segment_size=args.segment_size,
         file_metadata_path=Path(args.file_metadata_path),
         timestamp_path=Path(args.timestamp_path),
         input_files=input_files,
@@ -441,6 +446,8 @@ if __name__ == "__main__":
         new_sr=args.new_sr,
         datetime_begin=args.datetime_begin,
         datetime_end=args.datetime_end,
+        batch=args.batch,
+        batch_num=args.batch_num,
         batch_ind_min=args.batch_ind_min,
         batch_ind_max=args.batch_ind_max,
         last_file_behavior=args.last_file_behavior,

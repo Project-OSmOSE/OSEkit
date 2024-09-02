@@ -11,19 +11,19 @@ def test_reshape_errors(input_dir):
     with pytest.raises(ValueError) as e:
         reshape(
             input_files=input_dir,
-            chunk_size=20,
+            segment_size=20,
             datetime_begin="/not/a/datetime",
         )
 
     assert (
         str(e.value)
-        == f"The datetime string '/not/a/datetime' is not in a valid format. Please consider using the following format: 'YYYY-MM-DDTHH:MM:SS+/-HHMM'."
+        == "Invalid format for datetime_begin. Please use the following format: 'YYYY-MM-DDTHH:MM:SS+/-HHMM'."
     )
 
     with pytest.raises(ValueError) as e:
         reshape(
             input_files="/not/a/path",
-            chunk_size=15,
+            segment_size=15,
         )
 
     assert (
@@ -40,13 +40,13 @@ def test_reshape_errors(input_dir):
 
     assert (
         str(e.value)
-        == "Bad value misbehave for last_file_behavior parameter. Must be one of truncate, pad or discard."
+        == f"Invalid last_file_behavior: 'misbehave'. Must be one of 'truncate', 'pad', or 'discard'."
     )
 
     with pytest.raises(FileNotFoundError) as e:
         reshape(
             input_files=input_dir,
-            chunk_size=20,
+            segment_size=20,
         )  # Supposed to fail because there is no timestamp.csv
 
     assert (
@@ -64,7 +64,7 @@ def test_reshape_smaller(input_dataset: Path, output_dir: Path):
 
     reshape(
         input_files=dataset._get_original_after_build(),
-        chunk_size=2,
+        segment_size=2,
         output_dir_path=output_dir,
     )
 
@@ -90,7 +90,7 @@ def test_reshape_with_new_sr(input_dataset: Path, output_dir):
 
     reshape(
         input_files=dataset._get_original_after_build(),
-        chunk_size=1,
+        segment_size=1,
         output_dir_path=output_dir,
         last_file_behavior="truncate",
         new_sr=800,
@@ -118,7 +118,7 @@ def test_reshape_truncate_last(input_dataset: Path, output_dir):
 
     reshape(
         input_files=dataset._get_original_after_build(),
-        chunk_size=1,
+        segment_size=1,
         output_dir_path=output_dir,
         last_file_behavior="truncate",
     )
