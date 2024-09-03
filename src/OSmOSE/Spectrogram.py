@@ -674,13 +674,11 @@ class Spectrogram(Dataset):
             ).strftime("%Y-%m-%dT%H:%M:%S%z")
 
         # new timestamps calculation to determine the size of a batch
-        new_file = list(
-            pd.date_range(
-                start=pd.Timestamp(datetime_begin),
-                end=pd.Timestamp(datetime_end),
-                freq=f"{self.spectro_duration}s",
-            )
-        )
+        new_file = pd.date_range(
+            start=pd.Timestamp(datetime_begin),
+            end=pd.Timestamp(datetime_end),
+            freq=f"{self.spectro_duration}s",
+        ).to_list()
 
         # size of a batch
         batch_size = (len(new_file) - 1) // self.batch_number
@@ -861,7 +859,16 @@ class Spectrogram(Dataset):
         metadata["audio_file_dataset_duration"] = self.spectro_duration
         metadata["dataset_sr"] = self.dataset_sr
         metadata["audio_file_dataset_overlap"] = self.audio_file_overlap
-        metadata["audio_file_count"] = len(new_file) - 1
+
+        origin_dt = pd.read_csv(
+            self.path_input_audio_file / "timestamp.csv", parse_dates=["timestamp"]
+        )["timestamp"]
+        nber_file_to_process = 0
+        for dt in new_file:
+            if dt >= origin_dt.iloc[0] and dt <= origin_dt.iloc[-1]:
+                nber_file_to_process += 1
+        metadata["audio_file_count"] = nber_file_to_process
+
         metadata["start_date"] = datetime_begin
         metadata["end_date"] = datetime_end
         new_meta_path = self.audio_path / "metadata.csv"
