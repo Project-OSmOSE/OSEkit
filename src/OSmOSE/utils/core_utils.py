@@ -304,14 +304,6 @@ def read_config(raw_config: Union[str, dict, Path]) -> NamedTuple:
     return raw_config
 
 
-# def convert(template: NamedTuple, dictionary: dict) -> NamedTuple:
-#     """Convert a dictionary in a Named Tuple"""
-#     for key, value in dictionary.items():
-#         if isinstance(value, dict):
-#             dictionary[key] = convert(template, value)
-#     return template(**dictionary)
-
-
 def read_header(file: str) -> Tuple[int, float, int, int, int]:
     """Read the first bytes of a wav/flac file and extract its characteristics.
     At the very least, only the first 44 bytes are read. If the `data` chunk is not right after the header chunk,
@@ -795,13 +787,9 @@ def select_audio_file(
     df_file = pd.DataFrame(df_file, columns=["filename", "dt_start", "dt_end"])
 
     # list of new datetimes
-    new_datetime = list(
-        pd.date_range(
-            start=dt_begin,
-            end=dt_end,
-            freq=f"{duration}s",
-        )
-    )
+    new_datetime = pd.date_range(
+        start=dt_begin, end=dt_end, freq=f"{duration}s"
+    ).to_list()
 
     # append manually dt_end if user wants to keep the last segment which is < duration
     if new_datetime[-1] != dt_end and last_file_behavior != "discard":

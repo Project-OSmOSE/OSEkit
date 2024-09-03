@@ -1080,12 +1080,13 @@ class Spectrogram(Dataset):
             output_file = self.path_output_spectrogram / audio_file
 
             if overwrite:
+                if any(self.path_output_spectrogram.glob(f"{Path(audio_file).stem}*")):
+                    print(
+                        f"Existing spectrogram files detected for audio file {audio_file}! 'overwrite' is set to {overwrite}, they will be overwritten."
+                    )
                 for old_file in self.path_output_spectrogram.glob(
                     f"{Path(audio_file).stem}*"
                 ):
-                    print(
-                        f"Existing files detected for audio file {audio_file}! They will be overwritten."
-                    )
                     old_file.unlink()
                 if save_matrix:
                     for old_matrix in self.path_output_spectrogram_matrix.glob(
