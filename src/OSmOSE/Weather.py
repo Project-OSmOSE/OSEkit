@@ -204,7 +204,7 @@ class Weather(Auxiliary):
 		instance.df = check_epoch(pd.read_csv(path))
 		instance.method = method
 		instance.ground_truth = ground_truth
-		instance.popt = {}
+		instance.popt, instance.wind_model_stats = {}, {}
 		return instance
 
 
