@@ -458,25 +458,22 @@ class Dataset:
                 continue
 
             # append audio metadata read from header in the dataframe audio_metadata
+            new_data = pd.DataFrame(
+                {
+                    "filename": [cur_filename],
+                    "timestamp": [cur_timestamp],
+                    "duration": [sf_meta.duration],
+                    "origin_sr": [int(sf_meta.samplerate)],
+                    "sampwidth": [sampwidth],
+                    "size": [size / 1e6],
+                    "duration_inter_file": [None],
+                    "channel_count": [channel_count],
+                    "status_read_header": [True],
+                }
+            )
+            new_data = new_data.dropna(axis=1, how="all")
             audio_metadata = pd.concat(
-                [
-                    audio_metadata,
-                    pd.DataFrame(
-                        {
-                            "filename": cur_filename,
-                            "timestamp": cur_timestamp,
-                            "duration": sf_meta.duration,
-                            "origin_sr": int(sf_meta.samplerate),
-                            "sampwidth": sampwidth,
-                            "size": size / 1e6,
-                            "duration_inter_file": None,
-                            "channel_count": channel_count,
-                            "status_read_header": True,
-                        },
-                        index=[0],
-                    ),
-                ],
-                axis=0,
+                [audio_metadata if not audio_metadata.empty else None, new_data], axis=0
             )
 
         audio_metadata["duration_inter_file"] = audio_metadata["duration"].diff()

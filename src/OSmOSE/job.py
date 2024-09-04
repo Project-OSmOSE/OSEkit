@@ -407,8 +407,6 @@ class Job_builder:
         )
 
         job_file_path = jobdir.joinpath(outfilename)
-
-        # job_file.append(f"\nchmod 444 {outfile} {errfile}")
         job_file.append(f"\nrm {job_file_path}\n")
 
         #! BUILD DONE => WRITING
