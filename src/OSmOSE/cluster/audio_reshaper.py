@@ -29,6 +29,7 @@ def reshape(
     batch_ind_min: int = 0,
     batch_ind_max: int = -1,
     last_file_behavior: Literal["truncate", "pad", "discard"] = "pad",
+    concat: bool = True,
     verbose: bool = False,
     overwrite: bool = True,
 ) -> List[str]:
@@ -133,31 +134,38 @@ def reshape(
 
     # In the case of a single batch where batch_ind_max = -1, assign its true value otherwise the main for loop does not work
     if batch == 0 and batch_ind_min == 0 and batch_ind_max == -1:
-        batch_ind_max = (
-            len(
-                list(
-                    pd.date_range(
-                        start=pd.Timestamp(datetime_begin),
-                        end=pd.Timestamp(datetime_end)
-                        - pd.Timedelta(value=int(f"{segment_size}"), unit="s"),
-                        freq=f"{segment_size}s",
+        if concat:
+            batch_ind_max = (
+                len(
+                    list(
+                        pd.date_range(
+                            start=pd.Timestamp(datetime_begin),
+                            end=pd.Timestamp(datetime_end)
+                            - pd.Timedelta(value=int(f"{segment_size}"), unit="s"),
+                            freq=f"{segment_size}s",
+                        )
                     )
                 )
+                - 1
             )
-            - 1
-        )
+        else:
+            batch_ind_max = len(file_metadata) - 1
 
     # Iterate over each segment
     for i in range((batch_ind_max - batch_ind_min) + 1):
 
         audio_data = np.empty(shape=[0])
 
-        segment_datetime_begin = datetime_begin + (
-            (i + batch_ind_min) * segment_duration
-        )
-        segment_datetime_end = min(
-            segment_datetime_begin + segment_duration, datetime_end
-        )
+        if concat:
+            segment_datetime_begin = datetime_begin + (
+                (i + batch_ind_min) * segment_duration
+            )
+            segment_datetime_end = min(
+                segment_datetime_begin + segment_duration, datetime_end
+            )
+        else:
+            segment_datetime_begin = file_metadata["timestamp"].iloc[i]
+            segment_datetime_end = file_metadata["timestamp"].iloc[i] + segment_duration
 
         for index, row in file_metadata.iterrows():
 
@@ -230,46 +238,58 @@ def reshape(
 
                     # The segment is shorter than expected
                     if len(audio_data) < expected_frames:
-
-                        # Not last batch
-                        if batch + 1 < batch_num:
-                            # Not last segment
-                            if i <= (batch_ind_max - batch_ind_min):
-                                previous_segment = audio_data
-                                continue
-
-                        # Last batch
-                        elif batch + 1 == batch_num:
-
-                            # Last batch but not last segment
-                            if i <= (batch_ind_max - batch_ind_min):
-
-                                # Not last original audio file
-                                if index + 1 < len(file_metadata):
+                        if concat:
+                            # Not last batch
+                            if batch + 1 < batch_num:
+                                # Not last segment
+                                if i <= (batch_ind_max - batch_ind_min):
                                     previous_segment = audio_data
                                     continue
 
-                                # Last original audio file
-                                elif index + 1 == len(file_metadata):
-                                    padding = np.zeros(
-                                        expected_frames - len(audio_data),
-                                        dtype=np.float32,
-                                    )
-                                    audio_data = np.concatenate((audio_data, padding))
-                                    previous_segment = np.empty(shape=[0])
+                            # Last batch
+                            elif batch + 1 == batch_num:
 
-                            # Last batch and last segment
-                            else:
-                                if last_file_behavior == "pad":
-                                    padding = np.zeros(
-                                        expected_frames - len(audio_data),
-                                        dtype=np.float32,
-                                    )
-                                    audio_data = np.concatenate((audio_data, padding))
-                                elif last_file_behavior == "truncate":
-                                    continue
-                                elif last_file_behavior == "discard":
-                                    break
+                                # Last batch but not last segment
+                                if i <= (batch_ind_max - batch_ind_min):
+
+                                    # Not last original audio file
+                                    if index + 1 < len(file_metadata):
+                                        previous_segment = audio_data
+                                        continue
+
+                                    # Last original audio file
+                                    elif index + 1 == len(file_metadata):
+                                        padding = np.zeros(
+                                            expected_frames - len(audio_data),
+                                            dtype=np.float32,
+                                        )
+                                        audio_data = np.concatenate(
+                                            (audio_data, padding)
+                                        )
+                                        previous_segment = np.empty(shape=[0])
+
+                                # Last batch and last segment
+                                else:
+                                    if last_file_behavior == "pad":
+                                        padding = np.zeros(
+                                            expected_frames - len(audio_data),
+                                            dtype=np.float32,
+                                        )
+                                        audio_data = np.concatenate(
+                                            (audio_data, padding)
+                                        )
+                                    elif last_file_behavior == "truncate":
+                                        continue
+                                    elif last_file_behavior == "discard":
+                                        break
+                        else:
+                            padding = np.zeros(
+                                expected_frames - len(audio_data),
+                                dtype=np.float32,
+                            )
+                            audio_data = np.concatenate((audio_data, padding))
+                            previous_segment = np.empty(shape=[0])
+                            break
 
                     # The segment is the expected length
                     elif len(audio_data) == expected_frames:
@@ -302,12 +322,12 @@ def reshape(
         result.append(outfilename.name)
         timestamp_list.append(segment_datetime_begin.strftime("%Y-%m-%dT%H:%M:%S.%f%z"))
 
-        if not overwrite and os.path.exists(outfilename):
-            if verbose:
-                print(
-                    f"File {outfilename} already exists and overwrite is set to False. Skipping...\n"
-                )
-            continue
+        # if not overwrite and os.path.exists(outfilename):
+        #     if verbose:
+        #         print(
+        #             f"File {outfilename} already exists and overwrite is set to False. Skipping...\n"
+        #         )
+        #     continue
 
         if audio_data.shape != np.empty(shape=[0]).shape:
             sf.write(
@@ -395,6 +415,12 @@ if __name__ == "__main__":
         help="The last file of the list to be processed. Default is -1, meaning the entire list is processed.",
     )
     parser.add_argument(
+        "--concat",
+        action="store_true",
+        default=True,
+        help="Whether the script concatenate audio segments or not. If not, the segments are 0-padded if necessary to fit the defined duration.",
+    )
+    parser.add_argument(
         "--verbose",
         "-v",
         action="store_true",
@@ -450,6 +476,7 @@ if __name__ == "__main__":
         batch_num=args.batch_num,
         batch_ind_min=args.batch_ind_min,
         batch_ind_max=args.batch_ind_max,
+        concat=args.concat,
         last_file_behavior=args.last_file_behavior,
         verbose=args.verbose,
         overwrite=args.overwrite,

@@ -556,6 +556,7 @@ class Spectrogram(Dataset):
         batch_ind_max: int = -1,
         force_init: bool = False,
         env_name: str = None,
+        concat: bool = True,
         last_file_behavior: Literal["pad", "truncate", "discard"] = "pad",
     ) -> None:
         """Prepares everything (path, variables, files) for spectrogram generation. This needs to be run before the spectrograms are generated.
@@ -565,7 +566,7 @@ class Spectrogram(Dataset):
         ----------
         datetime_begin : `Timestamp`,
             The begin datetime of the audio files used to generate the spectrograms.
-        datetime_begin : `Timestamp`,
+        datetime_end : `Timestamp`,
             The end datetime of the audio files used to generate the spectrograms.
         dataset_sr : `int`, optional, keyword-only
             The sampling frequency of the audio files used to generate the spectrograms. If set, will overwrite the Spectrogram.dataset_sr attribute.
@@ -576,6 +577,8 @@ class Spectrogram(Dataset):
             The index of the last file to consider (the default is -1, meaning consider every file).
         force_init : `bool`, optional, keyword-only
             Force every parameter of the initialization.
+        concat : `bool`, optional, keyword-only
+            argument used to specify if the user want to concatenate audio data. If not audio segment will be zero-padded to fit the desired duration if necessary.
         """
 
         # remove temp directories from adjustment spectrograms
@@ -674,11 +677,15 @@ class Spectrogram(Dataset):
             ).strftime("%Y-%m-%dT%H:%M:%S%z")
 
         # new timestamps calculation to determine the size of a batch
-        new_file = pd.date_range(
-            start=pd.Timestamp(datetime_begin),
-            end=pd.Timestamp(datetime_end),
-            freq=f"{self.spectro_duration}s",
-        ).to_list()
+        if concat:
+            new_file = pd.date_range(
+                start=pd.Timestamp(datetime_begin),
+                end=pd.Timestamp(datetime_end),
+                freq=f"{self.spectro_duration}s",
+            ).to_list()
+        else:
+            new_file = self.list_audio_to_process
+            new_file.append([""])
 
         # size of a batch
         batch_size = (len(new_file) - 1) // self.batch_number
@@ -691,7 +698,7 @@ class Spectrogram(Dataset):
             self.dataset_sr != origin_sr
         ):
             print(
-                f"Automatically reshaping audio files to fit the spectro duration value. Files will be {self.spectro_duration} seconds long."
+                f"Automatically reshaping audio files to fit the spectro duration value. Files will be {self.spectro_duration} seconds long. Parameter 'concat' is set to {concat}."
             )
 
             input_files = self.path_input_audio_file
@@ -728,6 +735,7 @@ class Spectrogram(Dataset):
                             "batch_ind_min": i_min,
                             "batch_ind_max": i_max,
                             "last_file_behavior": last_file_behavior,
+                            "concat": concat,
                             "verbose": self.verbose,
                         },
                     )
@@ -751,6 +759,7 @@ class Spectrogram(Dataset):
                                 --batch-ind-min {i_min}\
                                 --batch-ind-max {i_max}\
                                 --last-file-behavior {last_file_behavior}\
+                                {'--concat' if concat else ''}\
                                 {'--verbose' if self.verbose else ''}",
                         jobname=f"OSmOSE_reshape_{batch}",
                         preset="low",
