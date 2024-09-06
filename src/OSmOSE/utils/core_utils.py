@@ -734,7 +734,7 @@ def add_entry_for_APLOSE(path: str, file: str, info: pd.DataFrame):
             csv file
         info: 'DataFrame'
             info of the entry
-            'campaign' / 'dataset' / 'spectro_duration' / 'dataset_sr' / 'files_type' / 'identifier'
+            'path' / 'dataset' / 'spectro_duration' / 'dataset_sr' / 'files_type'
     Returns
     -------
 
@@ -743,13 +743,10 @@ def add_entry_for_APLOSE(path: str, file: str, info: pd.DataFrame):
 
     if dataset_csv.exists():
         meta = pd.read_csv(dataset_csv)
-        if info["identifier"][0] not in meta["identifier"].values:
-            meta = pd.concat([meta, info], ignore_index=True).sort_values(
-                by=["project", "dataset"], ascending=True
-            )
-            meta.to_csv(dataset_csv, index=False)
-    else:
-        info.to_csv(dataset_csv, index=False)
+        meta = pd.concat([meta, info], ignore_index=True).sort_values(
+            by=["path", "dataset"], ascending=True
+        )
+        meta.to_csv(dataset_csv, index=False)
 
 
 def select_audio_file(
