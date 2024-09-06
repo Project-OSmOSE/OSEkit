@@ -38,7 +38,6 @@ def reshape(
     The begin and end datetime can be specified as well by the user,
     if not, the begin datetime of the first original audio file and the end datetime of the last audio file will be used
     """
-
     set_umask()
 
     # Validate datetimes format
@@ -164,8 +163,8 @@ def reshape(
                 segment_datetime_begin + segment_duration, datetime_end
             )
         else:
-            segment_datetime_begin = file_metadata["timestamp"].iloc[i]
-            segment_datetime_end = file_metadata["timestamp"].iloc[i] + segment_duration
+            segment_datetime_begin = file_metadata["timestamp"].iloc[i + batch_ind_min]
+            segment_datetime_end = segment_datetime_begin + segment_duration
 
         for index, row in file_metadata.iterrows():
 
@@ -322,12 +321,12 @@ def reshape(
         result.append(outfilename.name)
         timestamp_list.append(segment_datetime_begin.strftime("%Y-%m-%dT%H:%M:%S.%f%z"))
 
-        # if not overwrite and os.path.exists(outfilename):
-        #     if verbose:
-        #         print(
-        #             f"File {outfilename} already exists and overwrite is set to False. Skipping...\n"
-        #         )
-        #     continue
+        if not overwrite and os.path.exists(outfilename):
+            if verbose:
+                print(
+                    f"File {outfilename} already exists and overwrite is set to False. Skipping...\n"
+                )
+            continue
 
         if audio_data.shape != np.empty(shape=[0]).shape:
             sf.write(
@@ -416,8 +415,8 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--concat",
-        action="store_true",
         default=True,
+        type=str,
         help="Whether the script concatenate audio segments or not. If not, the segments are 0-padded if necessary to fit the defined duration.",
     )
     parser.add_argument(
@@ -476,7 +475,7 @@ if __name__ == "__main__":
         batch_num=args.batch_num,
         batch_ind_min=args.batch_ind_min,
         batch_ind_max=args.batch_ind_max,
-        concat=args.concat,
+        concat=args.concat.lower() == "true",
         last_file_behavior=args.last_file_behavior,
         verbose=args.verbose,
         overwrite=args.overwrite,

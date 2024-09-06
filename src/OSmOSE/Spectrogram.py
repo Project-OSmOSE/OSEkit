@@ -556,8 +556,8 @@ class Spectrogram(Dataset):
         batch_ind_max: int = -1,
         force_init: bool = False,
         env_name: str = None,
-        concat: bool = True,
         last_file_behavior: Literal["pad", "truncate", "discard"] = "pad",
+        concat: bool = True,
     ) -> None:
         """Prepares everything (path, variables, files) for spectrogram generation. This needs to be run before the spectrograms are generated.
         If the dataset has not yet been build, it is before the rest of the functions are initialized.
@@ -578,7 +578,7 @@ class Spectrogram(Dataset):
         force_init : `bool`, optional, keyword-only
             Force every parameter of the initialization.
         concat : `bool`, optional, keyword-only
-            argument used to specify if the user want to concatenate audio data. If not audio segment will be zero-padded to fit the desired duration if necessary.
+            Concatenate audio segment or not based on this argument. If set to False, the audio segment will be zero-padded to fit desired spectro duration if necessary.
         """
 
         # remove temp directories from adjustment spectrograms
@@ -684,8 +684,11 @@ class Spectrogram(Dataset):
                 freq=f"{self.spectro_duration}s",
             ).to_list()
         else:
-            new_file = self.list_audio_to_process
-            new_file.append([""])
+            new_file = file_metadata["timestamp"].to_list()
+            new_file.append(
+                file_metadata["timestamp"].iloc[-1]
+                + pd.Timedelta(self.spectro_duration, unit="s")
+            )
 
         # size of a batch
         batch_size = (len(new_file) - 1) // self.batch_number
@@ -759,7 +762,7 @@ class Spectrogram(Dataset):
                                 --batch-ind-min {i_min}\
                                 --batch-ind-max {i_max}\
                                 --last-file-behavior {last_file_behavior}\
-                                {'--concat' if concat else ''}\
+                                --concat {concat}\
                                 {'--verbose' if self.verbose else ''}",
                         jobname=f"OSmOSE_reshape_{batch}",
                         preset="low",
@@ -771,6 +774,7 @@ class Spectrogram(Dataset):
 
                     job_id = self.jb.submit_job()
                     reshape_job_id_list += job_id
+                    print(self.verbose)
 
             for process in processes:
                 process.join()
