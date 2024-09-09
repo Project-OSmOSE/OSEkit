@@ -38,6 +38,70 @@ def reshape(
     The begin and end datetime can be specified as well by the user,
     if not, the begin datetime of the first original audio file and the end datetime of the last audio file will be used
     """
+    
+    """
+    Reshape all audio files in the folder to be of the specified duration and/or sampling rate.
+
+    Parameters:
+    -----------
+    input_files : Union[str, list]
+        Path to a directory containing audio files.
+
+    segment_size : int
+        The desired duration of each audio segment in seconds.
+
+    file_metadata_path : Union[str, Path], optional
+        Path to file_metadata.csv file.
+
+    timestamp_path : Union[str, Path], optional
+        Path to timestamps.csv file.
+
+    output_dir_path : Union[str, Path], optional
+        Directory where the processed audio files will be saved.
+
+    datetime_begin : str, optional
+        Start date and time in ISO 8601 format (e.g., 'YYYY-MM-DDTHH:MM:SS'). This defines the beginning of
+        the time window for processing. If not specified, the start time of the first original audio file will be used.
+
+    datetime_end : str, optional
+        End date and time in ISO 8601 format (e.g., 'YYYY-MM-DDTHH:MM:SS'). This defines the end of the time
+        window for processing. If not specified, the end time of the last original audio file will be used.
+
+    new_sr : int, optional
+        Desired sampling rate for the output audio files. If set to -1 (default), the original sampling rate
+        of the audio files will be retained.
+
+    batch : int, optional
+        The current batch number to process when dealing with large datasets. Default is 0, which processes
+        all files at once.
+
+    batch_num : int, optional
+        The total number of batches to divide the processing into. Default is 1.
+
+    batch_ind_min : int, optional
+        The minimum index of the files to include in the current batch. Default is 0.
+
+    batch_ind_max : int, optional
+        The maximum index of the files to include in the current batch. Default is -1, which processes all
+        files up to the end.
+
+    last_file_behavior : Literal["truncate", "pad", "discard"], optional
+        Specifies how to handle the last audio segment if it is shorter than the desired segment size:
+        - "truncate": Truncate the segment to the shorter length.
+        - "pad": Pad the segment with zeros to match the segment size (default).
+        - "discard": Discard the segment entirely.
+
+    concat : bool, optional
+        If True, concatenate all original audio data. If False,
+        each segment will be saved as a separate file. Default is True.
+
+    verbose : bool, optional
+        If True, print detailed information about the processing steps. Default is False.
+
+    overwrite : bool, optional
+        If True, overwrite existing files in the output directory with the same name. Default is True.
+    """
+
     set_umask()
 
     # Validate datetimes format
