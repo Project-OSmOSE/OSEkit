@@ -38,7 +38,7 @@ def reshape(
     The begin and end datetime can be specified as well by the user,
     if not, the begin datetime of the first original audio file and the end datetime of the last audio file will be used
     """
-    
+
     """
     Reshape all audio files in the folder to be of the specified duration and/or sampling rate.
 
