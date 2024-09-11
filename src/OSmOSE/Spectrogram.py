@@ -34,7 +34,7 @@ from OSmOSE.utils.core_utils import (
     get_timestamp_of_audio_file,
     select_audio_file,
 )
-from OSmOSE.utils.audio_utils import get_audio_file
+from OSmOSE.utils.audio_utils import get_audio_file, read_header
 from OSmOSE.config import OSMOSE_PATH, FPDEFAULT, DPDEFAULT
 from OSmOSE.frequency_scales.frequency_scale_serializer import FrequencyScaleSerializer
 
@@ -600,11 +600,6 @@ class Spectrogram(Dataset):
         # create some internal paths
         self.__build_path(force_init=force_init)
 
-        # weird stuff currently to change soon: on datarmor you do batch processing with pbs jobs in which local instances run,
-        # which take their spectrogram parameters from the "adjust_metadata.csv".
-        # This explains why first we cannot rmtree folders adjustment_spectros, and why we exec save_spectro_metadata(True)
-        # to create it if not existing yet (rare case but if spectro generation is laucnhed without any adjustment..)
-
         if not (
             self.path
             / OSMOSE_PATH.spectrogram
@@ -675,6 +670,12 @@ class Spectrogram(Dataset):
                 + pd.Timedelta(file_metadata["duration"].iloc[-1], unit="s")
             ).strftime("%Y-%m-%dT%H:%M:%S%z")
 
+        # check datetimes
+        if not pd.Timestamp(datetime_begin) < pd.Timestamp(datetime_end):
+            raise ValueError(
+                f"'datetime_begin' must be anterior to 'datetime_end'.\ndatetime_begin is set to {pd.Timestamp(datetime_begin)} and datetime_end is set to {pd.Timestamp(datetime_end)}"
+            )
+
         # new timestamps calculation to determine the size of a batch
         if self.concat:
             new_file = pd.date_range(
@@ -683,11 +684,32 @@ class Spectrogram(Dataset):
                 freq=f"{self.spectro_duration}s",
             ).to_list()
         else:
-            new_file = file_metadata["timestamp"].to_list()
-            new_file.append(
-                file_metadata["timestamp"].iloc[-1]
-                + pd.Timedelta(self.spectro_duration, unit="s")
-            )
+            # new_file = file_metadata["timestamp"].to_list()
+            # new_file.append(
+            #     file_metadata["timestamp"].iloc[-1]
+            #     + pd.Timedelta(self.spectro_duration, unit="s")
+            # )
+
+            origin_timestamp = file_metadata[
+                (file_metadata["timestamp"] >= datetime_begin)
+                & (file_metadata["timestamp"] <= datetime_end)
+            ]
+            new_file = []
+            for i, ts in enumerate(origin_timestamp["timestamp"]):
+                counter = 0
+                current_ts = ts
+                original_timedelta = pd.Timedelta(
+                    seconds=origin_timestamp["duration"].iloc[i]
+                )
+
+                while (
+                    current_ts <= ts + original_timedelta
+                    and (ts + original_timedelta - current_ts).total_seconds() > 5
+                ):
+                    new_file.append(current_ts)
+                    current_ts += pd.Timedelta(seconds=self.spectro_duration)
+                    counter += 1
+            new_file = new_file[: -counter + 1] if counter > 1 else new_file
 
         # size of a batch
         batch_size = (len(new_file) - 1) // self.batch_number
@@ -739,6 +761,7 @@ class Spectrogram(Dataset):
                             "last_file_behavior": last_file_behavior,
                             "concat": self.concat,
                             "verbose": self.verbose,
+                            "proceed": force_init,
                         },
                     )
 
@@ -762,7 +785,8 @@ class Spectrogram(Dataset):
                                 --batch-ind-max {i_max}\
                                 --last-file-behavior {last_file_behavior}\
                                 --concat {self.concat}\
-                                {'--verbose' if self.verbose else ''}",
+                                {'--verbose' if self.verbose else ''}\
+                                {'--proceed' if force_init else ''}",
                         jobname=f"OSmOSE_reshape_{batch}",
                         preset="low",
                         mem="30G",
@@ -773,7 +797,6 @@ class Spectrogram(Dataset):
 
                     job_id = self.jb.submit_job()
                     reshape_job_id_list += job_id
-                    print(self.verbose)
 
             for process in processes:
                 process.join()
