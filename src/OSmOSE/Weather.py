@@ -199,13 +199,33 @@ class Weather(Auxiliary):
 		fig.show()
 
 	@classmethod
+	def from_joined_dataframe(cls, path, method, ground_truth, dataset_path, weather_params=None, **kwargs):
+		"""
+		Class method to instantiate a Weather object from an already joined dataframe.
+		
+		Parameters:
+		path (str): Path to the joined dataframe (CSV format).
+		method (str): Method or processing pipeline to be used.
+		ground_truth (str): Column name for ground truth data.
+		dataset_path (str): Path to the dataset (needed to call the init method properly).
+		weather_params (dict): Optional weather parameters to be passed.
+		kwargs: Any additional arguments to pass to the __init__ method.
+		"""
+		instance = cls.__new__(cls)
+		instance.df = check_epoch(pd.read_csv(path))
+		instance.__init__(dataset_path=dataset_path, method=method, ground_truth=ground_truth, 
+				  weather_params=weather_params, **kwargs)
+
+    		return instance
+		
+"""	@classmethod
 	def from_joined_dataframe(cls, path, method, ground_truth):
 		instance = cls.__new__(cls)
 		instance.df = check_epoch(pd.read_csv(path))
 		instance.method = method
 		instance.ground_truth = ground_truth
 		instance.popt, instance.wind_model_stats = {}, {}
-		return instance
+		return instance"""
 
 
 '''    def save_all_welch(self):
