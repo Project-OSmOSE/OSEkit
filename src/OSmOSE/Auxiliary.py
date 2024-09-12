@@ -233,7 +233,7 @@ class Auxiliary(Spectrogram):
 			_temp = pd.DataFrame().from_dict({**{'timestamp':_time}, **{fcs[i] : _noise_level[i] for i in range(len(fcs))}}).sort_values('timestamp')
 		_temp = check_epoch(_temp)
 		self.df = pd.merge(self.df, _temp, on='epoch', suffixes = [None, 'acoustic'])
-		self.drop('timestamp_acoustic', axis = 1, inplace = True)
+		self.df.drop('timestamp_acoustic', axis = 1, inplace = True)
 
 
 	def join_other(self, csv_path: str = None, variable_name : Union[str, List, Tuple] = None):
