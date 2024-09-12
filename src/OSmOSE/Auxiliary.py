@@ -231,7 +231,7 @@ class Auxiliary(Spectrogram):
 			_temp = pd.DataFrame().from_dict({**{'timestamp':_time}, **{'full_band':full_band}, **{fcs[i] : _noise_level[i] for i in range(len(fcs))}}).sort_values('timestamp')
 		else : 
 			_temp = pd.DataFrame().from_dict({**{'timestamp':_time}, **{fcs[i] : _noise_level[i] for i in range(len(fcs))}}).sort_values('timestamp')
-		_temp = check_df(_temp)
+		_temp = check_epoch(_temp)
 		self.df = pd.merge(self.df, _temp, on='epoch')
 
 
