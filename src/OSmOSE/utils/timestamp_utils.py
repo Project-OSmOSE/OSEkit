@@ -6,7 +6,7 @@ import os
 
 def check_epoch(df):
     "Function that adds epoch column to dataframe"
-    df['timestamp'] = df.timestamp.apply(lambda x : from_timestamp(to_timestamp(x).dt.tz_localize(None)))
+    df['timestamp'] = df.timestamp.apply(lambda x : from_timestamp(to_timestamp(x)..replace(tzinfo=timezone.utc)))
     if "epoch" in df.columns:
         return df
     try :
