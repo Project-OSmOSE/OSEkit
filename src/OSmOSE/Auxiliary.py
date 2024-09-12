@@ -231,8 +231,8 @@ class Auxiliary(Spectrogram):
 			_temp = pd.DataFrame().from_dict({**{'timestamp':_time}, **{'full_band':full_band}, **{fcs[i] : _noise_level[i] for i in range(len(fcs))}}).sort_values('timestamp')
 		else : 
 			_temp = pd.DataFrame().from_dict({**{'timestamp':_time}, **{fcs[i] : _noise_level[i] for i in range(len(fcs))}}).sort_values('timestamp')
-		_temp['timestamp'] = _temp['timestamp'].dt.tz_localize(None)
-		self.df = pd.merge(self.df, _temp, on='timestamp')
+		_temp = check_df(_temp)
+		self.df = pd.merge(self.df, _temp, on='epoch')
 
 
 	def join_other(self, csv_path: str = None, variable_name : Union[str, List, Tuple] = None):
