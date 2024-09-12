@@ -6,13 +6,14 @@ import os
 
 def check_epoch(df):
     "Function that adds epoch column to dataframe"
-    df['timestamp'] = df.timestamp.apply(lambda x : from_timestamp(to_timestamp(x).replace(tzinfo=timezone.utc)))
+    df['timestamp'] = df.timestamp.apply(lambda x : to_timestamp(x)).dt.tzinfo(None)
     if "epoch" in df.columns:
         return df
     try :
         df['epoch'] = df.timestamp.apply(lambda x : x.timestamp())
     except ValueError:
         print("Please check that you have either a timestamp column (format ISO 8601 Micro s) or an epoch column")
+    df['timestamp'] = df.timestamp.apply(from_timestamp)
     return df
 
 
