@@ -16,7 +16,7 @@ from glob import glob
 from tqdm import tqdm
 
 
-def beaufort(x):
+def get_beaufort(x):
     return next((i for i, limit in enumerate([0.3, 1.6, 3.4, 5.5, 8, 10.8, 13.9, 17.2, 20.8, 24.5, 28.5, 32.7]) 
                  if x < limit), 12)
 
@@ -87,8 +87,9 @@ class Weather(Auxiliary):
 		if self.ground_truth not in self.df :
 			print(f"Ground truth data '{self.ground_truth}' was not found in joined dataframe.\nPlease call the correct joining method or automatic_join()")
 		self.popt, self.wind_model_stats = {}, {}
-		self.df['classes'] = self.df[self.ground_truth].apply(beaufort)
 
+	def beaufort(self) :
+		self.df['classes'] = self.df[self.ground_truth].apply(get_beaufort)
 
 	def __str__(self):
 		if 'wind_model_stats' in dir(self):
