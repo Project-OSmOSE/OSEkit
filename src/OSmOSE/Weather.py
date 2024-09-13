@@ -87,6 +87,8 @@ class Weather(Auxiliary):
 		if self.ground_truth not in self.df :
 			print(f"Ground truth data '{self.ground_truth}' was not found in joined dataframe.\nPlease call the correct joining method or automatic_join()")
 		self.popt, self.wind_model_stats = {}, {}
+		self.df['classes'] = self.df[self.ground_truth].apply(beaufort)
+
 
 	def __str__(self):
 		if 'wind_model_stats' in dir(self):
@@ -144,7 +146,6 @@ class Weather(Auxiliary):
 			params['bounds'] = np.hstack((np.array([[value-params['scaling_factor']*abs(value), value+params['scaling_factor']*abs(value)] for value in self.method['parameters'].values()]).T, [[-np.inf],[np.inf]]))
 		popt_tot, popv_tot = [], []
 		mae, rmse, r2, var, std = [], [], [], [], []
-		self.df['classes'] = self.df[self.ground_truth].apply(beaufort)
 		self.df['skf_estimation'] = np.nan
 		skf = StratifiedKFold(n_splits=params['n_splits'])
 		for i, (train_index, test_index) in enumerate(skf.split(self.df[self.method['frequency']], self.df.classes)):
