@@ -170,7 +170,6 @@ class Weather(Auxiliary):
 	def lstm_fit(self, seq_length = 10, **kwargs) :
 		default = {'learning_rate':0.001,'epochs':75,'weight_decay':0.000,'hidden_dim':512, 'n_splits':5, 'n_cross_validation':1}
 		params = {**default, **kwargs}
-		self.df['classes'] = self.df[self.ground_truth].apply(beaufort)
 		self.df['lstm_estimation'] = np.nan
 		self.df.dropna(subset = [self.method['frequency'], self.ground_truth], inplace = True)
 		skf = StratifiedKFold(n_splits=params['n_splits'])
