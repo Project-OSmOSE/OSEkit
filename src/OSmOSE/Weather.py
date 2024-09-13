@@ -215,8 +215,7 @@ class Weather(Auxiliary):
 		instance.df = check_epoch(pd.read_csv(path))
 		instance.__init__(dataset_path=dataset_path, method=method, ground_truth=ground_truth, 
 				  weather_params=weather_params, **kwargs)
-
-    		return instance
+		return instance
 		
 """	@classmethod
 	def from_joined_dataframe(cls, path, method, ground_truth):
