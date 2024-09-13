@@ -199,13 +199,13 @@ class Weather(Auxiliary):
 		fig.show()
 
 	@classmethod
-	def from_joined_dataframe(cls, path, method, ground_truth, dataset_path, weather_params=None, **kwargs):
+	def from_joined_dataframe(cls, path, ground_truth, dataset_path, method = None, weather_params=None, **kwargs):
 		"""
 		Class method to instantiate a Weather object from an already joined dataframe.
 		
 		Parameters:
 		path (str): Path to the joined dataframe (CSV format).
-		method (str): Method or processing pipeline to be used.
+		method (str): Optional. Method or processing pipeline to be used.
 		ground_truth (str): Column name for ground truth data.
 		dataset_path (str): Path to the dataset (needed to call the init method properly).
 		weather_params (dict): Optional weather parameters to be passed.
