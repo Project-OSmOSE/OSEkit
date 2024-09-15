@@ -212,9 +212,9 @@ class Auxiliary(Spectrogram):
 					_time.extend(_data['Time'])
 					for i, fc in enumerate(fcs) : 
 						freq_ind = np.argmin(abs(_data['Freq']-fc))
-						_noise_level[i].extend(np.log10(_data['Sxx'][:, freq_ind]))
+						_noise_level[i].extend( 10 * np.log10((_data['Sxx'][:, freq_ind] / (1e-12)) + (1e-20)) )  
 					if 'full_band' not in self.df:
-						full_band.extend(np.mean(np.log10(_data['Sxx']), axis = 1))
+						full_band.extend(np.mean( 10 * np.log10((_data['Sxx'] / (1e-12)) + (1e-20)) , axis = 1))
 			case 'spectrogram' | 'LTAS':
 				fns = glob(str(self.path_output_spectrogram_matrix)+'/*')
 				pbar = tqdm(fns)
