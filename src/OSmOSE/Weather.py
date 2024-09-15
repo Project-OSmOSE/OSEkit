@@ -87,6 +87,8 @@ class Weather(Auxiliary):
 		if self.ground_truth not in self.df :
 			print(f"Ground truth data '{self.ground_truth}' was not found in joined dataframe.\nPlease call the correct joining method or automatic_join()")
 		self.popt, self.wind_model_stats = {}, {}
+		self.df.columns = [int(col) if col.isdigit() else col for col in self.df.columns]
+
 
 	def beaufort(self) :
 		self.df['classes'] = self.df[self.ground_truth].apply(get_beaufort)
@@ -214,8 +216,17 @@ class Weather(Auxiliary):
 		"""
 		instance = cls.__new__(cls)
 		instance.df = check_epoch(pd.read_csv(path))
-		instance.__init__(dataset_path=dataset_path, method=method, ground_truth=ground_truth, 
-				  weather_params=weather_params, **kwargs)
+		if method :
+			instance.method = empirical[method]
+		else :
+			instance.method = weather_params
+
+		instance.ground_truth = ground_truth
+		if instance.ground_truth not in instance.df :
+			print(f"Ground truth data '{instance.ground_truth}' was not found in joined dataframe.\nPlease call the correct joining method or automatic_join()")
+		instance.popt, instance.wind_model_stats = {}, {}
+		instance.df.columns = [int(col) if col.isdigit() else col for col in instance.df.columns]
+
 		return instance
 		
 """	@classmethod
