@@ -6,8 +6,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 import numpy as np
 import soundfile as sf
-from librosa import resample
-import sys
+from librosa import load, resample
 
 from OSmOSE.utils.core_utils import set_umask
 from OSmOSE.utils.path_utils import make_path
@@ -33,8 +32,6 @@ def reshape(
     concat: bool = True,
     verbose: bool = False,
     overwrite: bool = True,
-    proceed: bool = False,
-    max_delta: int = 5,
 ) -> List[str]:
     """
     Reshape all audio files in the folder to be of the specified duration and/or sampling rate.
@@ -103,13 +100,10 @@ def reshape(
 
     overwrite : bool, optional
         If True, overwrite existing files in the output directory with the same name. Default is True.
-
-    max_delta_interval: `int`, optional, keyword-only
-        The maximum number of second allowed for a delta between two timestamp_list to still be considered consecutive.
-        Default is 5s.
     """
 
     set_umask()
+    segment_duration = pd.Timedelta(seconds=segment_size)
 
     # Validate datetimes format
     regex = r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}[+-]\d{4}$"
@@ -195,34 +189,6 @@ def reshape(
             file_metadata["duration"].iloc[-1], unit="s"
         )
 
-    # Delta gaps between end of an audio file and the beginning of the following file
-    delta = []
-    for index in range(len(file_metadata)):
-        if index == 0:
-            delta.append(0)
-        else:
-            cur_timestamp_begin = file_metadata["timestamp"].iloc[index]
-            prev_timestamp_end = file_metadata["timestamp"].iloc[
-                index - 1
-            ] + pd.Timedelta(file_metadata["duration"].iloc[index - 1], unit="seconds")
-            delta.append((cur_timestamp_begin - prev_timestamp_end).total_seconds())
-
-    # Check for non continuous data, i.e. audio file with a gap > max_delta
-    if any(num > max_delta for num in delta):
-        index = [i for i, num in enumerate(delta) if num > max_delta]
-
-        for i in index:
-            print(
-                f"""Warning: You are trying to merge audio files that are not chronologically consecutive.\n'{file_metadata["filename"][i - 1]}' ends at {file_metadata["timestamp"].iloc[i - 1] + pd.Timedelta(file_metadata["duration"].iloc[i - 1], unit='seconds')} and '{file_metadata["filename"][i]}' starts at {file_metadata["timestamp"].iloc[i]} .\nThere is {delta[i]} seconds of difference between the two files, which is over the maximum tolerance of {max_delta} seconds."""
-            )
-
-        if not proceed:
-            raise ValueError(
-                "Error: Cannot merge non-continuous audio files if force_reshape is set to False."
-            )
-        else:
-            print(f"\n'proceed' is set to {proceed}, resuming...")
-
     # In the case of a single batch where batch_ind_max = -1, assign its true value otherwise the main for loop does not work
     if batch == 0 and batch_ind_min == 0 and batch_ind_max == -1:
         if concat:
@@ -242,36 +208,53 @@ def reshape(
         else:
             batch_ind_max = len(file_metadata) - 1
 
-    segment_duration = pd.Timedelta(seconds=segment_size)
+    # segment timestamps
+    if concat:
+        new_file = pd.date_range(
+            start=datetime_begin,
+            end=datetime_end,
+            freq=f"{segment_size}s",
+        ).to_list()
+    else:
+        origin_timestamp = file_metadata[
+            (file_metadata["timestamp"] >= datetime_begin)
+            & (file_metadata["timestamp"] <= datetime_end)
+        ]
+        new_file = []
+        for i, ts in enumerate(origin_timestamp["timestamp"]):
+            current_ts = ts
+            original_timedelta = pd.Timedelta(
+                seconds=origin_timestamp["duration"].iloc[i]
+            )
+
+            while (
+                current_ts <= ts + original_timedelta
+                and (ts + original_timedelta - current_ts).total_seconds() > 5
+            ):
+                new_file.append(current_ts)
+                current_ts += segment_duration
+        new_file.append(current_ts + segment_duration)
+
+    # sample rates
+    orig_sr = file_metadata["origin_sr"][0]
+    segment_sample_rate = orig_sr if new_sr == -1 else new_sr
+
+    # origin audio time vector list
+    file_time_vec_list = [
+        file_metadata["timestamp"][i].timestamp()
+        + (
+            np.arange(0, file_metadata["duration"][i] * segment_sample_rate)
+            / segment_sample_rate
+        )
+        for i in range(len(file_metadata))
+    ]
+
     result = []
     timestamp_list = []
-    audio_data_previous = np.empty(shape=[0])
-    initial_padding = np.empty(shape=[0])
-    f = 0  # written file
-    gap_index = None
-
-    # segment timestamps
-    origin_timestamp = file_metadata[
-        (file_metadata["timestamp"] >= datetime_begin)
-        & (file_metadata["timestamp"] <= datetime_end)
-    ]
-    new_file = []
-    for i, ts in enumerate(origin_timestamp["timestamp"]):
-        current_ts = ts
-        original_timedelta = pd.Timedelta(seconds=origin_timestamp["duration"].iloc[i])
-
-        while (
-            current_ts <= ts + original_timedelta
-            and (ts + original_timedelta - current_ts).total_seconds() > 5
-        ):
-            new_file.append(current_ts)
-            current_ts += segment_duration
-    new_file.append(current_ts + segment_duration)
-
-    # Iterate over each segment
     for i in range((batch_ind_max - batch_ind_min) + 1):
+        print(i)
 
-        audio_data = np.empty(shape=[0])
+        audio_data = np.empty(shape=segment_size * segment_sample_rate)
 
         if concat:
             segment_datetime_begin = datetime_begin + (
@@ -281,194 +264,116 @@ def reshape(
                 segment_datetime_begin + segment_duration, datetime_end
             )
         else:
-            # segment_datetime_begin = file_metadata["timestamp"].iloc[i + batch_ind_min]
-            # segment_datetime_end = segment_datetime_begin + segment_duration
             segment_datetime_begin = new_file[i + batch_ind_min]
             segment_datetime_end = segment_datetime_begin + segment_duration
+
+        # segment time vector
+        time_vec = (
+            segment_datetime_begin.timestamp()
+            + np.arange(0, segment_size * segment_sample_rate) / segment_sample_rate
+        )
 
         for index, row in file_metadata.iterrows():
 
             file_datetime_begin = row["timestamp"]
             file_datetime_end = row["timestamp"] + pd.Timedelta(seconds=row["duration"])
 
-            # Check if original audio file overlaps with the current segment
+            # check if original audio file overlaps with the current segment
             if (
                 file_datetime_end > segment_datetime_begin
                 and file_datetime_begin < segment_datetime_end
             ):
-                with sf.SoundFile(input_dir_path / row["filename"]) as audio_file:
-                    file_sample_rate = audio_file.samplerate
 
-                    # Determine the part of the file that fits into the segment
-                    if file_datetime_begin < segment_datetime_begin:
-                        # File starts before the segment, so we skip the initial part of the file
-                        start_offset = int(
-                            (
-                                segment_datetime_begin - file_datetime_begin
-                            ).total_seconds()
-                            * file_sample_rate
-                        )
+                start_offset = (
+                    0
+                    if file_datetime_begin >= segment_datetime_begin
+                    else int(
+                        (segment_datetime_begin - file_datetime_begin).total_seconds()
+                        * orig_sr
+                    )
+                )
+                end_offset = (
+                    round(orig_sr * row["duration"])
+                    if file_datetime_end <= segment_datetime_end
+                    else int(
+                        (segment_datetime_end - file_datetime_begin).total_seconds()
+                        * orig_sr
+                    )
+                )
 
-                    elif file_datetime_begin >= segment_datetime_begin:
-                        # File does not start before the segment, no offset
-                        start_offset = 0
+                # with sf.SoundFile(input_dir_path / row["filename"]) as audio_file:
+                #     audio_file.seek(start_offset)
+                #     sig = audio_file.read(frames=end_offset - start_offset)
 
-                        # First segment begins after first original file : zero padding
-                        if (
-                            f == 0
-                            and audio_data_previous.shape == np.zeros(shape=0).shape
-                        ):
-                            initial_padding = np.zeros(
-                                shape=int(
-                                    (
-                                        file_datetime_begin - segment_datetime_begin
-                                    ).total_seconds()
-                                    * file_sample_rate
-                                )
-                            )
+                audio_file = sf.SoundFile(input_dir_path / row["filename"])
+                audio_file.seek(start_offset)
+                sig = audio_file.read(frames=end_offset - start_offset)
 
-                    if file_datetime_end > segment_datetime_end:
-                        # File ends after the segment, so we cut off the end part of the file
-                        end_offset = int(
-                            (segment_datetime_end - file_datetime_begin).total_seconds()
-                            * file_sample_rate
-                        )
-                    else:
-                        # File ends before the segment, we read the rest of the audio file
-                        end_offset = len(audio_file)
+                if orig_sr != segment_sample_rate:
+                    sig = resample(sig, orig_sr=orig_sr, target_sr=new_sr)
 
-                    # Read the appropriate section of the file
-                    audio_file.seek(start_offset)
-                    audio_data = audio_file.read(frames=end_offset - start_offset)
+                # # origin audio time vector
+                file_time_vec = file_time_vec_list[index]
+                # start_offset = int((file_time_vec < time_vec[0]).sum() / segment_sample_rate) * orig_sr
+                # end_offset = int((file_time_vec <= time_vec[-1]).sum() / segment_sample_rate) * orig_sr
+                # sig, fs = load(
+                #     path=input_dir_path / row["filename"],
+                #     offset=(file_time_vec < time_vec[0]).sum() / segment_sample_rate,
+                #     duration=(
+                #         (file_time_vec <= time_vec[-1]).sum()
+                #         - (file_time_vec < time_vec[0]).sum()
+                #     )
+                #     / segment_sample_rate,
+                #     sr=segment_sample_rate,
+                #     res_type='soxr_hq'
+                # )
 
-                    # Zero-padding gaps between consecutive origin audio files
-                    if delta[index] > 0 and gap_index != index and concat:
-                        gap_padding = np.zeros(
-                            shape=round(delta[index] * file_sample_rate)
-                        )
-                        audio_data = np.concatenate((gap_padding, audio_data))
-                        gap_index = index
+                audio_data[
+                    (time_vec >= file_time_vec[0]) & (time_vec <= file_time_vec[-1])
+                ] = sig
 
-                    # Initial padding
-                    if initial_padding.shape != np.zeros(shape=0).shape:
-                        audio_data = np.concatenate((initial_padding, audio_data))
-                        initial_padding = np.zeros(shape=0)
+        if audio_data.sum() == 0:
+            print(
+                f"No data available for file {segment_datetime_begin.strftime('%Y_%m_%d_%H_%M_%S')}.wav. Skipping...\n"
+            )
+            continue
 
-                    # Resampling
-                    segment_sample_rate = file_sample_rate if new_sr == -1 else -1
-
-                    if file_sample_rate != segment_sample_rate:
-                        audio_data = resample(
-                            audio_data, orig_sr=file_sample_rate, target_sr=new_sr
-                        )
-                        segment_sample_rate = new_sr
-
-                    audio_data = np.concatenate((audio_data_previous, audio_data))
-
-                    expected_frames = int(segment_size * segment_sample_rate)
-
-                    # The segment is shorter than expected
-                    if len(audio_data) < expected_frames:
-                        if concat:
-                            # Not last batch
-                            if batch + 1 < batch_num:
-                                # Not last segment
-                                if i <= (batch_ind_max - batch_ind_min):
-                                    audio_data_previous = audio_data
-
-                            # Last batch
-                            elif batch + 1 == batch_num:
-                                # Last batch but not last segment
-                                if i <= (batch_ind_max - batch_ind_min):
-                                    # Not last original audio file
-                                    if index + 1 < len(file_metadata):
-                                        audio_data_previous = audio_data
-                                    # Last original audio file
-                                    elif index + 1 == len(file_metadata):
-                                        padding = np.zeros(
-                                            expected_frames - len(audio_data),
-                                            dtype=np.float32,
-                                        )
-                                        audio_data = np.concatenate(
-                                            (audio_data, padding)
-                                        )
-                                        audio_data_previous = np.empty(shape=[0])
-                                # Last batch and last segment
-                                else:
-                                    if last_file_behavior == "pad":
-                                        padding = np.zeros(
-                                            expected_frames - len(audio_data),
-                                            dtype=np.float32,
-                                        )
-                                        audio_data = np.concatenate(
-                                            (audio_data, padding)
-                                        )
-                                    elif last_file_behavior == "truncate":
-                                        continue
-                                    elif last_file_behavior == "discard":
-                                        break
-                        else:
-                            padding = np.zeros(
-                                expected_frames - len(audio_data),
-                                dtype=np.float32,
-                            )
-                            audio_data = np.concatenate((audio_data, padding))
-                            audio_data_previous = np.empty(shape=[0])
-
-                    # The segment is the expected length
-                    elif len(audio_data) == expected_frames:
-                        audio_data_previous = np.empty(shape=[0])
-                        # break
-                    # The segment is longer than the expected length
-                    else:
-                        audio_data_previous = audio_data[expected_frames:]
-                        audio_data = audio_data[:expected_frames]
-                        break
-
-            elif file_datetime_begin > segment_datetime_end:
-                if index + 1 == len(file_metadata):
-                    if audio_data.shape == np.empty(shape=[0]).shape:
-                        print(
-                            f"No data available for file {segment_datetime_begin.strftime('%Y_%m_%d_%H_%M_%S')}.wav. Skipping...\n"
-                        )
-            else:
-                if index + 1 == len(file_metadata):
-                    if audio_data.shape == np.empty(shape=[0]).shape:
-                        print(
-                            f"No data available for file {segment_datetime_begin.strftime('%Y_%m_%d_%H_%M_%S')}.wav. Skipping...\n"
-                        )
-
-        # if len(audio_data) != expected_frames:
-        #     break
+        if (
+            len(np.nonzero(audio_data)[0]) < 0.05 * segment_size * segment_sample_rate
+            and concat
+        ):
+            print(
+                f"Not enough data available for file {segment_datetime_begin.strftime('%Y_%m_%d_%H_%M_%S')}.wav ({len(np.nonzero(audio_data)[0]) / segment_sample_rate:.2f} sec). Skipping...\n"
+            )
+            continue
 
         # Define the output file name and save the audio segment
         outfilename = (
             output_dir_path
             / f"{segment_datetime_begin.strftime('%Y_%m_%d_%H_%M_%S')}.wav"
         )
-        result.append(outfilename.name)
-        timestamp_list.append(segment_datetime_begin.strftime("%Y-%m-%dT%H:%M:%S.%f%z"))
 
-        if not overwrite and os.path.exists(outfilename):
+        if not overwrite and outfilename.exists():
             if verbose:
                 print(
                     f"File {outfilename} already exists and overwrite is set to False. Skipping...\n"
                 )
+            continue
 
-        if audio_data.shape != np.empty(shape=[0]).shape:
-            sf.write(
-                outfilename,
-                audio_data,
-                segment_sample_rate,
+        result.append(outfilename.name)
+        timestamp_list.append(segment_datetime_begin.strftime("%Y-%m-%dT%H:%M:%S.%f%z"))
+
+        sf.write(
+            outfilename,
+            audio_data,
+            segment_sample_rate,
+        )
+        os.chmod(outfilename, mode=FPDEFAULT)
+
+        if verbose:
+            print(
+                f"Saved file from {segment_datetime_begin} to {segment_datetime_end} as {outfilename}\n"
             )
-            os.chmod(outfilename, mode=FPDEFAULT)
-
-            f += 1  # Increment the number of written file
-
-            if verbose:
-                print(
-                    f"Saved file from {segment_datetime_begin} to {segment_datetime_end} as {outfilename}\n"
-                )
 
     # writing infos to timestamp_*.csv
     input_timestamp = pd.DataFrame({"filename": result, "timestamp": timestamp_list})
@@ -540,13 +445,6 @@ if __name__ == "__main__":
         help="The last file of the list to be processed. Default is -1, meaning the entire list is processed.",
     )
     parser.add_argument(
-        "--max-delta",
-        "-delta",
-        type=int,
-        default=5,
-        help="The maximum number of second allowed for a delta between two timestamp_list to still be considered the same.",
-    )
-    parser.add_argument(
         "--concat",
         default=True,
         type=str,
@@ -564,12 +462,6 @@ if __name__ == "__main__":
         action="store_true",
         default=False,
         help="If set, deletes all content in --output-dir before writing the output. Default false, deactivated if the --output-dir is the same as --input-file dir.",
-    )
-    parser.add_argument(
-        "--proceed",
-        action="store_true",
-        default=False,
-        help="If set, Ignore all warnings and non-fatal errors while reshaping.",
     )
     parser.add_argument(
         "--last-file-behavior",
@@ -614,10 +506,8 @@ if __name__ == "__main__":
         batch_num=args.batch_num,
         batch_ind_min=args.batch_ind_min,
         batch_ind_max=args.batch_ind_max,
-        max_delta=args.max_delta,
         concat=args.concat.lower() == "true",
         last_file_behavior=args.last_file_behavior,
         verbose=args.verbose,
-        proceed=args.proceed,
         overwrite=args.overwrite,
     )

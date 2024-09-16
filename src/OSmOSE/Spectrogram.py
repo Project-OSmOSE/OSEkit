@@ -684,12 +684,6 @@ class Spectrogram(Dataset):
                 freq=f"{self.spectro_duration}s",
             ).to_list()
         else:
-            # new_file = file_metadata["timestamp"].to_list()
-            # new_file.append(
-            #     file_metadata["timestamp"].iloc[-1]
-            #     + pd.Timedelta(self.spectro_duration, unit="s")
-            # )
-
             origin_timestamp = file_metadata[
                 (file_metadata["timestamp"] >= datetime_begin)
                 & (file_metadata["timestamp"] <= datetime_end)
@@ -707,15 +701,16 @@ class Spectrogram(Dataset):
                     and (ts + original_timedelta - current_ts).total_seconds() > 5
                 ):
                     new_file.append(current_ts)
-                    current_ts += pd.Timedelta(seconds=self.spectro_duration)
+                    # current_ts += pd.Timedelta(seconds=self.spectro_duration)
+                    current_ts += pd.Timedelta(seconds=1200)
                     counter += 1
             new_file = new_file[: -counter + 1] if counter > 1 else new_file
 
         # size of a batch
-        batch_size = (len(new_file) - 1) // self.batch_number
+        batch_size = len(new_file) // self.batch_number
         if batch_size == 0:
             self.batch_number = 1
-            batch_size = (len(new_file) - 1) // self.batch_number
+            batch_size = len(new_file) // self.batch_number
 
         # if a resample or a segmentation or both is necessary
         if (int(self.spectro_duration) != int(audio_file_origin_duration.mean())) or (
@@ -734,10 +729,10 @@ class Spectrogram(Dataset):
 
                 i_min = i_max + 1
                 i_max = (
-                    i_min + batch_size - 1
+                    i_min + batch_size
                     if batch < self.batch_number - 1
                     and i_min + batch_size < len(new_file)
-                    else len(new_file) - 2
+                    else len(new_file) - 1
                 )
 
                 if self.__local:
@@ -761,7 +756,6 @@ class Spectrogram(Dataset):
                             "last_file_behavior": last_file_behavior,
                             "concat": self.concat,
                             "verbose": self.verbose,
-                            "proceed": force_init,
                         },
                     )
 
@@ -785,8 +779,7 @@ class Spectrogram(Dataset):
                                 --batch-ind-max {i_max}\
                                 --last-file-behavior {last_file_behavior}\
                                 --concat {self.concat}\
-                                {'--verbose' if self.verbose else ''}\
-                                {'--proceed' if force_init else ''}",
+                                {'--verbose' if self.verbose else ''}",
                         jobname=f"OSmOSE_reshape_{batch}",
                         preset="low",
                         mem="30G",
