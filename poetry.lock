@@ -2052,6 +2052,22 @@ requests = "*"
 tqdm = "*"
 
 [[package]]
+name = "multiurl"
+version = "0.3.1"
+description = "A package to download several URL as one, as well as supporting multi-part URLs"
+optional = false
+python-versions = "*"
+files = [
+    {file = "multiurl-0.3.1.tar.gz", hash = "sha256:c7001437b59d56d4c310d725c3dcfff98c97c4b652893d88989853827465d442"},
+]
+
+[package.dependencies]
+python-dateutil = "*"
+pytz = "*"
+requests = "*"
+tqdm = "*"
+
+[[package]]
 name = "mypy-extensions"
 version = "1.0.0"
 description = "Type system extensions for programs checked with the mypy type checker."

@@ -3,7 +3,7 @@ from OSmOSE.frequency_scales.frequency_scale_serializer import FrequencyScaleSer
 import numpy as np
 import pytest
 
-configs_to_test = ["porp_delph", "Dual_LF_HF", "Audible"]
+configs_to_test = ["porp_delph", "dual_LF_HF", "audible"]
 important_freqs = [22050, 44100, 156250, 312500]
 
 
@@ -14,10 +14,10 @@ def test_scale_serializer():
         serializer.get_scale("porp_delph", sr=312500), CustomFrequencyScale
     ), "Error in porp_delph scale"
     assert isinstance(
-        serializer.get_scale("Audible", sr=312500), CustomFrequencyScale
+        serializer.get_scale("audible", sr=312500), CustomFrequencyScale
     ), "Error in Audible scale"
     assert isinstance(
-        serializer.get_scale("Dual_LF_HF", sr=312500), CustomFrequencyScale
+        serializer.get_scale("dual_LF_HF", sr=312500), CustomFrequencyScale
     ), "Error in Dual_LF_HF scale"
 
     try:
@@ -65,7 +65,7 @@ def test_custom_scales():
         assert np.isclose(scale.scale2bbox(e, f, g, h)[0], test_box2[0], rtol=1e-12)
         assert np.isclose(scale.scale2bbox(e, f, g, h)[1], test_box2[1], rtol=1e-12)
         assert np.isclose(scale.scale2bbox(e, f, g, h)[2], test_box2[2], rtol=1e-12)
-        if config != "Audible":
+        if config != "audible":
             assert np.isclose(scale.scale2bbox(e, f, g, h)[3], test_box2[3], rtol=1e-12)
         else:
             assert np.isclose(
