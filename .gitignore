@@ -1,8 +1,10 @@
 .pytest-cache
-__pycache__
+__pycache__/
 *.git
 dist
 .vscode
 ongoing_jobs
 log_job
 .coverage
+/_site
+archive/
