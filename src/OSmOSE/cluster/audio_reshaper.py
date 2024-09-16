@@ -6,7 +6,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 import numpy as np
 import soundfile as sf
-from librosa import load, resample
+from librosa import resample
 
 from OSmOSE.utils.core_utils import set_umask
 from OSmOSE.utils.path_utils import make_path
@@ -252,7 +252,6 @@ def reshape(
     result = []
     timestamp_list = []
     for i in range((batch_ind_max - batch_ind_min) + 1):
-        print(i)
 
         audio_data = np.empty(shape=segment_size * segment_sample_rate)
 
@@ -292,6 +291,7 @@ def reshape(
                         * orig_sr
                     )
                 )
+
                 end_offset = (
                     round(orig_sr * row["duration"])
                     if file_datetime_end <= segment_datetime_end
@@ -301,32 +301,17 @@ def reshape(
                     )
                 )
 
-                # with sf.SoundFile(input_dir_path / row["filename"]) as audio_file:
-                #     audio_file.seek(start_offset)
-                #     sig = audio_file.read(frames=end_offset - start_offset)
+                # read the appropriate section of the origin audio file
+                with sf.SoundFile(input_dir_path / row["filename"]) as audio_file:
+                    audio_file.seek(start_offset)
+                    sig = audio_file.read(frames=end_offset - start_offset)
 
-                audio_file = sf.SoundFile(input_dir_path / row["filename"])
-                audio_file.seek(start_offset)
-                sig = audio_file.read(frames=end_offset - start_offset)
-
+                # resample
                 if orig_sr != segment_sample_rate:
                     sig = resample(sig, orig_sr=orig_sr, target_sr=new_sr)
 
-                # # origin audio time vector
+                # origin audio time vector
                 file_time_vec = file_time_vec_list[index]
-                # start_offset = int((file_time_vec < time_vec[0]).sum() / segment_sample_rate) * orig_sr
-                # end_offset = int((file_time_vec <= time_vec[-1]).sum() / segment_sample_rate) * orig_sr
-                # sig, fs = load(
-                #     path=input_dir_path / row["filename"],
-                #     offset=(file_time_vec < time_vec[0]).sum() / segment_sample_rate,
-                #     duration=(
-                #         (file_time_vec <= time_vec[-1]).sum()
-                #         - (file_time_vec < time_vec[0]).sum()
-                #     )
-                #     / segment_sample_rate,
-                #     sr=segment_sample_rate,
-                #     res_type='soxr_hq'
-                # )
 
                 audio_data[
                     (time_vec >= file_time_vec[0]) & (time_vec <= file_time_vec[-1])
@@ -343,7 +328,7 @@ def reshape(
             and concat
         ):
             print(
-                f"Not enough data available for file {segment_datetime_begin.strftime('%Y_%m_%d_%H_%M_%S')}.wav ({len(np.nonzero(audio_data)[0]) / segment_sample_rate:.2f} sec). Skipping...\n"
+                f"Not enough data available for file {segment_datetime_begin.strftime('%Y_%m_%d_%H_%M_%S')}.wav ({len(np.nonzero(audio_data)[0]) / segment_sample_rate:.2f} sec which is less than 5% of the spectrogram duration of {segment_size}s). Skipping...\n"
             )
             continue
 

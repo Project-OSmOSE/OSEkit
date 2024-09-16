@@ -4,7 +4,7 @@ import os
 import shutil
 import sys
 from typing import Tuple, Union, Literal
-from math import log10, ceil
+from math import log10
 from pathlib import Path
 import multiprocessing as mp
 import glob
@@ -701,8 +701,7 @@ class Spectrogram(Dataset):
                     and (ts + original_timedelta - current_ts).total_seconds() > 5
                 ):
                     new_file.append(current_ts)
-                    # current_ts += pd.Timedelta(seconds=self.spectro_duration)
-                    current_ts += pd.Timedelta(seconds=1200)
+                    current_ts += pd.Timedelta(seconds=self.spectro_duration)
                     counter += 1
             new_file = new_file[: -counter + 1] if counter > 1 else new_file
 
@@ -780,7 +779,7 @@ class Spectrogram(Dataset):
                                 --last-file-behavior {last_file_behavior}\
                                 --concat {self.concat}\
                                 {'--verbose' if self.verbose else ''}",
-                        jobname=f"OSmOSE_reshape_{batch}",
+                        jobname=f"reshape_{batch}",
                         preset="low",
                         mem="30G",
                         walltime="04:00:00",
@@ -799,7 +798,7 @@ class Spectrogram(Dataset):
             self.jb.build_job_file(
                 script_path=Path(inspect.getfile(merge_timestamp_csv)).resolve(),
                 script_args=f"--input-files {self.audio_path}",
-                jobname="OSmOSE_merge_timestamp",
+                jobname="merge_timestamp",
                 preset="low",
                 mem="30G",
                 walltime="04:00:00",
