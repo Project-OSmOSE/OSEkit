@@ -708,11 +708,18 @@ class Spectrogram(Dataset):
 
             input_files = self.path_input_audio_file
 
-            nb_reshaped_files = (
-                audio_file_origin_duration.sum()
-            ) / self.spectro_duration
-            # metadata["audio_file_count"] = int(nb_reshaped_files)
-            metadata["audio_file_count"] = ceil(nb_reshaped_files)
+            """Compute the number of files that will be generated after reshaping, based on individual file durations stored in file_metadata.csv, and depending 
+            on the reshaping mode specified in the variable last_file_behavior"""
+            nb_reshaped_files=0
+            for ind_file_dur in audio_file_origin_duration:
+                if (last_file_behavior == "pad") | (last_file_behavior == "truncate"):
+                    nb_reshaped_files += np.ceil(ind_file_dur / dataset.spectro_duration) 
+                elif last_file_behavior == "discard":
+                    nb_reshaped_files += np.floor(ind_file_dur / dataset.spectro_duration) 
+            nb_reshaped_files = int(nb_reshaped_files)
+            del ind_file_dur
+            metadata["audio_file_count"] = nb_reshaped_files
+
             next_offset_beginning = 0
             offset_end = 0
             i_max = -1
