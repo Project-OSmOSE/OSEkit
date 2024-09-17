@@ -708,9 +708,6 @@ class Spectrogram(Dataset):
 
             input_files = self.path_input_audio_file
 
-            # nb_reshaped_files = (
-            #     audio_file_origin_duration * audio_file_count
-            # ) / self.spectro_duration
             nb_reshaped_files = (
                 audio_file_origin_duration.sum()
             ) / self.spectro_duration
