@@ -32,6 +32,7 @@ def reshape(
     concat: bool = True,
     verbose: bool = False,
     overwrite: bool = True,
+    trigger: int = 5,
 ) -> List[str]:
     """
     Reshape all audio files in the folder to be of the specified duration and/or sampling rate.
@@ -100,10 +101,19 @@ def reshape(
 
     overwrite : bool, optional
         If True, overwrite existing files in the output directory with the same name. Default is True.
+
+    trigger : int, optional
+        Integer from 0 to 100 to filter out segments with a number of sample inferior to (trigger * spectrogram duration * segment_sample_rate)
     """
 
     set_umask()
     segment_duration = pd.Timedelta(seconds=segment_size)
+
+    # Validation for trigger
+    if not (0 <= trigger <= 100):
+        raise ValueError(
+            "The 'trigger' parameter must be an integer between 0 and 100."
+        )
 
     # Validate datetimes format
     regex = r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}[+-]\d{4}$"
@@ -253,7 +263,7 @@ def reshape(
     timestamp_list = []
     for i in range((batch_ind_max - batch_ind_min) + 1):
 
-        audio_data = np.empty(shape=segment_size * segment_sample_rate)
+        audio_data = np.zeros(shape=segment_size * segment_sample_rate)
 
         if concat:
             segment_datetime_begin = datetime_begin + (
@@ -272,6 +282,8 @@ def reshape(
             + np.arange(0, segment_size * segment_sample_rate) / segment_sample_rate
         )
 
+        len_sig = 0
+        audio_data_sum = audio_data.sum()
         for index, row in file_metadata.iterrows():
 
             file_datetime_begin = row["timestamp"]
@@ -308,27 +320,32 @@ def reshape(
 
                 # resample
                 if orig_sr != segment_sample_rate:
-                    sig = resample(sig, orig_sr=orig_sr, target_sr=new_sr)
+                    sig = resample(sig, orig_sr=orig_sr, target_sr=segment_sample_rate)
 
                 # origin audio time vector
                 file_time_vec = file_time_vec_list[index]
 
                 audio_data[
-                    (time_vec >= file_time_vec[0]) & (time_vec <= file_time_vec[-1])
+                    (time_vec < file_time_vec[0])
+                    .sum() : (time_vec < file_time_vec[0])
+                    .sum()
+                    + len(sig)
                 ] = sig
 
-        if audio_data.sum() == 0:
+                len_sig += len(sig)
+
+                if not concat:
+                    break
+
+        if np.sum(audio_data) == 0:
             print(
                 f"No data available for file {segment_datetime_begin.strftime('%Y_%m_%d_%H_%M_%S')}.wav. Skipping...\n"
             )
             continue
 
-        if (
-            len(np.nonzero(audio_data)[0]) < 0.05 * segment_size * segment_sample_rate
-            and concat
-        ):
+        if len_sig < 0.01 * trigger * segment_size * segment_sample_rate:
             print(
-                f"Not enough data available for file {segment_datetime_begin.strftime('%Y_%m_%d_%H_%M_%S')}.wav ({len(np.nonzero(audio_data)[0]) / segment_sample_rate:.2f} sec which is less than 5% of the spectrogram duration of {segment_size}s). Skipping...\n"
+                f"Not enough data available for file {segment_datetime_begin.strftime('%Y_%m_%d_%H_%M_%S')}.wav ({len_sig / segment_sample_rate:.2f}s < {trigger}% of the spectrogram duration of {segment_size}s). Skipping...\n"
             )
             continue
 
@@ -359,7 +376,7 @@ def reshape(
             print(
                 f"Saved file from {segment_datetime_begin} to {segment_datetime_end} as {outfilename}\n"
             )
-
+    # %%
     # writing infos to timestamp_*.csv
     input_timestamp = pd.DataFrame({"filename": result, "timestamp": timestamp_list})
     input_timestamp.sort_values(by=["timestamp"], inplace=True)
@@ -430,6 +447,13 @@ if __name__ == "__main__":
         help="The last file of the list to be processed. Default is -1, meaning the entire list is processed.",
     )
     parser.add_argument(
+        "--trigger",
+        "-trig",
+        type=int,
+        default=5,
+        help="Integer to filter out segment with not enough samples",
+    )
+    parser.add_argument(
         "--concat",
         default=True,
         type=str,
@@ -464,7 +488,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--new-sr",
         type=int,
-        default=0,
+        default=-1,
         help="Sampling rate",
     )
 
@@ -476,7 +500,7 @@ if __name__ == "__main__":
         else args.input_files
     )
 
-    print("Parameters :", args)
+    print(f"### Parameters: {args}\n")
 
     files = reshape(
         segment_size=args.segment_size,
@@ -495,4 +519,5 @@ if __name__ == "__main__":
         last_file_behavior=args.last_file_behavior,
         verbose=args.verbose,
         overwrite=args.overwrite,
+        trigger=args.trigger,
     )
