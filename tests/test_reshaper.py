@@ -17,7 +17,7 @@ def test_reshape_errors(input_dir):
 
     assert (
         str(e.value)
-        == "Invalid format for datetime_begin. Please use the following format: 'YYYY-MM-DDTHH:MM:SS+/-HHMM'."
+        == "The timestamp '/not/a/datetime' must match format %Y-%m-%dT%H:%M:%S%z."
     )
 
     with pytest.raises(ValueError) as e:

@@ -504,10 +504,6 @@ class Job_builder:
                 self.__ongoing_jobs.remove(jobinfo)
                 self.__finished_jobs.append(jobinfo)
 
-        for jobinfo in self.__finished_jobs:
-            if not jobinfo["outfile"].exists() and not jobinfo["path"].exists():
-                self.__finished_jobs.remove(jobinfo)
-
     def update_job_access(self):
         """In case the output files are not accessible by anyone but the owner, running this once will update the permissions for anyone to read them."""
 

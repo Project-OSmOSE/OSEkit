@@ -10,6 +10,7 @@ from librosa import resample
 
 from OSmOSE.utils.core_utils import set_umask
 from OSmOSE.utils.path_utils import make_path
+from OSmOSE.utils.timestamp_utils import to_timestamp
 from OSmOSE.config import DPDEFAULT, FPDEFAULT
 from OSmOSE.utils import get_audio_file
 
@@ -115,26 +116,11 @@ def reshape(
             "The 'trigger' parameter must be an integer between 0 and 100."
         )
 
-    # Validate datetimes format
-    regex = r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}[+-]\d{4}$"
-    regex2 = r"^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$"
-    datetime_format_error = (
-        "Please use the following format: 'YYYY-MM-DDTHH:MM:SS+/-HHMM'."
-    )
-
     if datetime_begin:
-        if not re.match(regex, datetime_begin) and not re.match(regex2, datetime_begin):
-            raise ValueError(
-                f"Invalid format for datetime_begin. {datetime_format_error}"
-            )
-        datetime_begin = pd.Timestamp(datetime_begin)
+        datetime_begin = to_timestamp(datetime_begin)
 
     if datetime_end:
-        if not re.match(regex, datetime_end) and not re.match(regex2, datetime_end):
-            raise ValueError(
-                f"Invalid format for datetime_end. {datetime_format_error}"
-            )
-        datetime_end = pd.Timestamp(datetime_end)
+        datetime_end = to_timestamp(datetime_end)
 
     # Validate last_file_behavior
     if last_file_behavior not in ["truncate", "pad", "discard"]:
@@ -170,7 +156,8 @@ def reshape(
                 "Cannot overwrite input directory when the output directory is implicit!"
             )
     output_dir_path = Path(output_dir_path)
-    make_path(output_dir_path, mode=DPDEFAULT)
+    if not output_dir_path.exists():
+        make_path(output_dir_path, mode=DPDEFAULT)
 
     # Load timestamp and metadata
     input_timestamp = pd.read_csv(
@@ -191,6 +178,7 @@ def reshape(
         drop=True
     )
 
+    # datetimes
     if not datetime_begin:
         datetime_begin = file_metadata["timestamp"].iloc[0]
 
@@ -199,32 +187,13 @@ def reshape(
             file_metadata["duration"].iloc[-1], unit="s"
         )
 
-    # In the case of a single batch where batch_ind_max = -1, assign its true value otherwise the main for loop does not work
-    if batch == 0 and batch_ind_min == 0 and batch_ind_max == -1:
-        if concat:
-            batch_ind_max = (
-                len(
-                    list(
-                        pd.date_range(
-                            start=pd.Timestamp(datetime_begin),
-                            end=pd.Timestamp(datetime_end)
-                            - pd.Timedelta(value=int(f"{segment_size}"), unit="s"),
-                            freq=f"{segment_size}s",
-                        )
-                    )
-                )
-                - 1
-            )
-        else:
-            batch_ind_max = len(file_metadata) - 1
-
     # segment timestamps
     if concat:
         new_file = pd.date_range(
             start=datetime_begin,
             end=datetime_end,
             freq=f"{segment_size}s",
-        ).to_list()
+        ).to_list()[:-1]
     else:
         origin_timestamp = file_metadata[
             (file_metadata["timestamp"] >= datetime_begin)
@@ -237,31 +206,20 @@ def reshape(
                 seconds=origin_timestamp["duration"].iloc[i]
             )
 
-            while (
-                current_ts <= ts + original_timedelta
-                and (ts + original_timedelta - current_ts).total_seconds() > 5
-            ):
+            while current_ts <= ts + original_timedelta:
                 new_file.append(current_ts)
                 current_ts += segment_duration
-        new_file.append(current_ts + segment_duration)
+
+    if batch_ind_max == -1:
+        batch_ind_max = len(new_file) - 1
 
     # sample rates
     orig_sr = file_metadata["origin_sr"][0]
     segment_sample_rate = orig_sr if new_sr == -1 else new_sr
 
-    # origin audio time vector list
-    file_time_vec_list = [
-        file_metadata["timestamp"][i].timestamp()
-        + (
-            np.arange(0, file_metadata["duration"][i] * segment_sample_rate)
-            / segment_sample_rate
-        )
-        for i in range(len(file_metadata))
-    ]
-
     result = []
     timestamp_list = []
-    for i in range((batch_ind_max - batch_ind_min) + 1):
+    for i in range(batch_ind_max - batch_ind_min + 1):
 
         audio_data = np.zeros(shape=segment_size * segment_sample_rate)
 
@@ -317,13 +275,22 @@ def reshape(
                 with sf.SoundFile(input_dir_path / row["filename"]) as audio_file:
                     audio_file.seek(start_offset)
                     sig = audio_file.read(frames=end_offset - start_offset)
+                    orig_len = len(sig)
 
                 # resample
+                # During the conversion, because the ratio of original and new sampling rates​ is not an integer,
+                # the resample algorithm may introduce a slight rounding error when computing the exact number of output samples.
+                # This rounding error can sometimes result in one extra sample.
                 if orig_sr != segment_sample_rate:
                     sig = resample(sig, orig_sr=orig_sr, target_sr=segment_sample_rate)
+                    expected_len = int((segment_sample_rate * orig_len) / orig_sr)
+                    sig = sig[:expected_len]
 
                 # origin audio time vector
-                file_time_vec = file_time_vec_list[index]
+                file_time_vec = file_metadata["timestamp"][index].timestamp() + (
+                    np.arange(0, file_metadata["duration"][index] * segment_sample_rate)
+                    / segment_sample_rate
+                )
 
                 audio_data[
                     (time_vec < file_time_vec[0])
@@ -376,7 +343,7 @@ def reshape(
             print(
                 f"Saved file from {segment_datetime_begin} to {segment_datetime_end} as {outfilename}\n"
             )
-    # %%
+
     # writing infos to timestamp_*.csv
     input_timestamp = pd.DataFrame({"filename": result, "timestamp": timestamp_list})
     input_timestamp.sort_values(by=["timestamp"], inplace=True)

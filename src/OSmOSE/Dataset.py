@@ -848,8 +848,7 @@ class Dataset:
             "(MB)",
             "(GB)",
         ]  # assign units to variables
-        joined_str = ""
-        print(f"Metadata of {self.name} :")
+        joined_str = f"Metadata of {self.name} :\n"
         ct = 0
         for var in list_display_metadata:
             joined_str += f"- {var} : {metadata[var][0]} {ending_charac[ct]} \n"

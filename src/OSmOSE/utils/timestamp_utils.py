@@ -53,20 +53,20 @@ def substract_timestamps(
     return next_timestamp - cur_timestamp
 
 
-def to_timestamp(string: str) -> datetime:
+def to_timestamp(string: str) -> pd.Timestamp:
     try:
-        return datetime.strptime(string, "%Y-%m-%dT%H:%M:%S.%fZ")
+        return pd.Timestamp(string)
     except ValueError:
         try:
-            return datetime.strptime(string, "%Y-%m-%dT%H-%M-%S_%fZ")
+            return pd.Timestamp(string)
         except ValueError:
             raise ValueError(
-                f"The timestamp '{string}' must match either format %Y-%m-%dT%H:%M:%S.%fZ or %Y-%m-%dT%H-%M-%S_%fZ"
+                f"The timestamp '{string}' must match format %Y-%m-%dT%H:%M:%S%z."
             )
 
 
-def from_timestamp(date: datetime) -> str:
-    return datetime.strftime(date, "%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+def from_timestamp(date: pd.Timestamp) -> str:
+    return date.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + date.strftime("%z")
 
 
 def get_timestamps(
@@ -101,7 +101,7 @@ def get_timestamps(
     )
 
     if os.path.exists(csv):
-        df = pd.read_csv(csv)
+        df = pd.read_csv(csv, parse_dates=["timestamp"])
         return df
     else:
         raise ValueError(f"{csv} does not exist")
