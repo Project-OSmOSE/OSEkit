@@ -1,27 +1,30 @@
 import os
-import re
 import pandas as pd
-from typing import List, Union, Literal
+from typing import List
 from argparse import ArgumentParser
 from pathlib import Path
 import numpy as np
 import soundfile as sf
 from librosa import resample
 
-from OSmOSE.utils.core_utils import set_umask
-from OSmOSE.utils.path_utils import make_path
-from OSmOSE.utils.timestamp_utils import to_timestamp
-from OSmOSE.config import DPDEFAULT, FPDEFAULT
-from OSmOSE.utils import get_audio_file
+from OSmOSE.utils import (
+    DPDEFAULT,
+    FPDEFAULT,
+    to_timestamp,
+    get_audio_file,
+    set_umask,
+    make_path,
+    str2Path,
+)
 
 
 def reshape(
-    input_files: Union[str, list],
+    input_files: str | list,
     segment_size: int,
     *,
-    file_metadata_path: Union[str, Path] = None,
-    timestamp_path: Union[str, Path] = None,
-    output_dir_path: Union[str, Path] = None,
+    file_metadata_path: str | Path = None,
+    timestamp_path: str | Path = None,
+    output_dir_path: str | Path = None,
     datetime_begin: str = None,
     datetime_end: str = None,
     new_sr: int = -1,
@@ -29,22 +32,15 @@ def reshape(
     batch_num: int = 1,
     batch_ind_min: int = 0,
     batch_ind_max: int = -1,
-    last_file_behavior: Literal["truncate", "pad", "discard"] = "pad",
     concat: bool = True,
     verbose: bool = False,
     overwrite: bool = True,
     trigger: int = 5,
-) -> List[str]:
-    """
-    Reshape all audio files in the folder to be of the specified duration and/or sampling rate.
-    The begin and end datetime can be specified as well by the user,
-    if not, the begin datetime of the first original audio file and the end datetime of the last audio file will be used
-    """
-
+):
     """
     Reshape all audio files in the folder to be of the specified duration and/or sampling rate.
 
-    Parameters:
+    Parameters
     -----------
     input_files : Union[str, list]
         Path to a directory containing audio files.
@@ -87,12 +83,6 @@ def reshape(
         The maximum index of the files to include in the current batch. Default is -1, which processes all
         files up to the end.
 
-    last_file_behavior : Literal["truncate", "pad", "discard"], optional
-        Specifies how to handle the last audio segment if it is shorter than the desired segment size:
-        - "truncate": Truncate the segment to the shorter length.
-        - "pad": Pad the segment with zeros to match the segment size (default).
-        - "discard": Discard the segment entirely.
-
     concat : bool, optional
         If True, concatenate all original audio data. If False,
         each segment will be saved as a separate file. Default is True.
@@ -110,25 +100,28 @@ def reshape(
     set_umask()
     segment_duration = pd.Timedelta(seconds=segment_size)
 
-    # Validation for trigger
+    # validation for trigger
     if not (0 <= trigger <= 100):
         raise ValueError(
             "The 'trigger' parameter must be an integer between 0 and 100."
         )
 
+    # validation datetimes
     if datetime_begin:
         datetime_begin = to_timestamp(datetime_begin)
 
     if datetime_end:
         datetime_end = to_timestamp(datetime_end)
 
-    # Validate last_file_behavior
-    if last_file_behavior not in ["truncate", "pad", "discard"]:
-        raise ValueError(
-            f"Invalid last_file_behavior: '{last_file_behavior}'. Must be one of 'truncate', 'pad', or 'discard'."
-        )
-
-    # Prepare file paths
+    # prepare file paths
+    if file_metadata_path and isinstance(file_metadata_path, str):
+        file_metadata_path = str2Path(file_metadata_path)
+    if timestamp_path and isinstance(timestamp_path, str):
+        timestamp_path = str2Path(timestamp_path)
+    if output_dir_path and isinstance(output_dir_path, str):
+        output_dir_path = str2Path(output_dir_path)
+    if input_files and isinstance(input_files, str):
+        input_files = str2Path(input_files)
     if isinstance(input_files, list):
         input_dir_path = Path(input_files[0]).parent
         files = [Path(file) for file in input_files]
@@ -136,9 +129,9 @@ def reshape(
         input_dir_path = Path(input_files)
         files = get_audio_file(file_path=input_dir_path)
 
-    if not input_dir_path.is_dir():
+    if not input_dir_path.exists():
         raise ValueError(
-            f"The input files must either be a valid folder path or a list of file path, not {input_dir_path}."
+            f"The input files must either be a valid folder path, not '{input_dir_path}'."
         )
 
     if not (input_dir_path / "timestamp.csv").exists() and (
@@ -148,18 +141,17 @@ def reshape(
             f"The timestamp.csv file must be present in the directory {Path(input_dir_path)} and correspond to the audio files in the same location, or be specified in the argument."
         )
 
-    # Output directory
+    # output directory
     if not output_dir_path:
         output_dir_path = input_dir_path
         if overwrite:
             raise ValueError(
                 "Cannot overwrite input directory when the output directory is implicit!"
             )
-    output_dir_path = Path(output_dir_path)
     if not output_dir_path.exists():
         make_path(output_dir_path, mode=DPDEFAULT)
 
-    # Load timestamp and metadata
+    # load timestamp and metadata
     input_timestamp = pd.read_csv(
         timestamp_path
         if timestamp_path and timestamp_path.exists()
@@ -483,7 +475,6 @@ if __name__ == "__main__":
         batch_ind_min=args.batch_ind_min,
         batch_ind_max=args.batch_ind_max,
         concat=args.concat.lower() == "true",
-        last_file_behavior=args.last_file_behavior,
         verbose=args.verbose,
         overwrite=args.overwrite,
         trigger=args.trigger,

@@ -32,9 +32,8 @@ from OSmOSE.utils.core_utils import (
     safe_read,
     set_umask,
     get_timestamp_of_audio_file,
-    select_audio_file,
 )
-from OSmOSE.utils.audio_utils import get_audio_file, read_header
+from OSmOSE.utils.audio_utils import get_audio_file
 from OSmOSE.config import OSMOSE_PATH, FPDEFAULT, DPDEFAULT
 from OSmOSE.frequency_scales.frequency_scale_serializer import FrequencyScaleSerializer
 
@@ -558,7 +557,6 @@ class Spectrogram(Dataset):
         batch_ind_max: int = -1,
         force_init: bool = False,
         env_name: str = None,
-        last_file_behavior: Literal["pad", "truncate", "discard"] = "pad",
         trigger: int = 5,
     ) -> None:
         """Prepares everything (path, variables, files) for spectrogram generation. This needs to be run before the spectrograms are generated.
@@ -760,7 +758,6 @@ class Spectrogram(Dataset):
                             "batch_num": self.batch_number,
                             "batch_ind_min": i_min,
                             "batch_ind_max": i_max,
-                            "last_file_behavior": last_file_behavior,
                             "concat": self.concat,
                             "verbose": self.verbose,
                         },
@@ -785,7 +782,6 @@ class Spectrogram(Dataset):
                                 --batch-num {self.batch_number}\
                                 --batch-ind-min {i_min}\
                                 --batch-ind-max {i_max}\
-                                --last-file-behavior {last_file_behavior}\
                                 --concat {self.concat}\
                                 {'--verbose' if self.verbose else ''}",
                         jobname=f"reshape_{batch}",

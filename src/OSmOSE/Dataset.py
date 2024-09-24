@@ -1,12 +1,9 @@
 import os
-import stat
 from pathlib import Path
 from typing import Union, Tuple, List
 from datetime import datetime
-from warnings import warn
 from statistics import fmean as mean
 import shutil
-import glob
 from os import PathLike
 import sys
 import re
@@ -26,7 +23,7 @@ from OSmOSE.utils.timestamp_utils import check_epoch
 from OSmOSE.utils.core_utils import read_header, check_n_files, set_umask
 from OSmOSE.utils.path_utils import make_path
 from OSmOSE.timestamps import write_timestamp
-from OSmOSE.config import *
+from OSmOSE.config import DPDEFAULT, FPDEFAULT, OSMOSE_PATH, TIMESTAMP_FORMAT_AUDIO_FILE
 
 
 class Dataset:
@@ -735,15 +732,14 @@ class Dataset:
                 ValueError
                     If the original folder is not found and could not be created.
         """
-        path_raw_audio = self.path.joinpath(OSMOSE_PATH.raw_audio)
+        path_raw_audio = self.path / OSMOSE_PATH.raw_audio
         audio_files = []
         parent_dir_list = []
-        timestamp_files = []
 
-        make_path(path_raw_audio.joinpath("original"), mode=DPDEFAULT)
-        make_path(self.path.joinpath(OSMOSE_PATH.other), mode=DPDEFAULT)
-        make_path(self.path.joinpath(OSMOSE_PATH.instrument), mode=DPDEFAULT)
-        make_path(self.path.joinpath(OSMOSE_PATH.environment), mode=DPDEFAULT)
+        make_path(path_raw_audio / "original", mode=DPDEFAULT)
+        make_path(self.path / OSMOSE_PATH.other, mode=DPDEFAULT)
+        make_path(self.path / OSMOSE_PATH.instrument, mode=DPDEFAULT)
+        make_path(self.path / OSMOSE_PATH.environment, mode=DPDEFAULT)
 
         for path, _, files in os.walk(self.path):
             for f in files:
@@ -761,7 +757,7 @@ class Dataset:
                             )
                     elif f == "timestamp.csv":
                         Path(path, f).rename(
-                            path_raw_audio.joinpath("original", "timestamp.csv")
+                            path_raw_audio / "original" / "timestamp.csv"
                         )
                     else:
                         for key_dico in self.dico_aux_substring:
@@ -769,14 +765,11 @@ class Dataset:
                                 "|".join(self.dico_aux_substring[key_dico]), f
                             ):
                                 Path(path, f).rename(
-                                    self.path.joinpath(
-                                        OSMOSE_PATH.auxiliary, key_dico, f
-                                    )
+                                    self.path / OSMOSE_PATH.auxiliary / key_dico / f
                                 )
 
         for audio in audio_files:
-            audio.rename(path_raw_audio.joinpath("original", audio.name))
-            # os.chmod(path_raw_audio.joinpath("original",audio.name), mode=FPDEFAULT)
+            audio.rename(path_raw_audio / "original" / audio.name)
 
         for parent_dir in parent_dir_list:
             if len(os.listdir(parent_dir)) > 0:
@@ -788,7 +781,7 @@ class Dataset:
 
             shutil.rmtree(parent_dir)
 
-        return path_raw_audio.joinpath("original")
+        return path_raw_audio / "original"
 
     def _get_original_after_build(self) -> Path:
         """Find the original folder path after the dataset has been built.

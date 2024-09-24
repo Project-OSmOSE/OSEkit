@@ -8,4 +8,5 @@ dist
 ongoing_jobs
 log_job
 archive/
-
+.github
+.spyproject

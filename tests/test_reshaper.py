@@ -28,19 +28,7 @@ def test_reshape_errors(input_dir):
 
     assert (
         str(e.value)
-        == f"The input files must either be a valid folder path or a list of file path, not {str(Path('/not/a/path'))}."
-    )
-
-    with pytest.raises(ValueError) as e:
-        reshape(
-            input_dir,
-            20,
-            last_file_behavior="misbehave",
-        )
-
-    assert (
-        str(e.value)
-        == f"Invalid last_file_behavior: 'misbehave'. Must be one of 'truncate', 'pad', or 'discard'."
+        == f"The input files must either be a valid folder path, not '{str(Path('/not/a/path'))}'."
     )
 
     with pytest.raises(FileNotFoundError) as e:
@@ -92,7 +80,6 @@ def test_reshape_with_new_sr(input_dataset: Path, output_dir):
         input_files=dataset._get_original_after_build(),
         segment_size=1,
         output_dir_path=output_dir,
-        last_file_behavior="truncate",
         new_sr=800,
     )
 
@@ -120,7 +107,6 @@ def test_reshape_truncate_last(input_dataset: Path, output_dir):
         input_files=dataset._get_original_after_build(),
         segment_size=1,
         output_dir_path=output_dir,
-        last_file_behavior="truncate",
     )
 
     reshaped_files = [
