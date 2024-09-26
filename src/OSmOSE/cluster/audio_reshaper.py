@@ -246,7 +246,7 @@ def reshape(
                 start_offset = (
                     int(
                         max(
-                            0,
+                            0.,
                             (
                                 segment_datetime_begin - file_datetime_begin
                             ).total_seconds(),
@@ -254,6 +254,7 @@ def reshape(
                     )
                     * orig_sr
                 )
+                
                 end_offset = (
                     int(
                         min(
