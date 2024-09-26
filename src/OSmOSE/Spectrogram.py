@@ -557,7 +557,7 @@ class Spectrogram(Dataset):
         batch_ind_max: int = -1,
         force_init: bool = False,
         env_name: str = None,
-        trigger: int = 5,
+        threshold: int = 5,
     ) -> None:
         """Prepares everything (path, variables, files) for spectrogram generation. This needs to be run before the spectrograms are generated.
         If the dataset has not yet been build, it is before the rest of the functions are initialized.
@@ -577,8 +577,8 @@ class Spectrogram(Dataset):
             The index of the last file to consider (the default is -1, meaning consider every file).
         force_init : `bool`, optional, keyword-only
             Force every parameter of the initialization.
-        trigger : int, optional
-            Integer from 0 to 100 to filter out segments with a number of sample inferior to (trigger * spectrogram duration * segment_sample_rate)
+        threshold : int, optional
+            Integer from 0 to 100 to filter out segments with a number of sample inferior to (threshold * spectrogram duration * segment_sample_rate)
         """
 
         # remove temp directories from adjustment spectrograms
@@ -660,12 +660,6 @@ class Spectrogram(Dataset):
                 set(subset).intersection(set(self.list_audio_to_process))
             )
 
-        # validation for trigger
-        if not (0 <= trigger <= 100):
-            raise ValueError(
-                "'trigger' parameter must be an integer between 0 and 100. {trigger} is not a valid value"
-            )
-
         # if datetime begin/end are not provided, takes the datetime of first audio file/datetime + duration of last audio file
         if not datetime_begin:
             datetime_begin = (file_metadata["timestamp"].iloc[0]).strftime(
@@ -692,16 +686,16 @@ class Spectrogram(Dataset):
                 freq=f"{self.spectro_duration}s",
             ).to_list()[:-1]
         else:
-            origin_timestamp = file_metadata[
+            selected_file_metadata = file_metadata[
                 (file_metadata["timestamp"] >= datetime_begin)
                 & (file_metadata["timestamp"] <= datetime_end)
             ]
             new_file = []
-            for i, ts in enumerate(origin_timestamp["timestamp"]):
+            for i, ts in enumerate(selected_file_metadata["timestamp"]):
                 counter = 0
                 current_ts = ts
                 original_timedelta = pd.Timedelta(
-                    seconds=origin_timestamp["duration"].iloc[i]
+                    seconds=selected_file_metadata["duration"].iloc[i]
                 )
 
                 while current_ts <= ts + original_timedelta:
@@ -753,7 +747,7 @@ class Spectrogram(Dataset):
                             "datetime_end": datetime_end,
                             "segment_size": int(self.spectro_duration),
                             "new_sr": int(self.dataset_sr),
-                            "trigger": trigger,
+                            "threshold": threshold,
                             "batch": batch,
                             "batch_num": self.batch_number,
                             "batch_ind_min": i_min,
@@ -777,7 +771,7 @@ class Spectrogram(Dataset):
                                 --datetime-end {datetime_end}\
                                 --segment-size {int(self.spectro_duration)}\
                                 --new-sr {int(self.dataset_sr)}\
-                                --trigger {trigger}\
+                                --threshold {threshold}\
                                 --batch {batch}\
                                 --batch-num {self.batch_number}\
                                 --batch-ind-min {i_min}\
@@ -828,8 +822,12 @@ class Spectrogram(Dataset):
             print(f"save file {str(input_dir_path / 'timestamp.csv')}")
             df = pd.DataFrame(
                 {
-                    "filename": list(itertools.chain(*list_conca_filename)),
-                    "timestamp": list(itertools.chain(*list_conca_timestamps)),
+                    "filename": list(
+                        itertools.chain.from_iterable(list_conca_filename)
+                    ),
+                    "timestamp": list(
+                        itertools.chain.from_iterable(list_conca_timestamps)
+                    ),
                 }
             )
             df.sort_values(by=["timestamp"], inplace=True)
@@ -895,11 +893,10 @@ class Spectrogram(Dataset):
         origin_dt = pd.read_csv(
             self.path_input_audio_file / "timestamp.csv", parse_dates=["timestamp"]
         )["timestamp"]
-        nber_file_to_process = 0
-        for dt in new_file:
-            if dt >= origin_dt.iloc[0] and dt <= origin_dt.iloc[-1]:
-                nber_file_to_process += 1
-        metadata["audio_file_count"] = nber_file_to_process
+
+        metadata["audio_file_count"] = sum(
+            1 for dt in new_file if origin_dt.iloc[0] <= dt <= origin_dt.iloc[-1]
+        )
 
         metadata["start_date"] = datetime_begin
         metadata["end_date"] = datetime_end

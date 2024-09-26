@@ -20,7 +20,7 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from OSmOSE.utils.timestamp_utils import check_epoch
-from OSmOSE.utils.core_utils import read_header, check_n_files, set_umask
+from OSmOSE.utils.core_utils import check_n_files, set_umask
 from OSmOSE.utils.path_utils import make_path
 from OSmOSE.timestamps import write_timestamp
 from OSmOSE.config import DPDEFAULT, FPDEFAULT, OSMOSE_PATH, TIMESTAMP_FORMAT_AUDIO_FILE
@@ -404,12 +404,12 @@ class Dataset:
 
         already_printed_1 = False
         for ind_dt in tqdm(range(len(timestamp_csv)), desc="Scanning audio files"):
+
             audio_file = audio_file_list[ind_dt]
 
             cur_timestamp, _ = self._format_timestamp(
                 timestamp_csv[ind_dt], date_template, already_printed_1
             )
-
             # define final audio filename, especially we remove the sign '-' in filenames (because of our qsub_resample.sh)
             if ("-" in audio_file.name) or (":" in audio_file.name):
                 cur_filename = audio_file.name.replace("-", "_").replace(":", "_")
@@ -424,10 +424,16 @@ class Dataset:
                 cur_filename = audio_file.name
 
             try:
-                origin_sr, frames, sampwidth, channel_count, size = read_header(
-                    path_raw_audio.joinpath(cur_filename)
-                )
-                sf_meta = sf.info(path_raw_audio.joinpath(cur_filename))
+                # origin_sr, frames, sampwidth, channel_count, size = read_header(
+                #     path_raw_audio / cur_filename
+                # )
+                channel_count = sf.info(path_raw_audio / cur_filename).channels
+                size = (path_raw_audio / cur_filename).stat().st_size
+                # with wave.open(str(path_raw_audio / cur_filename), 'rb') as wav:
+                #     sampwidth = wav.getsampwidth()
+                sampwidth = sf.info(path_raw_audio / cur_filename).subtype
+
+                sf_meta = sf.info(path_raw_audio / cur_filename)
 
             except Exception as e:
                 print(f"error message making status read header False : \n {e}")
@@ -457,16 +463,17 @@ class Dataset:
             # append audio metadata read from header in the dataframe audio_metadata
             new_data = pd.DataFrame(
                 {
-                    "filename": [cur_filename],
-                    "timestamp": [cur_timestamp],
-                    "duration": [sf_meta.duration],
-                    "origin_sr": [int(sf_meta.samplerate)],
-                    "sampwidth": [sampwidth],
-                    "size": [size / 1e6],
-                    "duration_inter_file": [None],
-                    "channel_count": [channel_count],
-                    "status_read_header": [True],
-                }
+                    "filename": cur_filename,
+                    "timestamp": cur_timestamp,
+                    "duration": sf_meta.duration,
+                    "origin_sr": int(sf_meta.samplerate),
+                    "sampwidth": sampwidth,
+                    "size": size / 1e6,
+                    "duration_inter_file": None,
+                    "channel_count": channel_count,
+                    "status_read_header": True,
+                },
+                index=[ind_dt],
             )
             new_data = new_data.dropna(axis=1, how="all")
             audio_metadata = pd.concat(
@@ -607,7 +614,7 @@ class Dataset:
             # write summary metadata.csv
             data = {
                 "origin_sr": int(mean(audio_metadata["origin_sr"].values)),
-                "sample_bits": int(8 * mean(audio_metadata["sampwidth"].values)),
+                "sample_bits": list(set(audio_metadata["sampwidth"])),
                 "channel_count": int(mean(audio_metadata["channel_count"].values)),
                 "audio_file_count": len(audio_metadata["filename"].values),
                 "start_date": timestamp_csv[0],

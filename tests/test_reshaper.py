@@ -28,7 +28,7 @@ def test_reshape_errors(input_dir):
 
     assert (
         str(e.value)
-        == f"The input files must either be a valid folder path, not '{str(Path('/not/a/path'))}'."
+        == f"The input files must be a valid folder path, not '{str(Path('/not/a/path'))}'."
     )
 
     with pytest.raises(FileNotFoundError) as e:

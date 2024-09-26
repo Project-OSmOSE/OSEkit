@@ -57,12 +57,9 @@ def to_timestamp(string: str) -> pd.Timestamp:
     try:
         return pd.Timestamp(string)
     except ValueError:
-        try:
-            return pd.Timestamp(string)
-        except ValueError:
-            raise ValueError(
-                f"The timestamp '{string}' must match format %Y-%m-%dT%H:%M:%S%z."
-            )
+        raise ValueError(
+            f"The timestamp '{string}' must match format %Y-%m-%dT%H:%M:%S%z."
+        )
 
 
 def from_timestamp(date: pd.Timestamp) -> str:

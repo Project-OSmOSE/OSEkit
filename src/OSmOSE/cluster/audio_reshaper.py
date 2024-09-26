@@ -14,7 +14,6 @@ from OSmOSE.utils import (
     get_audio_file,
     set_umask,
     make_path,
-    str2Path,
 )
 
 
@@ -35,7 +34,7 @@ def reshape(
     concat: bool = True,
     verbose: bool = False,
     overwrite: bool = True,
-    trigger: int = 5,
+    threshold: int = 5,
 ):
     """
     Reshape all audio files in the folder to be of the specified duration and/or sampling rate.
@@ -93,17 +92,17 @@ def reshape(
     overwrite : bool, optional
         If True, overwrite existing files in the output directory with the same name. Default is True.
 
-    trigger : int, optional
-        Integer from 0 to 100 to filter out segments with a number of sample inferior to (trigger * spectrogram duration * segment_sample_rate)
+    threshold : int, optional
+        Integer from 0 to 100 to filter out segments with a number of sample inferior to (threshold * spectrogram duration * new_sr)
     """
 
     set_umask()
     segment_duration = pd.Timedelta(seconds=segment_size)
 
-    # validation for trigger
-    if not (0 <= trigger <= 100):
+    # validation for threshold
+    if not (0 <= threshold <= 100):
         raise ValueError(
-            "The 'trigger' parameter must be an integer between 0 and 100."
+            "The 'threshold' parameter must be an integer between 0 and 100."
         )
 
     # validation datetimes
@@ -115,13 +114,13 @@ def reshape(
 
     # prepare file paths
     if file_metadata_path and isinstance(file_metadata_path, str):
-        file_metadata_path = str2Path(file_metadata_path)
+        file_metadata_path = Path(file_metadata_path)
     if timestamp_path and isinstance(timestamp_path, str):
-        timestamp_path = str2Path(timestamp_path)
+        timestamp_path = Path(timestamp_path)
     if output_dir_path and isinstance(output_dir_path, str):
-        output_dir_path = str2Path(output_dir_path)
+        output_dir_path = Path(output_dir_path)
     if input_files and isinstance(input_files, str):
-        input_files = str2Path(input_files)
+        input_files = Path(input_files)
     if isinstance(input_files, list):
         input_dir_path = Path(input_files[0]).parent
         files = [Path(file) for file in input_files]
@@ -131,7 +130,7 @@ def reshape(
 
     if not input_dir_path.exists():
         raise ValueError(
-            f"The input files must either be a valid folder path, not '{input_dir_path}'."
+            f"The input files must be a valid folder path, not '{input_dir_path}'."
         )
 
     if not (input_dir_path / "timestamp.csv").exists() and (
@@ -165,10 +164,10 @@ def reshape(
             input_dir_path / "file_metadata.csv", parse_dates=["timestamp"]
         )
 
-    filename = [file.name for file in files]
-    file_metadata = file_metadata[file_metadata["filename"].isin(filename)].reset_index(
-        drop=True
-    )
+    filenames = [file.name for file in files]
+    file_metadata = file_metadata[
+        file_metadata["filename"].isin(filenames)
+    ].reset_index(drop=True)
 
     # datetimes
     if not datetime_begin:
@@ -207,13 +206,13 @@ def reshape(
 
     # sample rates
     orig_sr = file_metadata["origin_sr"][0]
-    segment_sample_rate = orig_sr if new_sr == -1 else new_sr
+    new_sr = orig_sr if new_sr == -1 else new_sr
 
     result = []
     timestamp_list = []
     for i in range(batch_ind_max - batch_ind_min + 1):
 
-        audio_data = np.zeros(shape=segment_size * segment_sample_rate)
+        audio_data = np.zeros(shape=segment_size * new_sr)
 
         if concat:
             segment_datetime_begin = datetime_begin + (
@@ -229,11 +228,10 @@ def reshape(
         # segment time vector
         time_vec = (
             segment_datetime_begin.timestamp()
-            + np.arange(0, segment_size * segment_sample_rate) / segment_sample_rate
+            + np.arange(0, segment_size * new_sr) / new_sr
         )
 
         len_sig = 0
-        audio_data_sum = audio_data.sum()
         for index, row in file_metadata.iterrows():
 
             file_datetime_begin = row["timestamp"]
@@ -246,21 +244,24 @@ def reshape(
             ):
 
                 start_offset = (
-                    0
-                    if file_datetime_begin >= segment_datetime_begin
-                    else int(
-                        (segment_datetime_begin - file_datetime_begin).total_seconds()
-                        * orig_sr
+                    int(
+                        max(
+                            0,
+                            (
+                                segment_datetime_begin - file_datetime_begin
+                            ).total_seconds(),
+                        )
                     )
+                    * orig_sr
                 )
-
                 end_offset = (
-                    round(orig_sr * row["duration"])
-                    if file_datetime_end <= segment_datetime_end
-                    else int(
-                        (segment_datetime_end - file_datetime_begin).total_seconds()
-                        * orig_sr
+                    int(
+                        min(
+                            (segment_datetime_end - file_datetime_begin),
+                            (file_datetime_end - file_datetime_begin),
+                        ).total_seconds()
                     )
+                    * orig_sr
                 )
 
                 # read the appropriate section of the origin audio file
@@ -273,15 +274,14 @@ def reshape(
                 # During the conversion, because the ratio of original and new sampling rates​ is not an integer,
                 # the resample algorithm may introduce a slight rounding error when computing the exact number of output samples.
                 # This rounding error can sometimes result in one extra sample.
-                if orig_sr != segment_sample_rate:
-                    sig = resample(sig, orig_sr=orig_sr, target_sr=segment_sample_rate)
-                    expected_len = int((segment_sample_rate * orig_len) / orig_sr)
+                if orig_sr != new_sr:
+                    sig = resample(sig, orig_sr=orig_sr, target_sr=new_sr)
+                    expected_len = int((new_sr * orig_len) / orig_sr)
                     sig = sig[:expected_len]
 
                 # origin audio time vector
                 file_time_vec = file_metadata["timestamp"][index].timestamp() + (
-                    np.arange(0, file_metadata["duration"][index] * segment_sample_rate)
-                    / segment_sample_rate
+                    np.arange(0, file_metadata["duration"][index] * new_sr) / new_sr
                 )
 
                 audio_data[
@@ -302,9 +302,9 @@ def reshape(
             )
             continue
 
-        if len_sig < 0.01 * trigger * segment_size * segment_sample_rate:
+        if len_sig < 0.01 * threshold * segment_size * new_sr:
             print(
-                f"Not enough data available for file {segment_datetime_begin.strftime('%Y_%m_%d_%H_%M_%S')}.wav ({len_sig / segment_sample_rate:.2f}s < {trigger}% of the spectrogram duration of {segment_size}s). Skipping...\n"
+                f"Not enough data available for file {segment_datetime_begin.strftime('%Y_%m_%d_%H_%M_%S')}.wav ({len_sig / new_sr:.2f}s < {threshold}% of the spectrogram duration of {segment_size}s). Skipping...\n"
             )
             continue
 
@@ -327,7 +327,7 @@ def reshape(
         sf.write(
             outfilename,
             audio_data,
-            segment_sample_rate,
+            new_sr,
         )
         os.chmod(outfilename, mode=FPDEFAULT)
 
@@ -406,7 +406,7 @@ if __name__ == "__main__":
         help="The last file of the list to be processed. Default is -1, meaning the entire list is processed.",
     )
     parser.add_argument(
-        "--trigger",
+        "--threshold",
         "-trig",
         type=int,
         default=5,
@@ -477,5 +477,5 @@ if __name__ == "__main__":
         concat=args.concat.lower() == "true",
         verbose=args.verbose,
         overwrite=args.overwrite,
-        trigger=args.trigger,
+        threshold=args.threshold,
     )
