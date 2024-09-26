@@ -243,25 +243,19 @@ def reshape(
                 and file_datetime_begin < segment_datetime_end
             ):
 
-                start_offset = (
-                    int(
-                        max(
-                            0.,
-                            (
-                                segment_datetime_begin - file_datetime_begin
-                            ).total_seconds(),
-                        )
+                start_offset = int(
+                    max(
+                        0.0,
+                        (segment_datetime_begin - file_datetime_begin).total_seconds(),
                     )
                     * orig_sr
                 )
-                
-                end_offset = (
-                    int(
-                        min(
-                            (segment_datetime_end - file_datetime_begin),
-                            (file_datetime_end - file_datetime_begin),
-                        ).total_seconds()
-                    )
+
+                end_offset = int(
+                    min(
+                        (segment_datetime_end - file_datetime_begin),
+                        (file_datetime_end - file_datetime_begin),
+                    ).total_seconds()
                     * orig_sr
                 )
 
