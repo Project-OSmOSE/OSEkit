@@ -1,12 +1,9 @@
 import os
-import stat
 from pathlib import Path
 from typing import Union, Tuple, List
 from datetime import datetime
-from warnings import warn
 from statistics import fmean as mean
 import shutil
-import glob
 from os import PathLike
 import sys
 import re
@@ -23,10 +20,10 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from OSmOSE.utils.timestamp_utils import check_epoch
-from OSmOSE.utils.core_utils import read_header, check_n_files, set_umask
+from OSmOSE.utils.core_utils import check_n_files, set_umask
 from OSmOSE.utils.path_utils import make_path
 from OSmOSE.timestamps import write_timestamp
-from OSmOSE.config import *
+from OSmOSE.config import DPDEFAULT, FPDEFAULT, OSMOSE_PATH, TIMESTAMP_FORMAT_AUDIO_FILE
 
 
 class Dataset:
@@ -407,12 +404,12 @@ class Dataset:
 
         already_printed_1 = False
         for ind_dt in tqdm(range(len(timestamp_csv)), desc="Scanning audio files"):
+
             audio_file = audio_file_list[ind_dt]
 
             cur_timestamp, _ = self._format_timestamp(
                 timestamp_csv[ind_dt], date_template, already_printed_1
             )
-
             # define final audio filename, especially we remove the sign '-' in filenames (because of our qsub_resample.sh)
             if ("-" in audio_file.name) or (":" in audio_file.name):
                 cur_filename = audio_file.name.replace("-", "_").replace(":", "_")
@@ -427,10 +424,16 @@ class Dataset:
                 cur_filename = audio_file.name
 
             try:
-                origin_sr, frames, sampwidth, channel_count, size = read_header(
-                    path_raw_audio.joinpath(cur_filename)
-                )
-                sf_meta = sf.info(path_raw_audio.joinpath(cur_filename))
+                # origin_sr, frames, sampwidth, channel_count, size = read_header(
+                #     path_raw_audio / cur_filename
+                # )
+                channel_count = sf.info(path_raw_audio / cur_filename).channels
+                size = (path_raw_audio / cur_filename).stat().st_size
+                # with wave.open(str(path_raw_audio / cur_filename), 'rb') as wav:
+                #     sampwidth = wav.getsampwidth()
+                sampwidth = sf.info(path_raw_audio / cur_filename).subtype
+
+                sf_meta = sf.info(path_raw_audio / cur_filename)
 
             except Exception as e:
                 print(f"error message making status read header False : \n {e}")
@@ -458,25 +461,23 @@ class Dataset:
                 continue
 
             # append audio metadata read from header in the dataframe audio_metadata
+            new_data = pd.DataFrame(
+                {
+                    "filename": cur_filename,
+                    "timestamp": cur_timestamp,
+                    "duration": sf_meta.duration,
+                    "origin_sr": int(sf_meta.samplerate),
+                    "sampwidth": sampwidth,
+                    "size": size / 1e6,
+                    "duration_inter_file": None,
+                    "channel_count": channel_count,
+                    "status_read_header": True,
+                },
+                index=[ind_dt],
+            )
+            new_data = new_data.dropna(axis=1, how="all")
             audio_metadata = pd.concat(
-                [
-                    audio_metadata,
-                    pd.DataFrame(
-                        {
-                            "filename": cur_filename,
-                            "timestamp": cur_timestamp,
-                            "duration": sf_meta.duration,
-                            "origin_sr": int(sf_meta.samplerate),
-                            "sampwidth": sampwidth,
-                            "size": size / 1e6,
-                            "duration_inter_file": None,
-                            "channel_count": channel_count,
-                            "status_read_header": True,
-                        },
-                        index=[0],
-                    ),
-                ],
-                axis=0,
+                [audio_metadata if not audio_metadata.empty else None, new_data], axis=0
             )
 
         audio_metadata["duration_inter_file"] = audio_metadata["duration"].diff()
@@ -613,7 +614,7 @@ class Dataset:
             # write summary metadata.csv
             data = {
                 "origin_sr": int(mean(audio_metadata["origin_sr"].values)),
-                "sample_bits": int(8 * mean(audio_metadata["sampwidth"].values)),
+                "sample_bits": list(set(audio_metadata["sampwidth"])),
                 "channel_count": int(mean(audio_metadata["channel_count"].values)),
                 "audio_file_count": len(audio_metadata["filename"].values),
                 "start_date": timestamp_csv[0],
@@ -738,15 +739,14 @@ class Dataset:
                 ValueError
                     If the original folder is not found and could not be created.
         """
-        path_raw_audio = self.path.joinpath(OSMOSE_PATH.raw_audio)
+        path_raw_audio = self.path / OSMOSE_PATH.raw_audio
         audio_files = []
         parent_dir_list = []
-        timestamp_files = []
 
-        make_path(path_raw_audio.joinpath("original"), mode=DPDEFAULT)
-        make_path(self.path.joinpath(OSMOSE_PATH.other), mode=DPDEFAULT)
-        make_path(self.path.joinpath(OSMOSE_PATH.instrument), mode=DPDEFAULT)
-        make_path(self.path.joinpath(OSMOSE_PATH.environment), mode=DPDEFAULT)
+        make_path(path_raw_audio / "original", mode=DPDEFAULT)
+        make_path(self.path / OSMOSE_PATH.other, mode=DPDEFAULT)
+        make_path(self.path / OSMOSE_PATH.instrument, mode=DPDEFAULT)
+        make_path(self.path / OSMOSE_PATH.environment, mode=DPDEFAULT)
 
         for path, _, files in os.walk(self.path):
             for f in files:
@@ -764,7 +764,7 @@ class Dataset:
                             )
                     elif f == "timestamp.csv":
                         Path(path, f).rename(
-                            path_raw_audio.joinpath("original", "timestamp.csv")
+                            path_raw_audio / "original" / "timestamp.csv"
                         )
                     else:
                         for key_dico in self.dico_aux_substring:
@@ -772,14 +772,11 @@ class Dataset:
                                 "|".join(self.dico_aux_substring[key_dico]), f
                             ):
                                 Path(path, f).rename(
-                                    self.path.joinpath(
-                                        OSMOSE_PATH.auxiliary, key_dico, f
-                                    )
+                                    self.path / OSMOSE_PATH.auxiliary / key_dico / f
                                 )
 
         for audio in audio_files:
-            audio.rename(path_raw_audio.joinpath("original", audio.name))
-            # os.chmod(path_raw_audio.joinpath("original",audio.name), mode=FPDEFAULT)
+            audio.rename(path_raw_audio / "original" / audio.name)
 
         for parent_dir in parent_dir_list:
             if len(os.listdir(parent_dir)) > 0:
@@ -791,7 +788,7 @@ class Dataset:
 
             shutil.rmtree(parent_dir)
 
-        return path_raw_audio.joinpath("original")
+        return path_raw_audio / "original"
 
     def _get_original_after_build(self) -> Path:
         """Find the original folder path after the dataset has been built.
@@ -851,8 +848,7 @@ class Dataset:
             "(MB)",
             "(GB)",
         ]  # assign units to variables
-        joined_str = ""
-        print(f"Metadata of {self.name} :")
+        joined_str = f"Metadata of {self.name} :\n"
         ct = 0
         for var in list_display_metadata:
             joined_str += f"- {var} : {metadata[var][0]} {ending_charac[ct]} \n"

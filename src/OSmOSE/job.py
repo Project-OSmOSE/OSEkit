@@ -407,8 +407,6 @@ class Job_builder:
         )
 
         job_file_path = jobdir.joinpath(outfilename)
-
-        # job_file.append(f"\nchmod 444 {outfile} {errfile}")
         job_file.append(f"\nrm {job_file_path}\n")
 
         #! BUILD DONE => WRITING
@@ -498,7 +496,9 @@ class Job_builder:
         return jobid_list
 
     def update_job_status(self):
-        """Iterates over the list of ongoing jobs and mark them as finished if the job file does not exist."""
+        """Iterates over the list of ongoing jobs and mark them as finished if the job file does not exist.
+        Iterates over the list of finished jobs and remove them if the job outfile does not exist.
+        """
         for jobinfo in self.__ongoing_jobs:
             if not jobinfo["path"].exists():
                 self.__ongoing_jobs.remove(jobinfo)

@@ -7,7 +7,7 @@ import shutil
 import struct
 from collections import namedtuple
 import sys
-from typing import Union, NamedTuple, Tuple, List
+from typing import Union, NamedTuple, Tuple, List, Literal
 import pytz
 import glob
 import math
@@ -304,14 +304,6 @@ def read_config(raw_config: Union[str, dict, Path]) -> NamedTuple:
     return raw_config
 
 
-# def convert(template: NamedTuple, dictionary: dict) -> NamedTuple:
-#     """Convert a dictionary in a Named Tuple"""
-#     for key, value in dictionary.items():
-#         if isinstance(value, dict):
-#             dictionary[key] = convert(template, value)
-#     return template(**dictionary)
-
-
 def read_header(file: str) -> Tuple[int, float, int, int, int]:
     """Read the first bytes of a wav/flac file and extract its characteristics.
     At the very least, only the first 44 bytes are read. If the `data` chunk is not right after the header chunk,
@@ -340,14 +332,24 @@ def read_header(file: str) -> Tuple[int, float, int, int, int]:
 
         if header == b"RIFF":
             # WAV file processing
-            _, size, _ = struct.unpack("<4sI4s", header + fh.read(8))
-            chunk_header = fh.read(8)
-            subchunkid, _ = struct.unpack("<4sI", chunk_header)
+            _, size, wave_format = struct.unpack("<4sI4s", header + fh.read(8))
 
-            if subchunkid == b"fmt ":
-                _, channels, samplerate, _, _, sampwidth = struct.unpack(
-                    "HHIIHH", fh.read(16)
-                )
+            while True:
+                chunk_header = fh.read(8)
+                if len(chunk_header) < 8:
+                    break  # Reached the end of the file or a corrupted file
+
+                subchunkid, subchunk_size = struct.unpack("<4sI", chunk_header)
+
+                if subchunkid == b"fmt ":
+                    # Process the fmt chunk
+                    fmt_chunk_data = fh.read(subchunk_size)
+                    _, channels, samplerate, _, _, sampwidth = struct.unpack(
+                        "<HHIIHH", fmt_chunk_data[:16]
+                    )
+                    break
+                else:
+                    fh.seek(subchunk_size, 1)
 
             chunkOffset = fh.tell()
             found_data = False
@@ -730,7 +732,7 @@ def add_entry_for_APLOSE(path: str, file: str, info: pd.DataFrame):
             csv file
         info: 'DataFrame'
             info of the entry
-            'project' / 'dataset' / 'spectro_duration' / 'dataset_sr' / 'files_type' / 'identifier'
+            'path' / 'dataset' / 'spectro_duration' / 'dataset_sr' / 'files_type'
     Returns
     -------
 
@@ -739,10 +741,7 @@ def add_entry_for_APLOSE(path: str, file: str, info: pd.DataFrame):
 
     if dataset_csv.exists():
         meta = pd.read_csv(dataset_csv)
-        if info["identifier"][0] not in meta["identifier"].values:
-            meta = pd.concat([meta, info], ignore_index=True).sort_values(
-                by=["project", "dataset"], ascending=True
-            )
-            meta.to_csv(dataset_csv, index=False)
-    else:
-        info.to_csv(dataset_csv, index=False)
+        meta = pd.concat([meta, info], ignore_index=True).sort_values(
+            by=["path", "dataset"], ascending=True
+        )
+        meta.to_csv(dataset_csv, index=False)

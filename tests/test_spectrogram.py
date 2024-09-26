@@ -98,6 +98,7 @@ def test_number_image_matrix(input_dataset):
     spectrogram.window_size = 512
     spectrogram.nfft = 512
     spectrogram.overlap = 20
+    spectrogram.batch_number = 1
 
     spectrogram.initialize()
 
@@ -155,6 +156,8 @@ def test_numerical_values(input_dataset):
     spectrogram.window_size = 512
     spectrogram.nfft = 512
     spectrogram.overlap = 20
+    spectrogram.data_normalization = "zscore"
+    spectrogram.spectro_normalization = "spectrum"
 
     spectrogram.initialize()
 
@@ -165,10 +168,12 @@ def test_numerical_values(input_dataset):
         ).glob(f"*{ext}")
         [list_audio.append(f) for f in list_audio_ext]
 
-    spectrogram.process_all_files(list_audio_to_process=list_audio)
+    spectrogram.process_all_files(
+        list_audio_to_process=list_audio, save_for_LTAS=True, save_matrix=True
+    )
 
     # test 3s welch spectra against PamGuide reference values
-    list_welch = list(dataset.path.joinpath(OSMOSE_PATH.welch, "3_44100").glob("*.npz"))
+    list_welch = list((dataset.path / OSMOSE_PATH.welch / "3_44100").glob("*.npz"))
     data = np.load(list_welch[0], allow_pickle=True)
 
     val_PamGuide = np.array(
