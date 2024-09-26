@@ -1,6 +1,5 @@
 import os
 import pandas as pd
-from typing import List
 from argparse import ArgumentParser
 from pathlib import Path
 import numpy as np
@@ -40,7 +39,7 @@ def reshape(
     Reshape all audio files in the folder to be of the specified duration and/or sampling rate.
 
     Parameters
-    -----------
+    ----------
     input_files : Union[str, list]
         Path to a directory containing audio files.
 
@@ -95,7 +94,6 @@ def reshape(
     threshold : int, optional
         Integer from 0 to 100 to filter out segments with a number of sample inferior to (threshold * spectrogram duration * new_sr)
     """
-
     set_umask()
     segment_duration = pd.Timedelta(seconds=segment_size)
 
@@ -432,7 +430,9 @@ if __name__ == "__main__":
         help="Tells the program what to do with the remaining data that are shorter than the segment size. Possible arguments are pad (the default), which pads with silence until the last file has the same length as the others; truncate to create a shorter file with only the leftover data; discard to not do anything with the last data and throw it away.",
     )
     parser.add_argument(
-        "--timestamp-path", default=None, help="Path to the original timestamp file."
+        "--timestamp-path",
+        default=None,
+        help="Path to the original timestamp file.",
     )
     parser.add_argument(
         "--file-metadata-path",
