@@ -830,27 +830,18 @@ class Dataset:
 
     def __str__(self):
         metadata = pd.read_csv(self.original_folder.joinpath("metadata.csv"))
-        list_display_metadata = [
-            "audio_file_origin_duration",
-            "origin_sr",
-            "start_date",
-            "end_date",
-            "audio_file_count",
-            "audio_file_origin_volume",
-            "dataset_origin_volume",
-        ]  # restrain metadata to a shorter list of variables to be displayed
-        ending_charac = [
-            "(s)",
-            "(Hz)",
-            "",
-            "",
-            "",
-            "(MB)",
-            "(GB)",
-        ]  # assign units to variables
-        joined_str = f"Metadata of {self.name} :\n"
-        ct = 0
-        for var in list_display_metadata:
-            joined_str += f"- {var} : {metadata[var][0]} {ending_charac[ct]} \n"
-            ct += 1
-        return joined_str
+        displayed_metadata = {
+            "audio_file_origin_duration": "(s)",
+            "origin_sr": "(Hz)",
+            "start_date": "",
+            "end_date": "",
+            "audio_file_count": "",
+            "audio_file_origin_volume": "(MB)",
+            "dataset_origin_volume": "(GB)",
+        }  # restrain metadata to a shorter list of variables to be displayed, with their respective units
+        preamble = f"Metadata of {self.name} :"
+        metadata_str = "\n".join(
+            f"- {key} : {metadata[key][0]} {unit}"
+            for key, unit in displayed_metadata.items()
+        )
+        return f"{preamble}\n{metadata_str}"
