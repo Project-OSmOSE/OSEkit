@@ -353,9 +353,9 @@ class Auxiliary(Spectrogram):
         """
         ds = nc.Dataset(self.era)
         variables = list(ds.variables.keys())[3:]
-        era_time = pd.DataFrame(ds.variables["time"][:].data)
+        era_time = pd.DataFrame(ds.variables["valid_time"][:].data)
         era_datetime = era_time[0].apply(
-            lambda x: datetime(1900, 1, 1) + timedelta(hours=int(x))
+            lambda x: datetime(1970, 1, 1) + timedelta(seconds=int(x))
         )
         timestamps = era_datetime.apply(lambda x: x.timestamp()).to_numpy()
 
@@ -363,6 +363,8 @@ class Auxiliary(Spectrogram):
         for variable in variables:
             pbar.update(1)
             pbar.set_description("Loading and formatting %s" % variable)
+            if variable in ['longitude','latitude','time','expver']:
+                continue            
             self.df[variable] = interpolate.RegularGridInterpolator(
                 (timestamps, ds["latitude"][:], ds["longitude"][:]),
                 ds[variable][:],
