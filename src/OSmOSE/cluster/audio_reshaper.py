@@ -299,13 +299,13 @@ def reshape(
         # if no data available
         if np.sum(audio_data) == 0:
             msg_log += (
-                f"No data available for file {out_filename.name}.wav. Skipping...\n"
+                f"No data available for file {out_filename.name}. Skipping...\n"
             )
             continue
 
         # if not enough data available
         if len_sig < 0.01 * threshold * segment_size * new_sr:
-            msg_log += f"Not enough data available for file {segment_datetime_begin.strftime('%Y_%m_%d_%H_%M_%S')}.wav ({len_sig / new_sr:.2f}s < {threshold}% of the spectrogram duration of {segment_size}s). Skipping...\n"
+            msg_log += f"Not enough data available for file {out_filename.name} ({len_sig / new_sr:.2f}s < {threshold}% of the spectrogram duration of {segment_size}s). Skipping...\n"
             continue
 
         # if audio file already exists and overwrite parameter is set to False
