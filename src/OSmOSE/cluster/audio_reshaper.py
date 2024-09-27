@@ -96,7 +96,7 @@ def reshape(
     """
     set_umask()
     segment_duration = pd.Timedelta(seconds=segment_size)
-    msg_log = ''
+    msg_log = ""
 
     # validation for threshold
     if not (0 <= threshold <= 100):
@@ -298,7 +298,9 @@ def reshape(
 
         # if no data available
         if np.sum(audio_data) == 0:
-            msg_log += f"No data available for file {out_filename.name}.wav. Skipping...\n"
+            msg_log += (
+                f"No data available for file {out_filename.name}.wav. Skipping...\n"
+            )
             continue
 
         # if not enough data available
