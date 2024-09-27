@@ -1,22 +1,42 @@
 from OSmOSE.config import SUPPORTED_AUDIO_FORMAT
 from pathlib import Path
-import glob
-import os
 
 
-def is_audio(filename: Path):
-    return any([filename.endswith(ext) for ext in SUPPORTED_AUDIO_FORMAT])
+def is_audio(filename: Path) -> bool:
+    """
+    Check if a given file is a supported audio file based on its extension.
+
+    Parameters
+    ----------
+    filename : Path
+        The path to the file to be checked.
+
+    Returns
+    -------
+    bool
+        True if the file has an extension that matches a supported audio format,
+        False otherwise.
+    """
+    return filename.suffix in SUPPORTED_AUDIO_FORMAT
 
 
-def get_audio_file(file_path: str | Path) -> list[Path]:
+def get_all_audio_files(directory: Path) -> list[Path]:
+    """
+    Retrieve all supported audio files from a given directory.
 
-    assert any(
-        [isinstance(file_path, str), isinstance(file_path, Path)]
-    ), "A Path or string must be provided"
+    Parameters
+    ----------
+    file_path : Path
+        The path to the directory to search for audio files
 
-    audio_path = []
-    for ext in SUPPORTED_AUDIO_FORMAT:
-        audio_path_ext = glob.glob(os.path.join(file_path, f"*{ext}"))
-        [audio_path.append(Path(f)) for f in audio_path_ext]
-
-    return sorted(audio_path)
+    Returns
+    -------
+    list[Path]
+        A list of `Path` objects corresponding to the supported audio files
+        found in the directory.
+    """
+    return sorted(
+        file
+        for extension in SUPPORTED_AUDIO_FORMAT
+        for file in directory.glob(f"*{extension}")
+    )
