@@ -290,15 +290,17 @@ def reshape(
                     break
 
         if np.sum(audio_data) == 0:
-            print(
-                f"No data available for file {segment_datetime_begin.strftime('%Y_%m_%d_%H_%M_%S')}.wav. Skipping...\n"
-            )
+            if verbose:
+                print(
+                    f"No data available for file {segment_datetime_begin.strftime('%Y_%m_%d_%H_%M_%S')}.wav. Skipping..."
+                )
             continue
 
         if len_sig < 0.01 * threshold * segment_size * new_sr:
-            print(
-                f"Not enough data available for file {segment_datetime_begin.strftime('%Y_%m_%d_%H_%M_%S')}.wav ({len_sig / new_sr:.2f}s < {threshold}% of the spectrogram duration of {segment_size}s). Skipping...\n"
-            )
+            if verbose:
+                print(
+                    f"Not enough data available for file {segment_datetime_begin.strftime('%Y_%m_%d_%H_%M_%S')}.wav ({len_sig / new_sr:.2f}s < {threshold}% of the spectrogram duration of {segment_size}s). Skipping..."
+                )
             continue
 
         # Define the output file name and save the audio segment
@@ -310,7 +312,7 @@ def reshape(
         if not overwrite and outfilename.exists():
             if verbose:
                 print(
-                    f"File {outfilename} already exists and overwrite is set to False. Skipping...\n"
+                    f"File {outfilename} already exists and overwrite is set to False. Skipping..."
                 )
             continue
 
@@ -326,7 +328,7 @@ def reshape(
 
         if verbose:
             print(
-                f"Saved file from {segment_datetime_begin} to {segment_datetime_end} as {outfilename}\n"
+                f"Saved file from {segment_datetime_begin} to {segment_datetime_end} as {outfilename}"
             )
 
     # writing infos to timestamp_*.csv
@@ -338,7 +340,7 @@ def reshape(
         na_rep="NaN",
     )
     os.chmod((output_dir_path / f"timestamp_{batch}.csv"), mode=FPDEFAULT)
-    print(f"Saved timestamp csv file as timestamp_{batch}.csv\n")
+    print(f"Saved timestamp csv file as timestamp_{batch}.csv")
 
     print(f"Reshape for batch_{batch} completed")
 
