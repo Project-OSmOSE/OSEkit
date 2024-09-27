@@ -10,7 +10,7 @@ from OSmOSE.utils import (
     DPDEFAULT,
     FPDEFAULT,
     to_timestamp,
-    get_audio_file,
+    get_all_audio_files,
     set_umask,
     make_path,
 )
@@ -96,6 +96,7 @@ def reshape(
     """
     set_umask()
     segment_duration = pd.Timedelta(seconds=segment_size)
+    msg_log = ""
 
     # validation for threshold
     if not (0 <= threshold <= 100):
@@ -124,7 +125,7 @@ def reshape(
         files = [Path(file) for file in input_files]
     else:
         input_dir_path = Path(input_files)
-        files = get_audio_file(file_path=input_dir_path)
+        files = get_all_audio_files(directory=input_dir_path)
 
     if not input_dir_path.exists():
         raise ValueError(
@@ -289,47 +290,37 @@ def reshape(
                 if not concat:
                     break
 
-        if np.sum(audio_data) == 0:
-            if verbose:
-                print(
-                    f"No data available for file {segment_datetime_begin.strftime('%Y_%m_%d_%H_%M_%S')}.wav. Skipping..."
-                )
-            continue
-
-        if len_sig < 0.01 * threshold * segment_size * new_sr:
-            if verbose:
-                print(
-                    f"Not enough data available for file {segment_datetime_begin.strftime('%Y_%m_%d_%H_%M_%S')}.wav ({len_sig / new_sr:.2f}s < {threshold}% of the spectrogram duration of {segment_size}s). Skipping..."
-                )
-            continue
-
         # Define the output file name and save the audio segment
-        outfilename = (
+        out_filename = (
             output_dir_path
             / f"{segment_datetime_begin.strftime('%Y_%m_%d_%H_%M_%S')}.wav"
         )
 
-        if not overwrite and outfilename.exists():
-            if verbose:
-                print(
-                    f"File {outfilename} already exists and overwrite is set to False. Skipping..."
-                )
+        # if no data available
+        if np.sum(audio_data) == 0:
+            msg_log += f"No data available for file {out_filename.name}. Skipping...\n"
             continue
 
-        result.append(outfilename.name)
+        # if not enough data available
+        if len_sig < 0.01 * threshold * segment_size * new_sr:
+            msg_log += f"Not enough data available for file {out_filename.name} ({len_sig / new_sr:.2f}s < {threshold}% of the spectrogram duration of {segment_size}s). Skipping...\n"
+            continue
+
+        # if audio file already exists and overwrite parameter is set to False
+        if not overwrite and out_filename.exists():
+            msg_log += f"File {out_filename} already exists and overwrite is set to False. Skipping...\n"
+            continue
+
+        result.append(out_filename.name)
         timestamp_list.append(segment_datetime_begin.strftime("%Y-%m-%dT%H:%M:%S.%f%z"))
 
         sf.write(
-            outfilename,
+            out_filename,
             audio_data,
             new_sr,
         )
-        os.chmod(outfilename, mode=FPDEFAULT)
-
-        if verbose:
-            print(
-                f"Saved file from {segment_datetime_begin} to {segment_datetime_end} as {outfilename}"
-            )
+        os.chmod(out_filename, mode=FPDEFAULT)
+        msg_log += "Saved file from {segment_datetime_begin} to {segment_datetime_end} as {out_filename}\n"
 
     # writing infos to timestamp_*.csv
     input_timestamp = pd.DataFrame({"filename": result, "timestamp": timestamp_list})
@@ -340,10 +331,11 @@ def reshape(
         na_rep="NaN",
     )
     os.chmod((output_dir_path / f"timestamp_{batch}.csv"), mode=FPDEFAULT)
+    msg_log += f"Saved timestamp csv file as timestamp_{batch}.csv\n"
+    msg_log += f"Reshape for batch_{batch} completed\n"
 
     if verbose:
-        print(f"Saved timestamp csv file as timestamp_{batch}.csv")
-        print(f"Reshape for batch_{batch} completed")
+        print(msg_log)
 
     return
 

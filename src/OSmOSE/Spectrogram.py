@@ -33,7 +33,7 @@ from OSmOSE.utils.core_utils import (
     set_umask,
     get_timestamp_of_audio_file,
 )
-from OSmOSE.utils.audio_utils import get_audio_file
+from OSmOSE.utils.audio_utils import get_all_audio_files
 from OSmOSE.config import OSMOSE_PATH, FPDEFAULT, DPDEFAULT
 from OSmOSE.frequency_scales.frequency_scale_serializer import FrequencyScaleSerializer
 
@@ -614,7 +614,7 @@ class Spectrogram(Dataset):
 
         self.path_input_audio_file = self._get_original_after_build()
 
-        list_audio_withEvent_comp = get_audio_file(self.path_input_audio_file)
+        list_audio_withEvent_comp = get_all_audio_files(self.path_input_audio_file)
 
         if batch_ind_max == -1:
             batch_ind_max = len(list_audio_withEvent_comp)
@@ -962,7 +962,7 @@ class Spectrogram(Dataset):
         os.chmod(meta_path, mode=FPDEFAULT)
 
     def audio_file_list_csv(self) -> Path:
-        list_audio = get_audio_file(self.path_input_audio_file)
+        list_audio = get_all_audio_files(self.path_input_audio_file)
 
         csv_path = self.audio_path / f"wav_list_{len(list_audio)}.csv"
 
