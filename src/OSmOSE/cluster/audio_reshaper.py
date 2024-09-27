@@ -292,8 +292,8 @@ def reshape(
 
         # Define the output file name and save the audio segment
         out_filename = (
-                output_dir_path
-                / f"{segment_datetime_begin.strftime('%Y_%m_%d_%H_%M_%S')}.wav"
+            output_dir_path
+            / f"{segment_datetime_begin.strftime('%Y_%m_%d_%H_%M_%S')}.wav"
         )
 
         # if no data available
