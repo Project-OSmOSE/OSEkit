@@ -298,9 +298,7 @@ def reshape(
 
         # if no data available
         if np.sum(audio_data) == 0:
-            msg_log += (
-                f"No data available for file {out_filename.name}. Skipping...\n"
-            )
+            msg_log += f"No data available for file {out_filename.name}. Skipping...\n"
             continue
 
         # if not enough data available
