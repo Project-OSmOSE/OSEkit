@@ -340,9 +340,10 @@ def reshape(
         na_rep="NaN",
     )
     os.chmod((output_dir_path / f"timestamp_{batch}.csv"), mode=FPDEFAULT)
-    print(f"Saved timestamp csv file as timestamp_{batch}.csv")
 
-    print(f"Reshape for batch_{batch} completed")
+    if verbose:
+        print(f"Saved timestamp csv file as timestamp_{batch}.csv")
+        print(f"Reshape for batch_{batch} completed")
 
     return
 
