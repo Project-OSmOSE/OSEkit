@@ -10,7 +10,7 @@ from OSmOSE.utils import (
     DPDEFAULT,
     FPDEFAULT,
     to_timestamp,
-    get_audio_file,
+    get_all_audio_files,
     set_umask,
     make_path,
 )
@@ -124,7 +124,7 @@ def reshape(
         files = [Path(file) for file in input_files]
     else:
         input_dir_path = Path(input_files)
-        files = get_audio_file(directory=input_dir_path)
+        files = get_all_audio_files(directory=input_dir_path)
 
     if not input_dir_path.exists():
         raise ValueError(
