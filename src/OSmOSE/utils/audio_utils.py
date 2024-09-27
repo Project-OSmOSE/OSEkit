@@ -20,7 +20,7 @@ def is_audio(filename: Path) -> bool:
     return filename.suffix in SUPPORTED_AUDIO_FORMAT
 
 
-def get_audio_file(directory: Path) -> list[Path]:
+def get_all_audio_files(directory: Path) -> list[Path]:
     """
     Retrieve all supported audio files from a given directory.
 
@@ -35,8 +35,8 @@ def get_audio_file(directory: Path) -> list[Path]:
         A list of `Path` objects corresponding to the supported audio files
         found in the directory.
     """
-    audio_path = []
-    for ext in SUPPORTED_AUDIO_FORMAT:
-        audio_path.extend(list(directory.glob(f"*{ext}")))
-
-    return sorted(audio_path)
+    return sorted(
+        file
+        for extension in SUPPORTED_AUDIO_FORMAT
+        for file in directory.glob(f"*{extension}")
+    )
