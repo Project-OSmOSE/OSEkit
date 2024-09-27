@@ -1,12 +1,9 @@
 import os
-import stat
 from pathlib import Path
 from typing import Union, Tuple, List
 from datetime import datetime
-from warnings import warn
 from statistics import fmean as mean
 import shutil
-import glob
 from os import PathLike
 import sys
 import re
@@ -22,10 +19,11 @@ except ModuleNotFoundError:
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
-from OSmOSE.utils.core_utils import read_header, check_n_files, set_umask
+from OSmOSE.utils.timestamp_utils import check_epoch
+from OSmOSE.utils.core_utils import check_n_files, set_umask
 from OSmOSE.utils.path_utils import make_path
 from OSmOSE.timestamps import write_timestamp
-from OSmOSE.config import *
+from OSmOSE.config import DPDEFAULT, FPDEFAULT, OSMOSE_PATH, TIMESTAMP_FORMAT_AUDIO_FILE
 
 
 class Dataset:
@@ -73,10 +71,16 @@ class Dataset:
         >>> from OSmOSE import Dataset
         >>> dataset = Dataset(Path("home","user","my_dataset"), coordinates = [49.2, -5], owner_group = "gosmose")
         """
+        assert isinstance(dataset_path, Path) or isinstance(
+            dataset_path, str
+        ), f"Expected value to be a Path or a string, but got {type(dataset_path).__name__}"
+        # assert gps_coordinates
+
         self.__path = Path(dataset_path)
         self.__name = self.__path.stem
         self.owner_group = owner_group
         self.__gps_coordinates = []
+        self.__depth = None
         self.__local = local
         self.timezone = timezone
 
@@ -95,7 +99,6 @@ class Dataset:
 
         pd.set_option("display.float_format", lambda x: "%.0f" % x)
 
-    # region Properties
     @property
     def name(self):
         """str: The Dataset name. It is readonly."""
@@ -154,17 +157,21 @@ class Dataset:
                 aux_data_path = next(self.path.rglob(new_coordinates), False)
 
                 if aux_data_path:
+                    self.__gps_coordinates = check_epoch(pd.read_csv(aux_data_path))
+                    """
                     csvFileArray = pd.read_csv(aux_data_path)
                     self.__gps_coordinates = [
                         np.mean(csvFileArray["lat"]),
                         np.mean(csvFileArray["lon"]),
-                    ]
+                    ]"""
                 else:
                     raise FileNotFoundError(
                         f"The {new_coordinates} has been found no where within {self.path}"
                     )
 
             case tuple():
+                self.__gps_coordinates = new_coordinates
+            case list():
                 self.__gps_coordinates = new_coordinates
             case _:
                 raise TypeError(
@@ -200,11 +207,13 @@ class Dataset:
             case str():
                 aux_data_path = next(self.path.rglob(new_depth), False)
                 if aux_data_path:
+                    self.__depth = check_epoch(pd.read_csv(aux_data_path))
+                    """
                     csvFileArray = pd.read_csv(aux_data_path)
-                    self.__depth = int(np.mean(csvFileArray["depth"]))
+                    self.__depth = int(np.mean(csvFileArray["depth"]))"""
                 else:
                     raise FileNotFoundError(
-                        f"The {new_coordinates} has been found no where within {self.path}"
+                        f"The {new_depth} has been found no where within {self.path}"
                     )
 
             case int():
@@ -357,7 +366,6 @@ class Dataset:
                 timezone=self.timezone,
                 verbose=False,
             )
-            # raise FileNotFoundError(f"The timestamp.csv file has not been found in {path_raw_audio}. You can create it automatically but to do so you have to set the date template as argument.")
         else:
             user_timestamp = True
 
@@ -396,12 +404,12 @@ class Dataset:
 
         already_printed_1 = False
         for ind_dt in tqdm(range(len(timestamp_csv)), desc="Scanning audio files"):
+
             audio_file = audio_file_list[ind_dt]
 
             cur_timestamp, _ = self._format_timestamp(
                 timestamp_csv[ind_dt], date_template, already_printed_1
             )
-
             # define final audio filename, especially we remove the sign '-' in filenames (because of our qsub_resample.sh)
             if ("-" in audio_file.name) or (":" in audio_file.name):
                 cur_filename = audio_file.name.replace("-", "_").replace(":", "_")
@@ -416,10 +424,16 @@ class Dataset:
                 cur_filename = audio_file.name
 
             try:
-                origin_sr, frames, sampwidth, channel_count, size = read_header(
-                    path_raw_audio.joinpath(cur_filename)
-                )
-                sf_meta = sf.info(path_raw_audio.joinpath(cur_filename))
+                # origin_sr, frames, sampwidth, channel_count, size = read_header(
+                #     path_raw_audio / cur_filename
+                # )
+                channel_count = sf.info(path_raw_audio / cur_filename).channels
+                size = (path_raw_audio / cur_filename).stat().st_size
+                # with wave.open(str(path_raw_audio / cur_filename), 'rb') as wav:
+                #     sampwidth = wav.getsampwidth()
+                sampwidth = sf.info(path_raw_audio / cur_filename).subtype
+
+                sf_meta = sf.info(path_raw_audio / cur_filename)
 
             except Exception as e:
                 print(f"error message making status read header False : \n {e}")
@@ -446,34 +460,24 @@ class Dataset:
                 )
                 continue
 
-            # # define duration_inter_file; does not have a value for the last timestamp
-            # if ind_dt > 0:
-            #     duration_inter_file = (datetime.strptime(
-            #         timestamp_csv[ind_dt], '%Y-%m-%dT%H:%M:%S.%f%z'
-            #     ) - datetime.strptime(timestamp_csv[ind_dt-1], '%Y-%m-%dT%H:%M:%S.%f%z')).total_seconds()
-            # else:
-            #     duration_inter_file = None
-
             # append audio metadata read from header in the dataframe audio_metadata
+            new_data = pd.DataFrame(
+                {
+                    "filename": cur_filename,
+                    "timestamp": cur_timestamp,
+                    "duration": sf_meta.duration,
+                    "origin_sr": int(sf_meta.samplerate),
+                    "sampwidth": sampwidth,
+                    "size": size / 1e6,
+                    "duration_inter_file": None,
+                    "channel_count": channel_count,
+                    "status_read_header": True,
+                },
+                index=[ind_dt],
+            )
+            new_data = new_data.dropna(axis=1, how="all")
             audio_metadata = pd.concat(
-                [
-                    audio_metadata,
-                    pd.DataFrame(
-                        {
-                            "filename": cur_filename,
-                            "timestamp": cur_timestamp,
-                            "duration": sf_meta.duration,  # frames / float(origin_sr),
-                            "origin_sr": int(sf_meta.samplerate),
-                            "sampwidth": sampwidth,
-                            "size": size / 1e6,
-                            "duration_inter_file": None,
-                            "channel_count": channel_count,
-                            "status_read_header": True,
-                        },
-                        index=[0],
-                    ),
-                ],
-                axis=0,
+                [audio_metadata if not audio_metadata.empty else None, new_data], axis=0
             )
 
         audio_metadata["duration_inter_file"] = audio_metadata["duration"].diff()
@@ -610,12 +614,11 @@ class Dataset:
             # write summary metadata.csv
             data = {
                 "origin_sr": int(mean(audio_metadata["origin_sr"].values)),
-                "sample_bits": int(8 * mean(audio_metadata["sampwidth"].values)),
+                "sample_bits": list(set(audio_metadata["sampwidth"])),
                 "channel_count": int(mean(audio_metadata["channel_count"].values)),
                 "audio_file_count": len(audio_metadata["filename"].values),
                 "start_date": timestamp_csv[0],
                 "end_date": timestamp_csv[-1],
-                # "duty_cycle": dutyCycle_percent,
                 "audio_file_origin_duration": int(
                     mean(audio_metadata["duration"].values)
                 ),
@@ -736,15 +739,14 @@ class Dataset:
                 ValueError
                     If the original folder is not found and could not be created.
         """
-        path_raw_audio = self.path.joinpath(OSMOSE_PATH.raw_audio)
+        path_raw_audio = self.path / OSMOSE_PATH.raw_audio
         audio_files = []
         parent_dir_list = []
-        timestamp_files = []
 
-        make_path(path_raw_audio.joinpath("original"), mode=DPDEFAULT)
-        make_path(self.path.joinpath(OSMOSE_PATH.other), mode=DPDEFAULT)
-        make_path(self.path.joinpath(OSMOSE_PATH.instrument), mode=DPDEFAULT)
-        make_path(self.path.joinpath(OSMOSE_PATH.environment), mode=DPDEFAULT)
+        make_path(path_raw_audio / "original", mode=DPDEFAULT)
+        make_path(self.path / OSMOSE_PATH.other, mode=DPDEFAULT)
+        make_path(self.path / OSMOSE_PATH.instrument, mode=DPDEFAULT)
+        make_path(self.path / OSMOSE_PATH.environment, mode=DPDEFAULT)
 
         for path, _, files in os.walk(self.path):
             for f in files:
@@ -752,7 +754,7 @@ class Dataset:
                     not Path(path, f).parent.name == "original"
                     and not Path(path, f).parent.name == "auxiliary"
                 ):
-                    if f.endswith((".wav", ".WAV", "*.mp3", ".*flac")):
+                    if f.endswith((".wav", ".WAV", ".mp3", ".flac", ".FLAC")):
                         audio_files.append(Path(path, f))
                         if str(Path(path, f).parent) != str(self.path):
                             (
@@ -762,7 +764,7 @@ class Dataset:
                             )
                     elif f == "timestamp.csv":
                         Path(path, f).rename(
-                            path_raw_audio.joinpath("original", "timestamp.csv")
+                            path_raw_audio / "original" / "timestamp.csv"
                         )
                     else:
                         for key_dico in self.dico_aux_substring:
@@ -770,26 +772,11 @@ class Dataset:
                                 "|".join(self.dico_aux_substring[key_dico]), f
                             ):
                                 Path(path, f).rename(
-                                    self.path.joinpath(
-                                        OSMOSE_PATH.auxiliary, key_dico, f
-                                    )
+                                    self.path / OSMOSE_PATH.auxiliary / key_dico / f
                                 )
 
-        # if len(timestamp_files) > 1:
-        #     res = "-1"
-        #     choice = ""
-        #     for i, ts in enumerate(timestamp_files):
-        #         choice += f"{i+1}: {ts}\n"
-        #     while int(res) not in range(1,len(timestamp_files) +1):
-        #         res = input(f"Multiple timestamp.csv detected. Choose which one should be considered the original:\n{choice}")
-
-        #         timestamp_files[int(res)-1].rename(path_raw_audio.joinpath("original","timestamp.csv"))
-        # elif len(timestamp_files) == 1:
-        #     timestamp_files[0].rename(path_raw_audio.joinpath("original","timestamp.csv"))
-
         for audio in audio_files:
-            audio.rename(path_raw_audio.joinpath("original", audio.name))
-            # os.chmod(path_raw_audio.joinpath("original",audio.name), mode=FPDEFAULT)
+            audio.rename(path_raw_audio / "original" / audio.name)
 
         for parent_dir in parent_dir_list:
             if len(os.listdir(parent_dir)) > 0:
@@ -801,35 +788,7 @@ class Dataset:
 
             shutil.rmtree(parent_dir)
 
-        return path_raw_audio.joinpath("original")
-        # if any(
-        #     file.endswith(".wav") for file in os.listdir(self.path)
-        # ):  # If there are audio files in the dataset folder
-        #     make_path(path_raw_audio.joinpath("original"), mode=DPDEFAULT)
-
-        #     for audiofile in os.listdir(self.path):
-        #         if audiofile.endswith(".wav"):
-        #             self.path.joinpath(audiofile).rename(
-        #                 path_raw_audio.joinpath("original", audiofile)
-        #             )
-        #     return path_raw_audio.joinpath("original")
-        # elif path_raw_audio.exists():
-        #     if path_raw_audio.joinpath("original").is_dir():
-        #         return path_raw_audio.joinpath("original")
-        #     elif len(list(path_raw_audio.iterdir())) == 1:
-        #         return path_raw_audio.joinpath(next(path_raw_audio.iterdir()))
-        # elif (
-        #     len(next(os.walk(self.path))[1]) == 1
-        # ):  # If there is exactly one folder in the dataset folder
-        #     make_path(path_raw_audio, mode=DPDEFAULT)
-        #     orig_folder = self.path.joinpath(next(os.walk(self.path))[1][0])
-        #     new_path = orig_folder.rename(path_raw_audio.joinpath(orig_folder.name))
-        #     return new_path
-
-        # else:
-        #     raise ValueError(
-        #         f"No folder has been found in {path_raw_audio}. Please create the raw audio file folder and try again."
-        #     )
+        return path_raw_audio / "original"
 
     def _get_original_after_build(self) -> Path:
         """Find the original folder path after the dataset has been built.
@@ -871,28 +830,18 @@ class Dataset:
 
     def __str__(self):
         metadata = pd.read_csv(self.original_folder.joinpath("metadata.csv"))
-        list_display_metadata = [
-            "audio_file_origin_duration",
-            "origin_sr",
-            "start_date",
-            "end_date",
-            "audio_file_count",
-            "audio_file_origin_volume",
-            "dataset_origin_volume",
-        ]  # restrain metadata to a shorter list of variables to be displayed
-        ending_charac = [
-            "(s)",
-            "(Hz)",
-            "",
-            "",
-            "",
-            "(MB)",
-            "(GB)",
-        ]  # assign units to variables
-        joined_str = ""
-        print(f"Metadata of {self.name} :")
-        ct = 0
-        for var in list_display_metadata:
-            joined_str += f"- {var} : {metadata[var][0]} {ending_charac[ct]} \n"
-            ct += 1
-        return joined_str
+        displayed_metadata = {
+            "audio_file_origin_duration": "(s)",
+            "origin_sr": "(Hz)",
+            "start_date": "",
+            "end_date": "",
+            "audio_file_count": "",
+            "audio_file_origin_volume": "(MB)",
+            "dataset_origin_volume": "(GB)",
+        }  # restrain metadata to a shorter list of variables to be displayed, with their respective units
+        preamble = f"Metadata of {self.name} :"
+        metadata_str = "\n".join(
+            f"- {key} : {metadata[key][0]} {unit}"
+            for key, unit in displayed_metadata.items()
+        )
+        return f"{preamble}\n{metadata_str}"

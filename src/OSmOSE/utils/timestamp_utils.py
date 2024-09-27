@@ -4,6 +4,23 @@ from typing import List
 import os
 
 
+def check_epoch(df):
+    "Function that adds epoch column to dataframe"
+    if "epoch" in df.columns:
+        return df
+    else:
+        try:
+            df["epoch"] = df.timestamp.apply(
+                lambda x: datetime.strptime(x[:26], "%Y-%m-%dT%H:%M:%S.%f").timestamp()
+            )
+            return df
+        except ValueError:
+            print(
+                "Please check that you have either a timestamp column (format ISO 8601 Micro s) or an epoch column"
+            )
+            return df
+
+
 def substract_timestamps(
     input_timestamp: pd.DataFrame, files: List[str], index: int
 ) -> timedelta:
@@ -36,20 +53,17 @@ def substract_timestamps(
     return next_timestamp - cur_timestamp
 
 
-def to_timestamp(string: str) -> datetime:
+def to_timestamp(string: str) -> pd.Timestamp:
     try:
-        return datetime.strptime(string, "%Y-%m-%dT%H:%M:%S.%fZ")
+        return pd.Timestamp(string)
     except ValueError:
-        try:
-            return datetime.strptime(string, "%Y-%m-%dT%H-%M-%S_%fZ")
-        except ValueError:
-            raise ValueError(
-                f"The timestamp '{string}' must match either format %Y-%m-%dT%H:%M:%S.%fZ or %Y-%m-%dT%H-%M-%S_%fZ"
-            )
+        raise ValueError(
+            f"The timestamp '{string}' must match format %Y-%m-%dT%H:%M:%S%z."
+        )
 
 
-def from_timestamp(date: datetime) -> str:
-    return datetime.strftime(date, "%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+def from_timestamp(date: pd.Timestamp) -> str:
+    return date.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + date.strftime("%z")
 
 
 def get_timestamps(
@@ -84,7 +98,7 @@ def get_timestamps(
     )
 
     if os.path.exists(csv):
-        df = pd.read_csv(csv)
+        df = pd.read_csv(csv, parse_dates=["timestamp"])
         return df
     else:
         raise ValueError(f"{csv} does not exist")

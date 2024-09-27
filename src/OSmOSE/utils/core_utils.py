@@ -7,15 +7,15 @@ import shutil
 import struct
 from collections import namedtuple
 import sys
-from typing import Union, NamedTuple, Tuple, List
+from typing import Union, NamedTuple, Tuple, List, Literal
 import pytz
 import glob
 import math
 import pandas as pd
 import json
-import pwd
 
 try:
+    import pwd
     import tomllib
 except ModuleNotFoundError:
     import tomli as tomllib
@@ -25,7 +25,7 @@ import numpy as np
 from OSmOSE.config import *
 
 
-def display_folder_storage_infos(dir_path: str) -> None:
+def display_folder_storage_info(dir_path: str) -> None:
     usage = shutil.disk_usage(dir_path)
     print("Total storage space (TB):", round(usage.total / (1024**4), 1))
     print("Used storage space (TB):", round(usage.used / (1024**4), 1))
@@ -33,15 +33,17 @@ def display_folder_storage_infos(dir_path: str) -> None:
     print("Available storage space (TB):", round(usage.free / (1024**4), 1))
 
 
-def list_not_built_datasets(datasets_folder_path: str) -> None:
+def list_not_built_dataset(path_osmose: str, project: str = None) -> None:
     """Prints the available datasets that have not been built by the `Dataset.build()` function.
 
     Parameter
     ---------
     dataset_folder_path: str
-        The path to the directory containing the datasets."""
+        The path to the directory containing the project/datasets.
+    project: str
+        Name of the project folder containing the datasets."""
 
-    ds_folder = Path(datasets_folder_path)
+    ds_folder = Path(path_osmose, project)
 
     dataset_list = [
         directory
@@ -53,8 +55,8 @@ def list_not_built_datasets(datasets_folder_path: str) -> None:
         dataset_list, key=lambda path: str(path).lower()
     )  # case insensitive alphabetical sorting of datasets
 
-    list_not_built_datasets = []
-    list_unknown_datasets = []
+    list_not_built_dataset = []
+    list_unknown_dataset = []
 
     for dataset_directory in dataset_list:
         dataset_directory = ds_folder.joinpath(dataset_directory)
@@ -79,21 +81,168 @@ def list_not_built_datasets(datasets_folder_path: str) -> None:
                     OSMOSE_PATH.raw_audio, "original"
                 ).exists()
             ):
-                list_not_built_datasets.append(dataset_directory)
+                list_not_built_dataset.append(dataset_directory)
         else:
-            list_unknown_datasets.append(dataset_directory)
+            list_unknown_dataset.append(dataset_directory)
 
     not_built_formatted = "\n".join(
-        [f"  - {dataset.name}" for dataset in list_not_built_datasets]
+        [f"  - {dataset.name}" for dataset in list_not_built_dataset]
     )
-    print(f"""List of the datasets that aren't built yet:\n{not_built_formatted}""")
+    print(f"""List of the datasets that are not built yet:\n\n{not_built_formatted}""")
 
-    unreachable_formatted = "\n".join(
-        [f"  - {dataset.name}" for dataset in list_unknown_datasets]
-    )
-    print(
-        f"""List of unreachable datasets (probably due to insufficient permissions) :\n{unreachable_formatted}"""
-    )
+    if list_unknown_dataset:
+        unreachable_formatted = "\n".join(
+            [f"  - {dataset.name}" for dataset in list_unknown_dataset]
+        )
+        print(
+            f"""List of unreachable datasets (probably due to insufficient permissions):\n\n{unreachable_formatted}"""
+        )
+
+
+def list_dataset(path_osmose: str, project: str = None) -> None:
+    """Prints the available datasets that have been built by the `Dataset.build()` function.
+
+    Parameter
+    ---------
+    dataset_folder_path: str
+        The path to the directory containing the project/datasets.
+    project: str
+        Name of the project folder containing the datasets."""
+
+    ds_folder = Path(path_osmose, project)
+
+    dataset_list = [
+        directory
+        for directory in ds_folder.iterdir()
+        if ds_folder.joinpath(directory).is_dir()
+    ]
+
+    dataset_list = sorted(
+        dataset_list, key=lambda path: str(path).lower()
+    )  # case insensitive alphabetical sorting of datasets
+
+    list_built_dataset = []
+    list_unknown_dataset = []
+
+    for dataset_directory in dataset_list:
+        dataset_directory = ds_folder.joinpath(dataset_directory)
+        if os.access(dataset_directory, os.R_OK):
+            metadata_path = next(
+                dataset_directory.joinpath(OSMOSE_PATH.raw_audio).rglob("metadata.csv"),
+                None,
+            )
+            timestamp_path = next(
+                dataset_directory.joinpath(OSMOSE_PATH.raw_audio).rglob(
+                    "timestamp.csv"
+                ),
+                None,
+            )
+
+            if (
+                metadata_path
+                and metadata_path.exists()
+                and timestamp_path
+                and timestamp_path.exists()
+                and not dataset_directory.joinpath(
+                    OSMOSE_PATH.raw_audio, "original"
+                ).exists()
+            ):
+                list_built_dataset.append(dataset_directory)
+
+        else:
+            list_unknown_dataset.append(dataset_directory)
+
+    if list_built_dataset:
+        built_formatted = "\n".join(
+            [f"  - {dataset.name}" for dataset in list_built_dataset]
+        )
+        print(f"""List of the built datasets under {ds_folder}:\n\n{built_formatted}""")
+    else:
+        print(f"No dataset found under '{ds_folder}'")
+
+    if list_unknown_dataset:
+        unreachable_formatted = "\n".join(
+            [f"  - {dataset.name}" for dataset in list_unknown_dataset]
+        )
+        print(
+            f"""List of unreachable datasets (probably due to insufficient permissions):\n\n{unreachable_formatted}"""
+        )
+
+
+def list_aplose(path_osmose: str, project: str = ""):
+    """Prints the available APLOSE datasets containing result files (result and task_status).
+
+    Parameter
+    ---------
+    dataset_folder_path: str
+        The path to the directory containing the project / datasets.
+    project: str
+        Name of the project folder containing the datasets."""
+
+    ds_folder = Path(path_osmose, project)
+
+    dataset_list = [
+        directory
+        for directory in ds_folder.iterdir()
+        if ds_folder.joinpath(directory).is_dir()
+    ]
+
+    dataset_list = sorted(
+        dataset_list, key=lambda path: str(path).lower()
+    )  # case insensitive alphabetical sorting of datasets
+
+    list_built_dataset = []
+    list_unknown_dataset = []
+    list_aplose_result = []
+    list_aplose_task_status = []
+
+    for dataset_directory in dataset_list:
+        aplose_path = Path(dataset_directory, OSMOSE_PATH.aplose)
+
+        result_path = next(
+            iter(glob.glob(os.path.join(aplose_path, "**_results**.csv"))),
+            None,
+        )
+
+        task_status_path = (
+            result_path.replace("results", "task_status") if result_path else None
+        )
+
+        if os.access(dataset_directory, os.R_OK):
+            if (
+                result_path
+                and Path(result_path).exists()
+                and task_status_path
+                and Path(task_status_path).exists()
+            ):
+                list_built_dataset.append(dataset_directory)
+                list_aplose_result.append(Path(result_path))
+                list_aplose_task_status.append(Path(task_status_path))
+        else:
+            list_unknown_dataset.append(dataset_directory)
+
+    if list_built_dataset:
+        aplose_formatted = "\n".join(
+            [
+                f"  - {dataset.name}\n\tresult file: {r.name}\n\ttask status file: {ts.name}"
+                for dataset, r, ts in zip(
+                    list_built_dataset, list_aplose_result, list_aplose_task_status
+                )
+            ]
+        )
+        print(
+            f"""List of the datasets with APLOSE result files under {ds_folder}:\n\n{aplose_formatted}"""
+        )
+    else:
+        print(f"No dataset with APLOSE result files found under '{ds_folder}'")
+
+    if list_unknown_dataset:
+        unreachable_formatted = "\n".join(
+            [f"  - {dataset.name}" for dataset in list_unknown_dataset]
+        )
+        print(
+            f"""List of unreachable datasets (probably due to insufficient permissions):\n\n{unreachable_formatted}"""
+        )
 
 
 def read_config(raw_config: Union[str, dict, Path]) -> NamedTuple:
@@ -155,22 +304,14 @@ def read_config(raw_config: Union[str, dict, Path]) -> NamedTuple:
     return raw_config
 
 
-# def convert(template: NamedTuple, dictionary: dict) -> NamedTuple:
-#     """Convert a dictionary in a Named Tuple"""
-#     for key, value in dictionary.items():
-#         if isinstance(value, dict):
-#             dictionary[key] = convert(template, value)
-#     return template(**dictionary)
-
-
 def read_header(file: str) -> Tuple[int, float, int, int, int]:
-    """Read the first bytes of a wav file and extract its characteristics.
+    """Read the first bytes of a wav/flac file and extract its characteristics.
     At the very least, only the first 44 bytes are read. If the `data` chunk is not right after the header chunk,
     the subsequent chunks will be read until the `data` chunk is found. If there is no `data` chunk, all the file will be read.
     Parameter
     ---------
     file: str
-        The absolute path of the wav file whose header will be read.
+        The absolute path of the audio file whose header will be read.
     Returns
     -------
     samplerate : `int`
@@ -187,42 +328,78 @@ def read_header(file: str) -> Tuple[int, float, int, int, int]:
     if the file has been corrupted or the writing process has been interrupted before completion.
     """
     with open(file, "rb") as fh:
-        _, size, _ = struct.unpack("<4sI4s", fh.read(12))
-        chunk_header = fh.read(8)
-        subchunkid, _ = struct.unpack("<4sI", chunk_header)
+        header = fh.read(4)
 
-        if subchunkid == b"fmt ":
-            _, channels, samplerate, _, _, sampwidth = struct.unpack(
-                "HHIIHH", fh.read(16)
-            )
+        if header == b"RIFF":
+            # WAV file processing
+            _, size, wave_format = struct.unpack("<4sI4s", header + fh.read(8))
 
-        chunkOffset = fh.tell()
-        found_data = False
-        while chunkOffset < size and not found_data:
-            fh.seek(chunkOffset)
-            subchunk2id, subchunk2size = struct.unpack("<4sI", fh.read(8))
-            if subchunk2id == b"data":
-                found_data = True
+            while True:
+                chunk_header = fh.read(8)
+                if len(chunk_header) < 8:
+                    break  # Reached the end of the file or a corrupted file
 
-            chunkOffset = chunkOffset + subchunk2size + 8
+                subchunkid, subchunk_size = struct.unpack("<4sI", chunk_header)
 
-        if not found_data:
-            print(
-                "No data chunk found while reading the header. Will fallback on the header size."
-            )
-            subchunk2size = size - 36
+                if subchunkid == b"fmt ":
+                    # Process the fmt chunk
+                    fmt_chunk_data = fh.read(subchunk_size)
+                    _, channels, samplerate, _, _, sampwidth = struct.unpack(
+                        "<HHIIHH", fmt_chunk_data[:16]
+                    )
+                    break
+                else:
+                    fh.seek(subchunk_size, 1)
 
-        sampwidth = (sampwidth + 7) // 8
-        framesize = channels * sampwidth
-        frames = subchunk2size / framesize
+            chunkOffset = fh.tell()
+            found_data = False
+            while chunkOffset < size and not found_data:
+                fh.seek(chunkOffset)
+                subchunk2id, subchunk2size = struct.unpack("<4sI", fh.read(8))
+                if subchunk2id == b"data":
+                    found_data = True
 
-        # if (size - 72) > subchunk2size:
-        #     print(
-        #         f"Warning : the size indicated in the header is not the same as the actual file size. This might mean that the file is truncated or otherwise corrupt.\
-        #         \nSupposed size: {size} bytes \nActual size: {subchunk2size} bytes."
-        #     )
+                chunkOffset = chunkOffset + subchunk2size + 8
 
-        return samplerate, frames, sampwidth, channels, size
+            if not found_data:
+                print(
+                    "No data chunk found while reading the header. Will fallback on the header size."
+                )
+                subchunk2size = size - 36
+
+            sampwidth = (sampwidth + 7) // 8
+            framesize = channels * sampwidth
+            frames = subchunk2size / framesize
+
+            return samplerate, frames, sampwidth, channels, size
+
+        elif header == b"fLaC":
+            # FLAC file processing
+            is_last = False
+            while not is_last:
+                block_header = fh.read(4)
+                block_type = block_header[0] & 0x7F
+                is_last = (block_header[0] & 0x80) != 0
+                block_size = struct.unpack(">I", b"\x00" + block_header[1:])[0]
+
+                if block_type == 0:  # STREAMINFO block
+                    block_data = fh.read(block_size)
+                    samplerate = (
+                        struct.unpack(">I", b"\x00" + block_data[10:13])[0] >> 4
+                    )
+                    channels = ((block_data[12] & 0x0E) >> 1) + 1
+                    sampwidth = (
+                        ((block_data[12] & 0x01) << 4) | ((block_data[13] & 0xF0) >> 4)
+                    ) + 1
+                    size = struct.unpack(">Q", b"\x00" * 4 + block_data[14:18])[0]
+                    frames = size / samplerate
+
+                    return samplerate, frames, sampwidth, channels, size
+                    break
+                else:
+                    fh.seek(block_size, 1)  # Skip this block
+        else:
+            raise ValueError("Unsupported file format")
 
 
 def safe_read(
@@ -368,182 +545,7 @@ def t_rounder(t: pd.Timestamp, res: int) -> pd.Timestamp:
     return t
 
 
-def list_dataset(path_osmose: str, campaign_folder: str = None):
-    """Lists all the datasets available, i.e. built datasets, under given path.
-    A dataset is defined as built if it contains the following folders : 'data', 'processed' (THIS DEFINITION MIGHT NEED TO BE IMPOVED).
-    The function check in the immediate directories of the given path and one level deeper
-    in case a campaign folder is present, i.e. a folder that contains several datasets.
-    If user only wants to print the datasets under a specific campaign only, then 'campaign_folder' argument
-    should be provided and the function will only check for dataset structure under this folder.
-
-    Parameter
-    ---------
-    path_osmose: 'str'
-        usually '/home/datawork-osmose/dataset/'
-
-    path_osmose: 'str'
-        campaign name to check for dataset strucure, if provided
-
-    Returns
-    -------
-    The list of the datasets and theirs associated campaign is being printed
-    In case of denied read permissions, the list of datasets with no permission will be printed with its owner
-    """
-
-    dataset, denied_dataset, campaign, owner = [], [], [], []
-    if campaign_folder != "":
-        path_osmose = os.path.join(path_osmose, campaign_folder)
-
-    # Iterate over immediate subdirectories of the root directory
-    for entry in os.scandir(path_osmose):
-        if entry.is_dir():
-            try:
-                subdirectories = set(os.listdir(entry.path))
-                if all(subdir in subdirectories for subdir in ["data", "processed"]):
-                    dataset.append(os.path.basename(entry.path))
-                    if campaign_folder != "":
-                        campaign.append(campaign_folder)
-                    else:
-                        campaign.append("/")
-
-                if campaign_folder == "":
-                    # If the immediate subdirectory doesn't contain the required subdirectories,
-                    # check one level deeper (campaigns directories)
-                    for sub_entry in os.scandir(entry.path):
-                        if sub_entry.is_dir():
-                            try:
-                                sub_subdirectories = set(os.listdir(sub_entry.path))
-                                if all(
-                                    subdir in sub_subdirectories
-                                    for subdir in ["data", "processed"]
-                                ):
-                                    dataset.append(os.path.basename(sub_entry.path))
-                                    campaign.append(Path(sub_entry.path).parts[-2])
-                            except PermissionError:
-                                denied_dataset.append(sub_entry.path)
-                                owner_id = os.stat(sub_entry.path).st_uid
-                                owner_name = pwd.getpwuid(owner_id).pw_name
-                                owner.append(owner_name)
-
-            except PermissionError:
-                denied_dataset.append(entry.path)
-                owner_id = os.stat(entry.path).st_uid
-                owner_name = pwd.getpwuid(owner_id).pw_name
-                owner.append(owner_name)
-                continue
-
-    if dataset != []:
-        print("Built datasets:")
-        combined = list(zip(campaign, dataset))
-        combined.sort()
-        campaign, dataset = zip(*combined)
-        for cp, ds in zip(campaign, dataset):
-            print(f"  - campaign: {cp} -- dataset: {ds}")
-    else:
-        raise ValueError(f"No dataset available under {path_osmose}")
-
-    if denied_dataset != []:
-        print("\nNo permission to read:")
-        combined = list(zip(denied_dataset, owner))
-        combined.sort()
-        denied_dataset, owner = zip(*combined)
-        for ds, ow in zip(denied_dataset, owner):
-            print(f"  - {ds} -- Owner ID: {ow}")
-
-
-def list_aplose(path_osmose: str):
-    """Checks whether an APLOSE annotation file is stored in a dataset folder.
-    The search for an aPLOSE file is performed under one of the following directory structures:
-        - campaign_name/dataset_name/processed/aplose/csv_result_file
-        - dataset_name/processed/aplose/csv_result_file
-    If either structure is found, it will be printed.
-
-    Parameter
-    ---------
-    path_osmose: 'str'
-        usually '/home/datawork-osmose/dataset/'
-
-    Returns
-    -------
-    The list of the datasets and theirs associated campaign and APLOSE annotation file is being printed
-    In case of denied read permissions, the list of datasets with no permission will be printed with its owner
-    """
-
-    campaign_path, aplose_path, aplose_file, no_permission, owner = [], [], [], [], []
-
-    # Iterate over directories directly under path_osmose_dataset
-    for dir_name in os.listdir(path_osmose):
-        dir_path = os.path.join(path_osmose, dir_name)
-
-        # Check if the item is a directory
-        if os.path.isdir(dir_path):
-            try:
-                processed_dir_path = os.path.join(dir_path, "processed")
-
-                # Check if 'processed' directory exists
-                if os.path.isdir(processed_dir_path):
-                    aplose_dir_path = os.path.join(processed_dir_path, "aplose")
-                    if os.path.exists(aplose_dir_path):
-                        csv_path = glob.glob(
-                            os.path.join(aplose_dir_path, "**_results**.csv")
-                        )
-                        for csv in csv_path:
-                            campaign_path.append("/")
-                            aplose_path.append(dir_name)
-                            aplose_file.append(os.path.basename(csv))
-                else:
-                    # If 'processed' directory doesn't exist, look one level deeper
-                    for subdir_name in os.listdir(dir_path):
-                        subdir_path = os.path.join(dir_path, subdir_name)
-                        processed_subdir_path = os.path.join(subdir_path, "processed")
-
-                        # Check if the item is a directory
-                        if os.path.isdir(processed_subdir_path):
-                            try:
-                                # Check if 'processed' directory exists
-                                if os.path.isdir(processed_subdir_path):
-                                    aplose_subdir_path = os.path.join(
-                                        processed_subdir_path, "aplose"
-                                    )
-                                    if os.path.exists(aplose_subdir_path):
-                                        csv_path = glob.glob(
-                                            os.path.join(
-                                                aplose_dir_path, "**_results**.csv"
-                                            )
-                                        )
-                                        for csv in csv_path:
-                                            campaign_path.append(
-                                                Path(aplose_subdir_path).parts[-4]
-                                            )
-                                            aplose_path.append(subdir_name)
-                                            aplose_file.append(os.path.basename(csv))
-
-                            except PermissionError:
-                                owner_id = os.stat(subdir_path).st_uid
-                                owner_name = pwd.getpwuid(owner_id).pw_name
-                                owner.append(owner_name)
-                                no_permission.append(subdir_path)
-
-            except PermissionError:
-                owner_id = os.stat(dir_path).st_uid
-                owner_name = pwd.getpwuid(owner_id).pw_name
-                owner.append(owner_name)
-                no_permission.append(dir_path)
-
-    # Print datasets with no read permission
-    print("\nNo permission to read:")
-    for ds, ow in zip(no_permission, owner):
-        print(f"  - {ds} -- Owner ID: {ow}")
-
-    # Print campaigns -- datasets -- APLOSE files
-    print("\nAvailable APLOSE annotation files:")
-    for campaign, ds, f in zip(campaign_path, aplose_path, aplose_file):
-        print(f"  - campaign: {campaign} -- dataset: {ds} -- file: {f}")
-
-
-def check_available_file_resolution(
-    path_osmose: str, campaign_ID: str, dataset_ID: str
-):
+def check_available_file_resolution(path_osmose: str, project_ID: str, dataset_ID: str):
     """Lists the file resolution for a given dataset
 
     Parameters
@@ -551,8 +553,8 @@ def check_available_file_resolution(
     path_osmose: 'str'
         usually '/home/datawork-osmose/dataset/'
 
-    campaign_ID: 'str'
-        Name of the campaign, can be '' if the dataset is directly stored under path_osmose
+    project_ID: 'str'
+        Name of the project, can be '' if the dataset is directly stored under path_osmose
 
     dataset_ID: 'str'
         Name of the dataset
@@ -562,10 +564,10 @@ def check_available_file_resolution(
     The list of the dataset resolutions is being printed and returned as a list of str
     """
 
-    base_path = os.path.join(path_osmose, campaign_ID, dataset_ID, "data", "audio")
+    base_path = os.path.join(path_osmose, project_ID, dataset_ID, "data", "audio")
     resolution = os.listdir(base_path)
 
-    print(f"\nDataset : {campaign_ID}/{dataset_ID}")
+    print(f"\nDataset : {project_ID}/{dataset_ID}")
     print("Available Resolution (LengthFile_samplerate) :", end="\n")
 
     [print(f" {r}") for r in resolution]
@@ -575,7 +577,7 @@ def check_available_file_resolution(
 
 def extract_config(
     path_osmose: str,
-    list_campaign_ID: List[str],
+    list_project_ID: List[str],
     list_dataset_ID: List[str],
     out_dir: str,
 ):
@@ -589,8 +591,8 @@ def extract_config(
     path_osmose: 'str'
         usually '/home/datawork-osmose/dataset/'
 
-    list_campaign_ID: List[str]
-        List of the campaigns, can be '' if datasets are directly stored under path_osmose
+    list_project_ID: List[str]
+        List of the projects, can be '' if datasets are directly stored under path_osmose
 
     list_dataset_ID: 'str'
         List of the datasets
@@ -605,15 +607,15 @@ def extract_config(
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
-    for campaign_ID, dataset_ID in zip(list_campaign_ID, list_dataset_ID):
+    for project_ID, dataset_ID in zip(list_project_ID, list_dataset_ID):
         dataset_resolution = check_available_file_resolution(
-            path_osmose, campaign_ID, dataset_ID
+            path_osmose, project_ID, dataset_ID
         )
 
         for dr in dataset_resolution:
             ### audio config files
             path1 = os.path.join(
-                path_osmose, campaign_ID, dataset_ID, "data", "audio", dr
+                path_osmose, project_ID, dataset_ID, "data", "audio", dr
             )
             files1 = glob.glob(os.path.join(path1, "**.csv"))
 
@@ -624,7 +626,7 @@ def extract_config(
 
         ### spectro config files
         path2 = os.path.join(
-            path_osmose, campaign_ID, dataset_ID, "processed", "spectrogram"
+            path_osmose, project_ID, dataset_ID, "processed", "spectrogram"
         )
         files2 = []
         for root, dirs, files in os.walk(path2):
@@ -730,7 +732,7 @@ def add_entry_for_APLOSE(path: str, file: str, info: pd.DataFrame):
             csv file
         info: 'DataFrame'
             info of the entry
-            'campaign' / 'dataset' / 'spectro_duration' / 'dataset_sr' / 'files_type' / 'identifier'
+            'path' / 'dataset' / 'spectro_duration' / 'dataset_sr' / 'files_type'
     Returns
     -------
 
@@ -739,10 +741,7 @@ def add_entry_for_APLOSE(path: str, file: str, info: pd.DataFrame):
 
     if dataset_csv.exists():
         meta = pd.read_csv(dataset_csv)
-        if info["identifier"][0] not in meta["identifier"].values:
-            meta = pd.concat([meta, info], ignore_index=True).sort_values(
-                by=["project", "dataset"], ascending=True
-            )
-            meta.to_csv(dataset_csv, index=False)
-    else:
-        info.to_csv(dataset_csv, index=False)
+        meta = pd.concat([meta, info], ignore_index=True).sort_values(
+            by=["path", "dataset"], ascending=True
+        )
+        meta.to_csv(dataset_csv, index=False)

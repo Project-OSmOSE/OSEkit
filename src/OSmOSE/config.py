@@ -2,7 +2,7 @@ from pathlib import Path
 from collections import namedtuple
 import stat
 
-SUPPORTED_AUDIO_FORMAT = [".wav"]
+SUPPORTED_AUDIO_FORMAT = [".wav", ".flac"]
 
 # Dict are easier to modify, namedtuple easier to use
 __global_path_dict = {
@@ -18,8 +18,10 @@ __global_path_dict = {
     "EPD": Path("processed", "EPD"),
     "SPLfiltered": Path("processed", "SPLfiltered"),
     "processed_auxiliary": Path("processed", "auxiliary"),
+    "aplose": Path("processed", "aplose"),
     "weather": Path("appli", "weather"),
     "other": Path("other"),
+    "log": Path("log"),
 }
 
 OSMOSE_PATH = namedtuple("path_list", __global_path_dict.keys())(**__global_path_dict)

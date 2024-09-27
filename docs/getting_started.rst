@@ -67,11 +67,18 @@ BallenyIslands2015      2011-09-19 11:00      Balleny Islands 2015      1000
 Most of the examples found in modules and in the use case gallery use these audio recordings. To test and run the scripts, we recommend downloading these files to your local hard drive. The files can be downloaded from the GitHub `repository <https://github.com/project-OSmOSE>`_
 
 
-  
-.. include:: gallery_basic_use_cases/index.rst
-
+ 
 
 .. include:: tutorials.rst
 
 
 
+Joining datasets
+=============================
+
+The Auxiliary class automatically joins environmental and instrument data to acoustic data. By default, the processed acoustic dataset serves as the reference dataset and other data will be joined to corresponding time and localization. So far, only csv files and ERA5 re-analysis netCDF files can be joined to your acoustic data. The API functions to download ERA data can be found in the module but an internet access is necessary. 
+
+.. image:: figures/trajectory_wind_speed.png
+  :width: 400
+  :align: center
+  :alt: Elephant seal trajectory with wind speed (m/s) as a color map
