@@ -320,7 +320,7 @@ def reshape(
             new_sr,
         )
         os.chmod(out_filename, mode=FPDEFAULT)
-        msg_log += "Saved file from {segment_datetime_begin} to {segment_datetime_end} as {out_filename}\n"
+        msg_log += f"Saved file from {segment_datetime_begin} to {segment_datetime_end} as {out_filename}\n"
 
     # writing infos to timestamp_*.csv
     input_timestamp = pd.DataFrame({"filename": result, "timestamp": timestamp_list})
