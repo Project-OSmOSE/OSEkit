@@ -1115,25 +1115,25 @@ class Spectrogram(Dataset):
             audio_file = Path(audio_file).name
             output_file = self.path_output_spectrogram / audio_file
 
-            if overwrite:
-                if any(self.path_output_spectrogram.glob(f"{Path(audio_file).stem}*")):
+            if any(self.path_output_spectrogram.glob(f"{Path(audio_file).stem}*")):
+                if not overwrite:
+                    print(
+                        f"The spectrograms for the file {audio_file} have already been generated, skipping..."
+                    )
+                    return
+                else:
                     print(
                         f"Existing spectrogram files detected for audio file {audio_file}! 'overwrite' is set to {overwrite}, they will be overwritten."
                     )
-                for old_file in self.path_output_spectrogram.glob(
-                    f"{Path(audio_file).stem}*"
-                ):
-                    old_file.unlink()
-                if save_matrix:
-                    for old_matrix in self.path_output_spectrogram_matrix.glob(
+                    for old_file in self.path_output_spectrogram.glob(
                         f"{Path(audio_file).stem}*"
                     ):
-                        old_matrix.unlink()
-            else:
-                print(
-                    f"The spectrograms for the file {audio_file} have already been generated, skipping..."
-                )
-                return
+                        old_file.unlink()
+                    if save_matrix:
+                        for old_matrix in self.path_output_spectrogram_matrix.glob(
+                            f"{Path(audio_file).stem}*"
+                        ):
+                            old_matrix.unlink()
 
             if audio_file not in os.listdir(self.audio_path):
                 raise FileNotFoundError(
@@ -1204,7 +1204,9 @@ class Spectrogram(Dataset):
         )
         data = signal.sosfilt(bpcoef, data)
 
-        print(f"Generating spectrograms for {output_file.name}")
+        if self.verbose:
+            print(f"Generating spectrograms for {output_file.name}")
+
         self.gen_tiles(
             data=data, sample_rate=sample_rate, output_file=output_file, adjust=adjust
         )
