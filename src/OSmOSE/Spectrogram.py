@@ -254,6 +254,8 @@ class Spectrogram(Dataset):
         for attribute in df:
             instance.__setattr__(attribute, df[attribute].values[0])
 
+        instance.prepare_paths()
+
         return instance
 
     @property
