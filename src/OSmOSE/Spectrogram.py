@@ -547,6 +547,11 @@ class Spectrogram(Dataset):
             "(Hz)",
         )
 
+    def prepare_paths(self, force_init: bool = False):
+        # create some internal paths
+        self.__build_path(force_init = force_init)
+
+
     def initialize(
         self,
         *,
@@ -598,8 +603,7 @@ class Spectrogram(Dataset):
                 mode=DPDEFAULT,
             )
 
-        # create some internal paths
-        self.__build_path(force_init=force_init)
+        self.prepare_paths(force_init = force_init)
 
         if not (
             self.path
