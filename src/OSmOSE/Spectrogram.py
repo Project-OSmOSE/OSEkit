@@ -247,9 +247,11 @@ class Spectrogram(Dataset):
         self.__build_path(dry=True)
 
     @classmethod
-    def from_csv(cls, dataset_path: Path, metadata_csv_path: Path): # I don't want to use the dataset_path, but for now I have to
+    def from_csv(
+        cls, dataset_path: Path, metadata_csv_path: Path
+    ):  # I don't want to use the dataset_path, but for now I have to
         df = pd.read_csv(metadata_csv_path)
-        instance = cls(dataset_path = dataset_path)
+        instance = cls(dataset_path=dataset_path)
 
         for attribute in df:
             instance.__setattr__(attribute, df[attribute].values[0])
@@ -441,7 +443,7 @@ class Spectrogram(Dataset):
 
     @frequency_resolution.setter
     def frequency_resolution(self, value: float):
-        self._frequency_resolution = value # I don't know why this value is stored in the .csv, as it directly depends on dataset_sr and nfft
+        self._frequency_resolution = value  # I don't know why this value is stored in the .csv, as it directly depends on dataset_sr and nfft
 
     @property
     def time_resolution(self):
@@ -565,8 +567,7 @@ class Spectrogram(Dataset):
 
     def prepare_paths(self, force_init: bool = False):
         # create some internal paths
-        self.__build_path(force_init = force_init)
-
+        self.__build_path(force_init=force_init)
 
     def initialize(
         self,
@@ -619,7 +620,7 @@ class Spectrogram(Dataset):
                 mode=DPDEFAULT,
             )
 
-        self.prepare_paths(force_init = force_init)
+        self.prepare_paths(force_init=force_init)
 
         if not (
             self.path
