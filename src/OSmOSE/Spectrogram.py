@@ -246,6 +246,20 @@ class Spectrogram(Dataset):
 
         self.__build_path(dry=True)
 
+    @classmethod
+    def from_csv(
+        cls, dataset_path: Path, metadata_csv_path: Path
+    ):  # I don't want to use the dataset_path, but for now I have to
+        df = pd.read_csv(metadata_csv_path)
+        instance = cls(dataset_path=dataset_path)
+
+        for attribute in df:
+            instance.__setattr__(attribute, df[attribute].values[0])
+
+        instance.prepare_paths()
+
+        return instance
+
     @property
     def dataset_sr(self):
         """int: The sampling frequency of the dataset."""
@@ -427,6 +441,10 @@ class Spectrogram(Dataset):
         """Frequency resolution of the spectrogram, calculated by dividing the samplerate by nfft."""
         return self.dataset_sr / self.nfft
 
+    @frequency_resolution.setter
+    def frequency_resolution(self, value: float):
+        self._frequency_resolution = value  # I don't know why this value is stored in the .csv, as it directly depends on dataset_sr and nfft
+
     @property
     def time_resolution(self):
         return self.__time_resolution
@@ -547,6 +565,10 @@ class Spectrogram(Dataset):
             "(Hz)",
         )
 
+    def prepare_paths(self, force_init: bool = False):
+        # create some internal paths
+        self.__build_path(force_init=force_init)
+
     def initialize(
         self,
         *,
@@ -598,8 +620,7 @@ class Spectrogram(Dataset):
                 mode=DPDEFAULT,
             )
 
-        # create some internal paths
-        self.__build_path(force_init=force_init)
+        self.prepare_paths(force_init=force_init)
 
         if not (
             self.path
@@ -907,7 +928,7 @@ class Spectrogram(Dataset):
         metadata.to_csv(new_meta_path, index=False)
         os.chmod(new_meta_path, mode=FPDEFAULT)
 
-    def save_spectro_metadata(self, adjust_bool: bool):
+    def save_spectro_metadata(self, adjust_bool: bool) -> Path:
         temporal_resolution, frequency_resolution, Nbwin = self.extract_spectro_params()
 
         data = {
@@ -960,6 +981,7 @@ class Spectrogram(Dataset):
 
         analysis_sheet.to_csv(meta_path, index=False)
         os.chmod(meta_path, mode=FPDEFAULT)
+        return meta_path
 
     def audio_file_list_csv(self) -> Path:
         list_audio = get_all_audio_files(self.path_input_audio_file)
