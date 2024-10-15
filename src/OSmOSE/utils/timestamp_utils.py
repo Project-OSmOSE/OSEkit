@@ -2,6 +2,8 @@ from datetime import datetime, timedelta
 import pandas as pd
 from typing import List
 import os
+from pandas import Timestamp
+import re
 
 
 def check_epoch(df):
@@ -85,15 +87,30 @@ def build_regex_from_datetime_template(datetime_template: str) -> str:
         datetime_template = datetime_template.replace(key, value)
     return datetime_template
 
-def is_datetime_template_valid(date_template: str) -> bool:
+def is_datetime_template_valid(datetime_template: str) -> bool:
     strftime_identifiers = "YymdHIpMSf"
-    percent_sign_indexes = (index for index,char in enumerate(date_template) if char == "%")
+    percent_sign_indexes = (index for index,char in enumerate(datetime_template) if char == "%")
     for index in percent_sign_indexes:
-        if index == len(date_template) - 1:
+        if index == len(datetime_template) - 1:
             return False
-        if date_template[index+1] not in strftime_identifiers:
+        if datetime_template[index + 1] not in strftime_identifiers:
             return False
     return True
+
+def extract_timestamp_from_filename(filename: str, datetime_template: str)  -> Timestamp:
+
+    if not is_datetime_template_valid(datetime_template):
+        raise ValueError(f"{datetime_template} is not a supported strftime template")
+
+    regex_pattern = build_regex_from_datetime_template(datetime_template)
+    regex_result = re.findall(regex_pattern, filename)
+
+    if not regex_result:
+        raise ValueError(f"{filename} did not match the given {datetime_template} template")
+
+    date_string = "".join(regex_result[0])
+    cleaned_date_template = ''.join(c + datetime_template[i + 1] for i, c in enumerate(datetime_template) if c == '%')  # MUST BE TESTED IN CASE OF "%i%" or "%%"
+    return Timestamp(datetime.strptime(date_string, cleaned_date_template))
 
 def get_timestamps(
     path_osmose_dataset: str, campaign_name: str, dataset_name: str, resolution: str
