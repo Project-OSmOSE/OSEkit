@@ -65,6 +65,26 @@ def to_timestamp(string: str) -> pd.Timestamp:
 def from_timestamp(date: pd.Timestamp) -> str:
     return date.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + date.strftime("%z")
 
+def build_regex_from_datetime_template(datetime_template: str) -> str:
+    regex_builder = {
+        "%Y": r"([12][0-9]{3})",
+        "%y": r"([0-9]{2})",
+        "%m": r"(0[1-9]|1[0-2])",
+        "%d": r"([0-2][0-9]|3[0-1])",
+        "%H": r"([0-1][0-9]|2[0-4])",
+        "%I": r"(0[1-9]|1[0-2])",
+        "%p": r"(AM|PM)",
+        "%M": r"([0-5][0-9])",
+        "%S": r"([0-5][0-9])",
+        "%f": r"([0-9]{6})",
+    }
+    escaped_characters = "()"
+    for escaped in escaped_characters:
+        datetime_template = datetime_template.replace(escaped, fr"\{escaped}")
+    for key, value in regex_builder.items():
+        datetime_template = datetime_template.replace(key, value)
+    return datetime_template
+
 def is_datetime_template_valid(date_template: str) -> bool:
     strftime_identifiers = "YymdHIpMSf"
     percent_sign_indexes = (index for index,char in enumerate(date_template) if char == "%")
