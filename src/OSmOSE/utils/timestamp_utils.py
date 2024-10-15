@@ -65,6 +65,15 @@ def to_timestamp(string: str) -> pd.Timestamp:
 def from_timestamp(date: pd.Timestamp) -> str:
     return date.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + date.strftime("%z")
 
+def is_datetime_template_valid(date_template: str) -> bool:
+    strftime_identifiers = "YymdHIpMSf"
+    percent_sign_indexes = (index for index,char in enumerate(date_template) if char == "%")
+    for index in percent_sign_indexes:
+        if index == len(date_template) - 1:
+            return False
+        if date_template[index+1] not in strftime_identifiers:
+            return False
+    return True
 
 def get_timestamps(
     path_osmose_dataset: str, campaign_name: str, dataset_name: str, resolution: str
