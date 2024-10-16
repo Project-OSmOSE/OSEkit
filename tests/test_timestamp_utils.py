@@ -1,3 +1,4 @@
+import pandas as pd
 import pytest
 from pandas import Timestamp
 from OSmOSE.utils.timestamp_utils import *
@@ -63,3 +64,32 @@ def test_extract_timestamp_from_filename(filename: str, datetime_template: str, 
 def test_extract_timestamp_from_filename_errors(filename: str, datetime_template: str, expected: Timestamp):
     with expected as e:
         assert extract_timestamp_from_filename(filename, datetime_template) == e
+
+
+@pytest.fixture
+def correct_series():
+    series = pd.Series({
+        "something2345_2012_06_24__16:32:10.wav": pd.Timestamp("2012-06-24 16:32:10"),
+        "something2345_2023_07_28__08:24:50.flac": pd.Timestamp("2023-07-28 08:24:50"),
+        "something2345_2024_01_01__23:12:11.WAV": pd.Timestamp("2024-01-01 23:12:11"),
+        "something2345_2024_02_02__02:02:02.FLAC": pd.Timestamp("2024-02-02 02:02:02"),
+    }, name = "Timestamp")
+    series.index.name = "Filename"
+    return series.reset_index()
+
+@pytest.mark.integtest
+def test_associate_timestamps(correct_series):
+    input_files = list(correct_series.Filename)
+    assert associate_timestamps((i for i in input_files), "%Y_%m_%d__%H:%M:%S").equals(correct_series)
+
+@pytest.mark.integtest
+def test_associate_timestamps_error_with_incorrect_datetime_format(correct_series):
+    input_files = list(correct_series.Filename)
+    mismatching_datetime_format = "%Y%m%d__%H:%M:%S"
+    incorrect_datetime_format = "%y%m%d%H%M%P%S"
+
+    with pytest.raises(ValueError, match = f"{input_files[0]} did not match the given {mismatching_datetime_format} template") as e:
+        assert e == associate_timestamps((i for i in input_files), mismatching_datetime_format)
+
+    with pytest.raises(ValueError, match = "%y%m%d%H%M%P%S is not a supported strftime template"):
+        assert e == associate_timestamps((i for i in input_files), incorrect_datetime_format)

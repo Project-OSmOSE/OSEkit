@@ -1,6 +1,7 @@
+from collections.abc import Generator
 from datetime import datetime, timedelta
 import pandas as pd
-from typing import List
+from typing import List, Iterable
 import os
 from pandas import Timestamp
 import re
@@ -145,7 +146,7 @@ def extract_timestamp_from_filename(filename: str, datetime_template: str)  -> T
     filename: str
         The filename in which the timestamp should be extracted, ex '2016_06_13_14:12.txt'
     datetime_template: str
-        The datetime template used in filename, using strftime codes (https://strftime.org/).
+         The datetime template used in filename, using strftime codes (https://strftime.org/). Example: '%y%m%d_%H:%M:%S'
 
     Returns
     -------
@@ -156,10 +157,10 @@ def extract_timestamp_from_filename(filename: str, datetime_template: str)  -> T
     --------
     >>> extract_timestamp_from_filename('2016_06_13_14:12.txt', '%Y_%m_%d_%H:%M')
     Timestamp('2016-06-13 14:12:00')
-    >>> extract_timestamp_from_filename('date_12_03_21_hour_11:45:10_PM.wav', 'date_%y_%m_%d_hour_%I:%M:%S_%p')
+    >>> extract_timestamp_from_filename('date_12_03_21_hour_11:45:10_PM.wav', '%y_%m_%d_hour_%I:%M:%S_%p')
     Timestamp('2012-03-21 23:45:10')
     """
-    
+
     if not is_datetime_template_valid(datetime_template):
         raise ValueError(f"{datetime_template} is not a supported strftime template")
 
@@ -172,6 +173,27 @@ def extract_timestamp_from_filename(filename: str, datetime_template: str)  -> T
     date_string = "".join(regex_result[0])
     cleaned_date_template = ''.join(c + datetime_template[i + 1] for i, c in enumerate(datetime_template) if c == '%')  # MUST BE TESTED IN CASE OF "%i%" or "%%"
     return Timestamp(datetime.strptime(date_string, cleaned_date_template))
+
+def associate_timestamps(audio_files: Iterable[str], datetime_template: str) -> pd.Series:
+    """
+    Returns a chronologically sorted pandas series containing the audio files as indexes and the extracted timestamp as values.
+
+    Parameters
+    ----------
+    audio_files: Iterable[str]
+        files from which the timestamps should be extracted. They must share a same datetime format.
+    datetime_template: str
+         The datetime template used in filename, using strftime codes (https://strftime.org/). Example: '%y%m%d_%H:%M:%S'
+
+    Returns
+    -------
+    pandas.Series
+        A series with the audio files names as index and the extracted timestamps as values.
+    """
+    files_with_timestamps = {file: extract_timestamp_from_filename(file, datetime_template) for file in audio_files}
+    series = pd.Series(data = files_with_timestamps, name = "Timestamp")
+    series.index.name = "Filename"
+    return series.sort_values().reset_index()
 
 def get_timestamps(
     path_osmose_dataset: str, campaign_name: str, dataset_name: str, resolution: str
