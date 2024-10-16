@@ -79,6 +79,25 @@ def from_timestamp(date: pd.Timestamp) -> str:
     return date.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + date.strftime("%z")
 
 def build_regex_from_datetime_template(datetime_template: str) -> str:
+    """
+    Builds the regular expression that is used to parse a Timestamp from a string following the given datetime strftime template
+
+    Parameters
+    ----------
+    datetime_template: str
+        A datetime template string using strftime codes
+
+    Returns
+    -------
+    str
+        A regex that can be used to parse a Timestamp from a string following the given datetime strftime template
+
+    Examples
+    --------
+    >>> build_regex_from_datetime_template('year_%Y_hour_%H')
+    'year_([12][0-9]{3})_hour_([0-1][0-9]|2[0-4])'
+    """
+
     escaped_characters = "()"
     for escaped in escaped_characters:
         datetime_template = datetime_template.replace(escaped, fr"\{escaped}")
@@ -87,6 +106,27 @@ def build_regex_from_datetime_template(datetime_template: str) -> str:
     return datetime_template
 
 def is_datetime_template_valid(datetime_template: str) -> bool:
+    """
+    Checks the validity of a datetime template string. A datetame template string is used to extract a timestamp from a given string: 'year_%Y' is a valid datetame template for extracting '2016' from the 'year_2016' string.
+    A datetime template string should use valid strftime codes (see https://strftime.org/).
+
+    Parameters
+    ----------
+    datetime_template: str
+        The datetime template
+
+    Returns
+    -------
+    bool:
+    True if datetime_template is valid (only uses supported strftime codes), False otherwise
+
+    Examples
+    --------
+    >>> is_datetime_template_valid('year_%Y_hour_%H')
+    True
+    >>> is_datetime_template_valid('unsupported_code_%Z_hour_%H')
+    False
+    """
     strftime_identifiers = [key.lstrip('%') for key in _REGEX_BUILDER.keys()]
     percent_sign_indexes = (index for index,char in enumerate(datetime_template) if char == "%")
     for index in percent_sign_indexes:
@@ -97,7 +137,29 @@ def is_datetime_template_valid(datetime_template: str) -> bool:
     return True
 
 def extract_timestamp_from_filename(filename: str, datetime_template: str)  -> Timestamp:
+    """
+    Extract a pandas.Timestamp from the filename string following the datetime_template specified.
 
+    Parameters
+    ----------
+    filename: str
+        The filename in which the timestamp should be extracted, ex '2016_06_13_14:12.txt'
+    datetime_template: str
+        The datetime template used in filename, using strftime codes (https://strftime.org/).
+
+    Returns
+    -------
+    pandas.Timestamp:
+        The timestamp extracted from filename according to datetime_template
+
+    Examples
+    --------
+    >>> extract_timestamp_from_filename('2016_06_13_14:12.txt', '%Y_%m_%d_%H:%M')
+    Timestamp('2016-06-13 14:12:00')
+    >>> extract_timestamp_from_filename('date_12_03_21_hour_11:45:10_PM.wav', 'date_%y_%m_%d_hour_%I:%M:%S_%p')
+    Timestamp('2012-03-21 23:45:10')
+    """
+    
     if not is_datetime_template_valid(datetime_template):
         raise ValueError(f"{datetime_template} is not a supported strftime template")
 
