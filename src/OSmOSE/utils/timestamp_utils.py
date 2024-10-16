@@ -5,6 +5,18 @@ import os
 from pandas import Timestamp
 import re
 
+_REGEX_BUILDER = {
+        "%Y": r"([12][0-9]{3})",
+        "%y": r"([0-9]{2})",
+        "%m": r"(0[1-9]|1[0-2])",
+        "%d": r"([0-2][0-9]|3[0-1])",
+        "%H": r"([0-1][0-9]|2[0-4])",
+        "%I": r"(0[1-9]|1[0-2])",
+        "%p": r"(AM|PM)",
+        "%M": r"([0-5][0-9])",
+        "%S": r"([0-5][0-9])",
+        "%f": r"([0-9]{6})",
+    }
 
 def check_epoch(df):
     "Function that adds epoch column to dataframe"
@@ -63,32 +75,19 @@ def to_timestamp(string: str) -> pd.Timestamp:
             f"The timestamp '{string}' must match format %Y-%m-%dT%H:%M:%S%z."
         )
 
-
 def from_timestamp(date: pd.Timestamp) -> str:
     return date.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + date.strftime("%z")
 
 def build_regex_from_datetime_template(datetime_template: str) -> str:
-    regex_builder = {
-        "%Y": r"([12][0-9]{3})",
-        "%y": r"([0-9]{2})",
-        "%m": r"(0[1-9]|1[0-2])",
-        "%d": r"([0-2][0-9]|3[0-1])",
-        "%H": r"([0-1][0-9]|2[0-4])",
-        "%I": r"(0[1-9]|1[0-2])",
-        "%p": r"(AM|PM)",
-        "%M": r"([0-5][0-9])",
-        "%S": r"([0-5][0-9])",
-        "%f": r"([0-9]{6})",
-    }
     escaped_characters = "()"
     for escaped in escaped_characters:
         datetime_template = datetime_template.replace(escaped, fr"\{escaped}")
-    for key, value in regex_builder.items():
+    for key, value in _REGEX_BUILDER.items():
         datetime_template = datetime_template.replace(key, value)
     return datetime_template
 
 def is_datetime_template_valid(datetime_template: str) -> bool:
-    strftime_identifiers = "YymdHIpMSf"
+    strftime_identifiers = [key.lstrip('%') for key in _REGEX_BUILDER.keys()]
     percent_sign_indexes = (index for index,char in enumerate(datetime_template) if char == "%")
     for index in percent_sign_indexes:
         if index == len(datetime_template) - 1:
