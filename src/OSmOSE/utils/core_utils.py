@@ -746,6 +746,7 @@ def add_entry_for_APLOSE(path: str, file: str, info: pd.DataFrame):
         )
         meta.to_csv(dataset_csv, index=False)
 
+
 def chmod_if_needed(path: Path, mode: int):
     if all(os.access(path, p) for p in (os.R_OK, os.W_OK)):
         return
@@ -753,4 +754,6 @@ def chmod_if_needed(path: Path, mode: int):
     try:
         os.chmod(path, mode)
     except PermissionError:
-        raise PermissionError(f"You do not have the permission to write to {path}, nor to change its permissions.")
+        raise PermissionError(
+            f"You do not have the permission to write to {path}, nor to change its permissions."
+        )
