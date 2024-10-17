@@ -22,9 +22,7 @@ from tqdm import tqdm
 from OSmOSE.utils.timestamp_utils import check_epoch
 from OSmOSE.utils.core_utils import check_n_files, set_umask
 from OSmOSE.utils.path_utils import make_path
-from OSmOSE.timestamps import write_timestamp
 from OSmOSE.config import DPDEFAULT, FPDEFAULT, OSMOSE_PATH, TIMESTAMP_FORMAT_AUDIO_FILE
-
 
 class Dataset:
     """Super class used to create dataset compatible with the rest of the package.
@@ -354,20 +352,14 @@ class Dataset:
             if original_folder is not None
             else self._find_or_create_original_folder()
         )
+
         path_timestamp_formatted = path_raw_audio.joinpath("timestamp.csv")
+        user_timestamp = path_timestamp_formatted.exists() # TODO: Formatting audio files beforehand will make this obsolete
+
+        if not user_timestamp:
+            self._write_timestamp_csv_from_audio_files(audio_path=path_raw_audio, date_template=date_template)
 
         resume_test_anomalies = path_raw_audio.joinpath("resume_test_anomalies.txt")
-
-        if not path_timestamp_formatted.exists():
-            user_timestamp = False
-            write_timestamp(
-                audio_path=path_raw_audio,
-                date_template=date_template,
-                timezone=self.timezone,
-                verbose=False,
-            )
-        else:
-            user_timestamp = True
 
         # read the timestamp.csv file
         timestamp_csv = pd.read_csv(path_timestamp_formatted)["timestamp"].values
@@ -654,6 +646,15 @@ class Dataset:
                         self._format_timestamp(Path(path, f), date_template, False)
 
             print("\n DONE ! your dataset is on OSmOSE platform !")
+
+    def _write_timestamp_csv_from_audio_files(self, audio_path: Path, date_template: str):
+        supported_audio_files = [file.name for file in get_all_audio_files(audio_path)]
+        filenames_with_timestamps = associate_timestamps(audio_files=supported_audio_files,
+                                                         datetime_template=date_template)
+        filenames_with_timestamps["timestamp"] = filenames_with_timestamps["timestamp"].apply(
+            lambda t: strftime_osmose_format(t))
+        filenames_with_timestamps.to_csv(audio_path/"timestamp.csv", index=False, na_rep="NaN")
+        os.chmod(audio_path/"timestamp.csv", mode=FPDEFAULT)
 
     def _format_timestamp(
         self,
