@@ -175,27 +175,27 @@ def is_datetime_template_valid(datetime_template: str) -> bool:
     return True
 
 
-def extract_timestamp_from_filename(filename: str, datetime_template: str) -> Timestamp:
+def strptime_from_text(text: str, datetime_template: str) -> Timestamp:
     """
-    Extract a pandas.Timestamp from the filename string following the datetime_template specified.
+    Extract a pandas.Timestamp from the text input string following the datetime_template specified.
 
     Parameters
     ----------
-    filename: str
-        The filename in which the timestamp should be extracted, ex '2016_06_13_14:12.txt'
+    text: str
+        The text in which the timestamp should be extracted, ex '2016_06_13_14:12.txt'
     datetime_template: str
-         The datetime template used in filename, using strftime codes (https://strftime.org/). Example: '%y%m%d_%H:%M:%S'
+         The datetime template used in the text, using strftime codes (https://strftime.org/). Example: '%y%m%d_%H:%M:%S'
 
     Returns
     -------
     pandas.Timestamp:
-        The timestamp extracted from filename according to datetime_template
+        The timestamp extracted from the text according to datetime_template
 
     Examples
     --------
-    >>> extract_timestamp_from_filename('2016_06_13_14:12.txt', '%Y_%m_%d_%H:%M')
+    >>> strptime_from_text('2016_06_13_14:12.txt', '%Y_%m_%d_%H:%M')
     Timestamp('2016-06-13 14:12:00')
-    >>> extract_timestamp_from_filename('date_12_03_21_hour_11:45:10_PM.wav', '%y_%m_%d_hour_%I:%M:%S_%p')
+    >>> strptime_from_text('date_12_03_21_hour_11:45:10_PM.wav', '%y_%m_%d_hour_%I:%M:%S_%p')
     Timestamp('2012-03-21 23:45:10')
     """
 
@@ -203,19 +203,17 @@ def extract_timestamp_from_filename(filename: str, datetime_template: str) -> Ti
         raise ValueError(f"{datetime_template} is not a supported strftime template")
 
     regex_pattern = build_regex_from_datetime_template(datetime_template)
-    regex_result = re.findall(regex_pattern, filename)
+    regex_result = re.findall(regex_pattern, text)
 
     if not regex_result:
-        raise ValueError(
-            f"{filename} did not match the given {datetime_template} template"
-        )
+        raise ValueError(f"{text} did not match the given {datetime_template} template")
 
     date_string = "".join(regex_result[0])
     cleaned_date_template = "".join(
         c + datetime_template[i + 1]
         for i, c in enumerate(datetime_template)
         if c == "%"
-    )  # MUST BE TESTED IN CASE OF "%i%" or "%%"
+    )
     return pd.to_datetime(date_string, format=cleaned_date_template)
 
 
@@ -238,8 +236,7 @@ def associate_timestamps(
         A series with the audio files names as index and the extracted timestamps as values.
     """
     files_with_timestamps = {
-        file: extract_timestamp_from_filename(file, datetime_template)
-        for file in audio_files
+        file: strptime_from_text(file, datetime_template) for file in audio_files
     }
     series = pd.Series(data=files_with_timestamps, name="timestamp")
     series.index.name = "filename"

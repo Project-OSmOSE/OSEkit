@@ -74,7 +74,7 @@ def test_build_regex_from_datetime_template(datetime_template: str, expected: st
 
 @pytest.mark.integ
 @pytest.mark.parametrize(
-    "filename, datetime_template, expected",
+    "text, datetime_template, expected",
     [
         pytest.param(
             "7189.230405144906.wav",
@@ -162,15 +162,13 @@ def test_build_regex_from_datetime_template(datetime_template: str, expected: st
         ),
     ],
 )
-def test_extract_timestamp_from_filename(
-    filename: str, datetime_template: str, expected: Timestamp
-):
-    assert extract_timestamp_from_filename(filename, datetime_template) == expected
+def test_strptime_from_text(text: str, datetime_template: str, expected: Timestamp):
+    assert strptime_from_text(text, datetime_template) == expected
 
 
 @pytest.mark.integ
 @pytest.mark.parametrize(
-    "filename, datetime_template, expected",
+    "text, datetime_template, expected",
     [
         pytest.param(
             "7189.230405144906.wav",
@@ -243,11 +241,9 @@ def test_extract_timestamp_from_filename(
         ),
     ],
 )
-def test_extract_timestamp_from_filename_errors(
-    filename: str, datetime_template: str, expected: Timestamp
-):
+def test_strptime_from_text(text: str, datetime_template: str, expected: Timestamp):
     with expected as e:
-        assert extract_timestamp_from_filename(filename, datetime_template) == e
+        assert strptime_from_text(text, datetime_template) == e
 
 
 @pytest.fixture
