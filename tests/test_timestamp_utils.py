@@ -73,18 +73,18 @@ def correct_series():
         "something2345_2023_07_28__08:24:50.flac": pd.Timestamp("2023-07-28 08:24:50"),
         "something2345_2024_01_01__23:12:11.WAV": pd.Timestamp("2024-01-01 23:12:11"),
         "something2345_2024_02_02__02:02:02.FLAC": pd.Timestamp("2024-02-02 02:02:02"),
-    }, name = "Timestamp")
-    series.index.name = "Filename"
+    }, name = "timestamp")
+    series.index.name = "filename"
     return series.reset_index()
 
 @pytest.mark.integtest
 def test_associate_timestamps(correct_series):
-    input_files = list(correct_series.Filename)
+    input_files = list(correct_series["filename"])
     assert associate_timestamps((i for i in input_files), "%Y_%m_%d__%H:%M:%S").equals(correct_series)
 
 @pytest.mark.integtest
 def test_associate_timestamps_error_with_incorrect_datetime_format(correct_series):
-    input_files = list(correct_series.Filename)
+    input_files = list(correct_series["filename"])
     mismatching_datetime_format = "%Y%m%d__%H:%M:%S"
     incorrect_datetime_format = "%y%m%d%H%M%P%S"
 

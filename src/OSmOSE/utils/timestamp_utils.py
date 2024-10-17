@@ -218,8 +218,8 @@ def associate_timestamps(audio_files: Iterable[str], datetime_template: str) -> 
         A series with the audio files names as index and the extracted timestamps as values.
     """
     files_with_timestamps = {file: extract_timestamp_from_filename(file, datetime_template) for file in audio_files}
-    series = pd.Series(data = files_with_timestamps, name = "Timestamp")
-    series.index.name = "Filename"
+    series = pd.Series(data = files_with_timestamps, name = "timestamp")
+    series.index.name = "filename"
     return series.sort_values().reset_index()
 
 def get_timestamps(
