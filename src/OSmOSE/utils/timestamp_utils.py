@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 import pandas as pd
 from typing import List, Iterable
 import os
+
+from OSmOSE.config import TIMESTAMP_FORMAT_AUDIO_FILE
 from pandas import Timestamp
 import re
 
@@ -76,8 +78,33 @@ def to_timestamp(string: str) -> pd.Timestamp:
             f"The timestamp '{string}' must match format %Y-%m-%dT%H:%M:%S%z."
         )
 
-def from_timestamp(date: pd.Timestamp) -> str:
-    return date.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + date.strftime("%z")
+def strftime_osmose_format(date: pd.Timestamp) -> str:
+    """
+    Format a pandas Timestamp using strftime() and the OSmOSE time format %Y-%m-%dT%H:%M:%S.%f%z, with %f limited to a millisecond precision.
+    If the input Timestamp is not localized, its localization will be defaulted as UTC.
+
+    arameters
+    ----------
+    date: pandas.Timestamp
+        The Timestamp to format
+
+    Returns
+    -------
+    str:
+        The formatted Timestamp
+
+    Examples
+    --------
+    >>> strftime_osmose_format(Timestamp('2024-10-17 10:14:11.933634', tz="US/Eastern"))
+    '2024-10-17T10:14:11.933-0400'
+    """
+    if date.tz is None:
+        date = date.tz_localize('UTC')
+
+    str_time = date.strftime(TIMESTAMP_FORMAT_AUDIO_FILE)
+    str_time = str_time[:-8] + str_time[-5:] # Changes microsecond precision to millisecond precision
+
+    return str_time
 
 def build_regex_from_datetime_template(datetime_template: str) -> str:
     """

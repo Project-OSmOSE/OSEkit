@@ -93,3 +93,15 @@ def test_associate_timestamps_error_with_incorrect_datetime_format(correct_serie
 
     with pytest.raises(ValueError, match = "%y%m%d%H%M%P%S is not a supported strftime template"):
         assert e == associate_timestamps((i for i in input_files), incorrect_datetime_format)
+
+@pytest.mark.unittest
+@pytest.mark.parametrize('timestamp, expected', [
+    pytest.param(Timestamp('2024-10-17 10:14:11.933+0000'), '2024-10-17T10:14:11.933+0000', id = "timestamp_with_timezone"),
+    pytest.param(Timestamp('2024-10-17 10:14:11+0000'), '2024-10-17T10:14:11.000+0000', id = "increase_precision_to_millisecond"),
+    pytest.param(Timestamp('2024-10-17 10:14:11.933384+0000'), '2024-10-17T10:14:11.933+0000', id = "reduce_precision_to_millisecond"),
+    pytest.param(Timestamp('2024-10-17 10:14:11.933293'), '2024-10-17T10:14:11.933+0000', id = "no_timezone_defaults_to_utc"),
+    pytest.param(Timestamp('2024-10-17 10:14:11.933-0400'), '2024-10-17T10:14:11.933-0400', id = "delta_timezone"),
+    pytest.param(Timestamp('2024-10-17 10:14:11.933', tz="US/Eastern"), '2024-10-17T10:14:11.933-0400', id = "str_timezone")
+])
+def test_strftime_osmose_format(timestamp: Timestamp, expected: str):
+    assert strftime_osmose_format(timestamp) == expected
