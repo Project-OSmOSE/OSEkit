@@ -13,7 +13,9 @@ from OSmOSE.utils.timestamp_utils import *
     pytest.param("%y%z%d%H%X%S", False, id="%X_is_wrong_strftime_code"),
     pytest.param("%y%z%d%H%%%S", False, id="%%_is_wrong_strftime_code"),
     pytest.param("%y%m%d_at_%H%M%S", True, id="alpha_letters_separated_codes"),
-    pytest.param("%y%m%d%H%M%S%", False, id="trailing_%_is_wrong_strftime_code")
+    pytest.param("%y%m%d%H%M%S%", False, id="trailing_%_is_wrong_strftime_code"),
+    pytest.param("%y%m%d%H%M%S%z", True, id="utc_offset"),
+    pytest.param("%y%m%d%H%M%S_%Z", True, id="timezone_name"),
 ])
 def test_is_datetime_template_valid(datetime_template, expected):
     assert is_datetime_template_valid(datetime_template) == expected
@@ -30,6 +32,9 @@ def test_is_datetime_template_valid(datetime_template, expected):
     pytest.param("%y%m%d_at_%H%M%S", "([0-9]{2})(0[1-9]|1[0-2])([0-2][0-9]|3[0-1])_at_([0-1][0-9]|2[0-4])([0-5][0-9])([0-5][0-9])", id="alpha_letters_separated_codes"),
     pytest.param("{%y}%m%d(%H%M%S)",
      "{([0-9]{2})}(0[1-9]|1[0-2])([0-2][0-9]|3[0-1])\(([0-1][0-9]|2[0-4])([0-5][0-9])([0-5][0-9])\)", id="parentheses_separated_codes"),
+    pytest.param("%y%m%d%z","([0-9]{2})(0[1-9]|1[0-2])([0-2][0-9]|3[0-1])([\+-]\d{4})",id="utc_offset"),
+    pytest.param("%y%m%d%Z","([0-9]{2})(0[1-9]|1[0-2])([0-2][0-9]|3[0-1])((?:\w+)(?:[-/]\w+)*(?:[\+-]\d+)?)",id="timezone_name"),
+
 ])
 def test_build_regex_from_datetime_template(datetime_template: str, expected: str):
     assert build_regex_from_datetime_template(datetime_template) == expected
@@ -37,16 +42,20 @@ def test_build_regex_from_datetime_template(datetime_template: str, expected: st
 
 @pytest.mark.integtest
 @pytest.mark.parametrize('filename, datetime_template, expected', [
-    pytest.param('7189.230405144906.wav', '%y%m%d%H%M%S',
-     Timestamp(year=2023, month=4, day=5, hour=14, minute=49, second=6, microsecond=0), id = "plain_pattern"),
-    pytest.param('7189.(230405)/(144906).wav', '(%y%m%d)/(%H%M%S)',
-     Timestamp(year=2023, month=4, day=5, hour=14, minute=49, second=6, microsecond=0), id = "escaped_parentheses"),
-    pytest.param('7189.23_04_05_14:49:06.wav', '%y_%m_%d_%H:%M:%S',
-     Timestamp(year=2023, month=4, day=5, hour=14, minute=49, second=6, microsecond=0), id = "special_characters"),
-    pytest.param('7189.230405_at_144906.wav', '%y%m%d_at_%H%M%S',
-     Timestamp(year=2023, month=4, day=5, hour=14, minute=49, second=6, microsecond=0), id = "alpha_letters"),
-    pytest.param('7189.202323040514490602PM000010.wav', '%Y%y%m%d%H%M%S%I%p%f',
-     Timestamp(year=2023, month=4, day=5, hour=14, minute=49, second=6, microsecond=10), id = "full_pattern")
+    pytest.param('7189.230405144906.wav', '%y%m%d%H%M%S', Timestamp('2023-04-05 14:49:06'), id = "plain_pattern"),
+    pytest.param('7189.(230405)/(144906).wav', '(%y%m%d)/(%H%M%S)', Timestamp('2023-04-05 14:49:06'), id = "escaped_parentheses"),
+    pytest.param('7189.23_04_05_14:49:06.wav', '%y_%m_%d_%H:%M:%S', Timestamp('2023-04-05 14:49:06'), id = "special_characters"),
+    pytest.param('7189.230405_at_144906.wav', '%y%m%d_at_%H%M%S', Timestamp('2023-04-05 14:49:06'), id = "alpha_letters"),
+    pytest.param('7189.202323040514490602PM000010.wav', '%Y%y%m%d%H%M%S%I%p%f', Timestamp('2023-04-05 14:49:06.000010'), id = "full_pattern"),
+pytest.param('7189.230405144906+0200.wav', '%y%m%d%H%M%S%z', Timestamp('2023-04-05 14:49:06+0200'), id = "utc_positive_offset"),
+pytest.param('7189.230405144906-0200.wav', '%y%m%d%H%M%S%z', Timestamp('2023-04-05 14:49:06-0200'), id = "utc_negative_offset"),
+pytest.param('7189.230405144906+020012.wav', '%y%m%d%H%M%S%z', Timestamp('2023-04-05 14:49:06+0200'), id = "utc_offset_with_seconds"),
+pytest.param('7189.230405144906+020012.123456.wav', '%y%m%d%H%M%S%z', Timestamp('2023-04-05 14:49:06+0200'), id = "utc_offset_with_microseconds"),
+pytest.param('7189.230405144906_Japan.wav', '%y%m%d%H%M%S_%Z', Timestamp('2023-04-05 14:49:06+0900', tz='UTC+09:00'), id = "timezone_name"),
+pytest.param('7189.230405144906_Japan.wav', '%y%m%d%H%M%S', Timestamp('2023-04-05 14:49:06'), id = "unspecified_timezone_name_doesnt_count"),
+pytest.param('7189.230405144906_Europe/Isle_of_Man.wav', '%y%m%d%H%M%S_%Z', Timestamp('2023-04-05 14:49:06+0100', tz='UTC+01:00'), id = "timezone_name_with_special_chars"),
+pytest.param('7189.230405144906_America/North_Dakota/New_Salem.wav', '%y%m%d%H%M%S_%Z', Timestamp('2023-04-05 14:49:06-0500', tz='UTC-05:00'), id = "timezone_name_with_double_slash"),
+pytest.param('7189.230405144906_Etc/GMT+2.wav', '%y%m%d%H%M%S_%Z', Timestamp('2023-04-05 14:49:06-0200', tz='UTC-02:00'), id = "timezone_name_with_offset"),
 ])
 def test_extract_timestamp_from_filename(filename: str, datetime_template: str, expected: Timestamp):
     assert extract_timestamp_from_filename(filename, datetime_template) == expected
@@ -60,6 +69,9 @@ def test_extract_timestamp_from_filename(filename: str, datetime_template: str, 
     pytest.param('7189.230405_144906.wav', '%y%m%d%H%M%S', pytest.raises(ValueError, match = "7189.230405_144906.wav did not match the given %y%m%d%H%M%S template"), id = "unmatching_pattern"),
     pytest.param('7189.230405144906.wav', '%Y%m%d%H%M%S', pytest.raises(ValueError, match = "7189.230405144906.wav did not match the given %Y%m%d%H%M%S template"), id = "%Y_should_have_4_digits"),
     pytest.param('7189.230405146706.wav', '%y%m%d%H%M%S', pytest.raises(ValueError, match = "7189.230405146706.wav did not match the given %y%m%d%H%M%S template"), id = "%M_should_be_lower_than_60"),
+    pytest.param('7189.230405146706_0200.wav', '%y%m%d%H%M%S_%z', pytest.raises(ValueError), id = "incorrect_timezone_offset"),
+    pytest.param('7189.230405146706_+2500.wav', '%y%m%d%H%M%S_%z', pytest.raises(ValueError), id = "out_of_range_timezone_offset"),
+    pytest.param('7189.230405146706_Brest.wav', '%y%m%d%H%M%S_%Z', pytest.raises(ValueError), id = "incorrect_timezone_name"),
 ])
 def test_extract_timestamp_from_filename_errors(filename: str, datetime_template: str, expected: Timestamp):
     with expected as e:
