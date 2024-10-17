@@ -2,7 +2,7 @@ import pytest
 from OSmOSE.utils.timestamp_utils import *
 
 
-@pytest.mark.unittest
+@pytest.mark.unit
 @pytest.mark.parametrize(
     "datetime_template, expected",
     [
@@ -22,7 +22,7 @@ def test_is_datetime_template_valid(datetime_template, expected):
     assert is_datetime_template_valid(datetime_template) == expected
 
 
-@pytest.mark.unittest
+@pytest.mark.unit
 @pytest.mark.parametrize(
     "datetime_template, expected",
     [
@@ -72,7 +72,7 @@ def test_build_regex_from_datetime_template(datetime_template: str, expected: st
     assert build_regex_from_datetime_template(datetime_template) == expected
 
 
-@pytest.mark.integtest
+@pytest.mark.integ
 @pytest.mark.parametrize(
     "filename, datetime_template, expected",
     [
@@ -168,7 +168,7 @@ def test_extract_timestamp_from_filename(
     assert extract_timestamp_from_filename(filename, datetime_template) == expected
 
 
-@pytest.mark.integtest
+@pytest.mark.integ
 @pytest.mark.parametrize(
     "filename, datetime_template, expected",
     [
@@ -273,7 +273,7 @@ def correct_series():
     return series.reset_index()
 
 
-@pytest.mark.integtest
+@pytest.mark.integ
 def test_associate_timestamps(correct_series):
     input_files = list(correct_series["filename"])
     assert associate_timestamps((i for i in input_files), "%Y_%m_%d__%H:%M:%S").equals(
@@ -281,7 +281,7 @@ def test_associate_timestamps(correct_series):
     )
 
 
-@pytest.mark.integtest
+@pytest.mark.integ
 def test_associate_timestamps_error_with_incorrect_datetime_format(correct_series):
     input_files = list(correct_series["filename"])
     mismatching_datetime_format = "%Y%m%d__%H:%M:%S"
@@ -304,7 +304,7 @@ def test_associate_timestamps_error_with_incorrect_datetime_format(correct_serie
         )
 
 
-@pytest.mark.unittest
+@pytest.mark.unit
 @pytest.mark.parametrize(
     "timestamp, expected",
     [
