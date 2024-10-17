@@ -19,7 +19,12 @@ except ModuleNotFoundError:
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
-from OSmOSE.utils.timestamp_utils import check_epoch
+from OSmOSE.utils.audio_utils import get_all_audio_files
+from OSmOSE.utils.timestamp_utils import (
+    check_epoch,
+    associate_timestamps,
+    strftime_osmose_format,
+)
 from OSmOSE.utils.core_utils import check_n_files, set_umask
 from OSmOSE.utils.path_utils import make_path
 from OSmOSE.config import DPDEFAULT, FPDEFAULT, OSMOSE_PATH, TIMESTAMP_FORMAT_AUDIO_FILE

@@ -1,6 +1,4 @@
-import pandas as pd
 import pytest
-from pandas import Timestamp
 from OSmOSE.utils.timestamp_utils import *
 
 
