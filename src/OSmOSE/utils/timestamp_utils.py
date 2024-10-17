@@ -9,19 +9,20 @@ from pandas import Timestamp
 import re
 
 _REGEX_BUILDER = {
-        "%Y": r"([12][0-9]{3})",
-        "%y": r"([0-9]{2})",
-        "%m": r"(0[1-9]|1[0-2])",
-        "%d": r"([0-2][0-9]|3[0-1])",
-        "%H": r"([0-1][0-9]|2[0-4])",
-        "%I": r"(0[1-9]|1[0-2])",
-        "%p": r"(AM|PM)",
-        "%M": r"([0-5][0-9])",
-        "%S": r"([0-5][0-9])",
-        "%f": r"([0-9]{6})",
-        "%Z": r"((?:\w+)(?:[-/]\w+)*(?:[\+-]\d+)?)",
-        "%z": r"([\+-]\d{4})"
-    }
+    "%Y": r"([12][0-9]{3})",
+    "%y": r"([0-9]{2})",
+    "%m": r"(0[1-9]|1[0-2])",
+    "%d": r"([0-2][0-9]|3[0-1])",
+    "%H": r"([0-1][0-9]|2[0-4])",
+    "%I": r"(0[1-9]|1[0-2])",
+    "%p": r"(AM|PM)",
+    "%M": r"([0-5][0-9])",
+    "%S": r"([0-5][0-9])",
+    "%f": r"([0-9]{6})",
+    "%Z": r"((?:\w+)(?:[-/]\w+)*(?:[\+-]\d+)?)",
+    "%z": r"([\+-]\d{4})",
+}
+
 
 def check_epoch(df):
     "Function that adds epoch column to dataframe"
@@ -80,6 +81,7 @@ def to_timestamp(string: str) -> pd.Timestamp:
             f"The timestamp '{string}' must match format %Y-%m-%dT%H:%M:%S%z."
         )
 
+
 def strftime_osmose_format(date: pd.Timestamp) -> str:
     """
     Format a pandas Timestamp using strftime() and the OSmOSE time format %Y-%m-%dT%H:%M:%S.%f%z, with %f limited to a millisecond precision.
@@ -101,12 +103,15 @@ def strftime_osmose_format(date: pd.Timestamp) -> str:
     '2024-10-17T10:14:11.933-0400'
     """
     if date.tz is None:
-        date = date.tz_localize('UTC')
+        date = date.tz_localize("UTC")
 
     str_time = date.strftime(TIMESTAMP_FORMAT_AUDIO_FILE)
-    str_time = str_time[:-8] + str_time[-5:] # Changes microsecond precision to millisecond precision
+    str_time = (
+        str_time[:-8] + str_time[-5:]
+    )  # Changes microsecond precision to millisecond precision
 
     return str_time
+
 
 def build_regex_from_datetime_template(datetime_template: str) -> str:
     """
@@ -130,10 +135,11 @@ def build_regex_from_datetime_template(datetime_template: str) -> str:
 
     escaped_characters = "()"
     for escaped in escaped_characters:
-        datetime_template = datetime_template.replace(escaped, fr"\{escaped}")
+        datetime_template = datetime_template.replace(escaped, rf"\{escaped}")
     for key, value in _REGEX_BUILDER.items():
         datetime_template = datetime_template.replace(key, value)
     return datetime_template
+
 
 def is_datetime_template_valid(datetime_template: str) -> bool:
     """
@@ -157,8 +163,10 @@ def is_datetime_template_valid(datetime_template: str) -> bool:
     >>> is_datetime_template_valid('unsupported_code_%Z_hour_%H')
     False
     """
-    strftime_identifiers = [key.lstrip('%') for key in _REGEX_BUILDER.keys()]
-    percent_sign_indexes = (index for index,char in enumerate(datetime_template) if char == "%")
+    strftime_identifiers = [key.lstrip("%") for key in _REGEX_BUILDER.keys()]
+    percent_sign_indexes = (
+        index for index, char in enumerate(datetime_template) if char == "%"
+    )
     for index in percent_sign_indexes:
         if index == len(datetime_template) - 1:
             return False
@@ -166,7 +174,8 @@ def is_datetime_template_valid(datetime_template: str) -> bool:
             return False
     return True
 
-def extract_timestamp_from_filename(filename: str, datetime_template: str)  -> Timestamp:
+
+def extract_timestamp_from_filename(filename: str, datetime_template: str) -> Timestamp:
     """
     Extract a pandas.Timestamp from the filename string following the datetime_template specified.
 
@@ -197,13 +206,22 @@ def extract_timestamp_from_filename(filename: str, datetime_template: str)  -> T
     regex_result = re.findall(regex_pattern, filename)
 
     if not regex_result:
-        raise ValueError(f"{filename} did not match the given {datetime_template} template")
+        raise ValueError(
+            f"{filename} did not match the given {datetime_template} template"
+        )
 
     date_string = "".join(regex_result[0])
-    cleaned_date_template = ''.join(c + datetime_template[i + 1] for i, c in enumerate(datetime_template) if c == '%')  # MUST BE TESTED IN CASE OF "%i%" or "%%"
-    return pd.to_datetime(date_string, format = cleaned_date_template)
+    cleaned_date_template = "".join(
+        c + datetime_template[i + 1]
+        for i, c in enumerate(datetime_template)
+        if c == "%"
+    )  # MUST BE TESTED IN CASE OF "%i%" or "%%"
+    return pd.to_datetime(date_string, format=cleaned_date_template)
 
-def associate_timestamps(audio_files: Iterable[str], datetime_template: str) -> pd.Series:
+
+def associate_timestamps(
+    audio_files: Iterable[str], datetime_template: str
+) -> pd.Series:
     """
     Returns a chronologically sorted pandas series containing the audio files as indexes and the extracted timestamp as values.
 
@@ -219,10 +237,14 @@ def associate_timestamps(audio_files: Iterable[str], datetime_template: str) -> 
     pandas.Series
         A series with the audio files names as index and the extracted timestamps as values.
     """
-    files_with_timestamps = {file: extract_timestamp_from_filename(file, datetime_template) for file in audio_files}
-    series = pd.Series(data = files_with_timestamps, name = "timestamp")
+    files_with_timestamps = {
+        file: extract_timestamp_from_filename(file, datetime_template)
+        for file in audio_files
+    }
+    series = pd.Series(data=files_with_timestamps, name="timestamp")
     series.index.name = "filename"
     return series.sort_values().reset_index()
+
 
 def get_timestamps(
     path_osmose_dataset: str, campaign_name: str, dataset_name: str, resolution: str
