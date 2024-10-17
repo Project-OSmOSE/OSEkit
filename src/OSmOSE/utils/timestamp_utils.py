@@ -199,7 +199,7 @@ def extract_timestamp_from_filename(filename: str, datetime_template: str)  -> T
 
     date_string = "".join(regex_result[0])
     cleaned_date_template = ''.join(c + datetime_template[i + 1] for i, c in enumerate(datetime_template) if c == '%')  # MUST BE TESTED IN CASE OF "%i%" or "%%"
-    return Timestamp(datetime.strptime(date_string, cleaned_date_template))
+    return pd.to_datetime(date_string, format = cleaned_date_template)
 
 def associate_timestamps(audio_files: Iterable[str], datetime_template: str) -> pd.Series:
     """
