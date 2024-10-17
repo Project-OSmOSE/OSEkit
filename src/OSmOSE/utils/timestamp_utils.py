@@ -9,18 +9,18 @@ from pandas import Timestamp
 import re
 
 _REGEX_BUILDER = {
-    "%Y": r"([12][0-9]{3})",
-    "%y": r"([0-9]{2})",
-    "%m": r"(0[1-9]|1[0-2])",
-    "%d": r"([0-2][0-9]|3[0-1])",
-    "%H": r"([0-1][0-9]|2[0-4])",
-    "%I": r"(0[1-9]|1[0-2])",
-    "%p": r"(AM|PM)",
-    "%M": r"([0-5][0-9])",
-    "%S": r"([0-5][0-9])",
-    "%f": r"([0-9]{6})",
-    "%Z": r"((?:\w+)(?:[-/]\w+)*(?:[\+-]\d+)?)",
-    "%z": r"([\+-]\d{4})",
+    "%Y": "([12][0-9]{3})",
+    "%y": "([0-9]{2})",
+    "%m": "(0[1-9]|1[0-2])",
+    "%d": "([0-2][0-9]|3[0-1])",
+    "%H": "([0-1][0-9]|2[0-4])",
+    "%I": "(0[1-9]|1[0-2])",
+    "%p": "(AM|PM)",
+    "%M": "([0-5][0-9])",
+    "%S": "([0-5][0-9])",
+    "%f": "([0-9]{6})",
+    "%Z": "((?:\\w+)(?:[-/]\\w+)*(?:[\\+-]\\d+)?)",
+    "%z": "([\\+-]\\d{4})",
 }
 
 
@@ -135,7 +135,7 @@ def build_regex_from_datetime_template(datetime_template: str) -> str:
 
     escaped_characters = "()"
     for escaped in escaped_characters:
-        datetime_template = datetime_template.replace(escaped, rf"\{escaped}")
+        datetime_template = datetime_template.replace(escaped, f"\\{escaped}")
     for key, value in _REGEX_BUILDER.items():
         datetime_template = datetime_template.replace(key, value)
     return datetime_template
