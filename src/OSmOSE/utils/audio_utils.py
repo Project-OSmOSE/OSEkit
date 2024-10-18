@@ -2,7 +2,7 @@ from OSmOSE.config import SUPPORTED_AUDIO_FORMAT
 from pathlib import Path
 
 
-def is_audio(filename: Path) -> bool:
+def is_supported_audio_format(filename: Path) -> bool:
     """
     Check if a given file is a supported audio file based on its extension.
 
@@ -17,7 +17,7 @@ def is_audio(filename: Path) -> bool:
         True if the file has an extension that matches a supported audio format,
         False otherwise.
     """
-    return filename.suffix in SUPPORTED_AUDIO_FORMAT
+    return filename.suffix.lower() in SUPPORTED_AUDIO_FORMAT
 
 
 def get_all_audio_files(directory: Path) -> list[Path]:
