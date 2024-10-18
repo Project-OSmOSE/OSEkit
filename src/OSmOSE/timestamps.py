@@ -6,7 +6,7 @@ import pandas as pd
 from pathlib import Path
 
 from OSmOSE.config import *
-from OSmOSE.utils.core_utils import get_files
+from OSmOSE.utils.core_utils import get_files, chmod_if_needed
 
 __converter = {
     "%Y": r"[12][0-9]{3}",

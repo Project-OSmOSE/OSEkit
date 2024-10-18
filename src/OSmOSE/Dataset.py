@@ -20,7 +20,7 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from OSmOSE.utils.timestamp_utils import check_epoch
-from OSmOSE.utils.core_utils import check_n_files, set_umask
+from OSmOSE.utils.core_utils import check_n_files, set_umask, chmod_if_needed
 from OSmOSE.utils.path_utils import make_path
 from OSmOSE.timestamps import write_timestamp
 from OSmOSE.config import DPDEFAULT, FPDEFAULT, OSMOSE_PATH, TIMESTAMP_FORMAT_AUDIO_FILE
