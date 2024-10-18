@@ -25,7 +25,7 @@ from OSmOSE.utils.timestamp_utils import (
     associate_timestamps,
     strftime_osmose_format,
 )
-from OSmOSE.utils.core_utils import check_n_files, set_umask
+from OSmOSE.utils.core_utils import check_n_files, set_umask, chmod_if_needed
 from OSmOSE.utils.path_utils import make_path
 from OSmOSE.config import DPDEFAULT, FPDEFAULT, OSMOSE_PATH, TIMESTAMP_FORMAT_AUDIO_FILE
 
@@ -351,7 +351,7 @@ class Dataset:
                         )
 
                 # Add the setgid bid to the folder's permissions, in order for subsequent created files to be created by the same user group.
-                os.chmod(self.path, DPDEFAULT)
+                chmod_if_needed(path=self.path, mode=DPDEFAULT)
 
         path_raw_audio = (
             original_folder
@@ -486,7 +486,7 @@ class Dataset:
 
         # write file_metadata.csv
         audio_metadata.to_csv(path_raw_audio.joinpath("file_metadata.csv"), index=False)
-        os.chmod(path_raw_audio.joinpath("file_metadata.csv"), mode=FPDEFAULT)
+        chmod_if_needed(path=path_raw_audio / "file_metadata.csv", mode=FPDEFAULT)
 
         # define anomaly tests of level 0 and 1
         test_level0_1 = (
@@ -585,7 +585,7 @@ class Dataset:
             df.sort_values(by=["timestamp"], inplace=True)
             df.to_csv(path_raw_audio.joinpath("timestamp.csv"), index=False)
 
-            os.chmod(path_raw_audio.joinpath("timestamp.csv"), mode=FPDEFAULT)
+            chmod_if_needed(path=path_raw_audio / "timestamp.csv", mode=FPDEFAULT)
 
             # change name of the original wav folder
             new_folder_name = path_raw_audio.parent.joinpath(
@@ -611,7 +611,7 @@ class Dataset:
                 pd.DataFrame(
                     [ff[0].replace("-", "_").replace(":", "_") for ff in xx]
                 ).to_csv(subset_path, index=False, header=None)
-                os.chmod(subset_path, mode=FPDEFAULT)
+                chmod_if_needed(path=subset_path, mode=FPDEFAULT)
 
             # write summary metadata.csv
             data = {
@@ -645,7 +645,7 @@ class Dataset:
                 mean(audio_metadata["duration"].values)
             )
             df.to_csv(path_raw_audio.joinpath("metadata.csv"), index=False)
-            os.chmod(path_raw_audio.joinpath("metadata.csv"), mode=FPDEFAULT)
+            chmod_if_needed(path=path_raw_audio / "metadata.csv", mode=FPDEFAULT)
 
             for path, _, files in os.walk(self.path.joinpath(OSMOSE_PATH.auxiliary)):
                 for f in files:
@@ -700,7 +700,7 @@ class Dataset:
             dataF["timestamp"] = list_cur_timestamp_formatted
 
             dataF.to_csv(cur_timestamp_not_formatted, index=False)
-            os.chmod(cur_timestamp_not_formatted, mode=FPDEFAULT)
+            chmod_if_needed(path=cur_timestamp_not_formatted, mode=FPDEFAULT)
 
             return None
 

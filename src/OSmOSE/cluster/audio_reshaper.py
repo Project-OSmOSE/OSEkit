@@ -13,6 +13,7 @@ from OSmOSE.utils import (
     get_all_audio_files,
     set_umask,
     make_path,
+    chmod_if_needed,
 )
 
 
@@ -319,7 +320,7 @@ def reshape(
             audio_data,
             new_sr,
         )
-        os.chmod(out_filename, mode=FPDEFAULT)
+        chmod_if_needed(path=out_filename, mode=FPDEFAULT)
         msg_log += f"Saved file from {segment_datetime_begin} to {segment_datetime_end} as {out_filename}\n"
 
     # writing infos to timestamp_*.csv
@@ -330,7 +331,7 @@ def reshape(
         index=False,
         na_rep="NaN",
     )
-    os.chmod((output_dir_path / f"timestamp_{batch}.csv"), mode=FPDEFAULT)
+    chmod_if_needed(path=output_dir_path / f"timestamp_{batch}.csv", mode=FPDEFAULT)
     msg_log += f"Saved timestamp csv file as timestamp_{batch}.csv\n"
     msg_log += f"Reshape for batch_{batch} completed\n"
 
