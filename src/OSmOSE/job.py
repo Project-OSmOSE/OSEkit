@@ -12,7 +12,7 @@ from warnings import warn
 from pathlib import Path
 from datetime import datetime, timedelta
 from importlib import resources
-from OSmOSE.utils.core_utils import read_config, set_umask
+from OSmOSE.utils.core_utils import read_config, set_umask, chmod_if_needed
 from OSmOSE.config import *
 
 JOB_CONFIG_TEMPLATE = namedtuple(
@@ -211,6 +211,7 @@ class Job_builder:
         *,
         script_path: str,
         script_args: str,
+        logdir: Path,
         jobname: str = None,
         preset: Literal["low", "medium", "high"] = None,
         job_scheduler: Literal["Torque", "Slurm"] = None,
@@ -223,7 +224,6 @@ class Job_builder:
         mem: str = None,
         outfile: str = None,
         errfile: str = None,
-        logdir: Path = None,
     ) -> str:
         """Build a job file corresponding to your job scheduler.
 
@@ -288,14 +288,7 @@ class Job_builder:
 
         pwd = Path(__file__).parent
 
-        if logdir is None:
-            logdir = pwd.joinpath("log_job")
-            jobdir = pwd.joinpath("ongoing_jobs")
-            logdir.mkdir(mode=DPDEFAULT, exist_ok=True)
-            jobdir.mkdir(mode=DPDEFAULT, exist_ok=True)
-        else:
-            logdir.mkdir(mode=DPDEFAULT, exist_ok=True)
-            jobdir = logdir
+        logdir.mkdir(mode=DPDEFAULT, exist_ok=True)
 
         job_file = ["#!/bin/bash"]
 
@@ -403,10 +396,10 @@ class Job_builder:
 
         #! FOOTER
         outfilename = (
-            f"{jobname}_{date_id}_{job_scheduler}_{len(os.listdir(jobdir))}.pbs"
+            f"{jobname}_{date_id}_{job_scheduler}_{len(os.listdir(logdir))}.pbs"
         )
 
-        job_file_path = jobdir.joinpath(outfilename)
+        job_file_path = logdir.joinpath(outfilename)
         job_file.append(f"\nrm {job_file_path}\n")
 
         #! BUILD DONE => WRITING
@@ -510,9 +503,9 @@ class Job_builder:
         for job_info in self.finished_jobs:
             try:
                 if job_info["outfile"].exists():
-                    os.chmod(job_info["outfile"], FPDEFAULT)
+                    chmod_if_needed(path=job_info["outfile"], mode=FPDEFAULT)
                 if job_info["errfile"].exists():
-                    os.chmod(job_info["errfile"], FPDEFAULT)
+                    chmod_if_needed(path=job_info["errfile"], mode=FPDEFAULT)
             except KeyError:
                 print(f"No outfile or errfile associated with job {job_info['path']}.")
 

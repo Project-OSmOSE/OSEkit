@@ -6,7 +6,7 @@ import pandas as pd
 from pathlib import Path
 
 from OSmOSE.config import *
-from OSmOSE.utils.core_utils import get_files
+from OSmOSE.utils.core_utils import get_files, chmod_if_needed
 
 __converter = {
     "%Y": r"[12][0-9]{3}",
@@ -149,7 +149,7 @@ def write_timestamp(
     df = pd.DataFrame({"filename": filename_raw_audio, "timestamp": timestamp})
     df.sort_values(by=["timestamp"], inplace=True)
     df.to_csv(Path(audio_path, "timestamp.csv"), index=False, na_rep="NaN")
-    os.chmod(Path(audio_path, "timestamp.csv"), mode=FPDEFAULT)
+    chmod_if_needed(path=Path(audio_path) / "timestamp.csv", mode=FPDEFAULT)
 
 
 if __name__ == "__main__":

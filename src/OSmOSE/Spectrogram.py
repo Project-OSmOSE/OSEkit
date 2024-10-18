@@ -32,6 +32,7 @@ from OSmOSE.utils.core_utils import (
     safe_read,
     set_umask,
     get_timestamp_of_audio_file,
+    chmod_if_needed,
 )
 from OSmOSE.utils.audio_utils import get_all_audio_files
 from OSmOSE.config import OSMOSE_PATH, FPDEFAULT, DPDEFAULT
@@ -246,6 +247,20 @@ class Spectrogram(Dataset):
 
         self.__build_path(dry=True)
 
+    @classmethod
+    def from_csv(
+        cls, dataset_path: Path, metadata_csv_path: Path
+    ):  # I don't want to use the dataset_path, but for now I have to
+        df = pd.read_csv(metadata_csv_path)
+        instance = cls(dataset_path=dataset_path)
+
+        for attribute in df:
+            instance.__setattr__(attribute, df[attribute].values[0])
+
+        instance.prepare_paths()
+
+        return instance
+
     @property
     def dataset_sr(self):
         """int: The sampling frequency of the dataset."""
@@ -427,6 +442,10 @@ class Spectrogram(Dataset):
         """Frequency resolution of the spectrogram, calculated by dividing the samplerate by nfft."""
         return self.dataset_sr / self.nfft
 
+    @frequency_resolution.setter
+    def frequency_resolution(self, value: float):
+        self._frequency_resolution = value  # I don't know why this value is stored in the .csv, as it directly depends on dataset_sr and nfft
+
     @property
     def time_resolution(self):
         return self.__time_resolution
@@ -547,6 +566,10 @@ class Spectrogram(Dataset):
             "(Hz)",
         )
 
+    def prepare_paths(self, force_init: bool = False):
+        # create some internal paths
+        self.__build_path(force_init=force_init)
+
     def initialize(
         self,
         *,
@@ -598,8 +621,7 @@ class Spectrogram(Dataset):
                 mode=DPDEFAULT,
             )
 
-        # create some internal paths
-        self.__build_path(force_init=force_init)
+        self.prepare_paths(force_init=force_init)
 
         if not (
             self.path
@@ -905,9 +927,9 @@ class Spectrogram(Dataset):
         if new_meta_path.exists():
             new_meta_path.unlink()
         metadata.to_csv(new_meta_path, index=False)
-        os.chmod(new_meta_path, mode=FPDEFAULT)
+        chmod_if_needed(path=new_meta_path, mode=FPDEFAULT)
 
-    def save_spectro_metadata(self, adjust_bool: bool):
+    def save_spectro_metadata(self, adjust_bool: bool) -> Path:
         temporal_resolution, frequency_resolution, Nbwin = self.extract_spectro_params()
 
         data = {
@@ -959,7 +981,8 @@ class Spectrogram(Dataset):
             meta_path.unlink()  # Always overwrite this file
 
         analysis_sheet.to_csv(meta_path, index=False)
-        os.chmod(meta_path, mode=FPDEFAULT)
+        chmod_if_needed(path=meta_path, mode=FPDEFAULT)
+        return meta_path
 
     def audio_file_list_csv(self) -> Path:
         list_audio = get_all_audio_files(self.path_input_audio_file)
@@ -972,7 +995,7 @@ class Spectrogram(Dataset):
             with open(csv_path, "w") as f:
                 f.write("\n".join([str(audio) for audio in list_audio]))
 
-            os.chmod(csv_path, mode=FPDEFAULT)
+            chmod_if_needed(path=csv_path, mode=FPDEFAULT)
 
             return csv_path
 
@@ -1025,7 +1048,9 @@ class Spectrogram(Dataset):
         if not filename.exists():
             pd.DataFrame.from_records([new_params]).to_csv(filename, index=False)
 
-            os.chmod(filename, mode=DPDEFAULT)
+            chmod_if_needed(
+                path=filename, mode=FPDEFAULT
+            )  # This was DPDEFAULT: was it intentional?
             return True
 
         orig_params = pd.read_csv(filename, header=0)
@@ -1040,7 +1065,9 @@ class Spectrogram(Dataset):
             filename.unlink()
             pd.DataFrame.from_records([new_params]).to_csv(filename, index=False)
 
-            os.chmod(filename, mode=DPDEFAULT)
+            chmod_if_needed(
+                path=filename, mode=FPDEFAULT
+            )  # This was DPDEFAULT: was it intentional?
             return True
         return False
 
@@ -1311,7 +1338,7 @@ class Spectrogram(Dataset):
                     Time=list_timestamps,
                 )
 
-                os.chmod(output_matrix, mode=FPDEFAULT)
+                chmod_if_needed(path=output_matrix, mode=FPDEFAULT)
 
         # loop over the zoom levels from the second lowest to the highest one
         for zoom_level in range(self.zoom_level + 1)[::-1]:
@@ -1367,7 +1394,7 @@ class Spectrogram(Dataset):
                         Time=current_timestamp,
                     )
 
-                    os.chmod(output_matrix, mode=FPDEFAULT)
+                    chmod_if_needed(path=output_matrix, mode=FPDEFAULT)
 
     def gen_spectro(
         self, *, data: np.ndarray, sample_rate: int, output_file: Path
@@ -1454,7 +1481,7 @@ class Spectrogram(Dataset):
                     Time=Time,
                 )
 
-                os.chmod(output_matrix, mode=FPDEFAULT)
+                chmod_if_needed(path=output_matrix, mode=FPDEFAULT)
 
         return Sxx, Freq
 
@@ -1530,7 +1557,7 @@ class Spectrogram(Dataset):
         plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
         plt.close()
 
-        os.chmod(output_file, mode=FPDEFAULT)
+        chmod_if_needed(path=output_file, mode=FPDEFAULT)
 
         if adjust:
             display(Image(output_file))
