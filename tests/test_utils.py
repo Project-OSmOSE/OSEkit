@@ -50,7 +50,7 @@ def test_read_header(input_dir):
 
 
 @pytest.fixture
-def correct_dataframe():
+def aplose_dataframe():
     data = pd.DataFrame(
         {
             "dataset": ["dataset_test", "dataset_test", "dataset_test"],
@@ -79,8 +79,8 @@ def correct_dataframe():
 
 
 @pytest.mark.unit
-def test_aplose2raven(correct_dataframe):
-    raven_dataframe = aplose2raven(df=correct_dataframe)
+def test_aplose2raven(aplose_dataframe):
+    raven_dataframe = aplose2raven(df=aplose_dataframe)
 
     expected_raven_dataframe = pd.DataFrame(
         {

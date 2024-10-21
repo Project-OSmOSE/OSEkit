@@ -23,11 +23,8 @@ def aplose2raven(df: pd.DataFrame) -> pd.DataFrame:
 
     df_raven = aplose2raven(df)
 
-    # export to json format
-    df.to_json("output/path.json")
-
-    # import json format
-    df_from_json = pd.read_json("path/to/json/file")
+    # export to txt format
+    df2raven.to_csv('path/to/result/file.txt', sep='\t', index=False)
     """
     start_time = [
         (st - df["start_datetime"][0]).total_seconds() for st in df["start_datetime"]
