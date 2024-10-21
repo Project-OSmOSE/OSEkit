@@ -23,7 +23,7 @@ def aplose2raven(df: pd.DataFrame) -> pd.DataFrame:
 
     df_raven = aplose2raven(df)
 
-    # export to txt format
+    # Raven export tab-separated files with a txt extension
     df2raven.to_csv('path/to/result/file.txt', sep='\t', index=False)
     """
     start_time = [
