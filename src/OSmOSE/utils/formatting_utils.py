@@ -23,8 +23,8 @@ def aplose2raven(df: pd.DataFrame) -> pd.DataFrame:
 
     df_raven = aplose2raven(df)
 
-    # Raven export tab-separated files with a txt extension
-    df2raven.to_csv('path/to/result/file.txt', sep='\t', index=False)
+    # export to Raven format
+    df2raven.to_csv('path/to/result/file.txt', sep='\t', index=False) # Raven export tab-separated files with a txt extension
     """
     start_time = [
         (st - df["start_datetime"][0]).total_seconds() for st in df["start_datetime"]
