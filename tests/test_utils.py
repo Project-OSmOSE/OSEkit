@@ -94,4 +94,4 @@ def test_aplose2raven(correct_dataframe):
         }
     )
 
-    assert expected_dataframe.equals(df_raven)
+    assert expected_raven_dataframe.equals(raven_dataframe)
