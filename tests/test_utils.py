@@ -80,9 +80,9 @@ def correct_dataframe():
 
 @pytest.mark.unit
 def test_aplose2raven(correct_dataframe):
-    df_raven = aplose2raven(df=correct_dataframe)
+    raven_dataframe = aplose2raven(df=correct_dataframe)
 
-    expected_dataframe = pd.DataFrame(
+    expected_raven_dataframe = pd.DataFrame(
         {
             "Selection": [1, 2, 3],
             "View": [1, 1, 1],
