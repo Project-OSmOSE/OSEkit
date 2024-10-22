@@ -1,7 +1,27 @@
+from collections.abc import Generator
 from datetime import datetime, timedelta
 import pandas as pd
-from typing import List
+from typing import List, Iterable
 import os
+
+from OSmOSE.config import TIMESTAMP_FORMAT_AUDIO_FILE
+from pandas import Timestamp
+import re
+
+_REGEX_BUILDER = {
+    "%Y": "([12][0-9]{3})",
+    "%y": "([0-9]{2})",
+    "%m": "(0[1-9]|1[0-2])",
+    "%d": "([0-2][0-9]|3[0-1])",
+    "%H": "([0-1][0-9]|2[0-4])",
+    "%I": "(0[1-9]|1[0-2])",
+    "%p": "(AM|PM)",
+    "%M": "([0-5][0-9])",
+    "%S": "([0-5][0-9])",
+    "%f": "([0-9]{6})",
+    "%Z": "((?:\\w+)(?:[-/]\\w+)*(?:[\\+-]\\d+)?)",
+    "%z": "([\\+-]\\d{4})",
+}
 
 
 def check_epoch(df):
@@ -62,8 +82,165 @@ def to_timestamp(string: str) -> pd.Timestamp:
         )
 
 
-def from_timestamp(date: pd.Timestamp) -> str:
-    return date.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + date.strftime("%z")
+def strftime_osmose_format(date: pd.Timestamp) -> str:
+    """
+    Format a pandas Timestamp using strftime() and the OSmOSE time format %Y-%m-%dT%H:%M:%S.%f%z, with %f limited to a millisecond precision.
+    If the input Timestamp is not localized, its localization will be defaulted as UTC.
+
+    Parameters
+    ----------
+    date: pandas.Timestamp
+        The Timestamp to format
+
+    Returns
+    -------
+    str:
+        The formatted Timestamp
+
+    Examples
+    --------
+    >>> strftime_osmose_format(Timestamp('2024-10-17 10:14:11.933634', tz="US/Eastern"))
+    '2024-10-17T10:14:11.933-0400'
+    """
+    if date.tz is None:
+        date = date.tz_localize("UTC")
+
+    str_time = date.strftime(TIMESTAMP_FORMAT_AUDIO_FILE)
+    str_time = (
+        str_time[:-8] + str_time[-5:]
+    )  # Changes microsecond precision to millisecond precision
+
+    return str_time
+
+
+def build_regex_from_datetime_template(datetime_template: str) -> str:
+    """
+    Builds the regular expression that is used to parse a Timestamp from a string following the given datetime strftime template
+
+    Parameters
+    ----------
+    datetime_template: str
+        A datetime template string using strftime codes
+
+    Returns
+    -------
+    str
+        A regex that can be used to parse a Timestamp from a string following the given datetime strftime template
+
+    Examples
+    --------
+    >>> build_regex_from_datetime_template('year_%Y_hour_%H')
+    'year_([12][0-9]{3})_hour_([0-1][0-9]|2[0-4])'
+    """
+
+    escaped_characters = "()"
+    for escaped in escaped_characters:
+        datetime_template = datetime_template.replace(escaped, f"\\{escaped}")
+    for key, value in _REGEX_BUILDER.items():
+        datetime_template = datetime_template.replace(key, value)
+    return datetime_template
+
+
+def is_datetime_template_valid(datetime_template: str) -> bool:
+    """
+    Checks the validity of a datetime template string. A datetame template string is used to extract a timestamp from a given string: 'year_%Y' is a valid datetame template for extracting '2016' from the 'year_2016' string.
+    A datetime template string should use valid strftime codes (see https://strftime.org/).
+
+    Parameters
+    ----------
+    datetime_template: str
+        The datetime template
+
+    Returns
+    -------
+    bool:
+    True if datetime_template is valid (only uses supported strftime codes), False otherwise
+
+    Examples
+    --------
+    >>> is_datetime_template_valid('year_%Y_hour_%H')
+    True
+    >>> is_datetime_template_valid('unsupported_code_%Z_hour_%H')
+    False
+    """
+    strftime_identifiers = [key.lstrip("%") for key in _REGEX_BUILDER.keys()]
+    percent_sign_indexes = (
+        index for index, char in enumerate(datetime_template) if char == "%"
+    )
+    for index in percent_sign_indexes:
+        if index == len(datetime_template) - 1:
+            return False
+        if datetime_template[index + 1] not in strftime_identifiers:
+            return False
+    return True
+
+
+def strptime_from_text(text: str, datetime_template: str) -> Timestamp:
+    """
+    Extract a pandas.Timestamp from the text input string following the datetime_template specified.
+
+    Parameters
+    ----------
+    text: str
+        The text in which the timestamp should be extracted, ex '2016_06_13_14:12.txt'
+    datetime_template: str
+         The datetime template used in the text, using strftime codes (https://strftime.org/). Example: '%y%m%d_%H:%M:%S'
+
+    Returns
+    -------
+    pandas.Timestamp:
+        The timestamp extracted from the text according to datetime_template
+
+    Examples
+    --------
+    >>> strptime_from_text('2016_06_13_14:12.txt', '%Y_%m_%d_%H:%M')
+    Timestamp('2016-06-13 14:12:00')
+    >>> strptime_from_text('date_12_03_21_hour_11:45:10_PM.wav', '%y_%m_%d_hour_%I:%M:%S_%p')
+    Timestamp('2012-03-21 23:45:10')
+    """
+
+    if not is_datetime_template_valid(datetime_template):
+        raise ValueError(f"{datetime_template} is not a supported strftime template")
+
+    regex_pattern = build_regex_from_datetime_template(datetime_template)
+    regex_result = re.findall(regex_pattern, text)
+
+    if not regex_result:
+        raise ValueError(f"{text} did not match the given {datetime_template} template")
+
+    date_string = "".join(regex_result[0])
+    cleaned_date_template = "".join(
+        c + datetime_template[i + 1]
+        for i, c in enumerate(datetime_template)
+        if c == "%"
+    )
+    return pd.to_datetime(date_string, format=cleaned_date_template)
+
+
+def associate_timestamps(
+    audio_files: Iterable[str], datetime_template: str
+) -> pd.Series:
+    """
+    Returns a chronologically sorted pandas series containing the audio files as indexes and the extracted timestamp as values.
+
+    Parameters
+    ----------
+    audio_files: Iterable[str]
+        files from which the timestamps should be extracted. They must share a same datetime format.
+    datetime_template: str
+         The datetime template used in filename, using strftime codes (https://strftime.org/). Example: '%y%m%d_%H:%M:%S'
+
+    Returns
+    -------
+    pandas.Series
+        A series with the audio files names as index and the extracted timestamps as values.
+    """
+    files_with_timestamps = {
+        file: strptime_from_text(file, datetime_template) for file in audio_files
+    }
+    series = pd.Series(data=files_with_timestamps, name="timestamp")
+    series.index.name = "filename"
+    return series.sort_values().reset_index()
 
 
 def get_timestamps(
