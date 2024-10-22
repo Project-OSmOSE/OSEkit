@@ -374,6 +374,26 @@ def test_strftime_osmose_format(timestamp: Timestamp, expected: str):
             "2024-10-17T10:14:11.000-0700",
             id="named_timezone_in_str",
         ),
+        pytest.param(
+            ["2024-10-17 10:14:11 +0200", "%Y-%m-%d %H:%M:%S %z", "UTC"],
+            "2024-10-17T08:14:11.000+0000",
+            id="provided_timezone_convers_strptime_timezone",
+        ),
+        pytest.param(
+            ["2024-10-17 10:14:11", "%Y-%m-%d %H:%M:%S", "+0200"],
+            "2024-10-17T10:14:11.000+0200",
+            id="UTC_offset_timezone_without_colon",
+        ),
+        pytest.param(
+            ["2024-10-17 10:14:11", "%Y-%m-%d %H:%M:%S", "-0700"],
+            "2024-10-17T10:14:11.000-0700",
+            id="negative_UTC_offset_timezone",
+        ),
+        pytest.param(
+            ["2024-10-17 10:14:11", "%Y-%m-%d %H:%M:%S", "-0000"],
+            "2024-10-17T10:14:11.000+0000",
+            id="negative_zero_UTC_offset_timezone",
+        ),
     ],
 )
 def test_reformat_timestamp(args, expected: str):
