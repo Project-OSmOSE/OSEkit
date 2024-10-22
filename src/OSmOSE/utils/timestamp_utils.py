@@ -82,6 +82,23 @@ def to_timestamp(string: str) -> pd.Timestamp:
         )
 
 
+def reformat_timestamp(
+    old_timestamp_str: str, old_datetime_template: str, timezone: str = None
+):
+    timestamp = strptime_from_text(
+        text=old_timestamp_str, datetime_template=old_datetime_template
+    )
+    if timezone:
+        if timestamp.tz:
+            print(
+                f"You specified a timezone for a tz-aware timestamp. Timestamps timezones will be overwritten to {timezone}"
+            )
+            timestamp = timestamp.tz_convert(timezone)
+        else:
+            timestamp = timestamp.tz_localize(timezone)
+    return strftime_osmose_format(timestamp)
+
+
 def strftime_osmose_format(date: pd.Timestamp) -> str:
     """
     Format a pandas Timestamp using strftime() and the OSmOSE time format %Y-%m-%dT%H:%M:%S.%f%z, with %f limited to a millisecond precision.
