@@ -87,7 +87,7 @@ def strftime_osmose_format(date: pd.Timestamp) -> str:
     Format a pandas Timestamp using strftime() and the OSmOSE time format %Y-%m-%dT%H:%M:%S.%f%z, with %f limited to a millisecond precision.
     If the input Timestamp is not localized, its localization will be defaulted as UTC.
 
-    arameters
+    Parameters
     ----------
     date: pandas.Timestamp
         The Timestamp to format
