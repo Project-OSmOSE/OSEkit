@@ -58,7 +58,7 @@ def test_is_datetime_template_valid(datetime_template, expected):
         ),
         pytest.param(
             "%y%m%d%z",
-            "(\d{2})(0[1-9]|1[0-2])([0-2]\d|3[0-1])([\+-]\d{4})",
+            "(\d{2})(0[1-9]|1[0-2])([0-2]\d|3[0-1])([\+-]\d{2}:?\d{2})",
             id="utc_offset",
         ),
         pytest.param(
@@ -161,10 +161,16 @@ def test_build_regex_from_datetime_template(datetime_template: str, expected: st
             id="timezone_name_with_offset",
         ),
         pytest.param(
-            "2023-04-05T14:49:06.123-0200.wav",
+            "2023-04-05T14:49:06.123-02:00.wav",
             "%Y-%m-%dT%H:%M:%S.%f%z",
             Timestamp("2023-04-05 14:49:06.123000-0200", tz="UTC-02:00"),
             id="osmose_format_timezone_string",
+        ),
+        pytest.param(
+            "2023-04-05T14:49:06.123-0200.wav",
+            "%Y-%m-%dT%H:%M:%S.%f%z",
+            Timestamp("2023-04-05 14:49:06.123000-0200", tz="UTC-02:00"),
+            id="osmose_format_without_colon_timezone_string",
         ),
         pytest.param(
             "2023-04-05T14:49:06.123456-0200.wav",
