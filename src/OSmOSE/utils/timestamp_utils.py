@@ -91,7 +91,7 @@ def reformat_timestamp(
     if timezone:
         if timestamp.tz:
             print(
-                f"You specified a timezone for a tz-aware timestamp. Timestamps timezones will be overwritten to {timezone}"
+                f"You specified a timezone for a tz-aware timestamp. Timestamps timezones {tz} will be converted to {timezone}"
             )
             timestamp = timestamp.tz_convert(timezone)
         else:
