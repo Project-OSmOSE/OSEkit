@@ -376,3 +376,63 @@ def test_associate_timestamps_error_with_incorrect_datetime_format(correct_serie
 )
 def test_strftime_osmose_format(timestamp: Timestamp, expected: str):
     assert strftime_osmose_format(timestamp) == expected
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "args, expected",
+    [
+        pytest.param(
+            ["2024-10-17 10:14:11", "%Y-%m-%d %H:%M:%S", "UTC"],
+            "2024-10-17T10:14:11.000+0000",
+            id="UTC_timezone",
+        ),
+        pytest.param(
+            ["2024-10-17 10:14:11", "%Y-%m-%d %H:%M:%S", "Pacific/Rarotonga"],
+            "2024-10-17T10:14:11.000-1000",
+            id="Non-UTC_timezone",
+        ),
+        pytest.param(
+            ["2024-10-17 10:14:11", "%Y-%m-%d %H:%M:%S", "+03:00"],
+            "2024-10-17T10:14:11.000+0300",
+            id="UTC_offset_timezone",
+        ),
+        pytest.param(
+            ["2024-10-17 10:14:11", "%Y-%m-%d %H:%M:%S"],
+            "2024-10-17T10:14:11.000+0000",
+            id="No_timezone_defaults_to_UTC",
+        ),
+        pytest.param(
+            ["2024-10-17 10:14:11 +0200", "%Y-%m-%d %H:%M:%S %z"],
+            "2024-10-17T10:14:11.000+0200",
+            id="UTC_offset_timezone_in_str",
+        ),
+        pytest.param(
+            ["2024-10-17 10:14:11 Canada/Pacific", "%Y-%m-%d %H:%M:%S %Z"],
+            "2024-10-17T10:14:11.000-0700",
+            id="named_timezone_in_str",
+        ),
+        pytest.param(
+            ["2024-10-17 10:14:11 +0200", "%Y-%m-%d %H:%M:%S %z", "UTC"],
+            "2024-10-17T08:14:11.000+0000",
+            id="provided_timezone_convers_strptime_timezone",
+        ),
+        pytest.param(
+            ["2024-10-17 10:14:11", "%Y-%m-%d %H:%M:%S", "+0200"],
+            "2024-10-17T10:14:11.000+0200",
+            id="UTC_offset_timezone_without_colon",
+        ),
+        pytest.param(
+            ["2024-10-17 10:14:11", "%Y-%m-%d %H:%M:%S", "-0700"],
+            "2024-10-17T10:14:11.000-0700",
+            id="negative_UTC_offset_timezone",
+        ),
+        pytest.param(
+            ["2024-10-17 10:14:11", "%Y-%m-%d %H:%M:%S", "-0000"],
+            "2024-10-17T10:14:11.000+0000",
+            id="negative_zero_UTC_offset_timezone",
+        ),
+    ],
+)
+def test_reformat_timestamp(args, expected: str):
+    assert reformat_timestamp(*args) == expected
