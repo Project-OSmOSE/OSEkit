@@ -18,7 +18,7 @@ _REGEX_BUILDER = {
     "%p": "(AM|PM)",
     "%M": "([0-5][0-9])",
     "%S": "([0-5][0-9])",
-    "%f": "([0-9]{6})",
+    "%f": "([0-9]{1,6})",
     "%Z": "((?:\\w+)(?:[-/]\\w+)*(?:[\\+-]\\d+)?)",
     "%z": "([\\+-]\\d{4})",
 }
@@ -208,8 +208,8 @@ def strptime_from_text(text: str, datetime_template: str) -> Timestamp:
     if not regex_result:
         raise ValueError(f"{text} did not match the given {datetime_template} template")
 
-    date_string = "".join(regex_result[0])
-    cleaned_date_template = "".join(
+    date_string = "_".join(regex_result[0])
+    cleaned_date_template = "_".join(
         c + datetime_template[i + 1]
         for i, c in enumerate(datetime_template)
         if c == "%"

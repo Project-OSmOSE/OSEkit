@@ -33,7 +33,7 @@ def test_is_datetime_template_valid(datetime_template, expected):
         ),
         pytest.param(
             "%Y%y%m%d%H%M%S%I%p%f",
-            "([12][0-9]{3})([0-9]{2})(0[1-9]|1[0-2])([0-2][0-9]|3[0-1])([0-1][0-9]|2[0-4])([0-5][0-9])([0-5][0-9])(0[1-9]|1[0-2])(AM|PM)([0-9]{6})",
+            "([12][0-9]{3})([0-9]{2})(0[1-9]|1[0-2])([0-2][0-9]|3[0-1])([0-1][0-9]|2[0-4])([0-5][0-9])([0-5][0-9])(0[1-9]|1[0-2])(AM|PM)([0-9]{1,6})",
             id="all_strftime_codes",
         ),
         pytest.param(
@@ -160,6 +160,24 @@ def test_build_regex_from_datetime_template(datetime_template: str, expected: st
             Timestamp("2023-04-05 14:49:06-0200", tz="UTC-02:00"),
             id="timezone_name_with_offset",
         ),
+        pytest.param(
+            "2023-04-05T14:49:06.123-0200.wav",
+            "%Y-%m-%dT%H:%M:%S.%f%z",
+            Timestamp("2023-04-05 14:49:06.123000-0200", tz="UTC-02:00"),
+            id="osmose_format_timezone_string",
+        ),
+        pytest.param(
+            "2023-04-05T14:49:06.123456-0200.wav",
+            "%Y-%m-%dT%H:%M:%S.%f%z",
+            Timestamp("2023-04-05 14:49:06.123456-0200", tz="UTC-02:00"),
+            id="microsecond_precision",
+        ),
+        pytest.param(
+            "2023-04-05T14:49:06.1-0200.wav",
+            "%Y-%m-%dT%H:%M:%S.%f%z",
+            Timestamp("2023-04-05 14:49:06.100000-0200", tz="UTC-02:00"),
+            id="decisecond_precision",
+        ),
     ],
 )
 def test_strptime_from_text(text: str, datetime_template: str, expected: Timestamp):
@@ -239,9 +257,17 @@ def test_strptime_from_text(text: str, datetime_template: str, expected: Timesta
             pytest.raises(ValueError),
             id="incorrect_timezone_name",
         ),
+        pytest.param(
+            "2023-04-05T14:49:06.-0200.wav",
+            "%Y-%m-%dT%H:%M:%S.%f%z",
+            pytest.raises(ValueError),
+            id="no_specified_%f",
+        ),
     ],
 )
-def test_strptime_from_text_errors(text: str, datetime_template: str, expected: Timestamp):
+def test_strptime_from_text_errors(
+    text: str, datetime_template: str, expected: Timestamp
+):
     with expected as e:
         assert strptime_from_text(text, datetime_template) == e
 
