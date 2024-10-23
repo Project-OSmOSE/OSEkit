@@ -178,6 +178,12 @@ def test_build_regex_from_datetime_template(datetime_template: str, expected: st
             Timestamp("2023-04-05 14:49:06.100000-0200", tz="UTC-02:00"),
             id="decisecond_precision",
         ),
+        pytest.param(
+            "14:49:06.1232023-04-05-0200.wav",
+            "%H:%M:%S.%f%Y-%m-%d%z",
+            Timestamp("2023-04-05 14:49:06.123000-0200", tz="UTC-02:00"),
+            id="no_ambiguity_for_%f_precision",
+        ),
     ],
 )
 def test_strptime_from_text(text: str, datetime_template: str, expected: Timestamp):
