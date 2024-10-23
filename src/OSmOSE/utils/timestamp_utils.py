@@ -9,18 +9,18 @@ from pandas import Timestamp
 import re
 
 _REGEX_BUILDER = {
-    "%Y": "([12][0-9]{3})",
-    "%y": "([0-9]{2})",
+    "%Y": "([12]\\d{3})",
+    "%y": "(\\d{2})",
     "%m": "(0[1-9]|1[0-2])",
-    "%d": "([0-2][0-9]|3[0-1])",
-    "%H": "([0-1][0-9]|2[0-4])",
+    "%d": "([0-2]\\d|3[0-1])",
+    "%H": "([0-1]\\d|2[0-4])",
     "%I": "(0[1-9]|1[0-2])",
     "%p": "(AM|PM)",
-    "%M": "([0-5][0-9])",
-    "%S": "([0-5][0-9])",
-    "%f": "([0-9]{6})",
+    "%M": "([0-5]\\d)",
+    "%S": "([0-5]\\d)",
+    "%f": "(\d{1,6})",
     "%Z": "((?:\\w+)(?:[-/]\\w+)*(?:[\\+-]\\d+)?)",
-    "%z": "([\\+-]\\d{4})",
+    "%z": "([\\+-]\\d{2}:?\\d{2})",
 }
 
 
@@ -147,7 +147,7 @@ def build_regex_from_datetime_template(datetime_template: str) -> str:
     Examples
     --------
     >>> build_regex_from_datetime_template('year_%Y_hour_%H')
-    'year_([12][0-9]{3})_hour_([0-1][0-9]|2[0-4])'
+    'year_([12]\d{3})_hour_([0-1]\d|2[0-4])'
     """
 
     escaped_characters = "()"
@@ -225,8 +225,8 @@ def strptime_from_text(text: str, datetime_template: str) -> Timestamp:
     if not regex_result:
         raise ValueError(f"{text} did not match the given {datetime_template} template")
 
-    date_string = "".join(regex_result[0])
-    cleaned_date_template = "".join(
+    date_string = "_".join(regex_result[0])
+    cleaned_date_template = "_".join(
         c + datetime_template[i + 1]
         for i, c in enumerate(datetime_template)
         if c == "%"
