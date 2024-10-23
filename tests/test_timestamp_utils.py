@@ -241,7 +241,7 @@ def test_strptime_from_text(text: str, datetime_template: str, expected: Timesta
         ),
     ],
 )
-def test_strptime_from_text(text: str, datetime_template: str, expected: Timestamp):
+def test_strptime_from_text_errors(text: str, datetime_template: str, expected: Timestamp):
     with expected as e:
         assert strptime_from_text(text, datetime_template) == e
 
