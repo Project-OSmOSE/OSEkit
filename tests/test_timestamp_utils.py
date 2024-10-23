@@ -415,7 +415,7 @@ def test_strftime_osmose_format(timestamp: Timestamp, expected: str):
         pytest.param(
             ["2024-10-17 10:14:11 +0200", "%Y-%m-%d %H:%M:%S %z", "UTC"],
             "2024-10-17T08:14:11.000+0000",
-            id="provided_timezone_convers_strptime_timezone",
+            id="provided_timezone_converts_strptime_timezone",
         ),
         pytest.param(
             ["2024-10-17 10:14:11", "%Y-%m-%d %H:%M:%S", "+0200"],
