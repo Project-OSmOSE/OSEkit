@@ -33,3 +33,4 @@ class LoggingContext:
             yield
         finally:
             self.logger = previous_logger
+
