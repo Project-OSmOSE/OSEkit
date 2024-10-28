@@ -768,8 +768,10 @@ class Dataset:
         make_path(self.path / OSMOSE_PATH.instrument, mode=DPDEFAULT)
         make_path(self.path / OSMOSE_PATH.environment, mode=DPDEFAULT)
 
-        for path, _, files in os.walk(self.path):
+        for path, dirname, files in os.walk(self.path):
             for f in files:
+                if "log" in f:
+                    continue
                 if (
                     not Path(path, f).parent.name == "original"
                     and not Path(path, f).parent.name == "auxiliary"
