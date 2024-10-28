@@ -130,7 +130,7 @@ def build_regex_from_datetime_template(datetime_template: str) -> str:
     Examples
     --------
     >>> build_regex_from_datetime_template('year_%Y_hour_%H')
-    'year_([12]\d{3})_hour_([0-1]\d|2[0-4])'
+    'year_([12]\\d{3})_hour_([0-1]\\d|2[0-4])'
     """
 
     escaped_characters = "()"
