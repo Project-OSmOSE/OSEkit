@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 from typing import Union, Tuple, List
@@ -87,6 +88,8 @@ class Dataset:
         self.__depth = None
         self.__local = local
         self.timezone = timezone
+
+        self._create_logger()
 
         if gps_coordinates is not None:
             self.gps_coordinates = gps_coordinates
@@ -313,6 +316,7 @@ class Dataset:
 
             DONE ! your dataset is on OSmOSE platform !
         """
+
         metadata_path = next(
             self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("metadata.csv"), False
         )
@@ -671,6 +675,17 @@ class Dataset:
             audio_path / "timestamp.csv", index=False, na_rep="NaN"
         )
         os.chmod(audio_path / "timestamp.csv", mode=FPDEFAULT)
+
+    def _create_logger(self):
+        logs_directory = self.__path / "log"
+        if not logs_directory.exists():
+            os.mkdir(logs_directory, mode = DPDEFAULT)
+        self.logger = logging.getLogger(f"dataset").getChild(self.name)
+        self.file_handler = logging.FileHandler(self.__path / "log" / "logs.log", mode = "w")
+        self.file_handler.setFormatter(logging.getLogger("dataset").handlers[0].formatter)
+        self.logger.setLevel(logging.DEBUG)
+        self.file_handler.setLevel(logging.DEBUG)
+        self.logger.addHandler(self.file_handler)
 
     def _format_timestamp(
         self,
