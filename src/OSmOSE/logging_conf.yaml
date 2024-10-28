@@ -19,6 +19,7 @@ handlers:
     formatter: fileFormatter
     filename: "logs.log"
     mode: "w"
+    delay: True
 
 formatters:
   fileFormatter:

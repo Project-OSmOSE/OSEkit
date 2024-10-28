@@ -6,11 +6,18 @@ import shutil
 import csv
 from OSmOSE.config import OSMOSE_PATH
 from scipy.signal import chirp
+from unittest.mock import patch
+import logging
 
 
 def capture_csv(monkeypatch):
     pass
 
+@pytest.fixture(autouse=True)
+def patch_filehandlers(monkeypatch):
+    def disabled_filewrite(self, record):
+        pass
+    monkeypatch.setattr(logging.FileHandler, "emit", disabled_filewrite)
 
 @pytest.fixture
 def input_dataset(tmp_path: Path):
