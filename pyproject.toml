@@ -48,7 +48,7 @@ addopts = [
 filterwarnings = [
     "ignore:pkg_resources is deprecated as an API:DeprecationWarning",
     "ignore:pkg_resources.declare_namespace('sphinxcontrib'):DeprecationWarning",
-    "always::SyntaxWarning"
+    "error::SyntaxWarning"
 ]
 markers = [
     "unit: Mark test as unitary test. Run only these with '-m unit'.",
