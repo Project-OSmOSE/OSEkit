@@ -6,6 +6,7 @@ from OSmOSE.Auxiliary import Auxiliary
 import logging.config
 import yaml
 import os.path
+from pathlib import Path
 
 __all__ = [
     "Auxiliary",
@@ -16,8 +17,13 @@ __all__ = [
 ]
 
 def _setup_logging(config_file = "logging_conf.yaml", default_level= logging.INFO):
-    config_file_path = os.path.join(os.path.dirname(__file__), config_file)
-    if os.path.exists(config_file_path):
+
+    user_config_file_path = Path(config_file)
+    default_config_file_path = Path(os.path.dirname(__file__)) / config_file
+
+    config_file_path = next((file for file in (user_config_file_path, default_config_file_path) if file.exists()), None)
+
+    if config_file_path:
         with open(config_file_path, "r") as config_file:
             logging_config = yaml.safe_load(config_file)
         logging.config.dictConfig(logging_config)
