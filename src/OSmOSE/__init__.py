@@ -16,7 +16,7 @@ __all__ = [
     "utils",
 ]
 
-def _setup_logging(config_file = "logging_conf.yaml", default_level= logging.INFO):
+def _setup_logging(config_file = "logging_config.yaml", default_level= logging.INFO):
 
     user_config_file_path = Path(config_file)
     default_config_file_path = Path(os.path.dirname(__file__)) / config_file
