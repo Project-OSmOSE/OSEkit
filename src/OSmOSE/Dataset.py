@@ -99,7 +99,9 @@ class Dataset:
         self.__original_folder = original_folder
 
         if skip_perms:
-            self.logger.debug("It seems you are on a non-Unix operating system (probably Windows). The build() method will not work as intended and permission might be incorrectly set.")
+            self.logger.debug(
+                "It seems you are on a non-Unix operating system (probably Windows). The build() method will not work as intended and permission might be incorrectly set."
+            )
 
         pd.set_option("display.float_format", lambda x: "%.0f" % x)
 
@@ -231,7 +233,9 @@ class Dataset:
     def owner_group(self):
         """str: The Unix group able to interact with the dataset."""
         if self.__group is None:
-            self.logger.warning("The OSmOSE group name is not defined. Please specify the group name before trying to build the dataset.")
+            self.logger.warning(
+                "The OSmOSE group name is not defined. Please specify the group name before trying to build the dataset."
+            )
         return self.__group
 
     @owner_group.setter
@@ -244,7 +248,9 @@ class Dataset:
             try:
                 gid = grp.getgrnam(value).gr_gid
             except KeyError as e:
-                self.logger.error(f"The group {value} does not exist on the system. Full error trace: {e}")
+                self.logger.error(
+                    f"The group {value} does not exist on the system. Full error trace: {e}"
+                )
                 raise KeyError(
                     f"The group {value} does not exist on the system. Full error trace: {e}"
                 )
@@ -322,7 +328,9 @@ class Dataset:
             and pd.read_csv(metadata_path)["is_built"][0]
             and not force_upload
         ):
-            self.logger.warning("This dataset has already been built. To run the build() method on an already built dataset, you have to use the force_upload parameter.")
+            self.logger.warning(
+                "This dataset has already been built. To run the build() method on an already built dataset, you have to use the force_upload parameter."
+            )
             sys.exit()
 
         if self.gps_coordinates is None:
@@ -346,7 +354,9 @@ class Dataset:
                     try:
                         os.chown(self.path, -1, gid)
                     except PermissionError:
-                        self.logger.error(f"You have not the permission to change the owner of the {self.path} folder. This might be because you are trying to rebuild an existing dataset. The group owner has not been changed.")
+                        self.logger.error(
+                            f"You have not the permission to change the owner of the {self.path} folder. This might be because you are trying to rebuild an existing dataset. The group owner has not been changed."
+                        )
 
                 # Add the setgid bid to the folder's permissions, in order for subsequent created files to be created by the same user group.
                 chmod_if_needed(path=self.path, mode=DPDEFAULT)
@@ -417,7 +427,9 @@ class Dataset:
                     path_raw_audio.joinpath(cur_filename)
                 )
                 if ind_dt == 0:
-                    self.logger.warning("We do not accept the sign '-' in our filenames, we transformed them into '_'. In case you have to rebuild your dataset be careful to change your timestamp template accordingly...")
+                    self.logger.warning(
+                        "We do not accept the sign '-' in our filenames, we transformed them into '_'. In case you have to rebuild your dataset be careful to change your timestamp template accordingly..."
+                    )
             else:
                 cur_filename = audio_file.name
 
@@ -434,7 +446,9 @@ class Dataset:
                 sf_meta = sf.info(path_raw_audio / cur_filename)
 
             except Exception as e:
-                self.logger.error(f"error message making status read header False : \n {e}")
+                self.logger.error(
+                    f"error message making status read header False : \n {e}"
+                )
                 # append audio metadata read from header for files with corrupted headers
                 audio_metadata = pd.concat(
                     [
@@ -537,12 +551,16 @@ class Dataset:
         if (
             len(list_tests_level0) - sum(list_tests_level0) > 0
         ):  # if presence of anomalies of level 0
-            self.logger.warning(f"Your dataset failed {len(list_tests_level0)-sum(list_tests_level0)} anomaly test of level 0 (over {len(list_tests_level0)}); see details below. \n Anomalies of level 0 block dataset uploading as long as they are present. Please correct your anomalies first, and try uploading it again after. \n You can inspect your metadata saved here {path_raw_audio.joinpath('file_metadata.csv')} using the notebook /home/datawork-osmose/osmose-datarmor/notebooks/metadata_analyzer.ipynb.")
+            self.logger.warning(
+                f"Your dataset failed {len(list_tests_level0)-sum(list_tests_level0)} anomaly test of level 0 (over {len(list_tests_level0)}); see details below. \n Anomalies of level 0 block dataset uploading as long as they are present. Please correct your anomalies first, and try uploading it again after. \n You can inspect your metadata saved here {path_raw_audio.joinpath('file_metadata.csv')} using the notebook /home/datawork-osmose/osmose-datarmor/notebooks/metadata_analyzer.ipynb."
+            )
 
             if (
                 len(list_tests_level1) - sum(list_tests_level1) > 0
             ):  # if also presence of anomalies of level 1
-                self.logger.warning(f"Your dataset also failed {len(list_tests_level1)-sum(list_tests_level1)} anomaly test of level 1 (over {len(list_tests_level1)}).")
+                self.logger.warning(
+                    f"Your dataset also failed {len(list_tests_level1)-sum(list_tests_level1)} anomaly test of level 1 (over {len(list_tests_level1)})."
+                )
 
             with open(resume_test_anomalies) as f:
                 self.logger.warning(f.read())
@@ -557,7 +575,9 @@ class Dataset:
             len(list_tests_level1) - sum(list_tests_level1) > 0
         ) and not force_upload:  # if presence of anomalies of level 1
 
-            self.logger.warning(f"Your dataset failed {len(list_tests_level1)-sum(list_tests_level1)} anomaly test of level 1 (over {len(list_tests_level1)}); see details below. \n  Anomalies of level 1 block dataset uploading, but anyone can force it by setting the variable `force_upload` to True. \n You can inspect your metadata saved here {path_raw_audio.joinpath('file_metadata.csv')} using the notebook  /home/datawork-osmose/osmose-datarmor/notebooks/metadata_analyzer.ipynb.")
+            self.logger.warning(
+                f"Your dataset failed {len(list_tests_level1)-sum(list_tests_level1)} anomaly test of level 1 (over {len(list_tests_level1)}); see details below. \n  Anomalies of level 1 block dataset uploading, but anyone can force it by setting the variable `force_upload` to True. \n You can inspect your metadata saved here {path_raw_audio.joinpath('file_metadata.csv')} using the notebook  /home/datawork-osmose/osmose-datarmor/notebooks/metadata_analyzer.ipynb."
+            )
 
             with open(resume_test_anomalies) as f:
                 self.logger.warning(f.read())
@@ -666,10 +686,12 @@ class Dataset:
     def _create_logger(self):
         logs_directory = self.__path / "log"
         if not logs_directory.exists():
-            os.mkdir(logs_directory, mode = DPDEFAULT)
+            os.mkdir(logs_directory, mode=DPDEFAULT)
         self.logger = logging.getLogger(f"dataset").getChild(self.__name)
-        self.file_handler = logging.FileHandler(logs_directory / "logs.log", mode = "w")
-        self.file_handler.setFormatter(logging.getLogger("dataset").handlers[0].formatter)
+        self.file_handler = logging.FileHandler(logs_directory / "logs.log", mode="w")
+        self.file_handler.setFormatter(
+            logging.getLogger("dataset").handlers[0].formatter
+        )
         self.logger.setLevel(logging.DEBUG)
         self.file_handler.setLevel(logging.DEBUG)
         self.logger.addHandler(self.file_handler)

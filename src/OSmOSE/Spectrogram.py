@@ -535,7 +535,9 @@ class Spectrogram(Dataset):
     def check_spectro_size(self):
         """Verify if the parameters will generate a spectrogram that can fit one screen properly"""
         if self.nfft > 2048:
-            self.logger.warning(f"Your spectra contain more than 1024 bin (ie {self.nfft/2}).\nNote that unless you have a 4K screen, unwanted numerical compression might occur when visualizing your spectrograms..")
+            self.logger.warning(
+                f"Your spectra contain more than 1024 bin (ie {self.nfft/2}).\nNote that unless you have a 4K screen, unwanted numerical compression might occur when visualizing your spectrograms.."
+            )
 
         temporal_resolution, frequency_resolution, Nbwin = self.extract_spectro_params()
 
@@ -544,7 +546,8 @@ class Spectrogram(Dataset):
         )
 
         if Nbwin > 3500:
-            self.logger.warning(f"Note that unless you have a 4K screen, unwanted numerical compression might occur when visualizing your spectrograms.\nYour resolutions: \n\ttime = {temporal_resolution} s\n\tfrequency = {frequency_resolution} Hz",
+            self.logger.warning(
+                f"Note that unless you have a 4K screen, unwanted numerical compression might occur when visualizing your spectrograms.\nYour resolutions: \n\ttime = {temporal_resolution} s\n\tfrequency = {frequency_resolution} Hz",
             )
 
     def prepare_paths(self, force_init: bool = False):
@@ -1144,7 +1147,9 @@ class Spectrogram(Dataset):
                 return
 
             if audio_file not in os.listdir(self.audio_path):
-                self.logger.error(f"The file {audio_file} must be in {self.audio_path} in order to be processed.")
+                self.logger.error(
+                    f"The file {audio_file} must be in {self.audio_path} in order to be processed."
+                )
                 raise FileNotFoundError(
                     f"The file {audio_file} must be in {self.audio_path} in order to be processed."
                 )
@@ -1243,7 +1248,7 @@ class Spectrogram(Dataset):
             f"- data max : {np.max(data):.3f}\n"
             f"- data mean : {np.mean(data):.3f}\n"
             f"- data std : {np.std(data):.3f}"
-            )
+        )
 
         duration = len(data) / int(sample_rate)
 
@@ -1735,7 +1740,9 @@ class Spectrogram(Dataset):
         ax.tick_params(axis="x", rotation=20)
 
         # Saving spectrogram plot to file
-        self.logger.debug("Saving", output_file, "\nNumber of welch:", str(log_spectro.shape[1]))
+        self.logger.debug(
+            "Saving", output_file, "\nNumber of welch:", str(log_spectro.shape[1])
+        )
         plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
         plt.close()
 
@@ -1940,7 +1947,9 @@ class Spectrogram(Dataset):
 
             # save as png figure
             output_file = self.path / OSMOSE_PATH.EPD / "EPD.png"
-            self.logger.debug(f"Saving {output_file}\nNumber of welch: {all_welch.shape[0]}")
+            self.logger.debug(
+                f"Saving {output_file}\nNumber of welch: {all_welch.shape[0]}"
+            )
             plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
             plt.close()
 

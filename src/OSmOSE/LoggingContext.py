@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 import logging
 
+
 class LoggingContext:
     def __init__(self):
         self.logger = logging.root
@@ -33,4 +34,3 @@ class LoggingContext:
             yield
         finally:
             self.logger = previous_logger
-
