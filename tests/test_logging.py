@@ -4,6 +4,8 @@ import yaml
 import logging
 import importlib
 
+from OSmOSE.LoggingContext import LoggingContext
+
 
 @pytest.fixture
 def temp_user_logging_config(tmp_path):
@@ -106,3 +108,28 @@ def test_default_logging_config(caplog, tmp_path):
         logging.getLogger().debug("Some debug log")
 
     assert "Some debug log" in caplog.text
+
+
+@pytest.mark.unit
+def test_logging_context(caplog):
+    logging_context = LoggingContext()
+
+    context_logger = logging.getLogger("context_logger")
+    logging_context.logger = logging.getLogger("default_logger")
+
+    with caplog.at_level(logging.DEBUG):
+        logging_context.logger.debug("From default logger")
+
+        with logging_context.set_logger(context_logger):
+            logging_context.logger.debug("From context logger")
+
+        logging_context.logger.debug("From default logger again")
+
+    assert len(caplog.records) == 3
+
+    assert caplog.records[0].name == "default_logger"
+    assert caplog.records[0].message == "From default logger"
+    assert caplog.records[1].name == "context_logger"
+    assert caplog.records[1].message == "From context logger"
+    assert caplog.records[2].name == "default_logger"
+    assert caplog.records[2].message == "From default logger again"
