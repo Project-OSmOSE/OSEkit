@@ -13,11 +13,17 @@ import logging
 def capture_csv(monkeypatch):
     pass
 
+
 @pytest.fixture(autouse=True)
-def patch_filehandlers(monkeypatch):
+def patch_filehandlers(monkeypatch, request):
+    if "allow_log_write_to_file" in request.keywords:
+        return
+
     def disabled_filewrite(self, record):
         pass
+
     monkeypatch.setattr(logging.FileHandler, "emit", disabled_filewrite)
+
 
 @pytest.fixture
 def input_dataset(tmp_path: Path):
