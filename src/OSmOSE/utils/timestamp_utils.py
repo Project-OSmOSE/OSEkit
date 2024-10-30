@@ -9,18 +9,18 @@ from pandas import Timestamp
 import re
 
 _REGEX_BUILDER = {
-    "%Y": "([12]\\d{3})",
-    "%y": "(\\d{2})",
-    "%m": "(0[1-9]|1[0-2])",
-    "%d": "([0-2]\\d|3[0-1])",
-    "%H": "([0-1]\\d|2[0-4])",
-    "%I": "(0[1-9]|1[0-2])",
-    "%p": "(AM|PM)",
-    "%M": "([0-5]\\d)",
-    "%S": "([0-5]\\d)",
-    "%f": "(\d{1,6})",
-    "%Z": "((?:\\w+)(?:[-/]\\w+)*(?:[\\+-]\\d+)?)",
-    "%z": "([\\+-]\\d{2}:?\\d{2})",
+    "%Y": r"([12]\d{3})",
+    "%y": r"(\d{2})",
+    "%m": r"(0[1-9]|1[0-2])",
+    "%d": r"([0-2]\d|3[0-1])",
+    "%H": r"([0-1]\d|2[0-4])",
+    "%I": r"(0[1-9]|1[0-2])",
+    "%p": r"(AM|PM)",
+    "%M": r"([0-5]\d)",
+    "%S": r"([0-5]\d)",
+    "%f": r"(\d{1,6})",
+    "%Z": r"((?:\w+)(?:[-/]\w+)*(?:[\+-]\d+)?)",
+    "%z": r"([\+-]\d{2}:?\d{2})",
 }
 
 
@@ -114,7 +114,7 @@ def strftime_osmose_format(date: pd.Timestamp) -> str:
 
 
 def build_regex_from_datetime_template(datetime_template: str) -> str:
-    """
+    r"""
     Builds the regular expression that is used to parse a Timestamp from a string following the given datetime strftime template
 
     Parameters
@@ -130,7 +130,7 @@ def build_regex_from_datetime_template(datetime_template: str) -> str:
     Examples
     --------
     >>> build_regex_from_datetime_template('year_%Y_hour_%H')
-    'year_([12]\d{3})_hour_([0-1]\d|2[0-4])'
+    'year_([12]\\d{3})_hour_([0-1]\\d|2[0-4])'
     """
 
     escaped_characters = "()"
@@ -160,7 +160,7 @@ def is_datetime_template_valid(datetime_template: str) -> bool:
     --------
     >>> is_datetime_template_valid('year_%Y_hour_%H')
     True
-    >>> is_datetime_template_valid('unsupported_code_%Z_hour_%H')
+    >>> is_datetime_template_valid('unsupported_code_%u_hour_%H')
     False
     """
     strftime_identifiers = [key.lstrip("%") for key in _REGEX_BUILDER.keys()]
