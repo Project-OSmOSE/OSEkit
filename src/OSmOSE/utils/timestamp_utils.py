@@ -114,7 +114,7 @@ def strftime_osmose_format(date: pd.Timestamp) -> str:
 
 
 def build_regex_from_datetime_template(datetime_template: str) -> str:
-    """
+    r"""
     Builds the regular expression that is used to parse a Timestamp from a string following the given datetime strftime template
 
     Parameters
@@ -160,7 +160,7 @@ def is_datetime_template_valid(datetime_template: str) -> bool:
     --------
     >>> is_datetime_template_valid('year_%Y_hour_%H')
     True
-    >>> is_datetime_template_valid('unsupported_code_%Z_hour_%H')
+    >>> is_datetime_template_valid('unsupported_code_%u_hour_%H')
     False
     """
     strftime_identifiers = [key.lstrip("%") for key in _REGEX_BUILDER.keys()]
