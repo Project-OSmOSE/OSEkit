@@ -89,7 +89,7 @@ class Weather:
             )  # careful data not sorted here! we should save them based on dataframe df below
 
         else:
-            print(f"Your complete welch npz is already built! move on..")
+            print("Your complete welch npz is already built! move on..")
 
     def wind_speed_estimation(
         self,
@@ -334,7 +334,7 @@ class Weather:
 class benchmark_weather:
     def __init__(self, osmose_path_dataset, dataset, local=True):
         if not isinstance(dataset, list):
-            print(f"Dataset should be multiple and defined within a list")
+            print("Dataset should be multiple and defined within a list")
             sys.exit(0)
 
         self.path = Path(osmose_path_dataset)

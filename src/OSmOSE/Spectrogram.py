@@ -1964,7 +1964,7 @@ class Spectrogram(Dataset):
             plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
             plt.close()
 
-            output_file_npz = self.path / OSMOSE_PATH.EPD / f"EPD.npz"
+            output_file_npz = self.path / OSMOSE_PATH.EPD / "EPD.npz"
 
             np.savez(
                 output_file_npz,

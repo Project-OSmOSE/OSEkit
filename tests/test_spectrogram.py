@@ -1,6 +1,3 @@
-import os
-import platform
-import pandas as pd
 import numpy as np
 from OSmOSE import Spectrogram, Dataset
 from OSmOSE.config import OSMOSE_PATH, SUPPORTED_AUDIO_FORMAT
@@ -15,7 +12,7 @@ def test_initialize_2s(input_dataset):
     )
     dataset.build()
 
-    assert dataset.path.joinpath(OSMOSE_PATH.raw_audio, f"3_44100").exists()
+    assert dataset.path.joinpath(OSMOSE_PATH.raw_audio, "3_44100").exists()
     num_file = 0
     for ext in SUPPORTED_AUDIO_FORMAT:
         num_file += len(
@@ -79,7 +76,7 @@ def test_number_image_matrix(input_dataset):
     )
     dataset.build()
 
-    assert dataset.path.joinpath(OSMOSE_PATH.raw_audio, f"3_44100").exists()
+    assert dataset.path.joinpath(OSMOSE_PATH.raw_audio, "3_44100").exists()
     num_file = 0
     for ext in SUPPORTED_AUDIO_FORMAT:
         num_file += len(

@@ -1,4 +1,3 @@
-import os
 import pandas as pd
 from argparse import ArgumentParser
 from pathlib import Path

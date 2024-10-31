@@ -1,11 +1,7 @@
-from io import StringIO
-import os
 
 import pandas as pd
 import pytest
-import shutil
 from OSmOSE.utils.core_utils import read_header, safe_read
-from OSmOSE.config import OSMOSE_PATH
 import numpy as np
 import soundfile as sf
 from OSmOSE.utils.formatting_utils import aplose2raven

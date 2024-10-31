@@ -1,13 +1,11 @@
 import cdsapi
-import numpy as np
 import pandas as pd
 import os
-import calendar
 from glob import glob
 from tqdm import tqdm
 import netCDF4 as nc
 from typing import Union, Tuple, List
-from datetime import datetime, date, timedelta
+from datetime import datetime, timedelta
 from OSmOSE.utils.timestamp_utils import check_epoch
 from OSmOSE.config import *
 from OSmOSE.Spectrogram import Spectrogram

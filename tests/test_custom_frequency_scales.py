@@ -1,7 +1,6 @@
 from OSmOSE.frequency_scales.custom_frequency_scale import CustomFrequencyScale
 from OSmOSE.frequency_scales.frequency_scale_serializer import FrequencyScaleSerializer
 import numpy as np
-import pytest
 
 configs_to_test = ["porp_delph", "dual_LF_HF", "audible"]
 important_freqs = [22050, 44100, 156250, 312500]

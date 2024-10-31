@@ -224,7 +224,7 @@ class Dataset:
                 self.__depth = new_depth
             case _:
                 raise TypeError(
-                    f"Variable depth must be either an int value for fixed hydrophone or a csv filename for moving hydrophone"
+                    "Variable depth must be either an int value for fixed hydrophone or a csv filename for moving hydrophone"
                 )
 
     @property
@@ -328,9 +328,9 @@ class Dataset:
             sys.exit()
 
         if self.gps_coordinates is None:
-            raise ValueError(f"GPS coordinates must be defined !")
+            raise ValueError("GPS coordinates must be defined !")
         if self.depth is None:
-            raise ValueError(f"Depth must be defined !")
+            raise ValueError("Depth must be defined !")
 
         self.dico_aux_substring = dico_aux_substring
 
@@ -420,7 +420,7 @@ class Dataset:
                 )
                 if ind_dt == 0:
                     print(
-                        f"\n We do not accept the sign '-' in our filenames, we transformed them into '_'. In case you have to rebuild your dataset be careful to change your timestamp template accordingly.. \n"
+                        "\n We do not accept the sign '-' in our filenames, we transformed them into '_'. In case you have to rebuild your dataset be careful to change your timestamp template accordingly.. \n"
                     )
             else:
                 cur_filename = audio_file.name
@@ -689,7 +689,7 @@ class Dataset:
                     val_timestamp_not_formatted, date_template, True
                 )
                 if format_OK:
-                    print(f"-> Format OK \n")
+                    print("-> Format OK \n")
                     return None
                 else:
                     list_cur_timestamp_formatted.append(cur_timestamp_formatted)
@@ -717,14 +717,14 @@ class Dataset:
             cur_timestamp_formatted = cur_timestamp_not_formatted
             format_OK = True
 
-        except Exception as e:
+        except Exception:
             if not already_printed_1:
                 already_printed_1 = True
                 print(
                     f"Timestamp format {cur_timestamp_not_formatted} does not fit our template {TIMESTAMP_FORMAT_AUDIO_FILE} let's reformat it"
                 )
             if not date_template:
-                raise FileNotFoundError(f"You have to define a date_template please.")
+                raise FileNotFoundError("You have to define a date_template please.")
             else:
                 date_obj = datetime.strptime(
                     cur_timestamp_not_formatted + self.timezone, date_template + "%z"

@@ -5,9 +5,7 @@ from importlib.resources import as_file
 import random
 import shutil
 import struct
-from collections import namedtuple
-import sys
-from typing import Union, NamedTuple, Tuple, List, Literal
+from typing import Union, NamedTuple, Tuple, List
 import pytz
 import glob
 import math
@@ -474,7 +472,7 @@ def check_n_files(
 
     # if "float" in str(sf.info(file_list[0])): # to understand
     bad_files = []
-    print(f"Testing whether samples are within [-1,1] for the following audio files:")
+    print("Testing whether samples are within [-1,1] for the following audio files:")
     for audio_file in random.sample(file_list, n):
         data, sr = safe_read(audio_file)
         if not (np.max(data) <= 1.0 and np.min(data) >= -1.0):
@@ -482,7 +480,7 @@ def check_n_files(
             print(f"- {audio_file.name} -> FAILED")
         else:
             print(f"- {audio_file.name} -> PASSED")
-    print(f"\n")
+    print("\n")
 
     return len(bad_files)
 

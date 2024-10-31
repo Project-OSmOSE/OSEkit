@@ -10,7 +10,7 @@ from string import Template
 from typing import NamedTuple, List, Literal
 from warnings import warn
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime
 from importlib import resources
 from OSmOSE.utils.core_utils import read_config, set_umask, chmod_if_needed
 from OSmOSE.config import *

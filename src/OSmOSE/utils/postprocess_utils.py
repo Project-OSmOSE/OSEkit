@@ -1,8 +1,5 @@
 import numpy as np
-import os
 import pandas as pd
-import shutil
-import glob
 import pytz
 import csv
 from typing import List
@@ -14,7 +11,6 @@ import bisect
 from OSmOSE.utils.core_utils import (
     t_rounder,
     extract_datetime,
-    check_available_file_resolution,
 )
 
 

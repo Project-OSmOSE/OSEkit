@@ -3,7 +3,6 @@ import pytest
 import numpy as np
 import soundfile as sf
 import shutil
-import csv
 from OSmOSE.config import OSMOSE_PATH
 from scipy.signal import chirp
 

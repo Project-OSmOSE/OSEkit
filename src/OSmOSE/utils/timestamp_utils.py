@@ -1,4 +1,3 @@
-from collections.abc import Generator
 from datetime import datetime, timedelta
 import pandas as pd
 from typing import List, Iterable
