@@ -1,9 +1,10 @@
 import argparse
-from pathlib import Path
-import subprocess
 import platform
-from OSmOSE.utils.core_utils import set_umask
+import subprocess
+from pathlib import Path
+
 from OSmOSE.utils.audio_utils import get_all_audio_files
+from OSmOSE.utils.core_utils import set_umask
 
 
 def resample(
@@ -28,8 +29,8 @@ def resample(
             The index of the first file of the batch. The default is 0.
         batch_ind_max: `int`, keyword-only
             The index of the last file of the batch. The default is -1, meaning the last file of the input directory.
-    """
 
+    """
     set_umask()
     if platform.system() == "Windows":
         print("Sox is unavailable on Windows")
@@ -46,8 +47,8 @@ def resample(
 
     for audio_file in audio_files_list:
         subprocess.run(
-            f"sox {str(audio_file)} -r {str(target_sr)} -t wavpcm {str(Path(output_dir, audio_file.name))}",
-            shell=True,
+            f"sox {audio_file!s} -r {target_sr!s} -t wavpcm {Path(output_dir, audio_file.name)!s}",
+            shell=True, check=False,
         )
 
         print(f"{audio_file.name} resampled to {target_sr}!")
@@ -59,7 +60,7 @@ def resample(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Python script to resample a list of audio files using the sox tool. Does not change the file duration."
+        description="Python script to resample a list of audio files using the sox tool. Does not change the file duration.",
     )
     required = parser.add_argument_group("required arguments")
     required.add_argument(
@@ -75,7 +76,7 @@ if __name__ == "__main__":
         help="The output folder of the resampled files.",
     )
     required.add_argument(
-        "--target-sr", "-sr", required=True, type=int, help="The target samplerate."
+        "--target-sr", "-sr", required=True, type=int, help="The target samplerate.",
     )
     parser.add_argument(
         "--batch-ind-min",

@@ -1,24 +1,25 @@
-import cdsapi
-import pandas as pd
 import os
-from glob import glob
-from tqdm import tqdm
-import netCDF4 as nc
-from typing import Union, Tuple, List
 from datetime import datetime, timedelta
-from OSmOSE.utils.timestamp_utils import check_epoch
-from OSmOSE.Spectrogram import Spectrogram
-from OSmOSE.config import OSMOSE_PATH
+from glob import glob
+from typing import List, Tuple, Union
+
+import cdsapi
+import netCDF4 as nc
+import pandas as pd
 from scipy import interpolate
+from tqdm import tqdm
+
+from OSmOSE.config import OSMOSE_PATH
+from OSmOSE.Spectrogram import Spectrogram
+from OSmOSE.utils.timestamp_utils import check_epoch
 
 
 class Auxiliary(Spectrogram):
-    """
-    This class joins environmental and instrument data to acoustic data.
+    """This class joins environmental and instrument data to acoustic data.
     The acoustic data is first fetched using the dataset path, the data's samplerate and the analysis parameters.
     If no analysis parameters are provided then data will be joined to corresponding raw audio files.
     """
-    
+
     # CHECK THAT ALL TIMEZONES ARE THE SAME PLEASE (UTC 00)
 
     def __init__(
@@ -36,8 +37,7 @@ class Auxiliary(Spectrogram):
         annotation: Union[dict, bool] = False,
         other: dict = None,
     ):
-        """
-        Parameters:
+        """Parameters
                dataset_path (str): The path to the dataset.
                dataset_sr (int, optional): The dataset sampling rate. Default is None.
                analysis_params (dict, optional): Additional analysis parameters. Default is None.
@@ -46,12 +46,14 @@ class Auxiliary(Spectrogram):
                era (bool, optional): Whether era data is included. Default is False. If string, enter the filename (Network Common Data Form) where era data is stored.
                annotation (bool, optional): Annotation data is included. Dictionary containing key (column name of annotation data) and absolute path of csv file where annotation data is stored. Default is False.
                other (dict, optional): Additional data (csv format) to join to acoustic data. Key is name of data (column name) to join to acoustic dataset, value is the absolute path where to find the csv. Default is None.
-        Notes:
+
+        Notes
+        -----
                The parameters `gps`, `depth`, `era`, `annotation`, and `other` are used as flags
                to indicate the presence of data to join to the corresponding spectrogram generation. When set to True, the respective
                data will be processed and included.
-        """
 
+        """
         super().__init__(
             dataset_path,
             gps_coordinates=gps_coordinates,
@@ -66,7 +68,7 @@ class Auxiliary(Spectrogram):
         # Load reference data that will be used to join all other data
         self.df = check_epoch(pd.read_csv(self.audio_path.joinpath("timestamp.csv")))
         self.metadata = pd.read_csv(
-            self._get_original_after_build().joinpath("metadata.csv"), header=0
+            self._get_original_after_build().joinpath("metadata.csv"), header=0,
         )
         self._depth, self._gps_coordinates = depth, gps_coordinates
         match depth:
@@ -75,7 +77,7 @@ class Auxiliary(Spectrogram):
                     self.depth = "depth.csv"
                 except FileNotFoundError:
                     print(
-                        "depth file not found, defaulting to depth from metadata file"
+                        "depth file not found, defaulting to depth from metadata file",
                     )
                     self.depth = self.metadata.depth.item()
             case int() | float():
@@ -90,10 +92,10 @@ class Auxiliary(Spectrogram):
                     self.gps_coordinates = "gps.csv"
                 except FileNotFoundError:
                     print(
-                        "gps file not found, defaulting to gps data from metadata file"
+                        "gps file not found, defaulting to gps data from metadata file",
                     )
                     self.gps_coordinates = tuple(
-                        self.metadata[["lat", "lon"]].values[0]
+                        self.metadata[["lat", "lon"]].values[0],
                     )
             case list() | tuple() | str():
                 self.gps_coordinates = gps_coordinates
@@ -135,33 +137,28 @@ class Auxiliary(Spectrogram):
             for elem in elems:
                 aux_str += f"   - {elem}\n"
             return aux_str
-        else:
-            return "You have not selected any data to join to your dataset ! "
+        return "You have not selected any data to join to your dataset ! "
 
     def join_depth(self):
-        """
-        Code to join depth data to reference dataframe.
+        """Code to join depth data to reference dataframe.
         The depth files should contain times in both Datetime and epoch format and a depth column
         """
-
         if isinstance(self.depth, pd.DataFrame):
             assert ("epoch" in self.depth.columns) and (
                 "depth" in self.depth.columns
             ), "Make sure the depth file has both an 'epoch' and 'depth' column."
             # Join data using a 1D interpolation
             self.df["depth"] = interpolate.interp1d(
-                self.depth.epoch, self.depth.depth, bounds_error=False
+                self.depth.epoch, self.depth.depth, bounds_error=False,
             )(self.df.epoch)
 
         elif type(self.depth) is int:
             self.df["depth"] = self.depth
 
     def join_gps(self):
-        """
-        Code to join gps data to reference dataframe.
+        """Code to join gps data to reference dataframe.
         The gps files should contain times in both Datetime and epoch format and a depth column
         """
-
         if isinstance(self.gps_coordinates, pd.DataFrame):
             assert (
                 ("epoch" in self.gps_coordinates.columns)
@@ -170,10 +167,10 @@ class Auxiliary(Spectrogram):
             ), "Make sure the depth file has both an 'epoch' and 'lat'/'lon' columns."
             # Join data using a 1D interpolation
             self.df["lat"] = interpolate.interp1d(
-                self.gps_coordinates.epoch, self.gps_coordinates.lat, bounds_error=False
+                self.gps_coordinates.epoch, self.gps_coordinates.lat, bounds_error=False,
             )(self.df.epoch)
             self.df["lon"] = interpolate.interp1d(
-                self.gps_coordinates.epoch, self.gps_coordinates.lon, bounds_error=False
+                self.gps_coordinates.epoch, self.gps_coordinates.lon, bounds_error=False,
             )(self.df.epoch)
 
         elif type(self.gps_coordinates) in [list, tuple]:
@@ -181,15 +178,16 @@ class Auxiliary(Spectrogram):
             self.df["lon"] = self.gps_coordinates[1]
 
     def join_other(
-        self, csv_path: str = None, variable_name: Union[str, List, Tuple] = None
+        self, csv_path: str = None, variable_name: Union[str, List, Tuple] = None,
     ):
-        """
-        Method to join data using solely temporal interpolation.
-        Parameters:
+        """Method to join data using solely temporal interpolation.
+
+        Parameters
+        ----------
                csv_path (str): Absolute path to new csv file (containing epoch column) you want to join to auxiliary dataframe
                variable_name (str, List, Tuple) : Variable names (and future column names) you want to join to auxiliary dataframe
-        """
 
+        """
         if variable_name and csv_path:
             variable_name = (
                 list(variable_name) if variable_name is not str else [variable_name]
@@ -199,7 +197,7 @@ class Auxiliary(Spectrogram):
         for key in self.other.keys():
             _csv = check_epoch(pd.read_csv(self.other[key]))
             self.df[key] = interpolate.interp1d(
-                _csv.epoch, _csv[key], bounds_error=False
+                _csv.epoch, _csv[key], bounds_error=False,
             )(self.df.epoch)
 
     def interpolation_era(self):
@@ -214,7 +212,7 @@ class Auxiliary(Spectrogram):
         # Handle ERA time
         era_time = pd.DataFrame(ds.variables["time"][:].data)
         era_datetime = era_time[0].apply(
-            lambda x: datetime(1900, 1, 1) + timedelta(hours=int(x))
+            lambda x: datetime(1900, 1, 1) + timedelta(hours=int(x)),
         )
         timestamps = era_datetime.apply(lambda x: x.timestamp()).to_numpy()
 
@@ -248,7 +246,7 @@ def make_cds_file(key, udi, path):
         pass
 
     cmd1 = "echo url: https://cds.climate.copernicus.eu/api/v2 >> .cdsapirc"
-    cmd2 = "echo key: {}:{} >> .cdsapirc".format(udi, key)
+    cmd2 = f"echo key: {udi}:{key} >> .cdsapirc"
     os.system(cmd1)
     os.system(cmd2)
 
@@ -276,9 +274,7 @@ def return_cdsapi(filename, key, variables, years, months, days, hours, area):
     print(f"Years : {years} \n Months : {months} \n Days : {days} \n Hours : {hours}")
 
     print(
-        "\nYour boundaries are : North {}°, South {}°, East {}°, West {}°".format(
-            area[0], area[2], area[3], area[1]
-        )
+        f"\nYour boundaries are : North {area[0]}°, South {area[2]}°, East {area[3]}°, West {area[1]}°",
     )
 
     filename = filename + ".nc"

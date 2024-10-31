@@ -1,11 +1,12 @@
-from datetime import datetime, timedelta
-import pandas as pd
-from typing import List, Iterable
 import os
+import re
+from datetime import datetime, timedelta
+from typing import Iterable, List
+
+import pandas as pd
+from pandas import Timestamp
 
 from OSmOSE.config import TIMESTAMP_FORMAT_AUDIO_FILE
-from pandas import Timestamp
-import re
 
 _REGEX_BUILDER = {
     "%Y": r"([12]\d{3})",
@@ -24,39 +25,39 @@ _REGEX_BUILDER = {
 
 
 def check_epoch(df):
-    "Function that adds epoch column to dataframe"
+    """Function that adds epoch column to dataframe"""
     if "epoch" in df.columns:
         return df
-    else:
-        try:
-            df["epoch"] = df.timestamp.apply(
-                lambda x: datetime.strptime(x[:26], "%Y-%m-%dT%H:%M:%S.%f").timestamp()
-            )
-            return df
-        except ValueError:
-            print(
-                "Please check that you have either a timestamp column (format ISO 8601 Micro s) or an epoch column"
-            )
-            return df
+    try:
+        df["epoch"] = df.timestamp.apply(
+            lambda x: datetime.strptime(x[:26], "%Y-%m-%dT%H:%M:%S.%f").timestamp(),
+        )
+        return df
+    except ValueError:
+        print(
+            "Please check that you have either a timestamp column (format ISO 8601 Micro s) or an epoch column",
+        )
+        return df
 
 
 def substract_timestamps(
-    input_timestamp: pd.DataFrame, files: List[str], index: int
+    input_timestamp: pd.DataFrame, files: List[str], index: int,
 ) -> timedelta:
     """Substracts two timestamp_list from the "timestamp" column of a dataframe at the indexes of files[i] and files[i-1] and returns the time delta between them
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
         input_timestamp: the pandas DataFrame containing at least two columns: filename and timestamp
 
         files: the list of file names corresponding to the filename column of the dataframe
 
         index: the index of the file whose timestamp will be substracted
 
-    Returns:
-    --------
-        The time between the two timestamp_list as a datetime.timedelta object"""
+    Returns
+    -------
+        The time between the two timestamp_list as a datetime.timedelta object
 
+    """
     if index == 0:
         return timedelta(seconds=0)
 
@@ -77,13 +78,12 @@ def to_timestamp(string: str) -> pd.Timestamp:
         return pd.Timestamp(string)
     except ValueError:
         raise ValueError(
-            f"The timestamp '{string}' must match format %Y-%m-%dT%H:%M:%S%z."
+            f"The timestamp '{string}' must match format %Y-%m-%dT%H:%M:%S%z.",
         )
 
 
 def strftime_osmose_format(date: pd.Timestamp) -> str:
-    """
-    Format a pandas Timestamp using strftime() and the OSmOSE time format %Y-%m-%dT%H:%M:%S.%f%z, with %f limited to a millisecond precision.
+    """Format a pandas Timestamp using strftime() and the OSmOSE time format %Y-%m-%dT%H:%M:%S.%f%z, with %f limited to a millisecond precision.
     If the input Timestamp is not localized, its localization will be defaulted as UTC.
 
     Parameters
@@ -100,6 +100,7 @@ def strftime_osmose_format(date: pd.Timestamp) -> str:
     --------
     >>> strftime_osmose_format(Timestamp('2024-10-17 10:14:11.933634', tz="US/Eastern"))
     '2024-10-17T10:14:11.933-0400'
+
     """
     if date.tz is None:
         date = date.tz_localize("UTC")
@@ -113,8 +114,7 @@ def strftime_osmose_format(date: pd.Timestamp) -> str:
 
 
 def build_regex_from_datetime_template(datetime_template: str) -> str:
-    r"""
-    Builds the regular expression that is used to parse a Timestamp from a string following the given datetime strftime template
+    r"""Builds the regular expression that is used to parse a Timestamp from a string following the given datetime strftime template
 
     Parameters
     ----------
@@ -130,8 +130,8 @@ def build_regex_from_datetime_template(datetime_template: str) -> str:
     --------
     >>> build_regex_from_datetime_template('year_%Y_hour_%H')
     'year_([12]\\d{3})_hour_([0-1]\\d|2[0-4])'
-    """
 
+    """
     escaped_characters = "()"
     for escaped in escaped_characters:
         datetime_template = datetime_template.replace(escaped, f"\\{escaped}")
@@ -141,8 +141,7 @@ def build_regex_from_datetime_template(datetime_template: str) -> str:
 
 
 def is_datetime_template_valid(datetime_template: str) -> bool:
-    """
-    Checks the validity of a datetime template string. A datetame template string is used to extract a timestamp from a given string: 'year_%Y' is a valid datetame template for extracting '2016' from the 'year_2016' string.
+    """Checks the validity of a datetime template string. A datetame template string is used to extract a timestamp from a given string: 'year_%Y' is a valid datetame template for extracting '2016' from the 'year_2016' string.
     A datetime template string should use valid strftime codes (see https://strftime.org/).
 
     Parameters
@@ -161,8 +160,9 @@ def is_datetime_template_valid(datetime_template: str) -> bool:
     True
     >>> is_datetime_template_valid('unsupported_code_%u_hour_%H')
     False
+
     """
-    strftime_identifiers = [key.lstrip("%") for key in _REGEX_BUILDER.keys()]
+    strftime_identifiers = [key.lstrip("%") for key in _REGEX_BUILDER]
     percent_sign_indexes = (
         index for index, char in enumerate(datetime_template) if char == "%"
     )
@@ -175,8 +175,7 @@ def is_datetime_template_valid(datetime_template: str) -> bool:
 
 
 def strptime_from_text(text: str, datetime_template: str) -> Timestamp:
-    """
-    Extract a pandas.Timestamp from the text input string following the datetime_template specified.
+    """Extract a pandas.Timestamp from the text input string following the datetime_template specified.
 
     Parameters
     ----------
@@ -196,8 +195,8 @@ def strptime_from_text(text: str, datetime_template: str) -> Timestamp:
     Timestamp('2016-06-13 14:12:00')
     >>> strptime_from_text('date_12_03_21_hour_11:45:10_PM.wav', '%y_%m_%d_hour_%I:%M:%S_%p')
     Timestamp('2012-03-21 23:45:10')
-    """
 
+    """
     if not is_datetime_template_valid(datetime_template):
         raise ValueError(f"{datetime_template} is not a supported strftime template")
 
@@ -217,10 +216,9 @@ def strptime_from_text(text: str, datetime_template: str) -> Timestamp:
 
 
 def associate_timestamps(
-    audio_files: Iterable[str], datetime_template: str
+    audio_files: Iterable[str], datetime_template: str,
 ) -> pd.Series:
-    """
-    Returns a chronologically sorted pandas series containing the audio files as indexes and the extracted timestamp as values.
+    """Returns a chronologically sorted pandas series containing the audio files as indexes and the extracted timestamp as values.
 
     Parameters
     ----------
@@ -233,6 +231,7 @@ def associate_timestamps(
     -------
     pandas.Series
         A series with the audio files names as index and the extracted timestamps as values.
+
     """
     files_with_timestamps = {
         file: strptime_from_text(file, datetime_template) for file in audio_files
@@ -243,11 +242,12 @@ def associate_timestamps(
 
 
 def get_timestamps(
-    path_osmose_dataset: str, campaign_name: str, dataset_name: str, resolution: str
+    path_osmose_dataset: str, campaign_name: str, dataset_name: str, resolution: str,
 ) -> pd.DataFrame:
     """Read infos from APLOSE timestamp csv file
+
     Parameters
-    -------
+    ----------
         path_osmose_dataset: 'str'
             usually '/home/datawork-osmose/dataset/'
 
@@ -257,12 +257,13 @@ def get_timestamps(
             Name of the dataset
         resolution: 'str'
             Resolution of the dataset
+
     Returns
     -------
         df: pd.DataFrame
             The timestamp file is read and returned as a DataFrame
-    """
 
+    """
     csv = os.path.join(
         path_osmose_dataset,
         campaign_name,
@@ -276,5 +277,4 @@ def get_timestamps(
     if os.path.exists(csv):
         df = pd.read_csv(csv, parse_dates=["timestamp"])
         return df
-    else:
-        raise ValueError(f"{csv} does not exist")
+    raise ValueError(f"{csv} does not exist")

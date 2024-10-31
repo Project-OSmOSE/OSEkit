@@ -1,7 +1,8 @@
-import numpy as np
-import time
 import calendar
 import datetime
+import time
+
+import numpy as np
 import scipy.interpolate as inter
 from pykdtree.kdtree import KDTree
 
@@ -47,17 +48,16 @@ def time_interpolation(time, var, method="linear"):
 def interpolation_gps(time, latitude, longitude, depth=None, method="linear"):
     interp_lat = inter.interp1d(time, latitude, kind=method)
     interp_lon = inter.interp1d(time, longitude, kind=method)
-    if isinstance(depth, type(None)):
+    if depth is None:
         return interp_lat, interp_lon
-    else:
-        interp_depth = inter.interp1d(time, depth, kind=method)
-        return interp_lat, interp_lon, interp_depth
+    interp_depth = inter.interp1d(time, depth, kind=method)
+    return interp_lat, interp_lon, interp_depth
 
 
 def apply_interp(interp, date, latitude=None, longitude=None, gps=None):
     if isinstance(interp, inter.interp1d):
         return interp(date)
-    elif isinstance(interp, inter.RegularGridInterpolator):
+    if isinstance(interp, inter.RegularGridInterpolator):
         return interp(np.stack((date, latitude, longitude), axis=1))
 
 

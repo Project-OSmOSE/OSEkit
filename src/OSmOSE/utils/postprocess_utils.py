@@ -1,16 +1,18 @@
+import bisect
+import csv
+import math
+from collections import Counter
+from typing import List
+
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytz
-import csv
-from typing import List
-import math
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-from collections import Counter
-import bisect
+
 from OSmOSE.utils.core_utils import (
-    t_rounder,
     extract_datetime,
+    t_rounder,
 )
 
 
@@ -30,7 +32,7 @@ def sorting_detections(
     """Filters an Aplose formatted detection file according to user specified filters
 
     Parameters
-    -------
+    ----------
         file: List[str], 'str'
             list of path(s) to the detection file(s), can be a str too
 
@@ -89,10 +91,10 @@ def sorting_detections(
                 - max_freq: sampling frequency * 0.5
                 - annotators: list of annotators after filtering
                 - labels: list of labels after filtering
-    """
 
+    """
     # Find the proper delimiter for file
-    with open(file, "r", newline="") as csv_file:
+    with open(file, newline="") as csv_file:
         try:
             temp_lines = csv_file.readline() + "\n" + csv_file.readline()
             dialect = csv.Sniffer().sniff(temp_lines, delimiters=",;")
@@ -109,10 +111,10 @@ def sorting_detections(
 
     # Convert datetime columns to proper format
     df["start_datetime"] = pd.to_datetime(
-        df["start_datetime"], format="%Y-%m-%dT%H:%M:%S.%f%z"
+        df["start_datetime"], format="%Y-%m-%dT%H:%M:%S.%f%z",
     )
     df["end_datetime"] = pd.to_datetime(
-        df["end_datetime"], format="%Y-%m-%dT%H:%M:%S.%f%z"
+        df["end_datetime"], format="%Y-%m-%dT%H:%M:%S.%f%z",
     )
     df = df.sort_values("start_datetime")
 
@@ -165,17 +167,11 @@ def sorting_detections(
         max_time = 0
 
     if box is False:
-        if len(df_nobox) == 0:
+        if len(df_nobox) == 0 or timebin_new is not None:
             df = reshape_timebin(df=df.reset_index(drop=True), timebin_new=timebin_new)
             max_time = int(max(df["end_time"]))
         else:
-            if timebin_new is not None:
-                df = reshape_timebin(
-                    df=df.reset_index(drop=True), timebin_new=timebin_new
-                )
-                max_time = int(max(df["end_time"]))
-            else:
-                df = df_nobox
+            df = df_nobox
 
     # Filter detections based on user_sel if specified
     if len(list_annotators) > 1:
@@ -230,37 +226,32 @@ def reshape_timebin(df: pd.DataFrame, timebin_new: int = None) -> pd.DataFrame:
     """Changes the timebin (time resolution) of a detection dataframe
     ex :    -from a raw PAMGuard detection file to a detection file with 10s timebin
             -from an 10s detection file to a 1min / 1h / 24h detection file
+
     Parameters
-    -------
+    ----------
         df: pd.DataFrame
             detection dataframe
 
         timebin_new: 'int'
             Time resolution to base the detections on, if not provided it is asked to the user
+
     Returns
     -------
         df_new: pd.DataFrame
             detection dataframe with the new timebin
+
     """
     if isinstance(df, pd.DataFrame) is False:
         raise ValueError("Not a dataframe passed, reshape aborted")
 
     annotators = list(df["annotator"].drop_duplicates())
     labels = list(df["annotation"].drop_duplicates())
-    
+
     max_freq = int(max(df["end_frequency"]))
 
     tz_data = df["start_datetime"][0].tz
 
-    if timebin_new == 10:
-        pass
-    elif timebin_new == 60:
-        pass
-    elif timebin_new == 600:
-        pass
-    elif timebin_new == 3600:
-        pass
-    elif timebin_new == 86400:
+    if timebin_new == 10 or timebin_new == 60 or timebin_new == 600 or timebin_new == 3600 or timebin_new == 86400:
         pass
     else:
         raise ValueError(f"Time resolution {timebin_new}s not available")
@@ -283,7 +274,7 @@ def reshape_timebin(df: pd.DataFrame, timebin_new: int = None) -> pd.DataFrame:
 
             t = t_rounder(t=df_detect_prov["start_datetime"].iloc[0], res=timebin_new)
             t2 = t_rounder(
-                df_detect_prov["start_datetime"].iloc[-1], timebin_new
+                df_detect_prov["start_datetime"].iloc[-1], timebin_new,
             ) + pd.timedelta(seconds=timebin_new)
 
             time_vector = [
@@ -326,15 +317,14 @@ def reshape_timebin(df: pd.DataFrame, timebin_new: int = None) -> pd.DataFrame:
             for i in range(len(times_detect_beg)):
                 for j in range(k, len(time_vector) - 1):
                     if int(times_detect_beg[i] * 1e7) in range(
-                        int(time_vector[j] * 1e7), int(time_vector[j + 1] * 1e7)
+                        int(time_vector[j] * 1e7), int(time_vector[j + 1] * 1e7),
                     ) or int(times_detect_end[i] * 1e7) in range(
-                        int(time_vector[j] * 1e7), int(time_vector[j + 1] * 1e7)
+                        int(time_vector[j] * 1e7), int(time_vector[j + 1] * 1e7),
                     ):
                         ranks.append(j)
                         k = j
                         break
-                    else:
-                        continue
+                    continue
 
             ranks = sorted(list(set(ranks)))
             detect_vec[ranks] = 1
@@ -348,16 +338,16 @@ def reshape_timebin(df: pd.DataFrame, timebin_new: int = None) -> pd.DataFrame:
                         start_datetime.strftime("%Y-%m-%dT%H:%M:%S.%f%z")[:-8]
                         + start_datetime.strftime("%Y-%m-%dT%H:%M:%S.%f%z")[-5:-2]
                         + ":"
-                        + start_datetime.strftime("%Y-%m-%dT%H:%M:%S.%f%z")[-2:]
+                        + start_datetime.strftime("%Y-%m-%dT%H:%M:%S.%f%z")[-2:],
                     )
                     end_datetime = pd.Timestamp(
-                        time_vector[i] + timebin_new, unit="s", tz=tz_data
+                        time_vector[i] + timebin_new, unit="s", tz=tz_data,
                     )
                     end_datetime_str.append(
                         end_datetime.strftime("%Y-%m-%dT%H:%M:%S.%f%z")[:-8]
                         + end_datetime.strftime("%Y-%m-%dT%H:%M:%S.%f%z")[-5:-2]
                         + ":"
-                        + end_datetime.strftime("%Y-%m-%dT%H:%M:%S.%f%z")[-2:]
+                        + end_datetime.strftime("%Y-%m-%dT%H:%M:%S.%f%z")[-2:],
                     )
                     filename.append(filename_vector[i])
 
@@ -371,10 +361,10 @@ def reshape_timebin(df: pd.DataFrame, timebin_new: int = None) -> pd.DataFrame:
             df_new_prov["start_frequency"] = [0] * len(start_datetime_str)
             df_new_prov["end_frequency"] = [max_freq] * len(start_datetime_str)
             df_new_prov["annotation"] = list(set(df_detect_prov["annotation"])) * len(
-                start_datetime_str
+                start_datetime_str,
             )
             df_new_prov["annotator"] = list(set(df_detect_prov["annotator"])) * len(
-                start_datetime_str
+                start_datetime_str,
             )
             df_new_prov["start_datetime"], df_new_prov["end_datetime"] = (
                 start_datetime_str,
@@ -408,8 +398,8 @@ def overview(data: pd.DataFrame):
     -------
     The list of annotation/detection per label and per annotator is being printed.
     Also plots of annotation per label and annotation per annotator is shown.
-    """
 
+    """
     summary_label = (
         data.groupby("annotation")["annotator"].apply(Counter).unstack(fill_value=0)
     )
@@ -417,11 +407,11 @@ def overview(data: pd.DataFrame):
         data.groupby("annotator")["annotation"].apply(Counter).unstack(fill_value=0)
     )
 
-    print("\nOverview of the detections :\n\n{0}".format(summary_label))
-    print("---\n\n{0}".format(summary_annotator.to_string()))
+    print(f"\nOverview of the detections :\n\n{summary_label}")
+    print(f"---\n\n{summary_annotator.to_string()}")
 
     fig, (ax1, ax2) = plt.subplots(
-        2, figsize=(12, 6), gridspec_kw={"height_ratios": [1, 1]}, facecolor="#36454F"
+        2, figsize=(12, 6), gridspec_kw={"height_ratios": [1, 1]}, facecolor="#36454F",
     )
     # ax1 = summary_label.plot(kind='bar', ax=ax1, color=['tab:blue', 'tab:orange'], edgecolor='black', linewidth=1)
     ax1 = summary_label.plot(kind="bar", ax=ax1, edgecolor="black", linewidth=1)
@@ -444,16 +434,16 @@ def overview(data: pd.DataFrame):
 
     # labels
     ax1.set_ylabel(
-        "Number of\nannotated calls", fontsize=15, color="w", multialignment="center"
+        "Number of\nannotated calls", fontsize=15, color="w", multialignment="center",
     )
     ax1.set_xlabel(
-        "Labels", fontsize=10, rotation=0, color="w", multialignment="center"
+        "Labels", fontsize=10, rotation=0, color="w", multialignment="center",
     )
     ax2.set_ylabel(
-        "Number of\nannotated calls", fontsize=15, color="w", multialignment="center"
+        "Number of\nannotated calls", fontsize=15, color="w", multialignment="center",
     )
     ax2.set_xlabel(
-        "Annotator", fontsize=10, rotation=0, color="w", multialignment="center"
+        "Annotator", fontsize=10, rotation=0, color="w", multialignment="center",
     )
 
     # spines
@@ -509,7 +499,7 @@ def single_seasonality(
     Given an APLOSE formatted DataFrame, annotator and label, compute the barplot of the detections
 
     Parameters
-    -------
+    ----------
         data: pd.DataFrame
              APLOSE formatted detection / annotation file
 
@@ -541,8 +531,8 @@ def single_seasonality(
 
     Returns
     -------
-    """
 
+    """
     tz_data = date1.tz
 
     if time_locator == "monthly":
@@ -645,7 +635,7 @@ def single_seasonality(
         ax.set_ylim([0, n_annot_max])
         if reso_bin == "Minutes":
             ax.set_ylabel(
-                "Detection rate % \n({0} min)".format(res_min), fontsize=20, color="w"
+                f"Detection rate % \n({res_min} min)", fontsize=20, color="w",
             )
         else:
             ax.set_ylabel("Detection rate % per month", fontsize=20, color="w")
