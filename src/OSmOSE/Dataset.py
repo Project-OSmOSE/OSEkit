@@ -244,7 +244,7 @@ class Dataset:
             return
         if value:
             try:
-                gid = grp.getgrnam(value).gr_gid
+                grp.getgrnam(value).gr_gid
             except KeyError as e:
                 raise KeyError(
                     f"The group {value} does not exist on the system. Full error trace: {e}"
@@ -711,7 +711,7 @@ class Dataset:
                 date_template = date_template[:-1]
 
         try:
-            check_right_format = datetime.strptime(
+            datetime.strptime(
                 cur_timestamp_not_formatted, TIMESTAMP_FORMAT_AUDIO_FILE
             )
             cur_timestamp_formatted = cur_timestamp_not_formatted

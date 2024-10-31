@@ -1,5 +1,12 @@
 import pytest
-from OSmOSE.utils.timestamp_utils import *
+import pandas as pd
+from pandas import Timestamp
+from OSmOSE.utils.timestamp_utils import (
+    is_datetime_template_valid,
+    build_regex_from_datetime_template,
+    associate_timestamps,
+    strptime_from_text,
+    strftime_osmose_format)
 
 
 @pytest.mark.unit

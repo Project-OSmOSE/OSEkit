@@ -8,8 +8,6 @@ import os
 def merge_timestamp_csv(input_files: str):
     input_dir_path = Path(input_files)
 
-    list_audio = list(input_dir_path.glob("timestamp_*"))
-
     list_conca_timestamps = []
     list_conca_filename = []
     for ll in list(input_dir_path.glob("timestamp_*")):

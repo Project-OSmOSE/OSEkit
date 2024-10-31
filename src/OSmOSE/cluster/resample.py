@@ -4,7 +4,6 @@ import subprocess
 import platform
 from OSmOSE.utils.core_utils import set_umask
 from OSmOSE.utils.audio_utils import get_all_audio_files
-from OSmOSE.config import *
 
 
 def resample(

@@ -5,7 +5,6 @@ import json
 import time
 import tomlkit
 import subprocess
-from uuid import uuid4
 from string import Template
 from typing import NamedTuple, List, Literal
 from warnings import warn
@@ -13,7 +12,8 @@ from pathlib import Path
 from datetime import datetime
 from importlib import resources
 from OSmOSE.utils.core_utils import read_config, set_umask, chmod_if_needed
-from OSmOSE.config import *
+from OSmOSE.config import DPDEFAULT, FPDEFAULT
+from collections import namedtuple
 
 JOB_CONFIG_TEMPLATE = namedtuple(
     "job_config",
@@ -286,8 +286,6 @@ class Job_builder:
         else:
             preset = None
 
-        pwd = Path(__file__).parent
-
         logdir.mkdir(mode=DPDEFAULT, exist_ok=True)
 
         job_file = ["#!/bin/bash"]
@@ -450,9 +448,7 @@ class Job_builder:
 
         if isinstance(dependency, list):
             dependency = ":".join(dependency)
-
-        jobarray_uuid = str(uuid4())
-        job_dir = Path(jobinfo_list[0]["path"]).parent
+            
         # TODO: Think about the issue when a job have too many dependencies and workaround.
 
         for i, jobinfo in enumerate(jobinfo_list):

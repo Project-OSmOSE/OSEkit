@@ -7,7 +7,7 @@ Created on Wed Oct  4 16:06:18 2023
 """
 from pathlib import Path
 import os
-from OSmOSE.config import *
+from OSmOSE.config import OSMOSE_PATH, DPDEFAULT
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -131,7 +131,7 @@ class Weather:
             y_train = y_train[x_train < val_outlier]
             x_train = x_train[x_train < val_outlier]
         if threshold_SPL:
-            if type(threshold_SPL) == int:
+            if type(threshold_SPL) is int:
                 y_train = y_train[x_train < threshold_SPL]
                 x_train = x_train[x_train < threshold_SPL]
             else:

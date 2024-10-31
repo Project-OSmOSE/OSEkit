@@ -173,7 +173,8 @@ def test_numerical_values(input_dataset):
     list_welch = list((dataset.path / OSMOSE_PATH.welch / "3_44100").glob("*.npz"))
     data = np.load(list_welch[0], allow_pickle=True)
 
-    val_PamGuide = np.array(
+
+    val_PamGuide = np.array(  # noqa: F841
         [
             [
                 3.73173496e02,

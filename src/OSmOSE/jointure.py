@@ -12,10 +12,11 @@ from pykdtree.kdtree import KDTree
 ########################################################################################
 
 
-get_era_time = lambda x: (
-    calendar.timegm(x.timetuple()) if isinstance(x, datetime.datetime) else x
-)
-g = lambda x: calendar.timegm(time.strptime(str(x)[:-11], "%Y-%m-%dT%H"))
+def get_era_time(x):
+    return calendar.timegm(x.timetuple()) if isinstance(x, datetime.datetime) else x
+
+def g(x):
+    return calendar.timegm(time.strptime(str(x)[:-11], "%Y-%m-%dT%H"))
 
 
 def rect_interpolation_era(stamps, var, method="linear"):

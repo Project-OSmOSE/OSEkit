@@ -7,8 +7,8 @@ import netCDF4 as nc
 from typing import Union, Tuple, List
 from datetime import datetime, timedelta
 from OSmOSE.utils.timestamp_utils import check_epoch
-from OSmOSE.config import *
 from OSmOSE.Spectrogram import Spectrogram
+from OSmOSE.config import OSMOSE_PATH
 from scipy import interpolate
 
 
@@ -18,7 +18,7 @@ class Auxiliary(Spectrogram):
     The acoustic data is first fetched using the dataset path, the data's samplerate and the analysis parameters.
     If no analysis parameters are provided then data will be joined to corresponding raw audio files.
     """
-
+    
     # CHECK THAT ALL TIMEZONES ARE THE SAME PLEASE (UTC 00)
 
     def __init__(
@@ -153,7 +153,7 @@ class Auxiliary(Spectrogram):
                 self.depth.epoch, self.depth.depth, bounds_error=False
             )(self.df.epoch)
 
-        elif type(self.depth) == int:
+        elif type(self.depth) is int:
             self.df["depth"] = self.depth
 
     def join_gps(self):
@@ -252,7 +252,7 @@ def make_cds_file(key, udi, path):
     os.system(cmd1)
     os.system(cmd2)
 
-    if path == None:
+    if path is None:
         try:
             os.mkdir("api")
         except FileExistsError:
@@ -271,7 +271,7 @@ def make_cds_file(key, udi, path):
 
 def return_cdsapi(filename, key, variables, years, months, days, hours, area):
     print("You have selected : \n")
-    sel = [print(variables) for data in variables]
+    [print(variables) for data in variables]
     print("\nfor the following times")
     print(f"Years : {years} \n Months : {months} \n Days : {days} \n Hours : {hours}")
 

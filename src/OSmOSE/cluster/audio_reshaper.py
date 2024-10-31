@@ -4,16 +4,11 @@ from pathlib import Path
 import numpy as np
 import soundfile as sf
 from librosa import resample
-
-from OSmOSE.utils import (
-    DPDEFAULT,
-    FPDEFAULT,
-    to_timestamp,
-    get_all_audio_files,
-    set_umask,
-    make_path,
-    chmod_if_needed,
-)
+from OSmOSE.config import DPDEFAULT, FPDEFAULT
+from OSmOSE.utils.timestamp_utils import to_timestamp
+from OSmOSE.utils.audio_utils import get_all_audio_files
+from OSmOSE.utils.core_utils import set_umask, chmod_if_needed
+from OSmOSE.utils.path_utils import make_path
 
 
 def reshape(

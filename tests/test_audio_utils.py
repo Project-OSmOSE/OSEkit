@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from OSmOSE.utils.audio_utils import *
+from OSmOSE.utils.audio_utils import is_supported_audio_format
 
 
 @pytest.mark.unit

@@ -23,7 +23,7 @@ def make_cds_file(key, udi, path_to_api):
     except FileExistsError:
         pass
 
-    if path_to_api == None:
+    if path_to_api is None:
         path_to_api = os.path.join(os.path.expanduser("~"), "Documents/api/")
 
     os.chdir(path_to_api)
@@ -75,8 +75,6 @@ def format_nc(filename):
     for i in range(len(variables)):
         single_levels[i] = fh.variables[variables[i]][:]
 
-    time_units = fh.variables["time"].units
-
     def transf_temps(time):
         time_str = float(time) / 24 + date.toordinal(date(1900, 1, 1))
         return date.fromordinal(int(time_str))
@@ -121,7 +119,7 @@ def final_creation(
 ):
     return_cdsapi(filename, key, variable, year, month, day, time, area)
     dates, lon, lat, single_levels, variables = format_nc(filename)
-    test = save_results(dates, lat, lon, single_levels, variables, filename)
+    save_results(dates, lat, lon, single_levels, variables, filename)
     return variables
 
 
@@ -151,8 +149,6 @@ def mise_en_forme_old(filename):
     for i in range(len(variables)):
         single_levels[i] = fh.variables[variables[i]][:]
 
-    time_units = fh.variables["time"].units
-
     def transf_temps(time):
         time_str = float(time) / 24 + date.toordinal(date(1900, 1, 1))
         return date.fromordinal(int(time_str))
@@ -174,7 +170,7 @@ def mise_en_forme_old(filename):
 
     print("\n[======>-----]\n")
 
-    return data, lons, lats, u10, v10, tp
+    return data, lons, lats
 
 
 # df_spams_fin : df1, data : df2

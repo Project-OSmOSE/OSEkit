@@ -889,7 +889,7 @@ class Spectrogram(Dataset):
                     process.start()
                     processes.append(process)
                 else:
-                    jobfile = self.jb.build_job_file(
+                    self.jb.build_job_file(
                         script_path=Path(inspect.getfile(compute_stats)).resolve(),
                         script_args=f"--input-dir {self.path_input_audio_file}\
                             --hp-filter-min-freq {self.hp_filter_min_freq}\
@@ -1582,7 +1582,7 @@ class Spectrogram(Dataset):
             "overwrite": True,
         }
 
-        map_process_file = partial(self.process_file, **kwargs)
+        partial(self.process_file, **kwargs)
 
         for ll in self.list_audio_to_process:
             self.process_file(ll, **kwargs)

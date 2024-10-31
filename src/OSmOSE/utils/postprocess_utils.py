@@ -247,13 +247,7 @@ def reshape_timebin(df: pd.DataFrame, timebin_new: int = None) -> pd.DataFrame:
 
     annotators = list(df["annotator"].drop_duplicates())
     labels = list(df["annotation"].drop_duplicates())
-
-    df_nobox = df.loc[
-        (df["start_time"] == 0)
-        & (df["end_time"] == max(df["end_time"]))
-        & (df["end_frequency"] == max(df["end_frequency"]))
-    ]
-    max_time = 0 if len(df_nobox) == 0 else int(max(df["end_time"]))
+    
     max_freq = int(max(df["end_frequency"]))
 
     tz_data = df["start_datetime"][0].tz
