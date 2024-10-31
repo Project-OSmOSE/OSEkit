@@ -425,7 +425,9 @@ class Job_builder:
 
     # TODO support multiple dependencies and job chaining (?)
     def submit_job(
-        self, jobfile: str = None, dependency: str | List[str] = None,
+        self,
+        jobfile: str = None,
+        dependency: str | List[str] = None,
     ) -> List[str]:
         """Submits the job file to the cluster using the job scheduler written in the file name or in the configuration file.
 
@@ -472,7 +474,9 @@ class Job_builder:
                 dep = f"-d afterok:{dependency}" if dependency else ""
                 jobid = (
                     subprocess.run(
-                        ["sbatch", dep, jobinfo["path"]], stdout=subprocess.PIPE, check=False,
+                        ["sbatch", dep, jobinfo["path"]],
+                        stdout=subprocess.PIPE,
+                        check=False,
                     )
                     .stdout.decode("utf-8")
                     .rstrip("\n")
@@ -514,7 +518,8 @@ class Job_builder:
             res += "==== PREPARED JOBS ====\n\n"
         for job_info in self.prepared_jobs:
             created_at = datetime.strptime(
-                today + job_info["outfile"].stem[-11:-3], "%d%m%y%H-%M-%S",
+                today + job_info["outfile"].stem[-11:-3],
+                "%d%m%y%H-%M-%S",
             )
             res += (
                 f"{job_info['job_name']} (created at {created_at}) : ready to start.\n"
@@ -524,7 +529,8 @@ class Job_builder:
             res += "==== ONGOING JOBS ====\n\n"
         for job_info in self.ongoing_jobs:
             created_at = datetime.strptime(
-                today + job_info["outfile"].stem[-11:-3], "%d%m%y%H-%M-%S",
+                today + job_info["outfile"].stem[-11:-3],
+                "%d%m%y%H-%M-%S",
             )
             delta = datetime.now() - created_at
             strftime = f"{'%H hours, ' if delta.seconds >= 3600 else ''}{'%M minutes and ' if delta.seconds >= 60 else ''}%S seconds"
@@ -535,7 +541,8 @@ class Job_builder:
             res += "==== FINISHED JOBS ====\n\n"
         for job_info in self.finished_jobs:
             created_at = datetime.strptime(
-                today + job_info["outfile"].stem[-11:-3], "%d%m%y%H-%M-%S",
+                today + job_info["outfile"].stem[-11:-3],
+                "%d%m%y%H-%M-%S",
             )
 
             if not job_info["outfile"].exists():
@@ -543,7 +550,9 @@ class Job_builder:
             else:
                 delta = (
                     datetime.fromtimestamp(
-                        time.mktime(time.localtime(job_info["outfile"].stat().st_ctime)),
+                        time.mktime(
+                            time.localtime(job_info["outfile"].stat().st_ctime)
+                        ),
                     )
                     - created_at
                 )
@@ -583,7 +592,9 @@ class Job_builder:
             job_id = 0
             if job_name:
                 job_id = get_dict_index_in_list(
-                    self.finished_jobs, "job_name", job_name.rstrip(),
+                    self.finished_jobs,
+                    "job_name",
+                    job_name.rstrip(),
                 )
             elif len(self.finished_jobs) == 0:
                 print(
@@ -603,11 +614,15 @@ class Job_builder:
     def delete_job(self, job_identifier: str):
         try:
             job_id = get_dict_index_in_list(
-                self.ongoing_jobs, "job_name", job_identifier.rstrip(),
+                self.ongoing_jobs,
+                "job_name",
+                job_identifier.rstrip(),
             )
         except ValueError:
             job_id = get_dict_index_in_list(
-                self.ongoing_jobs, "id", job_identifier.rstrip(),
+                self.ongoing_jobs,
+                "id",
+                job_identifier.rstrip(),
             )
 
         jobinfo = self.ongoing_jobs[job_id]

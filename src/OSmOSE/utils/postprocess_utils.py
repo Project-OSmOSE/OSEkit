@@ -111,10 +111,12 @@ def sorting_detections(
 
     # Convert datetime columns to proper format
     df["start_datetime"] = pd.to_datetime(
-        df["start_datetime"], format="%Y-%m-%dT%H:%M:%S.%f%z",
+        df["start_datetime"],
+        format="%Y-%m-%dT%H:%M:%S.%f%z",
     )
     df["end_datetime"] = pd.to_datetime(
-        df["end_datetime"], format="%Y-%m-%dT%H:%M:%S.%f%z",
+        df["end_datetime"],
+        format="%Y-%m-%dT%H:%M:%S.%f%z",
     )
     df = df.sort_values("start_datetime")
 
@@ -251,7 +253,13 @@ def reshape_timebin(df: pd.DataFrame, timebin_new: int = None) -> pd.DataFrame:
 
     tz_data = df["start_datetime"][0].tz
 
-    if timebin_new == 10 or timebin_new == 60 or timebin_new == 600 or timebin_new == 3600 or timebin_new == 86400:
+    if (
+        timebin_new == 10
+        or timebin_new == 60
+        or timebin_new == 600
+        or timebin_new == 3600
+        or timebin_new == 86400
+    ):
         pass
     else:
         raise ValueError(f"Time resolution {timebin_new}s not available")
@@ -274,7 +282,8 @@ def reshape_timebin(df: pd.DataFrame, timebin_new: int = None) -> pd.DataFrame:
 
             t = t_rounder(t=df_detect_prov["start_datetime"].iloc[0], res=timebin_new)
             t2 = t_rounder(
-                df_detect_prov["start_datetime"].iloc[-1], timebin_new,
+                df_detect_prov["start_datetime"].iloc[-1],
+                timebin_new,
             ) + pd.timedelta(seconds=timebin_new)
 
             time_vector = [
@@ -317,9 +326,11 @@ def reshape_timebin(df: pd.DataFrame, timebin_new: int = None) -> pd.DataFrame:
             for i in range(len(times_detect_beg)):
                 for j in range(k, len(time_vector) - 1):
                     if int(times_detect_beg[i] * 1e7) in range(
-                        int(time_vector[j] * 1e7), int(time_vector[j + 1] * 1e7),
+                        int(time_vector[j] * 1e7),
+                        int(time_vector[j + 1] * 1e7),
                     ) or int(times_detect_end[i] * 1e7) in range(
-                        int(time_vector[j] * 1e7), int(time_vector[j + 1] * 1e7),
+                        int(time_vector[j] * 1e7),
+                        int(time_vector[j + 1] * 1e7),
                     ):
                         ranks.append(j)
                         k = j
@@ -341,7 +352,9 @@ def reshape_timebin(df: pd.DataFrame, timebin_new: int = None) -> pd.DataFrame:
                         + start_datetime.strftime("%Y-%m-%dT%H:%M:%S.%f%z")[-2:],
                     )
                     end_datetime = pd.Timestamp(
-                        time_vector[i] + timebin_new, unit="s", tz=tz_data,
+                        time_vector[i] + timebin_new,
+                        unit="s",
+                        tz=tz_data,
                     )
                     end_datetime_str.append(
                         end_datetime.strftime("%Y-%m-%dT%H:%M:%S.%f%z")[:-8]
@@ -411,7 +424,10 @@ def overview(data: pd.DataFrame):
     print(f"---\n\n{summary_annotator.to_string()}")
 
     fig, (ax1, ax2) = plt.subplots(
-        2, figsize=(12, 6), gridspec_kw={"height_ratios": [1, 1]}, facecolor="#36454F",
+        2,
+        figsize=(12, 6),
+        gridspec_kw={"height_ratios": [1, 1]},
+        facecolor="#36454F",
     )
     # ax1 = summary_label.plot(kind='bar', ax=ax1, color=['tab:blue', 'tab:orange'], edgecolor='black', linewidth=1)
     ax1 = summary_label.plot(kind="bar", ax=ax1, edgecolor="black", linewidth=1)
@@ -434,16 +450,30 @@ def overview(data: pd.DataFrame):
 
     # labels
     ax1.set_ylabel(
-        "Number of\nannotated calls", fontsize=15, color="w", multialignment="center",
+        "Number of\nannotated calls",
+        fontsize=15,
+        color="w",
+        multialignment="center",
     )
     ax1.set_xlabel(
-        "Labels", fontsize=10, rotation=0, color="w", multialignment="center",
+        "Labels",
+        fontsize=10,
+        rotation=0,
+        color="w",
+        multialignment="center",
     )
     ax2.set_ylabel(
-        "Number of\nannotated calls", fontsize=15, color="w", multialignment="center",
+        "Number of\nannotated calls",
+        fontsize=15,
+        color="w",
+        multialignment="center",
     )
     ax2.set_xlabel(
-        "Annotator", fontsize=10, rotation=0, color="w", multialignment="center",
+        "Annotator",
+        fontsize=10,
+        rotation=0,
+        color="w",
+        multialignment="center",
     )
 
     # spines
@@ -635,7 +665,9 @@ def single_seasonality(
         ax.set_ylim([0, n_annot_max])
         if reso_bin == "Minutes":
             ax.set_ylabel(
-                f"Detection rate % \n({res_min} min)", fontsize=20, color="w",
+                f"Detection rate % \n({res_min} min)",
+                fontsize=20,
+                color="w",
             )
         else:
             ax.set_ylabel("Detection rate % per month", fontsize=20, color="w")

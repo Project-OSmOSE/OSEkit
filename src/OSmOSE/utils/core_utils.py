@@ -54,7 +54,8 @@ def list_not_built_dataset(path_osmose: str, project: str = None) -> None:
     ]
 
     dataset_list = sorted(
-        dataset_list, key=lambda path: str(path).lower(),
+        dataset_list,
+        key=lambda path: str(path).lower(),
     )  # case insensitive alphabetical sorting of datasets
 
     list_not_built_dataset = []
@@ -80,7 +81,8 @@ def list_not_built_dataset(path_osmose: str, project: str = None) -> None:
                 and timestamp_path
                 and timestamp_path.exists()
                 and not dataset_directory.joinpath(
-                    OSMOSE_PATH.raw_audio, "original",
+                    OSMOSE_PATH.raw_audio,
+                    "original",
                 ).exists()
             ):
                 list_not_built_dataset.append(dataset_directory)
@@ -120,7 +122,8 @@ def list_dataset(path_osmose: str, project: str = None) -> None:
     ]
 
     dataset_list = sorted(
-        dataset_list, key=lambda path: str(path).lower(),
+        dataset_list,
+        key=lambda path: str(path).lower(),
     )  # case insensitive alphabetical sorting of datasets
 
     list_built_dataset = []
@@ -146,7 +149,8 @@ def list_dataset(path_osmose: str, project: str = None) -> None:
                 and timestamp_path
                 and timestamp_path.exists()
                 and not dataset_directory.joinpath(
-                    OSMOSE_PATH.raw_audio, "original",
+                    OSMOSE_PATH.raw_audio,
+                    "original",
                 ).exists()
             ):
                 list_built_dataset.append(dataset_directory)
@@ -190,7 +194,8 @@ def list_aplose(path_osmose: str, project: str = ""):
     ]
 
     dataset_list = sorted(
-        dataset_list, key=lambda path: str(path).lower(),
+        dataset_list,
+        key=lambda path: str(path).lower(),
     )  # case insensitive alphabetical sorting of datasets
 
     list_built_dataset = []
@@ -228,7 +233,9 @@ def list_aplose(path_osmose: str, project: str = ""):
             [
                 f"  - {dataset.name}\n\tresult file: {r.name}\n\ttask status file: {ts.name}"
                 for dataset, r, ts in zip(
-                    list_built_dataset, list_aplose_result, list_aplose_task_status,
+                    list_built_dataset,
+                    list_aplose_result,
+                    list_aplose_task_status,
                 )
             ],
         )
@@ -351,7 +358,8 @@ def read_header(file: str) -> Tuple[int, float, int, int, int]:
                     # Process the fmt chunk
                     fmt_chunk_data = fh.read(subchunk_size)
                     _, channels, samplerate, _, _, sampwidth = struct.unpack(
-                        "<HHIIHH", fmt_chunk_data[:16],
+                        "<HHIIHH",
+                        fmt_chunk_data[:16],
                     )
                     break
                 fh.seek(subchunk_size, 1)
@@ -407,7 +415,11 @@ def read_header(file: str) -> Tuple[int, float, int, int, int]:
 
 
 def safe_read(
-    file_path: str, *, nan: float = 0.0, posinf: any = None, neginf: any = None,
+    file_path: str,
+    *,
+    nan: float = 0.0,
+    posinf: any = None,
+    neginf: any = None,
 ) -> Tuple[np.ndarray, int]:
     """Open a file using Soundfile and clean up the data to be used safely
     Currently, only checks for `NaN`, `inf` and `-inf` presence. The default behavior is the same as `np.nan_to_num`:
@@ -618,13 +630,20 @@ def extract_config(
 
     for project_ID, dataset_ID in zip(list_project_ID, list_dataset_ID):
         dataset_resolution = check_available_file_resolution(
-            path_osmose, project_ID, dataset_ID,
+            path_osmose,
+            project_ID,
+            dataset_ID,
         )
 
         for dr in dataset_resolution:
             ### audio config files
             path1 = os.path.join(
-                path_osmose, project_ID, dataset_ID, "data", "audio", dr,
+                path_osmose,
+                project_ID,
+                dataset_ID,
+                "data",
+                "audio",
+                dr,
             )
             files1 = glob.glob(os.path.join(path1, "**.csv"))
 
@@ -635,7 +654,11 @@ def extract_config(
 
         ### spectro config files
         path2 = os.path.join(
-            path_osmose, project_ID, dataset_ID, "processed", "spectrogram",
+            path_osmose,
+            project_ID,
+            dataset_ID,
+            "processed",
+            "spectrogram",
         )
         files2 = []
         for root, dirs, files in os.walk(path2):
@@ -656,7 +679,9 @@ def extract_config(
 
 
 def extract_datetime(
-    var: str, tz: pytz._FixedOffset = None, formats=None,
+    var: str,
+    tz: pytz._FixedOffset = None,
+    formats=None,
 ) -> Union[pd.Timestamp, str]:
     """Extracts datetime from filename based on the date format
 
@@ -752,7 +777,8 @@ def add_entry_for_APLOSE(path: str, file: str, info: pd.DataFrame):
     if dataset_csv.exists():
         meta = pd.read_csv(dataset_csv)
         meta = pd.concat([meta, info], ignore_index=True).sort_values(
-            by=["path", "dataset"], ascending=True,
+            by=["path", "dataset"],
+            ascending=True,
         )
         meta.to_csv(dataset_csv, index=False)
 

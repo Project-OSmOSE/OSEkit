@@ -148,16 +148,19 @@ def reshape(
 
     # load timestamp and metadata
     input_timestamp = pd.read_csv(
-        timestamp_path
-        if timestamp_path and timestamp_path.exists()
-        else input_dir_path / "timestamp.csv",
+        (
+            timestamp_path
+            if timestamp_path and timestamp_path.exists()
+            else input_dir_path / "timestamp.csv"
+        ),
     )
 
     if file_metadata_path and file_metadata_path.exists():
         file_metadata = pd.read_csv(file_metadata_path, parse_dates=["timestamp"])
     else:
         file_metadata = pd.read_csv(
-            input_dir_path / "file_metadata.csv", parse_dates=["timestamp"],
+            input_dir_path / "file_metadata.csv",
+            parse_dates=["timestamp"],
         )
 
     filenames = [file.name for file in files]
@@ -171,7 +174,8 @@ def reshape(
 
     if not datetime_end:
         datetime_end = file_metadata["timestamp"].iloc[-1] + pd.Timedelta(
-            file_metadata["duration"].iloc[-1], unit="s",
+            file_metadata["duration"].iloc[-1],
+            unit="s",
         )
 
     # segment timestamps
@@ -215,7 +219,8 @@ def reshape(
                 (i + batch_ind_min) * segment_duration
             )
             segment_datetime_end = min(
-                segment_datetime_begin + segment_duration, datetime_end,
+                segment_datetime_begin + segment_duration,
+                datetime_end,
             )
         else:
             segment_datetime_begin = new_file[i + batch_ind_min]
@@ -333,7 +338,6 @@ def reshape(
 
     if verbose:
         print(msg_log)
-
 
 
 if __name__ == "__main__":

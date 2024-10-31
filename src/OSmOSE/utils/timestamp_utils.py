@@ -41,7 +41,9 @@ def check_epoch(df):
 
 
 def substract_timestamps(
-    input_timestamp: pd.DataFrame, files: List[str], index: int,
+    input_timestamp: pd.DataFrame,
+    files: List[str],
+    index: int,
 ) -> timedelta:
     """Substracts two timestamp_list from the "timestamp" column of a dataframe at the indexes of files[i] and files[i-1] and returns the time delta between them
 
@@ -216,7 +218,8 @@ def strptime_from_text(text: str, datetime_template: str) -> Timestamp:
 
 
 def associate_timestamps(
-    audio_files: Iterable[str], datetime_template: str,
+    audio_files: Iterable[str],
+    datetime_template: str,
 ) -> pd.Series:
     """Returns a chronologically sorted pandas series containing the audio files as indexes and the extracted timestamp as values.
 
@@ -242,7 +245,10 @@ def associate_timestamps(
 
 
 def get_timestamps(
-    path_osmose_dataset: str, campaign_name: str, dataset_name: str, resolution: str,
+    path_osmose_dataset: str,
+    campaign_name: str,
+    dataset_name: str,
+    resolution: str,
 ) -> pd.DataFrame:
     """Read infos from APLOSE timestamp csv file
 

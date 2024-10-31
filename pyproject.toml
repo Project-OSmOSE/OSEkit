@@ -57,3 +57,11 @@ markers = [
     "reg: Mark test as regression test. Run only these with '-m ref'."
 ]
 
+[tool.ruff]
+select = ["ALL"]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = [
+    # at least this three should be fine in tests:
+    "S101", # asserts allowed in tests...
+]

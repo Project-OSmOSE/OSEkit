@@ -1,4 +1,3 @@
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -17,7 +16,11 @@ def test_safe_read(input_dir):
 
     data = rng.standard_normal(duration * rate)
     sf.write(
-        input_dir.joinpath("nonan.wav"), data, rate, format="WAV", subtype="DOUBLE",
+        input_dir.joinpath("nonan.wav"),
+        data,
+        rate,
+        format="WAV",
+        subtype="DOUBLE",
     )
 
     assert np.array_equal(data, safe_read(input_dir.joinpath("nonan.wav"))[0])
@@ -27,7 +30,11 @@ def test_safe_read(input_dir):
     nandata[0], nandata[137], nandata[2055] = np.nan, np.nan, np.nan
     expected[0], expected[137], expected[2055] = 0.0, 0.0, 0.0
     sf.write(
-        input_dir.joinpath("nan.wav"), nandata, rate, format="WAV", subtype="DOUBLE",
+        input_dir.joinpath("nan.wav"),
+        nandata,
+        rate,
+        format="WAV",
+        subtype="DOUBLE",
     )
 
     assert np.array_equal(expected, safe_read(input_dir.joinpath("nan.wav"))[0])

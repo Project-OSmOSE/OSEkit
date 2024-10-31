@@ -48,7 +48,8 @@ def resample(
     for audio_file in audio_files_list:
         subprocess.run(
             f"sox {audio_file!s} -r {target_sr!s} -t wavpcm {Path(output_dir, audio_file.name)!s}",
-            shell=True, check=False,
+            shell=True,
+            check=False,
         )
 
         print(f"{audio_file.name} resampled to {target_sr}!")
@@ -76,7 +77,11 @@ if __name__ == "__main__":
         help="The output folder of the resampled files.",
     )
     required.add_argument(
-        "--target-sr", "-sr", required=True, type=int, help="The target samplerate.",
+        "--target-sr",
+        "-sr",
+        required=True,
+        type=int,
+        help="The target samplerate.",
     )
     parser.add_argument(
         "--batch-ind-min",

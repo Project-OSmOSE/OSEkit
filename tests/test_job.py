@@ -1,4 +1,3 @@
-
 import pytest
 
 from OSmOSE import Job_builder

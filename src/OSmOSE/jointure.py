@@ -16,6 +16,7 @@ from pykdtree.kdtree import KDTree
 def get_era_time(x):
     return calendar.timegm(x.timetuple()) if isinstance(x, datetime.datetime) else x
 
+
 def g(x):
     return calendar.timegm(time.strptime(str(x)[:-11], "%Y-%m-%dT%H"))
 

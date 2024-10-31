@@ -79,7 +79,8 @@ class Dataset:
 
         """
         assert isinstance(dataset_path, Path) or isinstance(
-            dataset_path, str,
+            dataset_path,
+            str,
         ), f"Expected value to be a Path or a string, but got {type(dataset_path).__name__}"
         # assert gps_coordinates
 
@@ -319,7 +320,8 @@ class Dataset:
 
         """
         metadata_path = next(
-            self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("metadata.csv"), False,
+            self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("metadata.csv"),
+            False,
         )
         if (
             metadata_path
@@ -371,7 +373,8 @@ class Dataset:
 
         if not user_timestamp:
             self._write_timestamp_csv_from_audio_files(
-                audio_path=path_raw_audio, date_template=date_template,
+                audio_path=path_raw_audio,
+                date_template=date_template,
             )
 
         resume_test_anomalies = path_raw_audio.joinpath("resume_test_anomalies.txt")
@@ -415,7 +418,9 @@ class Dataset:
             audio_file = audio_file_list[ind_dt]
 
             cur_timestamp, _ = self._format_timestamp(
-                timestamp_csv[ind_dt], date_template, already_printed_1,
+                timestamp_csv[ind_dt],
+                date_template,
+                already_printed_1,
             )
             # define final audio filename, especially we remove the sign '-' in filenames (because of our qsub_resample.sh)
             if ("-" in audio_file.name) or (":" in audio_file.name):
@@ -484,7 +489,8 @@ class Dataset:
             )
             new_data = new_data.dropna(axis=1, how="all")
             audio_metadata = pd.concat(
-                [audio_metadata if not audio_metadata.empty else None, new_data], axis=0,
+                [audio_metadata if not audio_metadata.empty else None, new_data],
+                axis=0,
             )
 
         audio_metadata["duration_inter_file"] = audio_metadata["duration"].diff()
@@ -630,10 +636,12 @@ class Dataset:
                     mean(audio_metadata["duration"].values),
                 ),
                 "audio_file_origin_volume": round(
-                    mean(audio_metadata["size"].values), 1,
+                    mean(audio_metadata["size"].values),
+                    1,
                 ),
                 "dataset_origin_volume": max(
-                    1, round(sum(audio_metadata["size"].values) / 1000),
+                    1,
+                    round(sum(audio_metadata["size"].values) / 1000),
                 ),  # cannot be inferior to 1 GB
                 "dataset_origin_duration": round(
                     sum(audio_metadata["duration"].values),
@@ -663,17 +671,22 @@ class Dataset:
             print("\n DONE ! your dataset is on OSmOSE platform !")
 
     def _write_timestamp_csv_from_audio_files(
-        self, audio_path: Path, date_template: str,
+        self,
+        audio_path: Path,
+        date_template: str,
     ):
         supported_audio_files = [file.name for file in get_all_audio_files(audio_path)]
         filenames_with_timestamps = associate_timestamps(
-            audio_files=supported_audio_files, datetime_template=date_template,
+            audio_files=supported_audio_files,
+            datetime_template=date_template,
         )
         filenames_with_timestamps["timestamp"] = filenames_with_timestamps[
             "timestamp"
         ].apply(lambda t: strftime_osmose_format(t))
         filenames_with_timestamps.to_csv(
-            audio_path / "timestamp.csv", index=False, na_rep="NaN",
+            audio_path / "timestamp.csv",
+            index=False,
+            na_rep="NaN",
         )
         os.chmod(audio_path / "timestamp.csv", mode=FPDEFAULT)
 
@@ -691,7 +704,9 @@ class Dataset:
             dataF = pd.read_csv(cur_timestamp_not_formatted)
             for val_timestamp_not_formatted in dataF["timestamp"].values:
                 cur_timestamp_formatted, format_OK = self._format_timestamp(
-                    val_timestamp_not_formatted, date_template, True,
+                    val_timestamp_not_formatted,
+                    date_template,
+                    True,
                 )
                 if format_OK:
                     print("-> Format OK \n")
@@ -716,7 +731,8 @@ class Dataset:
 
         try:
             datetime.strptime(
-                cur_timestamp_not_formatted, TIMESTAMP_FORMAT_AUDIO_FILE,
+                cur_timestamp_not_formatted,
+                TIMESTAMP_FORMAT_AUDIO_FILE,
             )
             cur_timestamp_formatted = cur_timestamp_not_formatted
             format_OK = True
@@ -730,10 +746,12 @@ class Dataset:
             if not date_template:
                 raise FileNotFoundError("You have to define a date_template please.")
             date_obj = datetime.strptime(
-                cur_timestamp_not_formatted + self.timezone, date_template + "%z",
+                cur_timestamp_not_formatted + self.timezone,
+                date_template + "%z",
             )
             cur_timestamp_formatted = datetime.strftime(
-                date_obj, TIMESTAMP_FORMAT_AUDIO_FILE,
+                date_obj,
+                TIMESTAMP_FORMAT_AUDIO_FILE,
             )
 
         return cur_timestamp_formatted, format_OK
@@ -790,7 +808,8 @@ class Dataset:
                     else:
                         for key_dico in self.dico_aux_substring:
                             if re.search(
-                                "|".join(self.dico_aux_substring[key_dico]), f,
+                                "|".join(self.dico_aux_substring[key_dico]),
+                                f,
                             ):
                                 Path(path, f).rename(
                                     self.path / OSMOSE_PATH.auxiliary / key_dico / f,
@@ -845,7 +864,8 @@ class Dataset:
         origin_sr = int(metadata["origin_sr"][0])
 
         self.__original_folder = self.path.joinpath(
-            OSMOSE_PATH.raw_audio, f"{audio_file_origin_duration}_{origin_sr}",
+            OSMOSE_PATH.raw_audio,
+            f"{audio_file_origin_duration}_{origin_sr}",
         )
 
         return self.original_folder

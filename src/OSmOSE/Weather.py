@@ -85,7 +85,11 @@ class Weather:
                 ]  # suprinsingly , doing simply = list(time) was droping the Timestamp dtype, to be investigated in more depth...
 
             np.savez(
-                path_all_welch, LTAS=LTAS, time=time, Freq=Freq, allow_pickle=True,
+                path_all_welch,
+                LTAS=LTAS,
+                time=time,
+                Freq=Freq,
+                allow_pickle=True,
             )  # careful data not sorted here! we should save them based on dataframe df below
 
         else:
@@ -182,7 +186,8 @@ class Weather:
         )
 
         with open(
-            self.path.joinpath(OSMOSE_PATH.weather, "polynomial_law.txt"), "w",
+            self.path.joinpath(OSMOSE_PATH.weather, "polynomial_law.txt"),
+            "w",
         ) as f:
             for item in z:
                 f.write("%s\n" % item)

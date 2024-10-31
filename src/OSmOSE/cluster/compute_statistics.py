@@ -69,7 +69,8 @@ def Write_zscore_norma_params(
         data = signal.sosfilt(bpcoef, data)
 
         current_timestamp = get_timestamp_of_audio_file(
-            Path(input_dir).joinpath("timestamp.csv"), wav.name,
+            Path(input_dir).joinpath("timestamp.csv"),
+            wav.name,
         )
 
         list_summaryStats.append(

@@ -68,7 +68,8 @@ class Auxiliary(Spectrogram):
         # Load reference data that will be used to join all other data
         self.df = check_epoch(pd.read_csv(self.audio_path.joinpath("timestamp.csv")))
         self.metadata = pd.read_csv(
-            self._get_original_after_build().joinpath("metadata.csv"), header=0,
+            self._get_original_after_build().joinpath("metadata.csv"),
+            header=0,
         )
         self._depth, self._gps_coordinates = depth, gps_coordinates
         match depth:
@@ -149,7 +150,9 @@ class Auxiliary(Spectrogram):
             ), "Make sure the depth file has both an 'epoch' and 'depth' column."
             # Join data using a 1D interpolation
             self.df["depth"] = interpolate.interp1d(
-                self.depth.epoch, self.depth.depth, bounds_error=False,
+                self.depth.epoch,
+                self.depth.depth,
+                bounds_error=False,
             )(self.df.epoch)
 
         elif type(self.depth) is int:
@@ -167,10 +170,14 @@ class Auxiliary(Spectrogram):
             ), "Make sure the depth file has both an 'epoch' and 'lat'/'lon' columns."
             # Join data using a 1D interpolation
             self.df["lat"] = interpolate.interp1d(
-                self.gps_coordinates.epoch, self.gps_coordinates.lat, bounds_error=False,
+                self.gps_coordinates.epoch,
+                self.gps_coordinates.lat,
+                bounds_error=False,
             )(self.df.epoch)
             self.df["lon"] = interpolate.interp1d(
-                self.gps_coordinates.epoch, self.gps_coordinates.lon, bounds_error=False,
+                self.gps_coordinates.epoch,
+                self.gps_coordinates.lon,
+                bounds_error=False,
             )(self.df.epoch)
 
         elif type(self.gps_coordinates) in [list, tuple]:
@@ -178,7 +185,9 @@ class Auxiliary(Spectrogram):
             self.df["lon"] = self.gps_coordinates[1]
 
     def join_other(
-        self, csv_path: str = None, variable_name: Union[str, List, Tuple] = None,
+        self,
+        csv_path: str = None,
+        variable_name: Union[str, List, Tuple] = None,
     ):
         """Method to join data using solely temporal interpolation.
 
@@ -197,7 +206,9 @@ class Auxiliary(Spectrogram):
         for key in self.other.keys():
             _csv = check_epoch(pd.read_csv(self.other[key]))
             self.df[key] = interpolate.interp1d(
-                _csv.epoch, _csv[key], bounds_error=False,
+                _csv.epoch,
+                _csv[key],
+                bounds_error=False,
             )(self.df.epoch)
 
     def interpolation_era(self):

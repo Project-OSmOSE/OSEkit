@@ -114,7 +114,8 @@ class Spectrogram(Dataset):
         self.__local = local
 
         orig_metadata = pd.read_csv(
-            self._get_original_after_build() / "metadata.csv", header=0,
+            self._get_original_after_build() / "metadata.csv",
+            header=0,
         )
 
         processed_path = self.path / OSMOSE_PATH.spectrogram
@@ -249,7 +250,9 @@ class Spectrogram(Dataset):
 
     @classmethod
     def from_csv(
-        cls, dataset_path: Path, metadata_csv_path: Path,
+        cls,
+        dataset_path: Path,
+        metadata_csv_path: Path,
     ):  # I don't want to use the dataset_path, but for now I have to
         df = pd.read_csv(metadata_csv_path)
         instance = cls(dataset_path=dataset_path)
@@ -463,7 +466,10 @@ class Spectrogram(Dataset):
         self.__custom_frequency_scale = value
 
     def __build_path(
-        self, adjust: bool = False, dry: bool = False, force_init: bool = False,
+        self,
+        adjust: bool = False,
+        dry: bool = False,
+        force_init: bool = False,
     ):
         """Build some internal paths according to the expected architecture and might create them.
 
@@ -913,7 +919,8 @@ class Spectrogram(Dataset):
         metadata["audio_file_dataset_overlap"] = self.audio_file_overlap
 
         origin_dt = pd.read_csv(
-            self.path_input_audio_file / "timestamp.csv", parse_dates=["timestamp"],
+            self.path_input_audio_file / "timestamp.csv",
+            parse_dates=["timestamp"],
         )["timestamp"]
 
         metadata["audio_file_count"] = sum(
@@ -1049,7 +1056,8 @@ class Spectrogram(Dataset):
             pd.DataFrame.from_records([new_params]).to_csv(filename, index=False)
 
             chmod_if_needed(
-                path=filename, mode=FPDEFAULT,
+                path=filename,
+                mode=FPDEFAULT,
             )  # This was DPDEFAULT: was it intentional?
             return True
 
@@ -1066,7 +1074,8 @@ class Spectrogram(Dataset):
             pd.DataFrame.from_records([new_params]).to_csv(filename, index=False)
 
             chmod_if_needed(
-                path=filename, mode=FPDEFAULT,
+                path=filename,
+                mode=FPDEFAULT,
             )  # This was DPDEFAULT: was it intentional?
             return True
         return False
@@ -1233,11 +1242,19 @@ class Spectrogram(Dataset):
 
         print(f"Generating spectrograms for {output_file.name}")
         self.gen_tiles(
-            data=data, sample_rate=sample_rate, output_file=output_file, adjust=adjust,
+            data=data,
+            sample_rate=sample_rate,
+            output_file=output_file,
+            adjust=adjust,
         )
 
     def gen_tiles(
-        self, *, data: np.ndarray, sample_rate: int, output_file: Path, adjust: bool,
+        self,
+        *,
+        data: np.ndarray,
+        sample_rate: int,
+        output_file: Path,
+        adjust: bool,
     ):
         """Generate spectrogram tiles corresponding to the zoom levels.
 
@@ -1311,7 +1328,9 @@ class Spectrogram(Dataset):
         Sxx_mean_lowest_tuile = Sxx_mean_lowest_tuile[1:, :]
 
         segment_times = np.linspace(
-            0, len(data) / sample_rate, Sxx_complete_lowest_level.shape[1],
+            0,
+            len(data) / sample_rate,
+            Sxx_complete_lowest_level.shape[1],
         )[np.newaxis, :]
 
         # lowest tuile resolution
@@ -1348,11 +1367,13 @@ class Spectrogram(Dataset):
             # loop over the tiles at each zoom level
             for tile in range(2**zoom_level):
                 Sxx_int = Sxx_complete_lowest_level[
-                    :, tile * nberspec : (tile + 1) * nberspec,
+                    :,
+                    tile * nberspec : (tile + 1) * nberspec,
                 ][:, :: 2 ** (self.zoom_level - zoom_level)]
 
                 segment_times_int = segment_times[
-                    :, tile * nberspec : (tile + 1) * nberspec,
+                    :,
+                    tile * nberspec : (tile + 1) * nberspec,
                 ][:, :: 2 ** (self.zoom_level - zoom_level)]
 
                 if self.spectro_normalization == "density":
@@ -1398,7 +1419,11 @@ class Spectrogram(Dataset):
                     chmod_if_needed(path=output_matrix, mode=FPDEFAULT)
 
     def gen_spectro(
-        self, *, data: np.ndarray, sample_rate: int, output_file: Path,
+        self,
+        *,
+        data: np.ndarray,
+        sample_rate: int,
+        output_file: Path,
     ) -> Tuple[np.ndarray, np.ndarray[float]]:
         """Generate the spectrograms
 
@@ -1532,7 +1557,8 @@ class Spectrogram(Dataset):
             plt.ylim(freq[freq > 0].min(), self.dataset_sr / 2)
         else:
             custom_frequency_scale = FrequencyScaleSerializer().get_scale(
-                self.custom_frequency_scale, self.dataset_sr,
+                self.custom_frequency_scale,
+                self.dataset_sr,
             )
             freq_custom = np.vectorize(custom_frequency_scale.map_freq2scale)(freq)
             plt.pcolormesh(time, freq_custom, log_spectro, cmap=color_map)
@@ -1610,7 +1636,11 @@ class Spectrogram(Dataset):
                 Time = list(itertools.chain(*Time))
 
             np.savez(
-                path_all_welch, Sxx=Sxx, Time=Time, Freq=Freq, allow_pickle=True,
+                path_all_welch,
+                Sxx=Sxx,
+                Time=Time,
+                Freq=Freq,
+                allow_pickle=True,
             )  # careful data not sorted here! we should save them based on dataframe df below
 
         else:
@@ -1787,7 +1817,6 @@ class Spectrogram(Dataset):
                 "No intermediary welch spectra to aggregate, run a complete generation of spectrograms first!",
             )
 
-
         # assign default value for Freq_max, equivalent to no HF filtering
         freq_max = [int(sample_rate / 2)]
         if not isinstance(freq_min, list):
@@ -1819,7 +1848,9 @@ class Spectrogram(Dataset):
         df.index = pd.to_datetime(df.index)
 
         time_vector = pd.date_range(
-            df.index[0], df.index[-1], freq=str(time_resolution) + "s",
+            df.index[0],
+            df.index[-1],
+            freq=str(time_resolution) + "s",
         )
 
         # Plotting SPL
@@ -1945,7 +1976,10 @@ class Spectrogram(Dataset):
         p = np.nanpercentile(all_welch, percen, 0, interpolation="linear")
         for i in range(len(p)):
             plt.plot(
-                Freq, p[i, :], linewidth=2, label="%s %% percentil" % percen[i],
+                Freq,
+                p[i, :],
+                linewidth=2,
+                label="%s %% percentil" % percen[i],
             )
 
         ax.semilogx()
