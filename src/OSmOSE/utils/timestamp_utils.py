@@ -1,5 +1,7 @@
 """Utils for working with timestamps."""
 
+from __future__ import annotations  # Backwards compatibility with Python < 3.10
+
 import os
 import re
 from datetime import datetime, timedelta
@@ -87,15 +89,36 @@ def to_timestamp(string: str) -> pd.Timestamp:
 
 
 def reformat_timestamp(
-    old_timestamp_str: str, old_datetime_template: str, timezone: str = None
-):
+    old_timestamp_str: str,
+    old_datetime_template: str,
+    timezone: str | None = None,
+) -> str:
+    """Format a timestamp string from a given template to the OSmOSE template.
+
+    Parameters
+    ----------
+    old_timestamp_str: str
+        The old timestamp string.
+    old_datetime_template: str
+        The datetime template of the old timestamp using strftime codes.
+    timezone: str (optional)
+        The timezone of the timestamp.
+        If it is not provided, it will be defaulted as UTC.
+
+    Returns
+    -------
+    str:
+        The formatted timestamp string in the OSmOSE %Y-%m-%dT%H:%M:%S.%f%z format.
+
+    """
     timestamp = strptime_from_text(
-        text=old_timestamp_str, datetime_template=old_datetime_template
+        text=old_timestamp_str,
+        datetime_template=old_datetime_template,
     )
     if timezone:
         if timestamp.tz:
             print(
-                f"You specified a timezone for a tz-aware timestamp. Timestamps timezones {timestamp.tz} will be converted to {timezone}"
+                f"You specified a timezone for a tz-aware timestamp. Timestamps timezones {timestamp.tz} will be converted to {timezone}",
             )
             timestamp = timestamp.tz_convert(timezone)
         else:

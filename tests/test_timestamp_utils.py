@@ -1,18 +1,19 @@
 import pytest
-from pandas import Timestamp, Series
+from pandas import DataFrame, Series, Timestamp
+
 from OSmOSE.utils.timestamp_utils import (
-    is_datetime_template_valid,
-    build_regex_from_datetime_template,
-    strptime_from_text,
     associate_timestamps,
+    build_regex_from_datetime_template,
+    is_datetime_template_valid,
     reformat_timestamp,
     strftime_osmose_format,
+    strptime_from_text,
 )
 
 
 @pytest.mark.unit
 @pytest.mark.parametrize(
-    "datetime_template, expected",
+    ("datetime_template", "expected"),
     [
         pytest.param("%y%m%d%H%M%S", True, id="simple_pattern"),
         pytest.param("%Y%y%m%d%H%M%S%I%p%f", True, id="all_strftime_codes"),
@@ -26,13 +27,13 @@ from OSmOSE.utils.timestamp_utils import (
         pytest.param("%y%m%d%H%M%S_%Z", True, id="timezone_name"),
     ],
 )
-def test_is_datetime_template_valid(datetime_template, expected):
+def test_is_datetime_template_valid(datetime_template: str, expected: bool) -> None:
     assert is_datetime_template_valid(datetime_template) == expected
 
 
 @pytest.mark.unit
 @pytest.mark.parametrize(
-    "datetime_template, expected",
+    ("datetime_template", "expected"),
     [
         pytest.param(
             "%y%m%d%H%M%S",
@@ -41,12 +42,14 @@ def test_is_datetime_template_valid(datetime_template, expected):
         ),
         pytest.param(
             "%Y%y%m%d%H%M%S%I%p%f",
-            r"([12]\d{3})(\d{2})(0[1-9]|1[0-2])([0-2]\d|3[0-1])([0-1]\d|2[0-4])([0-5]\d)([0-5]\d)(0[1-9]|1[0-2])(AM|PM)(\d{1,6})",
+            r"([12]\d{3})(\d{2})(0[1-9]|1[0-2])([0-2]\d|3[0-1])([0-1]\d|2[0-4])"
+            r"([0-5]\d)([0-5]\d)(0[1-9]|1[0-2])(AM|PM)(\d{1,6})",
             id="all_strftime_codes",
         ),
         pytest.param(
             "%y %m %d %H %M %S",
-            r"(\d{2}) (0[1-9]|1[0-2]) ([0-2]\d|3[0-1]) ([0-1]\d|2[0-4]) ([0-5]\d) ([0-5]\d)",
+            r"(\d{2}) (0[1-9]|1[0-2]) ([0-2]\d|3[0-1]) "
+            r"([0-1]\d|2[0-4]) ([0-5]\d) ([0-5]\d)",
             id="spaces_separated_codes",
         ),
         pytest.param(
@@ -76,13 +79,16 @@ def test_is_datetime_template_valid(datetime_template, expected):
         ),
     ],
 )
-def test_build_regex_from_datetime_template(datetime_template: str, expected: str):
+def test_build_regex_from_datetime_template(
+    datetime_template: str,
+    expected: str,
+) -> None:
     assert build_regex_from_datetime_template(datetime_template) == expected
 
 
 @pytest.mark.integ
 @pytest.mark.parametrize(
-    "text, datetime_template, expected",
+    ("text", "datetime_template", "expected"),
     [
         pytest.param(
             "7189.230405144906.wav",
@@ -200,13 +206,17 @@ def test_build_regex_from_datetime_template(datetime_template: str, expected: st
         ),
     ],
 )
-def test_strptime_from_text(text: str, datetime_template: str, expected: Timestamp):
+def test_strptime_from_text(
+    text: str,
+    datetime_template: str,
+    expected: Timestamp,
+) -> None:
     assert strptime_from_text(text, datetime_template) == expected
 
 
 @pytest.mark.integ
 @pytest.mark.parametrize(
-    "text, datetime_template, expected",
+    ("text", "datetime_template", "expected"),
     [
         pytest.param(
             "7189.230405144906.wav",
@@ -240,7 +250,8 @@ def test_strptime_from_text(text: str, datetime_template: str, expected: Timesta
             "%y%m%d%H%M%S",
             pytest.raises(
                 ValueError,
-                match="7189.230405_144906.wav did not match the given %y%m%d%H%M%S template",
+                match="7189.230405_144906.wav did not match "
+                "the given %y%m%d%H%M%S template",
             ),
             id="unmatching_pattern",
         ),
@@ -249,7 +260,8 @@ def test_strptime_from_text(text: str, datetime_template: str, expected: Timesta
             "%Y%m%d%H%M%S",
             pytest.raises(
                 ValueError,
-                match="7189.230405144906.wav did not match the given %Y%m%d%H%M%S template",
+                match="7189.230405144906.wav did not match "
+                "the given %Y%m%d%H%M%S template",
             ),
             id="%Y_should_have_4_digits",
         ),
@@ -258,32 +270,49 @@ def test_strptime_from_text(text: str, datetime_template: str, expected: Timesta
             "%y%m%d%H%M%S",
             pytest.raises(
                 ValueError,
-                match="7189.230405146706.wav did not match the given %y%m%d%H%M%S template",
+                match="7189.230405146706.wav did not match "
+                "the given %y%m%d%H%M%S template",
             ),
             id="%M_should_be_lower_than_60",
         ),
         pytest.param(
             "7189.230405146706_0200.wav",
             "%y%m%d%H%M%S_%z",
-            pytest.raises(ValueError),
+            pytest.raises(
+                ValueError,
+                match="7189.230405146706_0200.wav did not match "
+                "the given %y%m%d%H%M%S_%z template",
+            ),
             id="incorrect_timezone_offset",
         ),
         pytest.param(
             "7189.230405146706_+2500.wav",
             "%y%m%d%H%M%S_%z",
-            pytest.raises(ValueError),
+            pytest.raises(
+                ValueError,
+                match=r"7189.230405146706_\+2500.wav did not match "
+                "the given %y%m%d%H%M%S_%z template",
+            ),
             id="out_of_range_timezone_offset",
         ),
         pytest.param(
             "7189.230405146706_Brest.wav",
             "%y%m%d%H%M%S_%Z",
-            pytest.raises(ValueError),
+            pytest.raises(
+                ValueError,
+                match="7189.230405146706_Brest.wav did not match "
+                "the given %y%m%d%H%M%S_%Z template",
+            ),
             id="incorrect_timezone_name",
         ),
         pytest.param(
             "2023-04-05T14:49:06.-0200.wav",
             "%Y-%m-%dT%H:%M:%S.%f%z",
-            pytest.raises(ValueError),
+            pytest.raises(
+                ValueError,
+                match="2023-04-05T14:49:06.-0200.wav did not match "
+                "the given %Y-%m-%dT%H:%M:%S.%f%z template",
+            ),
             id="no_specified_%f",
         ),
     ],
@@ -292,13 +321,13 @@ def test_strptime_from_text_errors(
     text: str,
     datetime_template: str,
     expected: Timestamp,
-):
+) -> None:
     with expected as e:
         assert strptime_from_text(text, datetime_template) == e
 
 
 @pytest.fixture
-def correct_series():
+def correct_series() -> DataFrame:
     series = Series(
         {
             "something2345_2012_06_24__16:32:10.wav": Timestamp("2012-06-24 16:32:10"),
@@ -313,7 +342,7 @@ def correct_series():
 
 
 @pytest.mark.integ
-def test_associate_timestamps(correct_series):
+def test_associate_timestamps(correct_series: DataFrame) -> None:
     input_files = list(correct_series["filename"])
     assert associate_timestamps((i for i in input_files), "%Y_%m_%d__%H:%M:%S").equals(
         correct_series,
@@ -321,14 +350,17 @@ def test_associate_timestamps(correct_series):
 
 
 @pytest.mark.integ
-def test_associate_timestamps_error_with_incorrect_datetime_format(correct_series):
+def test_associate_timestamps_error_with_incorrect_datetime_format(
+    correct_series: DataFrame,
+) -> None:
     input_files = list(correct_series["filename"])
     mismatching_datetime_format = "%Y%m%d__%H:%M:%S"
     incorrect_datetime_format = "%y%m%d%H%M%P%S"
 
     with pytest.raises(
         ValueError,
-        match=f"{input_files[0]} did not match the given {mismatching_datetime_format} template",
+        match=f"{input_files[0]} did not match "
+        f"the given {mismatching_datetime_format} template",
     ) as e:
         assert e == associate_timestamps(
             (i for i in input_files),
@@ -347,7 +379,7 @@ def test_associate_timestamps_error_with_incorrect_datetime_format(correct_serie
 
 @pytest.mark.unit
 @pytest.mark.parametrize(
-    "timestamp, expected",
+    ("timestamp", "expected"),
     [
         pytest.param(
             Timestamp("2024-10-17 10:14:11.933+0000"),
@@ -381,13 +413,13 @@ def test_associate_timestamps_error_with_incorrect_datetime_format(correct_serie
         ),
     ],
 )
-def test_strftime_osmose_format(timestamp: Timestamp, expected: str):
+def test_strftime_osmose_format(timestamp: Timestamp, expected: str) -> None:
     assert strftime_osmose_format(timestamp) == expected
 
 
 @pytest.mark.unit
 @pytest.mark.parametrize(
-    "args, expected",
+    ("args", "expected"),
     [
         pytest.param(
             ["2024-10-17 10:14:11", "%Y-%m-%d %H:%M:%S", "UTC"],
@@ -441,5 +473,5 @@ def test_strftime_osmose_format(timestamp: Timestamp, expected: str):
         ),
     ],
 )
-def test_reformat_timestamp(args, expected: str):
+def test_reformat_timestamp(args: str, expected: str) -> None:
     assert reformat_timestamp(*args) == expected
