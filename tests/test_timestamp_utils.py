@@ -1,3 +1,5 @@
+import logging
+
 import pytest
 from pandas import DataFrame, Series, Timestamp
 
@@ -475,3 +477,40 @@ def test_strftime_osmose_format(timestamp: Timestamp, expected: str) -> None:
 )
 def test_reformat_timestamp(args: str, expected: str) -> None:
     assert reformat_timestamp(*args) == expected
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("old_timestamp", "datetime_format", "timezone", "expected"),
+    [
+        pytest.param(
+            "2024-10-17 10:14:11 +0200",
+            "%Y-%m-%d %H:%M:%S %z",
+            "+01:00",
+            "2024-10-17T09:14:11.000+0100",
+            id="UTC_timezone",
+        ),
+        pytest.param(
+            "2024-06-17 10:14:11 Europe/Sarajevo",
+            "%Y-%m-%d %H:%M:%S %Z",
+            "UTC",
+            "2024-06-17T08:14:11.000+0000",
+            id="UTC_timezone",
+        ),
+    ],
+)
+def test_reformat_timestamp_while_changing_timezone(
+    old_timestamp: str,
+    datetime_format: str,
+    timezone: str,
+    expected: str,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+
+    with caplog.at_level(logging.WARNING):
+        result = reformat_timestamp(old_timestamp, datetime_format, timezone)
+
+    assert (
+        f"Timestamps timezones UTC+02:00 will be converted to {timezone}" in caplog.text
+    )
+    assert result == expected

@@ -11,6 +11,7 @@ import pandas as pd
 from pandas import Timestamp
 
 from OSmOSE.config import TIMESTAMP_FORMAT_AUDIO_FILE
+from OSmOSE.config import global_logging_context as glc
 
 _REGEX_BUILDER = {
     "%Y": r"([12]\d{3})",
@@ -117,8 +118,10 @@ def reformat_timestamp(
     )
     if timezone:
         if timestamp.tz:
-            print(
-                f"You specified a timezone for a tz-aware timestamp. Timestamps timezones {timestamp.tz} will be converted to {timezone}",
+
+            glc.logger.warning(
+                f"You specified a timezone for a tz-aware timestamp. "
+                f"Timestamps timezones {timestamp.tz} will be converted to {timezone}",
             )
             timestamp = timestamp.tz_convert(timezone)
         else:
