@@ -27,10 +27,9 @@ class FrequencyScaleSerializer:
         if config_name in self.configurations:
             scale_class, kwargs = self.configurations[config_name]
             print(
-                f"The y-scale used for spectrogram generation is {config_name} with sampling rate {sr}"
+                f"The y-scale used for spectrogram generation is {config_name} with sampling rate {sr}",
             )
             return scale_class(sr=sr, **kwargs)
-        else:
-            raise ValueError(
-                f"No configuration found for {config_name}, accepted values are {self.configurations.keys()}"
-            )
+        raise ValueError(
+            f"No configuration found for {config_name}, accepted values are {self.configurations.keys()}",
+        )

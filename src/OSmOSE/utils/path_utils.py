@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from OSmOSE.config import DPDEFAULT
 
 
@@ -14,6 +15,7 @@ def make_path(path: Path, *, mode=DPDEFAULT) -> Path:
         mode: `int`, optional, keyword-only
             The permission code of the complete path. The default is 0o755, meaning the owner has all permissions over the files of the path,
             and the owner group and others only have read and execute rights, but not writing.
+
     """
     for parent in path.parents[::-1]:
         parent.mkdir(mode=mode, exist_ok=True)
@@ -36,6 +38,6 @@ def str2Path(path: str) -> Path:
     -------
     Path
         The complete path as a Path.
-    """
 
+    """
     return Path(path)

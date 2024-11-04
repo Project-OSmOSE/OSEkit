@@ -1,14 +1,13 @@
-from pathlib import Path
-import pandas as pd
 import itertools
-from argparse import ArgumentParser
 import os
+from argparse import ArgumentParser
+from pathlib import Path
+
+import pandas as pd
 
 
 def merge_timestamp_csv(input_files: str):
     input_dir_path = Path(input_files)
-
-    list_audio = list(input_dir_path.glob("timestamp_*"))
 
     list_conca_timestamps = []
     list_conca_filename = []
@@ -18,12 +17,12 @@ def merge_timestamp_csv(input_files: str):
         list_conca_filename.append(list(pd.read_csv(ll)["filename"].values))
         os.remove(ll)
 
-    print(f"save file {str(input_dir_path.joinpath('timestamp.csv'))}")
+    print(f"save file {input_dir_path.joinpath('timestamp.csv')!s}")
     df = pd.DataFrame(
         {
             "filename": list(itertools.chain(*list_conca_filename)),
             "timestamp": list(itertools.chain(*list_conca_timestamps)),
-        }
+        },
     )
     df.sort_values(by=["timestamp"], inplace=True)
     df.to_csv(input_dir_path.joinpath("timestamp.csv"), index=False)

@@ -1,6 +1,7 @@
 import os
-from pathlib import Path
+
 import pytest
+
 from OSmOSE import Dataset
 
 
@@ -12,7 +13,7 @@ def test_find_or_create_original_folder(input_dataset):
     assert folder == input_dataset["orig_audio_dir"]
 
     input_dataset["orig_audio_dir"].rename(
-        input_dataset["orig_audio_dir"].with_name("unconventional_name")
+        input_dataset["orig_audio_dir"].with_name("unconventional_name"),
     )
 
     folder2 = dataset._find_or_create_original_folder()
@@ -23,7 +24,10 @@ def test_find_or_create_original_folder(input_dataset):
 @pytest.mark.integ
 def test_build(input_dataset):
     dataset = Dataset(
-        input_dataset["main_dir"], gps_coordinates=(1, 1), depth=10, timezone="+03:00"
+        input_dataset["main_dir"],
+        gps_coordinates=(1, 1),
+        depth=10,
+        timezone="+03:00",
     )
 
     dataset.build()
@@ -40,5 +44,5 @@ def test_build(input_dataset):
             "timestamp.csv",
         ]
         + [f"20220101_1200{str(3*i).zfill(2)}.wav" for i in range(5)]
-        + [f"20220101_1200{str(3*i).zfill(2)}.flac" for i in range(5, 10)]
+        + [f"20220101_1200{str(3*i).zfill(2)}.flac" for i in range(5, 10)],
     )

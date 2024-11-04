@@ -1,28 +1,30 @@
+import glob
+import json
+import math
 import os
-from warnings import warn
-from pathlib import Path
-from importlib.resources import as_file
 import random
 import shutil
 import struct
-from collections import namedtuple
-import sys
-from typing import Union, NamedTuple, Tuple, List, Literal
-import pytz
-import glob
-import math
+from importlib.resources import as_file
+from pathlib import Path
+from typing import List, NamedTuple, Tuple, Union
+from warnings import warn
+
 import pandas as pd
-import json
+import pytz
 
 try:
-    import pwd
     import tomllib
 except ModuleNotFoundError:
     import tomli as tomllib
 
-import soundfile as sf
+import datetime as dt
+import re
+
 import numpy as np
-from OSmOSE.config import *
+import soundfile as sf
+
+from OSmOSE.config import OSMOSE_PATH
 
 
 def display_folder_storage_info(dir_path: str) -> None:
@@ -41,8 +43,8 @@ def list_not_built_dataset(path_osmose: str, project: str = None) -> None:
     dataset_folder_path: str
         The path to the directory containing the project/datasets.
     project: str
-        Name of the project folder containing the datasets."""
-
+        Name of the project folder containing the datasets.
+    """
     ds_folder = Path(path_osmose, project)
 
     dataset_list = [
@@ -52,7 +54,8 @@ def list_not_built_dataset(path_osmose: str, project: str = None) -> None:
     ]
 
     dataset_list = sorted(
-        dataset_list, key=lambda path: str(path).lower()
+        dataset_list,
+        key=lambda path: str(path).lower(),
     )  # case insensitive alphabetical sorting of datasets
 
     list_not_built_dataset = []
@@ -67,7 +70,7 @@ def list_not_built_dataset(path_osmose: str, project: str = None) -> None:
             )
             timestamp_path = next(
                 dataset_directory.joinpath(OSMOSE_PATH.raw_audio).rglob(
-                    "timestamp.csv"
+                    "timestamp.csv",
                 ),
                 None,
             )
@@ -78,7 +81,8 @@ def list_not_built_dataset(path_osmose: str, project: str = None) -> None:
                 and timestamp_path
                 and timestamp_path.exists()
                 and not dataset_directory.joinpath(
-                    OSMOSE_PATH.raw_audio, "original"
+                    OSMOSE_PATH.raw_audio,
+                    "original",
                 ).exists()
             ):
                 list_not_built_dataset.append(dataset_directory)
@@ -86,16 +90,16 @@ def list_not_built_dataset(path_osmose: str, project: str = None) -> None:
             list_unknown_dataset.append(dataset_directory)
 
     not_built_formatted = "\n".join(
-        [f"  - {dataset.name}" for dataset in list_not_built_dataset]
+        [f"  - {dataset.name}" for dataset in list_not_built_dataset],
     )
     print(f"""List of the datasets that are not built yet:\n\n{not_built_formatted}""")
 
     if list_unknown_dataset:
         unreachable_formatted = "\n".join(
-            [f"  - {dataset.name}" for dataset in list_unknown_dataset]
+            [f"  - {dataset.name}" for dataset in list_unknown_dataset],
         )
         print(
-            f"""List of unreachable datasets (probably due to insufficient permissions):\n\n{unreachable_formatted}"""
+            f"""List of unreachable datasets (probably due to insufficient permissions):\n\n{unreachable_formatted}""",
         )
 
 
@@ -107,8 +111,8 @@ def list_dataset(path_osmose: str, project: str = None) -> None:
     dataset_folder_path: str
         The path to the directory containing the project/datasets.
     project: str
-        Name of the project folder containing the datasets."""
-
+        Name of the project folder containing the datasets.
+    """
     ds_folder = Path(path_osmose, project)
 
     dataset_list = [
@@ -118,7 +122,8 @@ def list_dataset(path_osmose: str, project: str = None) -> None:
     ]
 
     dataset_list = sorted(
-        dataset_list, key=lambda path: str(path).lower()
+        dataset_list,
+        key=lambda path: str(path).lower(),
     )  # case insensitive alphabetical sorting of datasets
 
     list_built_dataset = []
@@ -133,7 +138,7 @@ def list_dataset(path_osmose: str, project: str = None) -> None:
             )
             timestamp_path = next(
                 dataset_directory.joinpath(OSMOSE_PATH.raw_audio).rglob(
-                    "timestamp.csv"
+                    "timestamp.csv",
                 ),
                 None,
             )
@@ -144,7 +149,8 @@ def list_dataset(path_osmose: str, project: str = None) -> None:
                 and timestamp_path
                 and timestamp_path.exists()
                 and not dataset_directory.joinpath(
-                    OSMOSE_PATH.raw_audio, "original"
+                    OSMOSE_PATH.raw_audio,
+                    "original",
                 ).exists()
             ):
                 list_built_dataset.append(dataset_directory)
@@ -154,7 +160,7 @@ def list_dataset(path_osmose: str, project: str = None) -> None:
 
     if list_built_dataset:
         built_formatted = "\n".join(
-            [f"  - {dataset.name}" for dataset in list_built_dataset]
+            [f"  - {dataset.name}" for dataset in list_built_dataset],
         )
         print(f"""List of the built datasets under {ds_folder}:\n\n{built_formatted}""")
     else:
@@ -162,10 +168,10 @@ def list_dataset(path_osmose: str, project: str = None) -> None:
 
     if list_unknown_dataset:
         unreachable_formatted = "\n".join(
-            [f"  - {dataset.name}" for dataset in list_unknown_dataset]
+            [f"  - {dataset.name}" for dataset in list_unknown_dataset],
         )
         print(
-            f"""List of unreachable datasets (probably due to insufficient permissions):\n\n{unreachable_formatted}"""
+            f"""List of unreachable datasets (probably due to insufficient permissions):\n\n{unreachable_formatted}""",
         )
 
 
@@ -177,8 +183,8 @@ def list_aplose(path_osmose: str, project: str = ""):
     dataset_folder_path: str
         The path to the directory containing the project / datasets.
     project: str
-        Name of the project folder containing the datasets."""
-
+        Name of the project folder containing the datasets.
+    """
     ds_folder = Path(path_osmose, project)
 
     dataset_list = [
@@ -188,7 +194,8 @@ def list_aplose(path_osmose: str, project: str = ""):
     ]
 
     dataset_list = sorted(
-        dataset_list, key=lambda path: str(path).lower()
+        dataset_list,
+        key=lambda path: str(path).lower(),
     )  # case insensitive alphabetical sorting of datasets
 
     list_built_dataset = []
@@ -226,22 +233,24 @@ def list_aplose(path_osmose: str, project: str = ""):
             [
                 f"  - {dataset.name}\n\tresult file: {r.name}\n\ttask status file: {ts.name}"
                 for dataset, r, ts in zip(
-                    list_built_dataset, list_aplose_result, list_aplose_task_status
+                    list_built_dataset,
+                    list_aplose_result,
+                    list_aplose_task_status,
                 )
-            ]
+            ],
         )
         print(
-            f"""List of the datasets with APLOSE result files under {ds_folder}:\n\n{aplose_formatted}"""
+            f"""List of the datasets with APLOSE result files under {ds_folder}:\n\n{aplose_formatted}""",
         )
     else:
         print(f"No dataset with APLOSE result files found under '{ds_folder}'")
 
     if list_unknown_dataset:
         unreachable_formatted = "\n".join(
-            [f"  - {dataset.name}" for dataset in list_unknown_dataset]
+            [f"  - {dataset.name}" for dataset in list_unknown_dataset],
         )
         print(
-            f"""List of unreachable datasets (probably due to insufficient permissions):\n\n{unreachable_formatted}"""
+            f"""List of unreachable datasets (probably due to insufficient permissions):\n\n{unreachable_formatted}""",
         )
 
 
@@ -265,8 +274,9 @@ def read_config(raw_config: Union[str, dict, Path]) -> NamedTuple:
     TypeError
         Raised if the raw_config is anything else than a string, a PurePath or a dict.
     NotImplementedError
-        Raised if the raw_config file is in YAML format"""
+        Raised if the raw_config file is in YAML format
 
+    """
     match raw_config:
         case Path():
             with as_file(raw_config) as input_config:
@@ -275,14 +285,14 @@ def read_config(raw_config: Union[str, dict, Path]) -> NamedTuple:
         case str():
             if not Path(raw_config).is_file:
                 raise FileNotFoundError(
-                    f"The configuration file {raw_config} does not exist."
+                    f"The configuration file {raw_config} does not exist.",
                 )
 
         case dict():
             pass
         case _:
             raise TypeError(
-                "The raw_config must be either of type str, dict or Traversable."
+                "The raw_config must be either of type str, dict or Traversable.",
             )
 
     if not isinstance(raw_config, dict):
@@ -294,11 +304,11 @@ def read_config(raw_config: Union[str, dict, Path]) -> NamedTuple:
                     raw_config = json.load(input_config)
                 case ".yaml":
                     raise NotImplementedError(
-                        "YAML support will eventually get there (unfortunately)"
+                        "YAML support will eventually get there (unfortunately)",
                     )
                 case _:
                     raise FileNotFoundError(
-                        f"The provided configuration file extension ({Path(raw_config).suffix} is not a valid extension. Please use .toml or .json files."
+                        f"The provided configuration file extension ({Path(raw_config).suffix} is not a valid extension. Please use .toml or .json files.",
                     )
 
     return raw_config
@@ -312,7 +322,8 @@ def read_header(file: str) -> Tuple[int, float, int, int, int]:
     ---------
     file: str
         The absolute path of the audio file whose header will be read.
-    Returns
+
+    Returns:
     -------
     samplerate : `int`
         The number of samples in one frame.
@@ -322,10 +333,12 @@ def read_header(file: str) -> Tuple[int, float, int, int, int]:
         The number of audio channels.
     sampwidth : `int`
         The sample width.
-    Note
+
+    Note:
     ----
     When there is no `data` chunk, the `frames` value will fall back on the size written in the header. This can be incorrect,
     if the file has been corrupted or the writing process has been interrupted before completion.
+
     """
     with open(file, "rb") as fh:
         header = fh.read(4)
@@ -345,11 +358,11 @@ def read_header(file: str) -> Tuple[int, float, int, int, int]:
                     # Process the fmt chunk
                     fmt_chunk_data = fh.read(subchunk_size)
                     _, channels, samplerate, _, _, sampwidth = struct.unpack(
-                        "<HHIIHH", fmt_chunk_data[:16]
+                        "<HHIIHH",
+                        fmt_chunk_data[:16],
                     )
                     break
-                else:
-                    fh.seek(subchunk_size, 1)
+                fh.seek(subchunk_size, 1)
 
             chunkOffset = fh.tell()
             found_data = False
@@ -363,7 +376,7 @@ def read_header(file: str) -> Tuple[int, float, int, int, int]:
 
             if not found_data:
                 print(
-                    "No data chunk found while reading the header. Will fallback on the header size."
+                    "No data chunk found while reading the header. Will fallback on the header size.",
                 )
                 subchunk2size = size - 36
 
@@ -373,7 +386,7 @@ def read_header(file: str) -> Tuple[int, float, int, int, int]:
 
             return samplerate, frames, sampwidth, channels, size
 
-        elif header == b"fLaC":
+        if header == b"fLaC":
             # FLAC file processing
             is_last = False
             while not is_last:
@@ -396,18 +409,22 @@ def read_header(file: str) -> Tuple[int, float, int, int, int]:
 
                     return samplerate, frames, sampwidth, channels, size
                     break
-                else:
-                    fh.seek(block_size, 1)  # Skip this block
+                fh.seek(block_size, 1)  # Skip this block
         else:
             raise ValueError("Unsupported file format")
 
 
 def safe_read(
-    file_path: str, *, nan: float = 0.0, posinf: any = None, neginf: any = None
+    file_path: str,
+    *,
+    nan: float = 0.0,
+    posinf: any = None,
+    neginf: any = None,
 ) -> Tuple[np.ndarray, int]:
     """Open a file using Soundfile and clean up the data to be used safely
     Currently, only checks for `NaN`, `inf` and `-inf` presence. The default behavior is the same as `np.nan_to_num`:
     `NaNs` are transformed into 0.0, `inf` and `-inf` are transformed into the maximum and minimum values of their dtype.
+
     Parameters
     ----------
         file_path: `str`
@@ -418,12 +435,15 @@ def safe_read(
             The value that will replace `inf`. Default behavior is the maximum value of the data type.
         neginf: `any`, optional, keyword_only
             The value that will replace `-inf`. Default behavior is the minimum value of the data type.
+
     Returns
     -------
         audio_data: `NDArray`
             The cleaned audio data as a numpy array.
         sample_rate: `int`
-            The sample rate of the data."""
+            The sample rate of the data.
+
+    """
     audio_data, sample_rate = sf.read(file_path)
 
     nan_nb = sum(np.isnan(audio_data))
@@ -432,7 +452,7 @@ def safe_read(
 
     if nan_nb > 0:
         warn(
-            f"{nan_nb} NaN detected in file {Path(file_path).name}. They will be replaced with {nan}."
+            f"{nan_nb} NaN detected in file {Path(file_path).name}. They will be replaced with {nan}.",
         )
 
     np.nan_to_num(audio_data, copy=False, nan=nan, posinf=posinf, neginf=neginf)
@@ -451,6 +471,7 @@ def check_n_files(
     Currently, check if the data for wav in PCM float format are between -1.0 and 1.0. If the number of files that
     fail the test is higher than the threshold (which is 10% of n by default, with an absolute minimum of 1), all the
     dataset will be normalized and written in another file.
+
     Parameters
     ----------
         file_list: `list`
@@ -463,18 +484,18 @@ def check_n_files(
             it must have a value.
         auto_normalization: `bool`, optional, keyword_only
             Whether the normalization should proceed automatically or not if the threshold is reached. As a safeguard, the default is False.
+
     Returns
     -------
         normalized: `bool`
             Indicates whether or not the dataset has been normalized.
-    """
 
-    if n > len(file_list):
-        n = len(file_list)
+    """
+    n = min(n, len(file_list))
 
     # if "float" in str(sf.info(file_list[0])): # to understand
     bad_files = []
-    print(f"Testing whether samples are within [-1,1] for the following audio files:")
+    print("Testing whether samples are within [-1,1] for the following audio files:")
     for audio_file in random.sample(file_list, n):
         data, sr = safe_read(audio_file)
         if not (np.max(data) <= 1.0 and np.min(data) >= -1.0):
@@ -482,7 +503,7 @@ def check_n_files(
             print(f"- {audio_file.name} -> FAILED")
         else:
             print(f"- {audio_file.name} -> PASSED")
-    print(f"\n")
+    print("\n")
 
     return len(bad_files)
 
@@ -504,7 +525,7 @@ def get_timestamp_of_audio_file(path_timestamp_file: Path, audio_file_name: str)
     timestamps = pd.read_csv(path_timestamp_file)
     # get timestamp of the audio file
     return str(
-        timestamps["timestamp"][timestamps["filename"] == audio_file_name].values[0]
+        timestamps["timestamp"][timestamps["filename"] == audio_file_name].values[0],
     )
 
 
@@ -512,7 +533,7 @@ def t_rounder(t: pd.Timestamp, res: int) -> pd.Timestamp:
     """Rounds a Timestamp according to the user specified resolution : 10s / 1min / 10 min / 1h / 24h
 
     Parameters
-    -------
+    ----------
         t: pd.Timestamp
             Timestamp to round
         res: 'int'
@@ -522,8 +543,8 @@ def t_rounder(t: pd.Timestamp, res: int) -> pd.Timestamp:
     -------
         t: pd.Timestamp
             rounded Timestamp
-    """
 
+    """
     if res == 600:  # 10min
         minute = t.minute
         minute = math.floor(minute / 10) * 10
@@ -549,7 +570,7 @@ def check_available_file_resolution(path_osmose: str, project_ID: str, dataset_I
     """Lists the file resolution for a given dataset
 
     Parameters
-    ---------
+    ----------
     path_osmose: 'str'
         usually '/home/datawork-osmose/dataset/'
 
@@ -562,8 +583,8 @@ def check_available_file_resolution(path_osmose: str, project_ID: str, dataset_I
     Returns
     -------
     The list of the dataset resolutions is being printed and returned as a list of str
-    """
 
+    """
     base_path = os.path.join(path_osmose, project_ID, dataset_ID, "data", "audio")
     resolution = os.listdir(base_path)
 
@@ -587,7 +608,7 @@ def extract_config(
     for the spectrogram configuration as well.
 
     Parameters
-    ---------
+    ----------
     path_osmose: 'str'
         usually '/home/datawork-osmose/dataset/'
 
@@ -602,20 +623,27 @@ def extract_config(
 
     Returns
     -------
-    """
 
+    """
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
     for project_ID, dataset_ID in zip(list_project_ID, list_dataset_ID):
         dataset_resolution = check_available_file_resolution(
-            path_osmose, project_ID, dataset_ID
+            path_osmose,
+            project_ID,
+            dataset_ID,
         )
 
         for dr in dataset_resolution:
             ### audio config files
             path1 = os.path.join(
-                path_osmose, project_ID, dataset_ID, "data", "audio", dr
+                path_osmose,
+                project_ID,
+                dataset_ID,
+                "data",
+                "audio",
+                dr,
             )
             files1 = glob.glob(os.path.join(path1, "**.csv"))
 
@@ -626,7 +654,11 @@ def extract_config(
 
         ### spectro config files
         path2 = os.path.join(
-            path_osmose, project_ID, dataset_ID, "processed", "spectrogram"
+            path_osmose,
+            project_ID,
+            dataset_ID,
+            "processed",
+            "spectrogram",
         )
         files2 = []
         for root, dirs, files in os.walk(path2):
@@ -635,7 +667,7 @@ def extract_config(
                     os.path.join(root, file)
                     for file in files
                     if file.lower().endswith(".csv")
-                ]
+                ],
             )
 
         full_path2 = os.path.join(out_dir, "export_" + dataset_ID, "spectro")
@@ -647,12 +679,14 @@ def extract_config(
 
 
 def extract_datetime(
-    var: str, tz: pytz._FixedOffset = None, formats=None
+    var: str,
+    tz: pytz._FixedOffset = None,
+    formats=None,
 ) -> Union[pd.Timestamp, str]:
     """Extracts datetime from filename based on the date format
 
     Parameters
-    -------
+    ----------
         var: 'str'
             name of the wav file
         tz: pytz._FixedOffset
@@ -661,12 +695,13 @@ def extract_datetime(
             The date template in strftime format.
             For example, `2017/02/24` has the template `%Y/%m/%d`
             For more information on strftime template, see https://strftime.org/
+
     Returns
     -------
         date_obj: pd.Timestamp
             datetime corresponding to the datetime found in var
-    """
 
+    """
     if formats is None:
         # add more format if necessary
         formats = [
@@ -709,7 +744,7 @@ def extract_datetime(
 
         if tz is None:
             return date_obj
-        elif type(tz) is dt.timezone:
+        if type(tz) is dt.timezone:
             offset_minutes = tz.utcoffset(None).total_seconds() / 60
             pytz_fixed_offset = pytz.FixedOffset(int(offset_minutes))
             date_obj = pytz_fixed_offset.localize(date_obj)
@@ -717,15 +752,14 @@ def extract_datetime(
             date_obj = tz.localize(date_obj)
 
         return date_obj
-    else:
-        raise ValueError(f"{var}: No datetime found")
+    raise ValueError(f"{var}: No datetime found")
 
 
 def add_entry_for_APLOSE(path: str, file: str, info: pd.DataFrame):
     """Add entry for APLOSE dataset csv file
 
     Parameters
-    -------
+    ----------
         path: 'str'
             path to the file
         file: 'str'
@@ -733,6 +767,7 @@ def add_entry_for_APLOSE(path: str, file: str, info: pd.DataFrame):
         info: 'DataFrame'
             info of the entry
             'path' / 'dataset' / 'spectro_duration' / 'dataset_sr' / 'files_type'
+
     Returns
     -------
 
@@ -742,7 +777,8 @@ def add_entry_for_APLOSE(path: str, file: str, info: pd.DataFrame):
     if dataset_csv.exists():
         meta = pd.read_csv(dataset_csv)
         meta = pd.concat([meta, info], ignore_index=True).sort_values(
-            by=["path", "dataset"], ascending=True
+            by=["path", "dataset"],
+            ascending=True,
         )
         meta.to_csv(dataset_csv, index=False)
 
@@ -755,5 +791,5 @@ def chmod_if_needed(path: Path, mode: int):
         os.chmod(path, mode)
     except PermissionError:
         raise PermissionError(
-            f"You do not have the permission to write to {path}, nor to change its permissions."
+            f"You do not have the permission to write to {path}, nor to change its permissions.",
         )

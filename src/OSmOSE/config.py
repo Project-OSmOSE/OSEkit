@@ -1,6 +1,6 @@
-from pathlib import Path
-from collections import namedtuple
 import stat
+from collections import namedtuple
+from pathlib import Path
 from OSmOSE.LoggingContext import LoggingContext
 
 SUPPORTED_AUDIO_FORMAT = [".wav", ".flac"]

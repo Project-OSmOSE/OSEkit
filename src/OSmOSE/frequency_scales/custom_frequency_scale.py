@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-from OSmOSE.frequency_scales.abstract_frequency_scale import AbstractFrequencyScale
 from typing import Tuple
+
+from OSmOSE.frequency_scales.abstract_frequency_scale import AbstractFrequencyScale
 
 
 @dataclass
@@ -37,25 +38,23 @@ class CustomFrequencyScale(AbstractFrequencyScale):
         c1, c2, c3 = self.coefficients
         if freq <= f1:
             return freq / f1 * c1
-        elif freq <= f2:
+        if freq <= f2:
             return c1 + (freq - f1) / (f2 - f1) * c2 if f1 != f2 else c1
-        else:
-            return (
-                c1 + c2 + (freq - f2) / (0.5 * self.sr - f2) * c3
-                if (f2 != 0.5 * self.sr or c3 == 0)
-                else c1 + c2
-            )
+        return (
+            c1 + c2 + (freq - f2) / (0.5 * self.sr - f2) * c3
+            if (f2 != 0.5 * self.sr or c3 == 0)
+            else c1 + c2
+        )
 
     def map_scale2freq(self, custom_freq):
         f1, f2 = self.frequencies
         c1, c2, c3 = self.coefficients
         if custom_freq <= c1:
             return custom_freq / c1 * f1
-        elif custom_freq <= c1 + c2:
+        if custom_freq <= c1 + c2:
             return f1 + (custom_freq - c1) / c2 * (f2 - f1) if c2 != 0 else f1
-        else:
-            return (
-                f2 + (custom_freq - c1 - c2) / c3 * (0.5 * self.sr - f2)
-                if c3 != 0
-                else 0.5 * self.sr
-            )
+        return (
+            f2 + (custom_freq - c1 - c2) / c3 * (0.5 * self.sr - f2)
+            if c3 != 0
+            else 0.5 * self.sr
+        )

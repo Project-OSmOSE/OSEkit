@@ -1,9 +1,11 @@
 from pathlib import Path
+
 import pandas as pd
-from OSmOSE.cluster.audio_reshaper import reshape
-from OSmOSE import Dataset
 import pytest
 import soundfile as sf
+
+from OSmOSE import Dataset
+from OSmOSE.cluster.audio_reshaper import reshape
 
 
 @pytest.mark.unit
@@ -28,7 +30,7 @@ def test_reshape_errors(input_dir):
 
     assert (
         str(e.value)
-        == f"The input files must be a valid folder path, not '{str(Path('/not/a/path'))}'."
+        == f"The input files must be a valid folder path, not '{Path('/not/a/path')!s}'."
     )
 
     with pytest.raises(FileNotFoundError) as e:
@@ -46,7 +48,10 @@ def test_reshape_errors(input_dir):
 @pytest.mark.unit
 def test_reshape_smaller(input_dataset: Path, output_dir: Path):
     dataset = Dataset(
-        input_dataset["main_dir"], gps_coordinates=(1, 1), depth=10, timezone="+03:00"
+        input_dataset["main_dir"],
+        gps_coordinates=(1, 1),
+        depth=10,
+        timezone="+03:00",
     )
     dataset.build()
 
@@ -59,7 +64,8 @@ def test_reshape_smaller(input_dataset: Path, output_dir: Path):
     reshaped_files = [
         output_dir.joinpath(outfile)
         for outfile in pd.read_csv(
-            str(output_dir.joinpath("timestamp_0.csv")), header=0
+            str(output_dir.joinpath("timestamp_0.csv")),
+            header=0,
         )["filename"].values
     ]
 
@@ -72,7 +78,10 @@ def test_reshape_smaller(input_dataset: Path, output_dir: Path):
 @pytest.mark.unit
 def test_reshape_with_new_sr(input_dataset: Path, output_dir):
     dataset = Dataset(
-        input_dataset["main_dir"], gps_coordinates=(1, 1), depth=10, timezone="+03:00"
+        input_dataset["main_dir"],
+        gps_coordinates=(1, 1),
+        depth=10,
+        timezone="+03:00",
     )
     dataset.build()
 
@@ -86,7 +95,8 @@ def test_reshape_with_new_sr(input_dataset: Path, output_dir):
     reshaped_files = [
         output_dir.joinpath(outfile)
         for outfile in pd.read_csv(
-            str(output_dir.joinpath("timestamp_0.csv")), header=0
+            str(output_dir.joinpath("timestamp_0.csv")),
+            header=0,
         )["filename"].values
     ]
 
@@ -99,7 +109,10 @@ def test_reshape_with_new_sr(input_dataset: Path, output_dir):
 @pytest.mark.unit
 def test_reshape_truncate_last(input_dataset: Path, output_dir):
     dataset = Dataset(
-        input_dataset["main_dir"], gps_coordinates=(1, 1), depth=10, timezone="+03:00"
+        input_dataset["main_dir"],
+        gps_coordinates=(1, 1),
+        depth=10,
+        timezone="+03:00",
     )
     dataset.build()
 
@@ -112,7 +125,8 @@ def test_reshape_truncate_last(input_dataset: Path, output_dir):
     reshaped_files = [
         output_dir.joinpath(outfile)
         for outfile in pd.read_csv(
-            str(output_dir.joinpath("timestamp_0.csv")), header=0
+            str(output_dir.joinpath("timestamp_0.csv")),
+            header=0,
         )["filename"].values
     ]
 

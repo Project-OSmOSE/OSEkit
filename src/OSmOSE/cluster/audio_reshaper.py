@@ -1,20 +1,16 @@
-import os
-import pandas as pd
 from argparse import ArgumentParser
 from pathlib import Path
+
 import numpy as np
+import pandas as pd
 import soundfile as sf
 from librosa import resample
 
-from OSmOSE.utils import (
-    DPDEFAULT,
-    FPDEFAULT,
-    to_timestamp,
-    get_all_audio_files,
-    set_umask,
-    make_path,
-    chmod_if_needed,
-)
+from OSmOSE.config import DPDEFAULT, FPDEFAULT
+from OSmOSE.utils.audio_utils import get_all_audio_files
+from OSmOSE.utils.core_utils import chmod_if_needed, set_umask
+from OSmOSE.utils.path_utils import make_path
+from OSmOSE.utils.timestamp_utils import to_timestamp
 
 
 def reshape(
@@ -36,8 +32,7 @@ def reshape(
     overwrite: bool = True,
     threshold: int = 5,
 ):
-    """
-    Reshape all audio files in the folder to be of the specified duration and/or sampling rate.
+    """Reshape all audio files in the folder to be of the specified duration and/or sampling rate.
 
     Parameters
     ----------
@@ -94,6 +89,7 @@ def reshape(
 
     threshold : int, optional
         Integer from 0 to 100 to filter out segments with a number of sample inferior to (threshold * spectrogram duration * new_sr)
+
     """
     set_umask()
     segment_duration = pd.Timedelta(seconds=segment_size)
@@ -102,7 +98,7 @@ def reshape(
     # validation for threshold
     if not (0 <= threshold <= 100):
         raise ValueError(
-            "The 'threshold' parameter must be an integer between 0 and 100."
+            "The 'threshold' parameter must be an integer between 0 and 100.",
         )
 
     # validation datetimes
@@ -130,14 +126,14 @@ def reshape(
 
     if not input_dir_path.exists():
         raise ValueError(
-            f"The input files must be a valid folder path, not '{input_dir_path}'."
+            f"The input files must be a valid folder path, not '{input_dir_path}'.",
         )
 
     if not (input_dir_path / "timestamp.csv").exists() and (
         not timestamp_path or not timestamp_path.exists()
     ):
         raise FileNotFoundError(
-            f"The timestamp.csv file must be present in the directory {Path(input_dir_path)} and correspond to the audio files in the same location, or be specified in the argument."
+            f"The timestamp.csv file must be present in the directory {Path(input_dir_path)} and correspond to the audio files in the same location, or be specified in the argument.",
         )
 
     # output directory
@@ -145,23 +141,26 @@ def reshape(
         output_dir_path = input_dir_path
         if overwrite:
             raise ValueError(
-                "Cannot overwrite input directory when the output directory is implicit!"
+                "Cannot overwrite input directory when the output directory is implicit!",
             )
     if not output_dir_path.exists():
         make_path(output_dir_path, mode=DPDEFAULT)
 
     # load timestamp and metadata
     input_timestamp = pd.read_csv(
-        timestamp_path
-        if timestamp_path and timestamp_path.exists()
-        else input_dir_path / "timestamp.csv"
+        (
+            timestamp_path
+            if timestamp_path and timestamp_path.exists()
+            else input_dir_path / "timestamp.csv"
+        ),
     )
 
     if file_metadata_path and file_metadata_path.exists():
         file_metadata = pd.read_csv(file_metadata_path, parse_dates=["timestamp"])
     else:
         file_metadata = pd.read_csv(
-            input_dir_path / "file_metadata.csv", parse_dates=["timestamp"]
+            input_dir_path / "file_metadata.csv",
+            parse_dates=["timestamp"],
         )
 
     filenames = [file.name for file in files]
@@ -175,7 +174,8 @@ def reshape(
 
     if not datetime_end:
         datetime_end = file_metadata["timestamp"].iloc[-1] + pd.Timedelta(
-            file_metadata["duration"].iloc[-1], unit="s"
+            file_metadata["duration"].iloc[-1],
+            unit="s",
         )
 
     # segment timestamps
@@ -194,7 +194,7 @@ def reshape(
         for i, ts in enumerate(origin_timestamp["timestamp"]):
             current_ts = ts
             original_timedelta = pd.Timedelta(
-                seconds=origin_timestamp["duration"].iloc[i]
+                seconds=origin_timestamp["duration"].iloc[i],
             )
 
             while current_ts <= ts + original_timedelta:
@@ -219,7 +219,8 @@ def reshape(
                 (i + batch_ind_min) * segment_duration
             )
             segment_datetime_end = min(
-                segment_datetime_begin + segment_duration, datetime_end
+                segment_datetime_begin + segment_duration,
+                datetime_end,
             )
         else:
             segment_datetime_begin = new_file[i + batch_ind_min]
@@ -248,7 +249,7 @@ def reshape(
                         0.0,
                         (segment_datetime_begin - file_datetime_begin).total_seconds(),
                     )
-                    * orig_sr
+                    * orig_sr,
                 )
 
                 end_offset = int(
@@ -256,7 +257,7 @@ def reshape(
                         (segment_datetime_end - file_datetime_begin),
                         (file_datetime_end - file_datetime_begin),
                     ).total_seconds()
-                    * orig_sr
+                    * orig_sr,
                 )
 
                 # read the appropriate section of the origin audio file
@@ -337,8 +338,6 @@ def reshape(
 
     if verbose:
         print(msg_log)
-
-    return
 
 
 if __name__ == "__main__":
