@@ -1,9 +1,10 @@
-import cdsapi
-from datetime import date, datetime
 import os
-from netCDF4 import Dataset
+from datetime import date, datetime
+
+import cdsapi
 import numpy as np
 import pandas as pd
+from netCDF4 import Dataset
 
 
 def make_cds_file(key, udi, path_to_api):
@@ -14,7 +15,7 @@ def make_cds_file(key, udi, path_to_api):
         pass
 
     cmd1 = "echo url: https://cds.climate.copernicus.eu/api/v2 >> .cdsapirc"
-    cmd2 = "echo key: {}:{} >> .cdsapirc".format(udi, key)
+    cmd2 = f"echo key: {udi}:{key} >> .cdsapirc"
     os.system(cmd1)
     os.system(cmd2)
 
@@ -23,7 +24,7 @@ def make_cds_file(key, udi, path_to_api):
     except FileExistsError:
         pass
 
-    if path_to_api == None:
+    if path_to_api is None:
         path_to_api = os.path.join(os.path.expanduser("~"), "Documents/api/")
 
     os.chdir(path_to_api)
@@ -66,7 +67,7 @@ def format_nc(filename):
             fh.dimensions.get("time").size,
             fh.dimensions.get("latitude").size,
             fh.dimensions.get("longitude").size,
-        )
+        ),
     )
 
     lon = fh.variables["longitude"][:]
@@ -74,8 +75,6 @@ def format_nc(filename):
     time_bis = fh.variables["time"][:]
     for i in range(len(variables)):
         single_levels[i] = fh.variables[variables[i]][:]
-
-    time_units = fh.variables["time"].units
 
     def transf_temps(time):
         time_str = float(time) / 24 + date.toordinal(date(1900, 1, 1))
@@ -91,7 +90,7 @@ def format_nc(filename):
         [
             datetime(elem.year, elem.month, elem.day, hour)
             for elem, hour in list(zip(data["time"], hours))
-        ]
+        ],
     )
 
     print("\n[======>-----]\n")
@@ -113,15 +112,23 @@ def save_results(dates, lat, lon, single_levels, variables, filename):
                 stamps[i, j, k] = [dates[i], lat[j], lon[k]]
     np.save("stamps_" + filename, stamps, allow_pickle=True)
     print("\n[============]\nDone")
-    return None
 
 
 def final_creation(
-    df1, filename, key, variable, year, month, day, time, area, type_crea="complexe"
+    df1,
+    filename,
+    key,
+    variable,
+    year,
+    month,
+    day,
+    time,
+    area,
+    type_crea="complexe",
 ):
     return_cdsapi(filename, key, variable, year, month, day, time, area)
     dates, lon, lat, single_levels, variables = format_nc(filename)
-    test = save_results(dates, lat, lon, single_levels, variables, filename)
+    save_results(dates, lat, lon, single_levels, variables, filename)
     return variables
 
 
@@ -142,7 +149,7 @@ def mise_en_forme_old(filename):
             fh.dimensions.get("longitude").size,
             fh.dimensions.get("longitude").size,
             fh.dimensions.get("longitude").size,
-        )
+        ),
     )
 
     lons = fh.variables["longitude"][:]
@@ -150,8 +157,6 @@ def mise_en_forme_old(filename):
     time_bis = fh.variables["time"][:]
     for i in range(len(variables)):
         single_levels[i] = fh.variables[variables[i]][:]
-
-    time_units = fh.variables["time"].units
 
     def transf_temps(time):
         time_str = float(time) / 24 + date.toordinal(date(1900, 1, 1))
@@ -174,7 +179,7 @@ def mise_en_forme_old(filename):
 
     print("\n[======>-----]\n")
 
-    return data, lons, lats, u10, v10, tp
+    return data, lons, lats
 
 
 # df_spams_fin : df1, data : df2
@@ -233,7 +238,7 @@ def creation_complexe_old(df1, df2, u10, v10, tp, lats, lons):
             "u10": u10_,
             "v10": v10_,
             "tp": tp_,
-        }
+        },
     )
     print("\n[============]\n")
     return data_fin
@@ -246,8 +251,8 @@ def prepare_coord_target_old(filename):
     # test_.columns = ['time', 'long', 'lat', 'profondeur']
     test_["time"] = test_["time"].apply(
         lambda x: pd.Timestamp(
-            datetime.utcfromtimestamp(x).strftime("%Y-%m-%d %H:%M:%S")
-        )
+            datetime.utcfromtimestamp(x).strftime("%Y-%m-%d %H:%M:%S"),
+        ),
     )
 
     test_["year"] = test_["time"]

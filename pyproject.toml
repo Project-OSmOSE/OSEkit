@@ -36,6 +36,7 @@ pytest = "^7.2.1"
 black = "^24.4.2"
 pytest-cov = "^4.0.0"
 jupyter = "^1.0.0"
+ruff = "^0.7.1"
 
 [build-system]
 requires = ["poetry-core"]
@@ -56,3 +57,11 @@ markers = [
     "reg: Mark test as regression test. Run only these with '-m ref'."
 ]
 
+[tool.ruff]
+select = ["ALL"]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = [
+    # at least this three should be fine in tests:
+    "S101", # asserts allowed in tests...
+]

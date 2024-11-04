@@ -1,11 +1,12 @@
-from pathlib import Path
-import pytest
-import numpy as np
-import soundfile as sf
 import shutil
-import csv
-from OSmOSE.config import OSMOSE_PATH
+from pathlib import Path
+
+import numpy as np
+import pytest
+import soundfile as sf
 from scipy.signal import chirp
+
+from OSmOSE.config import OSMOSE_PATH
 
 
 def capture_csv(monkeypatch):
@@ -18,13 +19,16 @@ def input_dataset(tmp_path: Path):
 
     Creates the basic structure of a dataset in a temporary direction, as well as 10 audio files (5 wav and 5 flac) of 3 seconds of random noise at a sample rate of 44100,
      as well as the timestamp.csv file, from 2022-01-01T12:00:00 to 2022-01-01T12:00:30
+
     Returns
     -------
         The paths to the dataset's folders, in order :
         - root directory
         - main audio directory
         - original audio sub-directory
-        - main spectrogram directory."""
+        - main spectrogram directory.
+
+    """
     main_dir = tmp_path.joinpath("sample_dataset")
     main_audio_dir = main_dir.joinpath(OSMOSE_PATH.raw_audio)
     orig_audio_dir = main_audio_dir.joinpath("original")
@@ -54,14 +58,14 @@ def input_dataset(tmp_path: Path):
             sf.write(wav_file, data, rate, format="wav", subtype="FLOAT")
         else:
             flac_file = orig_audio_dir.joinpath(
-                f"20220101_1200{str(3*i).zfill(2)}.flac"
+                f"20220101_1200{str(3*i).zfill(2)}.flac",
             )
             sf.write(flac_file, data, rate, format="flac", subtype="PCM_24")
-    yield dict(
+    return dict(
         zip(
             ["main_dir", "main_audio_dir", "orig_audio_dir", "process_dir"],
             folders_to_create,
-        )
+        ),
     )
 
 
@@ -70,10 +74,13 @@ def input_dir(tmp_path):
     """Creates a temporary input directory with a single audio file.
 
     The file is 3 seconds of random noise at a sample rate of 44100.
+
     Returns
     -------
         input_dir: `Path`
-            The path to the input directory."""
+            The path to the input directory.
+
+    """
     # Parameters
     input_dir = tmp_path / "input"
     input_dir.mkdir()
@@ -87,7 +94,7 @@ def input_dir(tmp_path):
     wav_file = input_dir / "test.wav"
     sf.write(wav_file, data, rate, format="WAV", subtype="FLOAT")
 
-    yield input_dir
+    return input_dir
 
 
 @pytest.fixture
@@ -96,12 +103,14 @@ def output_dir(tmp_path: Path):
 
     Returns
     -------
-        The directory path"""
+        The directory path
+
+    """
     output_dir = tmp_path.joinpath("output")
     if output_dir.is_dir():
         shutil.rmtree(output_dir)
     output_dir.mkdir()
-    yield output_dir
+    return output_dir
 
 
 @pytest.fixture
@@ -115,7 +124,9 @@ def input_spectrogram(input_dataset):
         input_dataset: `Path`
             The path to the dataset directory
         analysis_params: `dict`
-            Dummy analysis parameters"""
+            Dummy analysis parameters
+
+    """
     analysis_params = {
         "nfft": 512,
         "winsize": 512,
@@ -135,7 +146,7 @@ def input_spectrogram(input_dataset):
         "zscore_duration": "original",
     }
 
-    yield input_dataset, analysis_params
+    return input_dataset, analysis_params
 
 
 @pytest.fixture
@@ -147,7 +158,9 @@ def input_reshape(input_dir: Path):
     Returns
     -------
         input_dir: `Path`
-            The path to the input directory."""
+            The path to the input directory.
+
+    """
     for i in range(9):
         wav_file = input_dir.joinpath(f"test{i}.wav")
         shutil.copyfile(input_dir.joinpath("test.wav"), wav_file)

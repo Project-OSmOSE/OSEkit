@@ -1,5 +1,14 @@
+import pandas as pd
 import pytest
-from OSmOSE.utils.timestamp_utils import *
+from pandas import Timestamp
+
+from OSmOSE.utils.timestamp_utils import (
+    associate_timestamps,
+    build_regex_from_datetime_template,
+    is_datetime_template_valid,
+    strftime_osmose_format,
+    strptime_from_text,
+)
 
 
 @pytest.mark.unit
@@ -204,7 +213,8 @@ def test_strptime_from_text(text: str, datetime_template: str, expected: Timesta
             "7189.230405144906.wav",
             "%y%m%d%H%M%%S",
             pytest.raises(
-                ValueError, match="%y%m%d%H%M%%S is not a supported strftime template"
+                ValueError,
+                match="%y%m%d%H%M%%S is not a supported strftime template",
             ),
             id="%%_is_wrong_strftime_code",
         ),
@@ -212,7 +222,8 @@ def test_strptime_from_text(text: str, datetime_template: str, expected: Timesta
             "7189.230405144906.wav",
             "%y%m%d%H%M%P%S",
             pytest.raises(
-                ValueError, match="%y%m%d%H%M%P%S is not a supported strftime template"
+                ValueError,
+                match="%y%m%d%H%M%P%S is not a supported strftime template",
             ),
             id="%P_is_wrong_strftime_code",
         ),
@@ -220,7 +231,8 @@ def test_strptime_from_text(text: str, datetime_template: str, expected: Timesta
             "7189.230405144906.wav",
             "%y%m%d%H%M%52%S",
             pytest.raises(
-                ValueError, match="%y%m%d%H%M%52%S is not a supported strftime template"
+                ValueError,
+                match="%y%m%d%H%M%52%S is not a supported strftime template",
             ),
             id="%5_is_wrong_strftime_code",
         ),
@@ -278,7 +290,9 @@ def test_strptime_from_text(text: str, datetime_template: str, expected: Timesta
     ],
 )
 def test_strptime_from_text_errors(
-    text: str, datetime_template: str, expected: Timestamp
+    text: str,
+    datetime_template: str,
+    expected: Timestamp,
 ):
     with expected as e:
         assert strptime_from_text(text, datetime_template) == e
@@ -289,16 +303,16 @@ def correct_series():
     series = pd.Series(
         {
             "something2345_2012_06_24__16:32:10.wav": pd.Timestamp(
-                "2012-06-24 16:32:10"
+                "2012-06-24 16:32:10",
             ),
             "something2345_2023_07_28__08:24:50.flac": pd.Timestamp(
-                "2023-07-28 08:24:50"
+                "2023-07-28 08:24:50",
             ),
             "something2345_2024_01_01__23:12:11.WAV": pd.Timestamp(
-                "2024-01-01 23:12:11"
+                "2024-01-01 23:12:11",
             ),
             "something2345_2024_02_02__02:02:02.FLAC": pd.Timestamp(
-                "2024-02-02 02:02:02"
+                "2024-02-02 02:02:02",
             ),
         },
         name="timestamp",
@@ -311,7 +325,7 @@ def correct_series():
 def test_associate_timestamps(correct_series):
     input_files = list(correct_series["filename"])
     assert associate_timestamps((i for i in input_files), "%Y_%m_%d__%H:%M:%S").equals(
-        correct_series
+        correct_series,
     )
 
 
@@ -326,7 +340,8 @@ def test_associate_timestamps_error_with_incorrect_datetime_format(correct_serie
         match=f"{input_files[0]} did not match the given {mismatching_datetime_format} template",
     ) as e:
         assert e == associate_timestamps(
-            (i for i in input_files), mismatching_datetime_format
+            (i for i in input_files),
+            mismatching_datetime_format,
         )
 
     with pytest.raises(
@@ -334,7 +349,8 @@ def test_associate_timestamps_error_with_incorrect_datetime_format(correct_serie
         match=f"{incorrect_datetime_format} is not a supported strftime template",
     ):
         assert e == associate_timestamps(
-            (i for i in input_files), incorrect_datetime_format
+            (i for i in input_files),
+            incorrect_datetime_format,
         )
 
 

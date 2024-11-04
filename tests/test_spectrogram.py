@@ -1,27 +1,28 @@
-import os
-import platform
-import pandas as pd
 import numpy as np
-from OSmOSE import Spectrogram, Dataset
-from OSmOSE.config import OSMOSE_PATH, SUPPORTED_AUDIO_FORMAT
-import soundfile as sf
 import pytest
+import soundfile as sf
+
+from OSmOSE import Dataset, Spectrogram
+from OSmOSE.config import OSMOSE_PATH, SUPPORTED_AUDIO_FORMAT
 
 
 @pytest.mark.integ
 def test_initialize_2s(input_dataset):
     dataset = Dataset(
-        input_dataset["main_dir"], gps_coordinates=(1, 1), depth=10, timezone="+03:00"
+        input_dataset["main_dir"],
+        gps_coordinates=(1, 1),
+        depth=10,
+        timezone="+03:00",
     )
     dataset.build()
 
-    assert dataset.path.joinpath(OSMOSE_PATH.raw_audio, f"3_44100").exists()
+    assert dataset.path.joinpath(OSMOSE_PATH.raw_audio, "3_44100").exists()
     num_file = 0
     for ext in SUPPORTED_AUDIO_FORMAT:
         num_file += len(
             list(
-                dataset.path.joinpath(OSMOSE_PATH.raw_audio, "3_44100").glob(f"*{ext}")
-            )
+                dataset.path.joinpath(OSMOSE_PATH.raw_audio, "3_44100").glob(f"*{ext}"),
+            ),
         )
     assert num_file == 10
 
@@ -75,17 +76,20 @@ def test_initialize_2s(input_dataset):
 @pytest.mark.integ
 def test_number_image_matrix(input_dataset):
     dataset = Dataset(
-        input_dataset["main_dir"], gps_coordinates=(1, 1), depth=10, timezone="+03:00"
+        input_dataset["main_dir"],
+        gps_coordinates=(1, 1),
+        depth=10,
+        timezone="+03:00",
     )
     dataset.build()
 
-    assert dataset.path.joinpath(OSMOSE_PATH.raw_audio, f"3_44100").exists()
+    assert dataset.path.joinpath(OSMOSE_PATH.raw_audio, "3_44100").exists()
     num_file = 0
     for ext in SUPPORTED_AUDIO_FORMAT:
         num_file += len(
             list(
-                dataset.path.joinpath(OSMOSE_PATH.raw_audio, "3_44100").glob(f"*{ext}")
-            )
+                dataset.path.joinpath(OSMOSE_PATH.raw_audio, "3_44100").glob(f"*{ext}"),
+            ),
         )
     assert num_file == 10
 
@@ -105,7 +109,9 @@ def test_number_image_matrix(input_dataset):
     list_audio = []
     for ext in SUPPORTED_AUDIO_FORMAT:
         list_audio_ext = spectrogram.path.joinpath(
-            "data", "audio", f"{spectrogram.spectro_duration}_{spectrogram.dataset_sr}"
+            "data",
+            "audio",
+            f"{spectrogram.spectro_duration}_{spectrogram.dataset_sr}",
         ).glob(f"*{ext}")
         [list_audio.append(f) for f in list_audio_ext]
 
@@ -120,8 +126,8 @@ def test_number_image_matrix(input_dataset):
                     f"{spectrogram.spectro_duration}_{spectrogram.dataset_sr}",
                     f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}_{spectrogram.custom_frequency_scale}",
                     "image",
-                ).glob("*.png")
-            )
+                ).glob("*.png"),
+            ),
         )
     else:
         assert len(list_audio) == len(
@@ -131,8 +137,8 @@ def test_number_image_matrix(input_dataset):
                     f"{spectrogram.spectro_duration}_{spectrogram.dataset_sr}",
                     f"{spectrogram.window_size}_{spectrogram.window_size}_{spectrogram.overlap}_{spectrogram.custom_frequency_scale}",
                     "image",
-                ).glob("*.png")
-            )
+                ).glob("*.png"),
+            ),
         )
 
     for file in list_audio:
@@ -143,7 +149,10 @@ def test_number_image_matrix(input_dataset):
 @pytest.mark.integ
 def test_numerical_values(input_dataset):
     dataset = Dataset(
-        input_dataset["main_dir"], gps_coordinates=(1, 1), depth=10, timezone="+03:00"
+        input_dataset["main_dir"],
+        gps_coordinates=(1, 1),
+        depth=10,
+        timezone="+03:00",
     )
     dataset.build()
 
@@ -164,19 +173,23 @@ def test_numerical_values(input_dataset):
     list_audio = []
     for ext in SUPPORTED_AUDIO_FORMAT:
         list_audio_ext = spectrogram.path.joinpath(
-            "data", "audio", f"{spectrogram.spectro_duration}_{spectrogram.dataset_sr}"
+            "data",
+            "audio",
+            f"{spectrogram.spectro_duration}_{spectrogram.dataset_sr}",
         ).glob(f"*{ext}")
         [list_audio.append(f) for f in list_audio_ext]
 
     spectrogram.process_all_files(
-        list_audio_to_process=list_audio, save_for_LTAS=True, save_matrix=True
+        list_audio_to_process=list_audio,
+        save_for_LTAS=True,
+        save_matrix=True,
     )
 
     # test 3s welch spectra against PamGuide reference values
     list_welch = list((dataset.path / OSMOSE_PATH.welch / "3_44100").glob("*.npz"))
     data = np.load(list_welch[0], allow_pickle=True)
 
-    val_PamGuide = np.array(
+    val_PamGuide = np.array(  # noqa: F841
         [
             [
                 3.73173496e02,
@@ -436,10 +449,11 @@ def test_numerical_values(input_dataset):
                 5.98928434e-07,
                 1.14932571e-06,
                 2.52971788e-06,
-            ]
-        ]
+            ],
+        ],
     )
 
     assert np.allclose(
-        data["Sxx"], data["Sxx"] + 10 ** (-13)
+        data["Sxx"],
+        data["Sxx"] + 10 ** (-13),
     )  # test not set yet, to be done, work in local but not on github
