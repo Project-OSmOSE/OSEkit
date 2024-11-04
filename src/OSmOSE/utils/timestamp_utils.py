@@ -269,8 +269,8 @@ def strptime_from_text(text: str, datetime_template: str) -> Timestamp:
 def associate_timestamps(
     audio_files: Iterable[str],
     datetime_template: str,
-) -> pd.Series:
-    """Return a pandas series with timestamps assignated to the audio files.
+) -> pd.DataFrame:
+    """Return a pandas dataframe with audio files and timestamp columns.
 
     Parameters
     ----------
@@ -284,16 +284,14 @@ def associate_timestamps(
 
     Returns
     -------
-    pandas.Series:
-        A series with audio files name indexes and timestamp values.
+    pandas.DataFrame:
+        A DataFrame with audio files name and timestamp columns.
 
     """
-    files_with_timestamps = {
-        file: strptime_from_text(file, datetime_template) for file in audio_files
-    }
-    series = pd.Series(data=files_with_timestamps, name="timestamp")
-    series.index.name = "filename"
-    return series.sort_values().reset_index()
+    return pd.DataFrame(
+        [[file, strptime_from_text(file, datetime_template)] for file in audio_files],
+        columns=["filename", "timestamp"],
+    )
 
 
 def get_timestamps(

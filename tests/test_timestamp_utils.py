@@ -1,7 +1,7 @@
 import logging
 
 import pytest
-from pandas import DataFrame, Series, Timestamp
+from pandas import DataFrame, Timestamp
 
 from OSmOSE.utils.timestamp_utils import (
     associate_timestamps,
@@ -329,33 +329,43 @@ def test_strptime_from_text_errors(
 
 
 @pytest.fixture
-def correct_series() -> DataFrame:
-    series = Series(
-        {
-            "something2345_2012_06_24__16:32:10.wav": Timestamp("2012-06-24 16:32:10"),
-            "something2345_2023_07_28__08:24:50.flac": Timestamp("2023-07-28 08:24:50"),
-            "something2345_2024_01_01__23:12:11.WAV": Timestamp("2024-01-01 23:12:11"),
-            "something2345_2024_02_02__02:02:02.FLAC": Timestamp("2024-02-02 02:02:02"),
-        },
-        name="timestamp",
+def correct_dataframe() -> DataFrame:
+    return DataFrame(
+        [
+            [
+                "something2345_2012_06_24__16:32:10.wav",
+                Timestamp("2012-06-24 16:32:10"),
+            ],
+            [
+                "something2345_2023_07_28__08:24:50.flac",
+                Timestamp("2023-07-28 08:24:50"),
+            ],
+            [
+                "something2345_2024_01_01__23:12:11.WAV",
+                Timestamp("2024-01-01 23:12:11"),
+            ],
+            [
+                "something2345_2024_02_02__02:02:02.FLAC",
+                Timestamp("2024-02-02 02:02:02"),
+            ],
+        ],
+        columns=["filename", "timestamp"],
     )
-    series.index.name = "filename"
-    return series.reset_index()
 
 
 @pytest.mark.integ
-def test_associate_timestamps(correct_series: DataFrame) -> None:
-    input_files = list(correct_series["filename"])
+def test_associate_timestamps(correct_dataframe: DataFrame) -> None:
+    input_files = list(correct_dataframe["filename"])
     assert associate_timestamps((i for i in input_files), "%Y_%m_%d__%H:%M:%S").equals(
-        correct_series,
+        correct_dataframe,
     )
 
 
 @pytest.mark.integ
 def test_associate_timestamps_error_with_incorrect_datetime_format(
-    correct_series: DataFrame,
+    correct_dataframe: DataFrame,
 ) -> None:
-    input_files = list(correct_series["filename"])
+    input_files = list(correct_dataframe["filename"])
     mismatching_datetime_format = "%Y%m%d__%H:%M:%S"
     incorrect_datetime_format = "%y%m%d%H%M%P%S"
 
