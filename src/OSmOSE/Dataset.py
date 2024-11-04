@@ -104,7 +104,7 @@ class Dataset:
 
         if skip_perms:
             self.logger.debug(
-                "It seems you are on a non-Unix operating system (probably Windows). The build() method will not work as intended and permission might be incorrectly set."
+                "It seems you are on a non-Unix operating system (probably Windows). The build() method will not work as intended and permission might be incorrectly set.",
             )
 
         pd.set_option("display.float_format", lambda x: "%.0f" % x)
@@ -240,7 +240,7 @@ class Dataset:
         """str: The Unix group able to interact with the dataset."""
         if self.__group is None:
             self.logger.warning(
-                "The OSmOSE group name is not defined. Please specify the group name before trying to build the dataset."
+                "The OSmOSE group name is not defined. Please specify the group name before trying to build the dataset.",
             )
         return self.__group
 
@@ -255,7 +255,7 @@ class Dataset:
                 grp.getgrnam(value).gr_gid
             except KeyError as e:
                 self.logger.error(
-                    f"The group {value} does not exist on the system. Full error trace: {e}"
+                    f"The group {value} does not exist on the system. Full error trace: {e}",
                 )
                 raise KeyError(
                     f"The group {value} does not exist on the system. Full error trace: {e}",
@@ -324,7 +324,6 @@ class Dataset:
             DONE ! your dataset is on OSmOSE platform !
 
         """
-
         metadata_path = next(
             self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("metadata.csv"),
             False,
@@ -336,15 +335,15 @@ class Dataset:
             and not force_upload
         ):
             self.logger.warning(
-                "This dataset has already been built. To run the build() method on an already built dataset, you have to use the force_upload parameter."
+                "This dataset has already been built. To run the build() method on an already built dataset, you have to use the force_upload parameter.",
             )
             sys.exit()
 
         if self.gps_coordinates is None:
-            self.logger.error(f"GPS coordinates must be defined !")
+            self.logger.error("GPS coordinates must be defined !")
             raise ValueError("GPS coordinates must be defined !")
         if self.depth is None:
-            self.logger.error(f"Depth must be defined !")
+            self.logger.error("Depth must be defined !")
             raise ValueError("Depth must be defined !")
 
         self.dico_aux_substring = dico_aux_substring
@@ -362,7 +361,7 @@ class Dataset:
                         os.chown(self.path, -1, gid)
                     except PermissionError:
                         self.logger.error(
-                            f"You have not the permission to change the owner of the {self.path} folder. This might be because you are trying to rebuild an existing dataset. The group owner has not been changed."
+                            f"You have not the permission to change the owner of the {self.path} folder. This might be because you are trying to rebuild an existing dataset. The group owner has not been changed.",
                         )
 
                 # Add the setgid bid to the folder's permissions, in order for subsequent created files to be created by the same user group.
@@ -438,7 +437,7 @@ class Dataset:
                 )
                 if ind_dt == 0:
                     self.logger.warning(
-                        "We do not accept the sign '-' in our filenames, we transformed them into '_'. In case you have to rebuild your dataset be careful to change your timestamp template accordingly..."
+                        "We do not accept the sign '-' in our filenames, we transformed them into '_'. In case you have to rebuild your dataset be careful to change your timestamp template accordingly...",
                     )
             else:
                 cur_filename = audio_file.name
@@ -457,7 +456,7 @@ class Dataset:
 
             except Exception as e:
                 self.logger.error(
-                    f"error message making status read header False : \n {e}"
+                    f"error message making status read header False : \n {e}",
                 )
                 # append audio metadata read from header for files with corrupted headers
                 audio_metadata = pd.concat(
@@ -563,14 +562,14 @@ class Dataset:
             len(list_tests_level0) - sum(list_tests_level0) > 0
         ):  # if presence of anomalies of level 0
             self.logger.warning(
-                f"Your dataset failed {len(list_tests_level0)-sum(list_tests_level0)} anomaly test of level 0 (over {len(list_tests_level0)}); see details below. \n Anomalies of level 0 block dataset uploading as long as they are present. Please correct your anomalies first, and try uploading it again after. \n You can inspect your metadata saved here {path_raw_audio.joinpath('file_metadata.csv')} using the notebook /home/datawork-osmose/osmose-datarmor/notebooks/metadata_analyzer.ipynb."
+                f"Your dataset failed {len(list_tests_level0)-sum(list_tests_level0)} anomaly test of level 0 (over {len(list_tests_level0)}); see details below. \n Anomalies of level 0 block dataset uploading as long as they are present. Please correct your anomalies first, and try uploading it again after. \n You can inspect your metadata saved here {path_raw_audio.joinpath('file_metadata.csv')} using the notebook /home/datawork-osmose/osmose-datarmor/notebooks/metadata_analyzer.ipynb.",
             )
 
             if (
                 len(list_tests_level1) - sum(list_tests_level1) > 0
             ):  # if also presence of anomalies of level 1
                 self.logger.warning(
-                    f"Your dataset also failed {len(list_tests_level1)-sum(list_tests_level1)} anomaly test of level 1 (over {len(list_tests_level1)})."
+                    f"Your dataset also failed {len(list_tests_level1)-sum(list_tests_level1)} anomaly test of level 1 (over {len(list_tests_level1)}).",
                 )
 
             with open(resume_test_anomalies) as f:
@@ -587,7 +586,7 @@ class Dataset:
         ) and not force_upload:  # if presence of anomalies of level 1
 
             self.logger.warning(
-                f"Your dataset failed {len(list_tests_level1)-sum(list_tests_level1)} anomaly test of level 1 (over {len(list_tests_level1)}); see details below. \n  Anomalies of level 1 block dataset uploading, but anyone can force it by setting the variable `force_upload` to True. \n You can inspect your metadata saved here {path_raw_audio.joinpath('file_metadata.csv')} using the notebook  /home/datawork-osmose/osmose-datarmor/notebooks/metadata_analyzer.ipynb."
+                f"Your dataset failed {len(list_tests_level1)-sum(list_tests_level1)} anomaly test of level 1 (over {len(list_tests_level1)}); see details below. \n  Anomalies of level 1 block dataset uploading, but anyone can force it by setting the variable `force_upload` to True. \n You can inspect your metadata saved here {path_raw_audio.joinpath('file_metadata.csv')} using the notebook  /home/datawork-osmose/osmose-datarmor/notebooks/metadata_analyzer.ipynb.",
             )
 
             with open(resume_test_anomalies) as f:
@@ -673,9 +672,9 @@ class Dataset:
 
             for path, _, files in os.walk(self.path.joinpath(OSMOSE_PATH.auxiliary)):
                 for f in files:
-                    if f.endswith((".csv")):
+                    if f.endswith(".csv"):
                         self.logger.debug(
-                            f"\n Checking your timestamp format in {Path(path,f).name}"
+                            f"\n Checking your timestamp format in {Path(path,f).name}",
                         )
                         self._format_timestamp(Path(path, f), date_template, False)
 
@@ -685,7 +684,7 @@ class Dataset:
         self,
         audio_path: Path,
         date_template: str,
-    ):
+    ) -> None:
         supported_audio_files = [file.name for file in get_all_audio_files(audio_path)]
         filenames_with_timestamps = associate_timestamps(
             audio_files=supported_audio_files,
@@ -699,16 +698,16 @@ class Dataset:
             index=False,
             na_rep="NaN",
         )
-        os.chmod(audio_path / "timestamp.csv", mode=FPDEFAULT)
+        chmod_if_needed(audio_path / "timestamp.csv", mode=FPDEFAULT)
 
-    def _create_logger(self):
+    def _create_logger(self) -> None:
         logs_directory = self.__path / "log"
         if not logs_directory.exists():
-            os.mkdir(logs_directory, mode=DPDEFAULT)
-        self.logger = logging.getLogger(f"dataset").getChild(self.__name)
+            logs_directory.mkdir(mode=DPDEFAULT)
+        self.logger = logging.getLogger("dataset").getChild(self.__name)
         self.file_handler = logging.FileHandler(logs_directory / "logs.log", mode="w")
         self.file_handler.setFormatter(
-            logging.getLogger("dataset").handlers[0].formatter
+            logging.getLogger("dataset").handlers[0].formatter,
         )
         self.logger.setLevel(logging.DEBUG)
         self.file_handler.setLevel(logging.DEBUG)
@@ -738,7 +737,7 @@ class Dataset:
                 list_cur_timestamp_formatted.append(cur_timestamp_formatted)
 
             self.logger.info(
-                f"We reformatted timestamps in your file {cur_timestamp_not_formatted.name}"
+                f"We reformatted timestamps in your file {cur_timestamp_not_formatted.name}",
             )
             dataF["timestamp"] = list_cur_timestamp_formatted
 
@@ -765,7 +764,7 @@ class Dataset:
             if not already_printed_1:
                 already_printed_1 = True
                 self.logger.warning(
-                    f"Timestamp format {cur_timestamp_not_formatted} does not fit our template {TIMESTAMP_FORMAT_AUDIO_FILE} let's reformat it"
+                    f"Timestamp format {cur_timestamp_not_formatted} does not fit our template {TIMESTAMP_FORMAT_AUDIO_FILE} let's reformat it",
                 )
             if not date_template:
                 self.logger.error("You have to define a date_template please.")
@@ -848,7 +847,7 @@ class Dataset:
         for parent_dir in parent_dir_list:
             if len(os.listdir(parent_dir)) > 0:
                 self.logger.warning(
-                    f"- Removing your subfolder: {parent_dir}, but be aware that you had the following non-wav data in your subfolder {parent_dir}: {os.listdir(parent_dir)}"
+                    f"- Removing your subfolder: {parent_dir}, but be aware that you had the following non-wav data in your subfolder {parent_dir}: {os.listdir(parent_dir)}",
                 )
             else:
                 self.logger.debug(f"- Removing your subfolder: {parent_dir}")
