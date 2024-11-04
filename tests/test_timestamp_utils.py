@@ -1,5 +1,13 @@
 import pytest
-from OSmOSE.utils.timestamp_utils import *
+from pandas import Timestamp, Series
+from OSmOSE.utils.timestamp_utils import (
+    is_datetime_template_valid,
+    build_regex_from_datetime_template,
+    strptime_from_text,
+    associate_timestamps,
+    reformat_timestamp,
+    strftime_osmose_format,
+)
 
 
 @pytest.mark.unit
@@ -18,7 +26,7 @@ from OSmOSE.utils.timestamp_utils import *
         pytest.param("%y%m%d%H%M%S_%Z", True, id="timezone_name"),
     ],
 )
-def test_is_datetime_template_valid(datetime_template, expected):
+def test_is_datetime_template_valid(datetime_template: str, expected):
     assert is_datetime_template_valid(datetime_template) == expected
 
 
@@ -286,20 +294,12 @@ def test_strptime_from_text_errors(
 
 @pytest.fixture
 def correct_series():
-    series = pd.Series(
+    series = Series(
         {
-            "something2345_2012_06_24__16:32:10.wav": pd.Timestamp(
-                "2012-06-24 16:32:10"
-            ),
-            "something2345_2023_07_28__08:24:50.flac": pd.Timestamp(
-                "2023-07-28 08:24:50"
-            ),
-            "something2345_2024_01_01__23:12:11.WAV": pd.Timestamp(
-                "2024-01-01 23:12:11"
-            ),
-            "something2345_2024_02_02__02:02:02.FLAC": pd.Timestamp(
-                "2024-02-02 02:02:02"
-            ),
+            "something2345_2012_06_24__16:32:10.wav": Timestamp("2012-06-24 16:32:10"),
+            "something2345_2023_07_28__08:24:50.flac": Timestamp("2023-07-28 08:24:50"),
+            "something2345_2024_01_01__23:12:11.WAV": Timestamp("2024-01-01 23:12:11"),
+            "something2345_2024_02_02__02:02:02.FLAC": Timestamp("2024-02-02 02:02:02"),
         },
         name="timestamp",
     )
