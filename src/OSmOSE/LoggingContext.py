@@ -1,15 +1,20 @@
-from contextlib import contextmanager
 import logging
+from contextlib import contextmanager
 
 
 class LoggingContext:
-    def __init__(self):
+    """Logging context with a global logger used within the OSEkit environment."""
+
+    def __init__(self) -> None:
+        """Initialize a LoggingContext object.
+
+        The initializer sets up the global logger of the instance.
+        """
         self.logger = logging.root
 
     @contextmanager
-    def set_logger(self, logger: logging.Logger):
-        """
-        This context manager can be used for calling utils functions with a specific logger.
+    def set_logger(self, logger: logging.Logger) -> None:
+        """Set a contextmanager for calling utils functions with a specific logger.
 
         Parameters
         ----------
@@ -27,6 +32,7 @@ class LoggingContext:
 
         with global_logging_context.set_logger(logger_to_use):
             log_something() # This log will be sent to the logger_to_use logger
+
         """
         previous_logger = self.logger
         try:

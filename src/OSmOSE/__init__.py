@@ -1,14 +1,15 @@
+import logging.config
+import os.path
+from pathlib import Path
+
+import yaml
+
 from OSmOSE import utils
 from OSmOSE.Auxiliary import Auxiliary
+from OSmOSE.config import FileName
 from OSmOSE.Dataset import Dataset
 from OSmOSE.job import Job_builder
 from OSmOSE.Spectrogram import Spectrogram
-import OSmOSE.utils as utils
-from OSmOSE.Auxiliary import Auxiliary
-import logging.config
-import yaml
-import os.path
-from pathlib import Path
 
 __all__ = [
     "Auxiliary",
@@ -19,10 +20,13 @@ __all__ = [
 ]
 
 
-def _setup_logging(config_file="logging_config.yaml", default_level=logging.INFO):
+def _setup_logging(
+    config_file: FileName = "logging_config.yaml",
+    default_level: int = logging.INFO,
+) -> None:
 
     user_config_file_path = Path(os.getenv("OSMOSE_USER_CONFIG", ".")) / config_file
-    default_config_file_path = Path(os.path.dirname(__file__)) / config_file
+    default_config_file_path = Path(__file__).parent / config_file
 
     config_file_path = next(
         (
@@ -34,8 +38,8 @@ def _setup_logging(config_file="logging_config.yaml", default_level=logging.INFO
     )
 
     if config_file_path:
-        with open(config_file_path, "r") as config_file:
-            logging_config = yaml.safe_load(config_file)
+        with Path.open(config_file_path) as configuration:
+            logging_config = yaml.safe_load(configuration)
         logging.config.dictConfig(logging_config)
     else:
         logging.basicConfig(level=default_level)

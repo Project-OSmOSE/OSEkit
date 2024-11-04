@@ -1,6 +1,9 @@
+import os
 import stat
 from collections import namedtuple
 from pathlib import Path
+from typing import TypeAlias
+
 from OSmOSE.LoggingContext import LoggingContext
 
 SUPPORTED_AUDIO_FORMAT = [".wav", ".flac"]
@@ -32,3 +35,5 @@ FPDEFAULT = 0o664  # Default file permissions
 DPDEFAULT = stat.S_ISGID | 0o775  # Default directory permissions
 
 global_logging_context = LoggingContext()
+
+FileName: TypeAlias = str | bytes | os.PathLike
