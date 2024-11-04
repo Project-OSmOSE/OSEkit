@@ -1904,7 +1904,9 @@ class Spectrogram(Dataset):
         # save as png figure
         output_file = self.path / OSMOSE_PATH.SPLfiltered / "SPLfiltered.png"
 
-        self.logger.debug(f"Saving\n{output_file}\nNumber of time points: {len(SPL_filtered)}")
+        self.logger.debug(
+            f"Saving\n{output_file}\nNumber of time points: {len(SPL_filtered)}"
+        )
         plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
         plt.close()
 
