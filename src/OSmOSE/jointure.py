@@ -1,5 +1,8 @@
+import calendar
+import datetime
+import time
+
 import numpy as np
-import time, calendar, datetime
 import scipy.interpolate as inter
 from pykdtree.kdtree import KDTree
 
@@ -10,10 +13,12 @@ from pykdtree.kdtree import KDTree
 ########################################################################################
 
 
-get_era_time = lambda x: (
-    calendar.timegm(x.timetuple()) if isinstance(x, datetime.datetime) else x
-)
-g = lambda x: calendar.timegm(time.strptime(str(x)[:-11], "%Y-%m-%dT%H"))
+def get_era_time(x):
+    return calendar.timegm(x.timetuple()) if isinstance(x, datetime.datetime) else x
+
+
+def g(x):
+    return calendar.timegm(time.strptime(str(x)[:-11], "%Y-%m-%dT%H"))
 
 
 def rect_interpolation_era(stamps, var, method="linear"):
@@ -44,17 +49,16 @@ def time_interpolation(time, var, method="linear"):
 def interpolation_gps(time, latitude, longitude, depth=None, method="linear"):
     interp_lat = inter.interp1d(time, latitude, kind=method)
     interp_lon = inter.interp1d(time, longitude, kind=method)
-    if isinstance(depth, type(None)):
+    if depth is None:
         return interp_lat, interp_lon
-    else:
-        interp_depth = inter.interp1d(time, depth, kind=method)
-        return interp_lat, interp_lon, interp_depth
+    interp_depth = inter.interp1d(time, depth, kind=method)
+    return interp_lat, interp_lon, interp_depth
 
 
 def apply_interp(interp, date, latitude=None, longitude=None, gps=None):
     if isinstance(interp, inter.interp1d):
         return interp(date)
-    elif isinstance(interp, inter.RegularGridInterpolator):
+    if isinstance(interp, inter.RegularGridInterpolator):
         return interp(np.stack((date, latitude, longitude), axis=1))
 
 

@@ -1,7 +1,5 @@
-import os
-from pathlib import Path
-
 import pytest
+
 from OSmOSE import Job_builder
 
 custom_config = {
@@ -41,7 +39,7 @@ def test_build_job_file(output_dir):
         logdir=output_dir,
     )
 
-    with open(jb.prepared_jobs[0]["path"], "r") as f:
+    with open(jb.prepared_jobs[0]["path"]) as f:
         text = "".join(f.readlines())
 
     assert pbshead in text

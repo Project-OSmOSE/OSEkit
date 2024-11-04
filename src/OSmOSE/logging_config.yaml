@@ -1,0 +1,32 @@
+version: 1
+
+loggers:
+  dataset:
+    level: DEBUG
+    handlers: [consoleHandler, globalFileHandler]
+    propagate: no
+
+handlers:
+  consoleHandler:
+    class: logging.StreamHandler
+    level: INFO
+    formatter: consoleFormatter
+    stream: ext://sys.stdout
+
+  globalFileHandler:
+    class: logging.FileHandler
+    level: DEBUG
+    formatter: fileFormatter
+    filename: "logs.log"
+    mode: "w"
+    delay: True
+
+formatters:
+  fileFormatter:
+    format: "\t%(asctime)s - %(name)s - %(levelname)s\n%(message)s\n"
+  consoleFormatter:
+    format: "\t%(asctime)s\n%(message)s\n"
+
+root:
+  level: DEBUG
+  handlers: [consoleHandler]

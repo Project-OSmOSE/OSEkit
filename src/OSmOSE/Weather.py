@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Oct  4 16:06:18 2023
+"""Created on Wed Oct  4 16:06:18 2023
 
 @author: cazaudo
 """
-from pathlib import Path
-import os
-from OSmOSE.config import *
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from OSmOSE.utils import make_path
-from tqdm import tqdm
-import sys
 import itertools
+import os
+import sys
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
+
+from OSmOSE.config import DPDEFAULT, OSMOSE_PATH
+from OSmOSE.utils import make_path
 
 
 class Weather:
@@ -85,11 +85,15 @@ class Weather:
                 ]  # suprinsingly , doing simply = list(time) was droping the Timestamp dtype, to be investigated in more depth...
 
             np.savez(
-                path_all_welch, LTAS=LTAS, time=time, Freq=Freq, allow_pickle=True
+                path_all_welch,
+                LTAS=LTAS,
+                time=time,
+                Freq=Freq,
+                allow_pickle=True,
             )  # careful data not sorted here! we should save them based on dataframe df below
 
         else:
-            print(f"Your complete welch npz is already built! move on..")
+            print("Your complete welch npz is already built! move on..")
 
     def wind_speed_estimation(
         self,
@@ -113,7 +117,7 @@ class Weather:
             {
                 "SPL_filtered": df["SPL_filtered"],
                 "InSituWIND": np.sqrt(df["interp_u10"] ** 2 + df["interp_v10"] ** 2),
-            }
+            },
         )
 
         feature_matrix = feature_matrix[pd.notnull(feature_matrix["InSituWIND"])]
@@ -131,7 +135,7 @@ class Weather:
             y_train = y_train[x_train < val_outlier]
             x_train = x_train[x_train < val_outlier]
         if threshold_SPL:
-            if type(threshold_SPL) == int:
+            if type(threshold_SPL) is int:
                 y_train = y_train[x_train < threshold_SPL]
                 x_train = x_train[x_train < threshold_SPL]
             else:
@@ -178,11 +182,12 @@ class Weather:
         else:
             plt.close()
         print(
-            f"Saving figure {self.path.joinpath(OSMOSE_PATH.weather,'scatter_wind_model.png')}"
+            f"Saving figure {self.path.joinpath(OSMOSE_PATH.weather,'scatter_wind_model.png')}",
         )
 
         with open(
-            self.path.joinpath(OSMOSE_PATH.weather, "polynomial_law.txt"), "w"
+            self.path.joinpath(OSMOSE_PATH.weather, "polynomial_law.txt"),
+            "w",
         ) as f:
             for item in z:
                 f.write("%s\n" % item)
@@ -236,7 +241,7 @@ class Weather:
         else:
             plt.close()
         print(
-            f"Saving figure {self.path.joinpath(OSMOSE_PATH.weather,'scatter_ecmwf_model.png')}"
+            f"Saving figure {self.path.joinpath(OSMOSE_PATH.weather,'scatter_ecmwf_model.png')}",
         )
 
         # temporal_ecmwf_model
@@ -273,7 +278,7 @@ class Weather:
         else:
             plt.close()
         print(
-            f"Saving figure {self.path.joinpath(OSMOSE_PATH.weather,'temporal_ecmwf_model.png')}"
+            f"Saving figure {self.path.joinpath(OSMOSE_PATH.weather,'temporal_ecmwf_model.png')}",
         )
 
     def append_SPL_filtered(self, freq_min: int, freq_max: int):
@@ -305,13 +310,13 @@ class Weather:
                     ltas["Sxx"][
                         0,
                         np.argmin(abs(ltas["Freq"] - freq_min)) : np.argmax(
-                            abs(ltas["Freq"] - freq_max)
+                            abs(ltas["Freq"] - freq_max),
                         ),
-                    ]
+                    ],
                 )
             else:
                 pre_SPL = np.mean(
-                    ltas["Sxx"][0, np.argmin(abs(ltas["Freq"] - freq_min))]
+                    ltas["Sxx"][0, np.argmin(abs(ltas["Freq"] - freq_min))],
                 )
 
             if metadata_spectrogram["spectro_normalization"][0] == "density":
@@ -334,7 +339,7 @@ class Weather:
 class benchmark_weather:
     def __init__(self, osmose_path_dataset, dataset, local=True):
         if not isinstance(dataset, list):
-            print(f"Dataset should be multiple and defined within a list")
+            print("Dataset should be multiple and defined within a list")
             sys.exit(0)
 
         self.path = Path(osmose_path_dataset)
@@ -366,7 +371,7 @@ class benchmark_weather:
         ct = 0
         for dd in self.dataset:
             f = open(
-                self.path.joinpath(dd, OSMOSE_PATH.weather, "polynomial_law.txt"), "r"
+                self.path.joinpath(dd, OSMOSE_PATH.weather, "polynomial_law.txt"),
             )
             xx = f.read()
             ll = [float(x) for x in xx.split("\n")[:-1]]
@@ -377,9 +382,9 @@ class benchmark_weather:
                 "-",
                 dd,
                 " : ",
-                "{:.3f}".format(p[0]),
-                "/ {:.3f}".format(p[1]),
-                "/ {:.3f}".format(p[2]),
+                f"{p[0]:.3f}",
+                f"/ {p[1]:.3f}",
+                f"/ {p[2]:.3f}",
             )
 
             x = np.arange(-20, 0, 0.1)

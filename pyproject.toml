@@ -36,6 +36,7 @@ pytest = "^7.2.1"
 black = "^24.4.2"
 pytest-cov = "^4.0.0"
 jupyter = "^1.0.0"
+ruff = "^0.7.1"
 
 [build-system]
 requires = ["poetry-core"]
@@ -48,10 +49,20 @@ addopts = [
 filterwarnings = [
     "ignore:pkg_resources is deprecated as an API:DeprecationWarning",
     "ignore:pkg_resources.declare_namespace('sphinxcontrib'):DeprecationWarning",
+    "error::SyntaxWarning"
 ]
 markers = [
     "unit: Mark test as unitary test. Run only these with '-m unit'.",
     "integ: Mark test as integration test. Run only these with '-m integ'.",
-    "reg: Mark test as regression test. Run only these with '-m ref'."
+    "reg: Mark test as regression test. Run only these with '-m ref'.",
+    "allow_log_write_to_file: Disables the automatic patch_filehandlers fixture that prevents logging handlers to write into files."
 ]
 
+[tool.ruff]
+select = ["ALL"]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = [
+    # at least this three should be fine in tests:
+    "S101", # asserts allowed in tests...
+]

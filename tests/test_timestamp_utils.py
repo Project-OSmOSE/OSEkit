@@ -26,7 +26,7 @@ from OSmOSE.utils.timestamp_utils import (
         pytest.param("%y%m%d%H%M%S_%Z", True, id="timezone_name"),
     ],
 )
-def test_is_datetime_template_valid(datetime_template: str, expected):
+def test_is_datetime_template_valid(datetime_template, expected):
     assert is_datetime_template_valid(datetime_template) == expected
 
 
@@ -36,42 +36,42 @@ def test_is_datetime_template_valid(datetime_template: str, expected):
     [
         pytest.param(
             "%y%m%d%H%M%S",
-            "(\d{2})(0[1-9]|1[0-2])([0-2]\d|3[0-1])([0-1]\d|2[0-4])([0-5]\d)([0-5]\d)",
+            r"(\d{2})(0[1-9]|1[0-2])([0-2]\d|3[0-1])([0-1]\d|2[0-4])([0-5]\d)([0-5]\d)",
             id="simple_pattern",
         ),
         pytest.param(
             "%Y%y%m%d%H%M%S%I%p%f",
-            "([12]\d{3})(\d{2})(0[1-9]|1[0-2])([0-2]\d|3[0-1])([0-1]\d|2[0-4])([0-5]\d)([0-5]\d)(0[1-9]|1[0-2])(AM|PM)(\d{1,6})",
+            r"([12]\d{3})(\d{2})(0[1-9]|1[0-2])([0-2]\d|3[0-1])([0-1]\d|2[0-4])([0-5]\d)([0-5]\d)(0[1-9]|1[0-2])(AM|PM)(\d{1,6})",
             id="all_strftime_codes",
         ),
         pytest.param(
             "%y %m %d %H %M %S",
-            "(\d{2}) (0[1-9]|1[0-2]) ([0-2]\d|3[0-1]) ([0-1]\d|2[0-4]) ([0-5]\d) ([0-5]\d)",
+            r"(\d{2}) (0[1-9]|1[0-2]) ([0-2]\d|3[0-1]) ([0-1]\d|2[0-4]) ([0-5]\d) ([0-5]\d)",
             id="spaces_separated_codes",
         ),
         pytest.param(
             "%y:%m:%d%H.%M%S",
-            "(\d{2}):(0[1-9]|1[0-2]):([0-2]\d|3[0-1])([0-1]\d|2[0-4]).([0-5]\d)([0-5]\d)",
+            r"(\d{2}):(0[1-9]|1[0-2]):([0-2]\d|3[0-1])([0-1]\d|2[0-4]).([0-5]\d)([0-5]\d)",
             id="special_chars_separated_codes",
         ),
         pytest.param(
             "%y%m%d_at_%H%M%S",
-            "(\d{2})(0[1-9]|1[0-2])([0-2]\d|3[0-1])_at_([0-1]\d|2[0-4])([0-5]\d)([0-5]\d)",
+            r"(\d{2})(0[1-9]|1[0-2])([0-2]\d|3[0-1])_at_([0-1]\d|2[0-4])([0-5]\d)([0-5]\d)",
             id="alpha_letters_separated_codes",
         ),
         pytest.param(
             "{%y}%m%d(%H%M%S)",
-            "{(\d{2})}(0[1-9]|1[0-2])([0-2]\d|3[0-1])\(([0-1]\d|2[0-4])([0-5]\d)([0-5]\d)\)",
+            r"{(\d{2})}(0[1-9]|1[0-2])([0-2]\d|3[0-1])\(([0-1]\d|2[0-4])([0-5]\d)([0-5]\d)\)",
             id="parentheses_separated_codes",
         ),
         pytest.param(
             "%y%m%d%z",
-            "(\d{2})(0[1-9]|1[0-2])([0-2]\d|3[0-1])([\+-]\d{2}:?\d{2})",
+            r"(\d{2})(0[1-9]|1[0-2])([0-2]\d|3[0-1])([\+-]\d{2}:?\d{2})",
             id="utc_offset",
         ),
         pytest.param(
             "%y%m%d%Z",
-            "(\d{2})(0[1-9]|1[0-2])([0-2]\d|3[0-1])((?:\w+)(?:[-/]\w+)*(?:[\+-]\d+)?)",
+            r"(\d{2})(0[1-9]|1[0-2])([0-2]\d|3[0-1])((?:\w+)(?:[-/]\w+)*(?:[\+-]\d+)?)",
             id="timezone_name",
         ),
     ],
@@ -212,7 +212,8 @@ def test_strptime_from_text(text: str, datetime_template: str, expected: Timesta
             "7189.230405144906.wav",
             "%y%m%d%H%M%%S",
             pytest.raises(
-                ValueError, match="%y%m%d%H%M%%S is not a supported strftime template"
+                ValueError,
+                match="%y%m%d%H%M%%S is not a supported strftime template",
             ),
             id="%%_is_wrong_strftime_code",
         ),
@@ -220,7 +221,8 @@ def test_strptime_from_text(text: str, datetime_template: str, expected: Timesta
             "7189.230405144906.wav",
             "%y%m%d%H%M%P%S",
             pytest.raises(
-                ValueError, match="%y%m%d%H%M%P%S is not a supported strftime template"
+                ValueError,
+                match="%y%m%d%H%M%P%S is not a supported strftime template",
             ),
             id="%P_is_wrong_strftime_code",
         ),
@@ -228,7 +230,8 @@ def test_strptime_from_text(text: str, datetime_template: str, expected: Timesta
             "7189.230405144906.wav",
             "%y%m%d%H%M%52%S",
             pytest.raises(
-                ValueError, match="%y%m%d%H%M%52%S is not a supported strftime template"
+                ValueError,
+                match="%y%m%d%H%M%52%S is not a supported strftime template",
             ),
             id="%5_is_wrong_strftime_code",
         ),
@@ -286,7 +289,9 @@ def test_strptime_from_text(text: str, datetime_template: str, expected: Timesta
     ],
 )
 def test_strptime_from_text_errors(
-    text: str, datetime_template: str, expected: Timestamp
+    text: str,
+    datetime_template: str,
+    expected: Timestamp,
 ):
     with expected as e:
         assert strptime_from_text(text, datetime_template) == e
@@ -311,7 +316,7 @@ def correct_series():
 def test_associate_timestamps(correct_series):
     input_files = list(correct_series["filename"])
     assert associate_timestamps((i for i in input_files), "%Y_%m_%d__%H:%M:%S").equals(
-        correct_series
+        correct_series,
     )
 
 
@@ -326,7 +331,8 @@ def test_associate_timestamps_error_with_incorrect_datetime_format(correct_serie
         match=f"{input_files[0]} did not match the given {mismatching_datetime_format} template",
     ) as e:
         assert e == associate_timestamps(
-            (i for i in input_files), mismatching_datetime_format
+            (i for i in input_files),
+            mismatching_datetime_format,
         )
 
     with pytest.raises(
@@ -334,7 +340,8 @@ def test_associate_timestamps_error_with_incorrect_datetime_format(correct_serie
         match=f"{incorrect_datetime_format} is not a supported strftime template",
     ):
         assert e == associate_timestamps(
-            (i for i in input_files), incorrect_datetime_format
+            (i for i in input_files),
+            incorrect_datetime_format,
         )
 
 

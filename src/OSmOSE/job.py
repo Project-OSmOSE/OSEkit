@@ -1,19 +1,21 @@
-from copy import copy
 import glob
-import os
 import json
-import time
-import tomlkit
+import os
 import subprocess
-from uuid import uuid4
-from string import Template
-from typing import NamedTuple, List, Literal
-from warnings import warn
-from pathlib import Path
-from datetime import datetime, timedelta
+import time
+from collections import namedtuple
+from copy import copy
+from datetime import datetime
 from importlib import resources
-from OSmOSE.utils.core_utils import read_config, set_umask, chmod_if_needed
-from OSmOSE.config import *
+from pathlib import Path
+from string import Template
+from typing import List, Literal, NamedTuple
+from warnings import warn
+
+import tomlkit
+
+from OSmOSE.config import DPDEFAULT, FPDEFAULT
+from OSmOSE.utils.core_utils import chmod_if_needed, read_config, set_umask
 
 JOB_CONFIG_TEMPLATE = namedtuple(
     "job_config",
@@ -37,7 +39,7 @@ class Job_builder:
         if config_file is None:
             self.__configfile = "config.toml"
             self.__full_config: NamedTuple = read_config(
-                resources.files("OSmOSE").joinpath(self.__configfile)
+                resources.files("OSmOSE").joinpath(self.__configfile),
             )
 
         else:
@@ -66,7 +68,7 @@ class Job_builder:
 
         if not all(prop in self.__config.keys() for prop in required_properties):
             raise ValueError(
-                f"The provided configuration file is missing the following attributes: {'; '.join(list(set(required_properties).difference(set(self.__config._fields))))}"
+                f"The provided configuration file is missing the following attributes: {'; '.join(list(set(required_properties).difference(set(self.__config._fields))))}",
             )
 
     # region Properties
@@ -193,7 +195,6 @@ class Job_builder:
         ---------
             `output_file`: the path to the new configuration file (in TOML or JSON format).
         """
-
         output_format = (
             Path(output_file).suffix if output_file else Path(self.__configfile).suffix
         )
@@ -274,19 +275,18 @@ class Job_builder:
         -------
         job_path : `str`
             The path to the created job file.
+
         """
         set_umask()
         if "Presets" in self.__config.keys():
             if preset and preset.lower() not in self.__config["Presets"].keys():
                 raise ValueError(
-                    f"Unrecognized preset {preset}. Valid presets are: {', '.join(self.__config['Presets'].keys())}"
+                    f"Unrecognized preset {preset}. Valid presets are: {', '.join(self.__config['Presets'].keys())}",
                 )
 
             job_preset = self.__config["Presets"][preset]
         else:
             preset = None
-
-        pwd = Path(__file__).parent
 
         logdir.mkdir(mode=DPDEFAULT, exist_ok=True)
 
@@ -358,7 +358,7 @@ class Job_builder:
                 outfile_param = ""
                 errfile_param = ""
                 warn(
-                    "Unrecognized job scheduler. Please review the PBS file and or specify a job scheduler between Torque or Slurm"
+                    "Unrecognized job scheduler. Please review the PBS file and or specify a job scheduler between Torque or Slurm",
                 )
 
         job_file.append(f"{prefix} {name_param}{jobname}")
@@ -371,7 +371,7 @@ class Job_builder:
         uid = date_id + str(
             len(glob.glob(Path(outfile).stem[:-2] + "*.out"))
             + len(self.prepared_jobs)
-            + len(self.ongoing_jobs)
+            + len(self.ongoing_jobs),
         ).zfill(3)
 
         outfile = Path(outfile).with_stem(f"{Path(outfile).stem}{uid}")
@@ -387,8 +387,8 @@ class Job_builder:
         # The env_script should contain all the command(s) needed to load the script, with the $env_name template where the environment name should be.
         job_file.append(
             Template(f"\n{env_script if env_script else self.env_script}").substitute(
-                env_name=env_name
-            )
+                env_name=env_name,
+            ),
         )
 
         #! SCRIPT
@@ -425,23 +425,25 @@ class Job_builder:
 
     # TODO support multiple dependencies and job chaining (?)
     def submit_job(
-        self, jobfile: str = None, dependency: str | List[str] = None
+        self,
+        jobfile: str = None,
+        dependency: str | List[str] = None,
     ) -> List[str]:
         """Submits the job file to the cluster using the job scheduler written in the file name or in the configuration file.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
             jobfile: `str`
                 The absolute path of the job file to be submitted. If none is provided, all the prepared job files will be submitted.
 
             dependency: `str` or `list(str)`
                 The job ID this job is dependent on. The afterok:dependency will be added to the command for all jobs submitted.
 
-        Returns:
-        --------
+        Returns
+        -------
             A list containing the job ids of the submitted jobs.
-        """
 
+        """
         jobinfo_list = (
             [{"path": jobfile}] if jobfile is not None else copy(self.prepared_jobs)
         )
@@ -451,8 +453,6 @@ class Job_builder:
         if isinstance(dependency, list):
             dependency = ":".join(dependency)
 
-        jobarray_uuid = str(uuid4())
-        job_dir = Path(jobinfo_list[0]["path"]).parent
         # TODO: Think about the issue when a job have too many dependencies and workaround.
 
         for i, jobinfo in enumerate(jobinfo_list):
@@ -464,7 +464,7 @@ class Job_builder:
                     else ["qsub", str(jobinfo["path"])]
                 )
                 jobid = (
-                    subprocess.run(cmd, stdout=subprocess.PIPE)
+                    subprocess.run(cmd, stdout=subprocess.PIPE, check=False)
                     .stdout.decode("utf-8")
                     .rstrip("\n")
                 )
@@ -474,7 +474,9 @@ class Job_builder:
                 dep = f"-d afterok:{dependency}" if dependency else ""
                 jobid = (
                     subprocess.run(
-                        ["sbatch", dep, jobinfo["path"]], stdout=subprocess.PIPE
+                        ["sbatch", dep, jobinfo["path"]],
+                        stdout=subprocess.PIPE,
+                        check=False,
                     )
                     .stdout.decode("utf-8")
                     .rstrip("\n")
@@ -499,7 +501,6 @@ class Job_builder:
 
     def update_job_access(self):
         """In case the output files are not accessible by anyone but the owner, running this once will update the permissions for anyone to read them."""
-
         for job_info in self.finished_jobs:
             try:
                 if job_info["outfile"].exists():
@@ -517,7 +518,8 @@ class Job_builder:
             res += "==== PREPARED JOBS ====\n\n"
         for job_info in self.prepared_jobs:
             created_at = datetime.strptime(
-                today + job_info["outfile"].stem[-11:-3], "%d%m%y%H-%M-%S"
+                today + job_info["outfile"].stem[-11:-3],
+                "%d%m%y%H-%M-%S",
             )
             res += (
                 f"{job_info['job_name']} (created at {created_at}) : ready to start.\n"
@@ -527,7 +529,8 @@ class Job_builder:
             res += "==== ONGOING JOBS ====\n\n"
         for job_info in self.ongoing_jobs:
             created_at = datetime.strptime(
-                today + job_info["outfile"].stem[-11:-3], "%d%m%y%H-%M-%S"
+                today + job_info["outfile"].stem[-11:-3],
+                "%d%m%y%H-%M-%S",
             )
             delta = datetime.now() - created_at
             strftime = f"{'%H hours, ' if delta.seconds >= 3600 else ''}{'%M minutes and ' if delta.seconds >= 60 else ''}%S seconds"
@@ -538,7 +541,8 @@ class Job_builder:
             res += "==== FINISHED JOBS ====\n\n"
         for job_info in self.finished_jobs:
             created_at = datetime.strptime(
-                today + job_info["outfile"].stem[-11:-3], "%d%m%y%H-%M-%S"
+                today + job_info["outfile"].stem[-11:-3],
+                "%d%m%y%H-%M-%S",
             )
 
             if not job_info["outfile"].exists():
@@ -546,7 +550,9 @@ class Job_builder:
             else:
                 delta = (
                     datetime.fromtimestamp(
-                        time.mktime(time.localtime(job_info["outfile"].stat().st_ctime))
+                        time.mktime(
+                            time.localtime(job_info["outfile"].stat().st_ctime)
+                        ),
                     )
                     - created_at
                 )
@@ -575,21 +581,24 @@ class Job_builder:
                 The type of the output file to read, whether standard (out) or error (err). The default is out.
             job_file_name: `str`, optional, keyword-only
                 The path to the job_file to read, which can be retrieved easily from Job_builder.finished_jobs. If not provided, then the first element of the list will be read.
+
         """
         if outtype not in ["out", "err"]:
             raise ValueError(
-                "The outtype must be either out for standard output file or err for error output file."
+                "The outtype must be either out for standard output file or err for error output file.",
             )
 
         if not job_file_name:
             job_id = 0
             if job_name:
                 job_id = get_dict_index_in_list(
-                    self.finished_jobs, "job_name", job_name.rstrip()
+                    self.finished_jobs,
+                    "job_name",
+                    job_name.rstrip(),
                 )
             elif len(self.finished_jobs) == 0:
                 print(
-                    f"There are no finished jobs in this context. Wait until the {len(self.ongoing_jobs)} ongoing jobs are done before reading the output. Otherwise, you can specify which file you wish to read."
+                    f"There are no finished jobs in this context. Wait until the {len(self.ongoing_jobs)} ongoing jobs are done before reading the output. Otherwise, you can specify which file you wish to read.",
                 )
                 return
 
@@ -599,24 +608,28 @@ class Job_builder:
                 else self.finished_jobs[job_id]["errfile"]
             )
 
-        with open(job_file_name, "r") as f:
+        with open(job_file_name) as f:
             print("".join(f.readlines()))
 
     def delete_job(self, job_identifier: str):
         try:
             job_id = get_dict_index_in_list(
-                self.ongoing_jobs, "job_name", job_identifier.rstrip()
+                self.ongoing_jobs,
+                "job_name",
+                job_identifier.rstrip(),
             )
         except ValueError:
             job_id = get_dict_index_in_list(
-                self.ongoing_jobs, "id", job_identifier.rstrip()
+                self.ongoing_jobs,
+                "id",
+                job_identifier.rstrip(),
             )
 
         jobinfo = self.ongoing_jobs[job_id]
         if "Torque" in str(jobinfo["path"]):
-            subprocess.run(["qdel", jobinfo["id"]])
+            subprocess.run(["qdel", jobinfo["id"]], check=False)
         elif "Slurm" in str(jobinfo["path"]):
-            subprocess.run(["scancel", jobinfo["id"]])
+            subprocess.run(["scancel", jobinfo["id"]], check=False)
         self.__ongoing_jobs.remove(jobinfo)
         self.__cancelled_jobs.append(jobinfo)
 

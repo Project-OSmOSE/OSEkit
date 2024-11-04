@@ -1,15 +1,13 @@
-from pathlib import Path
-import sys
-import csv
 import argparse
+import csv
+import sys
+from pathlib import Path
 
-import pandas as pd
-
-import soundfile as sf
 import numpy as np
+import soundfile as sf
 from scipy import signal
 
-from OSmOSE.utils.core_utils import set_umask, get_timestamp_of_audio_file
+from OSmOSE.utils.core_utils import get_timestamp_of_audio_file, set_umask
 
 
 def Write_zscore_norma_params(
@@ -42,6 +40,7 @@ def Write_zscore_norma_params(
 
     batch_ind_max: `int`
         The last file of the list to be processed. Default is -1, meaning the entire list is processed.
+
     """
     set_umask()
 
@@ -61,7 +60,7 @@ def Write_zscore_norma_params(
         bpcoef = signal.butter(
             20,
             np.array(
-                [max(hp_filter_min_freq, sys.float_info.epsilon), sample_rate / 2 - 1]
+                [max(hp_filter_min_freq, sys.float_info.epsilon), sample_rate / 2 - 1],
             ),
             fs=sample_rate,
             output="sos",
@@ -70,11 +69,12 @@ def Write_zscore_norma_params(
         data = signal.sosfilt(bpcoef, data)
 
         current_timestamp = get_timestamp_of_audio_file(
-            Path(input_dir).joinpath("timestamp.csv"), wav.name
+            Path(input_dir).joinpath("timestamp.csv"),
+            wav.name,
         )
 
         list_summaryStats.append(
-            [wav.name, current_timestamp, np.mean(data), np.std(data)]
+            [wav.name, current_timestamp, np.mean(data), np.std(data)],
         )
 
     with open(output_file, "w", newline="") as f:
@@ -87,7 +87,7 @@ def Write_zscore_norma_params(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Python script to get the mean and standard deviation of audio files, used in zscore parameter calculation."
+        description="Python script to get the mean and standard deviation of audio files, used in zscore parameter calculation.",
     )
     required = parser.add_argument_group("required arguments")
     required.add_argument(
