@@ -5,12 +5,25 @@ import numpy as np
 import pytest
 import soundfile as sf
 from scipy.signal import chirp
+from unittest.mock import patch
+import logging
 
 from OSmOSE.config import OSMOSE_PATH
 
 
 def capture_csv(monkeypatch):
     pass
+
+
+@pytest.fixture(autouse=True)
+def patch_filehandlers(monkeypatch, request):
+    if "allow_log_write_to_file" in request.keywords:
+        return
+
+    def disabled_filewrite(self, record):
+        pass
+
+    monkeypatch.setattr(logging.FileHandler, "emit", disabled_filewrite)
 
 
 @pytest.fixture

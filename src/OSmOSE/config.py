@@ -1,6 +1,10 @@
+import os
 import stat
 from collections import namedtuple
 from pathlib import Path
+from typing import TypeAlias
+
+from OSmOSE.LoggingContext import LoggingContext
 
 SUPPORTED_AUDIO_FORMAT = [".wav", ".flac"]
 
@@ -29,3 +33,7 @@ OSMOSE_PATH = namedtuple("path_list", __global_path_dict.keys())(**__global_path
 TIMESTAMP_FORMAT_AUDIO_FILE = "%Y-%m-%dT%H:%M:%S.%f%z"
 FPDEFAULT = 0o664  # Default file permissions
 DPDEFAULT = stat.S_ISGID | 0o775  # Default directory permissions
+
+global_logging_context = LoggingContext()
+
+FileName: TypeAlias = str | bytes | os.PathLike

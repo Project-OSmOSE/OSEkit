@@ -54,7 +54,8 @@ filterwarnings = [
 markers = [
     "unit: Mark test as unitary test. Run only these with '-m unit'.",
     "integ: Mark test as integration test. Run only these with '-m integ'.",
-    "reg: Mark test as regression test. Run only these with '-m ref'."
+    "reg: Mark test as regression test. Run only these with '-m ref'.",
+    "allow_log_write_to_file: Disables the automatic patch_filehandlers fixture that prevents logging handlers to write into files."
 ]
 
 [tool.ruff]
