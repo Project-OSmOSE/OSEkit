@@ -260,10 +260,16 @@ class Auxiliary(Spectrogram):
 		Results are saved in self.df as 'interp_{variable}'
 		"""
 		ds = nc.Dataset(self.era)
-		variables = list(ds.variables.keys())[3:]
-		era_time = pd.DataFrame(ds.variables['time'][:].data)
-		era_datetime = era_time[0].apply(lambda x : datetime(1900,1,1)+timedelta(hours=int(x)))
-		timestamps = era_datetime.apply(lambda x : x.timestamp()).to_numpy()
+		if 'number' in ds.variables.keys() :
+			variables = list(ds.variables.keys())[5:]
+		else :
+			variables = list(ds.variables.keys())[3:]
+		try :
+			era_time = pd.DataFrame(ds.variables['time'][:].data)
+			era_datetime = era_time[0].apply(lambda x : datetime(1900,1,1)+timedelta(hours=int(x)))
+			timestamps = era_datetime.apply(lambda x : x.timestamp()).to_numpy()
+		except KeyError :
+			timestamps = np.array(ds['valid_time'][:].data)
 		
 		pbar = tqdm(total=len(variables), position=0, leave=True)
 		for variable in variables:
