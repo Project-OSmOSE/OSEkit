@@ -33,17 +33,17 @@ def display_folder_storage_info(dir_path: str) -> None:
     print("Available storage space (TB):", round(usage.free / (1024**4), 1))
 
 
-def list_not_built_dataset(path_osmose: str, campaign: str = None) -> None:
+def list_not_built_dataset(path_osmose: str, project: str = None) -> None:
     """Prints the available datasets that have not been built by the `Dataset.build()` function.
 
     Parameter
     ---------
     dataset_folder_path: str
-        The path to the directory containing the campaigns/datasets.
-    campaign: str
-        Name of the campaign folder containing the datasets."""
+        The path to the directory containing the project/datasets.
+    project: str
+        Name of the project folder containing the datasets."""
 
-    ds_folder = Path(path_osmose, campaign)
+    ds_folder = Path(path_osmose, project)
 
     dataset_list = [
         directory
@@ -99,17 +99,17 @@ def list_not_built_dataset(path_osmose: str, campaign: str = None) -> None:
         )
 
 
-def list_dataset(path_osmose: str, campaign: str = None) -> None:
+def list_dataset(path_osmose: str, project: str = None) -> None:
     """Prints the available datasets that have been built by the `Dataset.build()` function.
 
     Parameter
     ---------
     dataset_folder_path: str
-        The path to the directory containing the campaigns/datasets.
-    campaign: str
-        Name of the campaign folder containing the datasets."""
+        The path to the directory containing the project/datasets.
+    project: str
+        Name of the project folder containing the datasets."""
 
-    ds_folder = Path(path_osmose, campaign)
+    ds_folder = Path(path_osmose, project)
 
     dataset_list = [
         directory
@@ -169,17 +169,17 @@ def list_dataset(path_osmose: str, campaign: str = None) -> None:
         )
 
 
-def list_aplose(path_osmose: str, campaign: str = ""):
+def list_aplose(path_osmose: str, project: str = ""):
     """Prints the available APLOSE datasets containing result files (result and task_status).
 
     Parameter
     ---------
     dataset_folder_path: str
-        The path to the directory containing the campaign / datasets.
-    campaign: str
-        Name of the campaign folder containing the datasets."""
+        The path to the directory containing the project / datasets.
+    project: str
+        Name of the project folder containing the datasets."""
 
-    ds_folder = Path(path_osmose, campaign)
+    ds_folder = Path(path_osmose, project)
 
     dataset_list = [
         directory
@@ -543,9 +543,7 @@ def t_rounder(t: pd.Timestamp, res: int) -> pd.Timestamp:
     return t
 
 
-def check_available_file_resolution(
-    path_osmose: str, campaign_ID: str, dataset_ID: str
-):
+def check_available_file_resolution(path_osmose: str, project_ID: str, dataset_ID: str):
     """Lists the file resolution for a given dataset
 
     Parameters
@@ -553,8 +551,8 @@ def check_available_file_resolution(
     path_osmose: 'str'
         usually '/home/datawork-osmose/dataset/'
 
-    campaign_ID: 'str'
-        Name of the campaign, can be '' if the dataset is directly stored under path_osmose
+    project_ID: 'str'
+        Name of the project, can be '' if the dataset is directly stored under path_osmose
 
     dataset_ID: 'str'
         Name of the dataset
@@ -564,10 +562,10 @@ def check_available_file_resolution(
     The list of the dataset resolutions is being printed and returned as a list of str
     """
 
-    base_path = os.path.join(path_osmose, campaign_ID, dataset_ID, "data", "audio")
+    base_path = os.path.join(path_osmose, project_ID, dataset_ID, "data", "audio")
     resolution = os.listdir(base_path)
 
-    print(f"\nDataset : {campaign_ID}/{dataset_ID}")
+    print(f"\nDataset : {project_ID}/{dataset_ID}")
     print("Available Resolution (LengthFile_samplerate) :", end="\n")
 
     [print(f" {r}") for r in resolution]
@@ -577,7 +575,7 @@ def check_available_file_resolution(
 
 def extract_config(
     path_osmose: str,
-    list_campaign_ID: List[str],
+    list_project_ID: List[str],
     list_dataset_ID: List[str],
     out_dir: str,
 ):
@@ -591,8 +589,8 @@ def extract_config(
     path_osmose: 'str'
         usually '/home/datawork-osmose/dataset/'
 
-    list_campaign_ID: List[str]
-        List of the campaigns, can be '' if datasets are directly stored under path_osmose
+    list_project_ID: List[str]
+        List of the projects, can be '' if datasets are directly stored under path_osmose
 
     list_dataset_ID: 'str'
         List of the datasets
@@ -607,15 +605,15 @@ def extract_config(
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
-    for campaign_ID, dataset_ID in zip(list_campaign_ID, list_dataset_ID):
+    for project_ID, dataset_ID in zip(list_project_ID, list_dataset_ID):
         dataset_resolution = check_available_file_resolution(
-            path_osmose, campaign_ID, dataset_ID
+            path_osmose, project_ID, dataset_ID
         )
 
         for dr in dataset_resolution:
             ### audio config files
             path1 = os.path.join(
-                path_osmose, campaign_ID, dataset_ID, "data", "audio", dr
+                path_osmose, project_ID, dataset_ID, "data", "audio", dr
             )
             files1 = glob.glob(os.path.join(path1, "**.csv"))
 
@@ -626,7 +624,7 @@ def extract_config(
 
         ### spectro config files
         path2 = os.path.join(
-            path_osmose, campaign_ID, dataset_ID, "processed", "spectrogram"
+            path_osmose, project_ID, dataset_ID, "processed", "spectrogram"
         )
         files2 = []
         for root, dirs, files in os.walk(path2):
@@ -732,7 +730,7 @@ def add_entry_for_APLOSE(path: str, file: str, info: pd.DataFrame):
             csv file
         info: 'DataFrame'
             info of the entry
-            'campaign' / 'dataset' / 'spectro_duration' / 'dataset_sr' / 'files_type' / 'identifier'
+            'project' / 'dataset' / 'spectro_duration' / 'dataset_sr' / 'files_type' / 'identifier'
     Returns
     -------
 

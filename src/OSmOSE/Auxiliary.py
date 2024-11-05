@@ -16,6 +16,7 @@ from scipy import interpolate
 
 
 class Auxiliary(Spectrogram):
+<<<<<<< HEAD
 	'''
 	This class joins environmental and instrument data to acoustic data. 
 	The acoustic data is first fetched using the dataset path, the data's samplerate and the analysis parameters.
@@ -324,9 +325,10 @@ def nearest_shore(dist2shore_ds, x,y):
 	return shore_distance
 
 def nearest_point(data, var):
-	tree = KDTree(var)
-	neighbor_dists, neighbor_indices = tree.query(data)
-	return neighbor_indices, neighbor_dists
+    tree = KDTree(var)
+    neighbor_dists, neighbor_indices = tree.query(data)
+    return neighbor_indices, neighbor_dists
+
 
 def make_cds_file(key, udi, path):
     os.chdir(os.path.expanduser("~"))
