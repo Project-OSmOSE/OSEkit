@@ -78,12 +78,6 @@ class Weather(Auxiliary):
 
         if method:
             self.method = empirical[method]
-            analysis_params["nfft"] = self.method["preprocessing"]["nfft"]
-            analysis_params["window_size"] = self.method["preprocessing"]["window_size"]
-            analysis_params["spectro_duration"] = self.method["preprocessing"][
-                "spectro_duration"
-            ]
-            dataset_sr = self.method["samplerate"]
         else:
             self.method = weather_params
 
@@ -91,9 +85,9 @@ class Weather(Auxiliary):
             dataset_path,
             gps_coordinates=gps_coordinates,
             depth=depth,
-            dataset_sr=weather_params["samplerate"],
+            dataset_sr=self.method["samplerate"],
             owner_group=owner_group,
-            analysis_params=weather_params["preprocessing"],
+            analysis_params=self.method["preprocessing"],
             batch_number=batch_number,
             local=local,
             era=era,
