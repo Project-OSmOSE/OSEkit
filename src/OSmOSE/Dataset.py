@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import os
 import re
@@ -47,11 +49,11 @@ class Dataset:
         self,
         dataset_path: str,
         *,
-        gps_coordinates: Union[str, list, Tuple] = None,
-        depth: Union[str, int] = None,
-        timezone: str = "+00:00",
-        owner_group: str = None,
-        original_folder: str = None,
+        gps_coordinates: str | list | tuple | None = None,
+        depth: str | int | None = None,
+        timezone: str | None = None,
+        owner_group: str | None = None,
+        original_folder: str | None = None,
         local: bool = True,
     ) -> None:
         """Instanciate the dataset with at least its path.
