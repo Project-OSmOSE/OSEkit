@@ -498,18 +498,18 @@ def test_reformat_timestamp(args: str, expected: str) -> None:
             "%Y-%m-%d %H:%M:%S %z",
             "+01:00",
             "2024-10-17T09:14:11.000+0100",
-            id="UTC_timezone",
+            id="UTC_offset",
         ),
         pytest.param(
             "2024-06-17 10:14:11 Europe/Sarajevo",
             "%Y-%m-%d %H:%M:%S %Z",
             "UTC",
             "2024-06-17T08:14:11.000+0000",
-            id="UTC_timezone",
+            id="named_timezone",
         ),
     ],
 )
-def test_reformat_timestamp_while_changing_timezone(
+def test_reformat_timestamp_warns_when_changing_timezone(
     old_timestamp: str,
     datetime_format: str,
     timezone: str,
@@ -523,4 +523,53 @@ def test_reformat_timestamp_while_changing_timezone(
     assert (
         f"Timestamps timezones UTC+02:00 will be converted to {timezone}" in caplog.text
     )
+    assert result == expected
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("old_timestamp", "datetime_format", "timezone", "expected"),
+    [
+        pytest.param(
+            "2024-06-17 10:14:11 +0200",
+            "%Y-%m-%d %H:%M:%S %z",
+            "Europe/Paris",
+            "2024-06-17T10:14:11.000+0200",
+            id="utc+2_to_paris_summer",
+        ),
+        pytest.param(
+            "2024-12-17 10:14:11 +0100",
+            "%Y-%m-%d %H:%M:%S %z",
+            "Europe/Paris",
+            "2024-12-17T10:14:11.000+0100",
+            id="utc+1_to_paris_winter",
+        ),
+        pytest.param(
+            "2024-12-17 10:14:11 Europe/London",
+            "%Y-%m-%d %H:%M:%S %Z",
+            "Europe/London",
+            "2024-12-17T10:14:11.000+0000",
+            id="london_to_london",
+        ),
+        pytest.param(
+            "2024-12-17 10:14:11 Europe/Madrid",
+            "%Y-%m-%d %H:%M:%S %Z",
+            "Europe/Malta",
+            "2024-12-17T10:14:11.000+0100",
+            id="madrid_to_malta",
+        ),
+    ],
+)
+def test_reformat_timestamp_doesnt_warn_when_timezones_have_same_utcoffset(
+    old_timestamp: str,
+    datetime_format: str,
+    timezone: str,
+    expected: str,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+
+    with caplog.at_level(logging.WARNING):
+        result = reformat_timestamp(old_timestamp, datetime_format, timezone)
+
+    assert "will be converted" not in caplog.text
     assert result == expected

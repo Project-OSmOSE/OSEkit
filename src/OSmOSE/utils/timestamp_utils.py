@@ -116,17 +116,19 @@ def reformat_timestamp(
         text=old_timestamp_str,
         datetime_template=old_datetime_template,
     )
-    if timezone:
-        if timestamp.tz:
+    if not timezone:
+        return strftime_osmose_format(timestamp)
 
-            glc.logger.warning(
-                f"You specified a timezone for a tz-aware timestamp. "
-                f"Timestamps timezones {timestamp.tz} will be converted to {timezone}",
-            )
-            timestamp = timestamp.tz_convert(timezone)
-        else:
-            timestamp = timestamp.tz_localize(timezone)
-    return strftime_osmose_format(timestamp)
+    if not timestamp.tz:
+        return strftime_osmose_format(timestamp.tz_localize(timezone))
+
+    if timestamp.utcoffset() != timestamp.tz_convert(timezone).utcoffset():
+        glc.logger.warning(
+            "The timestamps are tz-aware and you specified a different timezone.\n"
+            f"Timestamps timezones {timestamp.tz} will be converted to {timezone}",
+        )
+
+    return strftime_osmose_format(timestamp.tz_convert(timezone))
 
 
 def strftime_osmose_format(date: pd.Timestamp) -> str:
