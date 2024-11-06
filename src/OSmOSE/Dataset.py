@@ -422,15 +422,23 @@ class Dataset:
         else:
             number_bad_files = 0
 
+        flag_reformat_warning = False
         for ind_dt in tqdm(range(len(timestamp_csv)), desc="Scanning audio files"):
 
             audio_file = audio_file_list[ind_dt]
             cur_timestamp = timestamp_csv[ind_dt]
 
             if date_template != TIMESTAMP_FORMAT_AUDIO_FILE:
-                reformat_warning_message = f"Reformating datetime format from {date_template} to OSmOSE {TIMESTAMP_FORMAT_AUDIO_FILE}"
-                self.logger.warning(reformat_warning_message)
-                with glc.set_logger(self.logger):
+                if not flag_reformat_warning:
+                    logger = self.logger
+                    flag_reformat_warning = True
+                else:
+                    logger = logging.getLogger("dummy")
+                    logger.addHandler(logging.NullHandler())
+                    logger.propagate = False
+                with glc.set_logger(logger):
+                    reformat_warning_message = f"Reformating datetime format from {date_template} to OSmOSE {TIMESTAMP_FORMAT_AUDIO_FILE}"
+                    logger.warning(reformat_warning_message)
                     cur_timestamp = reformat_timestamp(
                         old_timestamp_str=cur_timestamp,
                         old_datetime_template=date_template,
