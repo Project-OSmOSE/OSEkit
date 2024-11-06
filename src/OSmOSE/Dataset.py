@@ -385,6 +385,7 @@ class Dataset:
                 audio_path=path_raw_audio,
                 date_template=date_template,
             )
+            date_template = TIMESTAMP_FORMAT_AUDIO_FILE
 
         resume_test_anomalies = path_raw_audio.joinpath("resume_test_anomalies.txt")
 
@@ -424,13 +425,14 @@ class Dataset:
         for ind_dt in tqdm(range(len(timestamp_csv)), desc="Scanning audio files"):
 
             audio_file = audio_file_list[ind_dt]
+            cur_timestamp = timestamp_csv[ind_dt]
 
             if date_template != TIMESTAMP_FORMAT_AUDIO_FILE:
                 reformat_warning_message = f"Reformating datetime format from {date_template} to OSmOSE {TIMESTAMP_FORMAT_AUDIO_FILE}"
                 self.logger.warning(reformat_warning_message)
                 with glc.set_logger(self.logger):
                     cur_timestamp = reformat_timestamp(
-                        old_timestamp_str=timestamp_csv[ind_dt],
+                        old_timestamp_str=cur_timestamp,
                         old_datetime_template=date_template,
                         timezone=self.timezone,
                     )
