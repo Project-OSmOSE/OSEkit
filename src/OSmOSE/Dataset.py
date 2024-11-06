@@ -3,8 +3,6 @@ import os
 import re
 import shutil
 import sys
-from datetime import datetime
-from os import PathLike
 from pathlib import Path
 from statistics import fmean as mean
 from typing import List, Tuple, Union
@@ -23,12 +21,14 @@ import pandas as pd
 from tqdm import tqdm
 
 from OSmOSE.config import DPDEFAULT, FPDEFAULT, OSMOSE_PATH, TIMESTAMP_FORMAT_AUDIO_FILE
+from OSmOSE.config import global_logging_context as glc
 from OSmOSE.utils.audio_utils import get_all_audio_files
 from OSmOSE.utils.core_utils import check_n_files, chmod_if_needed, set_umask
 from OSmOSE.utils.path_utils import make_path
 from OSmOSE.utils.timestamp_utils import (
     associate_timestamps,
     check_epoch,
+    reformat_timestamp,
     strftime_osmose_format,
 )
 
@@ -419,16 +419,20 @@ class Dataset:
         else:
             number_bad_files = 0
 
-        already_printed_1 = False
         for ind_dt in tqdm(range(len(timestamp_csv)), desc="Scanning audio files"):
 
             audio_file = audio_file_list[ind_dt]
 
-            cur_timestamp, _ = self._format_timestamp(
-                timestamp_csv[ind_dt],
-                date_template,
-                already_printed_1,
-            )
+            if date_template != TIMESTAMP_FORMAT_AUDIO_FILE:
+                reformat_warning_message = f"Reformating datetime format from {date_template} to OSmOSE {TIMESTAMP_FORMAT_AUDIO_FILE}"
+                self.logger.warning(reformat_warning_message)
+                with glc.set_logger(self.logger):
+                    cur_timestamp = reformat_timestamp(
+                        old_timestamp_str=timestamp_csv[ind_dt],
+                        old_datetime_template=date_template,
+                        timezone=self.timezone,
+                    )
+
             # define final audio filename, especially we remove the sign '-' in filenames (because of our qsub_resample.sh)
             if ("-" in audio_file.name) or (":" in audio_file.name):
                 cur_filename = audio_file.name.replace("-", "_").replace(":", "_")
@@ -712,73 +716,6 @@ class Dataset:
         self.logger.setLevel(logging.DEBUG)
         self.file_handler.setLevel(logging.DEBUG)
         self.logger.addHandler(self.file_handler)
-
-    def _format_timestamp(
-        self,
-        cur_timestamp_not_formatted: str,
-        date_template: str,
-        already_printed_1: int,
-    ):
-        format_OK = False
-
-        if isinstance(cur_timestamp_not_formatted, PathLike):
-            already_printed_1 = False
-            list_cur_timestamp_formatted = []
-            dataF = pd.read_csv(cur_timestamp_not_formatted)
-            for val_timestamp_not_formatted in dataF["timestamp"].values:
-                cur_timestamp_formatted, format_OK = self._format_timestamp(
-                    val_timestamp_not_formatted,
-                    date_template,
-                    True,
-                )
-                if format_OK:
-                    self.logger.debug("-> Format OK")
-                    return None
-                list_cur_timestamp_formatted.append(cur_timestamp_formatted)
-
-            self.logger.info(
-                f"We reformatted timestamps in your file {cur_timestamp_not_formatted.name}",
-            )
-            dataF["timestamp"] = list_cur_timestamp_formatted
-
-            dataF.to_csv(cur_timestamp_not_formatted, index=False)
-            chmod_if_needed(path=cur_timestamp_not_formatted, mode=FPDEFAULT)
-
-            return None
-
-        # trick, we need to remove an ending Z so this code works properly, will need to be cleaned
-        if cur_timestamp_not_formatted.endswith("Z"):
-            cur_timestamp_not_formatted = cur_timestamp_not_formatted[:-1]
-            if date_template and date_template.endswith("Z"):
-                date_template = date_template[:-1]
-
-        try:
-            datetime.strptime(
-                cur_timestamp_not_formatted,
-                TIMESTAMP_FORMAT_AUDIO_FILE,
-            )
-            cur_timestamp_formatted = cur_timestamp_not_formatted
-            format_OK = True
-
-        except Exception:
-            if not already_printed_1:
-                already_printed_1 = True
-                self.logger.warning(
-                    f"Timestamp format {cur_timestamp_not_formatted} does not fit our template {TIMESTAMP_FORMAT_AUDIO_FILE} let's reformat it",
-                )
-            if not date_template:
-                self.logger.error("You have to define a date_template please.")
-                raise FileNotFoundError("You have to define a date_template please.")
-            date_obj = datetime.strptime(
-                cur_timestamp_not_formatted + self.timezone,
-                date_template + "%z",
-            )
-            cur_timestamp_formatted = datetime.strftime(
-                date_obj,
-                TIMESTAMP_FORMAT_AUDIO_FILE,
-            )
-
-        return cur_timestamp_formatted, format_OK
 
     def _find_or_create_original_folder(self) -> Path:
         """Search for the original folder or create it from existing files.
