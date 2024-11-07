@@ -262,10 +262,9 @@ class Dataset:
     def build(
         self,
         *,
-        original_folder: str = None,
-        owner_group: str = None,
+        original_folder: str | None  = None,
+        owner_group: str | None = None,
         date_template: str = TIMESTAMP_FORMAT_AUDIO_FILE,
-        bare_check: bool = False,
         auto_normalization: bool = False,
         force_upload: bool = False,
         number_test_bad_files: int = 1,
@@ -297,9 +296,6 @@ class Dataset:
                 It is used to generate automatically the timestamp.csv file. Alternatively, you can call the script to create the timestamp file first.
                 If no template is provided, will assume that the file already exists. In future versions, the template will be guessed automatically.
                 For more information on strftime template, see https://strftime.org/.
-            bare_check : `bool`, optional, keyword_only
-                Only do the checks and build steps that requires low resource usage. If you build the dataset on a login node or
-                if you are sure it is already good to use, set to True. Otherwise, it should be inside a job. Default is False.
             auto_normalization: `bool`, optional, keyword_only
                 If true, automatically normalize audio files if the data would cause issues downstream. The default is False.
             force_upload: `bool`, optional, keyword_only
