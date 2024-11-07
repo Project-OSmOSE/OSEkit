@@ -4,7 +4,6 @@ import logging
 import os
 import re
 import shutil
-import sys
 from pathlib import Path
 from statistics import fmean as mean
 from typing import List, Tuple, Union
@@ -270,7 +269,7 @@ class Dataset:
         *,
         original_folder: str = None,
         owner_group: str = None,
-        date_template: str = "%Y%m%d_%H%M%S",
+        date_template: str = TIMESTAMP_FORMAT_AUDIO_FILE,
         bare_check: bool = False,
         auto_normalization: bool = False,
         force_upload: bool = False,
@@ -326,20 +325,12 @@ class Dataset:
             DONE ! your dataset is on OSmOSE platform !
 
         """
-        metadata_path = next(
-            self.path.joinpath(OSMOSE_PATH.raw_audio).rglob("metadata.csv"),
-            False,
-        )
-        if (
-            metadata_path
-            and metadata_path.exists()
-            and pd.read_csv(metadata_path)["is_built"][0]
-            and not force_upload
-        ):
+        if not force_upload and self._is_built():
             self.logger.warning(
-                "This dataset has already been built. To run the build() method on an already built dataset, you have to use the force_upload parameter.",
+                "This dataset has already been built. To run the build() method on an "
+                "already built dataset, you have to use the force_upload parameter.",
             )
-            sys.exit()
+            return
 
         if self.gps_coordinates is None:
             self.logger.error("GPS coordinates must be defined !")
@@ -728,6 +719,18 @@ class Dataset:
         self.logger.setLevel(logging.DEBUG)
         self.file_handler.setLevel(logging.DEBUG)
         self.logger.addHandler(self.file_handler)
+
+    def _is_built(self) -> bool:
+        metadata_path = next(
+            (self.path / OSMOSE_PATH.raw_audio).rglob("metadata.csv"),
+            None,
+        )
+        if metadata_path is None:
+            return False
+        metadata = pd.read_csv(metadata_path)
+        if "is_built" not in metadata.columns:
+            return False
+        return metadata["is_built"][0]
 
     def _find_or_create_original_folder(self) -> Path:
         """Search for the original folder or create it from existing files.
