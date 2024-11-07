@@ -53,7 +53,7 @@ def test_reshape_smaller(input_dataset: Path, output_dir: Path):
         depth=10,
         timezone="+03:00",
     )
-    dataset.build()
+    dataset.build(date_template="%Y%m%d_%H%M%S")
 
     reshape(
         input_files=dataset._get_original_after_build(),
@@ -83,7 +83,7 @@ def test_reshape_with_new_sr(input_dataset: Path, output_dir):
         depth=10,
         timezone="+03:00",
     )
-    dataset.build()
+    dataset.build(date_template="%Y%m%d_%H%M%S")
 
     reshape(
         input_files=dataset._get_original_after_build(),
@@ -114,7 +114,7 @@ def test_reshape_truncate_last(input_dataset: Path, output_dir):
         depth=10,
         timezone="+03:00",
     )
-    dataset.build()
+    dataset.build(date_template="%Y%m%d_%H%M%S")
 
     reshape(
         input_files=dataset._get_original_after_build(),

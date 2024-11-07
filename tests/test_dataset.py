@@ -30,7 +30,7 @@ def test_build(input_dataset):
         timezone="+03:00",
     )
 
-    dataset.build()
+    dataset.build(date_template="%Y%m%d_%H%M%S")
 
     new_expected_path = dataset.path.joinpath("data", "audio", "3_44100")
 
