@@ -6,6 +6,7 @@ import random
 import shutil
 import struct
 from importlib.resources import as_file
+from importlib.util import find_spec
 from pathlib import Path
 from typing import List, NamedTuple, Tuple, Union
 from warnings import warn
@@ -25,6 +26,13 @@ import numpy as np
 import soundfile as sf
 
 from OSmOSE.config import OSMOSE_PATH
+from OSmOSE.config import global_logging_context as glc
+
+if find_spec("grp"):
+    import grp
+    _is_grp_supported = True
+else:
+    _is_grp_supported = False
 
 
 def display_folder_storage_info(dir_path: str) -> None:
@@ -783,13 +791,64 @@ def add_entry_for_APLOSE(path: str, file: str, info: pd.DataFrame):
         meta.to_csv(dataset_csv, index=False)
 
 
-def chmod_if_needed(path: Path, mode: int):
+def chmod_if_needed(path: Path, mode: int) -> None:
+    """Change the permission of a path if user doesn't have read and write access.
+
+    Parameters
+    ----------
+    path: Path
+        Path of the file or folder in which permission should be changed.
+    mode: int
+        Permissions as used by os.chmod()
+
+    """
+    if not _is_grp_supported:
+        return
     if all(os.access(path, p) for p in (os.R_OK, os.W_OK)):
         return
 
     try:
-        os.chmod(path, mode)
-    except PermissionError:
-        raise PermissionError(
-            f"You do not have the permission to write to {path}, nor to change its permissions.",
-        )
+        path.chmod(mode)
+    except PermissionError as e:
+        message = (f"You do not have the permission to write to {path}, "
+                   "nor to change its permissions.")
+        glc.logger.error(message)
+        raise PermissionError(message) from e
+
+def chown_if_needed(path: Path, owner_group: str) -> None:
+    """Change the owner group of the given path.
+
+    Parameters
+    ----------
+    path:
+        Path of which the owner group should be changed.
+    owner_group:
+        The new owner group.
+        A warning is logged if the grp module is supported (Unix os) but
+        no owner_group is passed.
+
+    """
+    if not _is_grp_supported:
+        return
+    if owner_group is None:
+        glc.logger.warning("You did not set the group owner of the dataset.")
+        return
+    if path.group() == owner_group:
+        return
+    glc.logger.debug("Setting OSmOSE permission to the dataset..")
+
+    try:
+        gid = grp.getgrnam(owner_group).gr_gid
+    except KeyError as e:
+        message = f"Group {owner_group} does not exist."
+        glc.logger.error(message)
+        raise KeyError(message) from e
+
+    try:
+        os.chown(path, -1, gid)
+    except PermissionError as e:
+        message = (f"You do not have the permission to change the owner of {path}."
+                   f"The group owner has not been changed "
+                   f"from {path.group()} to {owner_group}.")
+        glc.logger.error(message)
+        raise PermissionError(message) from e

@@ -8,23 +8,19 @@ from pathlib import Path
 from statistics import fmean as mean
 from typing import List, Tuple, Union
 
-import soundfile as sf
-
-try:
-    import grp
-
-    skip_perms = False
-except ModuleNotFoundError:
-    skip_perms = True
-
 import numpy as np
 import pandas as pd
+import soundfile as sf
 from tqdm import tqdm
 
 from OSmOSE.config import DPDEFAULT, FPDEFAULT, OSMOSE_PATH, TIMESTAMP_FORMAT_AUDIO_FILE
 from OSmOSE.config import global_logging_context as glc
 from OSmOSE.utils.audio_utils import get_all_audio_files
-from OSmOSE.utils.core_utils import check_n_files, chmod_if_needed, set_umask
+from OSmOSE.utils.core_utils import (
+    check_n_files,
+    chmod_if_needed,
+    chown_if_needed,
+)
 from OSmOSE.utils.path_utils import make_path
 from OSmOSE.utils.timestamp_utils import (
     associate_timestamps,
@@ -97,11 +93,6 @@ class Dataset:
         self.depth = depth
 
         self.__original_folder = original_folder
-
-        if skip_perms:
-            self.logger.debug(
-                "It seems you are on a non-Unix operating system (probably Windows). The build() method will not work as intended and permission might be incorrectly set.",
-            )
 
         pd.set_option("display.float_format", lambda x: "%.0f" % x)
 
@@ -232,7 +223,7 @@ class Dataset:
                 )
 
     @property
-    def owner_group(self):
+    def owner_group(self) -> str:
         """str: The Unix group able to interact with the dataset."""
         if self.__group is None:
             self.logger.warning(
@@ -241,22 +232,7 @@ class Dataset:
         return self.__group
 
     @owner_group.setter
-    def owner_group(self, value):
-        if skip_perms:
-            self.logger.debug("Cannot set osmose group on a non-Unix operating system.")
-            self.__group = None
-            return
-        if value:
-            try:
-                grp.getgrnam(value).gr_gid
-            except KeyError as e:
-                self.logger.error(
-                    f"The group {value} does not exist on the system. Full error trace: {e}",
-                )
-                raise KeyError(
-                    f"The group {value} does not exist on the system. Full error trace: {e}",
-                )
-
+    def owner_group(self, value: str) -> None:
         self.__group = value
 
     def build(
@@ -324,24 +300,11 @@ class Dataset:
             return
 
         self.dico_aux_substring = dico_aux_substring
+        #TODO: rework the auxiliary management with a specific class.
 
-        if not self.__local:
-            set_umask()
-            if owner_group is None:
-                owner_group = self.owner_group
-
-            if not skip_perms:
-                self.logger.debug("Setting OSmOSE permission to the dataset..")
-                if owner_group:
-                    gid = grp.getgrnam(owner_group).gr_gid
-                    try:
-                        os.chown(self.path, -1, gid)
-                    except PermissionError:
-                        self.logger.error(
-                            f"You have not the permission to change the owner of the {self.path} folder. This might be because you are trying to rebuild an existing dataset. The group owner has not been changed.",
-                        )
-
-                # Add the setgid bid to the folder's permissions, in order for subsequent created files to be created by the same user group.
+        with glc.set_logger(self.logger):
+            if not self.__local:
+                chown_if_needed(path = self.path, owner_group = owner_group or self.owner_group)
                 chmod_if_needed(path=self.path, mode=DPDEFAULT)
 
         path_raw_audio = (
