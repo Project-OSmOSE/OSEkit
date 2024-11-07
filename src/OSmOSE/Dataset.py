@@ -48,8 +48,8 @@ class Dataset:
         self,
         dataset_path: str,
         *,
-        gps_coordinates: str | list | tuple | None = None,
-        depth: str | int | None = None,
+        gps_coordinates: str | list | tuple = (0,0),
+        depth: str | int = 0,
         timezone: str | None = None,
         owner_group: str | None = None,
         original_folder: str | None = None,
@@ -90,16 +90,11 @@ class Dataset:
         self.__name = self.__path.stem
         self._create_logger()
         self.owner_group = owner_group
-        self.__gps_coordinates = []
-        self.__depth = None
         self.__local = local
         self.timezone = timezone
 
-        if gps_coordinates is not None:
-            self.gps_coordinates = gps_coordinates
-
-        if depth is not None:
-            self.depth = depth
+        self.gps_coordinates = gps_coordinates
+        self.depth = depth
 
         self.__original_folder = original_folder
 
@@ -331,13 +326,6 @@ class Dataset:
                 "already built dataset, you have to use the force_upload parameter.",
             )
             return
-
-        if self.gps_coordinates is None:
-            self.logger.error("GPS coordinates must be defined !")
-            raise ValueError("GPS coordinates must be defined !")
-        if self.depth is None:
-            self.logger.error("Depth must be defined !")
-            raise ValueError("Depth must be defined !")
 
         self.dico_aux_substring = dico_aux_substring
 
