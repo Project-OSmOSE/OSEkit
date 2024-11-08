@@ -15,7 +15,8 @@ from OSmOSE.config import OSMOSE_PATH
 
 @pytest.fixture(autouse=True)
 def patch_filehandlers(
-    monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest,
+    monkeypatch: pytest.MonkeyPatch,
+    request: pytest.FixtureRequest,
 ) -> None:
     if "allow_log_write_to_file" in request.keywords:
         return
