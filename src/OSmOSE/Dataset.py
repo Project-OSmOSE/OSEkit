@@ -17,9 +17,9 @@ from OSmOSE.config import DPDEFAULT, FPDEFAULT, OSMOSE_PATH, TIMESTAMP_FORMAT_AU
 from OSmOSE.config import global_logging_context as glc
 from OSmOSE.utils.audio_utils import get_all_audio_files
 from OSmOSE.utils.core_utils import (
+    change_owner_group,
     check_n_files,
     chmod_if_needed,
-    chown_if_needed,
 )
 from OSmOSE.utils.path_utils import make_path
 from OSmOSE.utils.timestamp_utils import (
@@ -44,7 +44,7 @@ class Dataset:
         self,
         dataset_path: str,
         *,
-        gps_coordinates: str | list | tuple = (0,0),
+        gps_coordinates: str | list | tuple = (0, 0),
         depth: str | int = 0,
         timezone: str | None = None,
         owner_group: str | None = None,
@@ -238,7 +238,7 @@ class Dataset:
     def build(
         self,
         *,
-        original_folder: str | None  = None,
+        original_folder: str | None = None,
         owner_group: str | None = None,
         date_template: str = TIMESTAMP_FORMAT_AUDIO_FILE,
         auto_normalization: bool = False,
@@ -300,11 +300,13 @@ class Dataset:
             return
 
         self.dico_aux_substring = dico_aux_substring
-        #TODO: rework the auxiliary management with a specific class.
+        # TODO: rework the auxiliary management with a specific class.
 
         with glc.set_logger(self.logger):
             if not self.__local:
-                chown_if_needed(path = self.path, owner_group = owner_group or self.owner_group)
+                change_owner_group(
+                    path=self.path, owner_group=owner_group or self.owner_group
+                )
                 chmod_if_needed(path=self.path, mode=DPDEFAULT)
 
         path_raw_audio = (

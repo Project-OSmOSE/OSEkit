@@ -69,4 +69,5 @@ select = ["ALL"]
     "FBT", # Don't care about booleans as positional arguments in tests, e.g. via @pytest.mark.parametrize()
     "D", # Docstring-related stuff
     "SLF001", # Access to private variables
+    "BLE001", # Blind exceptions
 ]

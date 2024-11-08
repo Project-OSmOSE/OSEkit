@@ -28,11 +28,7 @@ import soundfile as sf
 from OSmOSE.config import OSMOSE_PATH
 from OSmOSE.config import global_logging_context as glc
 
-if find_spec("grp"):
-    import grp
-    _is_grp_supported = True
-else:
-    _is_grp_supported = False
+_is_grp_supported = bool(find_spec("grp"))
 
 
 def display_folder_storage_info(dir_path: str) -> None:
@@ -810,12 +806,15 @@ def chmod_if_needed(path: Path, mode: int) -> None:
     try:
         path.chmod(mode)
     except PermissionError as e:
-        message = (f"You do not have the permission to write to {path}, "
-                   "nor to change its permissions.")
+        message = (
+            f"You do not have the permission to write to {path}, "
+            "nor to change its permissions."
+        )
         glc.logger.error(message)
         raise PermissionError(message) from e
 
-def chown_if_needed(path: Path, owner_group: str) -> None:
+
+def change_owner_group(path: Path, owner_group: str) -> None:
     """Change the owner group of the given path.
 
     Parameters
@@ -838,6 +837,8 @@ def chown_if_needed(path: Path, owner_group: str) -> None:
     glc.logger.debug("Setting OSmOSE permission to the dataset..")
 
     try:
+        import grp
+
         gid = grp.getgrnam(owner_group).gr_gid
     except KeyError as e:
         message = f"Group {owner_group} does not exist."
@@ -847,8 +848,10 @@ def chown_if_needed(path: Path, owner_group: str) -> None:
     try:
         os.chown(path, -1, gid)
     except PermissionError as e:
-        message = (f"You do not have the permission to change the owner of {path}."
-                   f"The group owner has not been changed "
-                   f"from {path.group()} to {owner_group}.")
+        message = (
+            f"You do not have the permission to change the owner of {path}."
+            f"The group owner has not been changed "
+            f"from {path.group()} to {owner_group}."
+        )
         glc.logger.error(message)
         raise PermissionError(message) from e
