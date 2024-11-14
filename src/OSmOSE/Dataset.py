@@ -673,11 +673,14 @@ class Dataset:
 
         timestamps = pd.read_csv(timestamp_file[0])
         timestamps = adapt_timestamp_csv_to_osmose(
-            timestamps=timestamps, date_template=date_template, timezone=self.timezone,
+            timestamps=timestamps,
+            date_template=date_template,
+            timezone=self.timezone,
         )
 
         timestamps.to_csv(
-            self.path / OSMOSE_PATH.raw_audio / "timestamp.csv", index=False,
+            self.path / OSMOSE_PATH.raw_audio / "timestamp.csv",
+            index=False,
         )
 
     def _get_original_after_build(self) -> Path:

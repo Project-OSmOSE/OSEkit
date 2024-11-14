@@ -313,7 +313,9 @@ def associate_timestamps(
 
 
 def parse_timestamps_csv(
-    filenames: Iterable[str], datetime_template: str, timezone: str | None = None,
+    filenames: Iterable[str],
+    datetime_template: str,
+    timezone: str | None = None,
 ) -> pd.DataFrame:
     """Parse a DataFrame that can be exported to an OSmOSE timestamp.csv file.
 
@@ -337,7 +339,9 @@ def parse_timestamps_csv(
 
 
 def adapt_timestamp_csv_to_osmose(
-    timestamps: pd.DataFrame, date_template: str, timezone: str | None = None,
+    timestamps: pd.DataFrame,
+    date_template: str,
+    timezone: str | None = None,
 ) -> pd.DataFrame:
     """Adapt the timestamp format in a timestamp.csv file to the OSmOSE format.
 
@@ -372,7 +376,10 @@ def adapt_timestamp_csv_to_osmose(
     )
     return _localize_and_format_timestamps(timestamps, timezone)
 
-def _localize_and_format_timestamps(timestamps: pd.DataFrame, timezone: str | None = None) -> pd.DataFrame:
+
+def _localize_and_format_timestamps(
+    timestamps: pd.DataFrame, timezone: str | None = None
+) -> pd.DataFrame:
     if timezone:
         timestamps["timestamp"] = timestamps["timestamp"].apply(
             lambda t: localize_timestamp(t, timezone),
@@ -402,7 +409,6 @@ def is_osmose_format_timestamp(timestamp: str) -> bool:
         return False
     else:
         return True
-
 
 
 def get_timestamps(
