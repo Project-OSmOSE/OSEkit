@@ -130,9 +130,6 @@ def reformat_timestamp(
         The old timestamp string.
     old_datetime_template: str
         The datetime template of the old timestamp using strftime codes.
-    timezone: str (optional)
-        The timezone of the timestamp.
-        If it is not provided, it will be defaulted as UTC.
 
     Returns
     -------
@@ -367,7 +364,8 @@ def adapt_timestamp_csv_to_osmose(
             f"Timestamps were not in the OSmOSE format"
             f" and were formatted accordingly.\n"
             f"Example:\n"
-            f"{old_timestamp_sample} -> {reformat_timestamp(old_timestamp_sample, date_template)}"
+            f"{old_timestamp_sample} -> "
+            f"{reformat_timestamp(old_timestamp_sample, date_template)}"
         )
         glc.logger.info(message)
         template = date_template
@@ -378,7 +376,8 @@ def adapt_timestamp_csv_to_osmose(
 
 
 def _localize_and_format_timestamps(
-    timestamps: pd.DataFrame, timezone: str | None = None
+    timestamps: pd.DataFrame,
+    timezone: str | None = None,
 ) -> pd.DataFrame:
     if timezone:
         timestamps["timestamp"] = timestamps["timestamp"].apply(
