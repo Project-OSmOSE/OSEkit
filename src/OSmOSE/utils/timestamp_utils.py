@@ -315,6 +315,23 @@ def associate_timestamps(
 def parse_timestamps_csv(
     filenames: Iterable[str], datetime_template: str, timezone: str | None = None,
 ) -> pd.DataFrame:
+    """Parse a DataFrame that can be exported to an OSmOSE timestamp.csv file.
+
+    Parameters
+    ----------
+    filenames: Iterable[str]
+        Collection of filenames in which the timestamps should be extracted.
+    datetime_template: str
+        The datetime template used in the filename.
+    timezone: str | None
+        Optional, the timezone in which the timestamps should be localized.
+
+    Returns
+    -------
+    pandas.Dataframe:
+        A DataFrame with audio files name and timestamp columns.
+
+    """
     timestamps = associate_timestamps(filenames, datetime_template)
     return _localize_and_format_timestamps(timestamps, timezone)
 
@@ -322,6 +339,23 @@ def parse_timestamps_csv(
 def adapt_timestamp_csv_to_osmose(
     timestamps: pd.DataFrame, date_template: str, timezone: str | None = None,
 ) -> pd.DataFrame:
+    """Adapt the timestamp format in a timestamp.csv file to the OSmOSE format.
+
+    Parameters
+    ----------
+    timestamps: pandas.DataFrame
+        A DataFrame with audio files name and timestamp columns.
+    date_template: str
+        The datetime template used in the timestamp column.
+    timezone: str | None
+        Optional, the timezone in which the timestamps should be localized.
+
+    Returns
+    -------
+    pandas.DataFrame:
+        A DataFrame with audio files name and timestamp columns in the OSmOSE format.
+
+    """
     template = TIMESTAMP_FORMAT_AUDIO_FILE
     if not is_osmose_format_timestamp(timestamps["timestamp"]):
         old_timestamp_sample = str(timestamps["timestamp"][0])
