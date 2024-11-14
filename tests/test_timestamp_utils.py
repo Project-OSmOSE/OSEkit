@@ -8,6 +8,7 @@ import pytest
 from pandas import DataFrame, Timestamp
 
 from OSmOSE.utils.timestamp_utils import (
+    adapt_timestamp_csv_to_osmose,
     associate_timestamps,
     build_regex_from_datetime_template,
     is_datetime_template_valid,
@@ -762,3 +763,176 @@ def test_parse_timestamps_csv(
     expected: pd.DataFrame,
 ) -> None:
     assert parse_timestamps_csv(filenames, datetime_template, timezone).equals(expected)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("timestamps", "date_template", "timezone", "expected"),
+    [
+        pytest.param(
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_20240617101411.wav",
+                        "2024-06-17 10:14:11-0200",
+                    ],
+                    [
+                        "audio_20240617111411.wav",
+                        "2024-06-17 11:14:11-0200",
+                    ],
+                    [
+                        "audio_20240617121411.wav",
+                        "2024-06-17 12:14:11-0200",
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            "%Y-%m-%d %H:%M:%S%z",
+            None,
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_20240617101411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 10:14:11-0200")),
+                    ],
+                    [
+                        "audio_20240617111411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 11:14:11-0200")),
+                    ],
+                    [
+                        "audio_20240617121411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 12:14:11-0200")),
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            id="tz-aware_timestamps",
+        ),
+        pytest.param(
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_20240617101411.wav",
+                        "2024-06-17 10:14:11",
+                    ],
+                    [
+                        "audio_20240617111411.wav",
+                        "2024-06-17 11:14:11",
+                    ],
+                    [
+                        "audio_20240617121411.wav",
+                        "2024-06-17 12:14:11",
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            "%Y-%m-%d %H:%M:%S",
+            "-0200",
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_20240617101411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 10:14:11-0200")),
+                    ],
+                    [
+                        "audio_20240617111411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 11:14:11-0200")),
+                    ],
+                    [
+                        "audio_20240617121411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 12:14:11-0200")),
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            id="tz-naive_timestamps",
+        ),
+        pytest.param(
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_20240617101411.wav",
+                        "2024-06-17 10:14:11-0200",
+                    ],
+                    [
+                        "audio_20240617111411.wav",
+                        "2024-06-17 11:14:11-0200",
+                    ],
+                    [
+                        "audio_20240617121411.wav",
+                        "2024-06-17 12:14:11-0200",
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            "%Y-%m-%d %H:%M:%S%z",
+            "-0200",
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_20240617101411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 10:14:11-0200")),
+                    ],
+                    [
+                        "audio_20240617111411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 11:14:11-0200")),
+                    ],
+                    [
+                        "audio_20240617121411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 12:14:11-0200")),
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            id="non_conflicting_tz_timestamps",
+        ),
+        pytest.param(
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_20240617101411.wav",
+                        "2024-06-17 10:14:11-0200",
+                    ],
+                    [
+                        "audio_20240617111411.wav",
+                        "2024-06-17 11:14:11-0200",
+                    ],
+                    [
+                        "audio_20240617121411.wav",
+                        "2024-06-17 12:14:11-0200",
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            "%Y-%m-%d %H:%M:%S%z",
+            "GMT",
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_20240617101411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 12:14:11+0000")),
+                    ],
+                    [
+                        "audio_20240617111411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 13:14:11+0000")),
+                    ],
+                    [
+                        "audio_20240617121411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 14:14:11+0000")),
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            id="conflicting_tz_timestamps_lead_to_tz_conversion",
+        ),
+    ],
+)
+def test_adapt_timestamp_csv_to_osmose(
+    timestamps: pd.DataFrame,
+    date_template: str,
+    timezone: str | None,
+    expected: pd.DataFrame,
+) -> None:
+    assert adapt_timestamp_csv_to_osmose(timestamps, date_template, timezone).equals(
+        expected
+    )
