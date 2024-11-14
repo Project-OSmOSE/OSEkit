@@ -20,5 +20,5 @@ from OSmOSE.utils.audio_utils import is_supported_audio_format
         (Path("audio.pdf"), False),
     ],
 )
-def test_supported_audio_formats(filepath: Path, expected_output: bool):
+def test_supported_audio_formats(filepath: Path, expected_output: bool) -> None:
     assert is_supported_audio_format(filepath) == expected_output

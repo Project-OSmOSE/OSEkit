@@ -10,7 +10,7 @@ from typing import Iterable, List
 import pandas as pd
 from pandas import Timestamp
 
-from OSmOSE.config import TIMESTAMP_FORMAT_AUDIO_FILE
+from OSmOSE.config import FORBIDDEN_FILENAME_CHARACTERS, TIMESTAMP_FORMAT_AUDIO_FILE
 from OSmOSE.config import global_logging_context as glc
 
 _REGEX_BUILDER = {
@@ -357,6 +357,9 @@ def adapt_timestamp_csv_to_osmose(
         A DataFrame with audio files name and timestamp columns in the OSmOSE format.
 
     """
+    for forbidden_character, replacement in FORBIDDEN_FILENAME_CHARACTERS.items():
+        timestamps["filename"] = [filename.replace(forbidden_character, replacement) for filename in timestamps["filename"]]
+
     template = TIMESTAMP_FORMAT_AUDIO_FILE
     if not is_osmose_format_timestamp(timestamps["timestamp"]):
         old_timestamp_sample = str(timestamps["timestamp"][0])

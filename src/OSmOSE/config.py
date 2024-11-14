@@ -34,6 +34,8 @@ TIMESTAMP_FORMAT_AUDIO_FILE = "%Y-%m-%dT%H:%M:%S.%f%z"
 FPDEFAULT = 0o664  # Default file permissions
 DPDEFAULT = stat.S_ISGID | 0o775  # Default directory permissions
 
+FORBIDDEN_FILENAME_CHARACTERS = {":": "_", "-": "_"}
+
 global_logging_context = LoggingContext()
 
 FileName: TypeAlias = str | bytes | os.PathLike

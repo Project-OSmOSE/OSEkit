@@ -1003,6 +1003,45 @@ def test_parse_timestamps_csv(
             ),
             id="already_formatted_timestamp_converts_tz",
         ),
+        pytest.param(
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_2024-06-17 10:14:11.wav",
+                        "2024-06-17 10:14:11-0200",
+                    ],
+                    [
+                        "audio_2024-06-17 11:14:11.wav",
+                        "2024-06-17 11:14:11-0200",
+                    ],
+                    [
+                        "audio_2024-06-17 12:14:11.wav",
+                        "2024-06-17 12:14:11-0200",
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            "%Y-%m-%d %H:%M:%S%z",
+            None,
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_2024_06_17 10_14_11.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 10:14:11-0200")),
+                    ],
+                    [
+                        "audio_2024_06_17 11_14_11.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 11:14:11-0200")),
+                    ],
+                    [
+                        "audio_2024_06_17 12_14_11.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 12:14:11-0200")),
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            id="cleaned_filenames",
+        ),
     ],
 )
 def test_adapt_timestamp_csv_to_osmose(

@@ -1,4 +1,14 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Iterable
+
 import pandas as pd
+
+from OSmOSE.config import FORBIDDEN_FILENAME_CHARACTERS
+from OSmOSE.config import global_logging_context as glc
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def aplose2raven(df: pd.DataFrame) -> pd.DataFrame:
@@ -41,3 +51,22 @@ def aplose2raven(df: pd.DataFrame) -> pd.DataFrame:
     df2raven["High Freq (Hz)"] = df["end_frequency"]
 
     return df2raven
+
+def clean_filenames(filenames: Iterable[Path]) -> Iterable[Path]:
+    """Clean filenames to replace forbidden characters in the OSmOSE format.
+
+    Parameters
+    ----------
+    filenames: Iterable[Path]
+        Iterable of paths to audio files.
+
+    Returns
+    -------
+    Iterable[Path]
+        Files with forbidden characters in their names are replaced.
+
+    """
+    if any(c in FORBIDDEN_FILENAME_CHARACTERS for file in filenames for c in file.name):
+        glc.logger.warning("Audio file names contained forbidden characters."
+                            "Hyphens and colons are replaced with underscores.")
+    return [file.parent / file.name.replace(key, value) for key, value in FORBIDDEN_FILENAME_CHARACTERS.items for file in filenames]
