@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import logging
 import os
-import re
-import shutil
 from pathlib import Path
 from statistics import fmean as mean
 from typing import List, Tuple, Union
@@ -18,15 +16,14 @@ from OSmOSE.config import global_logging_context as glc
 from OSmOSE.utils.audio_utils import get_all_audio_files
 from OSmOSE.utils.core_utils import (
     change_owner_group,
-    check_n_files,
     chmod_if_needed,
 )
 from OSmOSE.utils.path_utils import make_path
 from OSmOSE.utils.timestamp_utils import (
-    associate_timestamps,
+    adapt_timestamp_csv_to_osmose,
     check_epoch,
+    parse_timestamps_csv,
     reformat_timestamp,
-    strftime_osmose_format,
 )
 
 
@@ -248,7 +245,7 @@ class Dataset:
             "instrument": ["depth", "gps"],
             "environment": ["insitu"],
         },
-    ) -> Path:
+    ) -> None:
         """Set up the architecture of the dataset.
 
         The following operations will be performed on the dataset. None of them are destructive:
@@ -305,33 +302,18 @@ class Dataset:
         with glc.set_logger(self.logger):
             if not self.__local:
                 change_owner_group(
-                    path=self.path, owner_group=owner_group or self.owner_group
+                    path=self.path,
+                    owner_group=owner_group or self.owner_group,
                 )
                 chmod_if_needed(path=self.path, mode=DPDEFAULT)
 
-        path_raw_audio = (
-            original_folder
-            if original_folder is not None
-            else self._find_or_create_original_folder()
+        self._build_audio(date_template=date_template)
+
+        return
+
+        resume_test_anomalies = (
+            self.path / OSMOSE_PATH.raw_audio / "resume_test_anomalies.txt"
         )
-
-        path_timestamp_formatted = path_raw_audio.joinpath("timestamp.csv")
-        user_timestamp = (
-            path_timestamp_formatted.exists()
-        )  # TODO: Formatting audio files beforehand will make this obsolete
-
-        if not user_timestamp:
-            self._write_timestamp_csv_from_audio_files(
-                audio_path=path_raw_audio,
-                date_template=date_template,
-            )
-            date_template = TIMESTAMP_FORMAT_AUDIO_FILE
-
-        resume_test_anomalies = path_raw_audio.joinpath("resume_test_anomalies.txt")
-
-        # read the timestamp.csv file
-        timestamp_csv = pd.read_csv(path_timestamp_formatted)["timestamp"].values
-        filename_csv = pd.read_csv(path_timestamp_formatted)["filename"].values
 
         # intialize the dataframe to collect audio metadata from header
         audio_metadata = pd.DataFrame(
@@ -352,15 +334,6 @@ class Dataset:
         ].astype(bool)
 
         audio_file_list = [Path(path_raw_audio, indiv) for indiv in filename_csv]
-
-        if not True:
-            number_bad_files = check_n_files(
-                audio_file_list,
-                number_test_bad_files,
-                auto_normalization=auto_normalization,
-            )
-        else:
-            number_bad_files = 0
 
         flag_reformat_warning = False
         for ind_dt in tqdm(range(len(timestamp_csv)), desc="Scanning audio files"):
@@ -636,26 +609,6 @@ class Dataset:
 
             self.logger.info("DONE ! your dataset is on OSmOSE platform !")
 
-    def _write_timestamp_csv_from_audio_files(
-        self,
-        audio_path: Path,
-        date_template: str,
-    ) -> None:
-        supported_audio_files = [file.name for file in get_all_audio_files(audio_path)]
-        filenames_with_timestamps = associate_timestamps(
-            audio_files=supported_audio_files,
-            datetime_template=date_template,
-        )
-        filenames_with_timestamps["timestamp"] = filenames_with_timestamps[
-            "timestamp"
-        ].apply(lambda t: strftime_osmose_format(t))
-        filenames_with_timestamps.to_csv(
-            audio_path / "timestamp.csv",
-            index=False,
-            na_rep="NaN",
-        )
-        chmod_if_needed(audio_path / "timestamp.csv", mode=FPDEFAULT)
-
     def _create_logger(self) -> None:
         logs_directory = self.__path / "log"
         if not logs_directory.exists():
@@ -681,81 +634,51 @@ class Dataset:
             return False
         return metadata["is_built"][0]
 
-    def _find_or_create_original_folder(self) -> Path:
-        """Search for the original folder or create it from existing files.
+    def _build_audio(self, date_template: str) -> None:
+        """Move all audio to the raw_audio folder, along with a timestamp.csv file.
 
-            This function does in order:
-        - If there is any audio file in the top directory, consider them all original and create the data/audio/original/ directory before
-            moving all audio files in it.
-        - If there is only one folder in the top directory, move it to /data/audio/original.
-        - If there is a folder named "original" in the raw audio path, then return it
-        - If there is only one folder in the raw audio path, then return it as the original.
-        If none of the above is true, then a ValueError is raised as the original folder could not be found nor created.
-
-        Returns
-        -------
-                original_folder: `Path`
-                    The path to the folder containing the original files.
-
-        Raises
-        ------
-                ValueError
-                    If the original folder is not found and could not be created.
-
+        If no timestamp.csv is found, it is created by parsing audio file names.
+        If the found timestamp.csv:
+            is in the OSmOSE format:
+                It is moved to the audio folder.
+            is not in the OSmOSE format:
+                A copy of the timestamp.csv is formatted and moved to the audio folder.
         """
-        path_raw_audio = self.path / OSMOSE_PATH.raw_audio
-        audio_files = []
-        parent_dir_list = []
+        audio_files = get_all_audio_files(self.path)
+        timestamp_file = list(self.path.rglob("timestamp.csv"))
+        timestamp_filepath = self.path / OSMOSE_PATH.raw_audio / "timestamp.csv"
+        (self.path / OSMOSE_PATH.raw_audio).mkdir(parents=True, exist_ok=True)
+        for file in audio_files:
+            file.replace(self.path / OSMOSE_PATH.raw_audio / file.name)
 
-        make_path(path_raw_audio / "original", mode=DPDEFAULT)
-        make_path(self.path / OSMOSE_PATH.other, mode=DPDEFAULT)
-        make_path(self.path / OSMOSE_PATH.instrument, mode=DPDEFAULT)
-        make_path(self.path / OSMOSE_PATH.environment, mode=DPDEFAULT)
+        if not timestamp_file:
+            self.logger.debug("Creating timestamp.csv file from scratch.")
+            timestamps = parse_timestamps_csv(
+                filenames=[file.name for file in audio_files],
+                datetime_template=date_template,
+                timezone=self.timezone,
+            )
+            timestamps.to_csv(timestamp_filepath, index=False)
+            return
 
-        for path, dirname, files in os.walk(self.path):
-            for f in files:
-                if "log" in f:
-                    continue
-                if (
-                    Path(path, f).parent.name != "original"
-                    and Path(path, f).parent.name != "auxiliary"
-                ):
-                    if f.endswith((".wav", ".WAV", ".mp3", ".flac", ".FLAC")):
-                        audio_files.append(Path(path, f))
-                        if str(Path(path, f).parent) != str(self.path):
-                            (
-                                parent_dir_list.append(Path(path, f).parent)
-                                if Path(path, f).parent not in parent_dir_list
-                                else parent_dir_list
-                            )
-                    elif f == "timestamp.csv":
-                        Path(path, f).rename(
-                            path_raw_audio / "original" / "timestamp.csv",
-                        )
-                    else:
-                        for key_dico in self.dico_aux_substring:
-                            if re.search(
-                                "|".join(self.dico_aux_substring[key_dico]),
-                                f,
-                            ):
-                                Path(path, f).rename(
-                                    self.path / OSMOSE_PATH.auxiliary / key_dico / f,
-                                )
+        if len(timestamp_file) > 1:
+            warning_message = (
+                "More than one timestamp file found in the dataset. "
+                f"Only {timestamp_file[0]} has been considered."
+            )
+            self.logger.warning(warning_message)
+        else:
+            message = f"Creating timestamps.csv file from {timestamp_file[0]}"
+            self.logger.debug(message)
 
-        for audio in audio_files:
-            audio.rename(path_raw_audio / "original" / audio.name)
+        timestamps = pd.read_csv(timestamp_file[0])
+        timestamps = adapt_timestamp_csv_to_osmose(
+            timestamps=timestamps, date_template=date_template, timezone=self.timezone,
+        )
 
-        for parent_dir in parent_dir_list:
-            if len(os.listdir(parent_dir)) > 0:
-                self.logger.warning(
-                    f"- Removing your subfolder: {parent_dir}, but be aware that you had the following non-wav data in your subfolder {parent_dir}: {os.listdir(parent_dir)}",
-                )
-            else:
-                self.logger.debug(f"- Removing your subfolder: {parent_dir}")
-
-            shutil.rmtree(parent_dir)
-
-        return path_raw_audio / "original"
+        timestamps.to_csv(
+            self.path / OSMOSE_PATH.raw_audio / "timestamp.csv", index=False,
+        )
 
     def _get_original_after_build(self) -> Path:
         """Find the original folder path after the dataset has been built.
