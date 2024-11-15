@@ -11,19 +11,24 @@ import pandas as pd
 import soundfile as sf
 from tqdm import tqdm
 
-from OSmOSE.config import DPDEFAULT, FPDEFAULT, OSMOSE_PATH, TIMESTAMP_FORMAT_AUDIO_FILE
+from OSmOSE.config import (
+    DPDEFAULT,
+    FPDEFAULT,
+    OSMOSE_PATH,
+    TIMESTAMP_FORMAT_AUDIO_FILE,
+)
 from OSmOSE.config import global_logging_context as glc
 from OSmOSE.utils.audio_utils import get_all_audio_files
 from OSmOSE.utils.core_utils import (
     change_owner_group,
     chmod_if_needed,
 )
+from OSmOSE.utils.formatting_utils import clean_filenames
 from OSmOSE.utils.path_utils import make_path
 from OSmOSE.utils.timestamp_utils import (
     adapt_timestamp_csv_to_osmose,
     check_epoch,
     parse_timestamps_csv,
-    reformat_timestamp,
 )
 
 
@@ -333,43 +338,7 @@ class Dataset:
             "status_read_header"
         ].astype(bool)
 
-        audio_file_list = [Path(path_raw_audio, indiv) for indiv in filename_csv]
-
-        flag_reformat_warning = False
         for ind_dt in tqdm(range(len(timestamp_csv)), desc="Scanning audio files"):
-
-            audio_file = audio_file_list[ind_dt]
-            cur_timestamp = timestamp_csv[ind_dt]
-
-            if date_template != TIMESTAMP_FORMAT_AUDIO_FILE:
-                if not flag_reformat_warning:
-                    logger = self.logger
-                    flag_reformat_warning = True
-                else:
-                    logger = logging.getLogger("dummy")
-                    logger.addHandler(logging.NullHandler())
-                    logger.propagate = False
-                with glc.set_logger(logger):
-                    reformat_warning_message = f"Reformating datetime format from {date_template} to OSmOSE {TIMESTAMP_FORMAT_AUDIO_FILE}"
-                    logger.warning(reformat_warning_message)
-                    cur_timestamp = reformat_timestamp(
-                        old_timestamp_str=cur_timestamp,
-                        old_datetime_template=date_template,
-                        timezone=self.timezone,
-                    )
-
-            # define final audio filename, especially we remove the sign '-' in filenames (because of our qsub_resample.sh)
-            if ("-" in audio_file.name) or (":" in audio_file.name):
-                cur_filename = audio_file.name.replace("-", "_").replace(":", "_")
-                path_raw_audio.joinpath(audio_file.name).rename(
-                    path_raw_audio.joinpath(cur_filename),
-                )
-                if ind_dt == 0:
-                    self.logger.warning(
-                        "We do not accept the sign '-' in our filenames, we transformed them into '_'. In case you have to rebuild your dataset be careful to change your timestamp template accordingly...",
-                    )
-            else:
-                cur_filename = audio_file.name
 
             try:
                 # origin_sr, frames, sampwidth, channel_count, size = read_header(
@@ -644,10 +613,13 @@ class Dataset:
             is not in the OSmOSE format:
                 A copy of the timestamp.csv is formatted and moved to the audio folder.
         """
-        audio_files = get_all_audio_files(self.path)
+        audio_files = get_all_audio_files(self.path) # TODO: manage built dataset with reshape audio folders
         timestamp_file = list(self.path.rglob("timestamp.csv"))
         timestamp_filepath = self.path / OSMOSE_PATH.raw_audio / "timestamp.csv"
         (self.path / OSMOSE_PATH.raw_audio).mkdir(parents=True, exist_ok=True)
+
+        audio_files = clean_filenames(audio_files)
+
         for file in audio_files:
             file.replace(self.path / OSMOSE_PATH.raw_audio / file.name)
 

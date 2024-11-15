@@ -23,3 +23,4 @@ from OSmOSE.utils.audio_utils import is_supported_audio_format
 )
 def test_supported_audio_formats(filepath: Path, expected_output: bool) -> None:
     assert is_supported_audio_format(filepath) == expected_output
+

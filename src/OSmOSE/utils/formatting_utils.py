@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
@@ -52,12 +52,12 @@ def aplose2raven(df: pd.DataFrame) -> pd.DataFrame:
 
     return df2raven
 
-def clean_filenames(filenames: Iterable[Path]) -> Iterable[Path]:
+def clean_filenames(filenames: list[Path]) -> list[Path]:
     """Clean filenames to replace forbidden characters in the OSmOSE format.
 
     Parameters
     ----------
-    filenames: Iterable[Path]
+    filenames: list[Path]
         Iterable of paths to audio files.
 
     Returns
@@ -69,4 +69,8 @@ def clean_filenames(filenames: Iterable[Path]) -> Iterable[Path]:
     if any(c in FORBIDDEN_FILENAME_CHARACTERS for file in filenames for c in file.name):
         glc.logger.warning("Audio file names contained forbidden characters."
                             "Hyphens and colons are replaced with underscores.")
-    return [file.parent / file.name.replace(key, value) for key, value in FORBIDDEN_FILENAME_CHARACTERS.items for file in filenames]
+    for index, file in enumerate(filenames):
+        for forbidden_character, replacement in FORBIDDEN_FILENAME_CHARACTERS.items():
+            file.name.replace(forbidden_character, replacement)
+        filenames[index] = file
+    return filenames
