@@ -70,10 +70,11 @@ def clean_filenames(filenames: list[Path]) -> list[Path]:
     if any(c in FORBIDDEN_FILENAME_CHARACTERS for file in filenames for c in file.name):
         glc.logger.warning(
             "Audio file names contained forbidden characters."
-            "Hyphens and colons are replaced with underscores."
+            "Hyphens and colons are replaced with underscores.",
         )
-    for index, file in enumerate(filenames):
-        for forbidden_character, replacement in FORBIDDEN_FILENAME_CHARACTERS.items():
-            file.name.replace(forbidden_character, replacement)
-        filenames[index] = file
-    return filenames
+    return [file.parent / clean_forbidden_characters(file.name) for file in filenames]
+
+def clean_forbidden_characters(text: str) -> str:
+    for forbidden_character, replacement in FORBIDDEN_FILENAME_CHARACTERS.items():
+        text = text.replace(forbidden_character, replacement)
+    return text

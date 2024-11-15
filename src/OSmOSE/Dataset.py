@@ -19,7 +19,7 @@ from OSmOSE.utils.core_utils import (
     change_owner_group,
     chmod_if_needed,
 )
-from OSmOSE.utils.formatting_utils import clean_filenames
+from OSmOSE.utils.formatting_utils import clean_filenames, clean_forbidden_characters
 from OSmOSE.utils.timestamp_utils import (
     adapt_timestamp_csv_to_osmose,
     check_epoch,
@@ -314,9 +314,7 @@ class Dataset:
                 chmod_if_needed(path=self.path, mode=DPDEFAULT)
 
         self._build_audio(audio_path=audio_path, date_template=date_template)
-
         return
-
         # write summary metadata.csv
         data = {
             "origin_sr": int(mean(audio_metadata["origin_sr"].values)),
@@ -390,11 +388,15 @@ class Dataset:
             is not in the OSmOSE format:
                 A copy of the timestamp.csv is formatted and moved to the audio folder.
         """
-        audio_files = get_all_audio_files(
+        raw_audio_files = get_all_audio_files(
             audio_path,
         )  # TODO: manage built dataset with reshape audio folders
 
-        audio_files = clean_filenames(audio_files)
+        audio_files = clean_filenames(raw_audio_files)
+        for old, new in zip(raw_audio_files, audio_files):
+            old.replace(new)
+        date_template = clean_forbidden_characters(date_template)
+
         timestamps = self._parse_timestamp_df(audio_files=audio_files, date_template=date_template, path = audio_path)
         audio_metadata = pd.DataFrame.from_records(get_audio_metadata(file) for file in audio_files)
 
