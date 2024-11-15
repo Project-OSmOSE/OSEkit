@@ -52,6 +52,7 @@ def aplose2raven(df: pd.DataFrame) -> pd.DataFrame:
 
     return df2raven
 
+
 def clean_filenames(filenames: list[Path]) -> list[Path]:
     """Clean filenames to replace forbidden characters in the OSmOSE format.
 
@@ -67,8 +68,10 @@ def clean_filenames(filenames: list[Path]) -> list[Path]:
 
     """
     if any(c in FORBIDDEN_FILENAME_CHARACTERS for file in filenames for c in file.name):
-        glc.logger.warning("Audio file names contained forbidden characters."
-                            "Hyphens and colons are replaced with underscores.")
+        glc.logger.warning(
+            "Audio file names contained forbidden characters."
+            "Hyphens and colons are replaced with underscores."
+        )
     for index, file in enumerate(filenames):
         for forbidden_character, replacement in FORBIDDEN_FILENAME_CHARACTERS.items():
             file.name.replace(forbidden_character, replacement)

@@ -18,7 +18,7 @@ from OSmOSE.config import (
     TIMESTAMP_FORMAT_AUDIO_FILE,
 )
 from OSmOSE.config import global_logging_context as glc
-from OSmOSE.utils.audio_utils import get_all_audio_files
+from OSmOSE.utils.audio_utils import get_all_audio_files, get_audio_metadata
 from OSmOSE.utils.core_utils import (
     change_owner_group,
     chmod_if_needed,
@@ -313,6 +313,10 @@ class Dataset:
                 chmod_if_needed(path=self.path, mode=DPDEFAULT)
 
         self._build_audio(date_template=date_template)
+        audio_metadata = self._create_audio_metadata(self.path / OSMOSE_PATH.raw_audio)
+        audio_metadata.to_csv(
+            self.path / OSMOSE_PATH.raw_audio / "file_metadata.csv", index=False
+        )
 
         return
 
@@ -613,7 +617,9 @@ class Dataset:
             is not in the OSmOSE format:
                 A copy of the timestamp.csv is formatted and moved to the audio folder.
         """
-        audio_files = get_all_audio_files(self.path) # TODO: manage built dataset with reshape audio folders
+        audio_files = get_all_audio_files(
+            self.path
+        )  # TODO: manage built dataset with reshape audio folders
         timestamp_file = list(self.path.rglob("timestamp.csv"))
         timestamp_filepath = self.path / OSMOSE_PATH.raw_audio / "timestamp.csv"
         (self.path / OSMOSE_PATH.raw_audio).mkdir(parents=True, exist_ok=True)
@@ -654,6 +660,56 @@ class Dataset:
             self.path / OSMOSE_PATH.raw_audio / "timestamp.csv",
             index=False,
         )
+
+    def _create_audio_metadata(self, path: Path) -> pd.DataFrame:
+        if not (path / "timestamp.csv").exists():
+            message = f"There is no timestamp.csv file in {path}."
+            self.logger.error(message)
+            raise FileNotFoundError(message)
+
+        timestamps = pd.read_csv(path / "timestamp.csv")
+        audio_files = get_all_audio_files(path)
+
+        if any(
+            (unlisted_file := file.name) not in timestamps["filename"].unique()
+            for file in audio_files
+        ):
+            message = f"{unlisted_file} has not been found in timestamp.csv"
+            self.logger.error(message)
+            raise FileNotFoundError(message)
+
+        if any(
+            (missing_file := filename) not in [file.name for file in audio_files]
+            for filename in timestamps["filename"]
+        ):
+            message = f"{missing_file} is listed in timestamp.csv but hasn't be found."
+            self.logger.error(message)
+            raise FileNotFoundError(message)
+
+        audio_metadata = pd.DataFrame(
+            columns=[
+                "filename",
+                "timestamp",
+                "duration",
+                "origin_sr",
+                "duration_inter_file",
+                "size",
+                "sampwidth",
+                "channel_count",
+                "status_read_header",
+            ],
+        )
+
+        for file in audio_files:
+            file_metadata = {
+                **get_audio_metadata(file),
+                "timestamp": timestamps.loc[
+                    timestamps["filename"] == file.name, "timestamp"
+                ].iloc[0],
+            }
+            audio_metadata.loc[len(audio_metadata)] = file_metadata
+
+        return pd.DataFrame(audio_metadata)
 
     def _get_original_after_build(self) -> Path:
         """Find the original folder path after the dataset has been built.

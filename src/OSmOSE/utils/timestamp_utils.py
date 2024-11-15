@@ -358,7 +358,10 @@ def adapt_timestamp_csv_to_osmose(
 
     """
     for forbidden_character, replacement in FORBIDDEN_FILENAME_CHARACTERS.items():
-        timestamps["filename"] = [filename.replace(forbidden_character, replacement) for filename in timestamps["filename"]]
+        timestamps["filename"] = [
+            filename.replace(forbidden_character, replacement)
+            for filename in timestamps["filename"]
+        ]
 
     template = TIMESTAMP_FORMAT_AUDIO_FILE
     if not is_osmose_format_timestamp(timestamps["timestamp"]):

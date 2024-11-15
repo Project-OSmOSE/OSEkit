@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from OSmOSE.config import SUPPORTED_AUDIO_FORMAT
+from OSmOSE.config import AUDIO_METADATA, SUPPORTED_AUDIO_FORMAT
 
 
 def is_supported_audio_format(filename: Path) -> bool:
@@ -41,3 +41,21 @@ def get_all_audio_files(directory: Path) -> list[Path]:
         for extension in SUPPORTED_AUDIO_FORMAT
         for file in directory.glob(f"*{extension}")
     )
+
+
+def get_audio_metadata(audio_file: Path) -> dict:
+    """Read metadata from the audio file.
+
+    Parameters
+    ----------
+    audio_file: pathlib.Path
+        The path to the audio file.
+
+    Returns
+    -------
+    dict:
+        A dictionary containing the metadata of the audio file.
+        The metadata list is grabbed from OSmOSE.config.AUDIO_METADATA.
+
+    """
+    return {key: f(audio_file) for key, f in AUDIO_METADATA.items()}
