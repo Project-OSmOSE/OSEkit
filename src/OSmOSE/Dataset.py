@@ -320,28 +320,6 @@ class Dataset:
 
         return
 
-        resume_test_anomalies = (
-            self.path / OSMOSE_PATH.raw_audio / "resume_test_anomalies.txt"
-        )
-
-        # intialize the dataframe to collect audio metadata from header
-        audio_metadata = pd.DataFrame(
-            columns=[
-                "filename",
-                "timestamp",
-                "duration",
-                "origin_sr",
-                "duration_inter_file",
-                "size",
-                "sampwidth",
-                "channel_count",
-                "status_read_header",
-            ],
-        )
-        audio_metadata["status_read_header"] = audio_metadata[
-            "status_read_header"
-        ].astype(bool)
-
         for ind_dt in tqdm(range(len(timestamp_csv)), desc="Scanning audio files"):
 
             try:
@@ -404,7 +382,7 @@ class Dataset:
                 axis=0,
             )
 
-        audio_metadata["duration_inter_file"] = audio_metadata["duration"].diff()
+
 
         # write file_metadata.csv
         audio_metadata.to_csv(path_raw_audio.joinpath("file_metadata.csv"), index=False)
@@ -708,7 +686,7 @@ class Dataset:
                 ].iloc[0],
             }
             audio_metadata.loc[len(audio_metadata)] = file_metadata
-
+        audio_metadata["duration_inter_file"] = audio_metadata["duration"].diff()
         return pd.DataFrame(audio_metadata)
 
     def _get_original_after_build(self) -> Path:
