@@ -313,29 +313,28 @@ class Dataset:
                 )
                 chmod_if_needed(path=self.path, mode=DPDEFAULT)
 
-        self._build_audio(audio_path=audio_path, date_template=date_template)
-        return
-        # write summary metadata.csv
+        file_metadata = self._build_audio(audio_path=audio_path, date_template=date_template)
+
         data = {
-            "origin_sr": int(mean(audio_metadata["origin_sr"].values)),
-            "sample_bits": list(set(audio_metadata["sampwidth"])),
-            "channel_count": int(mean(audio_metadata["channel_count"].values)),
-            "audio_file_count": len(audio_metadata["filename"].values),
-            "start_date": timestamp_csv[0],
-            "end_date": timestamp_csv[-1],
+            "origin_sr": int(mean(file_metadata["origin_sr"].values)),
+            "sample_bits": list(set(file_metadata["sampwidth"])),
+            "channel_count": int(mean(file_metadata["channel_count"].values)),
+            "audio_file_count": len(file_metadata["filename"].values),
+            "start_date": file_metadata["timestamp"].iloc[0],
+            "end_date": file_metadata["timestamp"].iloc[-1],
             "audio_file_origin_duration": int(
-                mean(audio_metadata["duration"].values),
+                mean(file_metadata["duration"].values),
             ),
             "audio_file_origin_volume": round(
-                mean(audio_metadata["size"].values),
+                mean(file_metadata["size"].values),
                 1,
             ),
             "dataset_origin_volume": max(
                 1,
-                round(sum(audio_metadata["size"].values) / 1000),
+                round(sum(file_metadata["size"].values) / 1000),
             ),  # cannot be inferior to 1 GB
             "dataset_origin_duration": round(
-                sum(audio_metadata["duration"].values),
+                sum(file_metadata["duration"].values),
             ),
             "is_built": True,
             "audio_file_dataset_overlap": 0,
@@ -344,12 +343,13 @@ class Dataset:
         df["lat"] = self.gps_coordinates[0]
         df["lon"] = self.gps_coordinates[1]
         df["depth"] = self.depth
-        df["dataset_sr"] = int(mean(audio_metadata["origin_sr"].values))
+        df["dataset_sr"] = int(mean(file_metadata["origin_sr"].values))
         df["audio_file_dataset_duration"] = int(
-            mean(audio_metadata["duration"].values),
+            mean(file_metadata["duration"].values),
         )
-        df.to_csv(path_raw_audio.joinpath("metadata.csv"), index=False)
-        chmod_if_needed(path=path_raw_audio / "metadata.csv", mode=FPDEFAULT)
+        metadata_file_path = self.path/OSMOSE_PATH.raw_audio/f"{df["audio_file_origin_duration"].iloc[0]}_{df["origin_sr"].iloc[0]}"/"metadata.csv"
+        df.to_csv(metadata_file_path, index=False)
+        chmod_if_needed(path=metadata_file_path, mode=FPDEFAULT)
 
         self.logger.info("DONE ! your dataset is on OSmOSE platform !")
 
@@ -378,7 +378,7 @@ class Dataset:
             return False
         return metadata["is_built"][0]
 
-    def _build_audio(self, audio_path: Path, date_template: str) -> None:
+    def _build_audio(self, audio_path: Path, date_template: str) -> pd.DataFrame:
         """Move all audio to the raw_audio folder, along with a timestamp.csv file.
 
         If no timestamp.csv is found, it is created by parsing audio file names.
@@ -418,6 +418,8 @@ class Dataset:
 
         for file in audio_files:
             file.replace(destination_folder / file.name)
+
+        return file_metadata
 
 
     def _parse_timestamp_df(self, audio_files: list[Path], date_template: str, path: Path | None) -> pd.DataFrame:
