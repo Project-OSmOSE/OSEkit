@@ -289,7 +289,7 @@ class Dataset:
             DONE ! your dataset is on OSmOSE platform !
 
         """
-        audio_path = original_folder
+        audio_path = original_folder or next(self.path.rglob("original"), None)
 
         if self._is_built():
             if not force_upload:
