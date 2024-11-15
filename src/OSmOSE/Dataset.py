@@ -89,7 +89,7 @@ class Dataset:
         self.gps_coordinates = gps_coordinates
         self.depth = depth
 
-        self.__original_folder = original_folder
+        self.__original_folder = original_folder or self.__path
 
         pd.set_option("display.float_format", lambda x: "%.0f" % x)
 
@@ -289,12 +289,18 @@ class Dataset:
             DONE ! your dataset is on OSmOSE platform !
 
         """
-        if not force_upload and self._is_built():
-            self.logger.warning(
-                "This dataset has already been built. To run the build() method on an "
-                "already built dataset, you have to use the force_upload parameter.",
-            )
-            return
+        audio_path = original_folder
+
+        if self._is_built():
+            if not force_upload:
+                self.logger.warning(
+                    "This dataset has already been built. To run the build() method on an "
+                    "already built dataset, you have to use the force_upload parameter.",
+                )
+                return
+            audio_path = audio_path or self._get_original_after_build()
+
+        audio_path = audio_path or self.path
 
         self.dico_aux_substring = dico_aux_substring
         # TODO: rework the auxiliary management with a specific class.
@@ -307,7 +313,7 @@ class Dataset:
                 )
                 chmod_if_needed(path=self.path, mode=DPDEFAULT)
 
-        self._build_audio(date_template=date_template)
+        self._build_audio(audio_path=audio_path, date_template=date_template)
 
         return
 
@@ -374,7 +380,7 @@ class Dataset:
             return False
         return metadata["is_built"][0]
 
-    def _build_audio(self, date_template: str) -> None:
+    def _build_audio(self, audio_path: Path, date_template: str) -> None:
         """Move all audio to the raw_audio folder, along with a timestamp.csv file.
 
         If no timestamp.csv is found, it is created by parsing audio file names.
@@ -385,11 +391,11 @@ class Dataset:
                 A copy of the timestamp.csv is formatted and moved to the audio folder.
         """
         audio_files = get_all_audio_files(
-            self.path,
+            audio_path,
         )  # TODO: manage built dataset with reshape audio folders
 
         audio_files = clean_filenames(audio_files)
-        timestamps = self._parse_timestamp_df(audio_files=audio_files, date_template=date_template, path = self.path)
+        timestamps = self._parse_timestamp_df(audio_files=audio_files, date_template=date_template, path = audio_path)
         audio_metadata = pd.DataFrame.from_records(get_audio_metadata(file) for file in audio_files)
 
         file_metadata = self._create_file_metadata(audio_metadata, timestamps)
