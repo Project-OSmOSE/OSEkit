@@ -5,6 +5,10 @@ loggers:
     level: DEBUG
     handlers: [consoleHandler, globalFileHandler]
     propagate: no
+  stdout:
+    level: INFO
+    handlers: [consoleHandler]
+    propagate: no
 
 handlers:
   consoleHandler:

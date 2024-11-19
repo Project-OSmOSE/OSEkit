@@ -8,7 +8,6 @@ import struct
 from importlib.resources import as_file
 from pathlib import Path
 from typing import List, NamedTuple, Tuple, Union
-from warnings import warn
 
 import pandas as pd
 import pytz
@@ -19,22 +18,27 @@ except ModuleNotFoundError:
     import tomli as tomllib
 
 import datetime as dt
+import logging
 import re
 
 import numpy as np
 import soundfile as sf
 
 from OSmOSE.config import OSMOSE_PATH
+from OSmOSE.config import global_logging_context as glc
 
+stdout_logger = logging.getLogger("stdout")
 
+@glc.set_logger(stdout_logger)
 def display_folder_storage_info(dir_path: str) -> None:
     usage = shutil.disk_usage(dir_path)
-    print("Total storage space (TB):", round(usage.total / (1024**4), 1))
-    print("Used storage space (TB):", round(usage.used / (1024**4), 1))
-    print("-----------------------")
-    print("Available storage space (TB):", round(usage.free / (1024**4), 1))
+    message = (f"Total storage space (TB): {round(usage.total / (1024**4), 1)}\n"
+               f"Used storage space (TB): {round(usage.total / (1024**4), 1)}\n"
+               f"-----------------------\n"
+               f"Available storage space (TB): {round(usage.free / (1024**4), 1)}")
+    glc.logger.info(message)
 
-
+@glc.set_logger(stdout_logger)
 def list_not_built_dataset(path_osmose: str, project: str = None) -> None:
     """Prints the available datasets that have not been built by the `Dataset.build()` function.
 
@@ -92,17 +96,17 @@ def list_not_built_dataset(path_osmose: str, project: str = None) -> None:
     not_built_formatted = "\n".join(
         [f"  - {dataset.name}" for dataset in list_not_built_dataset],
     )
-    print(f"""List of the datasets that are not built yet:\n\n{not_built_formatted}""")
+    glc.logger.info(f"""List of the datasets that are not built yet:\n\n{not_built_formatted}""")
 
     if list_unknown_dataset:
         unreachable_formatted = "\n".join(
             [f"  - {dataset.name}" for dataset in list_unknown_dataset],
         )
-        print(
+        glc.logger.info(
             f"""List of unreachable datasets (probably due to insufficient permissions):\n\n{unreachable_formatted}""",
         )
 
-
+@glc.set_logger(stdout_logger)
 def list_dataset(path_osmose: str, project: str = None) -> None:
     """Prints the available datasets that have been built by the `Dataset.build()` function.
 
@@ -162,19 +166,19 @@ def list_dataset(path_osmose: str, project: str = None) -> None:
         built_formatted = "\n".join(
             [f"  - {dataset.name}" for dataset in list_built_dataset],
         )
-        print(f"""List of the built datasets under {ds_folder}:\n\n{built_formatted}""")
+        glc.logger.info(f"""List of the built datasets under {ds_folder}:\n\n{built_formatted}""")
     else:
-        print(f"No dataset found under '{ds_folder}'")
+        glc.logger.info(f"No dataset found under '{ds_folder}'")
 
     if list_unknown_dataset:
         unreachable_formatted = "\n".join(
             [f"  - {dataset.name}" for dataset in list_unknown_dataset],
         )
-        print(
+        glc.logger.info(
             f"""List of unreachable datasets (probably due to insufficient permissions):\n\n{unreachable_formatted}""",
         )
 
-
+@glc.set_logger(stdout_logger)
 def list_aplose(path_osmose: str, project: str = ""):
     """Prints the available APLOSE datasets containing result files (result and task_status).
 
@@ -239,17 +243,17 @@ def list_aplose(path_osmose: str, project: str = ""):
                 )
             ],
         )
-        print(
+        glc.logger.info(
             f"""List of the datasets with APLOSE result files under {ds_folder}:\n\n{aplose_formatted}""",
         )
     else:
-        print(f"No dataset with APLOSE result files found under '{ds_folder}'")
+        glc.logger.info(f"No dataset with APLOSE result files found under '{ds_folder}'")
 
     if list_unknown_dataset:
         unreachable_formatted = "\n".join(
             [f"  - {dataset.name}" for dataset in list_unknown_dataset],
         )
-        print(
+        glc.logger.info(
             f"""List of unreachable datasets (probably due to insufficient permissions):\n\n{unreachable_formatted}""",
         )
 
@@ -375,7 +379,7 @@ def read_header(file: str) -> Tuple[int, float, int, int, int]:
                 chunkOffset = chunkOffset + subchunk2size + 8
 
             if not found_data:
-                print(
+                glc.logger.warning(
                     "No data chunk found while reading the header. Will fallback on the header size.",
                 )
                 subchunk2size = size - 36
@@ -451,7 +455,7 @@ def safe_read(
         nan_nb = sum(nan_nb)  # Double sum to account for multiple channels
 
     if nan_nb > 0:
-        warn(
+        glc.logger.warning(
             f"{nan_nb} NaN detected in file {Path(file_path).name}. They will be replaced with {nan}.",
         )
 
@@ -495,15 +499,15 @@ def check_n_files(
 
     # if "float" in str(sf.info(file_list[0])): # to understand
     bad_files = []
-    print("Testing whether samples are within [-1,1] for the following audio files:")
+    glc.logger.debug("Testing whether samples are within [-1,1] for the following audio files:")
     for audio_file in random.sample(file_list, n):
         data, sr = safe_read(audio_file)
         if not (np.max(data) <= 1.0 and np.min(data) >= -1.0):
             bad_files.append(audio_file)
-            print(f"- {audio_file.name} -> FAILED")
+            glc.logger.warning(f"- {audio_file.name} -> FAILED")
         else:
-            print(f"- {audio_file.name} -> PASSED")
-    print("\n")
+            glc.logger.debug(f"- {audio_file.name} -> PASSED")
+
 
     return len(bad_files)
 
@@ -565,7 +569,7 @@ def t_rounder(t: pd.Timestamp, res: int) -> pd.Timestamp:
         raise ValueError(f"res={res}s: Resolution not available")
     return t
 
-
+@glc.set_logger(stdout_logger)
 def check_available_file_resolution(path_osmose: str, project_ID: str, dataset_ID: str):
     """Lists the file resolution for a given dataset
 
@@ -588,10 +592,10 @@ def check_available_file_resolution(path_osmose: str, project_ID: str, dataset_I
     base_path = os.path.join(path_osmose, project_ID, dataset_ID, "data", "audio")
     resolution = os.listdir(base_path)
 
-    print(f"\nDataset : {project_ID}/{dataset_ID}")
-    print("Available Resolution (LengthFile_samplerate) :", end="\n")
-
-    [print(f" {r}") for r in resolution]
+    message = (f"Dataset : {project_ID}/{dataset_ID}\n"
+               "Available Resolution (LengthFile_samplerate) :\n"
+               f"{'\n'.join(resolution)}")
+    glc.logger.info(message)
 
     return resolution
 
@@ -675,7 +679,7 @@ def extract_config(
             os.makedirs(full_path2)
         [shutil.copy(file, full_path2) for file in files2]
 
-    print(f"\nFiles exported to {out_dir}")
+    glc.logger.info(f"\nFiles exported to {out_dir}")
 
 
 def extract_datetime(
