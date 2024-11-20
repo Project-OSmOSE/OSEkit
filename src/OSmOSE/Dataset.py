@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from os import PathLike
 from pathlib import Path
 from statistics import fmean as mean
 from typing import List, Tuple, Union
@@ -289,24 +290,20 @@ class Dataset:
             DONE ! your dataset is on OSmOSE platform !
 
         """
-        audio_path = original_folder or next(self.path.rglob("original"), None)
+        if self._is_built() and not force_upload:
+            self.logger.warning(
+                "This dataset has already been built. To run the build() method on an "
+                "already built dataset, you have to use the force_upload parameter.",
+            )
+            return
 
-        if self._is_built():
-            if not force_upload:
-                self.logger.warning(
-                    "This dataset has already been built. To run the build() method on an "
-                    "already built dataset, you have to use the force_upload parameter.",
-                )
-                return
-            audio_path = audio_path or self._get_original_after_build()
-
-        audio_path = audio_path or self.path
+        audio_path = self._find_original_folder(original_folder)
 
         self.dico_aux_substring = dico_aux_substring
         # TODO: rework the auxiliary management with a specific class.
 
-        with glc.set_logger(self.logger):
-            if not self.__local:
+        if not self.__local:
+            with glc.set_logger(self.logger):
                 change_owner_group(
                     path=self.path,
                     owner_group=owner_group or self.owner_group,
@@ -352,6 +349,37 @@ class Dataset:
         chmod_if_needed(path=metadata_file_path, mode=FPDEFAULT)
 
         self.logger.info("DONE ! your dataset is on OSmOSE platform !")
+
+    def _find_original_folder(self, original_folder: PathLike | str | None = None) -> Path:
+        """Find the original folder in which the audio are stored.
+
+        The original folder is either, in this order:
+            - The specified original_folder
+            - The original_folder found for a built dataset if the dataset is built
+            - The first found folder with the name "original"
+            - The root folder of the dataset
+
+        Parameters
+        ----------
+        original_folder: str|PathLike, optional, keyword-only
+            The original_folder containing the audio to use for the build.
+
+        Returns
+        -------
+        Path:
+            The path of the original_folder containing the audio to use for the build.
+
+        """
+        if original_folder is not None:
+            return Path(original_folder)
+
+        if self._is_built():
+            return self._get_original_after_build()
+
+        if original := next(self.path.rglob("original"), None) is not None:
+            return original
+
+        return self.path
 
     def _create_logger(self) -> None:
         logs_directory = self.__path / "log"
