@@ -1,3 +1,17 @@
+"""Logging context used by util functions, settable using a context manager.
+
+The OSmOSE package instantiates a LoggingContext on initialize in the config module.
+Utils functions log records to this LoggingContext.logger logger.
+The global logger can be replaced with a context manager:
+
+>>> from OSmOSE.config import global_logging_context as glc
+>>> import logging
+>>>
+>>> @glc.set_logger(logging.getLogger("logger_to_use"))
+>>> def do_something_with_util():
+>>>     ... # calls to utils functions, which log records to glc.logger
+"""
+
 import logging
 from contextlib import contextmanager
 

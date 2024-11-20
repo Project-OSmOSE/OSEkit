@@ -29,14 +29,18 @@ from OSmOSE.config import global_logging_context as glc
 
 stdout_logger = logging.getLogger("stdout")
 
+
 @glc.set_logger(stdout_logger)
 def display_folder_storage_info(dir_path: str) -> None:
     usage = shutil.disk_usage(dir_path)
-    message = (f"Total storage space (TB): {round(usage.total / (1024**4), 1)}\n"
-               f"Used storage space (TB): {round(usage.total / (1024**4), 1)}\n"
-               f"-----------------------\n"
-               f"Available storage space (TB): {round(usage.free / (1024**4), 1)}")
+    message = (
+        f"Total storage space (TB): {round(usage.total / (1024**4), 1)}\n"
+        f"Used storage space (TB): {round(usage.total / (1024**4), 1)}\n"
+        f"-----------------------\n"
+        f"Available storage space (TB): {round(usage.free / (1024**4), 1)}"
+    )
     glc.logger.info(message)
+
 
 @glc.set_logger(stdout_logger)
 def list_not_built_dataset(path_osmose: str, project: str = None) -> None:
@@ -96,7 +100,9 @@ def list_not_built_dataset(path_osmose: str, project: str = None) -> None:
     not_built_formatted = "\n".join(
         [f"  - {dataset.name}" for dataset in list_not_built_dataset],
     )
-    glc.logger.info(f"""List of the datasets that are not built yet:\n\n{not_built_formatted}""")
+    glc.logger.info(
+        f"""List of the datasets that are not built yet:\n\n{not_built_formatted}"""
+    )
 
     if list_unknown_dataset:
         unreachable_formatted = "\n".join(
@@ -105,6 +111,7 @@ def list_not_built_dataset(path_osmose: str, project: str = None) -> None:
         glc.logger.info(
             f"""List of unreachable datasets (probably due to insufficient permissions):\n\n{unreachable_formatted}""",
         )
+
 
 @glc.set_logger(stdout_logger)
 def list_dataset(path_osmose: str, project: str = None) -> None:
@@ -166,7 +173,9 @@ def list_dataset(path_osmose: str, project: str = None) -> None:
         built_formatted = "\n".join(
             [f"  - {dataset.name}" for dataset in list_built_dataset],
         )
-        glc.logger.info(f"""List of the built datasets under {ds_folder}:\n\n{built_formatted}""")
+        glc.logger.info(
+            f"""List of the built datasets under {ds_folder}:\n\n{built_formatted}"""
+        )
     else:
         glc.logger.info(f"No dataset found under '{ds_folder}'")
 
@@ -177,6 +186,7 @@ def list_dataset(path_osmose: str, project: str = None) -> None:
         glc.logger.info(
             f"""List of unreachable datasets (probably due to insufficient permissions):\n\n{unreachable_formatted}""",
         )
+
 
 @glc.set_logger(stdout_logger)
 def list_aplose(path_osmose: str, project: str = ""):
@@ -247,7 +257,9 @@ def list_aplose(path_osmose: str, project: str = ""):
             f"""List of the datasets with APLOSE result files under {ds_folder}:\n\n{aplose_formatted}""",
         )
     else:
-        glc.logger.info(f"No dataset with APLOSE result files found under '{ds_folder}'")
+        glc.logger.info(
+            f"No dataset with APLOSE result files found under '{ds_folder}'"
+        )
 
     if list_unknown_dataset:
         unreachable_formatted = "\n".join(
@@ -499,7 +511,9 @@ def check_n_files(
 
     # if "float" in str(sf.info(file_list[0])): # to understand
     bad_files = []
-    glc.logger.debug("Testing whether samples are within [-1,1] for the following audio files:")
+    glc.logger.debug(
+        "Testing whether samples are within [-1,1] for the following audio files:"
+    )
     for audio_file in random.sample(file_list, n):
         data, sr = safe_read(audio_file)
         if not (np.max(data) <= 1.0 and np.min(data) >= -1.0):
@@ -507,7 +521,6 @@ def check_n_files(
             glc.logger.warning(f"- {audio_file.name} -> FAILED")
         else:
             glc.logger.debug(f"- {audio_file.name} -> PASSED")
-
 
     return len(bad_files)
 
@@ -569,6 +582,7 @@ def t_rounder(t: pd.Timestamp, res: int) -> pd.Timestamp:
         raise ValueError(f"res={res}s: Resolution not available")
     return t
 
+
 @glc.set_logger(stdout_logger)
 def check_available_file_resolution(path_osmose: str, project_ID: str, dataset_ID: str):
     """Lists the file resolution for a given dataset
@@ -592,9 +606,11 @@ def check_available_file_resolution(path_osmose: str, project_ID: str, dataset_I
     base_path = os.path.join(path_osmose, project_ID, dataset_ID, "data", "audio")
     resolution = os.listdir(base_path)
 
-    message = (f"Dataset : {project_ID}/{dataset_ID}\n"
-               "Available Resolution (LengthFile_samplerate) :\n"
-               f"{'\n'.join(resolution)}")
+    message = (
+        f"Dataset : {project_ID}/{dataset_ID}\n"
+        "Available Resolution (LengthFile_samplerate) :\n"
+        f"{'\n'.join(resolution)}"
+    )
     glc.logger.info(message)
 
     return resolution
