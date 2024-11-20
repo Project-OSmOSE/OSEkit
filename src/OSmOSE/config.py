@@ -1,3 +1,4 @@
+import logging
 import os
 import stat
 from collections import namedtuple
@@ -35,5 +36,6 @@ FPDEFAULT = 0o664  # Default file permissions
 DPDEFAULT = stat.S_ISGID | 0o775  # Default directory permissions
 
 global_logging_context = LoggingContext()
+print_logger = logging.getLogger("printer")
 
 FileName: TypeAlias = str | bytes | os.PathLike

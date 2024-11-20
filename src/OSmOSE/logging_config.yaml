@@ -5,7 +5,7 @@ loggers:
     level: DEBUG
     handlers: [consoleHandler, globalFileHandler]
     propagate: no
-  stdout:
+  printer:
     level: INFO
     handlers: [consoleHandler]
     propagate: no

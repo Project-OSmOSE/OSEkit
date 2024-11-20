@@ -18,19 +18,16 @@ except ModuleNotFoundError:
     import tomli as tomllib
 
 import datetime as dt
-import logging
 import re
 
 import numpy as np
 import soundfile as sf
 
-from OSmOSE.config import OSMOSE_PATH
+from OSmOSE.config import OSMOSE_PATH, print_logger
 from OSmOSE.config import global_logging_context as glc
 
-stdout_logger = logging.getLogger("stdout")
 
-
-@glc.set_logger(stdout_logger)
+@glc.set_logger(print_logger)
 def display_folder_storage_info(dir_path: str) -> None:
     usage = shutil.disk_usage(dir_path)
     message = (
@@ -42,7 +39,7 @@ def display_folder_storage_info(dir_path: str) -> None:
     glc.logger.info(message)
 
 
-@glc.set_logger(stdout_logger)
+@glc.set_logger(print_logger)
 def list_not_built_dataset(path_osmose: str, project: str = None) -> None:
     """Prints the available datasets that have not been built by the `Dataset.build()` function.
 
@@ -101,7 +98,7 @@ def list_not_built_dataset(path_osmose: str, project: str = None) -> None:
         [f"  - {dataset.name}" for dataset in list_not_built_dataset],
     )
     glc.logger.info(
-        f"""List of the datasets that are not built yet:\n\n{not_built_formatted}"""
+        f"""List of the datasets that are not built yet:\n\n{not_built_formatted}""",
     )
 
     if list_unknown_dataset:
@@ -113,7 +110,7 @@ def list_not_built_dataset(path_osmose: str, project: str = None) -> None:
         )
 
 
-@glc.set_logger(stdout_logger)
+@glc.set_logger(print_logger)
 def list_dataset(path_osmose: str, project: str = None) -> None:
     """Prints the available datasets that have been built by the `Dataset.build()` function.
 
@@ -174,7 +171,7 @@ def list_dataset(path_osmose: str, project: str = None) -> None:
             [f"  - {dataset.name}" for dataset in list_built_dataset],
         )
         glc.logger.info(
-            f"""List of the built datasets under {ds_folder}:\n\n{built_formatted}"""
+            f"""List of the built datasets under {ds_folder}:\n\n{built_formatted}""",
         )
     else:
         glc.logger.info(f"No dataset found under '{ds_folder}'")
@@ -188,7 +185,7 @@ def list_dataset(path_osmose: str, project: str = None) -> None:
         )
 
 
-@glc.set_logger(stdout_logger)
+@glc.set_logger(print_logger)
 def list_aplose(path_osmose: str, project: str = ""):
     """Prints the available APLOSE datasets containing result files (result and task_status).
 
@@ -258,7 +255,7 @@ def list_aplose(path_osmose: str, project: str = ""):
         )
     else:
         glc.logger.info(
-            f"No dataset with APLOSE result files found under '{ds_folder}'"
+            f"No dataset with APLOSE result files found under '{ds_folder}'",
         )
 
     if list_unknown_dataset:
@@ -512,7 +509,7 @@ def check_n_files(
     # if "float" in str(sf.info(file_list[0])): # to understand
     bad_files = []
     glc.logger.debug(
-        "Testing whether samples are within [-1,1] for the following audio files:"
+        "Testing whether samples are within [-1,1] for the following audio files:",
     )
     for audio_file in random.sample(file_list, n):
         data, sr = safe_read(audio_file)
@@ -583,7 +580,7 @@ def t_rounder(t: pd.Timestamp, res: int) -> pd.Timestamp:
     return t
 
 
-@glc.set_logger(stdout_logger)
+@glc.set_logger(print_logger)
 def check_available_file_resolution(path_osmose: str, project_ID: str, dataset_ID: str):
     """Lists the file resolution for a given dataset
 
