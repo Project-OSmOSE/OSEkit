@@ -602,11 +602,12 @@ def check_available_file_resolution(path_osmose: str, project_ID: str, dataset_I
     """
     base_path = os.path.join(path_osmose, project_ID, dataset_ID, "data", "audio")
     resolution = os.listdir(base_path)
+    resolution_str = "\n".join(resolution)
 
     message = (
         f"Dataset : {project_ID}/{dataset_ID}\n"
         "Available Resolution (LengthFile_samplerate) :\n"
-        f"{'\n'.join(resolution)}"
+        f"{resolution_str}"
     )
     glc.logger.info(message)
 
