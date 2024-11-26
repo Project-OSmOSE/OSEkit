@@ -89,7 +89,6 @@ def reshape(
 
     threshold : int, optional
         Integer from 0 to 100 to filter out segments with a number of sample inferior to (threshold * spectrogram duration * new_sr)
-
     """
     set_umask()
     segment_duration = pd.Timedelta(seconds=segment_size)
@@ -186,9 +185,12 @@ def reshape(
             freq=f"{segment_size}s",
         ).to_list()[:-1]
     else:
+        file_metadata["end"] = file_metadata["timestamp"] + file_metadata[
+            "duration"
+        ].apply(lambda t: pd.Timedelta(seconds=t))
         origin_timestamp = file_metadata[
-            (file_metadata["timestamp"] >= datetime_begin)
-            & (file_metadata["timestamp"] <= datetime_end)
+            (file_metadata["timestamp"] < datetime_end)
+            & (file_metadata["end"] > datetime_begin)
         ]
         new_file = []
         for i, ts in enumerate(origin_timestamp["timestamp"]):
@@ -243,7 +245,6 @@ def reshape(
                 file_datetime_end > segment_datetime_begin
                 and file_datetime_begin < segment_datetime_end
             ):
-
                 start_offset = int(
                     max(
                         0.0,
@@ -321,6 +322,7 @@ def reshape(
             audio_data,
             new_sr,
         )
+
         chmod_if_needed(path=out_filename, mode=FPDEFAULT)
         msg_log += f"Saved file from {segment_datetime_begin} to {segment_datetime_end} as {out_filename}\n"
 
