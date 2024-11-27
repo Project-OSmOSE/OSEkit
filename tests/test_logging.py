@@ -1,16 +1,17 @@
-import pytest
-import os
-import yaml
-import logging
 import importlib
+import logging
+import os
 
-from OSmOSE.LoggingContext import LoggingContext
+import pytest
+import yaml
+
+from OSmOSE.logging_context import LoggingContext
 
 
 @pytest.fixture
 def temp_user_logging_config(tmp_path):
-    """
-    Writes a yaml logging config file in tmp_path, then returns its path.
+    """Writes a yaml logging config file in tmp_path, then returns its path.
+
     Parameters
     ----------
     tmp_path: pathlib.Path
@@ -19,6 +20,7 @@ def temp_user_logging_config(tmp_path):
     Returns
     -------
     pathlib.Path: path to the logging_config.yaml file.
+
     """
     config = {
         "version": 1,
@@ -27,7 +29,7 @@ def temp_user_logging_config(tmp_path):
                 "level": "DEBUG",
                 "handlers": ["consoleHandler", "fileHandler"],
                 "propagate": True,
-            }
+            },
         },
         "handlers": {
             "consoleHandler": {
@@ -57,15 +59,16 @@ def temp_user_logging_config(tmp_path):
 
 @pytest.fixture
 def set_user_config_env(temp_user_logging_config):
-    """
-    Set the OSMOSE_USER_CONFIG environment variable to the pytest tmp_file directory.
+    """Set the OSMOSE_USER_CONFIG environment variable to the pytest tmp_file directory.
     This will be read by OSmOSE during import to find the simulated user logging_config.yaml
     During setup, the logging module is reloaded to clear all configs, then the OSmOSE module is reloaded with a OSMOSE_USER_CONFIG environment key locating the mocked user config file.
     During teardown, both modules are reloaded again with the OSMOSE_USER_CONFIG key being reset, to clear the moked user config.
+
     Parameters
     ----------
     temp_user_logging_config: Path
         The path to the logging_config.yaml user config file.
+
     """
     importlib.reload(logging)
     import OSmOSE

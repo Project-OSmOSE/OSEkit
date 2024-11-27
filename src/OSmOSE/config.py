@@ -1,3 +1,4 @@
+import logging
 import os
 import stat
 from collections import namedtuple
@@ -6,7 +7,7 @@ from typing import TypeAlias
 
 import soundfile as sf
 
-from OSmOSE.LoggingContext import LoggingContext
+from OSmOSE.logging_context import LoggingContext
 
 SUPPORTED_AUDIO_FORMAT = [".wav", ".flac"]
 
@@ -47,5 +48,6 @@ AUDIO_METADATA = {
 }
 
 global_logging_context = LoggingContext()
+print_logger = logging.getLogger("printer")
 
 FileName: TypeAlias = str | bytes | os.PathLike

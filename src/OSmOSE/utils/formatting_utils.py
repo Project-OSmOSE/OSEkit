@@ -74,6 +74,7 @@ def clean_filenames(filenames: list[Path]) -> list[Path]:
         )
     return [file.parent / clean_forbidden_characters(file.name) for file in filenames]
 
+
 def clean_forbidden_characters(text: str) -> str:
     for forbidden_character, replacement in FORBIDDEN_FILENAME_CHARACTERS.items():
         text = text.replace(forbidden_character, replacement)
