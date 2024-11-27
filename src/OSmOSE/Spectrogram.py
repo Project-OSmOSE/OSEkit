@@ -39,7 +39,7 @@ from OSmOSE.utils.path_utils import make_path
 
 
 class Spectrogram(Dataset):
-    """Main class for spectrogram-related computations. Can resample, reshape and normalize audio files before generating spectrograms."""
+    """Main class for spectrogram-related computations. Can resample, reshape audio files before generating spectrograms."""
 
     def __init__(
         self,
@@ -104,7 +104,6 @@ class Spectrogram(Dataset):
         local : `bool`, optional, keyword_only
             Indicates whether or not the program is run locally. If it is the case, it will not create jobs and will handle the paralelisation
             alone. The default is False.
-
         """
         super().__init__(
             dataset_path=dataset_path,
@@ -592,7 +591,6 @@ class Spectrogram(Dataset):
             Force every parameter of the initialization.
         threshold : int, optional
             Integer from 0 to 100 to filter out segments with a number of sample inferior to (threshold * spectrogram duration * segment_sample_rate)
-
         """
         # remove temp directories from adjustment spectrograms
         for path in glob.glob(str(self.path / OSMOSE_PATH.raw_audio / "temp_*")):
@@ -687,7 +685,7 @@ class Spectrogram(Dataset):
         # check datetimes
         if not pd.Timestamp(datetime_begin) < pd.Timestamp(datetime_end):
             raise ValueError(
-                f"'datetime_begin' must be anterior to 'datetime_end'.\ndatetime_begin is set to {pd.Timestamp(datetime_begin)} and datetime_end is set to {pd.Timestamp(datetime_end)}",
+                f"'datetime_begin' must be anterior to 'datetime_end'.\ndatetime_begin is set to '{pd.Timestamp(datetime_begin)}' and datetime_end is set to '{pd.Timestamp(datetime_end)}'",
             )
 
         # new timestamps calculation to determine the size of a batch
@@ -698,23 +696,32 @@ class Spectrogram(Dataset):
                 freq=f"{self.spectro_duration}s",
             ).to_list()[:-1]
         else:
+            file_metadata["end"] = file_metadata["timestamp"] + file_metadata[
+                "duration"
+            ].apply(lambda t: pd.Timedelta(seconds=t))
+
             selected_file_metadata = file_metadata[
-                (file_metadata["timestamp"] >= datetime_begin)
-                & (file_metadata["timestamp"] <= datetime_end)
+                (file_metadata["timestamp"] < pd.Timestamp(datetime_end))
+                & (file_metadata["end"] > pd.Timestamp(datetime_begin))
             ]
+
             new_file = []
             for i, ts in enumerate(selected_file_metadata["timestamp"]):
-                counter = 0
                 current_ts = ts
                 original_timedelta = pd.Timedelta(
                     seconds=selected_file_metadata["duration"].iloc[i],
                 )
 
                 while current_ts <= ts + original_timedelta:
-                    new_file.append(current_ts)
+                    if pd.Timestamp(datetime_begin) < current_ts < pd.Timestamp(
+                        datetime_end
+                    ) or pd.Timestamp(datetime_begin) < current_ts + pd.Timedelta(
+                        seconds=self.spectro_duration
+                    ) < pd.Timestamp(
+                        datetime_end
+                    ):
+                        new_file.append(current_ts)
                     current_ts += pd.Timedelta(seconds=self.spectro_duration)
-                    counter += 1
-            new_file = new_file[: -counter + 1] if counter > 1 else new_file
 
         # size of a batch
         batch_size = len(new_file) // self.batch_number
