@@ -675,27 +675,17 @@ class Spectrogram(Dataset):
             datetime_begin = (file_metadata["timestamp"].iloc[0]).strftime(
                 "%Y-%m-%dT%H:%M:%S%z",
             )
-        else:
-            try:
-                datetime_begin = pd.Timestamp(datetime_begin)
-            except Exception as e:
-                print(e)
 
         if not datetime_end:
             datetime_end = (
                 file_metadata["timestamp"].iloc[-1]
                 + pd.Timedelta(file_metadata["duration"].iloc[-1], unit="s")
             ).strftime("%Y-%m-%dT%H:%M:%S%z")
-        else:
-            try:
-                datetime_end = pd.Timestamp(datetime_end)
-            except Exception as e:
-                print(e)
 
         # check datetimes
-        if not datetime_begin < datetime_end:
+        if not pd.Timestamp(datetime_begin) < pd.Timestamp(datetime_end):
             raise ValueError(
-                f"'datetime_begin' must be anterior to 'datetime_end'.\ndatetime_begin is set to '{datetime_begin}' and datetime_end is set to '{datetime_end}'",
+                f"'datetime_begin' must be anterior to 'datetime_end'.\ndatetime_begin is set to '{pd.Timestamp(datetime_begin)}' and datetime_end is set to '{pd.Timestamp(datetime_end)}'",
             )
 
         # new timestamps calculation to determine the size of a batch
@@ -709,10 +699,12 @@ class Spectrogram(Dataset):
             file_metadata["end"] = file_metadata["timestamp"] + file_metadata[
                 "duration"
             ].apply(lambda t: pd.Timedelta(seconds=t))
+
             selected_file_metadata = file_metadata[
-                (file_metadata["timestamp"] < datetime_end)
-                & (file_metadata["end"] > datetime_begin)
-            ]
+                (file_metadata["timestamp"] < pd.Timestamp(datetime_end)) &
+                (file_metadata["end"] > pd.Timestamp(datetime_begin))
+                ]
+
             new_file = []
             for i, ts in enumerate(selected_file_metadata["timestamp"]):
                 current_ts = ts
@@ -722,10 +714,10 @@ class Spectrogram(Dataset):
 
                 while current_ts <= ts + original_timedelta:
                     if (
-                        datetime_begin < current_ts < datetime_end
-                        or datetime_begin
+                        pd.Timestamp(datetime_begin) < current_ts < pd.Timestamp(datetime_end)
+                        or pd.Timestamp(datetime_begin)
                         < current_ts + pd.Timedelta(seconds=self.spectro_duration)
-                        < datetime_end
+                        < pd.Timestamp(datetime_end)
                     ):
                         new_file.append(current_ts)
                     current_ts += pd.Timedelta(seconds=self.spectro_duration)

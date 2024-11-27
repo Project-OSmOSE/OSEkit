@@ -170,12 +170,22 @@ def reshape(
     # datetimes
     if not datetime_begin:
         datetime_begin = file_metadata["timestamp"].iloc[0]
+    else:
+        try:
+            datetime_begin = pd.Timestamp(datetime_begin)
+        except Exception as e:
+            print(e)
 
     if not datetime_end:
         datetime_end = file_metadata["timestamp"].iloc[-1] + pd.Timedelta(
             file_metadata["duration"].iloc[-1],
             unit="s",
         )
+    else:
+        try:
+            datetime_end = pd.Timestamp(datetime_end)
+        except Exception as e:
+            print(e)
 
     # segment timestamps
     if concat:
@@ -188,10 +198,12 @@ def reshape(
         file_metadata["end"] = file_metadata["timestamp"] + file_metadata[
             "duration"
         ].apply(lambda t: pd.Timedelta(seconds=t))
+
         origin_timestamp = file_metadata[
             (file_metadata["timestamp"] < datetime_end)
             & (file_metadata["end"] > datetime_begin)
         ]
+
         new_file = []
         for i, ts in enumerate(origin_timestamp["timestamp"]):
             current_ts = ts
