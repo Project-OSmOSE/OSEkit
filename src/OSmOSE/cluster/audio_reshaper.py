@@ -200,7 +200,11 @@ def reshape(
             )
 
             while current_ts <= ts + original_timedelta:
-                new_file.append(current_ts)
+                if (
+                    datetime_begin < current_ts < datetime_end
+                    or datetime_begin < current_ts + segment_duration < datetime_end
+                ):
+                    new_file.append(current_ts)
                 current_ts += segment_duration
 
     if batch_ind_max == -1:
