@@ -701,9 +701,9 @@ class Spectrogram(Dataset):
             ].apply(lambda t: pd.Timedelta(seconds=t))
 
             selected_file_metadata = file_metadata[
-                (file_metadata["timestamp"] < pd.Timestamp(datetime_end)) &
-                (file_metadata["end"] > pd.Timestamp(datetime_begin))
-                ]
+                (file_metadata["timestamp"] < pd.Timestamp(datetime_end))
+                & (file_metadata["end"] > pd.Timestamp(datetime_begin))
+            ]
 
             new_file = []
             for i, ts in enumerate(selected_file_metadata["timestamp"]):
@@ -713,11 +713,12 @@ class Spectrogram(Dataset):
                 )
 
                 while current_ts <= ts + original_timedelta:
-                    if (
-                        pd.Timestamp(datetime_begin) < current_ts < pd.Timestamp(datetime_end)
-                        or pd.Timestamp(datetime_begin)
-                        < current_ts + pd.Timedelta(seconds=self.spectro_duration)
-                        < pd.Timestamp(datetime_end)
+                    if pd.Timestamp(datetime_begin) < current_ts < pd.Timestamp(
+                        datetime_end
+                    ) or pd.Timestamp(datetime_begin) < current_ts + pd.Timedelta(
+                        seconds=self.spectro_duration
+                    ) < pd.Timestamp(
+                        datetime_end
                     ):
                         new_file.append(current_ts)
                     current_ts += pd.Timedelta(seconds=self.spectro_duration)
