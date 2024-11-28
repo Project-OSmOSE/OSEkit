@@ -510,10 +510,12 @@ class Dataset:
         metadata["depth"] = self.depth
         metadata["dataset_sr"] = metadata["origin_sr"]
         metadata["audio_file_dataset_duration"] = metadata["audio_file_origin_duration"]
+        audio_origin_duration = metadata["audio_file_origin_duration"]
+        origin_sr = metadata["origin_sr"]
         metadata_file_path = (
             self.path
             / OSMOSE_PATH.raw_audio
-            / f"{metadata["audio_file_origin_duration"]}_{metadata["origin_sr"]}"
+            / f"{audio_origin_duration}_{origin_sr}"
             / "metadata.csv"
         )
         metadata = metadata.to_frame().T
