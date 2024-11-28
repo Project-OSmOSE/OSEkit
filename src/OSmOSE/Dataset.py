@@ -314,46 +314,7 @@ class Dataset:
             audio_path=audio_path, date_template=date_template,
         )
 
-        data = {
-            "origin_sr": int(mean(file_metadata["origin_sr"].values)),
-            "sample_bits": list(set(file_metadata["sampwidth"])),
-            "channel_count": int(mean(file_metadata["channel_count"].values)),
-            "audio_file_count": len(file_metadata["filename"].values),
-            "start_date": file_metadata["timestamp"].iloc[0],
-            "end_date": file_metadata["timestamp"].iloc[-1],
-            "audio_file_origin_duration": int(
-                mean(file_metadata["duration"].values),
-            ),
-            "audio_file_origin_volume": round(
-                mean(file_metadata["size"].values),
-                1,
-            ),
-            "dataset_origin_volume": max(
-                1,
-                round(sum(file_metadata["size"].values) / 1000),
-            ),  # cannot be inferior to 1 GB
-            "dataset_origin_duration": round(
-                sum(file_metadata["duration"].values),
-            ),
-            "is_built": True,
-            "audio_file_dataset_overlap": 0,
-        }
-        df = pd.DataFrame.from_records([data])
-        df["lat"] = self.gps_coordinates[0]
-        df["lon"] = self.gps_coordinates[1]
-        df["depth"] = self.depth
-        df["dataset_sr"] = int(mean(file_metadata["origin_sr"].values))
-        df["audio_file_dataset_duration"] = int(
-            mean(file_metadata["duration"].values),
-        )
-        metadata_file_path = (
-            self.path
-            / OSMOSE_PATH.raw_audio
-            / f"{df["audio_file_origin_duration"].iloc[0]}_{df["origin_sr"].iloc[0]}"
-            / "metadata.csv"
-        )
-        df.to_csv(metadata_file_path, index=False)
-        chmod_if_needed(path=metadata_file_path, mode=FPDEFAULT)
+        self._write_metadata(file_metadata=file_metadata)
 
         self.logger.info("DONE ! your dataset is on OSmOSE platform !")
 
@@ -519,6 +480,45 @@ class Dataset:
         file_metadata = audio_metadata.merge(timestamps, on="filename")
         file_metadata["duration_inter_file"] = audio_metadata["duration"].diff()
         return file_metadata
+
+    def _write_metadata(self, file_metadata: pd.DataFrame) -> None:
+        metadata = pd.Series()
+        metadata["origin_sr"] = round(mean(file_metadata["origin_sr"].values))
+        metadata["sample_bits"] = list(set(file_metadata["sampwidth"]))
+        metadata["channel_count"] = round(mean(file_metadata["channel_count"].values))
+        metadata["audio_file_count"] = len(file_metadata["filename"].values)
+        metadata["start_date"] = file_metadata["timestamp"].iloc[0]
+        metadata["end_date"] = file_metadata["timestamp"].iloc[-1]
+        metadata["audio_file_origin_duration"] = round(
+                mean(file_metadata["duration"].values),
+            )
+        metadata["audio_file_origin_volume"] = round(
+                mean(file_metadata["size"].values),
+                1,
+            )
+        metadata["dataset_origin_volume"] = max(
+                1,
+                round(sum(file_metadata["size"].values) / 1_000),
+            )  # cannot be inferior to 1 GB
+        metadata["dataset_origin_duration"] = round(
+                    sum(file_metadata["duration"].values),
+            )
+        metadata["is_built"] = True
+        metadata["audio_file_dataset_overlap"] = 0
+        metadata["lat"] = self.gps_coordinates[0]
+        metadata["lon"] = self.gps_coordinates[1]
+        metadata["depth"] = self.depth
+        metadata["dataset_sr"] = metadata["origin_sr"]
+        metadata["audio_file_dataset_duration"] = metadata["audio_file_origin_duration"]
+        metadata_file_path = (
+            self.path
+            / OSMOSE_PATH.raw_audio
+            / f"{metadata["audio_file_origin_duration"]}_{metadata["origin_sr"]}"
+            / "metadata.csv"
+        )
+        metadata = metadata.to_frame().T
+        metadata.to_csv(metadata_file_path, index=False)
+        chmod_if_needed(path=metadata_file_path, mode=FPDEFAULT)
 
     def _get_original_after_build(self) -> Path:
         """Find the original folder path after the dataset has been built.
