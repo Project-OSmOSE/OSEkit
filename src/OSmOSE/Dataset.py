@@ -520,32 +520,6 @@ class Dataset:
         file_metadata["duration_inter_file"] = audio_metadata["duration"].diff()
         return file_metadata
 
-        audio_metadata = pd.DataFrame(
-            columns=[
-                "filename",
-                "timestamp",
-                "duration",
-                "origin_sr",
-                "duration_inter_file",
-                "size",
-                "sampwidth",
-                "channel_count",
-                "status_read_header",
-            ],
-        )
-
-        for file in audio_files:
-            file_metadata = {
-                **get_audio_metadata(file),
-                "timestamp": timestamps.loc[
-                    timestamps["filename"] == file.name,
-                    "timestamp",
-                ].iloc[0],
-            }
-            audio_metadata.loc[len(audio_metadata)] = file_metadata
-        audio_metadata["duration_inter_file"] = audio_metadata["duration"].diff()
-        return pd.DataFrame(audio_metadata)
-
     def _get_original_after_build(self) -> Path:
         """Find the original folder path after the dataset has been built.
 
