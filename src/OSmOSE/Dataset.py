@@ -315,6 +315,7 @@ class Dataset:
         )
 
         self._write_metadata(file_metadata=file_metadata)
+        self._move_other_files()
 
         self.logger.info("DONE ! your dataset is on OSmOSE platform !")
 
@@ -346,7 +347,7 @@ class Dataset:
         if self._is_built():
             return self._get_original_after_build()
 
-        if original := next(self.path.rglob("original"), None) is not None:
+        if (original := next(self.path.rglob("original"), None)) is not None:
             return original
 
         return self.path
@@ -521,6 +522,27 @@ class Dataset:
         metadata = metadata.to_frame().T
         metadata.to_csv(metadata_file_path, index=False)
         chmod_if_needed(path=metadata_file_path, mode=FPDEFAULT)
+
+    def _move_other_files(self) -> None:
+        build_folders = (self.path / "log", self.path / "other", self._get_original_after_build())
+        nb_moved_files = 0
+        for file in self.path.rglob("*"):
+            if file.is_dir() and any(file.iterdir()):
+                continue
+            if file in (file for folder in build_folders for file in folder.rglob("*")):
+                continue
+            relative_path = file.relative_to(self.path)
+            destination_folder = (self.path / "other" / relative_path).parent
+            if not destination_folder.exists():
+                destination_folder.mkdir(parents=True, exist_ok=True)
+            file.replace(self.path / "other" / relative_path)
+            folder_to_remove = file.parent
+            while not any(folder_to_remove.iterdir()):
+                folder_to_remove.rmdir()
+                folder_to_remove = folder_to_remove.parent
+            nb_moved_files += 1
+        if nb_moved_files > 0:
+            self.logger.info("Moved %i file(s) to the 'other' folder.", nb_moved_files)
 
     def _get_original_after_build(self) -> Path:
         """Find the original folder path after the dataset has been built.
