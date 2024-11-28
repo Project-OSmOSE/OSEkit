@@ -311,7 +311,7 @@ class Dataset:
                 chmod_if_needed(path=self.path, mode=DPDEFAULT)
 
         file_metadata = self._build_audio(
-            audio_path=audio_path, date_template=date_template
+            audio_path=audio_path, date_template=date_template,
         )
 
         data = {
@@ -358,7 +358,7 @@ class Dataset:
         self.logger.info("DONE ! your dataset is on OSmOSE platform !")
 
     def _find_original_folder(
-        self, original_folder: PathLike | str | None = None
+        self, original_folder: PathLike | str | None = None,
     ) -> Path:
         """Find the original folder in which the audio are stored.
 
@@ -427,7 +427,7 @@ class Dataset:
         """
         raw_audio_files = get_all_audio_files(
             audio_path,
-        )  # TODO: manage built dataset with reshape audio folders
+        )  # TODO: manage built dataset with reshape audio folders ?
 
         audio_files = clean_filenames(raw_audio_files)
         for old, new in zip(raw_audio_files, audio_files):
@@ -435,7 +435,7 @@ class Dataset:
         date_template = clean_forbidden_characters(date_template)
 
         timestamps = self._parse_timestamp_df(
-            audio_files=audio_files, date_template=date_template, path=audio_path
+            audio_files=audio_files, date_template=date_template, path=audio_path,
         )
         audio_metadata = pd.DataFrame.from_records(
             get_audio_metadata(file) for file in audio_files
@@ -443,7 +443,9 @@ class Dataset:
 
         file_metadata = self._create_file_metadata(audio_metadata, timestamps)
 
-        folder_name = f'{int(mean(audio_metadata["duration"].values))}_{int(mean(audio_metadata["origin_sr"].values))}'
+        folder_name = (f'{round(mean(audio_metadata["duration"].values))}'
+                       '_'
+                       f'{round(mean(audio_metadata["origin_sr"].values))}')
         destination_folder = self.path / OSMOSE_PATH.raw_audio / folder_name
         destination_folder.mkdir(parents=True, exist_ok=True)
 
@@ -463,7 +465,7 @@ class Dataset:
         return file_metadata
 
     def _parse_timestamp_df(
-        self, audio_files: list[Path], date_template: str, path: Path | None
+        self, audio_files: list[Path], date_template: str, path: Path | None,
     ) -> pd.DataFrame:
         timestamp_file = None
 
@@ -496,7 +498,7 @@ class Dataset:
         )
 
     def _create_file_metadata(
-        self, audio_metadata: pd.DataFrame, timestamps: pd.DataFrame
+        self, audio_metadata: pd.DataFrame, timestamps: pd.DataFrame,
     ) -> pd.DataFrame:
         if any(
             (unlisted_file := file) not in timestamps["filename"].unique()
@@ -514,7 +516,7 @@ class Dataset:
             self.logger.error(message)
             raise FileNotFoundError(message)
 
-        file_metadata = pd.merge(audio_metadata, timestamps, on="filename")
+        file_metadata = audio_metadata.merge(timestamps, on="filename")
         file_metadata["duration_inter_file"] = audio_metadata["duration"].diff()
         return file_metadata
 
