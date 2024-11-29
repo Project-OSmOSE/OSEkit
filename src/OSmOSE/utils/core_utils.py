@@ -33,6 +33,7 @@ _is_grp_supported = bool(find_spec("grp"))
 @glc.set_logger(print_logger)
 def display_folder_storage_info(dir_path: str) -> None:
     usage = shutil.disk_usage(dir_path)
+
     def str_usage(key: str, value: int) -> str:
         return f"{f'{key} storage space:':<30}{f'{round(value/ (1024**4), 1)} TB':>10}"
     total = str_usage("Total", usage.total)
