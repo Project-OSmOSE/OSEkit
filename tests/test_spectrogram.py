@@ -14,7 +14,7 @@ def test_initialize_2s(input_dataset):
         depth=10,
         timezone="+03:00",
     )
-    dataset.build(date_template="%Y%m%d_%H%M%S")
+    dataset.build(date_template="%Y%m%d_%H%M%S", original_folder="data/audio/original")
 
     assert dataset.path.joinpath(OSMOSE_PATH.raw_audio, "3_44100").exists()
     num_file = 0
@@ -81,7 +81,7 @@ def test_number_image_matrix(input_dataset):
         depth=10,
         timezone="+03:00",
     )
-    dataset.build(date_template="%Y%m%d_%H%M%S")
+    dataset.build(date_template="%Y%m%d_%H%M%S", original_folder="data/audio/original")
 
     assert dataset.path.joinpath(OSMOSE_PATH.raw_audio, "3_44100").exists()
     num_file = 0
@@ -154,7 +154,7 @@ def test_numerical_values(input_dataset):
         depth=10,
         timezone="+03:00",
     )
-    dataset.build(date_template="%Y%m%d_%H%M%S")
+    dataset.build(date_template="%Y%m%d_%H%M%S", original_folder="data/audio/original")
 
     spectrogram = Spectrogram(dataset_path=dataset.path)
 
