@@ -311,7 +311,8 @@ class Dataset:
                 chmod_if_needed(path=self.path, mode=DPDEFAULT)
 
         file_metadata = self._build_audio(
-            audio_path=audio_path, date_template=date_template,
+            audio_path=audio_path,
+            date_template=date_template,
         )
 
         self._write_metadata(file_metadata=file_metadata)
@@ -320,7 +321,8 @@ class Dataset:
         self.logger.info("DONE ! your dataset is on OSmOSE platform !")
 
     def _find_original_folder(
-        self, original_folder: PathLike | str | None = None,
+        self,
+        original_folder: PathLike | str | None = None,
     ) -> Path:
         """Find the original folder in which the audio are stored.
 
@@ -397,7 +399,9 @@ class Dataset:
         date_template = clean_forbidden_characters(date_template)
 
         timestamps = self._parse_timestamp_df(
-            audio_files=audio_files, date_template=date_template, path=audio_path,
+            audio_files=audio_files,
+            date_template=date_template,
+            path=audio_path,
         )
         audio_metadata = pd.DataFrame.from_records(
             get_audio_metadata(file) for file in audio_files
@@ -405,9 +409,11 @@ class Dataset:
 
         file_metadata = self._create_file_metadata(audio_metadata, timestamps)
 
-        folder_name = (f'{round(mean(audio_metadata["duration"].values))}'
-                       '_'
-                       f'{round(mean(audio_metadata["origin_sr"].values))}')
+        folder_name = (
+            f'{round(mean(audio_metadata["duration"].values))}'
+            "_"
+            f'{round(mean(audio_metadata["origin_sr"].values))}'
+        )
         destination_folder = self.path / OSMOSE_PATH.raw_audio / folder_name
         destination_folder.mkdir(parents=True, exist_ok=True)
 
@@ -427,7 +433,10 @@ class Dataset:
         return file_metadata
 
     def _parse_timestamp_df(
-        self, audio_files: list[Path], date_template: str, path: Path | None,
+        self,
+        audio_files: list[Path],
+        date_template: str,
+        path: Path | None,
     ) -> pd.DataFrame:
         timestamp_file = None
 
@@ -460,7 +469,9 @@ class Dataset:
         )
 
     def _create_file_metadata(
-        self, audio_metadata: pd.DataFrame, timestamps: pd.DataFrame,
+        self,
+        audio_metadata: pd.DataFrame,
+        timestamps: pd.DataFrame,
     ) -> pd.DataFrame:
         if any(
             (unlisted_file := file) not in timestamps["filename"].unique()
@@ -491,19 +502,19 @@ class Dataset:
         metadata["start_date"] = file_metadata["timestamp"].iloc[0]
         metadata["end_date"] = file_metadata["timestamp"].iloc[-1]
         metadata["audio_file_origin_duration"] = round(
-                mean(file_metadata["duration"].values),
-            )
+            mean(file_metadata["duration"].values),
+        )
         metadata["audio_file_origin_volume"] = round(
-                mean(file_metadata["size"].values),
-                1,
-            )
+            mean(file_metadata["size"].values),
+            1,
+        )
         metadata["dataset_origin_volume"] = max(
-                1,
-                round(sum(file_metadata["size"].values) / 1_000),
-            )  # cannot be inferior to 1 GB
+            1,
+            round(sum(file_metadata["size"].values) / 1_000),
+        )  # cannot be inferior to 1 GB
         metadata["dataset_origin_duration"] = round(
-                    sum(file_metadata["duration"].values),
-            )
+            sum(file_metadata["duration"].values),
+        )
         metadata["is_built"] = True
         metadata["audio_file_dataset_overlap"] = 0
         metadata["lat"] = self.gps_coordinates[0]
@@ -524,7 +535,11 @@ class Dataset:
         chmod_if_needed(path=metadata_file_path, mode=FPDEFAULT)
 
     def _move_other_files(self) -> None:
-        build_folders = (self.path / "log", self.path / "other", self._get_original_after_build())
+        build_folders = (
+            self.path / "log",
+            self.path / "other",
+            self._get_original_after_build(),
+        )
         nb_moved_files = 0
         for file in self.path.rglob("*"):
             if file.is_dir() and any(file.iterdir()):
