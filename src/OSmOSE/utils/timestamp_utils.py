@@ -10,7 +10,7 @@ from typing import Iterable, List
 import pandas as pd
 from pandas import Timestamp
 
-from OSmOSE.config import TIMESTAMP_FORMAT_AUDIO_FILE
+from OSmOSE.config import FORBIDDEN_FILENAME_CHARACTERS, TIMESTAMP_FORMAT_AUDIO_FILE
 from OSmOSE.config import global_logging_context as glc
 
 _REGEX_BUILDER = {
@@ -89,10 +89,38 @@ def to_timestamp(string: str) -> pd.Timestamp:
         )
 
 
+def localize_timestamp(timestamp: Timestamp, timezone: str) -> Timestamp:
+    """Localize a timestamp in the given timezone.
+
+    Parameters
+    ----------
+    timestamp: pandas.Timestamp
+        The timestamp to localize.
+    timezone: str
+        The timezone in which the timestamp is localized.
+
+    Returns
+    -------
+    pandas.Timestamp
+    The timestamp localized in the specified timezone.
+    If the original timestamp was tz-aware, its tz will be converted
+    to the new timezone.
+
+    """
+    if not timestamp.tz:
+        return timestamp.tz_localize(timezone)
+
+    if timestamp.utcoffset() != timestamp.tz_convert(timezone).utcoffset():
+        glc.logger.warning(
+            "The timestamps are tz-aware and you specified a different timezone.\n"
+            f"Timestamps timezones {timestamp.tz} will be converted to {timezone}",
+        )
+    return timestamp.tz_convert(timezone)
+
+
 def reformat_timestamp(
     old_timestamp_str: str,
     old_datetime_template: str,
-    timezone: str | None = None,
 ) -> str:
     """Format a timestamp string from a given template to the OSmOSE template.
 
@@ -102,9 +130,6 @@ def reformat_timestamp(
         The old timestamp string.
     old_datetime_template: str
         The datetime template of the old timestamp using strftime codes.
-    timezone: str (optional)
-        The timezone of the timestamp.
-        If it is not provided, it will be defaulted as UTC.
 
     Returns
     -------
@@ -116,19 +141,7 @@ def reformat_timestamp(
         text=old_timestamp_str,
         datetime_template=old_datetime_template,
     )
-    if not timezone:
-        return strftime_osmose_format(timestamp)
-
-    if not timestamp.tz:
-        return strftime_osmose_format(timestamp.tz_localize(timezone))
-
-    if timestamp.utcoffset() != timestamp.tz_convert(timezone).utcoffset():
-        glc.logger.warning(
-            "The timestamps are tz-aware and you specified a different timezone.\n"
-            f"Timestamps timezones {timestamp.tz} will be converted to {timezone}",
-        )
-
-    return strftime_osmose_format(timestamp.tz_convert(timezone))
+    return strftime_osmose_format(timestamp)
 
 
 def strftime_osmose_format(date: pd.Timestamp) -> str:
@@ -294,6 +307,113 @@ def associate_timestamps(
         [[file, strptime_from_text(file, datetime_template)] for file in audio_files],
         columns=["filename", "timestamp"],
     )
+
+
+def parse_timestamps_csv(
+    filenames: Iterable[str],
+    datetime_template: str,
+    timezone: str | None = None,
+) -> pd.DataFrame:
+    """Parse a DataFrame that can be exported to an OSmOSE timestamp.csv file.
+
+    Parameters
+    ----------
+    filenames: Iterable[str]
+        Collection of filenames in which the timestamps should be extracted.
+    datetime_template: str
+        The datetime template used in the filename.
+    timezone: str | None
+        Optional, the timezone in which the timestamps should be localized.
+
+    Returns
+    -------
+    pandas.Dataframe:
+        A DataFrame with audio files name and timestamp columns.
+
+    """
+    timestamps = associate_timestamps(filenames, datetime_template)
+    return _localize_and_format_timestamps(timestamps, timezone)
+
+
+def adapt_timestamp_csv_to_osmose(
+    timestamps: pd.DataFrame,
+    date_template: str,
+    timezone: str | None = None,
+) -> pd.DataFrame:
+    """Adapt the timestamp format in a timestamp.csv file to the OSmOSE format.
+
+    Parameters
+    ----------
+    timestamps: pandas.DataFrame
+        A DataFrame with audio files name and timestamp columns.
+    date_template: str
+        The datetime template used in the timestamp column.
+    timezone: str | None
+        Optional, the timezone in which the timestamps should be localized.
+
+    Returns
+    -------
+    pandas.DataFrame:
+        A DataFrame with audio files name and timestamp columns in the OSmOSE format.
+
+    """
+    for forbidden_character, replacement in FORBIDDEN_FILENAME_CHARACTERS.items():
+        timestamps["filename"] = [
+            filename.replace(forbidden_character, replacement)
+            for filename in timestamps["filename"]
+        ]
+
+    template = TIMESTAMP_FORMAT_AUDIO_FILE
+    if not is_osmose_format_timestamp(timestamps["timestamp"]):
+        old_timestamp_sample = str(timestamps["timestamp"][0])
+        message = (
+            f"Timestamps were not in the OSmOSE format"
+            f" and were formatted accordingly.\n"
+            f"Example:\n"
+            f"{old_timestamp_sample} -> "
+            f"{reformat_timestamp(old_timestamp_sample, date_template)}"
+        )
+        glc.logger.info(message)
+        template = date_template
+    timestamps["timestamp"] = timestamps["timestamp"].apply(
+        lambda t: pd.to_datetime(str(t), format=template),
+    )
+    return _localize_and_format_timestamps(timestamps, timezone)
+
+
+def _localize_and_format_timestamps(
+    timestamps: pd.DataFrame,
+    timezone: str | None = None,
+) -> pd.DataFrame:
+    if timezone:
+        timestamps["timestamp"] = timestamps["timestamp"].apply(
+            lambda t: localize_timestamp(t, timezone),
+        )
+    timestamps["timestamp"] = timestamps["timestamp"].apply(
+        lambda t: strftime_osmose_format(t),
+    )
+    return timestamps
+
+
+def is_osmose_format_timestamp(timestamp: str) -> bool:
+    """Check if a string timestamp is formatted in the OSmOSE format.
+
+    Parameters
+    ----------
+    timestamp: str
+        The string representing the timestamp.
+
+    Returns
+    -------
+    True if timestamp is formatted in the OSmOSE format, False otherwise.
+
+    """
+    try:
+        pd.to_datetime(timestamp, format=TIMESTAMP_FORMAT_AUDIO_FILE)
+    except ValueError:
+        return False
+    else:
+        return True
 
 
 def get_timestamps(

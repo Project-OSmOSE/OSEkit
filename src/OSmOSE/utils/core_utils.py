@@ -6,9 +6,9 @@ import random
 import shutil
 import struct
 from importlib.resources import as_file
+from importlib.util import find_spec
 from pathlib import Path
 from typing import List, NamedTuple, Tuple, Union
-from warnings import warn
 
 import pandas as pd
 import pytz
@@ -24,17 +24,26 @@ import re
 import numpy as np
 import soundfile as sf
 
-from OSmOSE.config import OSMOSE_PATH
+from OSmOSE.config import OSMOSE_PATH, print_logger
+from OSmOSE.config import global_logging_context as glc
+
+_is_grp_supported = bool(find_spec("grp"))
 
 
+@glc.set_logger(print_logger)
 def display_folder_storage_info(dir_path: str) -> None:
     usage = shutil.disk_usage(dir_path)
-    print("Total storage space (TB):", round(usage.total / (1024**4), 1))
-    print("Used storage space (TB):", round(usage.used / (1024**4), 1))
-    print("-----------------------")
-    print("Available storage space (TB):", round(usage.free / (1024**4), 1))
+
+    def str_usage(key: str, value: int) -> str:
+        return f"{f'{key} storage space:':<30}{f'{round(value/ (1024**4), 1)} TB':>10}"
+
+    total = str_usage("Total", usage.total)
+    used = str_usage("Used", usage.used)
+    free = str_usage("Available", usage.free)
+    glc.logger.info("%s\n%s\n%s\n%s", total, used, f"{'-'*30:^40}", free)
 
 
+@glc.set_logger(print_logger)
 def list_not_built_dataset(path_osmose: str, project: str = None) -> None:
     """Prints the available datasets that have not been built by the `Dataset.build()` function.
 
@@ -92,17 +101,20 @@ def list_not_built_dataset(path_osmose: str, project: str = None) -> None:
     not_built_formatted = "\n".join(
         [f"  - {dataset.name}" for dataset in list_not_built_dataset],
     )
-    print(f"""List of the datasets that are not built yet:\n\n{not_built_formatted}""")
+    glc.logger.info(
+        f"""List of the datasets that are not built yet:\n\n{not_built_formatted}""",
+    )
 
     if list_unknown_dataset:
         unreachable_formatted = "\n".join(
             [f"  - {dataset.name}" for dataset in list_unknown_dataset],
         )
-        print(
+        glc.logger.info(
             f"""List of unreachable datasets (probably due to insufficient permissions):\n\n{unreachable_formatted}""",
         )
 
 
+@glc.set_logger(print_logger)
 def list_dataset(path_osmose: str, project: str = None) -> None:
     """Prints the available datasets that have been built by the `Dataset.build()` function.
 
@@ -162,19 +174,22 @@ def list_dataset(path_osmose: str, project: str = None) -> None:
         built_formatted = "\n".join(
             [f"  - {dataset.name}" for dataset in list_built_dataset],
         )
-        print(f"""List of the built datasets under {ds_folder}:\n\n{built_formatted}""")
+        glc.logger.info(
+            f"""List of the built datasets under {ds_folder}:\n\n{built_formatted}""",
+        )
     else:
-        print(f"No dataset found under '{ds_folder}'")
+        glc.logger.info(f"No dataset found under '{ds_folder}'")
 
     if list_unknown_dataset:
         unreachable_formatted = "\n".join(
             [f"  - {dataset.name}" for dataset in list_unknown_dataset],
         )
-        print(
+        glc.logger.info(
             f"""List of unreachable datasets (probably due to insufficient permissions):\n\n{unreachable_formatted}""",
         )
 
 
+@glc.set_logger(print_logger)
 def list_aplose(path_osmose: str, project: str = ""):
     """Prints the available APLOSE datasets containing result files (result and task_status).
 
@@ -239,17 +254,19 @@ def list_aplose(path_osmose: str, project: str = ""):
                 )
             ],
         )
-        print(
+        glc.logger.info(
             f"""List of the datasets with APLOSE result files under {ds_folder}:\n\n{aplose_formatted}""",
         )
     else:
-        print(f"No dataset with APLOSE result files found under '{ds_folder}'")
+        glc.logger.info(
+            f"No dataset with APLOSE result files found under '{ds_folder}'",
+        )
 
     if list_unknown_dataset:
         unreachable_formatted = "\n".join(
             [f"  - {dataset.name}" for dataset in list_unknown_dataset],
         )
-        print(
+        glc.logger.info(
             f"""List of unreachable datasets (probably due to insufficient permissions):\n\n{unreachable_formatted}""",
         )
 
@@ -375,7 +392,7 @@ def read_header(file: str) -> Tuple[int, float, int, int, int]:
                 chunkOffset = chunkOffset + subchunk2size + 8
 
             if not found_data:
-                print(
+                glc.logger.warning(
                     "No data chunk found while reading the header. Will fallback on the header size.",
                 )
                 subchunk2size = size - 36
@@ -451,7 +468,7 @@ def safe_read(
         nan_nb = sum(nan_nb)  # Double sum to account for multiple channels
 
     if nan_nb > 0:
-        warn(
+        glc.logger.warning(
             f"{nan_nb} NaN detected in file {Path(file_path).name}. They will be replaced with {nan}.",
         )
 
@@ -495,15 +512,16 @@ def check_n_files(
 
     # if "float" in str(sf.info(file_list[0])): # to understand
     bad_files = []
-    print("Testing whether samples are within [-1,1] for the following audio files:")
+    glc.logger.debug(
+        "Testing whether samples are within [-1,1] for the following audio files:",
+    )
     for audio_file in random.sample(file_list, n):
         data, sr = safe_read(audio_file)
         if not (np.max(data) <= 1.0 and np.min(data) >= -1.0):
             bad_files.append(audio_file)
-            print(f"- {audio_file.name} -> FAILED")
+            glc.logger.warning(f"- {audio_file.name} -> FAILED")
         else:
-            print(f"- {audio_file.name} -> PASSED")
-    print("\n")
+            glc.logger.debug(f"- {audio_file.name} -> PASSED")
 
     return len(bad_files)
 
@@ -566,6 +584,7 @@ def t_rounder(t: pd.Timestamp, res: int) -> pd.Timestamp:
     return t
 
 
+@glc.set_logger(print_logger)
 def check_available_file_resolution(path_osmose: str, project_ID: str, dataset_ID: str):
     """Lists the file resolution for a given dataset
 
@@ -587,11 +606,14 @@ def check_available_file_resolution(path_osmose: str, project_ID: str, dataset_I
     """
     base_path = os.path.join(path_osmose, project_ID, dataset_ID, "data", "audio")
     resolution = os.listdir(base_path)
+    resolution_str = "\n".join(resolution)
 
-    print(f"\nDataset : {project_ID}/{dataset_ID}")
-    print("Available Resolution (LengthFile_samplerate) :", end="\n")
-
-    [print(f" {r}") for r in resolution]
+    message = (
+        f"Dataset : {project_ID}/{dataset_ID}\n"
+        "Available Resolution (LengthFile_samplerate) :\n"
+        f"{resolution_str}"
+    )
+    glc.logger.info(message)
 
     return resolution
 
@@ -675,7 +697,7 @@ def extract_config(
             os.makedirs(full_path2)
         [shutil.copy(file, full_path2) for file in files2]
 
-    print(f"\nFiles exported to {out_dir}")
+    glc.logger.info(f"\nFiles exported to {out_dir}")
 
 
 def extract_datetime(
@@ -783,13 +805,71 @@ def add_entry_for_APLOSE(path: str, file: str, info: pd.DataFrame):
         meta.to_csv(dataset_csv, index=False)
 
 
-def chmod_if_needed(path: Path, mode: int):
+def chmod_if_needed(path: Path, mode: int) -> None:
+    """Change the permission of a path if user doesn't have read and write access.
+
+    Parameters
+    ----------
+    path: Path
+        Path of the file or folder in which permission should be changed.
+    mode: int
+        Permissions as used by os.chmod()
+
+    """
+    if not _is_grp_supported:
+        return
     if all(os.access(path, p) for p in (os.R_OK, os.W_OK)):
         return
 
     try:
-        os.chmod(path, mode)
-    except PermissionError:
-        raise PermissionError(
-            f"You do not have the permission to write to {path}, nor to change its permissions.",
+        path.chmod(mode)
+    except PermissionError as e:
+        message = (
+            f"You do not have the permission to write to {path}, "
+            "nor to change its permissions."
         )
+        glc.logger.error(message)
+        raise PermissionError(message) from e
+
+
+def change_owner_group(path: Path, owner_group: str) -> None:
+    """Change the owner group of the given path.
+
+    Parameters
+    ----------
+    path:
+        Path of which the owner group should be changed.
+    owner_group:
+        The new owner group.
+        A warning is logged if the grp module is supported (Unix os) but
+        no owner_group is passed.
+
+    """
+    if not _is_grp_supported:
+        return
+    if owner_group is None:
+        glc.logger.warning("You did not set the group owner of the dataset.")
+        return
+    if path.group() == owner_group:
+        return
+    glc.logger.debug("Setting OSmOSE permission to the dataset..")
+
+    try:
+        import grp
+
+        gid = grp.getgrnam(owner_group).gr_gid
+    except KeyError as e:
+        message = f"Group {owner_group} does not exist."
+        glc.logger.error(message)
+        raise KeyError(message) from e
+
+    try:
+        os.chown(path, -1, gid)
+    except PermissionError as e:
+        message = (
+            f"You do not have the permission to change the owner of {path}."
+            f"The group owner has not been changed "
+            f"from {path.group()} to {owner_group}."
+        )
+        glc.logger.error(message)
+        raise PermissionError(message) from e
