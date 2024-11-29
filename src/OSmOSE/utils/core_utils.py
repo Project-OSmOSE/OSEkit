@@ -32,7 +32,7 @@ def display_folder_storage_info(dir_path: str) -> None:
     usage = shutil.disk_usage(dir_path)
     message = (
         f"Total storage space (TB): {round(usage.total / (1024**4), 1)}\n"
-        f"Used storage space (TB): {round(usage.total / (1024**4), 1)}\n"
+        f"Used storage space (TB): {round(usage.used / (1024**4), 1)}\n"
         f"-----------------------\n"
         f"Available storage space (TB): {round(usage.free / (1024**4), 1)}"
     )
