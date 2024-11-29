@@ -350,9 +350,6 @@ class Dataset:
         if self._is_built():
             return self._get_original_after_build()
 
-        if (original := next(self.path.rglob("original"), None)) is not None:
-            return original
-
         return self.path
 
     def _create_logger(self) -> None:
