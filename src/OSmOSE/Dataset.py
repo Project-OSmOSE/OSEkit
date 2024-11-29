@@ -342,7 +342,10 @@ class Dataset:
 
         """
         if original_folder is not None:
-            return Path(original_folder)
+            if (folder := Path(original_folder)).exists():
+                return folder
+            if (folder := self.path / Path(original_folder)).exists():
+                return folder
 
         if self._is_built():
             return self._get_original_after_build()
