@@ -534,16 +534,17 @@ class Dataset:
                 continue
             if file in (file for folder in build_folders for file in folder.rglob("*")):
                 continue
-            relative_path = file.relative_to(self.path)
-            destination_folder = (self.path / "other" / relative_path).parent
-            if not destination_folder.exists():
-                destination_folder.mkdir(parents=True, exist_ok=True)
-            file.replace(self.path / "other" / relative_path)
-            folder_to_remove = file.parent
+            if not file.is_dir() or any(file.iterdir()):
+                relative_path = file.relative_to(self.path)
+                destination_folder = (self.path / "other" / relative_path).parent
+                if not destination_folder.exists():
+                    destination_folder.mkdir(parents=True, exist_ok=True)
+                file.replace(self.path / "other" / relative_path)
+                nb_moved_files += 1
+            folder_to_remove = file if file.is_dir() else file.parent
             while not any(folder_to_remove.iterdir()):
                 folder_to_remove.rmdir()
                 folder_to_remove = folder_to_remove.parent
-            nb_moved_files += 1
         if nb_moved_files > 0:
             self.logger.info("Moved %i file(s) to the 'other' folder.", nb_moved_files)
 
