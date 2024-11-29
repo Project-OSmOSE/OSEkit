@@ -30,13 +30,14 @@ from OSmOSE.config import global_logging_context as glc
 @glc.set_logger(print_logger)
 def display_folder_storage_info(dir_path: str) -> None:
     usage = shutil.disk_usage(dir_path)
-    message = (
-        f"Total storage space (TB): {round(usage.total / (1024**4), 1)}\n"
-        f"Used storage space (TB): {round(usage.used / (1024**4), 1)}\n"
-        f"-----------------------\n"
-        f"Available storage space (TB): {round(usage.free / (1024**4), 1)}"
-    )
-    glc.logger.info(message)
+
+    def str_usage(key: str, value: int) -> str:
+        return f"{f'{key} storage space:':<30}{f'{round(value/ (1024**4), 1)} TB':>10}"
+
+    total = str_usage("Total", usage.total)
+    used = str_usage("Used", usage.used)
+    free = str_usage("Available", usage.free)
+    glc.logger.info("%s\n%s\n%s\n%s", total, used, f"{'-'*30:^40}", free)
 
 
 @glc.set_logger(print_logger)
