@@ -1,0 +1,63 @@
+"""FileBase: Base class for the File objects (e.g. AudioFile), which associated timestamps with file-written data."""
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from os import PathLike
+
+    import numpy as np
+
+from pathlib import Path
+
+from pandas import Timestamp
+
+from OSmOSE.utils.timestamp_utils import strptime_from_text
+
+
+class FileBase:
+    """Base class for the File objects (e.g. AudioFile), which associated timestamps with file-written data."""
+
+    def __init__(self, path: PathLike | str, begin: Timestamp | None = None, end: Timestamp | None = None,  strptime_format: str | None = None) -> None:
+        """Initialize a File object with a path and a begin timestamp.
+
+        The begin timestamp can either be provided as a parameter or parsed from the filename according to the provided stroptime_format.
+
+        Parameters
+        ----------
+        path: PathLike | str
+            Full path to the file.
+        begin: pandas.Timestamp | None
+            Timestamp corresponding to the first data point in the file.
+            If it is not provided, strptime_format is mandatory.
+            If both begin and strptime_format are provided, begin will overrule the timestamp embedded in the filename.
+        end: pandas.Timestamp | None
+            (Optional) Timestamp after the last data point in the file.
+        strptime_format: str | None
+            The strptime format used in the text.
+            It should use valid strftime codes (https://strftime.org/).
+            Example: '%y%m%d_%H:%M:%S'.
+
+        """
+        self.path = Path(path)
+
+        if begin is None and strptime_format is None:
+            raise ValueError("Either begin or strptime_format must be specified")
+
+        self.begin = begin if begin is not None else strptime_from_text(text = self.path.name, datetime_template=strptime_format)
+
+    def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray:
+        """Return the data that is between start and stop from the file.
+
+        Parameters
+        ----------
+        start: pandas.Timestamp
+            Timestamp corresponding to the first data point to read.
+        stop: pandas.Timestamp
+            Timestamp after the last data point to read.
+
+        Returns
+        -------
+        The data between start and stop.
+
+        """
