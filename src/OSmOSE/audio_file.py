@@ -1,4 +1,5 @@
 """."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -16,7 +17,12 @@ from OSmOSE.file_base import FileBase
 class AudioFile(FileBase):
     """Audio file associated with timestamps."""
 
-    def __init__(self, path: PathLike | str, begin: Timestamp | None = None, strptime_format: str | None = None) -> None:
+    def __init__(
+        self,
+        path: PathLike | str,
+        begin: Timestamp | None = None,
+        strptime_format: str | None = None,
+    ) -> None:
         """Initialize an AudioFile object with a path and a begin timestamp.
 
         The begin timestamp can either be provided as a parameter or parsed from the filename according to the provided strptime_format.
@@ -35,9 +41,9 @@ class AudioFile(FileBase):
             Example: '%y%m%d_%H:%M:%S'.
 
         """
-        super().__init__(path, begin, strptime_format)
+        super().__init__(path=path, begin=begin, strptime_format=strptime_format)
         self.metadata = sf.info(path)
-        self.end = self.begin + Timedelta(seconds = self.metadata.duration)
+        self.end = self.begin + Timedelta(seconds=self.metadata.duration)
 
     def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray:
         """Return the audio data between start and stop from the file.
@@ -56,6 +62,6 @@ class AudioFile(FileBase):
 
         """
         sample_rate = self.metadata.samplerate
-        start_sample = round((start-self.begin).total_seconds() * sample_rate)
-        stop_sample = round((stop-self.begin).total_seconds() * sample_rate)
+        start_sample = round((start - self.begin).total_seconds() * sample_rate)
+        stop_sample = round((stop - self.begin).total_seconds() * sample_rate)
         return sf.read(self.path, start=start_sample, stop=stop_sample)[0]
