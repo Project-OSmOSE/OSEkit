@@ -15,7 +15,7 @@ from OSmOSE.config import TIMESTAMP_FORMAT_TEST_FILES
     [
         pytest.param(
             {
-                "duration": .05,
+                "duration": 0.05,
                 "sample_rate": 48_000,
                 "nb_files": 1,
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
@@ -24,7 +24,7 @@ from OSmOSE.config import TIMESTAMP_FORMAT_TEST_FILES
         ),
         pytest.param(
             {
-                "duration": .06,
+                "duration": 0.06,
                 "sample_rate": 48_000,
                 "nb_files": 1,
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
@@ -33,7 +33,7 @@ from OSmOSE.config import TIMESTAMP_FORMAT_TEST_FILES
         ),
         pytest.param(
             {
-                "duration": .05,
+                "duration": 0.05,
                 "sample_rate": 44_100,
                 "nb_files": 1,
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
@@ -56,6 +56,7 @@ def test_audio_file_timestamps(
         assert audio_file.begin == date_begin
         assert audio_file.end == date_begin + pd.Timedelta(seconds=duration)
 
+
 @pytest.mark.parametrize(
     ("audio_files", "start", "stop", "expected"),
     [
@@ -68,7 +69,7 @@ def test_audio_file_timestamps(
             },
             pd.Timestamp("2024-01-01 12:00:00"),
             pd.Timestamp("2024-01-01 12:00:01"),
-            np.linspace(0.,1.,48_000),
+            np.linspace(0.0, 1.0, 48_000),
             id="read_whole_file",
         ),
         pytest.param(
@@ -79,8 +80,16 @@ def test_audio_file_timestamps(
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
             },
             pd.Timestamp("2024-01-01 12:00:00"),
-            pd.Timestamp(year = 2024, month=1, day=1, hour=12, minute=0, second=0, microsecond=100_000),
-            np.linspace(0.,1.,48_000)[:4_800],
+            pd.Timestamp(
+                year=2024,
+                month=1,
+                day=1,
+                hour=12,
+                minute=0,
+                second=0,
+                microsecond=100_000,
+            ),
+            np.linspace(0.0, 1.0, 48_000)[:4_800],
             id="read_begin_only",
         ),
         pytest.param(
@@ -90,16 +99,56 @@ def test_audio_file_timestamps(
                 "nb_files": 1,
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
             },
-            pd.Timestamp(year = 2024, month=1, day=1, hour=12, minute=0, second=0, microsecond=500_000),
-            pd.Timestamp(year = 2024, month=1, day=1, hour=12, minute=0, second=0, microsecond=600_000),
-            np.linspace(0.,1.,48_000)[24_000:28_800],
+            pd.Timestamp(
+                year=2024,
+                month=1,
+                day=1,
+                hour=12,
+                minute=0,
+                second=0,
+                microsecond=500_000,
+            ),
+            pd.Timestamp(
+                year=2024,
+                month=1,
+                day=1,
+                hour=12,
+                minute=0,
+                second=0,
+                microsecond=600_000,
+            ),
+            np.linspace(0.0, 1.0, 48_000)[24_000:28_800],
             id="read_in_the_middle_of_the_file",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            pd.Timestamp(
+                year=2024,
+                month=1,
+                day=1,
+                hour=12,
+                minute=0,
+                second=0,
+                microsecond=900_000,
+            ),
+            pd.Timestamp("2024-01-01 12:00:01"),
+            np.linspace(0.0, 1.0, 48_000)[43_200:],
+            id="read_end_of_file",
         ),
     ],
     indirect=["audio_files"],
 )
 def test_audio_file_read(
-    audio_files: tuple[list[Path], pytest.fixtures.Subrequest], start: pd.Timestamp, stop: pd.Timestamp, expected: np.ndarray) -> None:
+    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    start: pd.Timestamp,
+    stop: pd.Timestamp,
+    expected: np.ndarray,
+) -> None:
     files, request = audio_files
     file = AudioFile(files[0], strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
     assert np.array_equal(file.read(start, stop), expected)

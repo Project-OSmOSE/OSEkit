@@ -18,13 +18,14 @@ from OSmOSE.config import OSMOSE_PATH, TIMESTAMP_FORMAT_TEST_FILES
 
 @pytest.fixture
 def audio_files(
-    tmp_path: Path, request: pytest.fixtures.Subrequest,
+    tmp_path: Path,
+    request: pytest.fixtures.Subrequest,
 ) -> tuple[list[Path], pytest.fixtures.Subrequest]:
     v_begin = 0.0
     v_end = 1.0
     nb_files = request.param.get("nb_files", 1)
     sample_rate = request.param.get("sample_rate", 48_000)
-    duration = request.param.get("duration", 1.)
+    duration = request.param.get("duration", 1.0)
     date_begin = request.param.get("date_begin", pd.Timestamp("2000-01-01 00:00:00"))
     inter_file_duration = request.param.get("inter_file_duration", 0)
     n_samples = int(round(duration * sample_rate))
@@ -39,7 +40,10 @@ def audio_files(
         file = tmp_path / f"audio_{time_str}.wav"
         files.append(file)
         sf.write(
-            file=file, data=data, samplerate=sample_rate, subtype="DOUBLE",
+            file=file,
+            data=data,
+            samplerate=sample_rate,
+            subtype="DOUBLE",
         )
     return files, request
 
