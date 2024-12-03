@@ -1,4 +1,5 @@
 """FileBase: Base class for the File objects (e.g. AudioFile), which associated timestamps with file-written data."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -17,7 +18,13 @@ from OSmOSE.utils.timestamp_utils import strptime_from_text
 class FileBase:
     """Base class for the File objects (e.g. AudioFile), which associated timestamps with file-written data."""
 
-    def __init__(self, path: PathLike | str, begin: Timestamp | None = None, end: Timestamp | None = None,  strptime_format: str | None = None) -> None:
+    def __init__(
+        self,
+        path: PathLike | str,
+        begin: Timestamp | None = None,
+        end: Timestamp | None = None,
+        strptime_format: str | None = None,
+    ) -> None:
         """Initialize a File object with a path and timestamps.
 
         The begin timestamp can either be provided as a parameter or parsed from the filename according to the provided strptime_format.
@@ -43,7 +50,13 @@ class FileBase:
         if begin is None and strptime_format is None:
             raise ValueError("Either begin or strptime_format must be specified")
 
-        self.begin = begin if begin is not None else strptime_from_text(text = self.path.name, datetime_template=strptime_format)
+        self.begin = (
+            begin
+            if begin is not None
+            else strptime_from_text(
+                text=self.path.name, datetime_template=strptime_format
+            )
+        )
         self.end = end if end is not None else self.begin
 
     def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray:
