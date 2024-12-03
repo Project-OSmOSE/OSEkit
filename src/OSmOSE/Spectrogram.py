@@ -16,7 +16,6 @@ import pandas as pd
 from IPython.display import Image, display
 from matplotlib import pyplot as plt
 from scipy import signal
-from termcolor import colored
 from tqdm import tqdm
 
 from OSmOSE.cluster import (
@@ -104,6 +103,7 @@ class Spectrogram(Dataset):
         local : `bool`, optional, keyword_only
             Indicates whether or not the program is run locally. If it is the case, it will not create jobs and will handle the paralelisation
             alone. The default is False.
+
         """
         super().__init__(
             dataset_path=dataset_path,
@@ -131,7 +131,7 @@ class Spectrogram(Dataset):
             analysis_sheet = {}
             self.__analysis_file = False
             self.logger.info(
-                "No valid processed/adjust_metadata.csv found and no parameters provided. All attributes will be initialized to default values..  \n"
+                "No valid processed/adjust_metadata.csv found and no parameters provided. All attributes will be initialized to default values..  \n",
             )
 
         self.batch_number: int = batch_number
@@ -506,14 +506,14 @@ class Spectrogram(Dataset):
         if not dry:
             if self.audio_path.exists() and force_init:
                 self.logger.info(
-                    f"removing existing directory {self.audio_path}.. this can take a bit of time"
+                    f"removing existing directory {self.audio_path}.. this can take a bit of time",
                 )
                 shutil.rmtree(self.audio_path)
             make_path(self.audio_path, mode=DPDEFAULT)
 
             if self.path_output_spectrogram.exists() and force_init:
                 self.logger.info(
-                    f"removing existing directory {self.path_output_spectrogram}.. this can take a bit of time"
+                    f"removing existing directory {self.path_output_spectrogram}.. this can take a bit of time",
                 )
                 shutil.rmtree(self.path_output_spectrogram)
             make_path(self.path_output_spectrogram, mode=DPDEFAULT)
@@ -541,13 +541,13 @@ class Spectrogram(Dataset):
         """Verify if the parameters will generate a spectrogram that can fit one screen properly"""
         if self.nfft > 2048:
             self.logger.warning(
-                f"Your spectra contain more than 1024 bin (ie {self.nfft/2}).\nNote that unless you have a 4K screen, unwanted numerical compression might occur when visualizing your spectrograms.."
+                f"Your spectra contain more than 1024 bin (ie {self.nfft/2}).\nNote that unless you have a 4K screen, unwanted numerical compression might occur when visualizing your spectrograms..",
             )
 
         temporal_resolution, frequency_resolution, Nbwin = self.extract_spectro_params()
 
         self.logger.info(
-            f"your smallest tile has a duration of: {self.spectro_duration / 2 ** (self.zoom_level)} (s), with a number of spectra of {Nbwin} \n"
+            f"your smallest tile has a duration of: {self.spectro_duration / 2 ** (self.zoom_level)} (s), with a number of spectra of {Nbwin} \n",
         )
 
         if Nbwin > 3500:
@@ -591,15 +591,22 @@ class Spectrogram(Dataset):
             Force every parameter of the initialization.
         threshold : int, optional
             Integer from 0 to 100 to filter out segments with a number of sample inferior to (threshold * spectrogram duration * segment_sample_rate)
+
         """
         # remove temp directories from adjustment spectrograms
         for path in glob.glob(str(self.path / OSMOSE_PATH.raw_audio / "temp_*")):
             shutil.rmtree(path)
 
-        # remove existing log directory and create a new empty one
-        if False and os.path.exists(self.path / OSMOSE_PATH.log):
-            shutil.rmtree(self.path / OSMOSE_PATH.log)
-            os.mkdir(self.path / OSMOSE_PATH.log)
+        # remove existing job files
+        if (self.path / OSMOSE_PATH.log).exists():
+            for file in (self.path / OSMOSE_PATH.log).rglob("*"):
+                if not file.is_file():
+                    continue
+                if file.suffix == ".log":
+                    continue
+                if not os.access(file, os.W_OK):
+                    continue
+                file.unlink()
 
         # remove welch directory if existing
         if self.path_output_welch.exists():
@@ -656,7 +663,7 @@ class Spectrogram(Dataset):
 
         if audio_metadata_path.exists():
             self.logger.warning(
-                "It seems these spectrogram parameters are already initialized. If it is an error or you want to rerun the initialization, add the `force_init` argument."
+                "It seems these spectrogram parameters are already initialized. If it is an error or you want to rerun the initialization, add the `force_init` argument.",
             )
             return
 
@@ -714,11 +721,11 @@ class Spectrogram(Dataset):
 
                 while current_ts <= ts + original_timedelta:
                     if pd.Timestamp(datetime_begin) < current_ts < pd.Timestamp(
-                        datetime_end
+                        datetime_end,
                     ) or pd.Timestamp(datetime_begin) < current_ts + pd.Timedelta(
-                        seconds=self.spectro_duration
+                        seconds=self.spectro_duration,
                     ) < pd.Timestamp(
-                        datetime_end
+                        datetime_end,
                     ):
                         new_file.append(current_ts)
                     current_ts += pd.Timedelta(seconds=self.spectro_duration)
@@ -734,7 +741,7 @@ class Spectrogram(Dataset):
             self.dataset_sr != origin_sr
         ):
             self.logger.info(
-                f"Automatically reshaping audio files to fit the spectro duration value. Files will be {self.spectro_duration} seconds long. Parameter 'concat' is set to {self.concat}."
+                f"Automatically reshaping audio files to fit the spectro duration value. Files will be {self.spectro_duration} seconds long. Parameter 'concat' is set to {self.concat}.",
             )
 
             input_files = self.path_input_audio_file
@@ -838,7 +845,7 @@ class Spectrogram(Dataset):
                 list_conca_filename.append(list(pd.read_csv(ll)["filename"].values))
                 os.remove(ll)
 
-            self.logger.debug(f"save file {str(input_dir_path / 'timestamp.csv')}")
+            self.logger.debug(f"save file {input_dir_path / 'timestamp.csv'!s}")
             df = pd.DataFrame(
                 {
                     "filename": list(
@@ -1128,7 +1135,7 @@ class Spectrogram(Dataset):
                     self.logger.debug("adjustment_spectros folder deleted.")
             except Exception as e:
                 self.logger.error(
-                    f"Cannot remove adjustment_spectros folder. Description of the error : {str(e.value)}"
+                    f"Cannot remove adjustment_spectros folder. Description of the error : {e.value!s}",
                 )
 
             self.save_matrix = save_matrix
@@ -1145,7 +1152,7 @@ class Spectrogram(Dataset):
             if overwrite:
                 if any(self.path_output_spectrogram.glob(f"{Path(audio_file).stem}*")):
                     self.logger.warning(
-                        f"Existing spectrogram files detected for audio file {audio_file}! 'overwrite' is set to {overwrite}, they will be overwritten."
+                        f"Existing spectrogram files detected for audio file {audio_file}! 'overwrite' is set to {overwrite}, they will be overwritten.",
                     )
                 for old_file in self.path_output_spectrogram.glob(
                     f"{Path(audio_file).stem}*",
@@ -1158,13 +1165,13 @@ class Spectrogram(Dataset):
                         old_matrix.unlink()
             else:
                 self.logger.info(
-                    f"The spectrograms for the file {audio_file} have already been generated, skipping..."
+                    f"The spectrograms for the file {audio_file} have already been generated, skipping...",
                 )
                 return
 
             if audio_file not in os.listdir(self.audio_path):
                 self.logger.error(
-                    f"The file {audio_file} must be in {self.audio_path} in order to be processed."
+                    f"The file {audio_file} must be in {self.audio_path} in order to be processed.",
                 )
                 raise FileNotFoundError(
                     f"The file {audio_file} must be in {self.audio_path} in order to be processed.",
@@ -1272,7 +1279,7 @@ class Spectrogram(Dataset):
             f"- data min : {np.min(data):.3f}\n"
             f"- data max : {np.max(data):.3f}\n"
             f"- data mean : {np.mean(data):.3f}\n"
-            f"- data std : {np.std(data):.3f}"
+            f"- data std : {np.std(data):.3f}",
         )
 
         duration = len(data) / int(sample_rate)
@@ -1536,7 +1543,7 @@ class Spectrogram(Dataset):
         )
         self.logger.debug(
             f"- min log spectro : {np.amin(log_spectro):.3f}\n"
-            f"- max log spectro : {np.amax(log_spectro):.3f}\n"
+            f"- max log spectro : {np.amax(log_spectro):.3f}\n",
         )
 
         color_map = plt.get_cmap(self.colormap)
@@ -1777,7 +1784,10 @@ class Spectrogram(Dataset):
 
         # Saving spectrogram plot to file
         self.logger.debug(
-            "Saving", output_file, "\nNumber of welch:", str(log_spectro.shape[1])
+            "Saving",
+            output_file,
+            "\nNumber of welch:",
+            str(log_spectro.shape[1]),
         )
         plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
         plt.close()
@@ -1912,7 +1922,7 @@ class Spectrogram(Dataset):
         output_file = self.path / OSMOSE_PATH.SPLfiltered / "SPLfiltered.png"
 
         self.logger.debug(
-            f"Saving\n{output_file}\nNumber of time points: {len(SPL_filtered)}"
+            f"Saving\n{output_file}\nNumber of time points: {len(SPL_filtered)}",
         )
         plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
         plt.close()
@@ -1983,7 +1993,7 @@ class Spectrogram(Dataset):
         # save as png figure
         output_file = self.path / OSMOSE_PATH.EPD / "EPD.png"
         self.logger.debug(
-            f"Saving {output_file}\nNumber of welch: {all_welch.shape[0]}"
+            f"Saving {output_file}\nNumber of welch: {all_welch.shape[0]}",
         )
         plt.savefig(output_file, bbox_inches="tight", pad_inches=0)
         plt.close()
