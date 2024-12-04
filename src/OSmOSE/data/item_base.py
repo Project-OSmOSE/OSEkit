@@ -41,7 +41,9 @@ class ItemBase:
 
         """
         self.file = file
-        self.begin = max(begin, self.file.begin) if begin is not None else self.file.begin
+        self.begin = (
+            max(begin, self.file.begin) if begin is not None else self.file.begin
+        )
         self.end = min(end, self.file.end) if end is not None else self.file.end
 
     def get_value(self) -> np.ndarray:
