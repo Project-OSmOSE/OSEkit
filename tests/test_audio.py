@@ -174,7 +174,7 @@ def test_audio_file_read(
             generate_sample_audio(nb_files=1, nb_samples=48_000)[0],
             id="whole_file",
         ),
-            pytest.param(
+        pytest.param(
             {
                 "duration": 1,
                 "sample_rate": 48_000,
@@ -206,10 +206,10 @@ def test_audio_file_read(
     indirect=["audio_files"],
 )
 def test_audio_item(
-        audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
-        start: pd.Timestamp | None,
-        stop: pd.Timestamp | None,
-        expected: np.ndarray,
+    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    start: pd.Timestamp | None,
+    stop: pd.Timestamp | None,
+    expected: np.ndarray,
 ) -> None:
     files, request = audio_files
     file = AudioFile(files[0], strptime_format=TIMESTAMP_FORMAT_TEST_FILES)

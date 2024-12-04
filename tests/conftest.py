@@ -31,7 +31,9 @@ def audio_files(
 
     nb_samples = int(round(duration * sample_rate))
     data = generate_sample_audio(
-        nb_files=nb_files, nb_samples=nb_samples, series_type=series_type,
+        nb_files=nb_files,
+        nb_samples=nb_samples,
+        series_type=series_type,
     )
     files = []
     for index, begin_time in enumerate(
