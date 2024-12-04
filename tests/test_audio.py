@@ -8,6 +8,7 @@ import pytest
 
 from OSmOSE.config import TIMESTAMP_FORMAT_TEST_FILES
 from OSmOSE.data.audio_file import AudioFile
+from OSmOSE.data.audio_item import AudioItem
 from OSmOSE.utils.audio_utils import generate_sample_audio
 
 if TYPE_CHECKING:
@@ -156,3 +157,61 @@ def test_audio_file_read(
     files, request = audio_files
     file = AudioFile(files[0], strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
     assert np.array_equal(file.read(start, stop), expected)
+
+
+@pytest.mark.parametrize(
+    ("audio_files", "start", "stop", "expected"),
+    [
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            None,
+            None,
+            generate_sample_audio(nb_files=1, nb_samples=48_000)[0],
+            id="whole_file",
+        ),
+            pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            pd.Timestamp(
+                year=2024,
+                month=1,
+                day=1,
+                hour=12,
+                minute=0,
+                second=0,
+                microsecond=500_000,
+            ),
+            pd.Timestamp(
+                year=2024,
+                month=1,
+                day=1,
+                hour=12,
+                minute=0,
+                second=0,
+                microsecond=600_000,
+            ),
+            generate_sample_audio(nb_files=1, nb_samples=48_000)[0][24_000:28_800],
+            id="mid_file",
+        ),
+    ],
+    indirect=["audio_files"],
+)
+def test_audio_item(
+        audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+        start: pd.Timestamp | None,
+        stop: pd.Timestamp | None,
+        expected: np.ndarray,
+) -> None:
+    files, request = audio_files
+    file = AudioFile(files[0], strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
+    item = AudioItem(file, start, stop)
+    assert np.array_equal(item.get_value(), expected)
