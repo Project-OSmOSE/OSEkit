@@ -34,15 +34,15 @@ class ItemBase:
             The File in which this Item belongs.
         begin: pandas.Timestamp (optional)
             The timestamp at which this item begins.
-            It is defaulted to the File begin.
+            It is defaulted or maxed to the File begin.
         end: pandas.Timestamp (optional)
             The timestamp at which this item ends.
-            It is defaulted to the File end.
+            It is defaulted or mined to the File end.
 
         """
         self.file = file
-        self.begin = begin if begin is not None else self.file.begin
-        self.end = end if end is not None else self.file.end
+        self.begin = max(begin, self.file.begin) if begin is not None else self.file.begin
+        self.end = min(end, self.file.end) if end is not None else self.file.end
 
     def get_value(self) -> np.ndarray:
         """Get the values from the File between the begin and stop timestamps."""
