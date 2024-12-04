@@ -8,8 +8,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
+from pandas import Timestamp
 
 from OSmOSE.data.item_base import ItemBase
+from OSmOSE.utils.timestamp_utils import is_overlapping
 
 if TYPE_CHECKING:
     from OSmOSE.data.file_base import FileBase
@@ -34,13 +36,20 @@ class DataBase:
 
         """
         self.items = items
+        self.begin = min(item.begin for item in self.items)
+        self.end = max(item.end for item in self.items)
 
     def get_value(self) -> np.ndarray:
         """Get the concatenated values from all Items."""
         return np.concatenate([item.get_value() for item in self.items])
 
     @classmethod
-    def from_file(cls, file: FileBase) -> DataBase:
+    def from_files(
+        cls,
+        files: list[FileBase],
+        begin: Timestamp | None = None,
+        end: Timestamp | None = None,
+    ) -> DataBase:
         """Initialize a DataBase from a single File.
 
         The resulting Data object will contain a single Item.
@@ -48,8 +57,8 @@ class DataBase:
 
         Parameters
         ----------
-        file: OSmOSE.data.file_base.FileBase
-            The File encapsulated in the Data object.
+        files: list[OSmOSE.data.file_base.FileBase]
+            The Files encapsulated in the Data object.
 
         Returns
         -------
@@ -57,5 +66,11 @@ class DataBase:
             The Data object.
 
         """
-        item = cls.item_cls(file)
-        return cls(items=[item])
+        begin = min(file.begin for file in files) if begin is None else begin
+        end = max(file.end for file in files) if end is None else end
+
+        overlapping_files = [file for file in files if is_overlapping((file.begin, file.end), (begin, end))]
+
+        items = [cls.item_cls(file, begin, end) for file in overlapping_files]
+
+        return cls(items=items)
