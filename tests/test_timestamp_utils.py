@@ -1072,72 +1072,72 @@ def test_adapt_timestamp_csv_to_osmose(
         ),
         pytest.param(
             (
-                    Timestamp("2024-01-01 00:00:00"),
-                    Timestamp("2024-01-02 00:00:00"),
+                Timestamp("2024-01-01 00:00:00"),
+                Timestamp("2024-01-02 00:00:00"),
             ),
             (
-                    Timestamp("2024-01-01 12:00:00"),
-                    Timestamp("2024-01-02 12:00:00"),
+                Timestamp("2024-01-01 12:00:00"),
+                Timestamp("2024-01-02 12:00:00"),
             ),
             True,
             id="overlapping_events",
         ),
         pytest.param(
             (
-                    Timestamp("2024-01-01 12:00:00"),
-                    Timestamp("2024-01-02 12:00:00"),
+                Timestamp("2024-01-01 12:00:00"),
+                Timestamp("2024-01-02 12:00:00"),
             ),
             (
-                    Timestamp("2024-01-01 00:00:00"),
-                    Timestamp("2024-01-02 00:00:00"),
+                Timestamp("2024-01-01 00:00:00"),
+                Timestamp("2024-01-02 00:00:00"),
             ),
             True,
             id="overlapping_events_reversed",
         ),
         pytest.param(
             (
-                    Timestamp("2024-01-01 00:00:00"),
-                    Timestamp("2024-01-02 00:00:00"),
+                Timestamp("2024-01-01 00:00:00"),
+                Timestamp("2024-01-02 00:00:00"),
             ),
             (
-                    Timestamp("2024-01-01 12:00:00"),
-                    Timestamp("2024-01-01 12:01:00"),
+                Timestamp("2024-01-01 12:00:00"),
+                Timestamp("2024-01-01 12:01:00"),
             ),
             True,
             id="embedded_events",
         ),
         pytest.param(
             (
-                    Timestamp("2024-01-01 0:00:00"),
-                    Timestamp("2024-01-01 12:00:00"),
+                Timestamp("2024-01-01 0:00:00"),
+                Timestamp("2024-01-01 12:00:00"),
             ),
             (
-                    Timestamp("2024-01-02 00:00:00"),
-                    Timestamp("2024-01-02 12:00:00"),
+                Timestamp("2024-01-02 00:00:00"),
+                Timestamp("2024-01-02 12:00:00"),
             ),
             False,
             id="non_overlapping_events",
         ),
         pytest.param(
             (
-                    Timestamp("2024-01-02 0:00:00"),
-                    Timestamp("2024-01-02 12:00:00"),
+                Timestamp("2024-01-02 0:00:00"),
+                Timestamp("2024-01-02 12:00:00"),
             ),
             (
-                    Timestamp("2024-01-01 00:00:00"),
-                    Timestamp("2024-01-01 12:00:00"),
+                Timestamp("2024-01-01 00:00:00"),
+                Timestamp("2024-01-01 12:00:00"),
             ),
             False,
             id="non_overlapping_events_reversed",
         ),
         pytest.param(
             (
-                    Timestamp("2024-01-01 0:00:00"),
-                    Timestamp("2024-01-01 12:00:00"),
+                Timestamp("2024-01-01 0:00:00"),
+                Timestamp("2024-01-01 12:00:00"),
             ),
             (
-                    Timestamp("2024-01-01 12:00:00"),
-                    Timestamp("2024-01-02 00:00:00"),
+                Timestamp("2024-01-01 12:00:00"),
+                Timestamp("2024-01-02 00:00:00"),
             ),
             False,
             id="border_sharing_isnt_overlapping",

@@ -8,12 +8,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-from pandas import Timestamp
 
 from OSmOSE.data.item_base import ItemBase
 from OSmOSE.utils.timestamp_utils import is_overlapping
 
 if TYPE_CHECKING:
+    from pandas import Timestamp
+
     from OSmOSE.data.file_base import FileBase
 
 
@@ -59,6 +60,12 @@ class DataBase:
         ----------
         files: list[OSmOSE.data.file_base.FileBase]
             The Files encapsulated in the Data object.
+        begin: pandas.Timestamp | None
+            The begin of the Data object.
+            defaulted to the begin of the first File.
+        end: pandas.Timestamp | None
+            The end of the Data object.
+            default to the end of the last File.
 
         Returns
         -------
@@ -69,7 +76,11 @@ class DataBase:
         begin = min(file.begin for file in files) if begin is None else begin
         end = max(file.end for file in files) if end is None else end
 
-        overlapping_files = [file for file in files if is_overlapping((file.begin, file.end), (begin, end))]
+        overlapping_files = [
+            file
+            for file in files
+            if is_overlapping((file.begin, file.end), (begin, end))
+        ]
 
         items = [cls.item_cls(file, begin, end) for file in overlapping_files]
 
