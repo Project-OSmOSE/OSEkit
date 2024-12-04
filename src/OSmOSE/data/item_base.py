@@ -20,7 +20,12 @@ class ItemBase:
     An Item correspond to a portion of a File object.
     """
 
-    def __init__(self, file: FileBase, begin: Timestamp | None = None, end: Timestamp | None = None) -> None:
+    def __init__(
+        self,
+        file: FileBase,
+        begin: Timestamp | None = None,
+        end: Timestamp | None = None,
+    ) -> None:
         """Initialize an ItemBase from a File and begin/end timestamps.
 
         Parameters
@@ -41,4 +46,4 @@ class ItemBase:
 
     def get_value(self) -> np.ndarray:
         """Get the values from the File between the begin and stop timestamps."""
-        return self.file.read(start = self.begin, stop = self.end)
+        return self.file.read(start=self.begin, stop=self.end)

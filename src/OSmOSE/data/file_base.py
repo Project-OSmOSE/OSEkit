@@ -60,7 +60,8 @@ class FileBase:
             begin
             if begin is not None
             else strptime_from_text(
-                text=self.path.name, datetime_template=strptime_format,
+                text=self.path.name,
+                datetime_template=strptime_format,
             )
         )
         self.end = end if end is not None else self.begin
@@ -69,7 +70,7 @@ class FileBase:
         """Return the data that is between start and stop from the file.
 
         This is an abstract method and should be overridden with actual implementations.
-        
+
         Parameters
         ----------
         start: pandas.Timestamp

@@ -15,7 +15,12 @@ if TYPE_CHECKING:
 class AudioItem(ItemBase):
     """AudioItem corresponding to a portion of an AudioFile object."""
 
-    def __init__(self, file: AudioFile, begin: Timestamp | None = None, end: Timestamp | None = None) -> None:
+    def __init__(
+        self,
+        file: AudioFile,
+        begin: Timestamp | None = None,
+        end: Timestamp | None = None,
+    ) -> None:
         """Initialize an AudioItem from an AudioItem and begin/end timestamps.
 
         Parameters
