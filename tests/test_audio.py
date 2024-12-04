@@ -8,6 +8,7 @@ import pytest
 
 from OSmOSE.config import TIMESTAMP_FORMAT_TEST_FILES
 from OSmOSE.data.audio_file import AudioFile
+from OSmOSE.utils.audio_utils import generate_sample_audio
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -72,7 +73,7 @@ def test_audio_file_timestamps(
             },
             pd.Timestamp("2024-01-01 12:00:00"),
             pd.Timestamp("2024-01-01 12:00:01"),
-            np.linspace(0.0, 1.0, 48_000),
+            generate_sample_audio(nb_files=1, nb_samples=48_000)[0],
             id="read_whole_file",
         ),
         pytest.param(
@@ -92,7 +93,7 @@ def test_audio_file_timestamps(
                 second=0,
                 microsecond=100_000,
             ),
-            np.linspace(0.0, 1.0, 48_000)[:4_800],
+            generate_sample_audio(nb_files=1, nb_samples=48_000)[0][:4_800],
             id="read_begin_only",
         ),
         pytest.param(
@@ -120,7 +121,7 @@ def test_audio_file_timestamps(
                 second=0,
                 microsecond=600_000,
             ),
-            np.linspace(0.0, 1.0, 48_000)[24_000:28_800],
+            generate_sample_audio(nb_files=1, nb_samples=48_000)[0][24_000:28_800],
             id="read_in_the_middle_of_the_file",
         ),
         pytest.param(
@@ -140,7 +141,7 @@ def test_audio_file_timestamps(
                 microsecond=900_000,
             ),
             pd.Timestamp("2024-01-01 12:00:01"),
-            np.linspace(0.0, 1.0, 48_000)[43_200:],
+            generate_sample_audio(nb_files=1, nb_samples=48_000)[0][43_200:],
             id="read_end_of_file",
         ),
     ],
