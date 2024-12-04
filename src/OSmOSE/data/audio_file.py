@@ -1,4 +1,4 @@
-"""."""
+"""Audio file associated with timestamps."""
 
 from __future__ import annotations
 

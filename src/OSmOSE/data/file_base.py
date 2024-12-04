@@ -1,4 +1,7 @@
-"""FileBase: Base class for the File objects (e.g. AudioFile), which associated timestamps with file-written data."""
+"""FileBase: Base class for the File objects (e.g. AudioFile).
+
+A File object associates file-written data to timestamps.
+"""
 
 from __future__ import annotations
 
@@ -16,7 +19,10 @@ from OSmOSE.utils.timestamp_utils import strptime_from_text
 
 
 class FileBase:
-    """Base class for the File objects (e.g. AudioFile), which associated timestamps with file-written data."""
+    """Base class for the File objects (e.g. AudioFile).
+
+    A File object associates file-written data to timestamps.
+    """
 
     def __init__(
         self,
@@ -54,7 +60,7 @@ class FileBase:
             begin
             if begin is not None
             else strptime_from_text(
-                text=self.path.name, datetime_template=strptime_format
+                text=self.path.name, datetime_template=strptime_format,
             )
         )
         self.end = end if end is not None else self.begin
@@ -62,6 +68,8 @@ class FileBase:
     def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray:
         """Return the data that is between start and stop from the file.
 
+        This is an abstract method and should be overridden with actual implementations.
+        
         Parameters
         ----------
         start: pandas.Timestamp
