@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 import soundfile as sf
 from pandas import Timedelta, Timestamp
 
-from OSmOSE.file_base import FileBase
+from OSmOSE.data.file_base import FileBase
 
 
 class AudioFile(FileBase):

@@ -1,13 +1,16 @@
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 import pytest
 
-from OSmOSE.audio_file import AudioFile
 from OSmOSE.config import TIMESTAMP_FORMAT_TEST_FILES
+from OSmOSE.data.audio_file import AudioFile
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 @pytest.mark.parametrize(
