@@ -24,7 +24,6 @@ def _setup_logging(
     config_file: FileName = "logging_config.yaml",
     default_level: int = logging.INFO,
 ) -> None:
-
     user_config_file_path = Path(os.getenv("OSMOSE_USER_CONFIG", ".")) / config_file
     default_config_file_path = Path(__file__).parent / config_file
 

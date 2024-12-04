@@ -123,6 +123,7 @@ def check_audio(
         message = "Your audio files have large duration discrepancies."
         raise ValueError(message)
 
+
 def generate_sample_audio(
     nb_files: int,
     nb_samples: int,
@@ -154,7 +155,11 @@ def generate_sample_audio(
 
     """
     if series_type == "repeat":
-        return np.split(np.tile(np.linspace(min_value, max_value, nb_samples), nb_files), nb_files)
+        return np.split(
+            np.tile(np.linspace(min_value, max_value, nb_samples), nb_files), nb_files
+        )
     if series_type == "increase":
-        return np.split(np.linspace(min_value, max_value, nb_samples * nb_files), nb_files)
+        return np.split(
+            np.linspace(min_value, max_value, nb_samples * nb_files), nb_files
+        )
     return np.split(np.empty(nb_samples * nb_files), nb_files)
