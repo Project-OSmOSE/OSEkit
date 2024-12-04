@@ -416,6 +416,34 @@ def is_osmose_format_timestamp(timestamp: str) -> bool:
         return True
 
 
+def is_overlapping(
+    event1: tuple[Timestamp, Timestamp], event2: tuple[Timestamp, Timestamp]
+) -> bool:
+    """Return True if the two events are overlapping, False otherwise.
+
+    Parameters
+    ----------
+    event1: tuple[pandas.Timestamp, pandas.Timestamp]
+        The first event.
+    event2: tuple[pandas.Timestamp, pandas.Timestamp]
+        The second event.
+
+    Returns
+    -------
+    bool:
+        True if the two events are overlapping, False otherwise.
+
+    Examples
+    --------
+    >>> is_overlapping((Timestamp("2024-01-01 00:00:00"),(Timestamp("2024-01-02 00:00:00"))), (Timestamp("2024-01-01 12:00:00"),(Timestamp("2024-01-02 12:00:00"))))
+    True
+    >>> is_overlapping((Timestamp("2024-01-01 00:00:00"),(Timestamp("2024-01-02 00:00:00"))), (Timestamp("2024-01-02 00:00:00"),(Timestamp("2024-01-02 12:00:00"))))
+    False
+
+    """
+    return event1[0] < event2[1] and event1[1] > event2[0]
+
+
 def get_timestamps(
     path_osmose_dataset: str,
     campaign_name: str,
