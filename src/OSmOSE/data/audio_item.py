@@ -17,7 +17,7 @@ class AudioItem(ItemBase):
 
     def __init__(
         self,
-        file: AudioFile,
+        file: AudioFile | None = None,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
     ) -> None:
