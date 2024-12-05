@@ -7,6 +7,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from OSmOSE.utils.timestamp_utils import is_overlapping
+
 if TYPE_CHECKING:
     import numpy as np
     from pandas import Timestamp
@@ -22,7 +24,7 @@ class ItemBase:
 
     def __init__(
         self,
-        file: FileBase,
+        file: FileBase | None = None,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
     ) -> None:
@@ -41,11 +43,53 @@ class ItemBase:
 
         """
         self.file = file
+
+        if file is None:
+            self.begin = begin
+            self.end = end
+            return
+
         self.begin = (
             max(begin, self.file.begin) if begin is not None else self.file.begin
         )
         self.end = min(end, self.file.end) if end is not None else self.file.end
 
     def get_value(self) -> np.ndarray:
-        """Get the values from the File between the begin and stop timestamps."""
-        return self.file.read(start=self.begin, stop=self.end)
+        """Get the values from the File between the begin and stop timestamps.
+
+        If the Item is empty, return a single 0.
+        """
+        return (
+            np.zeros(1)
+            if self.is_empty
+            else self.file.read(start=self.begin, stop=self.end)
+        )
+
+    @property
+    def is_empty(self) -> bool:
+        return self.file is None
+
+    @staticmethod
+    def concatenate_items(items: list[ItemBase]) -> list[ItemBase]:
+        items = sorted(items, key=lambda item: (item.begin, item.end))
+        concatenated_items: list[ItemBase] = []
+        for item in items:
+            overlapping_items = [
+                item2
+                for item2 in items
+                if is_overlapping((item.begin, item.end), (item2.begin, item2.end))
+            ]
+            if len(overlapping_items) == 1:
+                concatenated_items.append(item)
+                continue
+            kept_overlapping_item = max(overlapping_items, key=lambda item: item.end)
+            if kept_overlapping_item is not item:
+                item.end = kept_overlapping_item.begin
+            concatenated_items.append(item)
+            for dismissed_item in (
+                item2
+                for item2 in overlapping_items
+                if item2 not in (item, kept_overlapping_item)
+            ):
+                items.remove(dismissed_item)
+        return concatenated_items
