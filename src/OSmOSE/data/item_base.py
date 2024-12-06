@@ -5,6 +5,8 @@ Items correspond to a portion of a File object.
 
 from __future__ import annotations
 
+import copy
+
 import numpy as np
 from pandas import Timestamp
 
@@ -66,6 +68,16 @@ class ItemBase:
         """Return True if no File is attached to this Item."""
         return self.file is None
 
+    def __eq__(self, other: ItemBase) -> bool:
+        """Override the default implementation."""
+        if not isinstance(other, ItemBase):
+            return False
+        if self.file != other.file:
+            return False
+        if self.begin != other.begin:
+            return False
+        return not self.end != other.end
+
     @staticmethod
     def concatenate_items(items: list[ItemBase]) -> list[ItemBase]:
         """Resolve overlaps between Items.
@@ -74,7 +86,6 @@ class ItemBase:
         the earliest Item's end is set to the begin of the latest Item.
         If multiple items overlap with one earlier Item, only one is chosen as next.
         The chosen next Item is the one that ends the latest.
-        The Items are concatenated in-place.
 
         Parameters
         ----------
@@ -91,31 +102,32 @@ class ItemBase:
         >>> items = [ItemBase(begin = Timestamp("00:00:00"), end = Timestamp("00:00:15")), ItemBase(begin = Timestamp("00:00:10"), end = Timestamp("00:00:20"))]
         >>> items[0].end == items[1].begin
         False
-        >>> ItemBase.concatenate_items(items) # doctest: +ELLIPSIS
-        [<src.OSmOSE.data.item_base.ItemBase object ...>, <src.OSmOSE.data.item_base.ItemBase object ...>]
+        >>> items = ItemBase.concatenate_items(items)
         >>> items[0].end == items[1].begin
         True
 
         """
-        items = sorted(items, key=lambda item: (item.begin, item.end))
+        items = sorted([copy.copy(item) for item in items], key=lambda item: (item.begin, item.begin-item.end))
         concatenated_items: list[ItemBase] = []
         for item in items:
+            concatenated_items.append(item)
             overlapping_items = [
                 item2
                 for item2 in items
-                if is_overlapping((item.begin, item.end), (item2.begin, item2.end))
+                if item2 is not item and
+                is_overlapping((item.begin, item.end), (item2.begin, item2.end))
             ]
-            if len(overlapping_items) == 1:
-                concatenated_items.append(item)
+            if not overlapping_items:
                 continue
             kept_overlapping_item = max(overlapping_items, key=lambda item: item.end)
-            if kept_overlapping_item is not item:
+            if kept_overlapping_item.end > item.end:
                 item.end = kept_overlapping_item.begin
-            concatenated_items.append(item)
+            else:
+                kept_overlapping_item = None
             for dismissed_item in (
                 item2
                 for item2 in overlapping_items
-                if item2 not in (item, kept_overlapping_item)
+                if item2 is not kept_overlapping_item
             ):
                 items.remove(dismissed_item)
         return concatenated_items
