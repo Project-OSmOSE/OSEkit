@@ -84,5 +84,5 @@ class DataBase:
 
         items = [cls.item_cls(file, begin, end) for file in overlapping_files]
         items = ItemBase.concatenate_items(items)
-
+        items = ItemBase.fill_gaps(items)
         return cls(items=items)
