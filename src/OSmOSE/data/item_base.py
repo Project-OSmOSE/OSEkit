@@ -107,15 +107,18 @@ class ItemBase:
         True
 
         """
-        items = sorted([copy.copy(item) for item in items], key=lambda item: (item.begin, item.begin-item.end))
+        items = sorted(
+            [copy.copy(item) for item in items],
+            key=lambda item: (item.begin, item.begin - item.end),
+        )
         concatenated_items: list[ItemBase] = []
         for item in items:
             concatenated_items.append(item)
             overlapping_items = [
                 item2
                 for item2 in items
-                if item2 is not item and
-                is_overlapping((item.begin, item.end), (item2.begin, item2.end))
+                if item2 is not item
+                and is_overlapping((item.begin, item.end), (item2.begin, item2.end))
             ]
             if not overlapping_items:
                 continue
@@ -131,3 +134,35 @@ class ItemBase:
             ):
                 items.remove(dismissed_item)
         return concatenated_items
+
+    @staticmethod
+    def fill_gaps(items: list[ItemBase]) -> list[ItemBase]:
+        """Return a list with empty items added in the gaps between items.
+
+        Parameters
+        ----------
+        items: list[ItemBase]
+            List of Items to fill.
+
+        Returns
+        -------
+        list[ItemBase]:
+            List of Items with no gaps.
+
+        Examples
+        --------
+        >>> items = [ItemBase(begin = Timestamp("00:00:00"), end = Timestamp("00:00:10")), ItemBase(begin = Timestamp("00:00:15"), end = Timestamp("00:00:25"))]
+        >>> items = ItemBase.fill_gaps(items)
+        >>> [(item.begin.second, item.end.second) for item in items]
+        [(0, 10), (10, 15), (15, 25)]
+
+        """
+        items = sorted([copy.copy(item) for item in items], key=lambda item: item.begin)
+        filled_item_list = []
+        for index, item in enumerate(items[:-1]):
+            next_item = items[index + 1]
+            filled_item_list.append(item)
+            if next_item.begin > item.end:
+                filled_item_list.append(ItemBase(begin=item.end, end=next_item.begin))
+        filled_item_list.append(items[-1])
+        return filled_item_list
