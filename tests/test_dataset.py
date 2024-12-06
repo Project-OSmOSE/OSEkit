@@ -5,22 +5,6 @@ import pytest
 from OSmOSE import Dataset
 
 
-@pytest.mark.unit
-def test_find_or_create_original_folder(input_dataset):
-    dataset = Dataset(input_dataset["main_dir"])
-    folder = dataset._find_or_create_original_folder()
-
-    assert folder == input_dataset["orig_audio_dir"]
-
-    input_dataset["orig_audio_dir"].rename(
-        input_dataset["orig_audio_dir"].with_name("unconventional_name"),
-    )
-
-    folder2 = dataset._find_or_create_original_folder()
-
-    assert folder2 == input_dataset["orig_audio_dir"].with_name("original")
-
-
 @pytest.mark.integ
 def test_build(input_dataset):
     dataset = Dataset(
@@ -30,7 +14,7 @@ def test_build(input_dataset):
         timezone="+03:00",
     )
 
-    dataset.build()
+    dataset.build(date_template="%Y%m%d_%H%M%S", original_folder="data/audio/original")
 
     new_expected_path = dataset.path.joinpath("data", "audio", "3_44100")
 
@@ -40,7 +24,6 @@ def test_build(input_dataset):
         [
             "file_metadata.csv",
             "metadata.csv",
-            "resume_test_anomalies.txt",
             "timestamp.csv",
         ]
         + [f"20220101_1200{str(3*i).zfill(2)}.wav" for i in range(5)]
