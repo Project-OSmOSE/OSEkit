@@ -5,15 +5,11 @@ Items correspond to a portion of a File object.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import numpy as np
+from pandas import Timestamp
 
+from OSmOSE.data.file_base import FileBase
 from OSmOSE.utils.timestamp_utils import is_overlapping
-
-if TYPE_CHECKING:
-    import numpy as np
-    from pandas import Timestamp
-
-    from OSmOSE.data.file_base import FileBase
 
 
 class ItemBase:
@@ -67,10 +63,40 @@ class ItemBase:
 
     @property
     def is_empty(self) -> bool:
+        """Return True if no File is attached to this Item."""
         return self.file is None
 
     @staticmethod
     def concatenate_items(items: list[ItemBase]) -> list[ItemBase]:
+        """Resolve overlaps between Items.
+
+        If two Items overlap within the sequence (that is if one Item begins before the end of another,
+        the earliest Item's end is set to the begin of the latest Item.
+        If multiple items overlap with one earlier Item, only one is chosen as next.
+        The chosen next Item is the one that ends the latest.
+        The Items are concatenated in-place.
+
+        Parameters
+        ----------
+        items: list[ItemBase]
+            List of Items to concatenate.
+
+        Returns
+        -------
+        list[ItemBase]:
+            The list of Items with no overlapping Items.
+
+        Examples
+        --------
+        >>> items = [ItemBase(begin = Timestamp("00:00:00"), end = Timestamp("00:00:15")), ItemBase(begin = Timestamp("00:00:10"), end = Timestamp("00:00:20"))]
+        >>> items[0].end == items[1].begin
+        False
+        >>> ItemBase.concatenate_items(items) # doctest: +ELLIPSIS
+        [<src.OSmOSE.data.item_base.ItemBase object ...>, <src.OSmOSE.data.item_base.ItemBase object ...>]
+        >>> items[0].end == items[1].begin
+        True
+
+        """
         items = sorted(items, key=lambda item: (item.begin, item.end))
         concatenated_items: list[ItemBase] = []
         for item in items:
