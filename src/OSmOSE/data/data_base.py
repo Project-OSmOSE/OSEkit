@@ -40,6 +40,11 @@ class DataBase:
         self.begin = min(item.begin for item in self.items)
         self.end = max(item.end for item in self.items)
 
+    @property
+    def total_seconds(self) -> float:
+        """Return the total duration of the data in seconds."""
+        return (self.end - self.begin).total_seconds()
+
     def get_value(self) -> np.ndarray:
         """Get the concatenated values from all Items."""
         return np.concatenate([item.get_value() for item in self.items])
@@ -83,6 +88,12 @@ class DataBase:
         ]
 
         items = [cls.item_cls(file, begin, end) for file in overlapping_files]
+        if not items:
+            items.append(cls.item_cls(begin=begin, end=end))
+        if (first_item := sorted(items, key=lambda item: item.begin)[0]).begin > begin:
+            items.append(cls.item_cls(begin=begin, end=first_item.begin))
+        if (last_item := sorted(items, key=lambda item: item.end)[-1]).end < end:
+            items.append(cls.item_cls(begin=last_item.end, end=end))
         items = ItemBase.concatenate_items(items)
         items = ItemBase.fill_gaps(items)
         return cls(items=items)
