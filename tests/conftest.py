@@ -1,29 +1,103 @@
+from __future__ import annotations
+
+import logging
+import os
 import shutil
+import sys
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import numpy as np
+import pandas as pd
 import pytest
 import soundfile as sf
 from scipy.signal import chirp
-from unittest.mock import patch
-import logging
 
-from OSmOSE.config import OSMOSE_PATH
+from OSmOSE.config import OSMOSE_PATH, TIMESTAMP_FORMAT_TEST_FILES
+from OSmOSE.utils.audio_utils import generate_sample_audio
 
 
-def capture_csv(monkeypatch):
-    pass
+@pytest.fixture
+def audio_files(
+    tmp_path: Path,
+    request: pytest.fixtures.Subrequest,
+) -> tuple[list[Path], pytest.fixtures.Subrequest]:
+    nb_files = request.param.get("nb_files", 1)
+    sample_rate = request.param.get("sample_rate", 48_000)
+    duration = request.param.get("duration", 1.0)
+    date_begin = request.param.get("date_begin", pd.Timestamp("2000-01-01 00:00:00"))
+    inter_file_duration = request.param.get("inter_file_duration", 0)
+    series_type = request.param.get("series_type", "repeat")
+
+    nb_samples = int(round(duration * sample_rate))
+    data = generate_sample_audio(
+        nb_files=nb_files,
+        nb_samples=nb_samples,
+        series_type=series_type,
+    )
+    files = []
+    for index, begin_time in enumerate(
+        pd.date_range(
+            date_begin,
+            periods=nb_files,
+            freq=pd.Timedelta(seconds=duration + inter_file_duration),
+        ),
+    ):
+        time_str = begin_time.strftime(format=TIMESTAMP_FORMAT_TEST_FILES)
+        file = tmp_path / f"audio_{time_str}.wav"
+        files.append(file)
+        sf.write(
+            file=file,
+            data=data[index],
+            samplerate=sample_rate,
+            subtype="DOUBLE",
+        )
+    return files, request
 
 
 @pytest.fixture(autouse=True)
-def patch_filehandlers(monkeypatch, request):
+def patch_filehandlers(
+    monkeypatch: pytest.MonkeyPatch,
+    request: pytest.FixtureRequest,
+) -> None:
     if "allow_log_write_to_file" in request.keywords:
         return
 
-    def disabled_filewrite(self, record):
+    def disabled_filewrite(self: any, record: any) -> None:
         pass
 
     monkeypatch.setattr(logging.FileHandler, "emit", disabled_filewrite)
+
+
+@pytest.fixture
+def patch_grp_module(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
+    """Mock the grp module.
+    The grp.getgrnam() mocked function returns a mocked group.
+    The mocked_group.gr_gid attribute returns the index of mocked_group in grp.groups.
+    """
+
+    groups = ["ensta", "gosmose", "other"]
+    active_group = {"gid": 0}
+
+    mocked_grp_module = sys.modules["grp"] = MagicMock()
+    mocked_group = MagicMock()
+
+    def mock_group_with_gid(name: str) -> MagicMock:
+        if name not in groups:
+            message = f"getgrnam(): name not found: '{name}'"
+            raise KeyError(message)
+        mocked_group.gr_gid = groups.index(name)
+        return mocked_group
+
+    mocked_grp_module.getgrnam = MagicMock(side_effect=mock_group_with_gid)
+
+    def mock_chown(path: Path, uid: int, gid: int) -> None:
+        sys.modules["grp"].active_group["gid"] = gid
+
+    monkeypatch.setattr(os, "chown", mock_chown, raising=False)
+    monkeypatch.setattr(Path, "group", lambda path: groups[active_group["gid"]])
+
+    return mocked_grp_module
 
 
 @pytest.fixture
