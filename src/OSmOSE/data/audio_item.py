@@ -38,9 +38,11 @@ class AudioItem(ItemBase):
         super().__init__(file, begin, end)
 
     @property
-    def sample_rate(self):
+    def sample_rate(self) -> float:
+        """Sample rate of the associated AudioFile."""
         return None if self.is_empty else self.file.metadata.samplerate
 
     @property
-    def nb_channels(self):
+    def nb_channels(self) -> int:
+        """Number of channels in the associated AudioFile."""
         return 0 if self.is_empty else self.file.metadata.channels

@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
+import soundfile as sf
 
 from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
 from OSmOSE.data.audio_item import AudioItem
 from OSmOSE.data.data_base import DataBase
 from OSmOSE.utils.audio_utils import resample
-import soundfile as sf
-from pathlib import Path
 
 
 class AudioData(DataBase):
@@ -32,16 +33,18 @@ class AudioData(DataBase):
 
         """
         super().__init__(items)
-        self._check_sample_rates(sample_rate=sample_rate)
+        self._set_sample_rate(sample_rate=sample_rate)
 
     @property
     def nb_channels(self) -> int:
+        """Number of channels of the audio data."""
         return max(
             [1] + [item.nb_channels for item in self.items if type(item) is AudioItem],
         )
 
     @property
-    def shape(self):
+    def shape(self) -> tuple[int, ...]:
+        """Shape of the audio data."""
         data_length = int(self.sample_rate * self.total_seconds)
         return data_length if self.nb_channels <= 1 else (data_length, self.nb_channels)
 
@@ -49,7 +52,14 @@ class AudioData(DataBase):
         """Overwrite __str__."""
         return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)
 
-    def _check_sample_rates(self, sample_rate: int | None = None) -> None:
+    def _set_sample_rate(self, sample_rate: int | None = None) -> None:
+        """Set the AudioFile sample rate.
+
+        If the sample_rate is specified, it is set.
+        If it is not specified, it is set to the sampling rate of the
+        first item that has one.
+        Else, it is set to None.
+        """
         if sample_rate is not None or any(
             sample_rate := item.sample_rate
             for item in self.items
@@ -59,7 +69,11 @@ class AudioData(DataBase):
         else:
             self.sample_rate = None
 
-    def get_value(self):
+    def get_value(self) -> np.ndarray:
+        """Return the value of the audio data.
+
+        The data from the audio file will be resampled if necessary.
+        """
         data = np.empty(shape=self.shape)
         idx = 0
         for item in self.items:
@@ -80,6 +94,7 @@ class AudioData(DataBase):
         sf.write(folder / f"{self}.wav", self.get_value(), self.sample_rate)
 
     def _get_item_value(self, item: AudioItem) -> np.ndarray:
+        """Return the resampled (if needed) data from the audio item."""
         item_data = item.get_value()
         if item.is_empty:
             return item_data.repeat(int(item.total_seconds * self.sample_rate))
