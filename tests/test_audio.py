@@ -263,6 +263,30 @@ def test_audio_item(
             generate_sample_audio(nb_files=1, nb_samples=48_000 * 2)[0][38_400:57_600],
             id="between_files",
         ),
+        pytest.param(
+            {
+                "duration": 1,
+                "inter_file_duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 2,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            None,
+            None,
+            np.array(
+                list(
+                    generate_sample_audio(nb_files=1, nb_samples=48_000 * 2)[0][
+                        0:48_000
+                    ]
+                )
+                + [0.0] * 48_000
+                + list(
+                    generate_sample_audio(nb_files=1, nb_samples=48_000 * 2)[0][48_000:]
+                )
+            ),
+            id="empty_space_is_filled",
+        ),
     ],
     indirect=["audio_files"],
 )
