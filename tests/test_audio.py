@@ -282,7 +282,9 @@ def test_audio_item(
                 )
                 + [0.0] * 48_000
                 + list(
-                    generate_sample_audio(nb_files=1, nb_samples=48_000 * 2)[0][48_000:],
+                    generate_sample_audio(nb_files=1, nb_samples=48_000 * 2)[0][
+                        48_000:
+                    ],
                 ),
             ),
             id="empty_space_is_filled",
@@ -318,3 +320,82 @@ def test_audio_data(
     if all(item.is_empty for item in data.items):
         data.sample_rate = 48_000
     assert np.array_equal(data.get_value(), expected)
+
+
+@pytest.mark.parametrize(
+    ("audio_files", "start", "stop", "sample_rate", "expected_nb_samples"),
+    [
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            None,
+            None,
+            24_000,
+            24_000,
+            id="downsampling",
+        ),
+        pytest.param(
+            {
+                "duration": 0.5,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            None,
+            None,
+            96_000,
+            48_000,
+            id="upsampling",
+        ),
+        pytest.param(
+            {
+                "duration": 2,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            pd.Timestamp("2024-01-01 12:00:01"),
+            None,
+            96_000,
+            96_000,
+            id="upsampling_file_part",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 2,
+                "inter_file_duration": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            None,
+            None,
+            16_000,
+            48_000,
+            id="downsampling_with_gaps",
+        ),
+    ],
+    indirect=["audio_files"],
+)
+def test_audio_resample_sample_count(
+    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    start: pd.Timestamp | None,
+    stop: pd.Timestamp | None,
+    sample_rate: int,
+    expected_nb_samples: int,
+) -> None:
+    files, request = audio_files
+    audio_files = [
+        AudioFile(file, strptime_format=TIMESTAMP_FORMAT_TEST_FILES) for file in files
+    ]
+    data = AudioData.from_files(audio_files, begin=start, end=stop)
+    data.sample_rate = sample_rate
+    assert data.get_value().shape[0] == expected_nb_samples
