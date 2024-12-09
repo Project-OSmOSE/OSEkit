@@ -68,6 +68,11 @@ class ItemBase:
         """Return True if no File is attached to this Item."""
         return self.file is None
 
+    @property
+    def total_seconds(self) -> float:
+        """Return the total duration of the item in seconds."""
+        return (self.end - self.begin).total_seconds()
+
     def __eq__(self, other: ItemBase) -> bool:
         """Override the default implementation."""
         if not isinstance(other, ItemBase):
