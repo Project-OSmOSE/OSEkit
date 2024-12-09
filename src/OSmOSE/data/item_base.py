@@ -84,7 +84,7 @@ class ItemBase:
         return not self.end != other.end
 
     @staticmethod
-    def concatenate_items(items: list[ItemBase]) -> list[ItemBase]:
+    def remove_overlaps(items: list[ItemBase]) -> list[ItemBase]:
         """Resolve overlaps between Items.
 
         If two Items overlap within the sequence (that is if one Item begins before the end of another,
@@ -107,7 +107,7 @@ class ItemBase:
         >>> items = [ItemBase(begin = Timestamp("00:00:00"), end = Timestamp("00:00:15")), ItemBase(begin = Timestamp("00:00:10"), end = Timestamp("00:00:20"))]
         >>> items[0].end == items[1].begin
         False
-        >>> items = ItemBase.concatenate_items(items)
+        >>> items = ItemBase.remove_overlaps(items)
         >>> items[0].end == items[1].begin
         True
 
