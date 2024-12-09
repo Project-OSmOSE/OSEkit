@@ -278,14 +278,28 @@ def test_audio_item(
                 list(
                     generate_sample_audio(nb_files=1, nb_samples=48_000 * 2)[0][
                         0:48_000
-                    ]
+                    ],
                 )
                 + [0.0] * 48_000
                 + list(
-                    generate_sample_audio(nb_files=1, nb_samples=48_000 * 2)[0][48_000:]
-                )
+                    generate_sample_audio(nb_files=1, nb_samples=48_000 * 2)[0][48_000:],
+                ),
             ),
             id="empty_space_is_filled",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "inter_file_duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 2,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            pd.Timestamp("2024-01-01 10:00:00"),
+            pd.Timestamp("2024-01-01 10:00:01"),
+            np.zeros(shape=48_000),
+            id="out_of_range_is_zeros",
         ),
     ],
     indirect=["audio_files"],
@@ -301,4 +315,6 @@ def test_audio_data(
         AudioFile(file, strptime_format=TIMESTAMP_FORMAT_TEST_FILES) for file in files
     ]
     data = AudioData.from_files(audio_files, begin=start, end=stop)
+    if all(item.is_empty for item in data.items):
+        data.sample_rate = 48_000
     assert np.array_equal(data.get_value(), expected)
