@@ -94,6 +94,6 @@ class DataBase:
             items.append(cls.item_cls(begin=begin, end=first_item.begin))
         if (last_item := sorted(items, key=lambda item: item.end)[-1]).end < end:
             items.append(cls.item_cls(begin=last_item.end, end=end))
-        items = ItemBase.concatenate_items(items)
+        items = ItemBase.remove_overlaps(items)
         items = ItemBase.fill_gaps(items)
         return cls(items=items)
