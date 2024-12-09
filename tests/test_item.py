@@ -60,7 +60,7 @@ from OSmOSE.data.item_base import ItemBase
         ),
     ],
 )
-def test_concatenate_item(item_list: list[ItemBase], expected: list[ItemBase]) -> None:
+def test_remove_overlaps(item_list: list[ItemBase], expected: list[ItemBase]) -> None:
     cleaned_items = ItemBase.remove_overlaps(item_list)
     assert cleaned_items == expected
 

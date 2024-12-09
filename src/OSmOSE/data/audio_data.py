@@ -11,6 +11,7 @@ from OSmOSE.utils.audio_utils import resample
 import soundfile as sf
 from pathlib import Path
 
+
 class AudioData(DataBase):
     """AudioData encapsulating to a collection of AudioItem objects.
 
@@ -76,7 +77,7 @@ class AudioData(DataBase):
             Folder in which to write the audio file.
 
         """
-        sf.write(folder / f"{self}.wav" , self.get_value(), self.sample_rate)
+        sf.write(folder / f"{self}.wav", self.get_value(), self.sample_rate)
 
     def _get_item_value(self, item: AudioItem) -> np.ndarray:
         item_data = item.get_value()
