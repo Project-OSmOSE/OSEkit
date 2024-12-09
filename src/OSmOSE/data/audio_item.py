@@ -36,3 +36,11 @@ class AudioItem(ItemBase):
 
         """
         super().__init__(file, begin, end)
+
+    @property
+    def sample_rate(self):
+        return None if self.is_empty else self.file.metadata.samplerate
+
+    @property
+    def nb_channels(self):
+        return 0 if self.is_empty else self.file.metadata.channels
