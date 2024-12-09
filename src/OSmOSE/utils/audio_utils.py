@@ -5,6 +5,7 @@ from typing import Literal
 
 import numpy as np
 import pandas as pd
+import soxr
 
 from OSmOSE.config import (
     AUDIO_METADATA,
@@ -156,10 +157,33 @@ def generate_sample_audio(
     """
     if series_type == "repeat":
         return np.split(
-            np.tile(np.linspace(min_value, max_value, nb_samples), nb_files), nb_files
+            np.tile(np.linspace(min_value, max_value, nb_samples), nb_files),
+            nb_files,
         )
     if series_type == "increase":
         return np.split(
-            np.linspace(min_value, max_value, nb_samples * nb_files), nb_files
+            np.linspace(min_value, max_value, nb_samples * nb_files),
+            nb_files,
         )
     return np.split(np.empty(nb_samples * nb_files), nb_files)
+
+
+def resample(data: np.ndarray, origin_sr: float, target_sr: float) -> np.ndarray:
+    """Resample the audio data using soxr.
+
+    Parameters
+    ----------
+    data: np.ndarray
+        The audio data to resample.
+    origin_sr:
+        The sampling rate of the audio data.
+    target_sr:
+        The sampling rate of the resampled audio data.
+
+    Returns
+    -------
+    np.ndarray
+        The resampled audio data.
+
+    """
+    return soxr.resample(data, origin_sr, target_sr)
