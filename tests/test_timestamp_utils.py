@@ -1,11 +1,20 @@
+from __future__ import annotations
+
+import logging
+from typing import Iterable
+
 import pandas as pd
 import pytest
-from pandas import Timestamp
+from pandas import DataFrame, Timestamp
 
 from OSmOSE.utils.timestamp_utils import (
+    adapt_timestamp_csv_to_osmose,
     associate_timestamps,
     build_regex_from_datetime_template,
     is_datetime_template_valid,
+    localize_timestamp,
+    parse_timestamps_csv,
+    reformat_timestamp,
     strftime_osmose_format,
     strptime_from_text,
 )
@@ -13,7 +22,7 @@ from OSmOSE.utils.timestamp_utils import (
 
 @pytest.mark.unit
 @pytest.mark.parametrize(
-    "datetime_template, expected",
+    ("datetime_template", "expected"),
     [
         pytest.param("%y%m%d%H%M%S", True, id="simple_pattern"),
         pytest.param("%Y%y%m%d%H%M%S%I%p%f", True, id="all_strftime_codes"),
@@ -27,13 +36,13 @@ from OSmOSE.utils.timestamp_utils import (
         pytest.param("%y%m%d%H%M%S_%Z", True, id="timezone_name"),
     ],
 )
-def test_is_datetime_template_valid(datetime_template, expected):
+def test_is_datetime_template_valid(datetime_template: str, expected: bool) -> None:
     assert is_datetime_template_valid(datetime_template) == expected
 
 
 @pytest.mark.unit
 @pytest.mark.parametrize(
-    "datetime_template, expected",
+    ("datetime_template", "expected"),
     [
         pytest.param(
             "%y%m%d%H%M%S",
@@ -42,12 +51,14 @@ def test_is_datetime_template_valid(datetime_template, expected):
         ),
         pytest.param(
             "%Y%y%m%d%H%M%S%I%p%f",
-            r"([12]\d{3})(\d{2})(0[1-9]|1[0-2])([0-2]\d|3[0-1])([0-1]\d|2[0-4])([0-5]\d)([0-5]\d)(0[1-9]|1[0-2])(AM|PM)(\d{1,6})",
+            r"([12]\d{3})(\d{2})(0[1-9]|1[0-2])([0-2]\d|3[0-1])([0-1]\d|2[0-4])"
+            r"([0-5]\d)([0-5]\d)(0[1-9]|1[0-2])(AM|PM)(\d{1,6})",
             id="all_strftime_codes",
         ),
         pytest.param(
             "%y %m %d %H %M %S",
-            r"(\d{2}) (0[1-9]|1[0-2]) ([0-2]\d|3[0-1]) ([0-1]\d|2[0-4]) ([0-5]\d) ([0-5]\d)",
+            r"(\d{2}) (0[1-9]|1[0-2]) ([0-2]\d|3[0-1]) "
+            r"([0-1]\d|2[0-4]) ([0-5]\d) ([0-5]\d)",
             id="spaces_separated_codes",
         ),
         pytest.param(
@@ -77,13 +88,16 @@ def test_is_datetime_template_valid(datetime_template, expected):
         ),
     ],
 )
-def test_build_regex_from_datetime_template(datetime_template: str, expected: str):
+def test_build_regex_from_datetime_template(
+    datetime_template: str,
+    expected: str,
+) -> None:
     assert build_regex_from_datetime_template(datetime_template) == expected
 
 
 @pytest.mark.integ
 @pytest.mark.parametrize(
-    "text, datetime_template, expected",
+    ("text", "datetime_template", "expected"),
     [
         pytest.param(
             "7189.230405144906.wav",
@@ -201,13 +215,17 @@ def test_build_regex_from_datetime_template(datetime_template: str, expected: st
         ),
     ],
 )
-def test_strptime_from_text(text: str, datetime_template: str, expected: Timestamp):
+def test_strptime_from_text(
+    text: str,
+    datetime_template: str,
+    expected: Timestamp,
+) -> None:
     assert strptime_from_text(text, datetime_template) == expected
 
 
 @pytest.mark.integ
 @pytest.mark.parametrize(
-    "text, datetime_template, expected",
+    ("text", "datetime_template", "expected"),
     [
         pytest.param(
             "7189.230405144906.wav",
@@ -241,7 +259,8 @@ def test_strptime_from_text(text: str, datetime_template: str, expected: Timesta
             "%y%m%d%H%M%S",
             pytest.raises(
                 ValueError,
-                match="7189.230405_144906.wav did not match the given %y%m%d%H%M%S template",
+                match="7189.230405_144906.wav did not match "
+                "the given %y%m%d%H%M%S template",
             ),
             id="unmatching_pattern",
         ),
@@ -250,7 +269,8 @@ def test_strptime_from_text(text: str, datetime_template: str, expected: Timesta
             "%Y%m%d%H%M%S",
             pytest.raises(
                 ValueError,
-                match="7189.230405144906.wav did not match the given %Y%m%d%H%M%S template",
+                match="7189.230405144906.wav did not match "
+                "the given %Y%m%d%H%M%S template",
             ),
             id="%Y_should_have_4_digits",
         ),
@@ -259,32 +279,49 @@ def test_strptime_from_text(text: str, datetime_template: str, expected: Timesta
             "%y%m%d%H%M%S",
             pytest.raises(
                 ValueError,
-                match="7189.230405146706.wav did not match the given %y%m%d%H%M%S template",
+                match="7189.230405146706.wav did not match "
+                "the given %y%m%d%H%M%S template",
             ),
             id="%M_should_be_lower_than_60",
         ),
         pytest.param(
             "7189.230405146706_0200.wav",
             "%y%m%d%H%M%S_%z",
-            pytest.raises(ValueError),
+            pytest.raises(
+                ValueError,
+                match="7189.230405146706_0200.wav did not match "
+                "the given %y%m%d%H%M%S_%z template",
+            ),
             id="incorrect_timezone_offset",
         ),
         pytest.param(
             "7189.230405146706_+2500.wav",
             "%y%m%d%H%M%S_%z",
-            pytest.raises(ValueError),
+            pytest.raises(
+                ValueError,
+                match=r"7189.230405146706_\+2500.wav did not match "
+                "the given %y%m%d%H%M%S_%z template",
+            ),
             id="out_of_range_timezone_offset",
         ),
         pytest.param(
             "7189.230405146706_Brest.wav",
             "%y%m%d%H%M%S_%Z",
-            pytest.raises(ValueError),
+            pytest.raises(
+                ValueError,
+                match="7189.230405146706_Brest.wav did not match "
+                "the given %y%m%d%H%M%S_%Z template",
+            ),
             id="incorrect_timezone_name",
         ),
         pytest.param(
             "2023-04-05T14:49:06.-0200.wav",
             "%Y-%m-%dT%H:%M:%S.%f%z",
-            pytest.raises(ValueError),
+            pytest.raises(
+                ValueError,
+                match="2023-04-05T14:49:06.-0200.wav did not match "
+                "the given %Y-%m-%dT%H:%M:%S.%f%z template",
+            ),
             id="no_specified_%f",
         ),
     ],
@@ -293,51 +330,56 @@ def test_strptime_from_text_errors(
     text: str,
     datetime_template: str,
     expected: Timestamp,
-):
+) -> None:
     with expected as e:
         assert strptime_from_text(text, datetime_template) == e
 
 
 @pytest.fixture
-def correct_series():
-    series = pd.Series(
-        {
-            "something2345_2012_06_24__16:32:10.wav": pd.Timestamp(
-                "2012-06-24 16:32:10",
-            ),
-            "something2345_2023_07_28__08:24:50.flac": pd.Timestamp(
-                "2023-07-28 08:24:50",
-            ),
-            "something2345_2024_01_01__23:12:11.WAV": pd.Timestamp(
-                "2024-01-01 23:12:11",
-            ),
-            "something2345_2024_02_02__02:02:02.FLAC": pd.Timestamp(
-                "2024-02-02 02:02:02",
-            ),
-        },
-        name="timestamp",
+def correct_dataframe() -> DataFrame:
+    return DataFrame(
+        [
+            [
+                "something2345_2012_06_24__16:32:10.wav",
+                Timestamp("2012-06-24 16:32:10"),
+            ],
+            [
+                "something2345_2023_07_28__08:24:50.flac",
+                Timestamp("2023-07-28 08:24:50"),
+            ],
+            [
+                "something2345_2024_01_01__23:12:11.WAV",
+                Timestamp("2024-01-01 23:12:11"),
+            ],
+            [
+                "something2345_2024_02_02__02:02:02.FLAC",
+                Timestamp("2024-02-02 02:02:02"),
+            ],
+        ],
+        columns=["filename", "timestamp"],
     )
-    series.index.name = "filename"
-    return series.reset_index()
 
 
 @pytest.mark.integ
-def test_associate_timestamps(correct_series):
-    input_files = list(correct_series["filename"])
+def test_associate_timestamps(correct_dataframe: DataFrame) -> None:
+    input_files = list(correct_dataframe["filename"])
     assert associate_timestamps((i for i in input_files), "%Y_%m_%d__%H:%M:%S").equals(
-        correct_series,
+        correct_dataframe,
     )
 
 
 @pytest.mark.integ
-def test_associate_timestamps_error_with_incorrect_datetime_format(correct_series):
-    input_files = list(correct_series["filename"])
+def test_associate_timestamps_error_with_incorrect_datetime_format(
+    correct_dataframe: DataFrame,
+) -> None:
+    input_files = list(correct_dataframe["filename"])
     mismatching_datetime_format = "%Y%m%d__%H:%M:%S"
     incorrect_datetime_format = "%y%m%d%H%M%P%S"
 
     with pytest.raises(
         ValueError,
-        match=f"{input_files[0]} did not match the given {mismatching_datetime_format} template",
+        match=f"{input_files[0]} did not match "
+        f"the given {mismatching_datetime_format} template",
     ) as e:
         assert e == associate_timestamps(
             (i for i in input_files),
@@ -356,7 +398,7 @@ def test_associate_timestamps_error_with_incorrect_datetime_format(correct_serie
 
 @pytest.mark.unit
 @pytest.mark.parametrize(
-    "timestamp, expected",
+    ("timestamp", "expected"),
     [
         pytest.param(
             Timestamp("2024-10-17 10:14:11.933+0000"),
@@ -390,5 +432,624 @@ def test_associate_timestamps_error_with_incorrect_datetime_format(correct_serie
         ),
     ],
 )
-def test_strftime_osmose_format(timestamp: Timestamp, expected: str):
+def test_strftime_osmose_format(timestamp: Timestamp, expected: str) -> None:
     assert strftime_osmose_format(timestamp) == expected
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("timestamp_str", "old_template", "expected"),
+    [
+        pytest.param(
+            "2024-10-17 10:14:11",
+            "%Y-%m-%d %H:%M:%S",
+            "2024-10-17T10:14:11.000+0000",
+            id="space_separated_no_timezone",
+        ),
+        pytest.param(
+            "20241017101411",
+            "%Y%m%d%H%M%S",
+            "2024-10-17T10:14:11.000+0000",
+            id="no_separation_no_timezone",
+        ),
+        pytest.param(
+            "2024-10-17 10:14:11 +03:00",
+            "%Y-%m-%d %H:%M:%S %z",
+            "2024-10-17T10:14:11.000+0300",
+            id="UTC_offset_timezone",
+        ),
+        pytest.param(
+            "2024-10-17 10:14:11 Canada/Pacific",
+            "%Y-%m-%d %H:%M:%S %Z",
+            "2024-10-17T10:14:11.000-0700",
+            id="named_timezone_in_str",
+        ),
+        pytest.param(
+            "2024-10-17 10:14:11 +0200",
+            "%Y-%m-%d %H:%M:%S %z",
+            "2024-10-17T10:14:11.000+0200",
+            id="UTC_offset_timezone_without_colon",
+        ),
+        pytest.param(
+            "2024-10-17 10:14:11 -0700",
+            "%Y-%m-%d %H:%M:%S %z",
+            "2024-10-17T10:14:11.000-0700",
+            id="negative_UTC_offset_timezone",
+        ),
+        pytest.param(
+            "2024-10-17 10:14:11 -0000",
+            "%Y-%m-%d %H:%M:%S",
+            "2024-10-17T10:14:11.000+0000",
+            id="negative_zero_UTC_offset_timezone",
+        ),
+    ],
+)
+def test_reformat_timestamp(
+    timestamp_str: str,
+    old_template: str,
+    expected: str,
+) -> None:
+    assert (
+        reformat_timestamp(
+            old_timestamp_str=timestamp_str,
+            old_datetime_template=old_template,
+        )
+        == expected
+    )
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("timestamp", "timezone", "expected"),
+    [
+        pytest.param(
+            Timestamp("2024-10-17 10:14:11"),
+            "UTC",
+            Timestamp("2024-10-17 10:14:11+0000"),
+            id="UTC_timezone",
+        ),
+        pytest.param(
+            Timestamp("2024-10-17 10:14:11"),
+            "Pacific/Rarotonga",
+            Timestamp("2024-10-17 10:14:11-1000"),
+            id="Non-UTC_timezone",
+        ),
+        pytest.param(
+            Timestamp("2024-10-17 10:14:11"),
+            "+03:00",
+            Timestamp("2024-10-17 10:14:11+0300"),
+            id="UTC_offset_timezone",
+        ),
+        pytest.param(
+            Timestamp("2024-10-17 10:14:11"),
+            None,
+            Timestamp("2024-10-17 10:14:11", tz="UTC"),
+            id="No_timezone_defaults_to_UTC",
+        ),
+        pytest.param(
+            Timestamp("2024-10-17 10:14:11+0200"),
+            "+02:00",
+            Timestamp("2024-10-17 10:14:11+0200"),
+            id="tz-aware_timestamp",
+        ),
+        pytest.param(
+            Timestamp("2024-10-17 10:14:11-0700"),
+            "Canada/Pacific",
+            Timestamp("2024-10-17 10:14:11-0700", tz="Canada/Pacific"),
+            id="named_timezone_in_str",
+        ),
+        pytest.param(
+            Timestamp("2024-10-17 10:14:11"),
+            "+0200",
+            Timestamp("2024-10-17T10:14:11.000+0200"),
+            id="UTC_offset_timezone_without_colon",
+        ),
+        pytest.param(
+            Timestamp("2024-10-17 10:14:11"),
+            "-0700",
+            Timestamp("2024-10-17T10:14:11.000-0700"),
+            id="negative_UTC_offset_timezone",
+        ),
+        pytest.param(
+            Timestamp("2024-10-17 10:14:11"),
+            "-0000",
+            "2024-10-17T10:14:11.000+0000",
+            id="negative_zero_UTC_offset_timezone",
+        ),
+    ],
+)
+def test_localize_timestamp(
+    timestamp: Timestamp,
+    timezone: str,
+    expected: Timestamp,
+) -> None:
+    pass
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("timestamp", "timezone", "expected"),
+    [
+        pytest.param(
+            Timestamp("2024-10-17 10:14:11 +0200"),
+            "+01:00",
+            Timestamp("2024-10-17 09:14:11 +0100"),
+            id="UTC_offset",
+        ),
+        pytest.param(
+            Timestamp("2024-06-17 12:14:11+0200"),
+            "America/Chihuahua",
+            Timestamp("2024-06-17 04:14:11-0600"),
+            id="named_timezone",
+        ),
+    ],
+)
+def test_localize_timestamp_warns_when_changing_timezone(
+    timestamp: Timestamp,
+    timezone: str,
+    expected: Timestamp,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+
+    with caplog.at_level(logging.WARNING):
+        result = localize_timestamp(timestamp=timestamp, timezone=timezone)
+
+    assert (
+        f"Timestamps timezones UTC+02:00 will be converted to {timezone}" in caplog.text
+    )
+    assert result == expected
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("timestamp", "timezone", "expected"),
+    [
+        pytest.param(
+            Timestamp("2024-06-17 10:14:11 +0200"),
+            "Europe/Paris",
+            Timestamp("2024-06-17 10:14:11 +0200", tz="Europe/Paris"),
+            id="utc+2_to_paris_summer",
+        ),
+        pytest.param(
+            Timestamp("2024-12-17 10:14:11 +0100"),
+            "Europe/Paris",
+            Timestamp("2024-12-17 10:14:11 +0100", tz="Europe/Paris"),
+            id="utc+1_to_paris_winter",
+        ),
+        pytest.param(
+            Timestamp("2024-12-17 10:14:11 +0100"),
+            "+01:00",
+            Timestamp("2024-12-17 10:14:11 +0100"),
+            id="utc_offset",
+        ),
+        pytest.param(
+            Timestamp("2024-06-17 10:14:11", tz="America/Chihuahua"),
+            "-06:00",
+            Timestamp("2024-06-17 10:14:11-0600", tz="America/Chihuahua"),
+            id="utc_offset_with_named_tz",
+        ),
+    ],
+)
+def test_localize_timestamp_doesnt_warn_when_timezones_have_same_utcoffset(
+    timestamp: Timestamp,
+    timezone: str,
+    expected: Timestamp,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    with caplog.at_level(logging.WARNING):
+        result = localize_timestamp(timestamp=timestamp, timezone=timezone)
+
+    assert "will be converted" not in caplog.text
+    assert result == expected
+
+
+@pytest.mark.parametrize(
+    ("filenames", "datetime_template", "timezone", "expected"),
+    [
+        pytest.param(
+            [
+                "audio_20240617101411.wav",
+                "audio_20240617111411.wav",
+                "audio_20240617121411.wav",
+            ],
+            "%Y%m%d%H%M%S",
+            None,
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_20240617101411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 10:14:11+0000")),
+                    ],
+                    [
+                        "audio_20240617111411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 11:14:11+0000")),
+                    ],
+                    [
+                        "audio_20240617121411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 12:14:11+0000")),
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            id="no_timezone",
+        ),
+        pytest.param(
+            [
+                "audio_20240617101411.wav",
+                "audio_20240617111411.wav",
+                "audio_20240617121411.wav",
+            ],
+            "%Y%m%d%H%M%S",
+            "Europe/Paris",
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_20240617101411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 10:14:11+0200")),
+                    ],
+                    [
+                        "audio_20240617111411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 11:14:11+0200")),
+                    ],
+                    [
+                        "audio_20240617121411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 12:14:11+0200")),
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            id="specified_timezone",
+        ),
+        pytest.param(
+            [
+                "audio_20240617101411.wav",
+                "audio_20240617111411.wav",
+                "audio_20240617121411.wav",
+            ],
+            "%Y%m%d%H%M%S",
+            "-0200",
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_20240617101411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 10:14:11-0200")),
+                    ],
+                    [
+                        "audio_20240617111411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 11:14:11-0200")),
+                    ],
+                    [
+                        "audio_20240617121411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 12:14:11-0200")),
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            id="specified_utc_offset",
+        ),
+        pytest.param(
+            [
+                "audio_20240617101411+0200.wav",
+                "audio_20240617111411+0200.wav",
+                "audio_20240617121411+0200.wav",
+            ],
+            "%Y%m%d%H%M%S%z",
+            "UTC",
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_20240617101411+0200.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 08:14:11+0000")),
+                    ],
+                    [
+                        "audio_20240617111411+0200.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 09:14:11+0000")),
+                    ],
+                    [
+                        "audio_20240617121411+0200.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 10:14:11+0000")),
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            id="conflict_in_timezone_results_in_conversion",
+        ),
+    ],
+)
+def test_parse_timestamps_csv(
+    filenames: Iterable[str],
+    datetime_template: str,
+    timezone: str | None,
+    expected: pd.DataFrame,
+) -> None:
+    assert parse_timestamps_csv(filenames, datetime_template, timezone).equals(expected)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("timestamps", "date_template", "timezone", "expected"),
+    [
+        pytest.param(
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_20240617101411.wav",
+                        "2024-06-17 10:14:11-0200",
+                    ],
+                    [
+                        "audio_20240617111411.wav",
+                        "2024-06-17 11:14:11-0200",
+                    ],
+                    [
+                        "audio_20240617121411.wav",
+                        "2024-06-17 12:14:11-0200",
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            "%Y-%m-%d %H:%M:%S%z",
+            None,
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_20240617101411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 10:14:11-0200")),
+                    ],
+                    [
+                        "audio_20240617111411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 11:14:11-0200")),
+                    ],
+                    [
+                        "audio_20240617121411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 12:14:11-0200")),
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            id="tz-aware_timestamps",
+        ),
+        pytest.param(
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_20240617101411.wav",
+                        "2024-06-17 10:14:11",
+                    ],
+                    [
+                        "audio_20240617111411.wav",
+                        "2024-06-17 11:14:11",
+                    ],
+                    [
+                        "audio_20240617121411.wav",
+                        "2024-06-17 12:14:11",
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            "%Y-%m-%d %H:%M:%S",
+            "-0200",
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_20240617101411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 10:14:11-0200")),
+                    ],
+                    [
+                        "audio_20240617111411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 11:14:11-0200")),
+                    ],
+                    [
+                        "audio_20240617121411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 12:14:11-0200")),
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            id="tz-naive_timestamps",
+        ),
+        pytest.param(
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_20240617101411.wav",
+                        "2024-06-17 10:14:11-0200",
+                    ],
+                    [
+                        "audio_20240617111411.wav",
+                        "2024-06-17 11:14:11-0200",
+                    ],
+                    [
+                        "audio_20240617121411.wav",
+                        "2024-06-17 12:14:11-0200",
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            "%Y-%m-%d %H:%M:%S%z",
+            "-0200",
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_20240617101411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 10:14:11-0200")),
+                    ],
+                    [
+                        "audio_20240617111411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 11:14:11-0200")),
+                    ],
+                    [
+                        "audio_20240617121411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 12:14:11-0200")),
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            id="non_conflicting_tz_timestamps",
+        ),
+        pytest.param(
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_20240617101411.wav",
+                        "2024-06-17 10:14:11-0200",
+                    ],
+                    [
+                        "audio_20240617111411.wav",
+                        "2024-06-17 11:14:11-0200",
+                    ],
+                    [
+                        "audio_20240617121411.wav",
+                        "2024-06-17 12:14:11-0200",
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            "%Y-%m-%d %H:%M:%S%z",
+            "GMT",
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_20240617101411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 12:14:11+0000")),
+                    ],
+                    [
+                        "audio_20240617111411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 13:14:11+0000")),
+                    ],
+                    [
+                        "audio_20240617121411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 14:14:11+0000")),
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            id="conflicting_tz_timestamps_lead_to_tz_conversion",
+        ),
+        pytest.param(
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_20240617101411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 10:14:11+0000")),
+                    ],
+                    [
+                        "audio_20240617111411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 11:14:11+0000")),
+                    ],
+                    [
+                        "audio_20240617121411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 12:14:11+0000")),
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            "%Y-%m-%d %H:%M:%S%z",
+            None,
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_20240617101411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 10:14:11+0000")),
+                    ],
+                    [
+                        "audio_20240617111411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 11:14:11+0000")),
+                    ],
+                    [
+                        "audio_20240617121411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 12:14:11+0000")),
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            id="already_formatted_timestamp_should_not_raise_error",
+        ),
+        pytest.param(
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_20240617101411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 10:14:11+0000")),
+                    ],
+                    [
+                        "audio_20240617111411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 11:14:11+0000")),
+                    ],
+                    [
+                        "audio_20240617121411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 12:14:11+0000")),
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            "%Y-%m-%d %H:%M:%S%z",
+            "+0200",
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_20240617101411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 12:14:11+0200")),
+                    ],
+                    [
+                        "audio_20240617111411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 13:14:11+0200")),
+                    ],
+                    [
+                        "audio_20240617121411.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 14:14:11+0200")),
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            id="already_formatted_timestamp_converts_tz",
+        ),
+        pytest.param(
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_2024-06-17 10:14:11.wav",
+                        "2024-06-17 10:14:11-0200",
+                    ],
+                    [
+                        "audio_2024-06-17 11:14:11.wav",
+                        "2024-06-17 11:14:11-0200",
+                    ],
+                    [
+                        "audio_2024-06-17 12:14:11.wav",
+                        "2024-06-17 12:14:11-0200",
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            "%Y-%m-%d %H:%M:%S%z",
+            None,
+            pd.DataFrame(
+                data=[
+                    [
+                        "audio_2024_06_17 10_14_11.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 10:14:11-0200")),
+                    ],
+                    [
+                        "audio_2024_06_17 11_14_11.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 11:14:11-0200")),
+                    ],
+                    [
+                        "audio_2024_06_17 12_14_11.wav",
+                        strftime_osmose_format(Timestamp("2024-06-17 12:14:11-0200")),
+                    ],
+                ],
+                columns=["filename", "timestamp"],
+            ),
+            id="cleaned_filenames",
+        ),
+    ],
+)
+def test_adapt_timestamp_csv_to_osmose(
+    timestamps: pd.DataFrame,
+    date_template: str,
+    timezone: str | None,
+    expected: pd.DataFrame,
+) -> None:
+    assert adapt_timestamp_csv_to_osmose(timestamps, date_template, timezone).equals(
+        expected,
+    )
