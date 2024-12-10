@@ -526,10 +526,6 @@ def check_n_files(
     return len(bad_files)
 
 
-def set_umask():
-    os.umask(0o002)
-
-
 def get_files(path, extensions):
     all_files = []
     for ext in extensions:
@@ -873,3 +869,10 @@ def change_owner_group(path: Path, owner_group: str) -> None:
         )
         glc.logger.error(message)
         raise PermissionError(message) from e
+
+
+def get_umask() -> int:
+    """Return the current umask."""
+    umask = os.umask(0)
+    os.umask(umask)
+    return umask

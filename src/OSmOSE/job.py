@@ -15,7 +15,7 @@ from warnings import warn
 import tomlkit
 
 from OSmOSE.config import DPDEFAULT, FPDEFAULT
-from OSmOSE.utils.core_utils import chmod_if_needed, read_config, set_umask
+from OSmOSE.utils.core_utils import chmod_if_needed, read_config
 
 JOB_CONFIG_TEMPLATE = namedtuple(
     "job_config",
@@ -277,7 +277,6 @@ class Job_builder:
             The path to the created job file.
 
         """
-        set_umask()
         if "Presets" in self.__config.keys():
             if preset and preset.lower() not in self.__config["Presets"].keys():
                 raise ValueError(
@@ -551,7 +550,7 @@ class Job_builder:
                 delta = (
                     datetime.fromtimestamp(
                         time.mktime(
-                            time.localtime(job_info["outfile"].stat().st_ctime)
+                            time.localtime(job_info["outfile"].stat().st_ctime),
                         ),
                     )
                     - created_at

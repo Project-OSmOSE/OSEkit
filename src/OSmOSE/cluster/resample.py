@@ -4,7 +4,6 @@ import subprocess
 from pathlib import Path
 
 from OSmOSE.utils.audio_utils import get_all_audio_files
-from OSmOSE.utils.core_utils import set_umask
 
 
 def resample(
@@ -31,7 +30,6 @@ def resample(
             The index of the last file of the batch. The default is -1, meaning the last file of the input directory.
 
     """
-    set_umask()
     if platform.system() == "Windows":
         print("Sox is unavailable on Windows")
         return
