@@ -870,6 +870,7 @@ def change_owner_group(path: Path, owner_group: str) -> None:
         glc.logger.error(message)
         raise PermissionError(message) from e
 
+
 def get_umask() -> int:
     """Return the current umask."""
     umask = os.umask(0)
