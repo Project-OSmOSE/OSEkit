@@ -1,61 +1,29 @@
-import logging
-import os
 import shutil
-import sys
 from pathlib import Path
-from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
 import soundfile as sf
 from scipy.signal import chirp
+from unittest.mock import patch
+import logging
 
 from OSmOSE.config import OSMOSE_PATH
 
 
+def capture_csv(monkeypatch):
+    pass
+
+
 @pytest.fixture(autouse=True)
-def patch_filehandlers(
-    monkeypatch: pytest.MonkeyPatch,
-    request: pytest.FixtureRequest,
-) -> None:
+def patch_filehandlers(monkeypatch, request):
     if "allow_log_write_to_file" in request.keywords:
         return
 
-    def disabled_filewrite(self: any, record: any) -> None:
+    def disabled_filewrite(self, record):
         pass
 
     monkeypatch.setattr(logging.FileHandler, "emit", disabled_filewrite)
-
-
-@pytest.fixture
-def patch_grp_module(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
-    """Mock the grp module.
-    The grp.getgrnam() mocked function returns a mocked group.
-    The mocked_group.gr_gid attribute returns the index of mocked_group in grp.groups.
-    """
-
-    groups = ["ensta", "gosmose", "other"]
-    active_group = {"gid": 0}
-
-    mocked_grp_module = sys.modules["grp"] = MagicMock()
-    mocked_group = MagicMock()
-
-    def mock_group_with_gid(name: str) -> MagicMock:
-        if name not in groups:
-            message = f"getgrnam(): name not found: '{name}'"
-            raise KeyError(message)
-        mocked_group.gr_gid = groups.index(name)
-        return mocked_group
-
-    mocked_grp_module.getgrnam = MagicMock(side_effect=mock_group_with_gid)
-
-    def mock_chown(path: Path, uid: int, gid: int) -> None:
-        sys.modules["grp"].active_group["gid"] = gid
-
-    monkeypatch.setattr(os, "chown", mock_chown, raising=False)
-    monkeypatch.setattr(Path, "group", lambda path: groups[active_group["gid"]])
-
-    return mocked_grp_module
 
 
 @pytest.fixture
