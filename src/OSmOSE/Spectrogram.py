@@ -31,6 +31,7 @@ from OSmOSE.utils.audio_utils import get_all_audio_files
 from OSmOSE.utils.core_utils import (
     chmod_if_needed,
     get_timestamp_of_audio_file,
+    get_umask,
     safe_read,
 )
 from OSmOSE.utils.path_utils import make_path
@@ -801,6 +802,7 @@ class Spectrogram(Dataset):
                                 --batch-ind-min {i_min}\
                                 --batch-ind-max {i_max}\
                                 --concat {self.concat}\
+                                --umask {get_umask()}\
                                 {'--verbose' if self.verbose else ''}",
                         jobname=f"reshape_{batch}",
                         preset="low",
