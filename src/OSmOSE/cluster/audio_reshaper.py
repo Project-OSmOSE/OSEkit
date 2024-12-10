@@ -8,7 +8,7 @@ from librosa import resample
 
 from OSmOSE.config import DPDEFAULT, FPDEFAULT
 from OSmOSE.utils.audio_utils import get_all_audio_files
-from OSmOSE.utils.core_utils import chmod_if_needed, set_umask
+from OSmOSE.utils.core_utils import chmod_if_needed
 from OSmOSE.utils.path_utils import make_path
 from OSmOSE.utils.timestamp_utils import to_timestamp
 
@@ -89,8 +89,8 @@ def reshape(
 
     threshold : int, optional
         Integer from 0 to 100 to filter out segments with a number of sample inferior to (threshold * spectrogram duration * new_sr)
+
     """
-    set_umask()
     segment_duration = pd.Timedelta(seconds=segment_size)
     msg_log = ""
 
