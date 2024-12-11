@@ -4,15 +4,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from OSmOSE.data.audio_file import AudioFile
 from OSmOSE.data.item_base import ItemBase
 
 if TYPE_CHECKING:
     from pandas import Timestamp
 
-    from OSmOSE.data.audio_file import AudioFile
 
-
-class AudioItem(ItemBase):
+class AudioItem(ItemBase[AudioFile]):
     """AudioItem corresponding to a portion of an AudioFile object."""
 
     def __init__(

@@ -13,7 +13,7 @@ from OSmOSE.data.data_base import DataBase
 from OSmOSE.utils.audio_utils import resample
 
 
-class AudioData(DataBase):
+class AudioData(DataBase[AudioItem]):
     """AudioData encapsulating to a collection of AudioItem objects.
 
     The audio data can be retrieved from several Files through the Items.

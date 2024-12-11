@@ -5,7 +5,7 @@ Data corresponds to a collection of Items.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
 
@@ -17,8 +17,10 @@ if TYPE_CHECKING:
 
     from OSmOSE.data.file_base import FileBase
 
+TItem = TypeVar("TItem", bound=ItemBase)
 
-class DataBase:
+
+class DataBase(Generic[TItem]):
     """Base class for Data objects.
 
     A Data object is a collection of Item objects.
@@ -27,7 +29,7 @@ class DataBase:
 
     item_cls = ItemBase
 
-    def __init__(self, items: list[ItemBase]) -> None:
+    def __init__(self, items: list[TItem]) -> None:
         """Initialize an DataBase from a list of Items.
 
         Parameters

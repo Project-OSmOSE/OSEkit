@@ -6,15 +6,20 @@ Items correspond to a portion of a File object.
 from __future__ import annotations
 
 import copy
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
-from pandas import Timestamp
 
 from OSmOSE.data.file_base import FileBase
 from OSmOSE.utils.timestamp_utils import is_overlapping
 
+if TYPE_CHECKING:
+    from pandas import Timestamp
 
-class ItemBase:
+TFile = TypeVar("TFile", bound=FileBase)
+
+
+class ItemBase(Generic[TFile]):
     """Base class for the Item objects (e.g. AudioItem).
 
     An Item correspond to a portion of a File object.
@@ -22,7 +27,7 @@ class ItemBase:
 
     def __init__(
         self,
-        file: FileBase | None = None,
+        file: TFile | None = None,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
     ) -> None:
@@ -73,7 +78,7 @@ class ItemBase:
         """Return the total duration of the item in seconds."""
         return (self.end - self.begin).total_seconds()
 
-    def __eq__(self, other: ItemBase) -> bool:
+    def __eq__(self, other: ItemBase[TFile]) -> bool:
         """Override the default implementation."""
         if not isinstance(other, ItemBase):
             return False
@@ -84,7 +89,7 @@ class ItemBase:
         return not self.end != other.end
 
     @staticmethod
-    def remove_overlaps(items: list[ItemBase]) -> list[ItemBase]:
+    def remove_overlaps(items: list[ItemBase[TFile]]) -> list[ItemBase[TFile]]:
         """Resolve overlaps between Items.
 
         If two Items overlap within the sequence (that is if one Item begins before the end of another,
@@ -116,7 +121,7 @@ class ItemBase:
             [copy.copy(item) for item in items],
             key=lambda item: (item.begin, item.begin - item.end),
         )
-        concatenated_items: list[ItemBase] = []
+        concatenated_items = []
         for item in items:
             concatenated_items.append(item)
             overlapping_items = [
@@ -141,7 +146,7 @@ class ItemBase:
         return concatenated_items
 
     @staticmethod
-    def fill_gaps(items: list[ItemBase]) -> list[ItemBase]:
+    def fill_gaps(items: list[ItemBase[TFile]]) -> list[ItemBase[TFile]]:
         """Return a list with empty items added in the gaps between items.
 
         Parameters
