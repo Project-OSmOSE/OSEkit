@@ -2,24 +2,28 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 import soundfile as sf
 
 from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
+from OSmOSE.data.audio_file import AudioFile
 from OSmOSE.data.audio_item import AudioItem
 from OSmOSE.data.data_base import DataBase
 from OSmOSE.utils.audio_utils import resample
 
+if TYPE_CHECKING:
+    from pathlib import Path
 
-class AudioData(DataBase[AudioItem]):
+    from pandas import Timestamp
+
+
+class AudioData(DataBase[AudioItem, AudioFile]):
     """AudioData encapsulating to a collection of AudioItem objects.
 
     The audio data can be retrieved from several Files through the Items.
     """
-
-    item_cls = AudioItem
 
     def __init__(self, items: list[AudioItem], sample_rate: int | None = None) -> None:
         """Initialize an AudioData from a list of AudioItems.
@@ -101,3 +105,36 @@ class AudioData(DataBase[AudioItem]):
         if item.sample_rate != self.sample_rate:
             return resample(item_data, item.sample_rate, self.sample_rate)
         return item_data
+
+    @classmethod
+    def from_files(
+        cls,
+        files: list[AudioFile],
+        begin: Timestamp | None = None,
+        end: Timestamp | None = None,
+    ) -> AudioData:
+        """Return an AudioData object from a list of AudioFiles.
+
+        Parameters
+        ----------
+        files: list[AudioFile]
+            List of AudioFiles containing the data.
+        begin: Timestamp | None
+            Begin of the data object.
+            Defaulted to the begin of the first file.
+        end: Timestamp | None
+            End of the data object.
+            Defaulted to the end of the last file.
+
+        Returns
+        -------
+        DataBase[AudioItem, AudioFile]:
+        The AudioData object.
+
+        """
+        items_base = DataBase.items_from_files(files, begin, end)
+        audio_items = [
+            AudioItem(file=item.file, begin=item.begin, end=item.end)
+            for item in items_base
+        ]
+        return cls(audio_items)
