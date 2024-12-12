@@ -822,7 +822,8 @@ class Spectrogram(Dataset):
         if not self.__local:
             self.jb.build_job_file(
                 script_path=Path(inspect.getfile(merge_timestamp_csv)).resolve(),
-                script_args=f"--input-files {self.audio_path}",
+                script_args=f"--input-files {self.audio_path}\
+                        --umask {get_umask()}",
                 jobname="merge_timestamp",
                 preset="low",
                 mem="30G",
@@ -899,6 +900,7 @@ class Spectrogram(Dataset):
                             --hp-filter-min-freq {self.hp_filter_min_freq}\
                             --batch-ind-min {i_min}\
                             --batch-ind-max {i_max}\
+                            --umask {get_umask()}\
                             --output-file {self.path / OSMOSE_PATH.statistics / f'SummaryStats_{i_min}.csv'}",
                         jobname="OSmOSE_get_zscore_params",
                         preset="low",
