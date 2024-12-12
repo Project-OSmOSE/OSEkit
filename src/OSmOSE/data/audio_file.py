@@ -65,3 +65,7 @@ class AudioFile(FileBase):
         start_sample = round((start - self.begin).total_seconds() * sample_rate)
         stop_sample = round((stop - self.begin).total_seconds() * sample_rate)
         return sf.read(self.path, start=start_sample, stop=stop_sample)[0]
+
+    @classmethod
+    def from_base_file(cls, file: FileBase) -> AudioFile:
+        return cls(path=file.path, begin=file.begin)

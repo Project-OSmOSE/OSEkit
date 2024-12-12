@@ -71,3 +71,17 @@ class DatasetBase(Generic[TData, TFile]):
             DataBase.from_files(files, begin=b, end=b + data_duration)
             for b in date_range(begin, end, freq=data_duration)[:-1]
         ]
+
+    @classmethod
+    def from_files(
+        cls,
+        files: list[TFile],
+        begin: Timestamp,
+        end: Timestamp,
+        data_duration: Timedelta,
+    ) -> DatasetBase:
+        data_base = [
+            DataBase.from_files(files, begin=b, end=b + data_duration)
+            for b in date_range(begin, end, freq=data_duration)[:-1]
+        ]
+        return cls(data_base)

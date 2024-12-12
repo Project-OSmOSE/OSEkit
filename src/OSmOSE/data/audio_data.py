@@ -112,6 +112,7 @@ class AudioData(DataBase[AudioItem, AudioFile]):
         files: list[AudioFile],
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
+        sample_rate: float | None = None,
     ) -> AudioData:
         """Return an AudioData object from a list of AudioFiles.
 
@@ -132,9 +133,16 @@ class AudioData(DataBase[AudioItem, AudioFile]):
         The AudioData object.
 
         """
+        return cls.from_base_data(DataBase.from_files(files, begin, end), sample_rate)
         items_base = DataBase.items_from_files(files, begin, end)
         audio_items = [
             AudioItem(file=item.file, begin=item.begin, end=item.end)
             for item in items_base
         ]
         return cls(audio_items)
+
+    @classmethod
+    def from_base_data(
+        cls, data: DataBase, sample_rate: float | None = None
+    ) -> AudioData:
+        return cls([AudioItem.from_base_item(item) for item in data.items], sample_rate)

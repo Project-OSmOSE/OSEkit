@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from OSmOSE.data.audio_file import AudioFile
+from OSmOSE.data.file_base import FileBase
 from OSmOSE.data.item_base import ItemBase
 
 if TYPE_CHECKING:
@@ -45,3 +46,14 @@ class AudioItem(ItemBase[AudioFile]):
     def nb_channels(self) -> int:
         """Number of channels in the associated AudioFile."""
         return 0 if self.is_empty else self.file.metadata.channels
+
+    @classmethod
+    def from_base_item(cls, item: ItemBase) -> AudioItem:
+        file = item.file
+        if not file or isinstance(file, AudioFile):
+            return cls(file=file, begin=item.begin, end=item.end)
+        if isinstance(file, FileBase):
+            return cls(
+                file=AudioFile.from_base_file(file), begin=item.begin, end=item.end
+            )
+        raise TypeError

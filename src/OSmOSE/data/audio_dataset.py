@@ -26,8 +26,9 @@ class AudioDataset(DatasetBase[AudioData, AudioFile]):
             AudioFile(file, strptime_format=strptime_format)
             for file in folder.glob("*.wav")
         ]
-        data_base = DatasetBase.data_from_files(files, begin, end, data_duration)
-        audio_data = [
-            AudioData.from_files(files, data.begin, data.end) for data in data_base
-        ]
-        return cls(audio_data)
+        base_dataset = DatasetBase.from_files(files, begin, end, data_duration)
+        return cls.from_base_dataset(base_dataset)
+
+    @classmethod
+    def from_base_dataset(cls, base_dataset: DatasetBase) -> AudioDataset:
+        return cls([AudioData.from_base_data(data) for data in base_dataset.data])
