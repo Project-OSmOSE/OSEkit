@@ -6,6 +6,7 @@ The data is accessed via an Item object per File.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
@@ -55,6 +56,10 @@ class BaseData(Generic[TItem, TFile]):
     def get_value(self) -> np.ndarray:
         """Get the concatenated values from all Items."""
         return np.concatenate([item.get_value() for item in self.items])
+
+    def write(self, path: Path) -> None:
+        """Abstract method for writing the data."""
+        return
 
     @classmethod
     def from_files(

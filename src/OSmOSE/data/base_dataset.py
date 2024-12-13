@@ -6,6 +6,7 @@ that simplify repeated operations on the data.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Generic, TypeVar
 
 from pandas import Timedelta, Timestamp, date_range
@@ -37,6 +38,18 @@ class BaseDataset(Generic[TData, TFile]):
     def end(self) -> Timestamp:
         """End of the last data object."""
         return max(data.end for data in self.data)
+
+    def write(self, folder: Path) -> None:
+        """Write all data objects in the specified folder.
+
+        Parameters
+        ----------
+        folder: Path
+            Folder in which to write the data.
+
+        """
+        for data in self.data:
+            data.write(folder)
 
     @classmethod
     def from_files(
