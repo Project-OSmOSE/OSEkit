@@ -1,16 +1,33 @@
+"""AudioDataset is a collection of AudioData objects.
+
+AudioDataset is a collection of AudioData, with methods
+that simplify repeated operations on the audio data.
+"""
+
 from __future__ import annotations
 
-from pathlib import Path
-
-from pandas import Timedelta, Timestamp
+from typing import TYPE_CHECKING
 
 from OSmOSE.data.audio_data import AudioData
 from OSmOSE.data.audio_file import AudioFile
 from OSmOSE.data.dataset_base import DatasetBase
 
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from pandas import Timedelta, Timestamp
+
 
 class AudioDataset(DatasetBase[AudioData, AudioFile]):
-    def __init__(self, data: list[AudioData]):
+    """AudioDataset is a collection of AudioData objects.
+
+    AudioDataset is a collection of AudioData, with methods
+    that simplify repeated operations on the audio data.
+
+    """
+
+    def __init__(self, data: list[AudioData]) -> None:
+        """Initialize an AudioDataset."""
         super().__init__(data)
 
     @classmethod
@@ -22,6 +39,31 @@ class AudioDataset(DatasetBase[AudioData, AudioFile]):
         end: Timestamp | None = None,
         data_duration: Timedelta | None = None,
     ) -> AudioDataset:
+        """Return an AudioDataset from a folder containing the audio files.
+
+        Parameters
+        ----------
+        folder: Path
+            The folder containing the audio files.
+        strptime_format: str
+            The strptime format of the timestamps in the audio file names.
+        begin: Timestamp | None
+            The begin of the audio dataset.
+            Defaulted to the begin of the first file.
+        end: Timestamp | None
+            The end of the audio dataset.
+            Defaulted to the end of the last file.
+        data_duration: Timedelta | None
+            Duration of the audio data objects.
+            If provided, audio data will be evenly distributed between begin and end.
+            Else, one data object will cover the whole time period.
+
+        Returns
+        -------
+        Audiodataset:
+            The audio dataset.
+
+        """
         files = [
             AudioFile(file, strptime_format=strptime_format)
             for file in folder.glob("*.wav")
@@ -31,4 +73,5 @@ class AudioDataset(DatasetBase[AudioData, AudioFile]):
 
     @classmethod
     def from_base_dataset(cls, base_dataset: DatasetBase) -> AudioDataset:
+        """Return an AudioDataset object from a DatasetBase object."""
         return cls([AudioData.from_base_data(data) for data in base_dataset.data])

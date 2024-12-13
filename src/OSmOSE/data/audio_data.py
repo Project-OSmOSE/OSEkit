@@ -1,4 +1,8 @@
-"""AudioData encapsulating to a collection of AudioItem objects."""
+"""AudioData represent audio data scattered through different AudioFiles.
+
+The AudioData has a collection of AudioItem.
+The data is accessed via an AudioItem object per AudioFile.
+"""
 
 from __future__ import annotations
 
@@ -20,9 +24,10 @@ if TYPE_CHECKING:
 
 
 class AudioData(DataBase[AudioItem, AudioFile]):
-    """AudioData encapsulating to a collection of AudioItem objects.
+    """AudioData represent audio data scattered through different AudioFiles.
 
-    The audio data can be retrieved from several Files through the Items.
+    The AudioData has a collection of AudioItem.
+    The data is accessed via an AudioItem object per AudioFile.
     """
 
     def __init__(self, items: list[AudioItem], sample_rate: int | None = None) -> None:
@@ -126,6 +131,8 @@ class AudioData(DataBase[AudioItem, AudioFile]):
         end: Timestamp | None
             End of the data object.
             Defaulted to the end of the last file.
+        sample_rate: float | None
+            Sample rate of the AudioData.
 
         Returns
         -------
@@ -134,15 +141,26 @@ class AudioData(DataBase[AudioItem, AudioFile]):
 
         """
         return cls.from_base_data(DataBase.from_files(files, begin, end), sample_rate)
-        items_base = DataBase.items_from_files(files, begin, end)
-        audio_items = [
-            AudioItem(file=item.file, begin=item.begin, end=item.end)
-            for item in items_base
-        ]
-        return cls(audio_items)
 
     @classmethod
     def from_base_data(
-        cls, data: DataBase, sample_rate: float | None = None
+        cls,
+        data: DataBase,
+        sample_rate: float | None = None,
     ) -> AudioData:
+        """Return an AudioData object from a DataBase object.
+
+        Parameters
+        ----------
+        data: DataBase
+            DataBase object to convert to AudioData.
+        sample_rate: float | None
+            Sample rate of the AudioData.
+
+        Returns
+        -------
+        AudioData:
+            The AudioData object.
+
+        """
         return cls([AudioItem.from_base_item(item) for item in data.items], sample_rate)

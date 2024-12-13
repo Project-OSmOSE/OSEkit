@@ -1,6 +1,7 @@
 """DataBase: Base class for the Data objects (e.g. AudioData).
 
-Data corresponds to a collection of Items.
+Data corresponds to data scattered through different AudioFiles.
+The data is accessed via an AudioItem object per AudioFile.
 """
 
 from __future__ import annotations

@@ -1,3 +1,9 @@
+"""DatasetBase: Base class for the Dataset objects (e.g. AudioDataset).
+
+Datasets are collections of Data, with methods
+that simplify repeated operations on the data.
+"""
+
 from __future__ import annotations
 
 from typing import Generic, TypeVar

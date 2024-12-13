@@ -49,11 +49,14 @@ class AudioItem(ItemBase[AudioFile]):
 
     @classmethod
     def from_base_item(cls, item: ItemBase) -> AudioItem:
+        """Return an AudioItem object from an ItemBase object."""
         file = item.file
         if not file or isinstance(file, AudioFile):
             return cls(file=file, begin=item.begin, end=item.end)
         if isinstance(file, FileBase):
             return cls(
-                file=AudioFile.from_base_file(file), begin=item.begin, end=item.end
+                file=AudioFile.from_base_file(file),
+                begin=item.begin,
+                end=item.end,
             )
         raise TypeError

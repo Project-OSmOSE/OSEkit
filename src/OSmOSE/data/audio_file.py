@@ -68,4 +68,5 @@ class AudioFile(FileBase):
 
     @classmethod
     def from_base_file(cls, file: FileBase) -> AudioFile:
+        """Return an AudioFile object from a FileBase object."""
         return cls(path=file.path, begin=file.begin)
