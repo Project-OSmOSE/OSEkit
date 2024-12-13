@@ -47,6 +47,11 @@ class DataBase(Generic[TItem, TFile]):
         """Return the total duration of the data in seconds."""
         return (self.end - self.begin).total_seconds()
 
+    @property
+    def is_empty(self) -> bool:
+        """Return true if every item of this data object is empty."""
+        return all(item.is_empty for item in self.items)
+
     def get_value(self) -> np.ndarray:
         """Get the concatenated values from all Items."""
         return np.concatenate([item.get_value() for item in self.items])
