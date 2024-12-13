@@ -1,4 +1,4 @@
-"""FileBase: Base class for the File objects (e.g. AudioFile).
+"""BaseFile: Base class for the File objects.
 
 A File object associates file-written data to timestamps.
 """
@@ -18,8 +18,8 @@ from pathlib import Path
 from OSmOSE.utils.timestamp_utils import strptime_from_text
 
 
-class FileBase:
-    """Base class for the File objects (e.g. AudioFile).
+class BaseFile:
+    """Base class for the File objects.
 
     A File object associates file-written data to timestamps.
     """

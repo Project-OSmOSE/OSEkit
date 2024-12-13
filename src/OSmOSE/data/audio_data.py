@@ -14,7 +14,7 @@ import soundfile as sf
 from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
 from OSmOSE.data.audio_file import AudioFile
 from OSmOSE.data.audio_item import AudioItem
-from OSmOSE.data.data_base import DataBase
+from OSmOSE.data.base_data import BaseData
 from OSmOSE.utils.audio_utils import resample
 
 if TYPE_CHECKING:
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from pandas import Timestamp
 
 
-class AudioData(DataBase[AudioItem, AudioFile]):
+class AudioData(BaseData[AudioItem, AudioFile]):
     """AudioData represent audio data scattered through different AudioFiles.
 
     The AudioData has a collection of AudioItem.
@@ -136,24 +136,24 @@ class AudioData(DataBase[AudioItem, AudioFile]):
 
         Returns
         -------
-        DataBase[AudioItem, AudioFile]:
-        The AudioData object.
+        AudioData:
+            The AudioData object.
 
         """
-        return cls.from_base_data(DataBase.from_files(files, begin, end), sample_rate)
+        return cls.from_base_data(BaseData.from_files(files, begin, end), sample_rate)
 
     @classmethod
     def from_base_data(
         cls,
-        data: DataBase,
+        data: BaseData,
         sample_rate: float | None = None,
     ) -> AudioData:
-        """Return an AudioData object from a DataBase object.
+        """Return an AudioData object from a BaseData object.
 
         Parameters
         ----------
-        data: DataBase
-            DataBase object to convert to AudioData.
+        data: BaseData
+            BaseData object to convert to AudioData.
         sample_rate: float | None
             Sample rate of the AudioData.
 

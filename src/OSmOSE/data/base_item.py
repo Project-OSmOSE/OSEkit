@@ -1,4 +1,4 @@
-"""ItemBase: Base class for the Item objects (e.g. AudioItem).
+"""BaseItem: Base class for the Item objects.
 
 Items correspond to a portion of a File object.
 """
@@ -10,17 +10,17 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
 
-from OSmOSE.data.file_base import FileBase
+from OSmOSE.data.base_file import BaseFile
 from OSmOSE.utils.timestamp_utils import is_overlapping
 
 if TYPE_CHECKING:
     from pandas import Timestamp
 
-TFile = TypeVar("TFile", bound=FileBase)
+TFile = TypeVar("TFile", bound=BaseFile)
 
 
-class ItemBase(Generic[TFile]):
-    """Base class for the Item objects (e.g. AudioItem).
+class BaseItem(Generic[TFile]):
+    """Base class for the Item objects.
 
     An Item correspond to a portion of a File object.
     """
@@ -31,11 +31,11 @@ class ItemBase(Generic[TFile]):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
     ) -> None:
-        """Initialize an ItemBase from a File and begin/end timestamps.
+        """Initialize an BaseItem from a File and begin/end timestamps.
 
         Parameters
         ----------
-        file: OSmOSE.data.file_base.FileBase
+        file: TFile
             The File in which this Item belongs.
         begin: pandas.Timestamp (optional)
             The timestamp at which this item begins.
@@ -78,9 +78,9 @@ class ItemBase(Generic[TFile]):
         """Return the total duration of the item in seconds."""
         return (self.end - self.begin).total_seconds()
 
-    def __eq__(self, other: ItemBase[TFile]) -> bool:
+    def __eq__(self, other: BaseItem[TFile]) -> bool:
         """Override the default implementation."""
-        if not isinstance(other, ItemBase):
+        if not isinstance(other, BaseItem):
             return False
         if self.file != other.file:
             return False
@@ -89,7 +89,7 @@ class ItemBase(Generic[TFile]):
         return not self.end != other.end
 
     @staticmethod
-    def remove_overlaps(items: list[ItemBase[TFile]]) -> list[ItemBase[TFile]]:
+    def remove_overlaps(items: list[BaseItem[TFile]]) -> list[BaseItem[TFile]]:
         """Resolve overlaps between Items.
 
         If two Items overlap within the sequence (that is if one Item begins before the end of another,
@@ -99,20 +99,20 @@ class ItemBase(Generic[TFile]):
 
         Parameters
         ----------
-        items: list[ItemBase]
+        items: list[BaseItem]
             List of Items to concatenate.
 
         Returns
         -------
-        list[ItemBase]:
+        list[BaseItem]:
             The list of Items with no overlapping Items.
 
         Examples
         --------
-        >>> items = [ItemBase(begin = Timestamp("00:00:00"), end = Timestamp("00:00:15")), ItemBase(begin = Timestamp("00:00:10"), end = Timestamp("00:00:20"))]
+        >>> items = [BaseItem(begin = Timestamp("00:00:00"), end = Timestamp("00:00:15")), BaseItem(begin = Timestamp("00:00:10"), end = Timestamp("00:00:20"))]
         >>> items[0].end == items[1].begin
         False
-        >>> items = ItemBase.remove_overlaps(items)
+        >>> items = BaseItem.remove_overlaps(items)
         >>> items[0].end == items[1].begin
         True
 
@@ -146,23 +146,23 @@ class ItemBase(Generic[TFile]):
         return concatenated_items
 
     @staticmethod
-    def fill_gaps(items: list[ItemBase[TFile]]) -> list[ItemBase[TFile]]:
+    def fill_gaps(items: list[BaseItem[TFile]]) -> list[BaseItem[TFile]]:
         """Return a list with empty items added in the gaps between items.
 
         Parameters
         ----------
-        items: list[ItemBase]
+        items: list[BaseItem]
             List of Items to fill.
 
         Returns
         -------
-        list[ItemBase]:
+        list[BaseItem]:
             List of Items with no gaps.
 
         Examples
         --------
-        >>> items = [ItemBase(begin = Timestamp("00:00:00"), end = Timestamp("00:00:10")), ItemBase(begin = Timestamp("00:00:15"), end = Timestamp("00:00:25"))]
-        >>> items = ItemBase.fill_gaps(items)
+        >>> items = [BaseItem(begin = Timestamp("00:00:00"), end = Timestamp("00:00:10")), BaseItem(begin = Timestamp("00:00:15"), end = Timestamp("00:00:25"))]
+        >>> items = BaseItem.fill_gaps(items)
         >>> [(item.begin.second, item.end.second) for item in items]
         [(0, 10), (10, 15), (15, 25)]
 
@@ -173,6 +173,6 @@ class ItemBase(Generic[TFile]):
             next_item = items[index + 1]
             filled_item_list.append(item)
             if next_item.begin > item.end:
-                filled_item_list.append(ItemBase(begin=item.end, end=next_item.begin))
+                filled_item_list.append(BaseItem(begin=item.end, end=next_item.begin))
         filled_item_list.append(items[-1])
         return filled_item_list

@@ -1,4 +1,4 @@
-"""DatasetBase: Base class for the Dataset objects (e.g. AudioDataset).
+"""BaseDataset: Base class for the Dataset objects.
 
 Datasets are collections of Data, with methods
 that simplify repeated operations on the data.
@@ -10,14 +10,14 @@ from typing import Generic, TypeVar
 
 from pandas import Timedelta, Timestamp, date_range
 
-from OSmOSE.data.data_base import DataBase
-from OSmOSE.data.file_base import FileBase
+from OSmOSE.data.base_data import BaseData
+from OSmOSE.data.base_file import BaseFile
 
-TData = TypeVar("TData", bound=DataBase)
-TFile = TypeVar("TFile", bound=FileBase)
+TData = TypeVar("TData", bound=BaseData)
+TFile = TypeVar("TFile", bound=BaseFile)
 
 
-class DatasetBase(Generic[TData, TFile]):
+class BaseDataset(Generic[TData, TFile]):
     """Base class for Dataset objects.
 
     Datasets are collections of Data, with methods
@@ -45,8 +45,8 @@ class DatasetBase(Generic[TData, TFile]):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         data_duration: Timedelta | None = None,
-    ) -> DatasetBase:
-        """Return a base DatasetBase object from a list of Files.
+    ) -> BaseDataset:
+        """Return a base BaseDataset object from a list of Files.
 
         Parameters
         ----------
@@ -65,7 +65,7 @@ class DatasetBase(Generic[TData, TFile]):
 
         Returns
         -------
-        DataBase[TItem, TFile]:
+        BaseDataset[TItem, TFile]:
         The DataBase object.
 
         """
@@ -75,9 +75,9 @@ class DatasetBase(Generic[TData, TFile]):
             end = max(file.end for file in files)
         if data_duration:
             data_base = [
-                DataBase.from_files(files, begin=b, end=b + data_duration)
+                BaseData.from_files(files, begin=b, end=b + data_duration)
                 for b in date_range(begin, end, freq=data_duration)[:-1]
             ]
         else:
-            data_base = [DataBase.from_files(files, begin=begin, end=end)]
+            data_base = [BaseData.from_files(files, begin=begin, end=end)]
         return cls(data_base)

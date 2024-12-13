@@ -1,7 +1,7 @@
-"""DataBase: Base class for the Data objects (e.g. AudioData).
+"""BaseData: Base class for the Data objects.
 
-Data corresponds to data scattered through different AudioFiles.
-The data is accessed via an AudioItem object per AudioFile.
+Data corresponds to data scattered through different Files.
+The data is accessed via an Item object per File.
 """
 
 from __future__ import annotations
@@ -10,31 +10,31 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
 
-from OSmOSE.data.file_base import FileBase
-from OSmOSE.data.item_base import ItemBase
+from OSmOSE.data.base_file import BaseFile
+from OSmOSE.data.base_item import BaseItem
 from OSmOSE.utils.timestamp_utils import is_overlapping
 
 if TYPE_CHECKING:
     from pandas import Timestamp
 
 
-TItem = TypeVar("TItem", bound=ItemBase)
-TFile = TypeVar("TFile", bound=FileBase)
+TItem = TypeVar("TItem", bound=BaseItem)
+TFile = TypeVar("TFile", bound=BaseFile)
 
 
-class DataBase(Generic[TItem, TFile]):
-    """Base class for Data objects.
+class BaseData(Generic[TItem, TFile]):
+    """Base class for the Data objects.
 
-    A Data object is a collection of Item objects.
-    Data can be retrieved from several Files through the Items.
+    Data corresponds to data scattered through different Files.
+    The data is accessed via an Item object per File.
     """
 
     def __init__(self, items: list[TItem]) -> None:
-        """Initialize an DataBase from a list of Items.
+        """Initialize an BaseData from a list of Items.
 
         Parameters
         ----------
-        items: list[ItemBase]
+        items: list[BaseItem]
             List of the Items constituting the Data.
 
         """
@@ -62,7 +62,7 @@ class DataBase(Generic[TItem, TFile]):
         files: list[TFile],
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
-    ) -> DataBase[TItem, TFile]:
+    ) -> BaseData[TItem, TFile]:
         """Return a base DataBase object from a list of Files.
 
         Parameters
@@ -78,8 +78,8 @@ class DataBase(Generic[TItem, TFile]):
 
         Returns
         -------
-        DataBase[TItem, TFile]:
-        The DataBase object.
+        BaseData[TItem, TFile]:
+        The BaseData object.
 
         """
         items = cls.items_from_files(files, begin, end)
@@ -91,7 +91,7 @@ class DataBase(Generic[TItem, TFile]):
         files: list[TFile],
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
-    ) -> list[ItemBase]:
+    ) -> list[BaseItem]:
         """Return a list of Items from a list of Files and timestamps.
 
         The Items range from begin to end.
@@ -110,7 +110,7 @@ class DataBase(Generic[TItem, TFile]):
 
         Returns
         -------
-        list[ItemBase]
+        list[BaseItem]
             The list of Items that point to the files.
 
         """
@@ -123,12 +123,12 @@ class DataBase(Generic[TItem, TFile]):
             if is_overlapping((file.begin, file.end), (begin, end))
         ]
 
-        items = [ItemBase(file, begin, end) for file in included_files]
+        items = [BaseItem(file, begin, end) for file in included_files]
         if not items:
-            items.append(ItemBase(begin=begin, end=end))
+            items.append(BaseItem(begin=begin, end=end))
         if (first_item := sorted(items, key=lambda item: item.begin)[0]).begin > begin:
-            items.append(ItemBase(begin=begin, end=first_item.begin))
+            items.append(BaseItem(begin=begin, end=first_item.begin))
         if (last_item := sorted(items, key=lambda item: item.end)[-1]).end < end:
-            items.append(ItemBase(begin=last_item.end, end=end))
-        items = ItemBase.remove_overlaps(items)
-        return ItemBase.fill_gaps(items)
+            items.append(BaseItem(begin=last_item.end, end=end))
+        items = BaseItem.remove_overlaps(items)
+        return BaseItem.fill_gaps(items)

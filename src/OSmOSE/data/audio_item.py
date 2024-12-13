@@ -5,14 +5,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from OSmOSE.data.audio_file import AudioFile
-from OSmOSE.data.file_base import FileBase
-from OSmOSE.data.item_base import ItemBase
+from OSmOSE.data.base_file import BaseFile
+from OSmOSE.data.base_item import BaseItem
 
 if TYPE_CHECKING:
     from pandas import Timestamp
 
 
-class AudioItem(ItemBase[AudioFile]):
+class AudioItem(BaseItem[AudioFile]):
     """AudioItem corresponding to a portion of an AudioFile object."""
 
     def __init__(
@@ -48,12 +48,12 @@ class AudioItem(ItemBase[AudioFile]):
         return 0 if self.is_empty else self.file.metadata.channels
 
     @classmethod
-    def from_base_item(cls, item: ItemBase) -> AudioItem:
-        """Return an AudioItem object from an ItemBase object."""
+    def from_base_item(cls, item: BaseItem) -> AudioItem:
+        """Return an AudioItem object from an BaseItem object."""
         file = item.file
         if not file or isinstance(file, AudioFile):
             return cls(file=file, begin=item.begin, end=item.end)
-        if isinstance(file, FileBase):
+        if isinstance(file, BaseFile):
             return cls(
                 file=AudioFile.from_base_file(file),
                 begin=item.begin,

@@ -11,10 +11,10 @@ if TYPE_CHECKING:
 import soundfile as sf
 from pandas import Timedelta, Timestamp
 
-from OSmOSE.data.file_base import FileBase
+from OSmOSE.data.base_file import BaseFile
 
 
-class AudioFile(FileBase):
+class AudioFile(BaseFile):
     """Audio file associated with timestamps."""
 
     def __init__(
@@ -67,6 +67,6 @@ class AudioFile(FileBase):
         return sf.read(self.path, start=start_sample, stop=stop_sample)[0]
 
     @classmethod
-    def from_base_file(cls, file: FileBase) -> AudioFile:
-        """Return an AudioFile object from a FileBase object."""
+    def from_base_file(cls, file: BaseFile) -> AudioFile:
+        """Return an AudioFile object from a BaseFile object."""
         return cls(path=file.path, begin=file.begin)

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 
 from OSmOSE.data.audio_data import AudioData
 from OSmOSE.data.audio_file import AudioFile
-from OSmOSE.data.dataset_base import DatasetBase
+from OSmOSE.data.base_dataset import BaseDataset
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from pandas import Timedelta, Timestamp
 
 
-class AudioDataset(DatasetBase[AudioData, AudioFile]):
+class AudioDataset(BaseDataset[AudioData, AudioFile]):
     """AudioDataset is a collection of AudioData objects.
 
     AudioDataset is a collection of AudioData, with methods
@@ -78,10 +78,10 @@ class AudioDataset(DatasetBase[AudioData, AudioFile]):
             AudioFile(file, strptime_format=strptime_format)
             for file in folder.glob("*.wav")
         ]
-        base_dataset = DatasetBase.from_files(files, begin, end, data_duration)
+        base_dataset = BaseDataset.from_files(files, begin, end, data_duration)
         return cls.from_base_dataset(base_dataset)
 
     @classmethod
-    def from_base_dataset(cls, base_dataset: DatasetBase) -> AudioDataset:
-        """Return an AudioDataset object from a DatasetBase object."""
+    def from_base_dataset(cls, base_dataset: BaseDataset) -> AudioDataset:
+        """Return an AudioDataset object from a BaseDataset object."""
         return cls([AudioData.from_base_data(data) for data in base_dataset.data])
