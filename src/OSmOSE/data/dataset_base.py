@@ -33,23 +33,19 @@ class DatasetBase(Generic[TData, TFile]):
         return max(data.end for data in self.data)
 
     @classmethod
-    def data_from_files(
+    def from_files(
         cls,
         files: list[TFile],
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         data_duration: Timedelta | None = None,
-    ) -> list[DataBase]:
-        """Return a list of DataBase objects from File objects.
-
-        These DataBase are linked to the file through ItemBase objects.
-        Specialized Dataset classes can use these DataBase objects parameters to
-        instantiate specialized Data objects.
+    ) -> DatasetBase:
+        """Return a base DatasetBase object from a list of Files.
 
         Parameters
         ----------
         files: list[TFile]
-            The list of files from which the Data objects are built.
+            The list of files contained in the Dataset.
         begin: Timestamp | None
             Begin of the first data object.
             Defaulted to the begin of the first file.
@@ -59,29 +55,23 @@ class DatasetBase(Generic[TData, TFile]):
         data_duration: Timedelta | None
             Duration of the data objects.
             If provided, data will be evenly distributed between begin and end.
-            Else, one data object will cover the whole period.
+            Else, one data object will cover the whole time period.
 
         Returns
         -------
-        list[DataBase]:
-            A list of DataBase objects.
+        DataBase[TItem, TFile]:
+        The DataBase object.
 
         """
-        return [
-            DataBase.from_files(files, begin=b, end=b + data_duration)
-            for b in date_range(begin, end, freq=data_duration)[:-1]
-        ]
-
-    @classmethod
-    def from_files(
-        cls,
-        files: list[TFile],
-        begin: Timestamp,
-        end: Timestamp,
-        data_duration: Timedelta,
-    ) -> DatasetBase:
-        data_base = [
-            DataBase.from_files(files, begin=b, end=b + data_duration)
-            for b in date_range(begin, end, freq=data_duration)[:-1]
-        ]
+        if not begin:
+            begin = min(file.begin for file in files)
+        if not end:
+            end = max(file.end for file in files)
+        if data_duration:
+            data_base = [
+                DataBase.from_files(files, begin=b, end=b + data_duration)
+                for b in date_range(begin, end, freq=data_duration)[:-1]
+            ]
+        else:
+            data_base = [DataBase.from_files(files, begin=begin, end=end)]
         return cls(data_base)

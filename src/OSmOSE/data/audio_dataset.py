@@ -17,10 +17,10 @@ class AudioDataset(DatasetBase[AudioData, AudioFile]):
     def from_folder(
         cls,
         folder: Path,
-        begin: Timestamp,
-        end: Timestamp,
-        data_duration: Timedelta,
         strptime_format: str,
+        begin: Timestamp | None = None,
+        end: Timestamp | None = None,
+        data_duration: Timedelta | None = None,
     ) -> AudioDataset:
         files = [
             AudioFile(file, strptime_format=strptime_format)
