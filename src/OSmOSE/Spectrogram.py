@@ -31,8 +31,8 @@ from OSmOSE.utils.audio_utils import get_all_audio_files
 from OSmOSE.utils.core_utils import (
     chmod_if_needed,
     get_timestamp_of_audio_file,
+    get_umask,
     safe_read,
-    set_umask,
 )
 from OSmOSE.utils.path_utils import make_path
 
@@ -479,7 +479,6 @@ class Spectrogram(Dataset):
             dry: `bool`, optional
                 If set to True, will not create the folders and just return the file path.
         """
-        set_umask()
         processed_path = self.path / OSMOSE_PATH.spectrogram
         audio_foldername = f"{self.spectro_duration!s}_{self.dataset_sr!s}"
         self.audio_path = self.path / OSMOSE_PATH.raw_audio / audio_foldername
@@ -803,6 +802,7 @@ class Spectrogram(Dataset):
                                 --batch-ind-min {i_min}\
                                 --batch-ind-max {i_max}\
                                 --concat {self.concat}\
+                                --umask {get_umask()}\
                                 {'--verbose' if self.verbose else ''}",
                         jobname=f"reshape_{batch}",
                         preset="low",
@@ -822,7 +822,8 @@ class Spectrogram(Dataset):
         if not self.__local:
             self.jb.build_job_file(
                 script_path=Path(inspect.getfile(merge_timestamp_csv)).resolve(),
-                script_args=f"--input-files {self.audio_path}",
+                script_args=f"--input-files {self.audio_path}\
+                        --umask {get_umask()}",
                 jobname="merge_timestamp",
                 preset="low",
                 mem="30G",
@@ -899,6 +900,7 @@ class Spectrogram(Dataset):
                             --hp-filter-min-freq {self.hp_filter_min_freq}\
                             --batch-ind-min {i_min}\
                             --batch-ind-max {i_max}\
+                            --umask {get_umask()}\
                             --output-file {self.path / OSMOSE_PATH.statistics / f'SummaryStats_{i_min}.csv'}",
                         jobname="OSmOSE_get_zscore_params",
                         preset="low",
@@ -1121,7 +1123,6 @@ class Spectrogram(Dataset):
             self.save_for_LTAS = save_for_LTAS
 
         else:
-            set_umask()
             try:
                 if clean_adjust_folder and (
                     (

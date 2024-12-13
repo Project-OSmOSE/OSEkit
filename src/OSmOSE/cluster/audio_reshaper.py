@@ -1,3 +1,4 @@
+import os
 from argparse import ArgumentParser
 from pathlib import Path
 
@@ -8,7 +9,7 @@ from librosa import resample
 
 from OSmOSE.config import DPDEFAULT, FPDEFAULT
 from OSmOSE.utils.audio_utils import get_all_audio_files
-from OSmOSE.utils.core_utils import chmod_if_needed, set_umask
+from OSmOSE.utils.core_utils import chmod_if_needed
 from OSmOSE.utils.path_utils import make_path
 from OSmOSE.utils.timestamp_utils import to_timestamp
 
@@ -31,6 +32,7 @@ def reshape(
     verbose: bool = False,
     overwrite: bool = True,
     threshold: int = 5,
+    umask: int = 0o002,
 ):
     """Reshape all audio files in the folder to be of the specified duration and/or sampling rate.
 
@@ -89,10 +91,15 @@ def reshape(
 
     threshold : int, optional
         Integer from 0 to 100 to filter out segments with a number of sample inferior to (threshold * spectrogram duration * new_sr)
+
+    umask : int, optional
+        The umask to apply on the created files permissions. Default is 0o002.
+
     """
-    set_umask()
     segment_duration = pd.Timedelta(seconds=segment_size)
     msg_log = ""
+
+    os.umask(umask)
 
     # validation for threshold
     if not (0 <= threshold <= 100):
@@ -458,6 +465,12 @@ if __name__ == "__main__":
         default=-1,
         help="Sampling rate",
     )
+    parser.add_argument(
+        "--umask",
+        type=int,
+        default=0o002,
+        help="Umask to apply on the created files permissions.",
+    )
 
     args = parser.parse_args()
 
@@ -486,4 +499,5 @@ if __name__ == "__main__":
         verbose=args.verbose,
         overwrite=args.overwrite,
         threshold=args.threshold,
+        umask=args.umask,
     )

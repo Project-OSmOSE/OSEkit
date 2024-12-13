@@ -6,7 +6,8 @@ from pathlib import Path
 import pandas as pd
 
 
-def merge_timestamp_csv(input_files: str):
+def merge_timestamp_csv(input_files: str, umask: int):
+    os.umask(umask)
     input_dir_path = Path(input_files)
 
     list_conca_timestamps = []
@@ -36,6 +37,12 @@ if __name__ == "__main__":
         "-i",
         help="The files to be reshaped, as either the path to a directory containing audio files and a timestamp.csv or a list of filenames all in the same directory alongside a timestamp.csv.",
     )
+    parser.add_argument(
+        "--umask",
+        type=int,
+        default=0o002,
+        help="Umask to apply on the created files permissions.",
+    )
 
     args = parser.parse_args()
 
@@ -45,4 +52,4 @@ if __name__ == "__main__":
         else args.input_files
     )
 
-    files = merge_timestamp_csv(input_files=input_files)
+    files = merge_timestamp_csv(input_files=input_files, umask=args.umask)
