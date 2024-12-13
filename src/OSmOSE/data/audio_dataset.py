@@ -30,6 +30,16 @@ class AudioDataset(DatasetBase[AudioData, AudioFile]):
         """Initialize an AudioDataset."""
         super().__init__(data)
 
+    @property
+    def sample_rate(self) -> set[float]:
+        """Return the sample rate of the audio data."""
+        return {data.sample_rate for data in self.data}
+
+    @sample_rate.setter
+    def sample_rate(self, sample_rate: float) -> None:
+        for data in self.data:
+            data.sample_rate = sample_rate
+
     @classmethod
     def from_folder(
         cls,
