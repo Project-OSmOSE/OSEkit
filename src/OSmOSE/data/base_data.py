@@ -31,15 +31,29 @@ class BaseData(Generic[TItem, TFile], Event):
     The data is accessed via an Item object per File.
     """
 
-    def __init__(self, items: list[TItem]) -> None:
-        """Initialize an BaseData from a list of Items.
+    def __init__(
+        self,
+        items: list[TItem] | None = None,
+        begin: Timestamp | None = None,
+        end: Timestamp | None = None,
+    ) -> None:
+        """Initialize a BaseData from a list of Items.
 
         Parameters
         ----------
-        items: list[BaseItem]
+        items: list[BaseItem] | None
             List of the Items constituting the Data.
+            Defaulted to an empty item ranging from begin to end.
+        begin: Timestamp | None
+            Only effective if items is None.
+            Set the begin of the empty data.
+        end: Timestamp | None
+            Only effective if items is None.
+            Set the end of the empty data.
 
         """
+        if not items:
+            items = [BaseItem(begin=begin, end=end)]
         self.items = items
         self.begin = min(item.begin for item in self.items)
         self.end = max(item.end for item in self.items)

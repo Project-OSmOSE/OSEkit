@@ -30,7 +30,13 @@ class AudioData(BaseData[AudioItem, AudioFile]):
     The data is accessed via an AudioItem object per AudioFile.
     """
 
-    def __init__(self, items: list[AudioItem], sample_rate: int | None = None) -> None:
+    def __init__(
+        self,
+        items: list[AudioItem] | None = None,
+        begin: Timestamp | None = None,
+        end: Timestamp | None = None,
+        sample_rate: int | None = None,
+    ) -> None:
         """Initialize an AudioData from a list of AudioItems.
 
         Parameters
@@ -39,9 +45,15 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             List of the AudioItem constituting the AudioData.
         sample_rate: int
             The sample rate of the audio data.
+        begin: Timestamp | None
+            Only effective if items is None.
+            Set the begin of the empty data.
+        end: Timestamp | None
+            Only effective if items is None.
+            Set the end of the empty data.
 
         """
-        super().__init__(items)
+        super().__init__(items=items, begin=begin, end=end)
         self._set_sample_rate(sample_rate=sample_rate)
 
     @property

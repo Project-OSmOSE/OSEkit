@@ -112,6 +112,7 @@ class Event:
         cls,
         events: list[TEvent],
         filling_class: type[TEvent],
+        **kwargs: any,
     ) -> list[TEvent]:
         """Return a list with empty events added in the gaps between items.
 
@@ -123,6 +124,8 @@ class Event:
             List of events to fill.
         filling_class: type[TEvent]
             The class used for instantiating empty events in the gaps.
+        kwargs: any
+            Additional parameters to pass to the filling instance constructor.
 
         Returns
         -------
@@ -148,7 +151,7 @@ class Event:
             filled_event_list.append(event)
             if next_event.begin > event.end:
                 filled_event_list.append(
-                    filling_class(begin=event.end, end=next_event.begin),
+                    filling_class(begin=event.end, end=next_event.begin, **kwargs),
                 )
         filled_event_list.append(events[-1])
         return filled_event_list
