@@ -418,7 +418,8 @@ def is_osmose_format_timestamp(timestamp: str) -> bool:
 
 
 def is_overlapping(
-    event1: tuple[Timestamp, Timestamp], event2: tuple[Timestamp, Timestamp],
+    event1: tuple[Timestamp, Timestamp],
+    event2: tuple[Timestamp, Timestamp],
 ) -> bool:
     """Return True if the two events are overlapping, False otherwise.
 
@@ -443,6 +444,7 @@ def is_overlapping(
 
     """
     return event1[0] < event2[1] and event1[1] > event2[0]
+
 
 def remove_overlaps(items: list) -> list:
     """Resolve overlaps between objects that have begin and end attributes.
@@ -489,7 +491,7 @@ def remove_overlaps(items: list) -> list:
             item2
             for item2 in items
             if item2 is not item
-               and is_overlapping((item.begin, item.end), (item2.begin, item2.end))
+            and is_overlapping((item.begin, item.end), (item2.begin, item2.end))
         ]
         if not overlapping_items:
             continue
@@ -499,12 +501,11 @@ def remove_overlaps(items: list) -> list:
         else:
             kept_overlapping_item = None
         for dismissed_item in (
-                item2
-                for item2 in overlapping_items
-                if item2 is not kept_overlapping_item
+            item2 for item2 in overlapping_items if item2 is not kept_overlapping_item
         ):
             items.remove(dismissed_item)
     return concatenated_items
+
 
 def get_timestamps(
     path_osmose_dataset: str,
