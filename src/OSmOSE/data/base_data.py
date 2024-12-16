@@ -13,7 +13,7 @@ import numpy as np
 
 from OSmOSE.data.base_file import BaseFile
 from OSmOSE.data.base_item import BaseItem
-from OSmOSE.utils.timestamp_utils import is_overlapping
+from OSmOSE.utils.timestamp_utils import is_overlapping, remove_overlaps
 
 if TYPE_CHECKING:
     from pandas import Timestamp
@@ -135,5 +135,5 @@ class BaseData(Generic[TItem, TFile]):
             items.append(BaseItem(begin=begin, end=first_item.begin))
         if (last_item := sorted(items, key=lambda item: item.end)[-1]).end < end:
             items.append(BaseItem(begin=last_item.end, end=end))
-        items = BaseItem.remove_overlaps(items)
+        items = remove_overlaps(items)
         return BaseItem.fill_gaps(items)
