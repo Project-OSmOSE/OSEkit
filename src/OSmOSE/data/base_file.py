@@ -15,10 +15,11 @@ if TYPE_CHECKING:
 
 from pathlib import Path
 
+from OSmOSE.utils.data_utils import Event
 from OSmOSE.utils.timestamp_utils import strptime_from_text
 
 
-class BaseFile:
+class BaseFile(Event):
     """Base class for the File objects.
 
     A File object associates file-written data to timestamps.

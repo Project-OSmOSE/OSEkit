@@ -5,12 +5,12 @@ Items correspond to a portion of a File object.
 
 from __future__ import annotations
 
-import copy
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
 
 from OSmOSE.data.base_file import BaseFile
+from OSmOSE.utils.data_utils import Event
 
 if TYPE_CHECKING:
     from pandas import Timestamp
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 TFile = TypeVar("TFile", bound=BaseFile)
 
 
-class BaseItem(Generic[TFile]):
+class BaseItem(Generic[TFile], Event):
     """Base class for the Item objects.
 
     An Item correspond to a portion of a File object.
@@ -86,35 +86,3 @@ class BaseItem(Generic[TFile]):
         if self.begin != other.begin:
             return False
         return not self.end != other.end
-
-    @staticmethod
-    def fill_gaps(items: list[BaseItem[TFile]]) -> list[BaseItem[TFile]]:
-        """Return a list with empty items added in the gaps between items.
-
-        Parameters
-        ----------
-        items: list[BaseItem]
-            List of Items to fill.
-
-        Returns
-        -------
-        list[BaseItem]:
-            List of Items with no gaps.
-
-        Examples
-        --------
-        >>> items = [BaseItem(begin = Timestamp("00:00:00"), end = Timestamp("00:00:10")), BaseItem(begin = Timestamp("00:00:15"), end = Timestamp("00:00:25"))]
-        >>> items = BaseItem.fill_gaps(items)
-        >>> [(item.begin.second, item.end.second) for item in items]
-        [(0, 10), (10, 15), (15, 25)]
-
-        """
-        items = sorted([copy.copy(item) for item in items], key=lambda item: item.begin)
-        filled_item_list = []
-        for index, item in enumerate(items[:-1]):
-            next_item = items[index + 1]
-            filled_item_list.append(item)
-            if next_item.begin > item.end:
-                filled_item_list.append(BaseItem(begin=item.end, end=next_item.begin))
-        filled_item_list.append(items[-1])
-        return filled_item_list

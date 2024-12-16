@@ -6,16 +6,17 @@ The data is accessed via an Item object per File.
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
 
 from OSmOSE.data.base_file import BaseFile
 from OSmOSE.data.base_item import BaseItem
-from OSmOSE.utils.data_utils import EventClass, is_overlapping, remove_overlaps
+from OSmOSE.utils.data_utils import Event, fill_gaps, is_overlapping, remove_overlaps
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from pandas import Timestamp
 
 
@@ -23,7 +24,7 @@ TItem = TypeVar("TItem", bound=BaseItem)
 TFile = TypeVar("TFile", bound=BaseFile)
 
 
-class BaseData(Generic[TItem, TFile]):
+class BaseData(Generic[TItem, TFile], Event):
     """Base class for the Data objects.
 
     Data corresponds to data scattered through different Files.
@@ -123,9 +124,7 @@ class BaseData(Generic[TItem, TFile]):
         end = max(file.end for file in files) if end is None else end
 
         included_files = [
-            file
-            for file in files
-            if is_overlapping(file, EventClass(begin=begin, end=end))
+            file for file in files if is_overlapping(file, Event(begin=begin, end=end))
         ]
 
         items = [BaseItem(file, begin, end) for file in included_files]
@@ -136,4 +135,4 @@ class BaseData(Generic[TItem, TFile]):
         if (last_item := sorted(items, key=lambda item: item.end)[-1]).end < end:
             items.append(BaseItem(begin=last_item.end, end=end))
         items = remove_overlaps(items)
-        return BaseItem.fill_gaps(items)
+        return fill_gaps(items, BaseItem)

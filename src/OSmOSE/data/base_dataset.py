@@ -12,6 +12,7 @@ from pandas import Timedelta, Timestamp, date_range
 
 from OSmOSE.data.base_data import BaseData
 from OSmOSE.data.base_file import BaseFile
+from OSmOSE.utils.data_utils import Event
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -20,7 +21,7 @@ TData = TypeVar("TData", bound=BaseData)
 TFile = TypeVar("TFile", bound=BaseFile)
 
 
-class BaseDataset(Generic[TData, TFile]):
+class BaseDataset(Generic[TData, TFile], Event):
     """Base class for Dataset objects.
 
     Datasets are collections of Data, with methods
