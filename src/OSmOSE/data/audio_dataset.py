@@ -6,6 +6,7 @@ that simplify repeated operations on the audio data.
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 from OSmOSE.data.audio_data import AudioData
@@ -29,6 +30,18 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
     def __init__(self, data: list[AudioData]) -> None:
         """Initialize an AudioDataset."""
         super().__init__(data)
+        if (
+            len(
+                sample_rates := {
+                    data.sample_rate for data in data if data.sample_rate is not None
+                }
+            )
+            != 1
+        ):
+            logging.warning("Audio dataset contains different sample rates.")
+        else:
+            for empty_data in (data for data in data if data.sample_rate is None):
+                empty_data.sample_rate = min(sample_rates)
 
     @property
     def sample_rate(self) -> set[float]:
