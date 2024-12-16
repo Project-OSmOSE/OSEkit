@@ -1,4 +1,4 @@
-"""Event class"""
+"""Event class."""
 
 from __future__ import annotations
 
@@ -41,7 +41,7 @@ class Event:
         >>> Event(begin=Timestamp("2024-01-01 00:00:00"),end=Timestamp("2024-01-02 00:00:00")).overlaps(Event(begin=Timestamp("2024-01-02 00:00:00"),end=Timestamp("2024-01-02 12:00:00")))
         False
 
-        """
+        """  # noqa: E501
         return self.begin < other.end and self.end > other.begin
 
     @classmethod
@@ -74,7 +74,7 @@ class Event:
         >>> events[0].end == events[1].begin
         True
 
-        """
+        """  # noqa: E501
         events = sorted(
             [copy.copy(event) for event in events],
             key=lambda event: (event.begin, event.begin - event.end),
@@ -104,7 +104,9 @@ class Event:
 
     @classmethod
     def fill_gaps(
-        cls, events: list[TEvent], filling_class: type[TEvent]
+        cls,
+        events: list[TEvent],
+        filling_class: type[TEvent],
     ) -> list[TEvent]:
         """Return a list with empty events added in the gaps between items.
 
@@ -130,7 +132,7 @@ class Event:
         >>> [(event.begin.second, event.end.second) for event in events]
         [(0, 10), (10, 15), (15, 25)]
 
-        """
+        """  # noqa: E501
         events = sorted(
             [copy.copy(event) for event in events],
             key=lambda event: event.begin,

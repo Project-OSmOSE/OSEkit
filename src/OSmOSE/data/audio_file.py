@@ -25,7 +25,8 @@ class AudioFile(BaseFile):
     ) -> None:
         """Initialize an AudioFile object with a path and a begin timestamp.
 
-        The begin timestamp can either be provided as a parameter or parsed from the filename according to the provided strptime_format.
+        The begin timestamp can either be provided as a parameter
+         or parsed from the filename according to the provided strptime_format.
 
         Parameters
         ----------
@@ -34,7 +35,8 @@ class AudioFile(BaseFile):
         begin: pandas.Timestamp | None
             Timestamp corresponding to the first data point in the file.
             If it is not provided, strptime_format is mandatory.
-            If both begin and strptime_format are provided, begin will overrule the timestamp embedded in the filename.
+            If both begin and strptime_format are provided,
+            begin will overrule the timestamp embedded in the filename.
         strptime_format: str | None
             The strptime format used in the text.
             It should use valid strftime codes (https://strftime.org/).

@@ -58,7 +58,7 @@ class BaseData(Generic[TItem, TFile], Event):
         """Get the concatenated values from all Items."""
         return np.concatenate([item.get_value() for item in self.items])
 
-    def write(self, path: Path) -> None:
+    def write(self, path: Path) -> None:  # noqa: ARG002
         """Abstract method for writing the data."""
         return
 
