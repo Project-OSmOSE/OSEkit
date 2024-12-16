@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from pandas import Timestamp
 
-from OSmOSE.utils.data_utils import Event, fill_gaps, is_overlapping, remove_overlaps
+from OSmOSE.data.event import Event
 
 
 @pytest.mark.parametrize(
@@ -100,7 +100,7 @@ def test_overlapping_events(
     event2: Event,
     expected: bool,
 ) -> None:
-    assert is_overlapping(event1, event2) == expected
+    assert event1.overlaps(event2) is expected
 
 
 @pytest.mark.parametrize(
@@ -158,7 +158,7 @@ def test_overlapping_events(
     ],
 )
 def test_remove_overlaps(events: list[Event], expected: list[Event]) -> None:
-    cleaned_events = remove_overlaps(events)
+    cleaned_events = Event.remove_overlaps(events)
     assert cleaned_events == expected
 
 
@@ -214,5 +214,5 @@ def test_remove_overlaps(events: list[Event], expected: list[Event]) -> None:
     ],
 )
 def test_fill_event_gaps(events: list[Event], expected: list[Event]) -> None:
-    filled_events = fill_gaps(events, Event)
+    filled_events = Event.fill_gaps(events, Event)
     assert filled_events == expected

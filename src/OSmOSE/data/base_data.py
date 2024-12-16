@@ -12,7 +12,7 @@ import numpy as np
 
 from OSmOSE.data.base_file import BaseFile
 from OSmOSE.data.base_item import BaseItem
-from OSmOSE.utils.data_utils import Event, fill_gaps, is_overlapping, remove_overlaps
+from OSmOSE.data.event import Event
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -124,7 +124,7 @@ class BaseData(Generic[TItem, TFile], Event):
         end = max(file.end for file in files) if end is None else end
 
         included_files = [
-            file for file in files if is_overlapping(file, Event(begin=begin, end=end))
+            file for file in files if file.overlaps(Event(begin=begin, end=end))
         ]
 
         items = [BaseItem(file, begin, end) for file in included_files]
@@ -134,5 +134,5 @@ class BaseData(Generic[TItem, TFile], Event):
             items.append(BaseItem(begin=begin, end=first_item.begin))
         if (last_item := sorted(items, key=lambda item: item.end)[-1]).end < end:
             items.append(BaseItem(begin=last_item.end, end=end))
-        items = remove_overlaps(items)
-        return fill_gaps(items, BaseItem)
+        items = Event.remove_overlaps(items)
+        return Event.fill_gaps(items, BaseItem)

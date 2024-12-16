@@ -1,0 +1,150 @@
+"""Event class"""
+
+from __future__ import annotations
+
+import copy
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, TypeVar
+
+if TYPE_CHECKING:
+    from pandas import Timestamp
+
+
+@dataclass
+class Event:
+    """Events are bounded between begin an end attributes.
+
+    Classes that have a begin and an end should inherit from Event.
+    """
+
+    begin: Timestamp
+    end: Timestamp
+
+    def overlaps(self, other: type[Event] | Event) -> bool:
+        """Return True if the other event shares time with the current event.
+
+        Parameters
+        ----------
+        other: type[Event] | Event
+            The other event.
+
+        Returns
+        -------
+        bool:
+            True if the two events are overlapping, False otherwise.
+
+        Examples
+        --------
+        >>> from pandas import Timestamp
+        >>> Event(begin=Timestamp("2024-01-01 00:00:00"),end=Timestamp("2024-01-02 00:00:00")).overlaps(Event(begin=Timestamp("2024-01-01 12:00:00"),end=Timestamp("2024-01-02 12:00:00")))
+        True
+        >>> Event(begin=Timestamp("2024-01-01 00:00:00"),end=Timestamp("2024-01-02 00:00:00")).overlaps(Event(begin=Timestamp("2024-01-02 00:00:00"),end=Timestamp("2024-01-02 12:00:00")))
+        False
+
+        """
+        return self.begin < other.end and self.end > other.begin
+
+    @classmethod
+    def remove_overlaps(cls, events: list[TEvent]) -> list[TEvent]:
+        """Resolve overlaps between events.
+
+        If two events overlap within the whole events collection
+        (that is if one event begins before the end of another event),
+        the earliest event's end is set to the begin of the latest object.
+        If multiple events overlap with one earlier event, only one is chosen as next.
+        The chosen next event is the one that ends the latest.
+
+        Parameters
+        ----------
+        events: list
+            List of events in which to remove the overlaps.
+
+        Returns
+        -------
+        list:
+            The list of events with no overlap.
+
+        Examples
+        --------
+        >>> from pandas import Timestamp
+        >>> events = [Event(begin=Timestamp("00:00:00"),end=Timestamp("00:00:15")), Event(begin=Timestamp("00:00:10"),end=Timestamp("00:00:20"))]
+        >>> events[0].end == events[1].begin
+        False
+        >>> events = Event.remove_overlaps(events)
+        >>> events[0].end == events[1].begin
+        True
+
+        """
+        events = sorted(
+            [copy.copy(event) for event in events],
+            key=lambda event: (event.begin, event.begin - event.end),
+        )
+        concatenated_events = []
+        for event in events:
+            concatenated_events.append(event)
+            overlapping_events = [
+                event2
+                for event2 in events
+                if event2 is not event and event.overlaps(event2)
+            ]
+            if not overlapping_events:
+                continue
+            kept_overlapping_event = max(overlapping_events, key=lambda item: item.end)
+            if kept_overlapping_event.end > event.end:
+                event.end = kept_overlapping_event.begin
+            else:
+                kept_overlapping_event = None
+            for dismissed_event in (
+                event2
+                for event2 in overlapping_events
+                if event2 is not kept_overlapping_event
+            ):
+                events.remove(dismissed_event)
+        return concatenated_events
+
+    @classmethod
+    def fill_gaps(
+        cls, events: list[TEvent], filling_class: type[TEvent]
+    ) -> list[TEvent]:
+        """Return a list with empty events added in the gaps between items.
+
+        The created empty events are instantiated from the class filling_class.
+
+        Parameters
+        ----------
+        events: list[TEvent]
+            List of events to fill.
+        filling_class: type[TEvent]
+            The class used for instantiating empty events in the gaps.
+
+        Returns
+        -------
+        list[TEvent]:
+            List of events with no gaps.
+
+        Examples
+        --------
+        >>> from pandas import Timestamp
+        >>> events = [Event(begin = Timestamp("00:00:00"), end = Timestamp("00:00:10")), Event(begin = Timestamp("00:00:15"), end = Timestamp("00:00:25"))]
+        >>> events = Event.fill_gaps(events, Event)
+        >>> [(event.begin.second, event.end.second) for event in events]
+        [(0, 10), (10, 15), (15, 25)]
+
+        """
+        events = sorted(
+            [copy.copy(event) for event in events],
+            key=lambda event: event.begin,
+        )
+        filled_event_list = []
+        for index, event in enumerate(events[:-1]):
+            next_event = events[index + 1]
+            filled_event_list.append(event)
+            if next_event.begin > event.end:
+                filled_event_list.append(
+                    filling_class(begin=event.end, end=next_event.begin),
+                )
+        filled_event_list.append(events[-1])
+        return filled_event_list
+
+
+TEvent = TypeVar("TEvent", bound=Event)

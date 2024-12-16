@@ -12,7 +12,7 @@ from pandas import Timedelta, Timestamp, date_range
 
 from OSmOSE.data.base_data import BaseData
 from OSmOSE.data.base_file import BaseFile
-from OSmOSE.utils.data_utils import Event
+from OSmOSE.data.event import Event
 
 if TYPE_CHECKING:
     from pathlib import Path
