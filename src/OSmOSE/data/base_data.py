@@ -13,7 +13,7 @@ import numpy as np
 
 from OSmOSE.data.base_file import BaseFile
 from OSmOSE.data.base_item import BaseItem
-from OSmOSE.utils.timestamp_utils import is_overlapping, remove_overlaps
+from OSmOSE.utils.data_utils import EventClass, is_overlapping, remove_overlaps
 
 if TYPE_CHECKING:
     from pandas import Timestamp
@@ -125,7 +125,7 @@ class BaseData(Generic[TItem, TFile]):
         included_files = [
             file
             for file in files
-            if is_overlapping((file.begin, file.end), (begin, end))
+            if is_overlapping(file, EventClass(begin=begin, end=end))
         ]
 
         items = [BaseItem(file, begin, end) for file in included_files]

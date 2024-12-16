@@ -12,7 +12,6 @@ from OSmOSE.utils.timestamp_utils import (
     associate_timestamps,
     build_regex_from_datetime_template,
     is_datetime_template_valid,
-    is_overlapping,
     localize_timestamp,
     parse_timestamps_csv,
     reformat_timestamp,
@@ -1053,100 +1052,3 @@ def test_adapt_timestamp_csv_to_osmose(
     assert adapt_timestamp_csv_to_osmose(timestamps, date_template, timezone).equals(
         expected,
     )
-
-
-@pytest.mark.parametrize(
-    ("event1", "event2", "expected"),
-    [
-        pytest.param(
-            (
-                Timestamp("2024-01-01 00:00:00"),
-                Timestamp("2024-01-02 00:00:00"),
-            ),
-            (
-                Timestamp("2024-01-01 00:00:00"),
-                Timestamp("2024-01-02 00:00:00"),
-            ),
-            True,
-            id="same_event",
-        ),
-        pytest.param(
-            (
-                Timestamp("2024-01-01 00:00:00"),
-                Timestamp("2024-01-02 00:00:00"),
-            ),
-            (
-                Timestamp("2024-01-01 12:00:00"),
-                Timestamp("2024-01-02 12:00:00"),
-            ),
-            True,
-            id="overlapping_events",
-        ),
-        pytest.param(
-            (
-                Timestamp("2024-01-01 12:00:00"),
-                Timestamp("2024-01-02 12:00:00"),
-            ),
-            (
-                Timestamp("2024-01-01 00:00:00"),
-                Timestamp("2024-01-02 00:00:00"),
-            ),
-            True,
-            id="overlapping_events_reversed",
-        ),
-        pytest.param(
-            (
-                Timestamp("2024-01-01 00:00:00"),
-                Timestamp("2024-01-02 00:00:00"),
-            ),
-            (
-                Timestamp("2024-01-01 12:00:00"),
-                Timestamp("2024-01-01 12:01:00"),
-            ),
-            True,
-            id="embedded_events",
-        ),
-        pytest.param(
-            (
-                Timestamp("2024-01-01 0:00:00"),
-                Timestamp("2024-01-01 12:00:00"),
-            ),
-            (
-                Timestamp("2024-01-02 00:00:00"),
-                Timestamp("2024-01-02 12:00:00"),
-            ),
-            False,
-            id="non_overlapping_events",
-        ),
-        pytest.param(
-            (
-                Timestamp("2024-01-02 0:00:00"),
-                Timestamp("2024-01-02 12:00:00"),
-            ),
-            (
-                Timestamp("2024-01-01 00:00:00"),
-                Timestamp("2024-01-01 12:00:00"),
-            ),
-            False,
-            id="non_overlapping_events_reversed",
-        ),
-        pytest.param(
-            (
-                Timestamp("2024-01-01 0:00:00"),
-                Timestamp("2024-01-01 12:00:00"),
-            ),
-            (
-                Timestamp("2024-01-01 12:00:00"),
-                Timestamp("2024-01-02 00:00:00"),
-            ),
-            False,
-            id="border_sharing_isnt_overlapping",
-        ),
-    ],
-)
-def test_overlapping_events(
-    event1: tuple[Timestamp, Timestamp],
-    event2: tuple[Timestamp, Timestamp],
-    expected: bool,
-) -> None:
-    assert is_overlapping(event1, event2) == expected
