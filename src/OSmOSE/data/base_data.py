@@ -45,11 +45,6 @@ class BaseData(Generic[TItem, TFile], Event):
         self.end = max(item.end for item in self.items)
 
     @property
-    def total_seconds(self) -> float:
-        """Return the total duration of the data in seconds."""
-        return (self.end - self.begin).total_seconds()
-
-    @property
     def is_empty(self) -> bool:
         """Return true if every item of this data object is empty."""
         return all(item.is_empty for item in self.items)
