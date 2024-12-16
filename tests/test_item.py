@@ -4,6 +4,7 @@ import pytest
 from pandas import Timestamp
 
 from OSmOSE.data.base_item import BaseItem
+from OSmOSE.utils.timestamp_utils import remove_overlaps
 
 
 @pytest.mark.parametrize(
@@ -61,7 +62,7 @@ from OSmOSE.data.base_item import BaseItem
     ],
 )
 def test_remove_overlaps(item_list: list[BaseItem], expected: list[BaseItem]) -> None:
-    cleaned_items = BaseItem.remove_overlaps(item_list)
+    cleaned_items = remove_overlaps(item_list)
     assert cleaned_items == expected
 
 
