@@ -8,6 +8,7 @@ import pytest
 
 from OSmOSE.config import TIMESTAMP_FORMAT_TEST_FILES
 from OSmOSE.data.audio_data import AudioData
+from OSmOSE.data.audio_dataset import AudioDataset
 from OSmOSE.data.audio_file import AudioFile
 from OSmOSE.data.audio_item import AudioItem
 from OSmOSE.utils.audio_utils import generate_sample_audio
@@ -399,3 +400,96 @@ def test_audio_resample_sample_count(
     data = AudioData.from_files(audio_files, begin=start, end=stop)
     data.sample_rate = sample_rate
     assert data.get_value().shape[0] == expected_nb_samples
+
+
+@pytest.mark.parametrize(
+    ("audio_files", "begin", "end", "duration", "expected_audio_data"),
+    [
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            None,
+            None,
+            None,
+            generate_sample_audio(1, 48_000),
+            id="one_entire_file",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 3,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            None,
+            None,
+            pd.Timedelta(seconds=1),
+            generate_sample_audio(
+                nb_files=3, nb_samples=48_000, series_type="increase"
+            ),
+            id="multiple_consecutive_files",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 2,
+                "inter_file_duration": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            None,
+            None,
+            pd.Timedelta(seconds=1),
+            [
+                generate_sample_audio(nb_files=1, nb_samples=96_000)[0][0:48_000],
+                generate_sample_audio(
+                    nb_files=1, nb_samples=48_000, min_value=0.0, max_value=0.0
+                )[0],
+                generate_sample_audio(nb_files=1, nb_samples=96_000)[0][48_000:],
+            ],
+            id="two_separated_files",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 3,
+                "inter_file_duration": -0.5,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "repeat",
+            },
+            None,
+            None,
+            pd.Timedelta(seconds=1),
+            generate_sample_audio(nb_files=2, nb_samples=48_000),
+            id="overlapping_files",
+        ),
+    ],
+    indirect=["audio_files"],
+)
+def test_audio_dataset_from_folder(
+    tmp_path: Path,
+    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    begin: pd.Timestamp | None,
+    end: pd.Timestamp | None,
+    duration: pd.Timedelta | None,
+    expected_audio_data: list[tuple[int, bool]],
+) -> None:
+    dataset = AudioDataset.from_folder(
+        tmp_path,
+        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+        begin=begin,
+        end=end,
+        data_duration=duration,
+    )
+    assert all(
+        np.array_equal(data.get_value(), expected)
+        for (data, expected) in zip(dataset.data, expected_audio_data)
+    )

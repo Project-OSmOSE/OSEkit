@@ -6,13 +6,15 @@ that simplify repeated operations on the data.
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 from pandas import Timedelta, Timestamp, date_range
 
 from OSmOSE.data.base_data import BaseData
 from OSmOSE.data.base_file import BaseFile
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 TData = TypeVar("TData", bound=BaseData)
 TFile = TypeVar("TFile", bound=BaseFile)
