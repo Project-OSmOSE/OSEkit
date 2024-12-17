@@ -21,7 +21,7 @@ class AudioItem(BaseItem[AudioFile]):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
     ) -> None:
-        """Initialize an AudioItem from an AudioItem and begin/end timestamps.
+        """Initialize an AudioItem from an AudioFile and begin/end timestamps.
 
         Parameters
         ----------
@@ -49,7 +49,7 @@ class AudioItem(BaseItem[AudioFile]):
 
     @classmethod
     def from_base_item(cls, item: BaseItem) -> AudioItem:
-        """Return an AudioItem object from an BaseItem object."""
+        """Return an AudioItem object from a BaseItem object."""
         file = item.file
         if not file or isinstance(file, AudioFile):
             return cls(file=file, begin=item.begin, end=item.end)
