@@ -36,6 +36,7 @@ class SpectroItem(BaseItem[SpectroFile]):
 
         """
         super().__init__(file, begin, end)
+        self.shape = self.get_value().shape
 
     @property
     def time_resolution(self) -> Timedelta:

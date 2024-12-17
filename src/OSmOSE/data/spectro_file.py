@@ -59,7 +59,7 @@ class SpectroFile(BaseFile):
             time_resolution = float(data["time_resolution"])
             nb_points = data["Time"].shape[0]
         self.time_resolution = Timedelta(seconds=time_resolution)
-        self.duration = self.time_resolution * nb_points
+        self.end = self.begin + self.time_resolution * nb_points
         self.nb_points = nb_points
 
     def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray:

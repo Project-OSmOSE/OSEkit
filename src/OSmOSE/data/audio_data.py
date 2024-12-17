@@ -119,7 +119,9 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         """Return the resampled (if needed) data from the audio item."""
         item_data = item.get_value()
         if item.is_empty:
-            return item_data.repeat(int(item.duration.total_seconds() * self.sample_rate))
+            return item_data.repeat(
+                int(item.duration.total_seconds() * self.sample_rate)
+            )
         if item.sample_rate != self.sample_rate:
             return resample(item_data, item.sample_rate, self.sample_rate)
         return item_data
