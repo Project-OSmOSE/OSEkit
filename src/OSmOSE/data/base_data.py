@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
 
+from OSmOSE.config import DPDEFAULT
 from OSmOSE.data.base_file import BaseFile
 from OSmOSE.data.base_item import BaseItem
 from OSmOSE.data.event import Event
@@ -67,9 +68,12 @@ class BaseData(Generic[TItem, TFile], Event):
         """Get the concatenated values from all Items."""
         return np.concatenate([item.get_value() for item in self.items])
 
-    def write(self, path: Path) -> None:  # noqa: ARG002
-        """Abstract method for writing the data."""
-        return
+    def write(self, path: Path) -> None:
+        """Create the directory in which the data will be written.
+
+        The actual data writing is left to the specified classes.
+        """
+        path.mkdir(parents=True, exist_ok=True, mode=DPDEFAULT)
 
     @classmethod
     def from_files(

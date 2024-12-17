@@ -112,6 +112,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             Folder in which to write the audio file.
 
         """
+        super().write(path=folder)
         sf.write(folder / f"{self}.wav", self.get_value(), self.sample_rate)
 
     def _get_item_value(self, item: AudioItem) -> np.ndarray:
