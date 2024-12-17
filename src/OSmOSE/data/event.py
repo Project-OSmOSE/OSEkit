@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
-    from pandas import Timestamp
+    from pandas import Timedelta, Timestamp
 
 
 @dataclass
@@ -21,9 +21,9 @@ class Event:
     end: Timestamp
 
     @property
-    def total_seconds(self) -> float:
+    def duration(self) -> Timedelta:
         """Return the total duration of the data in seconds."""
-        return (self.end - self.begin).total_seconds()
+        return self.end - self.begin
 
     def overlaps(self, other: type[Event] | Event) -> bool:
         """Return True if the other event shares time with the current event.
