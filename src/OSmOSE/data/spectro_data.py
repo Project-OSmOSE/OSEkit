@@ -8,9 +8,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import matplotlib.pyplot as plt
 import numpy as np
+from scipy.signal import ShortTimeFFT
 
 from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
+from OSmOSE.data.audio_data import AudioData
 from OSmOSE.data.base_data import BaseData
 from OSmOSE.data.spectro_file import SpectroFile
 from OSmOSE.data.spectro_item import SpectroItem
@@ -31,9 +34,11 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
     def __init__(
         self,
         items: list[SpectroItem] | None = None,
+        audio_data: AudioData = None,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         time_resolution: Timedelta | None = None,
+        fft : ShortTimeFFT | None = None,
     ) -> None:
         """Initialize a SpectroData from a list of SpectroItems.
 
@@ -52,7 +57,9 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         """
         super().__init__(items=items, begin=begin, end=end)
-        self._set_time_resolution(time_resolution=time_resolution)
+        # self._set_time_resolution(time_resolution=time_resolution)
+        self.audio_data = audio_data
+        self.fft = fft
 
     @property
     def shape(self) -> tuple[int, ...]:
@@ -76,14 +83,56 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         The data from the Spectro file will be resampled if necessary.
         """
-        data = np.zeros(shape=self.shape)
-        idx = 0
-        for item in self.items:
-            item_data = self._get_item_value(item)
-            time_bins = item_data.shape[1]
-            data[:, idx : idx + time_bins] = item_data
-            idx += time_bins
-        return data
+        if not all(item.is_empty for item in self.items):
+            return self._get_value_from_items(self.items)
+        if not self.audio_data or not self.fft:
+            raise ValueError("SpectroData has not been initialized")
+
+        return self.fft.spectrogram(self.audio_data.get_value())
+
+    def save_spectrogram(self, folder: Path, custom_frequency_scale = "linear") -> None:
+        super().write(folder)
+        my_dpi = 100
+        fact_x = 1.3
+        fact_y = 1.3
+        fig, ax = plt.subplots(
+            nrows=1,
+            ncols=1,
+            figsize=(fact_x * 1800 / my_dpi, fact_y * 512 / my_dpi),
+            dpi=my_dpi,
+        )
+
+        sx = self.get_value()
+        time = np.arange(sx.shape[1]) * self.duration.total_seconds() / sx.shape[1]
+        freq = self.fft.f
+        log_spectro = 10 * np.log10(abs(sx) + 1e-12)
+
+        color_map = plt.get_cmap("viridis")
+
+        if custom_frequency_scale == "linear":
+            plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
+        elif custom_frequency_scale == "log":
+            plt.pcolormesh(time, freq, log_spectro, cmap=color_map)
+            plt.yscale("log")
+            plt.ylim(freq[freq > 0].min(), self.fft.fs / 2)
+
+        # plt.clim(vmin=min(log_spectro, key=lambda s: s), vmax=max(log_spectro, key=lambda s: s))
+
+        fig.axes[0].get_xaxis().set_visible(False)
+        fig.axes[0].get_yaxis().set_visible(False)
+        ax.set_frame_on(False)
+        ax.spines["right"].set_visible(False)
+        ax.spines["left"].set_visible(False)
+        ax.spines["bottom"].set_visible(False)
+        ax.spines["top"].set_visible(False)
+        plt.axis("off")
+        plt.subplots_adjust(
+            top=1, bottom=0, right=1, left=0, hspace=0, wspace=0,
+        )  # delete white borders
+        # Saving spectrogram plot to file
+        # plt.show(bbox_inches="tight", pad_inches=0)
+        plt.savefig(f"{folder / str(self)}", bbox_inches="tight", pad_inches=0)
+        plt.close()
 
     def write(self, folder: Path) -> None:
         """Write the Spectro data to file.
@@ -96,6 +145,16 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         """
         super().write(path=folder)
         # TODO: implement npz write
+
+    def _get_value_from_items(self, items: list[SpectroItem]) -> np.ndarray:
+        data = np.zeros(shape=self.shape)
+        idx = 0
+        for item in self.items:
+            item_data = self._get_item_value(item)
+            time_bins = item_data.shape[1]
+            data[:, idx: idx + time_bins] = item_data
+            idx += time_bins
+        return data
 
     def _get_item_value(self, item: SpectroItem) -> np.ndarray:
         """Return the resampled (if needed) data from the Spectro item."""
@@ -153,3 +212,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         """
         return cls([SpectroItem.from_base_item(item) for item in data.items])
+
+    @classmethod
+    def from_audio_data(cls, data: AudioData, fft: ShortTimeFFT) -> SpectroData:
+        return cls(audio_data=data, fft=fft, begin=data.begin, end=data.end)
