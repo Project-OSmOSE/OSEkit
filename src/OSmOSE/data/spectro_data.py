@@ -112,15 +112,15 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         if not self.audio_data or not self.fft:
             raise ValueError("SpectroData has not been initialized")
 
-        return self.fft.spectrogram(self.audio_data.get_value())
+        sx = self.fft.spectrogram(self.audio_data.get_value())
+        return 10 * np.log10(abs(sx) + np.nextafter(0,1))
 
     def plot(self, ax: plt.Axes | None = None) -> None:
         ax = ax if ax is not None else SpectroData.get_default_ax()
         sx = self.get_value()
         time = np.arange(sx.shape[1]) * self.duration.total_seconds() / sx.shape[1]
         freq = self.fft.f
-        log_spectro = 10 * np.log10(abs(sx) + 1e-12)
-        ax.pcolormesh(time, freq, log_spectro)
+        ax.pcolormesh(time, freq, sx)
 
     def save_spectrogram(self, folder: Path, ax: plt.Axes | None = None) -> None:
         super().write(folder)
