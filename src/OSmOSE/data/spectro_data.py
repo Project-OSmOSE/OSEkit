@@ -60,14 +60,11 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         # self._set_time_resolution(time_resolution=time_resolution)
         self.audio_data = audio_data
         self.fft = fft
-        self._ax = None
 
-    @property
-    def ax(self) -> plt.Axes:
-        if self._ax is not None:
-            return self._ax
+    @staticmethod
+    def get_default_ax() -> plt.Axes:
 
-        # Legacy OSEkit behaviour, done in the getter so that plt figure is created on demand only.
+        # Legacy OSEkit behaviour.
         _, ax = plt.subplots(
             nrows=1,
             ncols=1,
@@ -86,12 +83,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         plt.subplots_adjust(
             top=1, bottom=0, right=1, left=0, hspace=0, wspace=0,
         )
-        self.ax = ax
         return ax
-
-    @ax.setter
-    def ax(self, ax: plt.Axes | None) -> None:
-        self._ax = ax
 
     @property
     def shape(self) -> tuple[int, ...]:
@@ -122,17 +114,17 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         return self.fft.spectrogram(self.audio_data.get_value())
 
-    def plot(self):
+    def plot(self, ax: plt.Axes | None = None) -> None:
+        ax = ax if ax is not None else SpectroData.get_default_ax()
         sx = self.get_value()
         time = np.arange(sx.shape[1]) * self.duration.total_seconds() / sx.shape[1]
         freq = self.fft.f
         log_spectro = 10 * np.log10(abs(sx) + 1e-12)
-        self.ax.pcolormesh(time, freq, log_spectro)
+        ax.pcolormesh(time, freq, log_spectro)
 
-    def save_spectrogram(self, folder: Path) -> None:
+    def save_spectrogram(self, folder: Path, ax: plt.Axes | None = None) -> None:
         super().write(folder)
-        self.plot()
-        plt.figure(self.ax.get_figure().number)
+        self.plot(ax)
         plt.savefig(f"{folder / str(self)}", bbox_inches="tight", pad_inches=0)
         plt.close()
 
