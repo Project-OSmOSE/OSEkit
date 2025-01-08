@@ -138,7 +138,13 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         """
         super().write(path=folder)
-        # TODO: implement npz write
+        sx = self.get_value()
+        time = np.arange(sx.shape[1]) * self.duration.total_seconds() / sx.shape[1]
+        freq = self.fft.f
+        window = self.fft.win
+        hop = self.fft.hop
+        fs = [self.fft.fs]
+        np.savez(file = folder / f"{self}.npz", fs = fs, time = time, freq = freq, window = window, hop = hop, sx = sx)
 
     def _get_value_from_items(self, items: list[SpectroItem]) -> np.ndarray:
         data = np.zeros(shape=self.shape)

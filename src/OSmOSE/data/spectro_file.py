@@ -56,11 +56,18 @@ class SpectroFile(BaseFile):
 
     def _read_metadata(self, path: PathLike) -> None:
         with np.load(path) as data:
-            time_resolution = float(data["time_resolution"])
-            nb_points = data["Time"].shape[0]
-        self.time_resolution = Timedelta(seconds=time_resolution)
-        self.end = self.begin + self.time_resolution * nb_points
-        self.nb_points = nb_points
+            sample_rate = data["fs"][0]
+            time = data["time"]
+            freq = data["freq"]
+
+        self.sample_rate = sample_rate
+
+        delta_times = [Timedelta(seconds=time[i] - time[i-1]).round(freq = "ns") for i in range(1,time.shape[0])]
+        most_frequent_delta_time = max(((v, delta_times.count(v)) for v in set(delta_times)), key=lambda i: i[1])[0]
+        self.time_resolution = most_frequent_delta_time
+        self.end = (self.begin + Timedelta(seconds = time[-1]) + self.time_resolution).round(freq = "us")
+
+        self.freq = freq
 
     def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray:
         """Return the spectro data between start and stop from the file.
