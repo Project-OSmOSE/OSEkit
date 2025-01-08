@@ -99,10 +99,10 @@ class SpectroFile(BaseFile):
             start_bin = max(start_bin, 0)
 
             stop_bin = next(idx for idx,t in list(enumerate(time))[::-1] if self.begin + Timedelta(seconds = t) < stop) + 1
-            stop_bin = min(stop_bin, time.shape[0]-1)
+            stop_bin = min(stop_bin, time.shape[0])
 
-            sx = data["sx"][:, start_bin:stop_bin+1]
-            time = time[start_bin:stop_bin+1] - time[start_bin]
+            sx = data["sx"][:, start_bin:stop_bin]
+            time = time[start_bin:stop_bin] - time[start_bin]
 
             return pd.DataFrame({"time": time, **dict(zip(self.freq,sx))})
 

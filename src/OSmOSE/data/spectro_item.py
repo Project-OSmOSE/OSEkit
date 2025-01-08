@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy as np
+from pandas import DataFrame
+
 from OSmOSE.data.base_file import BaseFile
 from OSmOSE.data.base_item import BaseItem
 from OSmOSE.data.spectro_file import SpectroFile
@@ -36,7 +39,7 @@ class SpectroItem(BaseItem[SpectroFile]):
 
         """
         super().__init__(file, begin, end)
-        self.shape = self.get_value().shape
+        #self.shape = self.get_value().shape
 
     @property
     def time_resolution(self) -> Timedelta:
@@ -56,3 +59,14 @@ class SpectroItem(BaseItem[SpectroFile]):
                 end=item.end,
             )
         raise TypeError
+
+    def get_value(self, freq: np.ndarray | None = None) -> DataFrame:
+        """Get the values from the File between the begin and stop timestamps.
+
+        If the Item is empty, return a single 0.
+        """
+        return (
+            DataFrame(columns = ["time", *freq])
+            if self.is_empty
+            else self.file.read(start=self.begin, stop=self.end)
+        )

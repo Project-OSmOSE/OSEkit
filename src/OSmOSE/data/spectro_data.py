@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+from pandas import DataFrame
 from scipy.signal import ShortTimeFFT
 
 from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
@@ -146,23 +148,34 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         fs = [self.fft.fs]
         np.savez(file = folder / f"{self}.npz", fs = fs, time = time, freq = freq, window = window, hop = hop, sx = sx)
 
-    def _get_value_from_items(self, items: list[SpectroItem]) -> np.ndarray:
-        data = np.zeros(shape=self.shape)
-        idx = 0
-        for item in self.items:
-            item_data = self._get_item_value(item)
-            time_bins = item_data.shape[1]
-            data[:, idx: idx + time_bins] = item_data
-            idx += time_bins
-        return data
+    def _get_value_from_items(self, items: list[SpectroItem]) -> DataFrame:
+        if not all(np.array_equal(items[0].file.freq,i.file.freq) for i in items[1:] if not i.is_empty):
+            raise ValueError("Items don't have the same frequency bins.")
 
-    def _get_item_value(self, item: SpectroItem) -> np.ndarray:
+        if len({i.file.time_resolution for i in items if not i.is_empty}) > 1:
+            raise ValueError("Items don't have the same time resolution.")
+
+        time_resolution = next(i.file.time_resolution for i in items if not i.is_empty)
+        freq = next(i.file.freq for i in items if not i.is_empty)
+
+        joined_df = self._get_item_value(items[0], time_resolution, freq)
+
+        for item in items[1:]:
+            time_offset = joined_df["time"].iloc[-1] + time_resolution.total_seconds()
+            item_data = self._get_item_value(item, time_resolution, freq)
+            item_data["time"] += time_offset
+            joined_df = pd.concat((joined_df, item_data))
+
+        return joined_df.iloc[:, 1:].T.to_numpy()
+
+
+    def _get_item_value(self, item: SpectroItem, time_resolution: Timedelta | None = None, freq: np.ndarray | None = None) -> DataFrame:
         """Return the resampled (if needed) data from the Spectro item."""
-        item_data = item.get_value()
+        item_data = item.get_value(freq)
         if item.is_empty:
-            return item_data.repeat(round(item.duration / self.time_resolution))
-        if item.time_resolution != self.time_resolution:
-            raise ValueError("Time resolutions don't match.")
+            time = np.arange(item.duration // time_resolution) * time_resolution.total_seconds()
+            for t in time:
+                item_data.loc[item_data.shape[0]] = [t, *[-120.] * (item_data.shape[1]-1)]
         return item_data
 
     @classmethod
