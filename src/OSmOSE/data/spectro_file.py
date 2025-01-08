@@ -59,15 +59,22 @@ class SpectroFile(BaseFile):
             sample_rate = data["fs"][0]
             time = data["time"]
             freq = data["freq"]
-            hop = data["hop"][0]
+            hop = int(data["hop"][0])
             window = data["window"]
 
         self.sample_rate = sample_rate
 
-        delta_times = [Timedelta(seconds=time[i] - time[i-1]).round(freq = "ns") for i in range(1,time.shape[0])]
-        most_frequent_delta_time = max(((v, delta_times.count(v)) for v in set(delta_times)), key=lambda i: i[1])[0]
+        delta_times = [
+            Timedelta(seconds=time[i] - time[i - 1]).round(freq="ns")
+            for i in range(1, time.shape[0])
+        ]
+        most_frequent_delta_time = max(
+            ((v, delta_times.count(v)) for v in set(delta_times)), key=lambda i: i[1]
+        )[0]
         self.time_resolution = most_frequent_delta_time
-        self.end = (self.begin + Timedelta(seconds = time[-1]) + self.time_resolution).round(freq = "us")
+        self.end = (
+            self.begin + Timedelta(seconds=time[-1]) + self.time_resolution
+        ).round(freq="us")
 
         self.freq = freq
 
@@ -95,16 +102,30 @@ class SpectroFile(BaseFile):
         with np.load(self.path) as data:
             time = data["time"]
 
-            start_bin = next(idx for idx,t in enumerate(time) if self.begin + Timedelta(seconds = t) > start) - 1
+            start_bin = (
+                next(
+                    idx
+                    for idx, t in enumerate(time)
+                    if self.begin + Timedelta(seconds=t) > start
+                )
+                - 1
+            )
             start_bin = max(start_bin, 0)
 
-            stop_bin = next(idx for idx,t in list(enumerate(time))[::-1] if self.begin + Timedelta(seconds = t) < stop) + 1
+            stop_bin = (
+                next(
+                    idx
+                    for idx, t in list(enumerate(time))[::-1]
+                    if self.begin + Timedelta(seconds=t) < stop
+                )
+                + 1
+            )
             stop_bin = min(stop_bin, time.shape[0])
 
             sx = data["sx"][:, start_bin:stop_bin]
             time = time[start_bin:stop_bin] - time[start_bin]
 
-            return pd.DataFrame({"time": time, **dict(zip(self.freq,sx))})
+            return pd.DataFrame({"time": time, **dict(zip(self.freq, sx))})
 
     @classmethod
     def from_base_file(cls, file: BaseFile) -> SpectroFile:

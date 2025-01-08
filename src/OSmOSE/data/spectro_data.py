@@ -40,7 +40,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         time_resolution: Timedelta | None = None,
-        fft : ShortTimeFFT | None = None,
+        fft: ShortTimeFFT | None = None,
     ) -> None:
         """Initialize a SpectroData from a list of SpectroItems.
 
@@ -83,7 +83,12 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         ax.spines["top"].set_visible(False)
         plt.axis("off")
         plt.subplots_adjust(
-            top=1, bottom=0, right=1, left=0, hspace=0, wspace=0,
+            top=1,
+            bottom=0,
+            right=1,
+            left=0,
+            hspace=0,
+            wspace=0,
         )
         return ax
 
@@ -115,7 +120,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             raise ValueError("SpectroData has not been initialized")
 
         sx = self.fft.spectrogram(self.audio_data.get_value())
-        return 10 * np.log10(abs(sx) + np.nextafter(0,1))
+        return 10 * np.log10(abs(sx) + np.nextafter(0, 1))
 
     def plot(self, ax: plt.Axes | None = None) -> None:
         ax = ax if ax is not None else SpectroData.get_default_ax()
@@ -146,10 +151,22 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         window = self.fft.win
         hop = [self.fft.hop]
         fs = [self.fft.fs]
-        np.savez(file = folder / f"{self}.npz", fs = fs, time = time, freq = freq, window = window, hop = hop, sx = sx)
+        np.savez(
+            file=folder / f"{self}.npz",
+            fs=fs,
+            time=time,
+            freq=freq,
+            window=window,
+            hop=hop,
+            sx=sx,
+        )
 
     def _get_value_from_items(self, items: list[SpectroItem]) -> DataFrame:
-        if not all(np.array_equal(items[0].file.freq,i.file.freq) for i in items[1:] if not i.is_empty):
+        if not all(
+            np.array_equal(items[0].file.freq, i.file.freq)
+            for i in items[1:]
+            if not i.is_empty
+        ):
             raise ValueError("Items don't have the same frequency bins.")
 
         if len({i.file.time_resolution for i in items if not i.is_empty}) > 1:
@@ -168,14 +185,24 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         return joined_df.iloc[:, 1:].T.to_numpy()
 
-
-    def _get_item_value(self, item: SpectroItem, time_resolution: Timedelta | None = None, freq: np.ndarray | None = None) -> DataFrame:
+    def _get_item_value(
+        self,
+        item: SpectroItem,
+        time_resolution: Timedelta | None = None,
+        freq: np.ndarray | None = None,
+    ) -> DataFrame:
         """Return the resampled (if needed) data from the Spectro item."""
         item_data = item.get_value(freq)
         if item.is_empty:
-            time = np.arange(item.duration // time_resolution) * time_resolution.total_seconds()
+            time = (
+                np.arange(item.duration // time_resolution)
+                * time_resolution.total_seconds()
+            )
             for t in time:
-                item_data.loc[item_data.shape[0]] = [t, *[-120.] * (item_data.shape[1]-1)]
+                item_data.loc[item_data.shape[0]] = [
+                    t,
+                    *[-120.0] * (item_data.shape[1] - 1),
+                ]
         return item_data
 
     @classmethod
@@ -204,12 +231,15 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             The SpectroData object.
 
         """
-        return cls.from_base_data(BaseData.from_files(files, begin, end))
+        f0 = files[0]
+        fft = ShortTimeFFT(win=f0.window, hop=f0.hop, fs=f0.sample_rate)
+        return cls.from_base_data(BaseData.from_files(files, begin, end), fft=fft)
 
     @classmethod
     def from_base_data(
         cls,
         data: BaseData,
+        fft: ShortTimeFFT,
     ) -> SpectroData:
         """Return an SpectroData object from a BaseData object.
 
@@ -224,7 +254,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             The SpectroData object.
 
         """
-        return cls([SpectroItem.from_base_item(item) for item in data.items])
+        return cls([SpectroItem.from_base_item(item) for item in data.items], fft=fft)
 
     @classmethod
     def from_audio_data(cls, data: AudioData, fft: ShortTimeFFT) -> SpectroData:

@@ -39,7 +39,7 @@ class SpectroItem(BaseItem[SpectroFile]):
 
         """
         super().__init__(file, begin, end)
-        #self.shape = self.get_value().shape
+        # self.shape = self.get_value().shape
 
     @property
     def time_resolution(self) -> Timedelta:
@@ -66,7 +66,7 @@ class SpectroItem(BaseItem[SpectroFile]):
         If the Item is empty, return a single 0.
         """
         return (
-            DataFrame(columns = ["time", *freq])
+            DataFrame(columns=["time", *freq])
             if self.is_empty
             else self.file.read(start=self.begin, stop=self.end)
         )
