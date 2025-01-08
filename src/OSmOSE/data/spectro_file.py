@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
+import pandas as pd
 from pandas import Timedelta, Timestamp
 
 from OSmOSE.data.base_file import BaseFile
@@ -52,13 +53,14 @@ class SpectroFile(BaseFile):
         """
         super().__init__(path=path, begin=begin, strptime_format=strptime_format)
         self._read_metadata(path=path)
-        self.end = self.begin + self.duration
 
     def _read_metadata(self, path: PathLike) -> None:
         with np.load(path) as data:
             sample_rate = data["fs"][0]
             time = data["time"]
             freq = data["freq"]
+            hop = data["hop"][0]
+            window = data["window"]
 
         self.sample_rate = sample_rate
 
@@ -69,7 +71,10 @@ class SpectroFile(BaseFile):
 
         self.freq = freq
 
-    def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray:
+        self.window = window
+        self.hop = hop
+
+    def read(self, start: Timestamp, stop: Timestamp) -> pd.DataFrame:
         """Return the spectro data between start and stop from the file.
 
         The data is a 2D array representing the sxx values of the spectrogram.
@@ -87,10 +92,19 @@ class SpectroFile(BaseFile):
             The spectrogram data between start and stop.
 
         """
-        start_bin = round((start - self.begin) / self.time_resolution)
-        stop_bin = round((stop - self.begin) / self.time_resolution)
         with np.load(self.path) as data:
-            return data["Sxx"][:, start_bin:stop_bin]
+            time = data["time"]
+
+            start_bin = next(idx for idx,t in enumerate(time) if self.begin + Timedelta(seconds = t) > start) - 1
+            start_bin = max(start_bin, 0)
+
+            stop_bin = next(idx for idx,t in list(enumerate(time))[::-1] if self.begin + Timedelta(seconds = t) < stop) + 1
+            stop_bin = min(stop_bin, time.shape[0]-1)
+
+            sx = data["sx"][:, start_bin:stop_bin+1]
+            time = time[start_bin:stop_bin+1] - time[start_bin]
+
+            return pd.DataFrame({"time": time, **dict(zip(self.freq,sx))})
 
     @classmethod
     def from_base_file(cls, file: BaseFile) -> SpectroFile:
