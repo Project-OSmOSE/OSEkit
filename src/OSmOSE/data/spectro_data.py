@@ -10,8 +10,6 @@ from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-from pandas import DataFrame
 from scipy.signal import ShortTimeFFT
 
 from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
@@ -163,7 +161,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             mfft=mfft,
         )
 
-    def _get_value_from_items(self, items: list[SpectroItem]) -> DataFrame:
+    def _get_value_from_items(self, items: list[SpectroItem]) -> np.ndarray:
         if not all(
             np.array_equal(items[0].file.freq, i.file.freq)
             for i in items[1:]
@@ -174,18 +172,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         if len({i.file.time_resolution for i in items if not i.is_empty}) > 1:
             raise ValueError("Items don't have the same time resolution.")
 
-        time_resolution = next(i.file.time_resolution for i in items if not i.is_empty)
-        freq = next(i.file.freq for i in items if not i.is_empty)
-
-        joined_df = items[0].get_value(freq=freq, time_resolution=time_resolution)
-
-        for item in items[1:]:
-            time_offset = joined_df["time"].iloc[-1] + time_resolution.total_seconds()
-            item_data = item.get_value(freq=freq, time_resolution=time_resolution)
-            item_data["time"] += time_offset
-            joined_df = pd.concat((joined_df, item_data))
-
-        return joined_df.iloc[:, 1:].T.to_numpy()
+        return np.hstack(tuple(item.get_value(self.fft) for item in items))
 
     @classmethod
     def from_files(

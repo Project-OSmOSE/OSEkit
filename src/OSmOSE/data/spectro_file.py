@@ -9,7 +9,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-import pandas as pd
 from pandas import Timedelta, Timestamp
 from scipy.signal import ShortTimeFFT
 
@@ -72,7 +71,7 @@ class SpectroFile(BaseFile):
             for i in range(1, time.shape[0])
         ]
         most_frequent_delta_time = max(
-            ((v, delta_times.count(v)) for v in set(delta_times)), key=lambda i: i[1]
+            ((v, delta_times.count(v)) for v in set(delta_times)), key=lambda i: i[1],
         )[0]
         self.time_resolution = most_frequent_delta_time
         self.end = (
@@ -84,7 +83,7 @@ class SpectroFile(BaseFile):
         self.window = window
         self.hop = hop
 
-    def read(self, start: Timestamp, stop: Timestamp) -> pd.DataFrame:
+    def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray:
         """Return the spectro data between start and stop from the file.
 
         The data is a 2D array representing the sxx values of the spectrogram.
@@ -125,10 +124,7 @@ class SpectroFile(BaseFile):
             )
             stop_bin = min(stop_bin, time.shape[0])
 
-            sx = data["sx"][:, start_bin:stop_bin]
-            time = time[start_bin:stop_bin] - time[start_bin]
-
-            return pd.DataFrame({"time": time, **dict(zip(self.freq, sx))})
+            return data["sx"][:, start_bin:stop_bin]
 
     def get_fft(self) -> ShortTimeFFT:
         return ShortTimeFFT(win=self.window, hop=self.hop, fs=self.sample_rate, mfft=self.mfft)
