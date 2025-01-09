@@ -151,6 +151,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         window = self.fft.win
         hop = [self.fft.hop]
         fs = [self.fft.fs]
+        mfft = [self.fft.mfft]
         np.savez(
             file=folder / f"{self}.npz",
             fs=fs,
@@ -159,6 +160,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             window=window,
             hop=hop,
             sx=sx,
+            mfft=mfft,
         )
 
     def _get_value_from_items(self, items: list[SpectroItem]) -> DataFrame:
@@ -232,7 +234,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         """
         f0 = files[0]
-        fft = ShortTimeFFT(win=f0.window, hop=f0.hop, fs=f0.sample_rate)
+        fft = ShortTimeFFT(win=f0.window, hop=f0.hop, fs=f0.sample_rate, mfft=f0.mfft)
         return cls.from_base_data(BaseData.from_files(files, begin, end), fft=fft)
 
     @classmethod

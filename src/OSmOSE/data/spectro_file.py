@@ -61,8 +61,10 @@ class SpectroFile(BaseFile):
             freq = data["freq"]
             hop = int(data["hop"][0])
             window = data["window"]
+            mfft = data["mfft"][0]
 
         self.sample_rate = sample_rate
+        self.mfft = mfft
 
         delta_times = [
             Timedelta(seconds=time[i] - time[i - 1]).round(freq="ns")
