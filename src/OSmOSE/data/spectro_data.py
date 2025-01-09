@@ -213,9 +213,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             The SpectroData object.
 
         """
-        f0 = files[0]
-        fft = ShortTimeFFT(win=f0.window, hop=f0.hop, fs=f0.sample_rate, mfft=f0.mfft)
-        return cls.from_base_data(BaseData.from_files(files, begin, end), fft=fft)
+        return cls.from_base_data(BaseData.from_files(files, begin, end), fft=files[0].get_fft())
 
     @classmethod
     def from_base_data(

@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pandas as pd
 from pandas import Timedelta, Timestamp
+from scipy.signal import ShortTimeFFT
 
 from OSmOSE.data.base_file import BaseFile
 
@@ -128,6 +129,9 @@ class SpectroFile(BaseFile):
             time = time[start_bin:stop_bin] - time[start_bin]
 
             return pd.DataFrame({"time": time, **dict(zip(self.freq, sx))})
+
+    def get_fft(self) -> ShortTimeFFT:
+        return ShortTimeFFT(win=self.window, hop=self.hop, fs=self.sample_rate, mfft=self.mfft)
 
     @classmethod
     def from_base_file(cls, file: BaseFile) -> SpectroFile:
