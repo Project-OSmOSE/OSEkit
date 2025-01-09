@@ -177,35 +177,15 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         time_resolution = next(i.file.time_resolution for i in items if not i.is_empty)
         freq = next(i.file.freq for i in items if not i.is_empty)
 
-        joined_df = self._get_item_value(items[0], time_resolution, freq)
+        joined_df = items[0].get_value(freq=freq, time_resolution=time_resolution)
 
         for item in items[1:]:
             time_offset = joined_df["time"].iloc[-1] + time_resolution.total_seconds()
-            item_data = self._get_item_value(item, time_resolution, freq)
+            item_data = item.get_value(freq=freq, time_resolution=time_resolution)
             item_data["time"] += time_offset
             joined_df = pd.concat((joined_df, item_data))
 
         return joined_df.iloc[:, 1:].T.to_numpy()
-
-    def _get_item_value(
-        self,
-        item: SpectroItem,
-        time_resolution: Timedelta | None = None,
-        freq: np.ndarray | None = None,
-    ) -> DataFrame:
-        """Return the resampled (if needed) data from the Spectro item."""
-        item_data = item.get_value(freq)
-        if item.is_empty:
-            time = (
-                np.arange(item.duration // time_resolution)
-                * time_resolution.total_seconds()
-            )
-            for t in time:
-                item_data.loc[item_data.shape[0]] = [
-                    t,
-                    *[-120.0] * (item_data.shape[1] - 1),
-                ]
-        return item_data
 
     @classmethod
     def from_files(

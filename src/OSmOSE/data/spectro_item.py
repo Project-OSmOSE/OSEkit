@@ -60,13 +60,22 @@ class SpectroItem(BaseItem[SpectroFile]):
             )
         raise TypeError
 
-    def get_value(self, freq: np.ndarray | None = None) -> DataFrame:
+    def get_value(self, freq: np.ndarray | None = None, time_resolution: Timedelta | None = None) -> DataFrame:
         """Get the values from the File between the begin and stop timestamps.
 
         If the Item is empty, return a single 0.
         """
-        return (
-            DataFrame(columns=["time", *freq])
-            if self.is_empty
-            else self.file.read(start=self.begin, stop=self.end)
+        if not self.is_empty:
+            return self.file.read(start=self.begin, stop=self.end)
+
+        output_df = DataFrame(columns=["time", *freq])
+        time = (
+                np.arange(self.duration // time_resolution)
+                * time_resolution.total_seconds()
         )
+        for t in time:
+            output_df.loc[output_df.shape[0]] = [
+                t,
+                *[-120.0] * (output_df.shape[1] - 1),
+            ]
+        return output_df
