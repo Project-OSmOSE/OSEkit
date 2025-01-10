@@ -71,7 +71,8 @@ class SpectroFile(BaseFile):
             for i in range(1, time.shape[0])
         ]
         most_frequent_delta_time = max(
-            ((v, delta_times.count(v)) for v in set(delta_times)), key=lambda i: i[1],
+            ((v, delta_times.count(v)) for v in set(delta_times)),
+            key=lambda i: i[1],
         )[0]
         self.time_resolution = most_frequent_delta_time
         self.end = (
@@ -127,7 +128,9 @@ class SpectroFile(BaseFile):
             return data["sx"][:, start_bin:stop_bin]
 
     def get_fft(self) -> ShortTimeFFT:
-        return ShortTimeFFT(win=self.window, hop=self.hop, fs=self.sample_rate, mfft=self.mfft)
+        return ShortTimeFFT(
+            win=self.window, hop=self.hop, fs=self.sample_rate, mfft=self.mfft
+        )
 
     @classmethod
     def from_base_file(cls, file: BaseFile) -> SpectroFile:

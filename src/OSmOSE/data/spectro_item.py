@@ -60,7 +60,7 @@ class SpectroItem(BaseItem[SpectroFile]):
             )
         raise TypeError
 
-    def get_value(self, fft: ShortTimeFFT) -> np.ndarray:
+    def get_value(self, fft: ShortTimeFFT | None = None) -> np.ndarray:
         """Get the values from the File between the begin and stop timestamps.
 
         If the Item is empty, return a single 0.
@@ -68,4 +68,9 @@ class SpectroItem(BaseItem[SpectroFile]):
         if not self.is_empty:
             return self.file.read(start=self.begin, stop=self.end)
 
-        return np.ones((fft.f.shape[0], fft.p_num(int(self.duration.total_seconds() * fft.fs)))) * -120.
+        return (
+            np.ones(
+                (fft.f.shape[0], fft.p_num(int(self.duration.total_seconds() * fft.fs)))
+            )
+            * -120.0
+        )

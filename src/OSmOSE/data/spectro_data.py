@@ -117,7 +117,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         if not self.audio_data or not self.fft:
             raise ValueError("SpectroData has not been initialized")
 
-        sx = self.fft.spectrogram(self.audio_data.get_value())
+        sx = self.fft.spectrogram(self.audio_data.get_value(), padding="even")
         return 10 * np.log10(abs(sx) + np.nextafter(0, 1))
 
     def plot(self, ax: plt.Axes | None = None) -> None:
@@ -169,10 +169,20 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         ):
             raise ValueError("Items don't have the same frequency bins.")
 
-        if len({i.file.time_resolution for i in items if not i.is_empty}) > 1:
+        if len({i.file.get_fft().delta_t for i in items if not i.is_empty}) > 1:
             raise ValueError("Items don't have the same time resolution.")
 
-        return np.hstack(tuple(item.get_value(self.fft) for item in items))
+        output = items[0].get_value(fft=self.fft)
+        for item in items[1:]:
+            p1_le = self.fft.lower_border_end[1] - self.fft.p_min - 1
+            output = np.hstack(
+                (
+                    output[:, :-p1_le],
+                    (output[:, -p1_le:] + item.get_value(fft=self.fft)[:, :p1_le]) / 2,
+                    item.get_value(fft=self.fft)[:, p1_le:],
+                )
+            )
+        return output
 
     @classmethod
     def from_files(
@@ -200,7 +210,9 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             The SpectroData object.
 
         """
-        return cls.from_base_data(BaseData.from_files(files, begin, end), fft=files[0].get_fft())
+        return cls.from_base_data(
+            BaseData.from_files(files, begin, end), fft=files[0].get_fft()
+        )
 
     @classmethod
     def from_base_data(
