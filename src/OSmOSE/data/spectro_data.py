@@ -10,10 +10,8 @@ from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.signal import ShortTimeFFT
 
 from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
-from OSmOSE.data.audio_data import AudioData
 from OSmOSE.data.base_data import BaseData
 from OSmOSE.data.spectro_file import SpectroFile
 from OSmOSE.data.spectro_item import SpectroItem
@@ -21,7 +19,10 @@ from OSmOSE.data.spectro_item import SpectroItem
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from pandas import Timedelta, Timestamp
+    from pandas import Timestamp
+    from scipy.signal import ShortTimeFFT
+
+    from OSmOSE.data.audio_data import AudioData
 
 
 class SpectroData(BaseData[SpectroItem, SpectroFile]):
@@ -37,7 +38,6 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         audio_data: AudioData = None,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
-        time_resolution: Timedelta | None = None,
         fft: ShortTimeFFT | None = None,
     ) -> None:
         """Initialize a SpectroData from a list of SpectroItems.
@@ -46,24 +46,35 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         ----------
         items: list[SpectroItem]
             List of the SpectroItem constituting the SpectroData.
-        time_resolution: Timedelta
-            The time resolution of the Spectro data.
+        audio_data: AudioData
+            The audio data from which to compute the spectrogram.
         begin: Timestamp | None
             Only effective if items is None.
             Set the begin of the empty data.
         end: Timestamp | None
             Only effective if items is None.
             Set the end of the empty data.
+        fft: ShortTimeFFT
+            The short time FFT used for computing the spectrogram.
 
         """
         super().__init__(items=items, begin=begin, end=end)
-        # self._set_time_resolution(time_resolution=time_resolution)
         self.audio_data = audio_data
         self.fft = fft
 
     @staticmethod
     def get_default_ax() -> plt.Axes:
+        """Return a default-formatted Axes on a new figure.
 
+        The default OSmOSE spectrograms are plotted on wide, borderless spectrograms.
+        This method set the default figure and axes parameters.
+
+        Returns
+        -------
+        plt.Axes:
+            The default Axes on a new figure.
+
+        """
         # Legacy OSEkit behaviour.
         _, ax = plt.subplots(
             nrows=1,
@@ -94,7 +105,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
     def shape(self) -> tuple[int, ...]:
         """Shape of the Spectro data."""
         return self.fft.f_pts, self.fft.p_num(
-            int(self.fft.fs * self.duration.total_seconds())
+            int(self.fft.fs * self.duration.total_seconds()),
         )
 
     def __str__(self) -> str:
@@ -102,19 +113,28 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)
 
     def get_value(self) -> np.ndarray:
-        """Return the value of the Spectro data.
+        """Return the Sx matrix of the spectrogram.
 
-        The data from the Spectro file will be resampled if necessary.
+        The Sx matrix contains the absolute square of the STFT.
         """
         if not all(item.is_empty for item in self.items):
             return self._get_value_from_items(self.items)
         if not self.audio_data or not self.fft:
-            raise ValueError("SpectroData has not been initialized")
+            raise ValueError("SpectroData should have either items or audio_data.")
 
         sx = self.fft.spectrogram(self.audio_data.get_value(), padding="even")
         return 10 * np.log10(abs(sx) + np.nextafter(0, 1))
 
     def plot(self, ax: plt.Axes | None = None) -> None:
+        """Plot the spectrogram on a specific Axes.
+
+        Parameters
+        ----------
+        ax: plt.axes | None
+            Axes on which the spectrogram should be plotted.
+            Defaulted as the SpectroData.get_default_ax Axes.
+
+        """
         ax = ax if ax is not None else SpectroData.get_default_ax()
         sx = self.get_value()
         time = np.arange(sx.shape[1]) * self.duration.total_seconds() / sx.shape[1]
@@ -122,6 +142,17 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         ax.pcolormesh(time, freq, sx)
 
     def save_spectrogram(self, folder: Path, ax: plt.Axes | None = None) -> None:
+        """Export the spectrogram as a png image.
+
+        Parameters
+        ----------
+        folder: Path
+            Folder in which the spectrogram should be saved.
+        ax: plt.Axes | None
+            Axes on which the spectrogram should be plotted.
+            Defaulted as the SpectroData.get_default_ax Axes.
+
+        """
         super().write(folder)
         self.plot(ax)
         plt.savefig(f"{folder / str(self)}", bbox_inches="tight", pad_inches=0)
@@ -221,6 +252,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         ----------
         data: BaseData
             BaseData object to convert to SpectroData.
+        fft: ShortTimeFFT
+            The ShortTimeFFT used to compute the spectrogram.
 
         Returns
         -------
@@ -232,4 +265,19 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
     @classmethod
     def from_audio_data(cls, data: AudioData, fft: ShortTimeFFT) -> SpectroData:
+        """Instantiate a SpectroData object from a AudioData object.
+
+        Parameters
+        ----------
+        data: AudioData
+            Audio data from which the SpectroData should be computed.
+        fft: ShortTimeFFT
+            The ShortTimeFFT used to compute the spectrogram.
+
+        Returns
+        -------
+        SpectroData:
+            The SpectroData object.
+
+        """
         return cls(audio_data=data, fft=fft, begin=data.begin, end=data.end)
