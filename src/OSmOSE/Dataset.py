@@ -426,9 +426,9 @@ class Dataset:
                     exc_info=e,
                 )
                 raise
+            message = f"Timestamp.csv and audio files didn't match. Creating new timestamp.csv files from audio. Detail: \n\t{e}"
             self.logger.warning(
-                "Timestamp.csv and audio files didn't match. Creating new timestamp.csv files from audio. Detail: \n",
-                exc_info=e,
+                message,
             )
             timestamps = parse_timestamps_csv(
                 filenames=[file.name for file in audio_files],
@@ -442,9 +442,9 @@ class Dataset:
                     exc_info=e,
                 )
                 raise
+            message = f"Your audio files failed the following test(s):\n\t{e}"
             self.logger.warning(
-                "Your audio files failed the following test(s):\n",
-                exc_info=e,
+                message,
             )
 
         file_metadata = self._create_file_metadata(audio_metadata, timestamps)
