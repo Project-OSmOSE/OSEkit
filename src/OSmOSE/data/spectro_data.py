@@ -93,19 +93,13 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
     @property
     def shape(self) -> tuple[int, ...]:
         """Shape of the Spectro data."""
-        return max(item.shape[0] for item in self.items), sum(
-            item.shape[1] for item in self.items
+        return self.fft.f_pts, self.fft.p_num(
+            int(self.fft.fs * self.duration.total_seconds())
         )
 
     def __str__(self) -> str:
         """Overwrite __str__."""
         return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)
-
-    def _set_time_resolution(self, time_resolution: Timedelta) -> None:
-        """Set the SpectroFile time resolution."""
-        if len(tr := {item.time_resolution for item in self.items}) > 1:
-            raise ValueError("Items don't have the same time resolution")
-        self.time_resolution = tr.pop() if len(tr) == 1 else time_resolution
 
     def get_value(self) -> np.ndarray:
         """Return the value of the Spectro data.
@@ -180,7 +174,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
                     output[:, :-p1_le],
                     (output[:, -p1_le:] + item.get_value(fft=self.fft)[:, :p1_le]) / 2,
                     item.get_value(fft=self.fft)[:, p1_le:],
-                )
+                ),
             )
         return output
 
@@ -211,7 +205,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         """
         return cls.from_base_data(
-            BaseData.from_files(files, begin, end), fft=files[0].get_fft()
+            BaseData.from_files(files, begin, end),
+            fft=files[0].get_fft(),
         )
 
     @classmethod
