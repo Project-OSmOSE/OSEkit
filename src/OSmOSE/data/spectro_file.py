@@ -128,8 +128,20 @@ class SpectroFile(BaseFile):
             return data["sx"][:, start_bin:stop_bin]
 
     def get_fft(self) -> ShortTimeFFT:
+        """Return the ShortTimeFFT used for computing the spectrogram.
+
+        Returns
+        -------
+        ShortTimeFFT:
+            The ShortTimeFFT used for computing the spectrogram.
+            It is instantiated back from the parameters stored in the npz file.
+
+        """
         return ShortTimeFFT(
-            win=self.window, hop=self.hop, fs=self.sample_rate, mfft=self.mfft
+            win=self.window,
+            hop=self.hop,
+            fs=self.sample_rate,
+            mfft=self.mfft,
         )
 
     @classmethod

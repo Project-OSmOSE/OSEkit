@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-from scipy.signal import ShortTimeFFT
 
 from OSmOSE.data.base_file import BaseFile
 from OSmOSE.data.base_item import BaseItem
@@ -13,6 +12,7 @@ from OSmOSE.data.spectro_file import SpectroFile
 
 if TYPE_CHECKING:
     from pandas import Timedelta, Timestamp
+    from scipy.signal import ShortTimeFFT
 
 
 class SpectroItem(BaseItem[SpectroFile]):
@@ -39,7 +39,6 @@ class SpectroItem(BaseItem[SpectroFile]):
 
         """
         super().__init__(file, begin, end)
-        # self.shape = self.get_value().shape
 
     @property
     def time_resolution(self) -> Timedelta:
@@ -70,7 +69,10 @@ class SpectroItem(BaseItem[SpectroFile]):
 
         return (
             np.ones(
-                (fft.f.shape[0], fft.p_num(int(self.duration.total_seconds() * fft.fs)))
+                (
+                    fft.f.shape[0],
+                    fft.p_num(int(self.duration.total_seconds() * fft.fs)),
+                ),
             )
             * -120.0
         )
