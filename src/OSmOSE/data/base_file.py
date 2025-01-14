@@ -86,3 +86,7 @@ class BaseFile(Event):
         The data between start and stop.
 
         """
+
+    def __hash__(self) -> int:
+        """Overwrite hash magic method."""
+        return hash(self.path)

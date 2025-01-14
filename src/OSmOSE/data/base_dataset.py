@@ -42,6 +42,16 @@ class BaseDataset(Generic[TData, TFile], Event):
         """End of the last data object."""
         return max(data.end for data in self.data)
 
+    @property
+    def files(self) -> set[TFile]:
+        """All files referred to by the Dataset."""
+        return {
+            item.file
+            for data in self.data
+            for item in data.items
+            if item.file is not None
+        }
+
     def write(self, folder: Path) -> None:
         """Write all data objects in the specified folder.
 
