@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import os
 import shutil
@@ -6,11 +8,51 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import numpy as np
+import pandas as pd
 import pytest
 import soundfile as sf
 from scipy.signal import chirp
 
-from OSmOSE.config import OSMOSE_PATH
+from OSmOSE.config import OSMOSE_PATH, TIMESTAMP_FORMAT_TEST_FILES
+from OSmOSE.utils.audio_utils import generate_sample_audio
+
+
+@pytest.fixture
+def audio_files(
+    tmp_path: Path,
+    request: pytest.fixtures.Subrequest,
+) -> tuple[list[Path], pytest.fixtures.Subrequest]:
+    nb_files = request.param.get("nb_files", 1)
+    sample_rate = request.param.get("sample_rate", 48_000)
+    duration = request.param.get("duration", 1.0)
+    date_begin = request.param.get("date_begin", pd.Timestamp("2000-01-01 00:00:00"))
+    inter_file_duration = request.param.get("inter_file_duration", 0)
+    series_type = request.param.get("series_type", "repeat")
+
+    nb_samples = int(round(duration * sample_rate))
+    data = generate_sample_audio(
+        nb_files=nb_files,
+        nb_samples=nb_samples,
+        series_type=series_type,
+    )
+    files = []
+    for index, begin_time in enumerate(
+        pd.date_range(
+            date_begin,
+            periods=nb_files,
+            freq=pd.Timedelta(seconds=duration + inter_file_duration),
+        ),
+    ):
+        time_str = begin_time.strftime(format=TIMESTAMP_FORMAT_TEST_FILES)
+        file = tmp_path / f"audio_{time_str}.wav"
+        files.append(file)
+        sf.write(
+            file=file,
+            data=data[index],
+            samplerate=sample_rate,
+            subtype="DOUBLE",
+        )
+    return files, request
 
 
 @pytest.fixture(autouse=True)

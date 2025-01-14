@@ -87,7 +87,6 @@ def set_user_config_env(temp_user_logging_config):
 
 @pytest.mark.allow_log_write_to_file
 def test_user_logging_config(set_user_config_env, caplog, tmp_path):
-
     assert (
         len(logging.getLogger("test_user_logger").handlers) > 0
     )  # This is a tweaky way of checking if the test_user_logger logger has already been created
@@ -101,7 +100,6 @@ def test_user_logging_config(set_user_config_env, caplog, tmp_path):
 
 
 def test_default_logging_config(caplog, tmp_path):
-
     assert (
         len(logging.getLogger("dataset").handlers) > 0
     )  # This is a tweaky way of checking if the test_user_logger logger has already been created
