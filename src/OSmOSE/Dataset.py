@@ -518,7 +518,7 @@ class Dataset:
         return file_metadata
 
     def _write_metadata(self, file_metadata: pd.DataFrame) -> None:
-        metadata = pd.Series()
+        metadata = pd.Series(dtype="O")
         metadata["origin_sr"] = round(mean(file_metadata["origin_sr"].values))
         metadata["sample_bits"] = list(set(file_metadata["sampwidth"]))
         metadata["channel_count"] = round(mean(file_metadata["channel_count"].values))
