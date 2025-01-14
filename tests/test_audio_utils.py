@@ -65,6 +65,8 @@ def test_supported_audio_formats(filepath: Path, expected_output: bool) -> None:
                     ["file_1.wav", 128_000, 3_600],
                     ["file_2.wav", 128_000, 3_600],
                     ["file_3.wav", 128_000, 3_600],
+                    ["file_4.wav", 128_000, 3_600],
+                    ["file_5.wav", 128_000, 3_600],
                 ],
                 columns=["filename", "origin_sr", "duration"],
             ),
@@ -78,7 +80,7 @@ def test_supported_audio_formats(filepath: Path, expected_output: bool) -> None:
             ),
             pytest.raises(
                 FileNotFoundError,
-                match="file_3.wav has not been found in timestamp.csv",
+                match="The following files have not been found in timestamp.csv:\n\tfile_3.wav\n\tfile_5.wav",
             ),
             id="missing_file_in_timestamp_csv",
         ),
@@ -89,6 +91,7 @@ def test_supported_audio_formats(filepath: Path, expected_output: bool) -> None:
             ),
             pd.DataFrame(
                 [
+                    ["file_0.wav", pd.Timestamp("2024-01-01 12:11:00")],
                     ["file_1.wav", pd.Timestamp("2024-01-01 12:12:00")],
                     ["file_2.wav", pd.Timestamp("2024-01-01 12:13:00")],
                     ["file_3.wav", pd.Timestamp("2024-01-01 12:14:00")],
@@ -97,7 +100,7 @@ def test_supported_audio_formats(filepath: Path, expected_output: bool) -> None:
             ),
             pytest.raises(
                 FileNotFoundError,
-                match="file_3.wav is listed in timestamp.csv but hasn't be found.",
+                match="The following files are listed in timestamp.csv but hasn't be found:\n\tfile_0.wav\n\tfile_3.wav",
             ),
             id="missing_audio_file",
         ),
@@ -119,7 +122,8 @@ def test_supported_audio_formats(filepath: Path, expected_output: bool) -> None:
                 columns=["filename", "timestamp"],
             ),
             pytest.raises(
-                ValueError, match="Your files do not have all the same sampling rate."
+                ValueError,
+                match="Your files do not have all the same sampling rate.\nFound sampling rates: 128000 Hz, 128001 Hz.",
             ),
             id="mismatching_sr",
         ),
@@ -141,7 +145,8 @@ def test_supported_audio_formats(filepath: Path, expected_output: bool) -> None:
                 columns=["filename", "timestamp"],
             ),
             pytest.raises(
-                ValueError, match="Your audio files have large duration discrepancies."
+                ValueError,
+                match="Your audio files have large duration discrepancies.",
             ),
             id="mismatching_duration",
         ),
@@ -168,7 +173,9 @@ def test_supported_audio_formats(filepath: Path, expected_output: bool) -> None:
     ],
 )
 def test_check_audio(
-    audio_metadata: pd.DataFrame, timestamps: pd.DataFrame, expectation: None
+    audio_metadata: pd.DataFrame,
+    timestamps: pd.DataFrame,
+    expectation: None,
 ) -> None:
     with expectation as e:
         assert check_audio(audio_metadata, timestamps) == e

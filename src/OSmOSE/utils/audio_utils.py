@@ -90,24 +90,42 @@ def check_audio(
         - Large duration differences (> 5% of the mean duration) among audio files
 
     """
-    if any(
-        (unlisted_file := file) not in timestamps["filename"].unique()
-        for file in audio_metadata["filename"]
+    if (
+        len(
+            unlisted_files := [
+                file
+                for file in audio_metadata["filename"]
+                if file not in timestamps["filename"].unique()
+            ],
+        )
+        > 0
     ):
-        message = f"{unlisted_file} has not been found in timestamp.csv"
-        raise FileNotFoundError(message)
-
-    if any(
-        (missing_file := filename) not in audio_metadata["filename"].unique()
-        for filename in timestamps["filename"]
-    ):
-        message = f"{missing_file} is listed in timestamp.csv but hasn't be found."
-        raise FileNotFoundError(message)
-
-    if len(audio_metadata["origin_sr"].unique()) > 1:
         message = (
-            "Your files do not have all the same sampling rate. "
-            f"Found sampling rates: {', '.join(str(sr) + ' Hz' for sr in audio_metadata['origin_sr'].unique())}."
+            "The following files have not been found in timestamp.csv:\n\t"
+            + "\n\t".join(unlisted_files)
+        )
+        raise FileNotFoundError(message)
+
+    if (
+        len(
+            missing_files := [
+                file
+                for file in timestamps["filename"]
+                if file not in audio_metadata["filename"].unique()
+            ],
+        )
+        > 0
+    ):
+        message = (
+            "The following files are listed in timestamp.csv but hasn't be found:\n\t"
+            + "\n\t".join(missing_files)
+        )
+        raise FileNotFoundError(message)
+
+    if len(sample_rates := audio_metadata["origin_sr"].unique()) > 1:
+        message = (
+            "Your files do not have all the same sampling rate.\n"
+            f"Found sampling rates: {', '.join(str(sr) + ' Hz' for sr in sample_rates)}."
         )
         raise ValueError(message)
 
