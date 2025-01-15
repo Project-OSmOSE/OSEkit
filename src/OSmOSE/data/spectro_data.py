@@ -122,10 +122,23 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         if not self.audio_data or not self.fft:
             raise ValueError("SpectroData should have either items or audio_data.")
 
-        sx = self.fft.spectrogram(self.audio_data.get_value(), padding="even")
-        return 10 * np.log10(abs(sx) + np.nextafter(0, 1))
+        return self.fft.spectrogram(self.audio_data.get_value(), padding="even")
 
-    def plot(self, ax: plt.Axes | None = None) -> None:
+    def get_ltas_value(self, nb_windows: int = 1920) -> np.ndarray:
+        if self.shape[1] <= nb_windows:
+            return self.get_value()
+        sub_spectros = [
+            SpectroData.from_audio_data(ad, self.fft)
+            for ad in self.audio_data.divide(nb_windows)
+        ]
+        return np.vstack(
+            [
+                np.mean(sub_spectro.get_ltas_value(nb_windows), axis=1)
+                for sub_spectro in sub_spectros
+            ]
+        ).T
+
+    def plot(self, ax: plt.Axes | None = None, nb_ltas_windows: int = 0) -> None:
         """Plot the spectrogram on a specific Axes.
 
         Parameters
@@ -136,10 +149,15 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         """
         ax = ax if ax is not None else SpectroData.get_default_ax()
-        sx = self.get_value()
+        sx = (
+            self.get_value()
+            if nb_ltas_windows == 0
+            else self.get_ltas_value(nb_ltas_windows)
+        )
+        sx = 10 * np.log10(abs(sx) + np.nextafter(0, 1))
         time = np.arange(sx.shape[1]) * self.duration.total_seconds() / sx.shape[1]
         freq = self.fft.f
-        ax.pcolormesh(time, freq, sx)
+        ax.pcolormesh(time, freq, sx, vmin=-120, vmax=0)
 
     def save_spectrogram(self, folder: Path, ax: plt.Axes | None = None) -> None:
         """Export the spectrogram as a png image.
