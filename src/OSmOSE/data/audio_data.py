@@ -81,14 +81,16 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         first item that has one.
         Else, it is set to None.
         """
-        if sample_rate is not None or any(
-            sample_rate := item.sample_rate
-            for item in self.items
-            if item.sample_rate is not None
-        ):
+        if sample_rate is not None:
             self.sample_rate = sample_rate
-        else:
-            self.sample_rate = None
+            return
+        if sr := next(
+            (item.sample_rate for item in self.items if item.sample_rate is not None),
+            None,
+        ):
+            self.sample_rate = sr
+            return
+        self.sample_rate = None
 
     def get_value(self) -> np.ndarray:
         """Return the value of the audio data.
@@ -120,7 +122,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         item_data = item.get_value()
         if item.is_empty:
             return item_data.repeat(
-                int(item.duration.total_seconds() * self.sample_rate)
+                int(item.duration.total_seconds() * self.sample_rate),
             )
         if item.sample_rate != self.sample_rate:
             return resample(item_data, item.sample_rate, self.sample_rate)
@@ -178,4 +180,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             The AudioData object.
 
         """
-        return cls([AudioItem.from_base_item(item) for item in data.items], sample_rate)
+        return cls(
+            items=[AudioItem.from_base_item(item) for item in data.items],
+            sample_rate=sample_rate,
+        )
