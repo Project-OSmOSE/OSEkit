@@ -45,12 +45,7 @@ class BaseDataset(Generic[TData, TFile], Event):
     @property
     def files(self) -> set[TFile]:
         """All files referred to by the Dataset."""
-        return {
-            item.file
-            for data in self.data
-            for item in data.items
-            if item.file is not None
-        }
+        return {file for data in self.data for file in data.files}
 
     def write(self, folder: Path) -> None:
         """Write all data objects in the specified folder.

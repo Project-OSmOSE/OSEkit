@@ -75,6 +75,11 @@ class BaseData(Generic[TItem, TFile], Event):
         """
         path.mkdir(parents=True, exist_ok=True, mode=DPDEFAULT)
 
+    @property
+    def files(self) -> set[TFile]:
+        """All files referred to by the Data."""
+        return {item.file for item in self.items if item.file is not None}
+
     @classmethod
     def from_files(
         cls,
