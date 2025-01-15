@@ -66,7 +66,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
     @property
     def shape(self) -> tuple[int, ...]:
         """Shape of the audio data."""
-        data_length = int(self.sample_rate * self.duration.total_seconds())
+        data_length = round(self.sample_rate * self.duration.total_seconds())
         return data_length if self.nb_channels <= 1 else (data_length, self.nb_channels)
 
     def __str__(self) -> str:
@@ -122,11 +122,14 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         item_data = item.get_value()
         if item.is_empty:
             return item_data.repeat(
-                int(item.duration.total_seconds() * self.sample_rate),
+                round(item.duration.total_seconds() * self.sample_rate),
             )
         if item.sample_rate != self.sample_rate:
             return resample(item_data, item.sample_rate, self.sample_rate)
         return item_data
+
+    def divide(self, nb_subdata: int = 2) -> list[AudioData]:
+        return [AudioData.from_base_data(base_data, self.sample_rate) for base_data in super().divide(nb_subdata)]
 
     @classmethod
     def from_files(

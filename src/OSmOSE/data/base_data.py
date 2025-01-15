@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
+from pandas import date_range
 
 from OSmOSE.config import DPDEFAULT
 from OSmOSE.data.base_file import BaseFile
@@ -79,6 +80,14 @@ class BaseData(Generic[TItem, TFile], Event):
     def files(self) -> set[TFile]:
         """All files referred to by the Data."""
         return {item.file for item in self.items if item.file is not None}
+
+    def divide(self, nb_subdata: int = 2) -> list[BaseData]:
+        dates = date_range(self.begin, self.end, periods=nb_subdata + 1)
+        subdata_dates = zip(dates, dates[1:])
+        return [
+            BaseData.from_files(files=list(self.files), begin=b, end=e)
+            for b, e in subdata_dates
+        ]
 
     @classmethod
     def from_files(

@@ -9,6 +9,7 @@ from OSmOSE.data.base_file import BaseFile
 from OSmOSE.data.base_item import BaseItem
 
 if TYPE_CHECKING:
+    import numpy as np
     from pandas import Timestamp
 
 
@@ -46,6 +47,18 @@ class AudioItem(BaseItem[AudioFile]):
     def nb_channels(self) -> int:
         """Number of channels in the associated AudioFile."""
         return 0 if self.is_empty else self.file.metadata.channels
+
+    @property
+    def shape(self) -> int:
+        """Number of points in the audio item data."""
+        return round(self.sample_rate * self.duration.total_seconds())
+
+    def get_value(self) -> np.ndarray:
+        """Get the values from the File between the begin and stop timestamps.
+
+        If the Item is empty, return a single 0.
+        """
+        return super().get_value()[:self.shape]
 
     @classmethod
     def from_base_item(cls, item: BaseItem) -> AudioItem:
