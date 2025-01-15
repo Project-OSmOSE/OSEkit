@@ -41,12 +41,12 @@ class AudioItem(BaseItem[AudioFile]):
     @property
     def sample_rate(self) -> float:
         """Sample rate of the associated AudioFile."""
-        return None if self.is_empty else self.file.metadata.samplerate
+        return None if self.is_empty else self.file.sample_rate
 
     @property
     def nb_channels(self) -> int:
         """Number of channels in the associated AudioFile."""
-        return 0 if self.is_empty else self.file.metadata.channels
+        return 0 if self.is_empty else self.file.channels
 
     @property
     def shape(self) -> int:
