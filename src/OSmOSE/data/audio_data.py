@@ -129,7 +129,10 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         return item_data
 
     def divide(self, nb_subdata: int = 2) -> list[AudioData]:
-        return [AudioData.from_base_data(base_data, self.sample_rate) for base_data in super().divide(nb_subdata)]
+        return [
+            AudioData.from_base_data(base_data, self.sample_rate)
+            for base_data in super().divide(nb_subdata)
+        ]
 
     @classmethod
     def from_files(

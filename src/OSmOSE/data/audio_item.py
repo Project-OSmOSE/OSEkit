@@ -58,7 +58,7 @@ class AudioItem(BaseItem[AudioFile]):
 
         If the Item is empty, return a single 0.
         """
-        return super().get_value()[:self.shape]
+        return super().get_value()[: self.shape]
 
     @classmethod
     def from_base_item(cls, item: BaseItem) -> AudioItem:
