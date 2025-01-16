@@ -101,6 +101,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         idx = 0
         for item in self.items:
             item_data = self._get_item_value(item)
+            item_data = item_data[:min(item_data.shape[0], data.shape[0] - idx)]
             data[idx : idx + len(item_data)] = item_data
             idx += len(item_data)
         return data
