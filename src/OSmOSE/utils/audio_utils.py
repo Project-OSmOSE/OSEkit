@@ -167,6 +167,8 @@ def generate_sample_audio(
         Minimum value of the audio data.
     max_value: float
         Maximum value of the audio data.
+    dtype: np.dtype
+        The type of the output array.
 
     Returns
     -------
@@ -177,7 +179,8 @@ def generate_sample_audio(
     if series_type == "repeat":
         return np.split(
             np.tile(
-                np.linspace(min_value, max_value, nb_samples, dtype=dtype), nb_files
+                np.linspace(min_value, max_value, nb_samples, dtype=dtype),
+                nb_files,
             ),
             nb_files,
         )

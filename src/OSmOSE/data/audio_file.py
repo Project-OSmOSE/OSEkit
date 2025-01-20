@@ -8,6 +8,8 @@ if TYPE_CHECKING:
     from os import PathLike
 
     import numpy as np
+from math import floor
+
 from pandas import Timedelta, Timestamp
 
 from OSmOSE.data import audio_file_manager as afm
@@ -64,11 +66,13 @@ class AudioFile(BaseFile):
         -------
         numpy.ndarray:
             The audio data between start and stop.
+            The first frame of the data is the first frame that ends after start.
+            The last frame of the data is the last frame that starts before stop.
 
         """
         sample_rate = self.sample_rate
-        start_sample = round((start - self.begin).total_seconds() * sample_rate)
-        stop_sample = round((stop - self.begin).total_seconds() * sample_rate)
+        start_sample = floor((start - self.begin).total_seconds() * sample_rate)
+        stop_sample = floor((stop - self.begin).total_seconds() * sample_rate)
         return afm.read(self.path, start=start_sample, stop=stop_sample)
 
     @classmethod

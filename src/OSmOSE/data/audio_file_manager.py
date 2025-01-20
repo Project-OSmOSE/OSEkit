@@ -52,7 +52,7 @@ class AudioFileManager:
         start: int
             First frame to read.
         stop: int
-            Last frame to read.
+            Frame after the last frame to read.
 
         Returns
         -------

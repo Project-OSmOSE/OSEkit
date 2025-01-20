@@ -64,7 +64,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         )
 
     @property
-    def shape(self) -> tuple[int, ...]:
+    def shape(self) -> tuple[int, ...] | int:
         """Shape of the audio data."""
         data_length = round(self.sample_rate * self.duration.total_seconds())
         return data_length if self.nb_channels <= 1 else (data_length, self.nb_channels)
@@ -120,7 +120,10 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         """
         super().create_directories(path=folder)
         sf.write(
-            folder / f"{self}.wav", self.get_value(), self.sample_rate, subtype=subtype
+            folder / f"{self}.wav",
+            self.get_value(),
+            self.sample_rate,
+            subtype=subtype,
         )
 
     def _get_item_value(self, item: AudioItem) -> np.ndarray:
@@ -134,10 +137,23 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             return resample(item_data, item.sample_rate, self.sample_rate)
         return item_data
 
-    def divide(self, nb_subdata: int = 2) -> list[AudioData]:
+    def split(self, nb_subdata: int = 2) -> list[AudioData]:
+        """Split the audio data object in the specified number of audio subdata.
+
+        Parameters
+        ----------
+        nb_subdata: int
+            Number of subdata in which to split the data.
+
+        Returns
+        -------
+        list[AudioData]
+            The list of AudioData subdata objects.
+
+        """
         return [
             AudioData.from_base_data(base_data, self.sample_rate)
-            for base_data in super().divide(nb_subdata)
+            for base_data in super().split(nb_subdata)
         ]
 
     @classmethod
