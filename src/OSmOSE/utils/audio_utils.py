@@ -149,6 +149,7 @@ def generate_sample_audio(
     series_type: Literal["repeat", "increase"] = "repeat",
     min_value: float = 0.0,
     max_value: float = 1.0,
+    dtype: np.dtype = np.float64,
 ) -> list[np.ndarray]:
     """Generate sample audio data.
 
@@ -175,15 +176,17 @@ def generate_sample_audio(
     """
     if series_type == "repeat":
         return np.split(
-            np.tile(np.linspace(min_value, max_value, nb_samples), nb_files),
+            np.tile(
+                np.linspace(min_value, max_value, nb_samples, dtype=dtype), nb_files
+            ),
             nb_files,
         )
     if series_type == "increase":
         return np.split(
-            np.linspace(min_value, max_value, nb_samples * nb_files),
+            np.linspace(min_value, max_value, nb_samples * nb_files, dtype=dtype),
             nb_files,
         )
-    return np.split(np.empty(nb_samples * nb_files), nb_files)
+    return np.split(np.empty(nb_samples * nb_files, dtype=dtype), nb_files)
 
 
 def resample(data: np.ndarray, origin_sr: float, target_sr: float) -> np.ndarray:

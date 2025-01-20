@@ -53,6 +53,22 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         for data in self.data:
             data.sample_rate = sample_rate
 
+    def write(self, folder: Path, subtype: str | None = None) -> None:
+        """Write all data objects in the specified folder.
+
+        Parameters
+        ----------
+        folder: Path
+            Folder in which to write the data.
+        subtype: str | None
+            Subtype as provided by the soundfile module.
+            Defaulted as the default 16-bit PCM for WAV audio files.
+
+
+        """
+        for data in self.data:
+            data.write(folder, subtype)
+
     @classmethod
     def from_folder(
         cls,

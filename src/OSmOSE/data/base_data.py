@@ -69,12 +69,16 @@ class BaseData(Generic[TItem, TFile], Event):
         """Get the concatenated values from all Items."""
         return np.concatenate([item.get_value() for item in self.items])
 
-    def write(self, path: Path) -> None:
+    @staticmethod
+    def create_directories(path: Path) -> None:
         """Create the directory in which the data will be written.
 
         The actual data writing is left to the specified classes.
         """
         path.mkdir(parents=True, exist_ok=True, mode=DPDEFAULT)
+
+    def write(self, folder: Path) -> None:
+        """Abstract method for writing data to file."""
 
     @property
     def files(self) -> set[TFile]:

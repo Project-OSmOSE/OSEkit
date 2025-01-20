@@ -101,22 +101,27 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         idx = 0
         for item in self.items:
             item_data = self._get_item_value(item)
-            item_data = item_data[:min(item_data.shape[0], data.shape[0] - idx)]
+            item_data = item_data[: min(item_data.shape[0], data.shape[0] - idx)]
             data[idx : idx + len(item_data)] = item_data
             idx += len(item_data)
         return data
 
-    def write(self, folder: Path) -> None:
+    def write(self, folder: Path, subtype: str | None = None) -> None:
         """Write the audio data to file.
 
         Parameters
         ----------
         folder: pathlib.Path
             Folder in which to write the audio file.
+        subtype: str | None
+            Subtype as provided by the soundfile module.
+            Defaulted as the default 16-bit PCM for WAV audio files.
 
         """
-        super().write(path=folder)
-        sf.write(folder / f"{self}.wav", self.get_value(), self.sample_rate)
+        super().create_directories(path=folder)
+        sf.write(
+            folder / f"{self}.wav", self.get_value(), self.sample_rate, subtype=subtype
+        )
 
     def _get_item_value(self, item: AudioItem) -> np.ndarray:
         """Return the resampled (if needed) data from the audio item."""
