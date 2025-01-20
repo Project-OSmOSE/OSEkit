@@ -51,7 +51,8 @@ class AudioItem(BaseItem[AudioFile]):
     @property
     def shape(self) -> int:
         """Number of points in the audio item data."""
-        return round(self.sample_rate * self.duration.total_seconds())
+        start_sample, end_sample = self.file.frames_indexes(self.begin, self.end)
+        return end_sample - start_sample
 
     def get_value(self) -> np.ndarray:
         """Get the values from the File between the begin and stop timestamps.

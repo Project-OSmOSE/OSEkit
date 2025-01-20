@@ -70,10 +70,31 @@ class AudioFile(BaseFile):
             The last frame of the data is the last frame that starts before stop.
 
         """
-        sample_rate = self.sample_rate
-        start_sample = floor((start - self.begin).total_seconds() * sample_rate)
-        stop_sample = floor((stop - self.begin).total_seconds() * sample_rate)
+        start_sample, stop_sample = self.frames_indexes(start, stop)
         return afm.read(self.path, start=start_sample, stop=stop_sample)
+
+    def frames_indexes(self, start: Timestamp, stop: Timestamp) -> tuple[int, int]:
+        """Return the indexes of the frames between the start and stop timestamps.
+
+        The start index is that of the first sample that ends after the start timestamp.
+        The stop index is that of the last sample that starts before the stop timestamp.
+
+        Parameters
+        ----------
+        start: pandas.Timestamp
+            Timestamp corresponding to the first data point to read.
+        stop: pandas.Timestamp
+            Timestamp after the last data point to read.
+
+        Returns
+        -------
+        tuple[int,int]
+            First and last frames of the data.
+
+        """
+        start_sample = floor((start - self.begin).total_seconds() * self.sample_rate)
+        stop_sample = floor((stop - self.begin).total_seconds() * self.sample_rate)
+        return start_sample, stop_sample
 
     @classmethod
     def from_base_file(cls, file: BaseFile) -> AudioFile:
