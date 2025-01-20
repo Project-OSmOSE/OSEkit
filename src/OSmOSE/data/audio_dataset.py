@@ -44,9 +44,10 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         super().__init__(data)
 
     @property
-    def sample_rate(self) -> set[float]:
+    def sample_rate(self) -> set[float] | float:
         """Return the sample rate of the audio data."""
-        return {data.sample_rate for data in self.data}
+        sample_rates = {data.sample_rate for data in self.data}
+        return sample_rates if len(list(sample_rates)) > 1 else next(iter(sample_rates))
 
     @sample_rate.setter
     def sample_rate(self, sample_rate: float) -> None:
