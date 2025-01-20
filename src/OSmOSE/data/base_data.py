@@ -85,7 +85,20 @@ class BaseData(Generic[TItem, TFile], Event):
         """All files referred to by the Data."""
         return {item.file for item in self.items if item.file is not None}
 
-    def divide(self, nb_subdata: int = 2) -> list[BaseData]:
+    def split(self, nb_subdata: int = 2) -> list[BaseData]:
+        """Split the data object in the specified number of subdata.
+
+        Parameters
+        ----------
+        nb_subdata: int
+            Number of subdata in which to split the data.
+
+        Returns
+        -------
+        list[BaseData]
+            The list of BaseData subdata objects.
+
+        """
         dates = date_range(self.begin, self.end, periods=nb_subdata + 1)
         subdata_dates = zip(dates, dates[1:])
         return [

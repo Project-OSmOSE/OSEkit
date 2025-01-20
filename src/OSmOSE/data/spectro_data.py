@@ -124,18 +124,28 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         return self.fft.spectrogram(self.audio_data.get_value(), padding="even")
 
-    def get_ltas_value(self, nb_windows: int = 1920) -> np.ndarray:
+    def get_ltas_value(self, nb_windows: int = 1920, depth: int = 0) -> np.ndarray:
         if self.shape[1] <= nb_windows:
             return self.get_value()
         sub_spectros = [
             SpectroData.from_audio_data(ad, self.fft)
-            for ad in self.audio_data.divide(nb_windows)
+            for ad in self.audio_data.split(nb_windows)
         ]
+        from tqdm import tqdm
+
+        if depth == 0:
+            m = []
+            for sub_spectro in tqdm(sub_spectros):
+                m.append(
+                    np.mean(sub_spectro.get_ltas_value(nb_windows, depth + 1), axis=1),
+                )
+            return np.vstack(m).T
+
         return np.vstack(
             [
-                np.mean(sub_spectro.get_ltas_value(nb_windows), axis=1)
+                np.mean(sub_spectro.get_ltas_value(nb_windows, depth + 1), axis=1)
                 for sub_spectro in sub_spectros
-            ]
+            ],
         ).T
 
     def plot(self, ax: plt.Axes | None = None, nb_ltas_windows: int = 0) -> None:
@@ -185,7 +195,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             Folder in which to write the Spectro file.
 
         """
-        super().write(path=folder)
+        super().create_directories(path=folder)
         sx = self.get_value()
         time = np.arange(sx.shape[1]) * self.duration.total_seconds() / sx.shape[1]
         freq = self.fft.f
