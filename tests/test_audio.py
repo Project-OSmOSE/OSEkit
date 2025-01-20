@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pandas as pd
 import pytest
+import soundfile as sf
 
 from OSmOSE.config import TIMESTAMP_FORMAT_TEST_FILES
 from OSmOSE.data.audio_data import AudioData
@@ -431,7 +432,9 @@ def test_audio_resample_sample_count(
             None,
             pd.Timedelta(seconds=1),
             generate_sample_audio(
-                nb_files=3, nb_samples=48_000, series_type="increase"
+                nb_files=3,
+                nb_samples=48_000,
+                series_type="increase",
             ),
             id="multiple_consecutive_files",
         ),
@@ -450,7 +453,10 @@ def test_audio_resample_sample_count(
             [
                 generate_sample_audio(nb_files=1, nb_samples=96_000)[0][0:48_000],
                 generate_sample_audio(
-                    nb_files=1, nb_samples=48_000, min_value=0.0, max_value=0.0
+                    nb_files=1,
+                    nb_samples=48_000,
+                    min_value=0.0,
+                    max_value=0.0,
                 )[0],
                 generate_sample_audio(nb_files=1, nb_samples=96_000)[0][48_000:],
             ],
@@ -493,3 +499,60 @@ def test_audio_dataset_from_folder(
         np.array_equal(data.get_value(), expected)
         for (data, expected) in zip(dataset.data, expected_audio_data)
     )
+
+
+@pytest.mark.parametrize(
+    ("audio_files", "subtype", "expected_audio_data"),
+    [
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            "DOUBLE",
+            generate_sample_audio(1, 48_000, dtype=np.float64),
+            id="float64_file",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            "FLOAT",
+            generate_sample_audio(1, 48_000, dtype=np.float32),
+            id="float32_file",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 2,
+                "inter_file_duration": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            "DOUBLE",
+            generate_sample_audio(1, 48_000, dtype=np.float64),
+            id="padded_file",
+        ),
+    ],
+    indirect=["audio_files"],
+)
+def test_write_files(
+    tmp_path: Path,
+    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    subtype: str,
+    expected_audio_data: list[tuple[int, bool]],
+) -> None:
+    dataset = AudioDataset.from_folder(
+        tmp_path,
+        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+    )
+    output_path = tmp_path / "output"
+    dataset.write(output_path, subtype=subtype)
+    for data in dataset.data:
+        assert f"{data}.wav" in [f.name for f in output_path.glob("*.wav")]
+        assert np.allclose(data.get_value(), sf.read(output_path / f"{data}.wav")[0])
