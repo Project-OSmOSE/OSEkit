@@ -38,10 +38,12 @@ def audio_files(
     )
     files = []
     for index, begin_time in enumerate(
-        pd.date_range(
-            date_begin,
-            periods=nb_files,
-            freq=pd.Timedelta(seconds=duration + inter_file_duration),
+        list(
+            pd.date_range(
+                date_begin,
+                periods=nb_files,
+                freq=pd.Timedelta(seconds=duration + inter_file_duration),
+            )
         ),
     ):
         time_str = begin_time.strftime(format=TIMESTAMP_FORMAT_TEST_FILES)
@@ -102,13 +104,13 @@ def patch_grp_module(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
 
 
 @pytest.fixture
-def patch_afm_open(monkeypatch) -> list[Path]:
+def patch_afm_open(monkeypatch: pytest.MonkeyPatch) -> list[Path]:
     """Mock the AudioFileManager._open method in order to track the file openings."""
 
     opened_files = []
     open_func = AudioFileManager._open
 
-    def mock_open(self, path: Path):
+    def mock_open(self: AudioFileManager, path: Path) -> None:
         opened_files.append(path)
         open_func(self, path)
 
