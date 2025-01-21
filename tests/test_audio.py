@@ -286,8 +286,36 @@ def test_audio_file_read(
                 second=0,
                 microsecond=790_000,
             ),
+            generate_sample_audio(nb_files=1, nb_samples=10)[0][2:8],
+            id="first_frame_included_last_frame_rounding_up",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 10,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            pd.Timestamp(
+                year=2024,
+                month=1,
+                day=1,
+                hour=12,
+                minute=0,
+                second=0,
+                microsecond=290_000,
+            ),
+            pd.Timestamp(
+                year=2024,
+                month=1,
+                day=1,
+                hour=12,
+                minute=0,
+                second=0,
+                microsecond=720_000,
+            ),
             generate_sample_audio(nb_files=1, nb_samples=10)[0][2:7],
-            id="first_frame_included_last_frame_discarded",
+            id="first_frame_included_last_frame_rounding_down",
         ),
     ],
     indirect=["audio_files"],
@@ -406,6 +434,51 @@ def test_audio_data(
     if all(item.is_empty for item in data.items):
         data.sample_rate = 48_000
     assert np.array_equal(data.get_value(), expected)
+
+
+@pytest.mark.parametrize(
+    "audio_files",
+    [
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            id="simple_audio",
+        ),
+        pytest.param(
+            {
+                "duration": 14.303492063,
+                "sample_rate": 44_100,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            id="uneven_boundaries_rounding_up",
+        ),
+        pytest.param(
+            {
+                "duration": 14.303471655328797,
+                "sample_rate": 44_100,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            id="uneven_boundaries_rounding_down",
+        ),
+    ],
+    indirect=True,
+)
+def test_read_vs_soundfile(
+    audio_files: tuple[list[Path], pytest.fixtures.Subrequest]
+) -> None:
+    audio_files, _ = audio_files
+    af = AudioFile(audio_files[0], strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
+    ad = AudioData.from_files([af])
+    assert np.array_equal(sf.read(audio_files[0])[0], ad.get_value())
 
 
 @pytest.mark.parametrize(

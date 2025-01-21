@@ -93,7 +93,7 @@ class AudioFile(BaseFile):
 
         """
         start_sample = floor((start - self.begin).total_seconds() * self.sample_rate)
-        stop_sample = floor((stop - self.begin).total_seconds() * self.sample_rate)
+        stop_sample = round((stop - self.begin).total_seconds() * self.sample_rate)
         return start_sample, stop_sample
 
     @classmethod
