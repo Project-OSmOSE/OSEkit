@@ -14,6 +14,7 @@ import soundfile as sf
 from scipy.signal import chirp
 
 from OSmOSE.config import OSMOSE_PATH, TIMESTAMP_FORMAT_TEST_FILES
+from OSmOSE.data import AudioFileManager
 from OSmOSE.utils.audio_utils import generate_sample_audio
 
 
@@ -98,6 +99,21 @@ def patch_grp_module(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
     monkeypatch.setattr(Path, "group", lambda path: groups[active_group["gid"]])
 
     return mocked_grp_module
+
+
+@pytest.fixture
+def patch_afm_open(monkeypatch) -> list[Path]:
+    """Mock the AudioFileManager._open method in order to track the file openings."""
+
+    opened_files = []
+    open_func = AudioFileManager._open
+
+    def mock_open(self, path: Path):
+        opened_files.append(path)
+        open_func(self, path)
+
+    monkeypatch.setattr(AudioFileManager, "_open", mock_open)
+    return opened_files
 
 
 @pytest.fixture

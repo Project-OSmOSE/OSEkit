@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from pathlib import Path
+
+import numpy as np
+import pytest
+
 from OSmOSE.data.audio_file_manager import AudioFileManager
 from OSmOSE.utils.audio_utils import generate_sample_audio
-from pathlib import Path
-import pytest
-import numpy as np
-from soundfile import LibsndfileError
 
 
 @pytest.mark.parametrize(
@@ -55,17 +56,16 @@ from soundfile import LibsndfileError
     indirect=["audio_files"],
 )
 def test_read(
-    tmp_path: Path,
     audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
     frames: tuple[int, int],
     expected: np.ndarray,
 ) -> None:
 
-    audio_file_path = tmp_path / "audio_000101000000000000.wav"
+    audio_files, _ = audio_files
     afm = AudioFileManager()
     params = {"start": frames[0], "stop": frames[1]}
     params = {k: v for k, v in params.items() if v is not None}
-    assert np.array_equal(afm.read(path=audio_file_path, **params), expected)
+    assert np.array_equal(afm.read(path=audio_files[0], **params), expected)
 
 
 @pytest.mark.parametrize(
@@ -127,14 +127,124 @@ def test_read(
     indirect=["audio_files"],
 )
 def test_read_errors(
-    tmp_path: Path,
     audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
     frames: tuple[int, int],
     expected: np.ndarray,
 ) -> None:
-    audio_file_path = tmp_path / "audio_000101000000000000.wav"
+    audio_files, _ = audio_files
     afm = AudioFileManager()
     params = {"start": frames[0], "stop": frames[1]}
     params = {k: v for k, v in params.items() if v is not None}
     with expected as e:
-        assert afm.read(path=audio_file_path, **params) == e
+        assert afm.read(path=audio_files[0], **params) == e
+
+
+@pytest.mark.parametrize(
+    ("audio_files", "file_openings", "expected_opened_files"),
+    [
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 10,
+                "nb_files": 1,
+            },
+            [0],
+            [0],
+            id="one_single_file_opening",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 10,
+                "nb_files": 1,
+            },
+            [0, 0, 0, 0, 0],
+            [0],
+            id="repeated_file_openings",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 10,
+                "nb_files": 5,
+            },
+            [0, 1, 2, 3, 4],
+            [0, 1, 2, 3, 4],
+            id="different_file_openings",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 10,
+                "nb_files": 5,
+            },
+            [0, 0, 0, 1, 1, 1, 1, 2, 3, 3, 4, 4, 4, 2, 2, 1, 1],
+            [0, 1, 2, 3, 4, 2, 1],
+            id="multiple_repeated_file_openings",
+        ),
+    ],
+    indirect=["audio_files"],
+)
+def test_switch(
+    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    file_openings: list[int],
+    patch_afm_open: list[Path],
+    expected_opened_files: list[int],
+) -> None:
+
+    afm = AudioFileManager()
+    audio_files, _ = audio_files
+    for file in file_openings:
+        afm.read(path=audio_files[file])
+    assert [audio_files.index(f) for f in patch_afm_open] == expected_opened_files
+    assert audio_files.index(Path(afm.opened_file.name)) == file_openings[-1]
+
+
+@pytest.mark.parametrize(
+    "audio_files",
+    [
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 10,
+                "nb_files": 1,
+            },
+            id="one_single_file_opening",
+        ),
+    ],
+    indirect=True,
+)
+def test_close(audio_files: tuple[list[Path], pytest.fixtures.Subrequest]) -> None:
+    afm = AudioFileManager()
+    assert afm.opened_file is None
+    audio_files, _ = audio_files
+    afm.read(audio_files[0])
+    assert afm.opened_file is not None
+    assert Path(afm.opened_file.name) == audio_files[0]
+    afm._close()
+    assert afm.opened_file is None
+
+
+@pytest.mark.parametrize(
+    "audio_files",
+    [
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 10,
+                "nb_files": 5,
+            },
+            id="multiple_files",
+        ),
+    ],
+    indirect=True,
+)
+def test_info(audio_files: tuple[list[Path], pytest.fixtures.Subrequest]) -> None:
+    afm = AudioFileManager()
+    audio_files, request = audio_files
+    for file in audio_files:
+        assert afm.opened_file is None or Path(afm.opened_file.name) != file.name
+        sample_rate, frames, channels = afm.info(file)
+        assert request.param["sample_rate"] == sample_rate
+        assert request.param["duration"] * request.param["sample_rate"] == frames
+        assert channels == 1

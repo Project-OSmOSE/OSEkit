@@ -40,7 +40,10 @@ class AudioFileManager:
         self._open(path)
 
     def read(
-        self, path: PathLike | str, start: int = 0, stop: int | None = None
+        self,
+        path: PathLike | str,
+        start: int = 0,
+        stop: int | None = None,
     ) -> np.ndarray:
         """Read the content of an audio file.
 
@@ -69,11 +72,11 @@ class AudioFileManager:
 
         if not 0 <= start < frames:
             raise ValueError(
-                "Start should be between 0 and the last frame of the audio file."
+                "Start should be between 0 and the last frame of the audio file.",
             )
         if not 0 <= stop <= frames:
             raise ValueError(
-                "Stop should be between 0 and the last frame of the audio file."
+                "Stop should be between 0 and the last frame of the audio file.",
             )
         if start > stop:
             raise ValueError("Start should be inferior to Stop.")
