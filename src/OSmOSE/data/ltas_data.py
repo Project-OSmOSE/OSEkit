@@ -80,7 +80,11 @@ class LTASData(SpectroData):
         """
         ltas_fft = LTASData.get_ltas_fft(fft)
         super().__init__(
-            items=items, audio_data=audio_data, begin=begin, end=end, fft=ltas_fft
+            items=items,
+            audio_data=audio_data,
+            begin=begin,
+            end=end,
+            fft=ltas_fft,
         )
         self.nb_time_bins = nb_time_bins
 
@@ -95,18 +99,10 @@ class LTASData(SpectroData):
             for ad in self.audio_data.split(self.nb_time_bins)
         ]
 
-        if depth == 0:
-            m = []
-            for sub_spectro in tqdm(sub_spectros):
-                m.append(
-                    np.mean(sub_spectro.get_value(depth + 1), axis=1),
-                )
-            return np.vstack(m).T
-
         return np.vstack(
             [
                 np.mean(sub_spectro.get_value(depth + 1), axis=1)
-                for sub_spectro in sub_spectros
+                for sub_spectro in (sub_spectros if depth != 0 else tqdm(sub_spectros))
             ],
         ).T
 
