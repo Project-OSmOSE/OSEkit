@@ -108,6 +108,11 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             int(self.fft.fs * self.duration.total_seconds()),
         )
 
+    @property
+    def nb_bytes(self) -> int:
+        """Total bytes consumed by the spectro values."""
+        return self.shape[0] * self.shape[1] * 8
+
     def __str__(self) -> str:
         """Overwrite __str__."""
         return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)
