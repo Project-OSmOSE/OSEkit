@@ -76,6 +76,15 @@ class LTASData(SpectroData):
             Set the end of the empty data.
         fft: ShortTimeFFT
             The short time FFT used for computing the spectrogram.
+        nb_time_bins: int
+            The maximum number of time bins of the LTAS.
+            Given the audio data and the fft parameters,
+            if the resulting spectrogram has a number of windows p_num
+            <= nb_time_bins, the LTAS is computed like a classic spectrogram.
+            Otherwise, the audio data is split in nb_time_bins equal-duration
+            audio data, and each bin of the LTAS consist in an average of the
+            fft values obtained on each of these bins. The audio is split recursively
+            until p_num <= nb_time_bins.
 
         """
         ltas_fft = LTASData.get_ltas_fft(fft)
@@ -89,6 +98,10 @@ class LTASData(SpectroData):
         self.nb_time_bins = nb_time_bins
 
     def get_value(self, depth: int = 0) -> np.ndarray:
+        """Return the Sx matrix of the LTAS.
+
+        The Sx matrix contains the absolute square of the STFT.
+        """
         if self.shape[1] <= self.nb_time_bins:
             return super().get_value()
         sub_spectros = [
@@ -107,7 +120,25 @@ class LTASData(SpectroData):
         ).T
 
     @classmethod
-    def from_spectro_data(cls, spectro_data: SpectroData, nb_time_bins: int):
+    def from_spectro_data(
+        cls, spectro_data: SpectroData, nb_time_bins: int
+    ) -> LTASData:
+        """Initialize a LTASData from a SpectroData.
+
+        Parameters
+        ----------
+        spectro_data: SpectroData
+            The spectrogram to turn in a LTAS.
+        nb_time_bins: int
+            The maximum number of windows over which the audio will be split to perform
+            a LTAS.
+
+        Returns
+        -------
+        LTASData:
+            The LTASData instance.
+
+        """
         items = spectro_data.items
         audio_data = spectro_data.audio_data
         begin = spectro_data.begin
@@ -123,7 +154,23 @@ class LTASData(SpectroData):
         )
 
     @staticmethod
-    def get_ltas_fft(fft: ShortTimeFFT):
+    def get_ltas_fft(fft: ShortTimeFFT) -> ShortTimeFFT:
+        """Return a ShortTimeFFT object optimized for computing LTAS.
+
+        The overlap of the fft is forced set to 0, as the value of consecutive
+        windows will in the end be averaged.
+
+        Parameters
+        ----------
+        fft: ShortTimeFFT
+            The fft to optimize for LTAS computation.
+
+        Returns
+        -------
+        ShortTimeFFT
+            The optimized fft.
+
+        """
         win = fft.win
         fs = fft.fs
         mfft = fft.mfft
