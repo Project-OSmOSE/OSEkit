@@ -129,7 +129,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         return self.fft.spectrogram(self.audio_data.get_value(), padding="even")
 
-    def plot(self, ax: plt.Axes | None = None) -> None:
+    def plot(self, ax: plt.Axes | None = None, sx: np.ndarray | None = None) -> None:
         """Plot the spectrogram on a specific Axes.
 
         Parameters
@@ -137,10 +137,12 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         ax: plt.axes | None
             Axes on which the spectrogram should be plotted.
             Defaulted as the SpectroData.get_default_ax Axes.
+        sx: np.ndarray | None
+            Spectrogram sx values. Will be computed if not provided.
 
         """
         ax = ax if ax is not None else SpectroData.get_default_ax()
-        sx = self.get_value()
+        sx = self.get_value() if sx is None else sx
         sx = 10 * np.log10(abs(sx) + np.nextafter(0, 1))
         time = np.arange(sx.shape[1]) * self.duration.total_seconds() / sx.shape[1]
         freq = self.fft.f
@@ -163,17 +165,19 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         plt.savefig(f"{folder / str(self)}", bbox_inches="tight", pad_inches=0)
         plt.close()
 
-    def write(self, folder: Path) -> None:
+    def write(self, folder: Path, sx: np.ndarray | None = None) -> None:
         """Write the Spectro data to file.
 
         Parameters
         ----------
         folder: pathlib.Path
             Folder in which to write the Spectro file.
+        sx: np.ndarray | None
+            Spectrogram sx values. Will be computed if not provided.
 
         """
         super().create_directories(path=folder)
-        sx = self.get_value()
+        sx = self.get_value() if sx is None else sx
         time = np.arange(sx.shape[1]) * self.duration.total_seconds() / sx.shape[1]
         freq = self.fft.f
         window = self.fft.win
