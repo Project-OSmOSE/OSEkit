@@ -4,7 +4,11 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from OSmOSE.utils.audio_utils import check_audio, is_supported_audio_format
+from OSmOSE.utils.audio_utils import (
+    check_audio,
+    get_all_audio_files,
+    is_supported_audio_format,
+)
 
 
 @pytest.mark.unit
@@ -33,6 +37,74 @@ from OSmOSE.utils.audio_utils import check_audio, is_supported_audio_format
 )
 def test_supported_audio_formats(filepath: Path, expected_output: bool) -> None:
     assert is_supported_audio_format(filepath) == expected_output
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("files", "audio_files"),
+    [
+        pytest.param(
+            [
+                "cool.wav",
+            ],
+            [
+                "cool.wav",
+            ],
+            id="one_wav_file",
+        ),
+        pytest.param(
+            [
+                "cool.txt",
+            ],
+            [],
+            id="no_wav_file",
+        ),
+        pytest.param(
+            [
+                "cool.txt",
+                "fun.wav",
+            ],
+            [
+                "fun.wav",
+            ],
+            id="wav_and_non_audio",
+        ),
+        pytest.param(
+            [
+                "top.wav",
+                "cool.txt",
+                "fun.wav",
+                "spot.flac",
+            ],
+            [
+                "top.wav",
+                "fun.wav",
+                "spot.flac",
+            ],
+            id="wav_and_flac_and_non_audio",
+        ),
+        pytest.param(
+            [
+                "top.WaV",
+                "cool.txt",
+                "fun.wav",
+                "spot.FLAC",
+            ],
+            [
+                "top.WaV",
+                "fun.wav",
+                "spot.FLAC",
+            ],
+            id="case_insensitive",
+        ),
+    ],
+)
+def test_get_all_audio_files(
+    tmp_path: Path, files: list[Path], audio_files: list[Path]
+) -> None:
+    for file in files:
+        (tmp_path / file).open("a").close()
+    assert [file.name for file in get_all_audio_files(tmp_path)] == sorted(audio_files)
 
 
 @pytest.mark.unit

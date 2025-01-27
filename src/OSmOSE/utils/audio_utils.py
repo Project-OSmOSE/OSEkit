@@ -44,8 +44,11 @@ def get_all_audio_files(directory: Path) -> list[Path]:
     """
     return sorted(
         file
-        for file in directory.glob("*/*")
-        if file.suffix.lower() in (ext.lower() for ext in SUPPORTED_AUDIO_FORMAT)
+        for file in directory.iterdir()
+        if any(
+            file.name.lower().endswith(extension)
+            for extension in SUPPORTED_AUDIO_FORMAT
+        )
     )
 
 
