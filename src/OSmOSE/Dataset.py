@@ -399,12 +399,13 @@ class Dataset:
             is not in the OSmOSE format:
                 A copy of the timestamp.csv is formatted and moved to the audio folder.
         """
-        raw_audio_files = get_all_audio_files(
+        audio_files = get_all_audio_files(
             audio_path,
         )  # TODO: manage built dataset with reshape audio folders ?
 
-        audio_files = clean_filenames(raw_audio_files)
-        for old, new in zip(raw_audio_files, audio_files):
+        audio_files, corrected_files = clean_filenames(audio_files)
+
+        for old, new in corrected_files.items():
             old.replace(new)
         date_template = clean_forbidden_characters(date_template)
 
