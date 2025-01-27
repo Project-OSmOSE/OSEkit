@@ -53,7 +53,7 @@ def aplose2raven(df: pd.DataFrame) -> pd.DataFrame:
     return df2raven
 
 
-def clean_filenames(filenames: list[Path]) -> tuple[list[Path],dict[Path,Path]]:
+def clean_filenames(filenames: list[Path]) -> tuple[list[Path], dict[Path, Path]]:
     """Clean filenames to replace forbidden characters in the OSmOSE format.
 
     Parameters
@@ -69,26 +69,27 @@ def clean_filenames(filenames: list[Path]) -> tuple[list[Path],dict[Path,Path]]:
         as keys and corrected filenames as values.
 
     """
-    corrected_files = {
-        file: file.parent / clean_forbidden_characters(file.name) for file in filenames
-        if has_forbidden_characters(file.name)
-    }
-    for idx,file in enumerate(filenames):
-        if not has_forbidden_characters(file.name):
+    corrected_files = {}
+    for idx, file in enumerate(filenames):
+        if not has_forbidden_characters(file.name) and file.suffix.islower():
             continue
-        corrected_file = file.parent / clean_forbidden_characters(file.name)
-        corrected_files[file] = corrected_file
-        filenames[idx] = corrected_file
+        corrected = file.stem
+        corrected = clean_forbidden_characters(corrected)
+        corrected = file.parent / f"{corrected}{file.suffix.lower()}"
+        corrected_files[file] = corrected
+        filenames[idx] = corrected
+
     if corrected_files:
         glc.logger.warning(
-            "Audio file names contained forbidden characters."
-            "Hyphens and colons are replaced with underscores.",
+            "Audio file names have been cleaned.",
         )
-    return filenames,corrected_files
+    return filenames, corrected_files
+
 
 def has_forbidden_characters(filename: str) -> bool:
     """Return true if the filename contains forbidden characters."""
     return any(c in FORBIDDEN_FILENAME_CHARACTERS for c in filename)
+
 
 def clean_forbidden_characters(text: str) -> str:
     """Replace all forbidden characters in a given string with its replacement."""
