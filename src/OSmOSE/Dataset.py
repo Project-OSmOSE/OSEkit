@@ -7,6 +7,8 @@ from statistics import fmean as mean
 from typing import List, Tuple, Union
 
 import pandas as pd
+import soundfile
+from tqdm import tqdm
 
 from OSmOSE.config import (
     DPDEFAULT,
@@ -409,13 +411,31 @@ class Dataset:
             old.replace(new)
         date_template = clean_forbidden_characters(date_template)
 
+        corrupted_files = set()
+        audio_metadata = []
+        self.logger.info("Fetching audio file metadata...")
+        for idx, file in enumerate(tqdm(audio_files)):
+            try:
+                audio_metadata.append(get_audio_metadata(file))
+            except soundfile.LibsndfileError:
+                corrupted_files.add(idx)
+
+        audio_metadata = pd.DataFrame.from_records(
+            audio_metadata,
+        )
+
+        if corrupted_files:
+            message = "The following file(s) could not be opened:\n\t" + "\n\t".join(
+                audio_files[c].name for c in corrupted_files
+            )
+            self.logger.warning(message)
+            for corrupted_file in sorted(corrupted_files, reverse=True):
+                audio_files.pop(corrupted_file)
+
         timestamps = self._parse_timestamp_df(
             audio_files=audio_files,
             date_template=date_template,
             path=audio_path,
-        )
-        audio_metadata = pd.DataFrame.from_records(
-            get_audio_metadata(file) for file in audio_files
         )
 
         try:
@@ -468,7 +488,8 @@ class Dataset:
             index=False,
         )
 
-        for file in audio_files:
+        self.logger.info("Moving files...")
+        for file in tqdm(audio_files):
             file.replace(destination_folder / file.name)
 
         return file_metadata
