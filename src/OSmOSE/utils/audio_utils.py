@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
+import soundfile as sf
 
 from OSmOSE.config import (
     AUDIO_METADATA,
@@ -64,7 +65,8 @@ def get_audio_metadata(audio_file: Path) -> dict:
         The metadata list is grabbed from OSmOSE.config.AUDIO_METADATA.
 
     """
-    return {key: f(audio_file) for key, f in AUDIO_METADATA.items()}
+    with sf.SoundFile(audio_file, "r") as af:
+        return {key: f(af) for key, f in AUDIO_METADATA.items()}
 
 
 def check_audio(
