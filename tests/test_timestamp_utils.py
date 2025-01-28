@@ -83,7 +83,7 @@ def test_is_datetime_template_valid(datetime_template: str, expected: bool) -> N
         ),
         pytest.param(
             "%y%m%d%Z",
-            r"(\d{2})(0[1-9]|1[0-2])([0-2]\d|3[0-1])((?:\w+)(?:[-/]\w+)*(?:[\+-]\d+)?)",
+            r"(\d{2})(0[1-9]|1[0-2])([0-2]\d|3[0-1])((?:[a-zA-Z]+)(?:[-/]\w+)*(?:[\+-]\d+)?)",
             id="timezone_name",
         ),
     ],
@@ -212,6 +212,12 @@ def test_build_regex_from_datetime_template(
             "%H:%M:%S.%f%Y-%m-%d%z",
             Timestamp("2023-04-05 14:49:06.123000-0200", tz="UTC-02:00"),
             id="no_ambiguity_for_%f_precision",
+        ),
+        pytest.param(
+            "14:49:06.1232023-04-05_UTC_soundfile.wav",
+            "%H:%M:%S.%f%Y-%m-%d_%Z",
+            Timestamp("2023-04-05 14:49:06.123000", tz="UTC"),
+            id="underscore_after_%Z",
         ),
     ],
 )
