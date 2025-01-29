@@ -95,8 +95,8 @@ def check_audio(
     audio_files = set(audio_metadata["filename"].unique())
     timestamps = set(timestamps["filename"].unique())
 
-    unlisted_files = audio_files - timestamps
-    missing_files = timestamps - audio_files
+    unlisted_files = sorted(audio_files - timestamps)
+    missing_files = sorted(timestamps - audio_files)
 
     if unlisted_files:
         message = (
