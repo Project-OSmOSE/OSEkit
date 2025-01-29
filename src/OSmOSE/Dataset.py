@@ -586,11 +586,11 @@ class Dataset:
             self.path / "other",
             self._get_original_after_build(),
         )
-        nb_moved_files = 0
+
         for file in self.path.rglob("*"):
             if file.is_dir() and any(file.iterdir()):
                 continue
-            if file in (file for folder in build_folders for file in folder.rglob("*")):
+            if any(f in file.parents for f in build_folders):
                 continue
             if not file.is_dir() or any(file.iterdir()):
                 relative_path = file.relative_to(self.path)
@@ -598,13 +598,16 @@ class Dataset:
                 if not destination_folder.exists():
                     destination_folder.mkdir(parents=True, exist_ok=True)
                 file.replace(self.path / "other" / relative_path)
-                nb_moved_files += 1
             folder_to_remove = file if file.is_dir() else file.parent
             while not any(folder_to_remove.iterdir()):
                 folder_to_remove.rmdir()
                 folder_to_remove = folder_to_remove.parent
-        if nb_moved_files > 0:
-            self.logger.info("Moved %i file(s) to the 'other' folder.", nb_moved_files)
+
+        if (self.path / "other").exists():
+            self.logger.info(
+                "Moved %i file(s) to the 'other' folder.",
+                len(list((self.path / "other").rglob("*"))),
+            )
 
     def _get_original_after_build(self) -> Path:
         """Find the original folder path after the dataset has been built.
