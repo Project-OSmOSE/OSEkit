@@ -92,32 +92,20 @@ def check_audio(
         - Large duration differences (> 5% of the mean duration) among audio files
 
     """
-    if (
-        len(
-            unlisted_files := [
-                file
-                for file in audio_metadata["filename"]
-                if file not in timestamps["filename"].unique()
-            ],
-        )
-        > 0
-    ):
+    audio_files = set(audio_metadata["filename"].unique())
+    timestamps = set(timestamps["filename"].unique())
+
+    unlisted_files = audio_files - timestamps
+    missing_files = timestamps - audio_files
+
+    if unlisted_files:
         message = (
             "The following files have not been found in timestamp.csv:\n\t"
             + "\n\t".join(unlisted_files)
         )
         raise FileNotFoundError(message)
 
-    if (
-        len(
-            missing_files := [
-                file
-                for file in timestamps["filename"]
-                if file not in audio_metadata["filename"].unique()
-            ],
-        )
-        > 0
-    ):
+    if missing_files:
         message = (
             "The following files are listed in timestamp.csv but hasn't be found:\n\t"
             + "\n\t".join(missing_files)
