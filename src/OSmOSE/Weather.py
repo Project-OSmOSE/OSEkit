@@ -1,3 +1,10 @@
+"""
+Class for wind speed estimation using UPA
+Works for regression models (user defined or from OSmOSE) and one layer LSTM
+author : Anatole Gros-Martial
+sponsored by MINKE
+"""
+
 import torch
 from torch import nn, tensor, utils, device, cuda, optim, long, save
 from OSmOSE.config_weather import empirical
