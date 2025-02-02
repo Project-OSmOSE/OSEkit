@@ -2,7 +2,7 @@
 Class for wind speed estimation using UPA
 Works for regression models (user defined or from OSmOSE) and one layer LSTM
 author : Anatole Gros-Martial
-sponsored by MINKE
+This work was supported by MINKE (https://minke.eu/) [grant number 101008724].
 """
 
 import torch
