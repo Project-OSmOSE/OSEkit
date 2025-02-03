@@ -29,6 +29,7 @@ def audio_files(
     date_begin = request.param.get("date_begin", pd.Timestamp("2000-01-01 00:00:00"))
     inter_file_duration = request.param.get("inter_file_duration", 0)
     series_type = request.param.get("series_type", "repeat")
+    format = request.param.get("format", "wav")
 
     nb_samples = int(round(duration * sample_rate))
     data = generate_sample_audio(
@@ -43,18 +44,19 @@ def audio_files(
                 date_begin,
                 periods=nb_files,
                 freq=pd.Timedelta(seconds=duration + inter_file_duration),
-            )
+            ),
         ),
     ):
         time_str = begin_time.strftime(format=TIMESTAMP_FORMAT_TEST_FILES)
-        file = tmp_path / f"audio_{time_str}.wav"
+        file = tmp_path / f"audio_{time_str}.{format}"
         files.append(file)
-        sf.write(
-            file=file,
-            data=data[index],
-            samplerate=sample_rate,
-            subtype="DOUBLE",
-        )
+        kwargs = {
+            "file": file,
+            "data": data[index],
+            "samplerate": sample_rate,
+            "subtype": "DOUBLE" if format.lower() == "wav" else "PCM_24",
+        }
+        sf.write(**kwargs)
     return files, request
 
 

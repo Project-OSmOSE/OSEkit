@@ -148,6 +148,27 @@ def test_audio_file_timestamps(
             generate_sample_audio(nb_files=1, nb_samples=48_000)[0][43_200:],
             id="read_end_of_file",
         ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "format": "flac",
+            },
+            pd.Timestamp("2024-01-01 12:00:00"),
+            pd.Timestamp(
+                year=2024,
+                month=1,
+                day=1,
+                hour=12,
+                minute=0,
+                second=0,
+                microsecond=100_000,
+            ),
+            generate_sample_audio(nb_files=1, nb_samples=48_000)[0][:4_800],
+            id="flac_file",
+        ),
     ],
     indirect=["audio_files"],
 )
@@ -159,7 +180,7 @@ def test_audio_file_read(
 ) -> None:
     files, request = audio_files
     file = AudioFile(files[0], strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
-    assert np.array_equal(file.read(start, stop), expected)
+    assert np.allclose(file.read(start, stop), expected, atol=1e-7)
 
 
 @pytest.mark.parametrize(
@@ -473,7 +494,7 @@ def test_audio_data(
     indirect=True,
 )
 def test_read_vs_soundfile(
-    audio_files: tuple[list[Path], pytest.fixtures.Subrequest]
+    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
 ) -> None:
     audio_files, _ = audio_files
     af = AudioFile(audio_files[0], strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
