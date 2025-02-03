@@ -106,7 +106,8 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         """
         files = [
             AudioFile(file, strptime_format=strptime_format)
-            for file in folder.glob("*.wav")
+            for file in folder.iterdir()
+            if file.suffix.lower() in (".wav", ".flac")
         ]
         base_dataset = BaseDataset.from_files(files, begin, end, data_duration)
         return cls.from_base_dataset(base_dataset)
