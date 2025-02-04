@@ -9,6 +9,9 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from soundfile import LibsndfileError
+
+from OSmOSE.config import global_logging_context as glc
 from OSmOSE.data.audio_data import AudioData
 from OSmOSE.data.audio_file import AudioFile
 from OSmOSE.data.base_dataset import BaseDataset
@@ -104,12 +107,24 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             The audio dataset.
 
         """
-        files = [
-            AudioFile(file, strptime_format=strptime_format)
-            for file in folder.iterdir()
-            if file.suffix.lower() in (".wav", ".flac")
-        ]
-        base_dataset = BaseDataset.from_files(files, begin, end, data_duration)
+        audio_files = []
+        rejected_files = []
+        for file in folder.iterdir():
+            if file.suffix.lower() not in (".wav", ".flac"):
+                continue
+            try:
+                af = AudioFile(file, strptime_format=strptime_format)
+                audio_files.append(af)
+            except (ValueError, LibsndfileError):
+                rejected_files.append(file)
+
+        if rejected_files:
+            rejected_files = "\n\t".join(f.name for f in rejected_files)
+            glc.logger.warn(
+                f"The following files couldn't be parsed:\n{rejected_files}"
+            )
+
+        base_dataset = BaseDataset.from_files(audio_files, begin, end, data_duration)
         return cls.from_base_dataset(base_dataset)
 
     @classmethod
