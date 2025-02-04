@@ -24,6 +24,10 @@ def audio_files(
     request: pytest.fixtures.Subrequest,
 ) -> tuple[list[Path], pytest.fixtures.Subrequest]:
     nb_files = request.param.get("nb_files", 1)
+
+    if nb_files == 0:
+        return [], request
+
     sample_rate = request.param.get("sample_rate", 48_000)
     duration = request.param.get("duration", 1.0)
     date_begin = request.param.get("date_begin", pd.Timestamp("2000-01-01 00:00:00"))

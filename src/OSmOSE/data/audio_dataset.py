@@ -121,8 +121,11 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         if rejected_files:
             rejected_files = "\n\t".join(f.name for f in rejected_files)
             glc.logger.warn(
-                f"The following files couldn't be parsed:\n{rejected_files}"
+                f"The following files couldn't be parsed:\n\t{rejected_files}",
             )
+
+        if not audio_files:
+            raise FileNotFoundError(f"No valid audio file found in {folder}.")
 
         base_dataset = BaseDataset.from_files(audio_files, begin, end, data_duration)
         return cls.from_base_dataset(base_dataset)

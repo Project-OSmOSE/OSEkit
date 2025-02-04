@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -677,6 +678,191 @@ def test_audio_dataset_from_folder(
         np.array_equal(data.get_value(), expected)
         for (data, expected) in zip(dataset.data, expected_audio_data)
     )
+
+
+@pytest.mark.parametrize(
+    (
+        "audio_files",
+        "expected_audio_data",
+        "corrupted_audio_files",
+        "non_audio_files",
+        "error",
+    ),
+    [
+        pytest.param(
+            {"nb_files": 0},
+            [],
+            [],
+            [],
+            pytest.raises(
+                FileNotFoundError,
+                match="No valid audio file found in ",
+            ),
+            id="no_file",
+        ),
+        pytest.param(
+            {"nb_files": 0},
+            [],
+            [
+                pd.Timestamp("2000-01-01 00:00:00").strftime(
+                    format=TIMESTAMP_FORMAT_TEST_FILES,
+                )
+                + ".wav",
+                pd.Timestamp("2000-01-01 00:00:10").strftime(
+                    format=TIMESTAMP_FORMAT_TEST_FILES,
+                )
+                + ".flac",
+            ],
+            [],
+            pytest.raises(
+                FileNotFoundError,
+                match="No valid audio file found in ",
+            ),
+            id="corrupted_audio_files",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 3,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            generate_sample_audio(
+                nb_files=1,
+                nb_samples=144_000,
+                series_type="increase",
+            ),
+            [
+                pd.Timestamp("2000-01-01 00:00:00").strftime(
+                    format=TIMESTAMP_FORMAT_TEST_FILES,
+                )
+                + ".wav",
+                pd.Timestamp("2000-01-01 00:00:10").strftime(
+                    format=TIMESTAMP_FORMAT_TEST_FILES,
+                )
+                + ".flac",
+            ],
+            [],
+            None,
+            id="mixed_audio_files",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 3,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            generate_sample_audio(
+                nb_files=1,
+                nb_samples=144_000,
+                series_type="increase",
+            ),
+            [],
+            [
+                pd.Timestamp("2000-01-01 00:00:00").strftime(
+                    format=TIMESTAMP_FORMAT_TEST_FILES,
+                )
+                + ".csv"
+            ],
+            None,
+            id="non_audio_files_are_not_logged",
+        ),
+        pytest.param(
+            {"nb_files": 0},
+            [],
+            [
+                pd.Timestamp("2000-01-01 00:00:00").strftime(
+                    format=TIMESTAMP_FORMAT_TEST_FILES,
+                )
+                + ".wav",
+                pd.Timestamp("2000-01-01 00:00:10").strftime(
+                    format=TIMESTAMP_FORMAT_TEST_FILES,
+                )
+                + ".flac",
+            ],
+            [
+                pd.Timestamp("2000-01-01 00:00:00").strftime(
+                    format=TIMESTAMP_FORMAT_TEST_FILES,
+                )
+                + ".csv"
+            ],
+            pytest.raises(
+                FileNotFoundError,
+                match="No valid audio file found in ",
+            ),
+            id="all_but_ok_audio",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 3,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            generate_sample_audio(
+                nb_files=1,
+                nb_samples=144_000,
+                series_type="increase",
+            ),
+            [
+                pd.Timestamp("2000-01-01 00:00:00").strftime(
+                    format=TIMESTAMP_FORMAT_TEST_FILES,
+                )
+                + ".wav",
+                pd.Timestamp("2000-01-01 00:00:10").strftime(
+                    format=TIMESTAMP_FORMAT_TEST_FILES,
+                )
+                + ".flac",
+            ],
+            [
+                pd.Timestamp("2000-01-01 00:00:00").strftime(
+                    format=TIMESTAMP_FORMAT_TEST_FILES,
+                )
+                + ".csv"
+            ],
+            None,
+            id="full_mix",
+        ),
+    ],
+    indirect=["audio_files"],
+)
+def test_audio_dataset_from_folder_errors_warnings(
+    tmp_path: Path,
+    caplog,
+    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    expected_audio_data: list[np.ndarray],
+    corrupted_audio_files: list[str],
+    non_audio_files: list[str],
+    error,
+) -> None:
+
+    for corrupted_file in corrupted_audio_files:
+        (tmp_path / corrupted_file).open("a").close()  # Write empty audio files.
+
+    with caplog.at_level(logging.WARNING):
+        if error is not None:
+            with error as e:
+                assert (
+                    AudioDataset.from_folder(
+                        tmp_path,
+                        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+                    )
+                    == e
+                )
+        else:
+            dataset = AudioDataset.from_folder(
+                tmp_path,
+                strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+            )
+            assert all(
+                np.array_equal(data.get_value(), expected)
+                for (data, expected) in zip(dataset.data, expected_audio_data)
+            )
+        assert all(f in caplog.text for f in corrupted_audio_files)
 
 
 @pytest.mark.parametrize(
