@@ -5,6 +5,7 @@ from typing import Literal
 
 import numpy as np
 import pandas as pd
+import soundfile as sf
 import soxr
 
 from OSmOSE.config import (
@@ -37,7 +38,7 @@ def get_all_audio_files(directory: Path) -> list[Path]:
 
     Parameters
     ----------
-    file_path : Path
+    directory : Path
         The path to the directory to search for audio files
 
     Returns
@@ -49,8 +50,11 @@ def get_all_audio_files(directory: Path) -> list[Path]:
     """
     return sorted(
         file
-        for extension in SUPPORTED_AUDIO_FORMAT
-        for file in directory.glob(f"*{extension}")
+        for file in directory.iterdir()
+        if any(
+            file.name.lower().endswith(extension)
+            for extension in SUPPORTED_AUDIO_FORMAT
+        )
     )
 
 
@@ -69,7 +73,8 @@ def get_audio_metadata(audio_file: Path) -> dict:
         The metadata list is grabbed from OSmOSE.config.AUDIO_METADATA.
 
     """
-    return {key: f(audio_file) for key, f in AUDIO_METADATA.items()}
+    with sf.SoundFile(audio_file, "r") as af:
+        return {key: f(af) for key, f in AUDIO_METADATA.items()}
 
 
 def check_audio(
@@ -95,32 +100,20 @@ def check_audio(
         - Large duration differences (> 5% of the mean duration) among audio files
 
     """
-    if (
-        len(
-            unlisted_files := [
-                file
-                for file in audio_metadata["filename"]
-                if file not in timestamps["filename"].unique()
-            ],
-        )
-        > 0
-    ):
+    audio_files = set(audio_metadata["filename"].unique())
+    timestamps = set(timestamps["filename"].unique())
+
+    unlisted_files = sorted(audio_files - timestamps)
+    missing_files = sorted(timestamps - audio_files)
+
+    if unlisted_files:
         message = (
             "The following files have not been found in timestamp.csv:\n\t"
             + "\n\t".join(unlisted_files)
         )
         raise FileNotFoundError(message)
 
-    if (
-        len(
-            missing_files := [
-                file
-                for file in timestamps["filename"]
-                if file not in audio_metadata["filename"].unique()
-            ],
-        )
-        > 0
-    ):
+    if missing_files:
         message = (
             "The following files are listed in timestamp.csv but hasn't be found:\n\t"
             + "\n\t".join(missing_files)

@@ -7,6 +7,8 @@ from statistics import fmean as mean
 from typing import List, Tuple, Union
 
 import pandas as pd
+import soundfile
+from tqdm import tqdm
 
 from OSmOSE.config import (
     DPDEFAULT,
@@ -399,22 +401,41 @@ class Dataset:
             is not in the OSmOSE format:
                 A copy of the timestamp.csv is formatted and moved to the audio folder.
         """
-        raw_audio_files = get_all_audio_files(
+        audio_files = get_all_audio_files(
             audio_path,
         )  # TODO: manage built dataset with reshape audio folders ?
 
-        audio_files = clean_filenames(raw_audio_files)
-        for old, new in zip(raw_audio_files, audio_files):
+        audio_files, corrected_files = clean_filenames(audio_files)
+
+        for old, new in corrected_files.items():
             old.replace(new)
         date_template = clean_forbidden_characters(date_template)
+
+        corrupted_files = set()
+        audio_metadata = []
+        self.logger.info("Fetching audio file metadata...")
+        for idx, file in enumerate(tqdm(audio_files)):
+            try:
+                audio_metadata.append(get_audio_metadata(file))
+            except soundfile.LibsndfileError:
+                corrupted_files.add(idx)
+
+        audio_metadata = pd.DataFrame.from_records(
+            audio_metadata,
+        )
+
+        if corrupted_files:
+            message = "The following file(s) could not be opened:\n\t" + "\n\t".join(
+                audio_files[c].name for c in corrupted_files
+            )
+            self.logger.warning(message)
+            for corrupted_file in sorted(corrupted_files, reverse=True):
+                audio_files.pop(corrupted_file)
 
         timestamps = self._parse_timestamp_df(
             audio_files=audio_files,
             date_template=date_template,
             path=audio_path,
-        )
-        audio_metadata = pd.DataFrame.from_records(
-            get_audio_metadata(file) for file in audio_files
         )
 
         try:
@@ -467,7 +488,8 @@ class Dataset:
             index=False,
         )
 
-        for file in audio_files:
+        self.logger.info("Moving files...")
+        for file in tqdm(audio_files):
             file.replace(destination_folder / file.name)
 
         return file_metadata
@@ -564,11 +586,11 @@ class Dataset:
             self.path / "other",
             self._get_original_after_build(),
         )
-        nb_moved_files = 0
+
         for file in self.path.rglob("*"):
             if file.is_dir() and any(file.iterdir()):
                 continue
-            if file in (file for folder in build_folders for file in folder.rglob("*")):
+            if any(f in file.parents for f in build_folders):
                 continue
             if not file.is_dir() or any(file.iterdir()):
                 relative_path = file.relative_to(self.path)
@@ -576,13 +598,16 @@ class Dataset:
                 if not destination_folder.exists():
                     destination_folder.mkdir(parents=True, exist_ok=True)
                 file.replace(self.path / "other" / relative_path)
-                nb_moved_files += 1
             folder_to_remove = file if file.is_dir() else file.parent
             while not any(folder_to_remove.iterdir()):
                 folder_to_remove.rmdir()
                 folder_to_remove = folder_to_remove.parent
-        if nb_moved_files > 0:
-            self.logger.info("Moved %i file(s) to the 'other' folder.", nb_moved_files)
+
+        if (self.path / "other").exists():
+            self.logger.info(
+                "Moved %i file(s) to the 'other' folder.",
+                len(list((self.path / "other").rglob("*"))),
+            )
 
     def _get_original_after_build(self) -> Path:
         """Find the original folder path after the dataset has been built.

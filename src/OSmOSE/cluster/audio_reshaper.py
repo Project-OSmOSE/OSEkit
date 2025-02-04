@@ -123,17 +123,21 @@ def reshape(
         output_dir_path = Path(output_dir_path)
     if input_files and isinstance(input_files, str):
         input_files = Path(input_files)
-    if isinstance(input_files, list):
-        input_dir_path = Path(input_files[0]).parent
-        files = [Path(file) for file in input_files]
-    else:
-        input_dir_path = Path(input_files)
-        files = get_all_audio_files(directory=input_dir_path)
 
+    input_dir_path = (
+        Path(input_files[0]).parent
+        if isinstance(input_files, list)
+        else Path(input_files)
+    )
     if not input_dir_path.exists():
         raise ValueError(
             f"The input files must be a valid folder path, not '{input_dir_path}'.",
         )
+    files = (
+        [Path(file) for file in input_files]
+        if isinstance(input_files, list)
+        else get_all_audio_files(directory=input_dir_path)
+    )
 
     if not (input_dir_path / "timestamp.csv").exists() and (
         not timestamp_path or not timestamp_path.exists()

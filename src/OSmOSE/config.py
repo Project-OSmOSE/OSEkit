@@ -5,8 +5,6 @@ from collections import namedtuple
 from pathlib import Path
 from typing import TypeAlias
 
-import soundfile as sf
-
 from OSmOSE.logging_context import LoggingContext
 
 SUPPORTED_AUDIO_FORMAT = [".wav", ".flac"]
@@ -41,12 +39,12 @@ DPDEFAULT = stat.S_ISGID | 0o775  # Default directory permissions
 
 FORBIDDEN_FILENAME_CHARACTERS = {":": "_", "-": "_"}
 AUDIO_METADATA = {
-    "filename": lambda f: f.name,
-    "duration": lambda f: sf.info(f).duration,
-    "origin_sr": lambda f: sf.info(f).samplerate,
-    "sampwidth": lambda f: sf.info(f).subtype,
-    "size": lambda f: f.stat().st_size / 1e6,
-    "channel_count": lambda f: sf.info(f).channels,
+    "filename": lambda sound_file: Path(sound_file.name).name,
+    "duration": lambda sound_file: sound_file.frames / sound_file.samplerate,
+    "origin_sr": lambda sound_file: sound_file.samplerate,
+    "sampwidth": lambda sound_file: sound_file.subtype,
+    "size": lambda sound_file: Path(sound_file.name).stat().st_size / 1e6,
+    "channel_count": lambda sound_file: sound_file.channels,
 }
 
 global_logging_context = LoggingContext()

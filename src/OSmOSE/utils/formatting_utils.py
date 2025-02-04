@@ -53,7 +53,7 @@ def aplose2raven(df: pd.DataFrame) -> pd.DataFrame:
     return df2raven
 
 
-def clean_filenames(filenames: list[Path]) -> list[Path]:
+def clean_filenames(filenames: list[Path]) -> tuple[list[Path], dict[Path, Path]]:
     """Clean filenames to replace forbidden characters in the OSmOSE format.
 
     Parameters
@@ -63,19 +63,36 @@ def clean_filenames(filenames: list[Path]) -> list[Path]:
 
     Returns
     -------
-    Iterable[Path]
-        Files with forbidden characters in their names are replaced.
+    tuple[list[Path],dict[Path,Path]]
+        list[Path]: filenames where the incorrect filenames have been replaced.
+        dict[Path,Path]: Dictionary with incorrect filenames
+        as keys and corrected filenames as values.
 
     """
-    if any(c in FORBIDDEN_FILENAME_CHARACTERS for file in filenames for c in file.name):
+    corrected_files = {}
+    for idx, file in enumerate(filenames):
+        if not has_forbidden_characters(file.name) and file.suffix.islower():
+            continue
+        corrected = file.stem
+        corrected = clean_forbidden_characters(corrected)
+        corrected = file.parent / f"{corrected}{file.suffix.lower()}"
+        corrected_files[file] = corrected
+        filenames[idx] = corrected
+
+    if corrected_files:
         glc.logger.warning(
-            "Audio file names contained forbidden characters."
-            "Hyphens and colons are replaced with underscores.",
+            "Audio file names have been cleaned.",
         )
-    return [file.parent / clean_forbidden_characters(file.name) for file in filenames]
+    return filenames, corrected_files
+
+
+def has_forbidden_characters(filename: str) -> bool:
+    """Return true if the filename contains forbidden characters."""
+    return any(c in FORBIDDEN_FILENAME_CHARACTERS for c in filename)
 
 
 def clean_forbidden_characters(text: str) -> str:
+    """Replace all forbidden characters in a given string with its replacement."""
     for forbidden_character, replacement in FORBIDDEN_FILENAME_CHARACTERS.items():
         text = text.replace(forbidden_character, replacement)
     return text
