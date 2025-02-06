@@ -160,7 +160,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             Defaulted as the SpectroData.get_default_ax Axes.
 
         """
-        super().write(folder)
+        super().create_directories(path=folder)
         self.plot(ax)
         plt.savefig(f"{folder / str(self)}", bbox_inches="tight", pad_inches=0)
         plt.close()
