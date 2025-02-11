@@ -6,6 +6,7 @@ The data is accessed via an AudioItem object per AudioFile.
 
 from __future__ import annotations
 
+from math import ceil
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -179,7 +180,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             raise ValueError("Stop_frame must be lower than the length of the data.")
 
         start_timestamp = self.begin + Timedelta(
-            seconds=round(start_frame / self.sample_rate, 9)
+            seconds=ceil(start_frame / self.sample_rate * 1e9) / 1e9,
         )
         stop_timestamp = (
             self.end

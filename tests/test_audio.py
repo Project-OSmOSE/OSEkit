@@ -1063,6 +1063,19 @@ def test_split_data(
             ],
             id="subpart",
         ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 144_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            30,
+            60,
+            pd.Timestamp("2024-01-01 12:00:00.000208334"),
+            generate_sample_audio(1, 144_000, dtype=np.float64)[0][30:60],
+            id="higher_fs",
+        ),
     ],
     indirect=["audio_files"],
 )
