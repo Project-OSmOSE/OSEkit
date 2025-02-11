@@ -203,4 +203,4 @@ def resample(data: np.ndarray, origin_sr: float, target_sr: float) -> np.ndarray
         The resampled audio data.
 
     """
-    return soxr.resample(data, origin_sr, target_sr)
+    return soxr.resample(data, origin_sr, target_sr, quality="QQ")

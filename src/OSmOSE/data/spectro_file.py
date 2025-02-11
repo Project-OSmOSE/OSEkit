@@ -62,22 +62,15 @@ class SpectroFile(BaseFile):
             hop = int(data["hop"][0])
             window = data["window"]
             mfft = data["mfft"][0]
+            timestamps = str(data["timestamps"])
 
         self.sample_rate = sample_rate
         self.mfft = mfft
 
-        delta_times = [
-            Timedelta(seconds=time[i] - time[i - 1]).round(freq="ns")
-            for i in range(1, time.shape[0])
-        ]
-        most_frequent_delta_time = max(
-            ((v, delta_times.count(v)) for v in set(delta_times)),
-            key=lambda i: i[1],
-        )[0]
-        self.time_resolution = most_frequent_delta_time
-        self.end = (
-            self.begin + Timedelta(seconds=time[-1]) + self.time_resolution
-        ).round(freq="us")
+        self.begin, self.end = (Timestamp(t) for t in timestamps.split("_"))
+
+        self.time = time
+        self.time_resolution = (self.end - self.begin) / len(self.time)
 
         self.freq = freq
 

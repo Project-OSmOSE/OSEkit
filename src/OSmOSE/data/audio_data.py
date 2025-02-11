@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import soundfile as sf
+from pandas import Timedelta
 
 from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
 from OSmOSE.data.audio_file import AudioFile
@@ -155,6 +156,42 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             AudioData.from_base_data(base_data, self.sample_rate)
             for base_data in super().split(nb_subdata)
         ]
+
+    def split_frames(self, start_frame: int = 0, stop_frame: int = -1) -> AudioData:
+        """Return a new AudioData from a subpart of this AudioData's data.
+
+        Parameters
+        ----------
+        start_frame: int
+            First frame included in the new AudioData.
+        stop_frame: int
+            First frame after the last frame included in the new AudioData.
+
+        Returns
+        -------
+        AudioData
+            A new AudioData which data is included between start_frame and stop_frame.
+
+        """
+        if start_frame < 0:
+            raise ValueError("Start_frame must be greater than or equal to 0.")
+        if stop_frame < -1 or stop_frame > self.shape:
+            raise ValueError("Stop_frame must be lower than the length of the data.")
+
+        start_timestamp = self.begin + Timedelta(
+            seconds=round(start_frame / self.sample_rate, 9)
+        )
+        stop_timestamp = (
+            self.end
+            if stop_frame == -1
+            else self.begin + Timedelta(seconds=stop_frame / self.sample_rate)
+        )
+        return AudioData.from_files(
+            list(self.files),
+            start_timestamp,
+            stop_timestamp,
+            sample_rate=self.sample_rate,
+        )
 
     @classmethod
     def from_files(

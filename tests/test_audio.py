@@ -765,7 +765,7 @@ def test_audio_dataset_from_folder(
                 pd.Timestamp("2000-01-01 00:00:00").strftime(
                     format=TIMESTAMP_FORMAT_TEST_FILES,
                 )
-                + ".csv"
+                + ".csv",
             ],
             None,
             id="non_audio_files_are_not_logged",
@@ -787,7 +787,7 @@ def test_audio_dataset_from_folder(
                 pd.Timestamp("2000-01-01 00:00:00").strftime(
                     format=TIMESTAMP_FORMAT_TEST_FILES,
                 )
-                + ".csv"
+                + ".csv",
             ],
             pytest.raises(
                 FileNotFoundError,
@@ -822,7 +822,7 @@ def test_audio_dataset_from_folder(
                 pd.Timestamp("2000-01-01 00:00:00").strftime(
                     format=TIMESTAMP_FORMAT_TEST_FILES,
                 )
-                + ".csv"
+                + ".csv",
             ],
             None,
             id="full_mix",
@@ -1003,3 +1003,82 @@ def test_split_data(
                 subdata.get_value(),
                 data.get_value()[data_range : data_range + subdata_shape],
             )
+
+
+@pytest.mark.parametrize(
+    ("audio_files", "start_frame", "stop_frame", "expected_begin", "expected_data"),
+    [
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            0,
+            -1,
+            pd.Timestamp("2024-01-01 12:00:00"),
+            generate_sample_audio(1, 48_000, dtype=np.float64)[0],
+            id="whole_data",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            0,
+            1,
+            pd.Timestamp("2024-01-01 12:00:00"),
+            generate_sample_audio(1, 48_000, dtype=np.float64)[0][:1],
+            id="first_frame",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            47_999,
+            -1,
+            pd.Timestamp("2024-01-01 12:00:00")
+            + pd.Timedelta(seconds=round(47_999 / 48_000, 9)),
+            generate_sample_audio(1, 48_000, dtype=np.float64)[0][-1:],
+            id="last_frame",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            4_800 * 3,
+            4_800 * 4,
+            pd.Timestamp("2024-01-01 12:00:00.3"),
+            generate_sample_audio(1, 48_000, dtype=np.float64)[0][
+                4_800 * 3 : 4_800 * 4
+            ],
+            id="subpart",
+        ),
+    ],
+    indirect=["audio_files"],
+)
+def test_split_data_frames(
+    tmp_path: Path,
+    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    start_frame: int,
+    stop_frame: int,
+    expected_begin: pd.Timestamp,
+    expected_data: np.ndarray,
+) -> None:
+    dataset = AudioDataset.from_folder(
+        tmp_path,
+        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+    )
+    ad = dataset.data[0].split_frames(start_frame, stop_frame)
+
+    assert ad.begin == expected_begin
+    assert np.array_equal(ad.get_value(), expected_data)

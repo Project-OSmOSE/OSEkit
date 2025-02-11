@@ -92,8 +92,8 @@ class AudioFile(BaseFile):
             First and last frames of the data.
 
         """
-        start_sample = floor((start - self.begin).total_seconds() * self.sample_rate)
-        stop_sample = round((stop - self.begin).total_seconds() * self.sample_rate)
+        start_sample = floor(((start - self.begin) * self.sample_rate).total_seconds())
+        stop_sample = round(((stop - self.begin) * self.sample_rate).total_seconds())
         return start_sample, stop_sample
 
     @classmethod

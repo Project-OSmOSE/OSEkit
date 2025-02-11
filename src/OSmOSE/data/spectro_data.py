@@ -127,7 +127,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         if not self.audio_data or not self.fft:
             raise ValueError("SpectroData should have either items or audio_data.")
 
-        return self.fft.spectrogram(self.audio_data.get_value(), padding="even")
+        return self.fft.stft(self.audio_data.get_value(), padding="zeros")
 
     def plot(self, ax: plt.Axes | None = None, sx: np.ndarray | None = None) -> None:
         """Plot the spectrogram on a specific Axes.
@@ -143,7 +143,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         """
         ax = ax if ax is not None else SpectroData.get_default_ax()
         sx = self.get_value() if sx is None else sx
-        sx = 10 * np.log10(abs(sx) + np.nextafter(0, 1))
+        sx = 10 * np.log10(abs(sx) ** 2 + np.nextafter(0, 1))
         time = np.arange(sx.shape[1]) * self.duration.total_seconds() / sx.shape[1]
         freq = self.fft.f
         ax.pcolormesh(time, freq, sx, vmin=-120, vmax=0)
@@ -184,6 +184,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         hop = [self.fft.hop]
         fs = [self.fft.fs]
         mfft = [self.fft.mfft]
+        timestamps = (str(t) for t in (self.begin, self.end))
         np.savez(
             file=folder / f"{self}.npz",
             fs=fs,
@@ -193,7 +194,36 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             hop=hop,
             sx=sx,
             mfft=mfft,
+            timestamps="_".join(timestamps),
         )
+
+    def split(self, nb_subdata: int = 2) -> list[SpectroData]:
+        """Split the spectro data object in the specified number of spectro subdata.
+
+        Parameters
+        ----------
+        nb_subdata: int
+            Number of subdata in which to split the data.
+
+        Returns
+        -------
+        list[SpectroData]
+            The list of SpectroData subdata objects.
+
+        """
+        split_frames = list(
+            np.linspace(0, self.audio_data.shape, nb_subdata + 1, dtype=int),
+        )
+        split_frames = [
+            self.fft.nearest_k_p(frame) if idx < (len(split_frames) - 1) else frame
+            for idx, frame in enumerate(split_frames)
+        ]
+
+        ad_split = [
+            self.audio_data.split_frames(start_frame=a, stop_frame=b)
+            for a, b in zip(split_frames, split_frames[1:])
+        ]
+        return [SpectroData.from_audio_data(ad, self.fft) for ad in ad_split]
 
     def _get_value_from_items(self, items: list[SpectroItem]) -> np.ndarray:
         if not all(
@@ -208,11 +238,11 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         output = items[0].get_value(fft=self.fft)
         for item in items[1:]:
-            p1_le = self.fft.lower_border_end[1] - self.fft.p_min - 1
+            p1_le = self.fft.lower_border_end[1] - self.fft.p_min
             output = np.hstack(
                 (
                     output[:, :-p1_le],
-                    (output[:, -p1_le:] + item.get_value(fft=self.fft)[:, :p1_le]) / 2,
+                    (output[:, -p1_le:] + item.get_value(fft=self.fft)[:, :p1_le]),
                     item.get_value(fft=self.fft)[:, p1_le:],
                 ),
             )

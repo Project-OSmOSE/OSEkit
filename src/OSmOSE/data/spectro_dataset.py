@@ -43,6 +43,18 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         for data in self.data:
             data.fft = fft
 
+    def save_spectrogram(self, folder: Path) -> None:
+        """Export all spectrogram data as png images in the specified folder.
+
+        Parameters
+        ----------
+        folder: Path
+            Folder in which the spectrograms should be saved.
+
+        """
+        for data in self.data:
+            data.save_spectrogram(folder)
+
     @classmethod
     def from_folder(
         cls,
