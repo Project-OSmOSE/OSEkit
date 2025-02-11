@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pandas as pd
 import pytest
+from pandas import Timedelta
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming
 
@@ -144,7 +145,8 @@ def test_spectro_parameters_in_npz_files(
     assert sf.sample_rate == sft.fs
     nb_time_bins = sft.t(ad.shape).shape[0]
     assert np.array_equal(
-        sf.time, np.arange(nb_time_bins) * ad.duration.total_seconds() / nb_time_bins
+        sf.time,
+        np.arange(nb_time_bins) * ad.duration.total_seconds() / nb_time_bins,
     )
 
 
@@ -258,9 +260,31 @@ def test_spectrogram_from_npz_files(
 
     sd_split = sd.split(nb_chunks)
 
+    import soundfile as sf
+
     for spectro in sd_split:
         spectro.write(tmp_path / "output")
+        centered_data = spectro.audio_data.get_value(reject_dc=True)
+        (tmp_path / "audio").mkdir(exist_ok=True)
+        sf.write(
+            file=tmp_path / "audio" / f"{spectro.audio_data}.wav",
+            data=centered_data,
+            samplerate=spectro.audio_data.sample_rate,
+            subtype="DOUBLE",
+        )
+
     assert len(list((tmp_path / "output").glob("*.npz"))) == nb_chunks
+
+    # Since we reject the DC of audio data before computing Sx values of each chunk,
+    # we must compare the concatenated chunks with an AudioData made from the
+    # DC-free parts.
+
+    afs = [
+        AudioFile(f, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES)
+        for f in (tmp_path / "audio").glob("*.wav")
+    ]
+    ad = AudioData.from_files(afs)
+    sd = SpectroData.from_audio_data(ad, sft)
 
     sds = SpectroDataset.from_folder(
         tmp_path / "output",
@@ -268,7 +292,13 @@ def test_spectrogram_from_npz_files(
     )
 
     assert sds.begin == ad.begin
-    assert sds.duration == ad.duration
+
+    # Beats me, but Timedelta.round() raises a DivideByZeroException if done
+    # directly on the duration properties.
+
+    dt1, dt2 = (Timedelta(str(dt)) for dt in (sds.duration, ad.duration))
+
+    assert dt1.round(freq="ms") == dt2.round(freq="ms")
     assert len(sds.data) == 1
     assert sds.data[0].shape == sds.data[0].get_value().shape
 

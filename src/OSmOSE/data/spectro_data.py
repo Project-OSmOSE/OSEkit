@@ -127,7 +127,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         if not self.audio_data or not self.fft:
             raise ValueError("SpectroData should have either items or audio_data.")
 
-        return self.fft.stft(self.audio_data.get_value(), padding="zeros")
+        return self.fft.stft(self.audio_data.get_value(reject_dc=True), padding="zeros")
 
     def plot(self, ax: plt.Axes | None = None, sx: np.ndarray | None = None) -> None:
         """Plot the spectrogram on a specific Axes.

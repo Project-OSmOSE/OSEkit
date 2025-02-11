@@ -94,10 +94,21 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             return
         self.sample_rate = None
 
-    def get_value(self) -> np.ndarray:
+    def get_value(self, reject_dc: bool = False) -> np.ndarray:
         """Return the value of the audio data.
 
         The data from the audio file will be resampled if necessary.
+
+        Parameters
+        ----------
+        reject_dc: bool
+            If True, the values will be centered on 0.
+
+        Returns
+        -------
+        np.ndarray:
+            The value of the audio data.
+
         """
         data = np.empty(shape=self.shape)
         idx = 0
@@ -106,6 +117,8 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             item_data = item_data[: min(item_data.shape[0], data.shape[0] - idx)]
             data[idx : idx + len(item_data)] = item_data
             idx += len(item_data)
+        if reject_dc:
+            data -= data.mean()
         return data
 
     def write(self, folder: Path, subtype: str | None = None) -> None:
