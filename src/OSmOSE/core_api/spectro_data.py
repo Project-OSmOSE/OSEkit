@@ -148,7 +148,9 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         freq = self.fft.f
         ax.pcolormesh(time, freq, sx, vmin=-120, vmax=0)
 
-    def save_spectrogram(self, folder: Path, ax: plt.Axes | None = None) -> None:
+    def save_spectrogram(
+        self, folder: Path, ax: plt.Axes | None = None, sx: np.ndarray | None = None
+    ) -> None:
         """Export the spectrogram as a png image.
 
         Parameters
@@ -158,10 +160,12 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         ax: plt.Axes | None
             Axes on which the spectrogram should be plotted.
             Defaulted as the SpectroData.get_default_ax Axes.
+        sx: np.ndarray | None
+            Spectrogram sx values. Will be computed if not provided.
 
         """
         super().create_directories(path=folder)
-        self.plot(ax)
+        self.plot(ax, sx)
         plt.savefig(f"{folder / str(self)}", bbox_inches="tight", pad_inches=0)
         plt.close()
 
