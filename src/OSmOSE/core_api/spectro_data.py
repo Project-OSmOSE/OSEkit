@@ -111,7 +111,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
     @property
     def nb_bytes(self) -> int:
         """Total bytes consumed by the spectro values."""
-        return self.shape[0] * self.shape[1] * 8
+        return self.shape[0] * self.shape[1] * 16
 
     def __str__(self) -> str:
         """Overwrite __str__."""
