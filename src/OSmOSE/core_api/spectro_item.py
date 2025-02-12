@@ -67,12 +67,10 @@ class SpectroItem(BaseItem[SpectroFile]):
         if not self.is_empty:
             return self.file.read(start=self.begin, stop=self.end)
 
-        return (
-            np.ones(
-                (
-                    fft.f.shape[0],
-                    fft.p_num(int(self.duration.total_seconds() * fft.fs)),
-                ),
-            )
-            * -120.0
+        return np.zeros(
+            (
+                fft.f.shape[0],
+                fft.p_num(int(self.duration.total_seconds() * fft.fs)),
+            ),
+            dtype=complex,
         )

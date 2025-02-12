@@ -121,7 +121,9 @@ class LTASData(SpectroData):
 
     @classmethod
     def from_spectro_data(
-        cls, spectro_data: SpectroData, nb_time_bins: int,
+        cls,
+        spectro_data: SpectroData,
+        nb_time_bins: int,
     ) -> LTASData:
         """Initialize a LTASData from a SpectroData.
 
