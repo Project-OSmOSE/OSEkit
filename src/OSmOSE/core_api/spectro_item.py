@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from OSmOSE.data.base_file import BaseFile
-from OSmOSE.data.base_item import BaseItem
-from OSmOSE.data.spectro_file import SpectroFile
+from OSmOSE.core_api.base_file import BaseFile
+from OSmOSE.core_api.base_item import BaseItem
+from OSmOSE.core_api.spectro_file import SpectroFile
 
 if TYPE_CHECKING:
     from pandas import Timedelta, Timestamp

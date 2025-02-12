@@ -14,9 +14,9 @@ import soundfile as sf
 from pandas import Timedelta
 
 from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
-from OSmOSE.data.audio_file import AudioFile
-from OSmOSE.data.audio_item import AudioItem
-from OSmOSE.data.base_data import BaseData
+from OSmOSE.core_api.audio_file import AudioFile
+from OSmOSE.core_api.audio_item import AudioItem
+from OSmOSE.core_api.base_data import BaseData
 from OSmOSE.utils.audio_utils import resample
 
 if TYPE_CHECKING:

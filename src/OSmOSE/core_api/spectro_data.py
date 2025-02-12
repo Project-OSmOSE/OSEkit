@@ -12,9 +12,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
-from OSmOSE.data.base_data import BaseData
-from OSmOSE.data.spectro_file import SpectroFile
-from OSmOSE.data.spectro_item import SpectroItem
+from OSmOSE.core_api.base_data import BaseData
+from OSmOSE.core_api.spectro_file import SpectroFile
+from OSmOSE.core_api.spectro_item import SpectroItem
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from pandas import Timestamp
     from scipy.signal import ShortTimeFFT
 
-    from OSmOSE.data.audio_data import AudioData
+    from OSmOSE.core_api.audio_data import AudioData
 
 
 class SpectroData(BaseData[SpectroItem, SpectroFile]):

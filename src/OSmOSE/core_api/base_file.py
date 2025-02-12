@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 from pathlib import Path
 
-from OSmOSE.data.event import Event
+from OSmOSE.core_api.event import Event
 from OSmOSE.utils.timestamp_utils import strptime_from_text
 
 

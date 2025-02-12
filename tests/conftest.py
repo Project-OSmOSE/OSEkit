@@ -14,7 +14,7 @@ import soundfile as sf
 from scipy.signal import chirp
 
 from OSmOSE.config import OSMOSE_PATH, TIMESTAMP_FORMAT_TEST_FILES
-from OSmOSE.data import AudioFileManager
+from OSmOSE.core_api import AudioFileManager
 from OSmOSE.utils.audio_utils import generate_sample_audio
 
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from pandas import Timestamp
 
-from OSmOSE.data.event import Event
+from OSmOSE.core_api.event import Event
 
 
 @pytest.mark.parametrize(

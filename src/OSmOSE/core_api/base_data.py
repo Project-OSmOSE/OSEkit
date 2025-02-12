@@ -12,9 +12,9 @@ import numpy as np
 from pandas import date_range
 
 from OSmOSE.config import DPDEFAULT
-from OSmOSE.data.base_file import BaseFile
-from OSmOSE.data.base_item import BaseItem
-from OSmOSE.data.event import Event
+from OSmOSE.core_api.base_file import BaseFile
+from OSmOSE.core_api.base_item import BaseItem
+from OSmOSE.core_api.event import Event
 
 if TYPE_CHECKING:
     from pathlib import Path

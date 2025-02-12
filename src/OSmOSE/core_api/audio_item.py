@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from OSmOSE.data.audio_file import AudioFile
-from OSmOSE.data.base_file import BaseFile
-from OSmOSE.data.base_item import BaseItem
+from OSmOSE.core_api.audio_file import AudioFile
+from OSmOSE.core_api.base_file import BaseFile
+from OSmOSE.core_api.base_item import BaseItem
 
 if TYPE_CHECKING:
     import numpy as np

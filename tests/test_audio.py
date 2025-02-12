@@ -9,10 +9,10 @@ import pytest
 import soundfile as sf
 
 from OSmOSE.config import TIMESTAMP_FORMAT_TEST_FILES
-from OSmOSE.data.audio_data import AudioData
-from OSmOSE.data.audio_dataset import AudioDataset
-from OSmOSE.data.audio_file import AudioFile
-from OSmOSE.data.audio_item import AudioItem
+from OSmOSE.core_api.audio_data import AudioData
+from OSmOSE.core_api.audio_dataset import AudioDataset
+from OSmOSE.core_api.audio_file import AudioFile
+from OSmOSE.core_api.audio_item import AudioItem
 from OSmOSE.utils.audio_utils import generate_sample_audio
 
 if TYPE_CHECKING:

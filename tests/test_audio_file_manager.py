@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from OSmOSE.data.audio_file_manager import AudioFileManager
+from OSmOSE.core_api.audio_file_manager import AudioFileManager
 from OSmOSE.utils.audio_utils import generate_sample_audio
 
 

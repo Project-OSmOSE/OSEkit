@@ -12,9 +12,9 @@ from typing import TYPE_CHECKING
 from soundfile import LibsndfileError
 
 from OSmOSE.config import global_logging_context as glc
-from OSmOSE.data.audio_data import AudioData
-from OSmOSE.data.audio_file import AudioFile
-from OSmOSE.data.base_dataset import BaseDataset
+from OSmOSE.core_api.audio_data import AudioData
+from OSmOSE.core_api.audio_file import AudioFile
+from OSmOSE.core_api.base_dataset import BaseDataset
 
 if TYPE_CHECKING:
     from pathlib import Path

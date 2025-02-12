@@ -12,8 +12,8 @@ from math import floor
 
 from pandas import Timedelta, Timestamp
 
-from OSmOSE.data import audio_file_manager as afm
-from OSmOSE.data.base_file import BaseFile
+from OSmOSE.core_api import audio_file_manager as afm
+from OSmOSE.core_api.base_file import BaseFile
 
 
 class AudioFile(BaseFile):

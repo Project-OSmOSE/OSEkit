@@ -8,9 +8,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from OSmOSE.data.base_dataset import BaseDataset
-from OSmOSE.data.spectro_data import SpectroData
-from OSmOSE.data.spectro_file import SpectroFile
+from OSmOSE.core_api.base_dataset import BaseDataset
+from OSmOSE.core_api.spectro_data import SpectroData
+from OSmOSE.core_api.spectro_file import SpectroFile
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from pandas import Timedelta, Timestamp
     from scipy.signal import ShortTimeFFT
 
-    from OSmOSE.data.audio_dataset import AudioDataset
+    from OSmOSE.core_api.audio_dataset import AudioDataset
 
 
 class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
