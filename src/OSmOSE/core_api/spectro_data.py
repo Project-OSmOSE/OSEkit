@@ -125,7 +125,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
     @property
     def nb_bytes(self) -> int:
         """Total bytes consumed by the spectro values."""
-        return self.shape[0] * self.shape[1] * 16
+        nb_bytes_per_cell = 8 if self.matrix_dtype == MatrixDtype.Absolute else 16
+        return self.shape[0] * self.shape[1] * nb_bytes_per_cell
 
     def __str__(self) -> str:
         """Overwrite __str__."""
