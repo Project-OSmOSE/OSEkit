@@ -78,7 +78,7 @@ class SpectroFile(BaseFile):
         self.window = window
         self.hop = hop
 
-        self.is_complex = is_complex
+        self.sx_dtype = complex if is_complex else float
 
     def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray:
         """Return the spectro data between start and stop from the file.

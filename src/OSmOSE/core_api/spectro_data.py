@@ -6,7 +6,6 @@ The data is accessed via a SpectroItem object per SpectroFile.
 
 from __future__ import annotations
 
-from enum import Enum
 from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
@@ -24,18 +23,6 @@ if TYPE_CHECKING:
     from scipy.signal import ShortTimeFFT
 
     from OSmOSE.core_api.audio_data import AudioData
-
-
-class MatrixDtype(Enum):
-    """Represent the dtype of the spectrum values.
-
-    Complex will keep the phase info.
-    Absolute is more suited for LTAS-like spectrograms.
-
-    """
-
-    Complex = "complex"
-    Absolute = "absolute"
 
 
 class SpectroData(BaseData[SpectroItem, SpectroFile]):
@@ -74,7 +61,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         super().__init__(items=items, begin=begin, end=end)
         self.audio_data = audio_data
         self.fft = fft
-        self.matrix_dtype = MatrixDtype.Complex
+        self.sx_dtype = complex
 
     @staticmethod
     def get_default_ax() -> plt.Axes:
@@ -125,7 +112,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
     @property
     def nb_bytes(self) -> int:
         """Total bytes consumed by the spectro values."""
-        nb_bytes_per_cell = 8 if self.matrix_dtype == MatrixDtype.Absolute else 16
+        nb_bytes_per_cell = 16 if self.sx_dtype is complex else 8
         return self.shape[0] * self.shape[1] * nb_bytes_per_cell
 
     def __str__(self) -> str:
@@ -144,7 +131,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         sx = self.fft.stft(self.audio_data.get_value(reject_dc=True), padding="zeros")
 
-        if self.matrix_dtype == MatrixDtype.Absolute:
+        if self.sx_dtype is float:
             sx = abs(sx) ** 2
 
         return sx
@@ -164,7 +151,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         ax = ax if ax is not None else SpectroData.get_default_ax()
         sx = self.get_value() if sx is None else sx
 
-        if self.matrix_dtype == MatrixDtype.Complex:
+        if self.sx_dtype is complex:
             sx = abs(sx) ** 2
 
         sx = 10 * np.log10(sx + np.nextafter(0, 1))
@@ -268,8 +255,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         if len({i.file.get_fft().delta_t for i in items if not i.is_empty}) > 1:
             raise ValueError("Items don't have the same time resolution.")
 
-        sx_dtype = complex if self.matrix_dtype == MatrixDtype.Complex else float
-        output = items[0].get_value(fft=self.fft, sx_dtype=sx_dtype)
+        output = items[0].get_value(fft=self.fft, sx_dtype=self.sx_dtype)
         for item in items[1:]:
             p1_le = self.fft.lower_border_end[1] - self.fft.p_min
             output = np.hstack(
@@ -277,9 +263,12 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
                     output[:, :-p1_le],
                     (
                         output[:, -p1_le:]
-                        + item.get_value(fft=self.fft, sx_dtype=sx_dtype)[:, :p1_le]
+                        + item.get_value(fft=self.fft, sx_dtype=self.sx_dtype)[
+                            :,
+                            :p1_le,
+                        ]
                     ),
-                    item.get_value(fft=self.fft, sx_dtype=sx_dtype)[:, p1_le:],
+                    item.get_value(fft=self.fft, sx_dtype=self.sx_dtype)[:, p1_le:],
                 ),
             )
         return output
@@ -314,8 +303,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             BaseData.from_files(files, begin, end),
             fft=files[0].get_fft(),
         )
-        if all(not file.is_complex for file in files):
-            instance.matrix_dtype = MatrixDtype.Absolute
+        if not any(file.sx_dtype is complex for file in files):
+            instance.sx_dtype = float
         return instance
 
     @classmethod

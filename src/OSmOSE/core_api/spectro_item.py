@@ -71,13 +71,14 @@ class SpectroItem(BaseItem[SpectroFile]):
         if not self.is_empty:
             sx = self.file.read(start=self.begin, stop=self.end)
 
-            if self.file.is_complex and sx_dtype is float:
-                sx = abs(sx) ** 2
-            if self.file.is_complex and sx_dtype is complex:
-                raise TypeError(
-                    "Cannot convert absolute npz values to complex sx values."
-                    "Change the SpectroData dtype to absolute.",
-                )
+            if self.file.sx_dtype is not sx_dtype:
+                if sx_dtype is float:
+                    sx = abs(sx) ** 2
+                if sx_dtype is complex:
+                    raise TypeError(
+                        "Cannot convert absolute npz values to complex sx values."
+                        "Change the SpectroData dtype to absolute.",
+                    )
 
             return sx
 
