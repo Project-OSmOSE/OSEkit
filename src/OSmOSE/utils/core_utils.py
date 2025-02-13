@@ -794,7 +794,11 @@ def add_entry_for_APLOSE(path: str, file: str, info: pd.DataFrame):
 
     if dataset_csv.exists():
         meta = pd.read_csv(dataset_csv)
-        meta = pd.concat([meta, info], ignore_index=True).sort_values(
+        info.path = info.path.map(str)
+        meta = pd.concat(
+            [meta[meta.path != str(info.iloc[0].path)], info], ignore_index=True
+        )
+        meta = meta.sort_values(
             by=["path", "dataset"],
             ascending=True,
         )
