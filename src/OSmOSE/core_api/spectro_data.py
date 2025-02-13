@@ -310,10 +310,13 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             The SpectroData object.
 
         """
-        return cls.from_base_data(
+        instance = cls.from_base_data(
             BaseData.from_files(files, begin, end),
             fft=files[0].get_fft(),
         )
+        if all(not file.is_complex for file in files):
+            instance.matrix_dtype = MatrixDtype.Absolute
+        return instance
 
     @classmethod
     def from_base_data(
