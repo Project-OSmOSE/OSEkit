@@ -61,7 +61,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         super().__init__(items=items, begin=begin, end=end)
         self.audio_data = audio_data
         self.fft = fft
-        self.sx_dtype = complex
+        self._sx_dtype = complex
 
     @staticmethod
     def get_default_ax() -> plt.Axes:
@@ -114,6 +114,22 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         """Total bytes consumed by the spectro values."""
         nb_bytes_per_cell = 16 if self.sx_dtype is complex else 8
         return self.shape[0] * self.shape[1] * nb_bytes_per_cell
+
+    @property
+    def sx_dtype(self) -> type[complex]:
+        """Data type used to represent the sx values. Should either be float or complex.
+
+        If complex, the phase info will be included in the computed spectrum.
+        If float, only the absolute value of the spectrum will be kept.
+
+        """
+        return self._sx_dtype
+
+    @sx_dtype.setter
+    def sx_dtype(self, dtype: type[complex]) -> [complex, float]:
+        if dtype not in (complex, float):
+            raise ValueError("dtype must be complex or float.")
+        self._sx_dtype = dtype
 
     def __str__(self) -> str:
         """Overwrite __str__."""
