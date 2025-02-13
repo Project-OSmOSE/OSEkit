@@ -389,11 +389,15 @@ def test_spectrogram_sx_dtype(
 
     sd.write(tmp_path / "npz")
 
-    sd2 = SpectroDataset.from_folder(
-        (tmp_path / "npz"), strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES
-    ).data[0]
+    sf = SpectroFile(
+        tmp_path / "npz" / f"{sd}.npz", strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES
+    )
 
-    assert sd2.sx_dtype is complex  # Default SpectroData behaviour
+    assert sf.sx_dtype is origin_dtype
+
+    sd2 = SpectroData.from_files([sf])
+
+    assert sd2.sx_dtype is origin_dtype  # Default SpectroData behaviour
 
     assert ltas.get_value().dtype == float
 
