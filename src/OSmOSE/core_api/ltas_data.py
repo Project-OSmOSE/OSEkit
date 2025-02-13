@@ -23,7 +23,7 @@ import numpy as np
 from scipy.signal import ShortTimeFFT
 from tqdm import tqdm
 
-from OSmOSE.core_api.spectro_data import SpectroData
+from OSmOSE.core_api.spectro_data import MatrixDtype, SpectroData
 from OSmOSE.core_api.spectro_item import SpectroItem
 
 if TYPE_CHECKING:
@@ -96,6 +96,7 @@ class LTASData(SpectroData):
             fft=ltas_fft,
         )
         self.nb_time_bins = nb_time_bins
+        self.matrix_dtype = MatrixDtype.Absolute
 
     def get_value(self, depth: int = 0) -> np.ndarray:
         """Return the Sx matrix of the LTAS.
@@ -157,7 +158,10 @@ class LTASData(SpectroData):
 
     @classmethod
     def from_audio_data(
-        cls, data: AudioData, fft: ShortTimeFFT, nb_time_bins: int = 1920,
+        cls,
+        data: AudioData,
+        fft: ShortTimeFFT,
+        nb_time_bins: int = 1920,
     ) -> SpectroData:
         """Instantiate a SpectroData object from a AudioData object.
 

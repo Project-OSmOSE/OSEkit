@@ -6,6 +6,7 @@ The data is accessed via a SpectroItem object per SpectroFile.
 
 from __future__ import annotations
 
+from enum import Enum
 from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
@@ -23,6 +24,18 @@ if TYPE_CHECKING:
     from scipy.signal import ShortTimeFFT
 
     from OSmOSE.core_api.audio_data import AudioData
+
+
+class MatrixDtype(Enum):
+    """Represent the dtype of the spectrum values.
+
+    Complex will keep the phase info.
+    Absolute is more suited for LTAS-like spectrograms.
+
+    """
+
+    Complex = "complex"
+    Absolute = "absolute"
 
 
 class SpectroData(BaseData[SpectroItem, SpectroFile]):
@@ -61,6 +74,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         super().__init__(items=items, begin=begin, end=end)
         self.audio_data = audio_data
         self.fft = fft
+        self.matrix_dtype = MatrixDtype.Complex
 
     @staticmethod
     def get_default_ax() -> plt.Axes:
@@ -127,7 +141,12 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         if not self.audio_data or not self.fft:
             raise ValueError("SpectroData should have either items or audio_data.")
 
-        return self.fft.stft(self.audio_data.get_value(reject_dc=True), padding="zeros")
+        sx = self.fft.stft(self.audio_data.get_value(reject_dc=True), padding="zeros")
+
+        if self.matrix_dtype == MatrixDtype.Absolute:
+            sx = abs(sx) ** 2
+
+        return sx
 
     def plot(self, ax: plt.Axes | None = None, sx: np.ndarray | None = None) -> None:
         """Plot the spectrogram on a specific Axes.
@@ -143,9 +162,14 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         """
         ax = ax if ax is not None else SpectroData.get_default_ax()
         sx = self.get_value() if sx is None else sx
-        sx = 10 * np.log10(abs(sx) ** 2 + np.nextafter(0, 1))
+
+        if self.matrix_dtype == MatrixDtype.Complex:
+            sx = abs(sx) ** 2
+
+        sx = 10 * np.log10(sx + np.nextafter(0, 1))
         time = np.arange(sx.shape[1]) * self.duration.total_seconds() / sx.shape[1]
         freq = self.fft.f
+
         ax.pcolormesh(time, freq, sx, vmin=-120, vmax=0)
 
     def save_spectrogram(
