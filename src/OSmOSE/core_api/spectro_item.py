@@ -59,18 +59,32 @@ class SpectroItem(BaseItem[SpectroFile]):
             )
         raise TypeError
 
-    def get_value(self, fft: ShortTimeFFT | None = None) -> np.ndarray:
+    def get_value(
+        self,
+        fft: ShortTimeFFT | None = None,
+        sx_dtype: type[complex] = complex,
+    ) -> np.ndarray:
         """Get the values from the File between the begin and stop timestamps.
 
         If the Item is empty, return a single 0.
         """
         if not self.is_empty:
-            return self.file.read(start=self.begin, stop=self.end)
+            sx = self.file.read(start=self.begin, stop=self.end)
+
+            if np.iscomplexobj(sx) and sx_dtype is float:
+                sx = abs(sx) ** 2
+            if not np.iscomplexobj(sx) and sx_dtype is complex:
+                raise TypeError(
+                    "Cannot convert absolute npz values to complex sx values."
+                    "Change the SpectroData dtype to absolute.",
+                )
+
+            return sx
 
         return np.zeros(
             (
                 fft.f.shape[0],
                 fft.p_num(int(self.duration.total_seconds() * fft.fs)),
             ),
-            dtype=complex,
+            dtype=sx_dtype,
         )

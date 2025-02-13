@@ -268,14 +268,18 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         if len({i.file.get_fft().delta_t for i in items if not i.is_empty}) > 1:
             raise ValueError("Items don't have the same time resolution.")
 
-        output = items[0].get_value(fft=self.fft)
+        sx_dtype = complex if self.matrix_dtype == MatrixDtype.Complex else float
+        output = items[0].get_value(fft=self.fft, sx_dtype=sx_dtype)
         for item in items[1:]:
             p1_le = self.fft.lower_border_end[1] - self.fft.p_min
             output = np.hstack(
                 (
                     output[:, :-p1_le],
-                    (output[:, -p1_le:] + item.get_value(fft=self.fft)[:, :p1_le]),
-                    item.get_value(fft=self.fft)[:, p1_le:],
+                    (
+                        output[:, -p1_le:]
+                        + item.get_value(fft=self.fft, sx_dtype=sx_dtype)[:, :p1_le]
+                    ),
+                    item.get_value(fft=self.fft, sx_dtype=sx_dtype)[:, p1_le:],
                 ),
             )
         return output
