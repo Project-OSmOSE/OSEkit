@@ -240,7 +240,6 @@ def reshape(
     result = []
     timestamp_list = []
     for i in range(batch_ind_max - batch_ind_min + 1):
-
         audio_data = np.zeros(shape=segment_size * new_sr)
 
         if concat:
@@ -263,7 +262,6 @@ def reshape(
 
         len_sig = 0
         for index, row in file_metadata.iterrows():
-
             file_datetime_begin = row["timestamp"]
             file_datetime_end = row["timestamp"] + pd.Timedelta(seconds=row["duration"])
 

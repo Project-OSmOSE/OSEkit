@@ -596,7 +596,6 @@ def test_localize_timestamp_warns_when_changing_timezone(
     expected: Timestamp,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-
     with caplog.at_level(logging.WARNING):
         result = localize_timestamp(timestamp=timestamp, timezone=timezone)
 

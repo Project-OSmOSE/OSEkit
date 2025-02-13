@@ -16,7 +16,6 @@ if TYPE_CHECKING:
 
 @pytest.mark.unit
 def test_no_error_o_non_unix_os(tmp_path: Path) -> None:
-
     OSmOSE.utils.core_utils._is_grp_supported = False
     try:
         change_owner_group(path=tmp_path, owner_group="test")
@@ -30,7 +29,6 @@ def test_no_chmod_attempt_if_not_needed(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-
     OSmOSE.utils.core_utils._is_grp_supported = True
 
     monkeypatch.setattr(os, "access", lambda path, mode: mode in [os.R_OK, os.W_OK])
@@ -72,7 +70,6 @@ def test_chmod_called_if_missing_permissions(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-
     OSmOSE.utils.core_utils._is_grp_supported = True
 
     file_mode = 0o664
@@ -94,7 +91,6 @@ def test_error_logged_if_no_chmod_permission(
     monkeypatch: pytest.MonkeyPatch,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-
     OSmOSE.utils.core_utils._is_grp_supported = True
     monkeypatch.setattr(os, "access", lambda path, mode: mode in [])
 
@@ -134,7 +130,6 @@ def test_change_owner_group(
     tmp_path: Path,
     patch_grp_module: MagicMock,
 ) -> None:
-
     OSmOSE.utils.core_utils._is_grp_supported = True
 
     patch_grp_module.groups = existing_groups
@@ -151,7 +146,6 @@ def test_change_owner_group_keyerror_is_logged(
     caplog: pytest.LogCaptureFixture,
     patch_grp_module: MagicMock,
 ) -> None:
-
     OSmOSE.utils.core_utils._is_grp_supported = True
 
     patch_grp_module.groups = ["ensta", "gosmose", "other"]
@@ -171,7 +165,6 @@ def test_change_owner_group_permission_error_is_logged(
     patch_grp_module: MagicMock,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-
     OSmOSE.utils.core_utils._is_grp_supported = True
 
     existing_groups = ["ensta", "gosmose", "other"]
