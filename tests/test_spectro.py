@@ -13,6 +13,7 @@ from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES, TIMESTAMP_FORMAT_TEST
 from OSmOSE.core_api.audio_data import AudioData
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.audio_file import AudioFile
+from OSmOSE.core_api.ltas_data import LTASData
 from OSmOSE.core_api.spectro_data import SpectroData
 from OSmOSE.core_api.spectro_dataset import SpectroDataset
 from OSmOSE.core_api.spectro_file import SpectroFile
@@ -308,3 +309,102 @@ def test_spectrogram_from_npz_files(
     )
 
     assert np.allclose(sd.get_value(), sds.data[0].get_value())
+
+
+@pytest.mark.parametrize(
+    ("audio_files", "origin_dtype", "target_dtype", "expected_value_dtype"),
+    [
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 1_024,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            complex,
+            complex,
+            complex,
+            id="complex_to_complex",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 1_024,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            complex,
+            float,
+            float,
+            id="complex_to_float",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 1_024,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            complex,
+            float,
+            float,
+            id="float_to_float",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 1_024,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            float,
+            complex,
+            pytest.raises(
+                TypeError,
+                match="Cannot convert absolute npz values to complex sx values.",
+            ),
+            id="float_to_complex_raises_exception",
+        ),
+    ],
+    indirect=["audio_files"],
+)
+def test_spectrogram_sx_dtype(
+    tmp_path: Path,
+    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    origin_dtype: type[complex],
+    target_dtype: type[complex],
+    expected_value_dtype: type[complex],
+) -> None:
+    audio_file, request = audio_files
+    af = AudioFile(audio_file[0], strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
+    ad = AudioData.from_files([af])
+    sft = ShortTimeFFT(hamming(128), 128, 1_024)
+    sd = SpectroData.from_audio_data(ad, sft)
+
+    sd.sx_dtype = origin_dtype
+    ltas = LTASData.from_spectro_data(sd, 4)
+    assert ltas.sx_dtype is float  # Default LTASData behaviour
+
+    assert sd.get_value().dtype == origin_dtype
+
+    sd.write(tmp_path / "npz")
+
+    sd2 = SpectroDataset.from_folder(
+        (tmp_path / "npz"), strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES
+    ).data[0]
+
+    assert sd2.sx_dtype is complex  # Default SpectroData behaviour
+
+    assert ltas.get_value().dtype == float
+
+    sd2.sx_dtype = target_dtype
+
+    if type(expected_value_dtype) is type:
+        assert sd2.get_value().dtype == expected_value_dtype
+    else:
+        with expected_value_dtype as e:
+            assert sd2.get_value().dtype == expected_value_dtype
+
+    sd2.sx_dtype = origin_dtype
+
+    assert sd2.get_value().dtype == origin_dtype
