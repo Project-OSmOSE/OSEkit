@@ -149,7 +149,10 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         ax.pcolormesh(time, freq, sx, vmin=-120, vmax=0)
 
     def save_spectrogram(
-        self, folder: Path, ax: plt.Axes | None = None, sx: np.ndarray | None = None
+        self,
+        folder: Path,
+        ax: plt.Axes | None = None,
+        sx: np.ndarray | None = None,
     ) -> None:
         """Export the spectrogram as a png image.
 

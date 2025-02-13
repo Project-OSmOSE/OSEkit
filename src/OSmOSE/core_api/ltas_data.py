@@ -155,6 +155,36 @@ class LTASData(SpectroData):
             nb_time_bins=nb_time_bins,
         )
 
+    @classmethod
+    def from_audio_data(
+        cls, data: AudioData, fft: ShortTimeFFT, nb_time_bins: int = 1920,
+    ) -> SpectroData:
+        """Instantiate a SpectroData object from a AudioData object.
+
+        Parameters
+        ----------
+        data: AudioData
+            Audio data from which the SpectroData should be computed.
+        fft: ShortTimeFFT
+            The ShortTimeFFT used to compute the spectrogram.
+        nb_time_bins: int
+            The maximum number of windows over which the audio will be split to perform
+            Defaulted to 1920.
+
+        Returns
+        -------
+        LTASData:
+            The SpectroData object.
+
+        """
+        return cls(
+            audio_data=data,
+            fft=fft,
+            begin=data.begin,
+            end=data.end,
+            nb_time_bins=nb_time_bins,
+        )
+
     @staticmethod
     def get_ltas_fft(fft: ShortTimeFFT) -> ShortTimeFFT:
         """Return a ShortTimeFFT object optimized for computing LTAS.
