@@ -83,17 +83,20 @@ class BaseData(Generic[TItem, TFile], Event):
         return {
             "begin": self.begin.strftime(TIMESTAMP_FORMAT_AUDIO_FILE),
             "end": self.end.strftime(TIMESTAMP_FORMAT_AUDIO_FILE),
-            "files": {str(f): str(f.path) for f in self.files},
+            "files": {str(f): f.to_dict() for f in self.files},
         }
 
     @classmethod
     def from_dict(cls, dictionary: dict) -> BaseData:
         files = [
             BaseFile(
-                Path(path),
-                begin=to_datetime(name, format=TIMESTAMP_FORMAT_EXPORTED_FILES),
+                Path(file["path"]),
+                begin=to_datetime(
+                    file["begin"], format=TIMESTAMP_FORMAT_EXPORTED_FILES
+                ),
+                end=to_datetime(file["end"], format=TIMESTAMP_FORMAT_EXPORTED_FILES),
             )
-            for name, path in dictionary["files"].items()
+            for file in dictionary["files"].values()
         ]
         begin = Timestamp(dictionary["begin"])
         end = Timestamp(dictionary["end"])

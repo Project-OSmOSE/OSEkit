@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 
 from pandas import Timedelta, Timestamp, date_range
 
+from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
 from OSmOSE.core_api.base_data import BaseData
 from OSmOSE.core_api.base_file import BaseFile
 from OSmOSE.core_api.event import Event
@@ -31,6 +32,10 @@ class BaseDataset(Generic[TData, TFile], Event):
     def __init__(self, data: list[TData]) -> None:
         """Instantiate a Dataset object from the Data objects."""
         self.data = data
+
+    def __str__(self) -> str:
+        """Overwrite __str__."""
+        return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)
 
     @property
     def begin(self) -> Timestamp:

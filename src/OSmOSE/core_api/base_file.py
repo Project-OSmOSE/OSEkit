@@ -89,6 +89,13 @@ class BaseFile(Event):
 
         """
 
+    def to_dict(self):
+        return {
+            "path": str(self.path),
+            "begin": self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES),
+            "end": self.end.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES),
+        }
+
     def __hash__(self) -> int:
         """Overwrite hash magic method."""
         return hash(self.path)
