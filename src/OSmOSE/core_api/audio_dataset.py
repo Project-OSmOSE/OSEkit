@@ -131,6 +131,40 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         return cls.from_base_dataset(base_dataset)
 
     @classmethod
+    def from_files(
+        cls,
+        files: list[AudioFile],
+        begin: Timestamp | None = None,
+        end: Timestamp | None = None,
+        data_duration: Timedelta | None = None,
+    ) -> AudioDataset:
+        """Return an AudioDataset object from a list of AudioFiles.
+
+        Parameters
+        ----------
+        files: list[AudioFile]
+            The list of files contained in the Dataset.
+        begin: Timestamp | None
+            Begin of the first data object.
+            Defaulted to the begin of the first file.
+        end: Timestamp | None
+            End of the last data object.
+            Defaulted to the end of the last file.
+        data_duration: Timedelta | None
+            Duration of the data objects.
+            If provided, data will be evenly distributed between begin and end.
+            Else, one data object will cover the whole time period.
+
+        Returns
+        -------
+        BaseDataset[TItem, TFile]:
+        The DataBase object.
+
+        """
+        base = BaseDataset.from_files(files, begin, end, data_duration)
+        return cls.from_base_dataset(base)
+
+    @classmethod
     def from_base_dataset(cls, base_dataset: BaseDataset) -> AudioDataset:
         """Return an AudioDataset object from a BaseDataset object."""
         return cls([AudioData.from_base_data(data) for data in base_dataset.data])
