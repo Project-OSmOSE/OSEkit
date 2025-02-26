@@ -74,6 +74,10 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             data.write(folder, subtype)
 
     @classmethod
+    def from_dict(cls, dictionary: dict) -> AudioDataset:
+        return cls([AudioData.from_dict(d) for d in dictionary.values()])
+
+    @classmethod
     def from_folder(
         cls,
         folder: Path,
@@ -165,6 +169,12 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         return cls.from_base_dataset(base)
 
     @classmethod
-    def from_base_dataset(cls, base_dataset: BaseDataset) -> AudioDataset:
+    def from_base_dataset(
+        cls,
+        base_dataset: BaseDataset,
+        sample_rate: float | None = None,
+    ) -> AudioDataset:
         """Return an AudioDataset object from a BaseDataset object."""
-        return cls([AudioData.from_base_data(data) for data in base_dataset.data])
+        return cls(
+            [AudioData.from_base_data(data, sample_rate) for data in base_dataset.data],
+        )

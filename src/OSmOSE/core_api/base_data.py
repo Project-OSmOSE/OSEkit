@@ -6,21 +6,20 @@ The data is accessed via an Item object per File.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Generic, TypeVar
+from pathlib import Path
+from typing import Generic, TypeVar
 
 import numpy as np
-from pandas import date_range
+from pandas import Timestamp, date_range, to_datetime
 
-from OSmOSE.config import DPDEFAULT
+from OSmOSE.config import (
+    DPDEFAULT,
+    TIMESTAMP_FORMAT_AUDIO_FILE,
+    TIMESTAMP_FORMAT_EXPORTED_FILES,
+)
 from OSmOSE.core_api.base_file import BaseFile
 from OSmOSE.core_api.base_item import BaseItem
 from OSmOSE.core_api.event import Event
-
-if TYPE_CHECKING:
-    from pathlib import Path
-
-    from pandas import Timestamp
-
 
 TItem = TypeVar("TItem", bound=BaseItem)
 TFile = TypeVar("TFile", bound=BaseFile)
@@ -79,6 +78,26 @@ class BaseData(Generic[TItem, TFile], Event):
 
     def write(self, folder: Path) -> None:
         """Abstract method for writing data to file."""
+
+    def to_dict(self):
+        return {
+            "begin": self.begin.strftime(TIMESTAMP_FORMAT_AUDIO_FILE),
+            "end": self.end.strftime(TIMESTAMP_FORMAT_AUDIO_FILE),
+            "files": {str(f): str(f.path) for f in self.files},
+        }
+
+    @classmethod
+    def from_dict(cls, dictionary: dict) -> BaseData:
+        files = [
+            BaseFile(
+                Path(path),
+                begin=to_datetime(name, format=TIMESTAMP_FORMAT_EXPORTED_FILES),
+            )
+            for name, path in dictionary["files"].items()
+        ]
+        begin = Timestamp(dictionary["begin"])
+        end = Timestamp(dictionary["end"])
+        return cls.from_files(files, begin, end)
 
     @property
     def files(self) -> set[TFile]:

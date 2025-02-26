@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import soundfile as sf
-from pandas import Timedelta
+from pandas import Timedelta, Timestamp
 
 from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
 from OSmOSE.core_api.audio_file import AudioFile
@@ -21,8 +21,6 @@ from OSmOSE.utils.audio_utils import resample
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-    from pandas import Timestamp
 
 
 class AudioData(BaseData[AudioItem, AudioFile]):
@@ -206,6 +204,17 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             stop_timestamp,
             sample_rate=self.sample_rate,
         )
+
+    def to_dict(self):
+        base_dict = super().to_dict()
+        return base_dict | {
+            "sample_rate": self.sample_rate,
+        }
+
+    @classmethod
+    def from_dict(cls, dictionary: dict) -> AudioData:
+        base_data = BaseData.from_dict(dictionary)
+        return cls.from_base_data(base_data, dictionary["sample_rate"])
 
     @classmethod
     def from_files(

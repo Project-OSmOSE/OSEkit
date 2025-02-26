@@ -7,6 +7,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
+
 if TYPE_CHECKING:
     from os import PathLike
 
@@ -90,3 +92,7 @@ class BaseFile(Event):
     def __hash__(self) -> int:
         """Overwrite hash magic method."""
         return hash(self.path)
+
+    def __str__(self) -> str:
+        """Overwrite __str__."""
+        return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)

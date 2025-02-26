@@ -59,6 +59,13 @@ class BaseDataset(Generic[TData, TFile], Event):
         for data in self.data:
             data.write(folder)
 
+    def to_dict(self):
+        return {str(d): d.to_dict() for d in self.data}
+
+    @classmethod
+    def from_dict(cls, dictionary: dict):
+        return cls([BaseData.from_dict(d) for d in dictionary.values()])
+
     @classmethod
     def from_files(
         cls,
