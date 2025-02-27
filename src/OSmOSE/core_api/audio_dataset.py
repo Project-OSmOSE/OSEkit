@@ -6,7 +6,6 @@ that simplify repeated operations on the audio data.
 
 from __future__ import annotations
 
-import json
 import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -77,15 +76,6 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
     @classmethod
     def from_dict(cls, dictionary: dict) -> AudioDataset:
         return cls([AudioData.from_dict(d) for d in dictionary.values()])
-
-    def write_json(self, folder: Path) -> None:
-        with Path(folder / f"{self}.json").open("w") as file:
-            file.write(json.dumps(self.to_dict()))
-
-    @classmethod
-    def from_json(cls, file: Path) -> AudioDataset:
-        with file.open("r") as f:
-            return cls.from_dict(json.loads(f.read()))
 
     @classmethod
     def from_folder(

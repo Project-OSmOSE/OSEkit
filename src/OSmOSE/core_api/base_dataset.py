@@ -14,6 +14,7 @@ from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
 from OSmOSE.core_api.base_data import BaseData
 from OSmOSE.core_api.base_file import BaseFile
 from OSmOSE.core_api.event import Event
+from OSmOSE.core_api.json_serializer import deserialize_json, serialize_json
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -70,6 +71,13 @@ class BaseDataset(Generic[TData, TFile], Event):
     @classmethod
     def from_dict(cls, dictionary: dict):
         return cls([BaseData.from_dict(d) for d in dictionary.values()])
+
+    def write_json(self, folder: Path) -> None:
+        serialize_json(folder / f"{self}.json", self.to_dict())
+
+    @classmethod
+    def from_json(cls, file: Path) -> BaseDataset:
+        return cls.from_dict(deserialize_json(file))
 
     @classmethod
     def from_files(
