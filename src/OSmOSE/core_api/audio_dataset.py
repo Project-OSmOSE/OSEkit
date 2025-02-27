@@ -7,7 +7,6 @@ that simplify repeated operations on the audio data.
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from soundfile import LibsndfileError
@@ -16,8 +15,11 @@ from OSmOSE.config import global_logging_context as glc
 from OSmOSE.core_api.audio_data import AudioData
 from OSmOSE.core_api.audio_file import AudioFile
 from OSmOSE.core_api.base_dataset import BaseDataset
+from OSmOSE.core_api.json_serializer import deserialize_json
 
 if TYPE_CHECKING:
+
+    from pathlib import Path
 
     from pandas import Timedelta, Timestamp
 
@@ -191,3 +193,26 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         return cls(
             [AudioData.from_base_data(data, sample_rate) for data in base_dataset.data],
         )
+
+    @classmethod
+    def from_json(cls, file: Path) -> AudioDataset:
+        """Deserialize a AudioDataset from a JSON file.
+
+        Parameters
+        ----------
+        file: Path
+            Path to the serialized JSON file representing the BaseDataset.
+
+        Returns
+        -------
+        AudioDataset
+            The deserialized AudioDataset.
+
+        """
+        # I have to redefine this method (without overriding it)
+        # for the type hint to be correct.
+        # It seems to be due to BaseData being a Generic class, following which
+        # AudioData.from_json() is supposed to return a BaseData
+        # without this duplicate definition...
+        # I might look back at all this in the future
+        return cls.from_dict(deserialize_json(file))
