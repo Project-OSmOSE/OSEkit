@@ -89,7 +89,15 @@ class BaseFile(Event):
 
         """
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
+        """Serialize a BaseFile to a dictionary.
+
+        Returns
+        -------
+        dict:
+            The serialized dictionary representing the BaseFile.
+
+        """
         return {
             "path": str(self.path),
             "begin": self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES),

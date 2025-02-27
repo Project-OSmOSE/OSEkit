@@ -65,18 +65,53 @@ class BaseDataset(Generic[TData, TFile], Event):
         for data in self.data:
             data.write(folder)
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
+        """Serialize a BaseDataset to a dictionary.
+
+        Returns
+        -------
+        dict:
+            The serialized dictionary representing the BaseDataset.
+
+        """
         return {str(d): d.to_dict() for d in self.data}
 
     @classmethod
-    def from_dict(cls, dictionary: dict):
+    def from_dict(cls, dictionary: dict) -> BaseDataset:
+        """Deserialize a BaseDataset from a dictionary.
+
+        Parameters
+        ----------
+        dictionary: dict
+            The serialized dictionary representing the BaseData.
+
+        Returns
+        -------
+        AudioData
+            The deserialized BaseDataset.
+
+        """
         return cls([BaseData.from_dict(d) for d in dictionary.values()])
 
     def write_json(self, folder: Path) -> None:
+        """Write a serialized BaseDataset to a JSON file."""
         serialize_json(folder / f"{self}.json", self.to_dict())
 
     @classmethod
     def from_json(cls, file: Path) -> BaseDataset:
+        """Deserialize a BaseDataset from a JSON file.
+
+        Parameters
+        ----------
+        file: Path
+            Path to the serialized JSON file representing the BaseDataset.
+
+        Returns
+        -------
+        BaseDataset
+            The deserialized BaseDataset.
+
+        """
         return cls.from_dict(deserialize_json(file))
 
     @classmethod

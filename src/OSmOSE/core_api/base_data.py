@@ -79,7 +79,15 @@ class BaseData(Generic[TItem, TFile], Event):
     def write(self, folder: Path) -> None:
         """Abstract method for writing data to file."""
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
+        """Serialize a BaseData to a dictionary.
+
+        Returns
+        -------
+        dict:
+            The serialized dictionary representing the BaseData.
+
+        """
         return {
             "begin": self.begin.strftime(TIMESTAMP_FORMAT_AUDIO_FILE),
             "end": self.end.strftime(TIMESTAMP_FORMAT_AUDIO_FILE),
@@ -88,11 +96,25 @@ class BaseData(Generic[TItem, TFile], Event):
 
     @classmethod
     def from_dict(cls, dictionary: dict) -> BaseData:
+        """Deserialize a BaseData from a dictionary.
+
+        Parameters
+        ----------
+        dictionary: dict
+            The serialized dictionary representing the BaseData.
+
+        Returns
+        -------
+        AudioData
+            The deserialized BaseData.
+
+        """
         files = [
             BaseFile(
                 Path(file["path"]),
                 begin=to_datetime(
-                    file["begin"], format=TIMESTAMP_FORMAT_EXPORTED_FILES
+                    file["begin"],
+                    format=TIMESTAMP_FORMAT_EXPORTED_FILES,
                 ),
                 end=to_datetime(file["end"], format=TIMESTAMP_FORMAT_EXPORTED_FILES),
             )

@@ -205,7 +205,15 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             sample_rate=self.sample_rate,
         )
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
+        """Serialize an AudioData to a dictionary.
+
+        Returns
+        -------
+        dict:
+            The serialized dictionary representing the AudioData.
+
+        """
         base_dict = super().to_dict()
         return base_dict | {
             "sample_rate": self.sample_rate,
@@ -213,6 +221,19 @@ class AudioData(BaseData[AudioItem, AudioFile]):
 
     @classmethod
     def from_dict(cls, dictionary: dict) -> AudioData:
+        """Deserialize an AudioData from a dictionary.
+
+        Parameters
+        ----------
+        dictionary: dict
+            The serialized dictionary representing the AudioData.
+
+        Returns
+        -------
+        AudioData
+            The deserialized AudioData.
+
+        """
         base_data = BaseData.from_dict(dictionary)
         return cls.from_base_data(base_data, dictionary["sample_rate"])
 

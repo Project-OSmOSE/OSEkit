@@ -75,6 +75,19 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
 
     @classmethod
     def from_dict(cls, dictionary: dict) -> AudioDataset:
+        """Deserialize an AudioDataset from a dictionary.
+
+        Parameters
+        ----------
+        dictionary: dict
+            The serialized dictionary representing the AudioDataset.
+
+        Returns
+        -------
+        AudioDataset
+            The deserialized AudioDataset.
+
+        """
         return cls([AudioData.from_dict(d) for d in dictionary.values()])
 
     @classmethod
