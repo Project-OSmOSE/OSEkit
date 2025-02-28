@@ -196,12 +196,12 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
 
     @classmethod
     def from_json(cls, file: Path) -> AudioDataset:
-        """Deserialize a AudioDataset from a JSON file.
+        """Deserialize an AudioDataset from a JSON file.
 
         Parameters
         ----------
         file: Path
-            Path to the serialized JSON file representing the BaseDataset.
+            Path to the serialized JSON file representing the AudioDataset.
 
         Returns
         -------

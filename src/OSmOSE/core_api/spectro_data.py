@@ -394,7 +394,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         sft_dict = {
             "sft": (
                 {
-                    "win": self.fft.win,
+                    "win": list(self.fft.win),
                     "hop": self.fft.hop,
                     "fs": self.fft.fs,
                     "mfft": self.fft.mfft,

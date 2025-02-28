@@ -8,7 +8,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy as np
+from scipy.signal import ShortTimeFFT
+
 from OSmOSE.core_api.base_dataset import BaseDataset
+from OSmOSE.core_api.json_serializer import deserialize_json
 from OSmOSE.core_api.spectro_data import SpectroData
 from OSmOSE.core_api.spectro_file import SpectroFile
 
@@ -16,7 +20,6 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from pandas import Timedelta, Timestamp
-    from scipy.signal import ShortTimeFFT
 
     from OSmOSE.core_api.audio_dataset import AudioDataset
 
@@ -54,6 +57,77 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         """
         for data in self.data:
             data.save_spectrogram(folder)
+
+    def to_dict(self) -> dict:
+        """Serialize a SpectroDataset to a dictionary.
+
+        Returns
+        -------
+        dict:
+            The serialized dictionary representing the SpectroDataset.
+
+        """
+        sft_dict = {}
+        for data in self.data:
+            sft = next(
+                (
+                    sft
+                    for name, sft in sft_dict.items()
+                    if np.array_equal(data.fft.win, sft["win"])
+                    and data.fft.hop == sft["hop"]
+                    and data.fft.fs == sft["fs"]
+                    and data.fft.mfft == sft["mfft"]
+                ),
+                None,
+            )
+            if sft is None:
+                sft_dict[str(data.fft)] = {
+                    "win": list(data.fft.win),
+                    "hop": data.fft.hop,
+                    "fs": data.fft.fs,
+                    "mfft": data.fft.mfft,
+                    "spectro_data": [str(data)],
+                }
+                continue
+            sft["spectro_data"].append(str(data))
+        spectro_data_dict = {str(d): d.to_dict(embed_sft=False) for d in self.data}
+        return {"data": spectro_data_dict} | {"sft": sft_dict}
+
+    @classmethod
+    def from_dict(cls, dictionary: dict) -> SpectroDataset:
+        """Deserialize a SpectroDataset from a dictionary.
+
+        Parameters
+        ----------
+        dictionary: dict
+            The serialized dictionary representing the SpectroDataset.
+
+        Returns
+        -------
+        AudioData
+            The deserialized SpectroDataset.
+
+        """
+        sfts = [
+            (
+                ShortTimeFFT(
+                    win=np.array(sft["win"]),
+                    hop=sft["hop"],
+                    fs=sft["fs"],
+                    mfft=sft["mfft"],
+                ),
+                sft["spectro_data"],
+            )
+            for name, sft in dictionary["sft"].items()
+        ]
+        sd = [
+            SpectroData.from_dict(
+                params,
+                sft=next(sft for sft, linked_data in sfts if name in linked_data),
+            )
+            for name, params in dictionary["data"].items()
+        ]
+        return cls(sd)
 
     @classmethod
     def from_folder(
@@ -118,3 +192,26 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         The SpectroData is computed from the AudioData using the given fft.
         """
         return cls([SpectroData.from_audio_data(d, fft) for d in audio_dataset.data])
+
+    @classmethod
+    def from_json(cls, file: Path) -> SpectroDataset:
+        """Deserialize a SpectroDataset from a JSON file.
+
+        Parameters
+        ----------
+        file: Path
+            Path to the serialized JSON file representing the SpectroDataset.
+
+        Returns
+        -------
+        SpectroDataset
+            The deserialized SpectroDataset.
+
+        """
+        # I have to redefine this method (without overriding it)
+        # for the type hint to be correct.
+        # It seems to be due to BaseData being a Generic class, following which
+        # AudioData.from_json() is supposed to return a BaseData
+        # without this duplicate definition...
+        # I might look back at all this in the future
+        return cls.from_dict(deserialize_json(file))
