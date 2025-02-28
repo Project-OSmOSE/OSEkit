@@ -10,8 +10,10 @@ from typing import TYPE_CHECKING
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.signal import ShortTimeFFT
 
 from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
+from OSmOSE.core_api.audio_data import AudioData
 from OSmOSE.core_api.base_data import BaseData
 from OSmOSE.core_api.spectro_file import SpectroFile
 from OSmOSE.core_api.spectro_item import SpectroItem
@@ -20,9 +22,6 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from pandas import Timestamp
-    from scipy.signal import ShortTimeFFT
-
-    from OSmOSE.core_api.audio_data import AudioData
 
 
 class SpectroData(BaseData[SpectroItem, SpectroFile]):
@@ -364,3 +363,77 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         """
         return cls(audio_data=data, fft=fft, begin=data.begin, end=data.end)
+
+    def to_dict(self, embed_sft: bool = True) -> dict:
+        """Serialize a SpectroData to a dictionary.
+
+        Parameters
+        ----------
+        embed_sft: bool
+            If True, the SFT parameters will be included in the dictionary.
+            In a case where multiple SpectroData that share a same SFT are serialized,
+            SFT parameters shouldn't be included in the dictionary, as the window
+            values might lead to large redundant data.
+            Rather, the SFT parameters should be serialized in
+            a SpectroDataset dictionary so that it can be only stored once
+            for all SpectroData instances.
+
+        Returns
+        -------
+        dict:
+            The serialized dictionary representing the SpectroData.
+
+
+        """
+        base_dict = super().to_dict()
+        audio_dict = {
+            "audio_data": (
+                None if self.audio_data is None else self.audio_data.to_dict()
+            ),
+        }
+        sft_dict = {
+            "sft": (
+                {
+                    "win": self.fft.win,
+                    "hop": self.fft.hop,
+                    "fs": self.fft.fs,
+                    "mfft": self.fft.mfft,
+                }
+                if embed_sft
+                else None
+            ),
+        }
+        return base_dict | audio_dict | sft_dict
+
+    @classmethod
+    def from_dict(
+        cls,
+        dictionary: dict,
+        sft: ShortTimeFFT | None = None,
+    ) -> SpectroData:
+        """Deserialize a SpectroData from a dictionary.
+
+        Parameters
+        ----------
+        dictionary: dict
+            The serialized dictionary representing the AudioData.
+        sft: ShortTimeFFT | None
+            The ShortTimeFFT used to compute the spectrogram.
+            If not provided, the SFT parameters must be included in the dictionary.
+
+        Returns
+        -------
+        SpectroData
+            The deserialized SpectroData.
+
+        """
+        if sft is None and dictionary["sft"] is None:
+            raise ValueError("Missing sft")
+        sft = sft if sft is not None else ShortTimeFFT(**dictionary["sft"])
+
+        if dictionary["audio_data"] is None:
+            base_data = BaseData.from_dict(dictionary)
+            return cls.from_base_data(base_data, sft)
+
+        audio_data = AudioData.from_dict(dictionary["audio_data"])
+        return cls.from_audio_data(audio_data, sft)
