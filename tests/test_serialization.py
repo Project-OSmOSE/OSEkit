@@ -13,6 +13,7 @@ from OSmOSE.core_api.audio_data import AudioData
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.audio_file import AudioFile
 from OSmOSE.core_api.spectro_data import SpectroData
+from OSmOSE.core_api.spectro_dataset import SpectroDataset
 from OSmOSE.core_api.spectro_file import SpectroFile
 
 if TYPE_CHECKING:
@@ -329,7 +330,8 @@ def test_spectro_data_serialization(
     sd = SpectroData.from_audio_data(ad, sft)
 
     assert np.array_equal(
-        sd.get_value(), SpectroData.from_dict(sd.to_dict(embed_sft=True)).get_value()
+        sd.get_value(),
+        SpectroData.from_dict(sd.to_dict(embed_sft=True)).get_value(),
     )
 
     # SpectroData linked to SpectroFiles
@@ -344,5 +346,101 @@ def test_spectro_data_serialization(
     sd2 = SpectroData.from_files(sfs)
 
     assert np.array_equal(
-        sd.get_value(), SpectroData.from_dict(sd2.to_dict(embed_sft=True)).get_value()
+        sd.get_value(),
+        SpectroData.from_dict(sd2.to_dict(embed_sft=True)).get_value(),
+    )
+
+
+@pytest.mark.parametrize(
+    ("audio_files", "data_duration", "sample_rate", "sfts"),
+    [
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+            },
+            Timedelta(seconds=1),
+            48_000,
+            [ShortTimeFFT(win=hamming(1024), hop=1024, fs=48_000, mfft=1024)],
+            id="one_spectro_data",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+            },
+            Timedelta(seconds=0.1),
+            48_000,
+            [ShortTimeFFT(win=hamming(1024), hop=1024, fs=48_000, mfft=1024)],
+            id="ten_spectro_data_one_sft",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+            },
+            Timedelta(seconds=0.1),
+            48_000,
+            [
+                ShortTimeFFT(win=hamming(1024), hop=1024, fs=48_000, mfft=1024),
+                ShortTimeFFT(win=hann(1024), hop=512, fs=48_000, mfft=2048),
+            ],
+            id="ten_spectro_data_two_sfts",
+        ),
+    ],
+    indirect=["audio_files"],
+)
+def test_spectro_dataset_serialization(
+    tmp_path: Path,
+    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    data_duration: Timestamp | None,
+    sample_rate: float | list[float],
+    sfts: list[ShortTimeFFT],
+) -> None:
+
+    ads = AudioDataset.from_folder(
+        tmp_path,
+        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+        data_duration=data_duration,
+    )
+
+    ads.sample_rate = sample_rate
+
+    sds = SpectroDataset.from_audio_dataset(ads, sfts[0])
+    for idx, sd in enumerate(sds.data):  # Apply different SFTs to the sds data
+        sd.fft = sfts[idx // (len(sds.data) // len(sfts))]
+
+    sds.write_json(tmp_path)
+
+    sds2 = SpectroDataset.from_json(tmp_path / f"{sds}.json")
+
+    assert str(sds) == str(sds2)
+    assert all(
+        np.array_equal(sd.get_value(), sd2.get_value())
+        for sd, sd2 in zip(sds.data, sds2.data)
+    )
+
+    # Deserialized spectro data that share a same SFT should point to the same instance
+    if len(sds2.data) > 1:
+        assert sds2.data[0].fft == sds2.data[1].fft
+
+    # SpectroDataset from npz files
+
+    for sd in sds.data:
+        sd.write(tmp_path)
+
+    sds3 = SpectroDataset.from_files(
+        [
+            SpectroFile(file, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES)
+            for file in tmp_path.glob("*.npz")
+        ],
+        data_duration=data_duration,
+    )
+
+    assert all(
+        np.array_equal(sd.get_value(), sd3.get_value())
+        for sd, sd3 in zip(sds.data, sds3.data)
     )
