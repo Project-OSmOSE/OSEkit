@@ -429,6 +429,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         """
         if sft is None and dictionary["sft"] is None:
             raise ValueError("Missing sft")
+        dictionary["sft"]["win"] = np.array(dictionary["sft"]["win"])
         sft = sft if sft is not None else ShortTimeFFT(**dictionary["sft"])
 
         if dictionary["audio_data"] is None:
