@@ -46,7 +46,10 @@ def aplose2raven(df: pd.DataFrame) -> pd.DataFrame:
 
     # annoying precision considerations
     precision = lambda v: len(str(v).split(".")[1])
-    end_time_rounded = [et if type(et) is int else round(et, precision(st)) for (st, et) in zip(start_time, end_time)]
+    end_time_rounded = [
+        et if type(et) is int else round(et, precision(st))
+        for (st, et) in zip(start_time, end_time)
+    ]
 
     df2raven = pd.DataFrame()
     df2raven["Selection"] = list(range(1, len(df) + 1))
