@@ -40,13 +40,17 @@ def aplose2raven(df: pd.DataFrame) -> pd.DataFrame:
     start_time = [
         (st - df["start_datetime"][0]).total_seconds() for st in df["start_datetime"]
     ]
-    end_time = [st + dur for st, dur in zip(start_time, df["end_time"])]
+    end_time = [st + dur for st, dur in zip(start_time, df["end_time"] - df['start_time'])]
+
+    # annoying precision considerations
+    precision = lambda v: len(str(v).split(".")[1]) if "." in str(v) else None
+    end_time_rounded = [round(et, precision(st)) for (st, et) in zip(start_time, end_time)]
 
     df2raven = pd.DataFrame()
     df2raven["Selection"] = list(range(1, len(df) + 1))
     df2raven["View"], df2raven["Channel"] = [1] * len(df), [1] * len(df)
     df2raven["Begin Time (s)"] = start_time
-    df2raven["End Time (s)"] = end_time
+    df2raven["End Time (s)"] = end_time_rounded
     df2raven["Low Freq (Hz)"] = df["start_frequency"]
     df2raven["High Freq (Hz)"] = df["end_frequency"]
 
