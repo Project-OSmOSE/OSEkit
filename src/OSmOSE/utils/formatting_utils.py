@@ -40,7 +40,7 @@ def aplose2raven(df: pd.DataFrame) -> pd.DataFrame:
     start_time = [
         (st - df["start_datetime"][0]).total_seconds() for st in df["start_datetime"]
     ]
-    end_time = [st + dur for st, dur in zip(start_time, df["end_time"])]
+    end_time = [st + dur for st, dur in zip(start_time, df["end_time"] - df["start_time"])]
 
     df2raven = pd.DataFrame()
     df2raven["Selection"] = list(range(1, len(df) + 1))
