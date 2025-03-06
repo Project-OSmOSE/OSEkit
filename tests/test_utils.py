@@ -68,12 +68,12 @@ def aplose_dataframe():
             "start_datetime": [
                 pd.Timestamp("2020-05-29T11:30:00.000+00:00"),
                 pd.Timestamp("2020-05-29T11:31:00.000+00:00"),
-                pd.Timestamp("2020-05-29T11:31:00.000+00:00"),
+                pd.Timestamp("2020-05-29T11:31:05.900+00:00"),
             ],
             "end_datetime": [
                 pd.Timestamp("2020-05-29T11:31:00.000+00:00"),
                 pd.Timestamp("2020-05-29T11:32:00.000+00:00"),
-                pd.Timestamp("2020-05-29T11:32:00.000+00:00"),
+                pd.Timestamp("2020-05-29T11:32:08.100+00:00"),
             ],
             "is_box": [0, 0, 1],
         },
@@ -91,7 +91,7 @@ def test_aplose2raven(aplose_dataframe):
             "Selection": [1, 2, 3],
             "View": [1, 1, 1],
             "Channel": [1, 1, 1],
-            "Begin Time (s)": [0.0, 60.0, 60.0],
+            "Begin Time (s)": [0.0, 60.0, 65.9],
             "End Time (s)": [60.0, 120.0, 68.1],
             "Low Freq (Hz)": [0.0, 0.0, 18500.0],
             "High Freq (Hz)": [96000.0, 96000.0, 53000.0],
