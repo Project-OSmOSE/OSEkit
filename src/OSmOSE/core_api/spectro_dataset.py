@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
+import pytz
 from scipy.signal import ShortTimeFFT
 
 from OSmOSE.core_api.base_dataset import BaseDataset
@@ -136,6 +137,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         strptime_format: str,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
+        timezone: str | pytz.timezone | None = None,
         data_duration: Timedelta | None = None,
         **kwargs: any,
     ) -> SpectroDataset:
@@ -153,6 +155,12 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         end: Timestamp | None
             The end of the spectro dataset.
             Defaulted to the end of the last file.
+        timezone: str | pytz.timezone | None
+            The timezone in which the file should be localized.
+            If None, the file begin/end will be tz-naive.
+            If different from a timezone parsed from the filename, the timestamps'
+            timezone will be converted from the parsed timezone
+            to the specified timezone.
         data_duration: Timedelta | None
             Duration of the spectro data objects.
             If provided, spectro data will be evenly distributed between begin and end.
@@ -167,13 +175,14 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
         """
         kwargs.update(
-            {"file_class": SpectroFile, "supported_file_extensions": [".npz"]}
+            {"file_class": SpectroFile, "supported_file_extensions": [".npz"]},
         )
         base_dataset = BaseDataset.from_folder(
             folder=folder,
             strptime_format=strptime_format,
             begin=begin,
             end=end,
+            timezone=timezone,
             data_duration=data_duration,
             **kwargs,
         )

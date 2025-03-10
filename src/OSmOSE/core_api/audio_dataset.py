@@ -9,6 +9,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+import pytz
+
 from OSmOSE.core_api.audio_data import AudioData
 from OSmOSE.core_api.audio_file import AudioFile
 from OSmOSE.core_api.base_dataset import BaseDataset
@@ -96,6 +98,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         strptime_format: str,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
+        timezone: str | pytz.timezone | None = None,
         data_duration: Timedelta | None = None,
         **kwargs: any,
     ) -> AudioDataset:
@@ -113,6 +116,12 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         end: Timestamp | None
             The end of the audio dataset.
             Defaulted to the end of the last file.
+        timezone: str | pytz.timezone | None
+            The timezone in which the file should be localized.
+            If None, the file begin/end will be tz-naive.
+            If different from a timezone parsed from the filename, the timestamps'
+            timezone will be converted from the parsed timezone
+            to the specified timezone.
         data_duration: Timedelta | None
             Duration of the audio data objects.
             If provided, audio data will be evenly distributed between begin and end.
@@ -127,13 +136,14 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
 
         """
         kwargs.update(
-            {"file_class": AudioFile, "supported_file_extensions": [".wav", ".flac"]}
+            {"file_class": AudioFile, "supported_file_extensions": [".wav", ".flac"]},
         )
         base_dataset = BaseDataset.from_folder(
             folder=folder,
             strptime_format=strptime_format,
             begin=begin,
             end=end,
+            timezone=timezone,
             data_duration=data_duration,
             **kwargs,
         )

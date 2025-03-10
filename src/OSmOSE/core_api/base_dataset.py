@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Generic, TypeVar
 
+import pytz
 from pandas import Timedelta, Timestamp, date_range
 from soundfile import LibsndfileError
 
@@ -166,9 +167,10 @@ class BaseDataset(Generic[TData, TFile], Event):
         folder: Path,
         strptime_format: str,
         file_class: type[TFile] = BaseFile,
-        supported_file_extensions: list[str] = [],
+        supported_file_extensions: list[str] | None = None,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
+        timezone: str | pytz.timezone | None = None,
         data_duration: Timedelta | None = None,
     ) -> BaseDataset:
         """Return a BaseDataset from a folder containing the base files.
@@ -189,6 +191,12 @@ class BaseDataset(Generic[TData, TFile], Event):
         end: Timestamp | None
             The end of the audio dataset.
             Defaulted to the end of the last file.
+        timezone: str | pytz.timezone | None
+            The timezone in which the file should be localized.
+            If None, the file begin/end will be tz-naive.
+            If different from a timezone parsed from the filename, the timestamps'
+            timezone will be converted from the parsed timezone
+            to the specified timezone.
         data_duration: Timedelta | None
             Duration of the audio data objects.
             If provided, audio data will be evenly distributed between begin and end.
@@ -200,13 +208,15 @@ class BaseDataset(Generic[TData, TFile], Event):
             The base dataset.
 
         """
+        if supported_file_extensions is None:
+            supported_file_extensions = []
         valid_files = []
         rejected_files = []
         for file in folder.iterdir():
             if file.suffix.lower() not in supported_file_extensions:
                 continue
             try:
-                f = file_class(file, strptime_format=strptime_format)
+                f = file_class(file, strptime_format=strptime_format, timezone=timezone)
                 valid_files.append(f)
             except (ValueError, LibsndfileError):
                 rejected_files.append(file)
