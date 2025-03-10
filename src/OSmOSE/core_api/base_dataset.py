@@ -178,18 +178,18 @@ class BaseDataset(Generic[TData, TFile], Event):
         Parameters
         ----------
         folder: Path
-            The folder containing the audio files.
+            The folder containing the files.
         strptime_format: str
-            The strptime format of the timestamps in the audio file names.
+            The strptime format of the timestamps in the file names.
         file_class: type[Tfile]
             Derived type of BaseFile used to instantiate the dataset.
         supported_file_extensions: list[str]
             List of supported file extensions for parsing TFiles.
         begin: Timestamp | None
-            The begin of the audio dataset.
+            The begin of the dataset.
             Defaulted to the begin of the first file.
         end: Timestamp | None
-            The end of the audio dataset.
+            The end of the dataset.
             Defaulted to the end of the last file.
         timezone: str | pytz.timezone | None
             The timezone in which the file should be localized.
@@ -198,9 +198,9 @@ class BaseDataset(Generic[TData, TFile], Event):
             timezone will be converted from the parsed timezone
             to the specified timezone.
         data_duration: Timedelta | None
-            Duration of the audio data objects.
-            If provided, audio data will be evenly distributed between begin and end.
-            Else, one data object will cover the whole time period.
+            Duration of the data objects.
+            If provided, data will be evenly distributed between begin and end.
+            Else, one object will cover the whole time period.
 
         Returns
         -------
@@ -228,6 +228,6 @@ class BaseDataset(Generic[TData, TFile], Event):
             )
 
         if not valid_files:
-            raise FileNotFoundError(f"No valid audio file found in {folder}.")
+            raise FileNotFoundError(f"No valid file found in {folder}.")
 
         return BaseDataset.from_files(valid_files, begin, end, data_duration)
