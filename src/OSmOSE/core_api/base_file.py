@@ -19,6 +19,8 @@ if TYPE_CHECKING:
 
 from pathlib import Path
 
+from pandas import Timedelta
+
 from OSmOSE.core_api.event import Event
 from OSmOSE.utils.timestamp_utils import strptime_from_text
 
@@ -82,7 +84,7 @@ class BaseFile(Event):
         if timezone:
             self.begin = localize_timestamp(self.begin, timezone)
 
-        self.end = end if end is not None else self.begin
+        self.end = end if end is not None else (self.begin + Timedelta(seconds=1))
 
     def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray:
         """Return the data that is between start and stop from the file.
