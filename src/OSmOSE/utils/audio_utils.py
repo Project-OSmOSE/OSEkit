@@ -1,7 +1,12 @@
-from pathlib import Path
+from __future__ import annotations
 
+from pathlib import Path
+from typing import Literal
+
+import numpy as np
 import pandas as pd
 import soundfile as sf
+import soxr
 
 from OSmOSE.config import (
     AUDIO_METADATA,
@@ -33,7 +38,7 @@ def get_all_audio_files(directory: Path) -> list[Path]:
 
     Parameters
     ----------
-    file_path : Path
+    directory : Path
         The path to the directory to search for audio files
 
     Returns
@@ -129,3 +134,73 @@ def check_audio(
     ):
         message = "Your audio files have large duration discrepancies."
         raise ValueError(message)
+
+
+def generate_sample_audio(
+    nb_files: int,
+    nb_samples: int,
+    series_type: Literal["repeat", "increase"] = "repeat",
+    min_value: float = 0.0,
+    max_value: float = 1.0,
+    dtype: np.dtype = np.float64,
+) -> list[np.ndarray]:
+    """Generate sample audio data.
+
+    Parameters
+    ----------
+    nb_files: int
+        Number of audio data to generate.
+    nb_samples: int
+        Number of samples per audio data.
+    series_type: Literal["repeat", "increase"] (Optional)
+        "repeat": audio data contain the same linear values from min to max.
+        "increase": audio data contain increasing values from min to max.
+        Defaults to "repeat".
+    min_value: float
+        Minimum value of the audio data.
+    max_value: float
+        Maximum value of the audio data.
+    dtype: np.dtype
+        The type of the output array.
+
+    Returns
+    -------
+    list[numpy.ndarray]:
+        The generated audio data.
+
+    """
+    if series_type == "repeat":
+        return np.split(
+            np.tile(
+                np.linspace(min_value, max_value, nb_samples, dtype=dtype),
+                nb_files,
+            ),
+            nb_files,
+        )
+    if series_type == "increase":
+        return np.split(
+            np.linspace(min_value, max_value, nb_samples * nb_files, dtype=dtype),
+            nb_files,
+        )
+    return np.split(np.empty(nb_samples * nb_files, dtype=dtype), nb_files)
+
+
+def resample(data: np.ndarray, origin_sr: float, target_sr: float) -> np.ndarray:
+    """Resample the audio data using soxr.
+
+    Parameters
+    ----------
+    data: np.ndarray
+        The audio data to resample.
+    origin_sr:
+        The sampling rate of the audio data.
+    target_sr:
+        The sampling rate of the resampled audio data.
+
+    Returns
+    -------
+    np.ndarray
+        The resampled audio data.
+
+    """
+    return soxr.resample(data, origin_sr, target_sr, quality="QQ")

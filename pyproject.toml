@@ -70,4 +70,5 @@ select = ["ALL"]
     "D", # Docstring-related stuff
     "SLF001", # Access to private variables
     "BLE001", # Blind exceptions
+    "PLR0913", # Too many arguments in methods
 ]

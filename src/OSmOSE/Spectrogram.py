@@ -749,7 +749,6 @@ class Spectrogram(Dataset):
             i_max = -1
 
             for batch in range(self.batch_number):
-
                 i_min = i_max + 1
                 i_max = (
                     i_min + batch_size
