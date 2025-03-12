@@ -49,14 +49,16 @@ class Dataset:
     def _sort_audio_data(self, data: AudioDataset):
         data_duration = data.data_duration
         sample_rate = data.sample_rate
-        data_duration, sample_rate = (parameter if type(parameter) is not set else next(iter(parameter)) for parameter in (data_duration, sample_rate))
+        data_duration, sample_rate = (
+            parameter if type(parameter) is not set else next(iter(parameter))
+            for parameter in (data_duration, sample_rate)
+        )
         data.move(
             self.folder
             / "data"
             / "audio"
             / f"{round(data_duration.total_seconds())}_{round(sample_rate)}",
         )
-
 
 
 DatasetChild = TypeVar("DatasetChild", bound=Dataset)
