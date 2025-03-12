@@ -53,6 +53,14 @@ class BaseDataset(Generic[TData, TFile], Event):
         """All files referred to by the Dataset."""
         return {file for data in self.data for file in data.files}
 
+    @property
+    def data_duration(self) -> set[Timedelta] | Timedelta:
+        """Return the sample rate of the audio data."""
+        data_duration = {Timedelta(data.duration) for data in self.data}
+        return (
+            data_duration if len(list(data_duration)) > 1 else next(iter(data_duration))
+        )
+
     def write(self, folder: Path) -> None:
         """Write all data objects in the specified folder.
 
