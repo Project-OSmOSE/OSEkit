@@ -221,7 +221,7 @@ def test_close(audio_files: tuple[list[Path], pytest.fixtures.Subrequest]) -> No
     afm.read(audio_files[0])
     assert afm.opened_file is not None
     assert Path(afm.opened_file.name) == audio_files[0]
-    afm._close()
+    afm.close()
     assert afm.opened_file is None
 
 

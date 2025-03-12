@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -100,3 +101,7 @@ class AudioFile(BaseFile):
     def from_base_file(cls, file: BaseFile) -> AudioFile:
         """Return an AudioFile object from a BaseFile object."""
         return cls(path=file.path, begin=file.begin)
+
+    def move(self, destination_folder: Path):
+        afm.close()
+        super().move(destination_folder)

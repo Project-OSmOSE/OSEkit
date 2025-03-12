@@ -111,3 +111,9 @@ class BaseFile(Event):
     def __str__(self) -> str:
         """Overwrite __str__."""
         return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)
+
+    def move(self, destination_folder: Path):
+        destination_path = destination_folder / self.path.name
+        destination_folder.mkdir(exist_ok=True, parents=True)
+        self.path.rename(destination_path)
+        self.path = destination_path
