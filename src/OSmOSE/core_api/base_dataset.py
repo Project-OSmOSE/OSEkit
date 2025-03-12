@@ -157,3 +157,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         else:
             data_base = [BaseData.from_files(files, begin=begin, end=end)]
         return cls(data_base)
+
+    def move(self, destination_folder: Path) -> None:
+        for file in self.files:
+            file.move(destination_folder)
