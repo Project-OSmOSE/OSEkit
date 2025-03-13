@@ -155,7 +155,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         if data_duration:
             data_base = [
                 BaseData.from_files(files, begin=b, end=b + data_duration)
-                for b in date_range(begin, end, freq=data_duration)[:-1]
+                for b in date_range(begin, end, freq=data_duration, inclusive="left")
             ]
         else:
             data_base = [BaseData.from_files(files, begin=begin, end=end)]
