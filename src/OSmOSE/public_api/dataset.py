@@ -9,6 +9,13 @@ from OSmOSE.core_api.spectro_dataset import SpectroDataset
 
 
 class Dataset:
+    """Main class of the Public API.
+
+    The Dataset correspond to a collection of audio, spectro and auxilary core_api datasets.
+    It has additionnal metadata that can be exported, e.g. to APLOSE.
+
+    """
+
     def __init__(
         self,
         folder: Path,
@@ -16,29 +23,42 @@ class Dataset:
         gps_coordinates: str | list | tuple = (0, 0),
         depth: str | int = 0,
         timezone: str | None = None,
-    ):
+    ) -> None:
+        """Initialize a Dataset."""
         self.folder = folder
         self.strptime_format = strptime_format
         self.gps_coordinates = gps_coordinates
         self.depth = depth
         self.timezone = timezone
-        self.dataset = {}
+        self.datasets = {}
 
-    def build(self):
+    def build(self) -> None:
+        """Build the Dataset.
+
+        Building a dataset moves the original audio files to a specific folder
+        and creates metadata csv used by APLOSE.
+
+        """
         ads = AudioDataset.from_folder(
             self.folder,
             strptime_format=self.strptime_format,
         )
-        self.dataset["original"] = ads
-        self._sort_data(self.dataset["original"])
+        self.datasets["original"] = ads
+        self._sort_data(self.datasets["original"])
 
-    def restore(self):
+    def reset(self) -> None:
+        """Reset the Dataset.
+
+        Resetting a dataset will move back the original audio files and the content of the "other" folder
+         to the root folder.
+        WARNING: all other files and folders will be deleted.
+        """
         files_to_remove = list(self.folder.iterdir())
-        self.dataset["original"].move(self.folder)
+        self.datasets["original"].move(self.folder)
         for file in files_to_remove:
             shutil.rmtree(file)
 
-    def _sort_data(self, dataset: type[DatasetChild]):
+    def _sort_data(self, dataset: type[DatasetChild]) -> None:
         if type(dataset) is AudioDataset:
             self._sort_audio_data(dataset)
             return
@@ -46,7 +66,7 @@ class Dataset:
             self._sort_spectro_data(dataset)
             return
 
-    def _sort_audio_data(self, data: AudioDataset):
+    def _sort_audio_data(self, data: AudioDataset) -> None:
         data_duration = data.data_duration
         sample_rate = data.sample_rate
         data_duration, sample_rate = (
@@ -59,6 +79,9 @@ class Dataset:
             / "audio"
             / f"{round(data_duration.total_seconds())}_{round(sample_rate)}",
         )
+
+    def _sort_spectro_data(self, data: SpectroDataset) -> None:
+        pass
 
 
 DatasetChild = TypeVar("DatasetChild", bound=Dataset)
