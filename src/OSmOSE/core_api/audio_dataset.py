@@ -9,9 +9,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from soundfile import LibsndfileError
+import pytz
 
-from OSmOSE.config import global_logging_context as glc
 from OSmOSE.core_api.audio_data import AudioData
 from OSmOSE.core_api.audio_file import AudioFile
 from OSmOSE.core_api.base_dataset import BaseDataset
@@ -99,7 +98,9 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         strptime_format: str,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
+        timezone: str | pytz.timezone | None = None,
         data_duration: Timedelta | None = None,
+        **kwargs: any,
     ) -> AudioDataset:
         """Return an AudioDataset from a folder containing the audio files.
 
@@ -115,10 +116,18 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         end: Timestamp | None
             The end of the audio dataset.
             Defaulted to the end of the last file.
+        timezone: str | pytz.timezone | None
+            The timezone in which the file should be localized.
+            If None, the file begin/end will be tz-naive.
+            If different from a timezone parsed from the filename, the timestamps'
+            timezone will be converted from the parsed timezone
+            to the specified timezone.
         data_duration: Timedelta | None
             Duration of the audio data objects.
             If provided, audio data will be evenly distributed between begin and end.
             Else, one data object will cover the whole time period.
+        kwargs: any
+            Keyword arguments passed to the BaseDataset.from_folder classmethod.
 
         Returns
         -------
@@ -126,27 +135,18 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             The audio dataset.
 
         """
-        audio_files = []
-        rejected_files = []
-        for file in folder.iterdir():
-            if file.suffix.lower() not in (".wav", ".flac"):
-                continue
-            try:
-                af = AudioFile(file, strptime_format=strptime_format)
-                audio_files.append(af)
-            except (ValueError, LibsndfileError):
-                rejected_files.append(file)
-
-        if rejected_files:
-            rejected_files = "\n\t".join(f.name for f in rejected_files)
-            glc.logger.warn(
-                f"The following files couldn't be parsed:\n\t{rejected_files}",
-            )
-
-        if not audio_files:
-            raise FileNotFoundError(f"No valid audio file found in {folder}.")
-
-        base_dataset = BaseDataset.from_files(audio_files, begin, end, data_duration)
+        kwargs.update(
+            {"file_class": AudioFile, "supported_file_extensions": [".wav", ".flac"]},
+        )
+        base_dataset = BaseDataset.from_folder(
+            folder=folder,
+            strptime_format=strptime_format,
+            begin=begin,
+            end=end,
+            timezone=timezone,
+            data_duration=data_duration,
+            **kwargs,
+        )
         return cls.from_base_dataset(base_dataset)
 
     @classmethod

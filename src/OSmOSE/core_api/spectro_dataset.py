@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
+import pytz
 from scipy.signal import ShortTimeFFT
 
 from OSmOSE.core_api.base_dataset import BaseDataset
@@ -136,9 +137,11 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         strptime_format: str,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
+        timezone: str | pytz.timezone | None = None,
         data_duration: Timedelta | None = None,
+        **kwargs: any,
     ) -> SpectroDataset:
-        """Return a SpectroDataset from a folder containing the spectro files.
+        """Return a SpectroDataset from a folder containing the audio files.
 
         Parameters
         ----------
@@ -152,23 +155,39 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         end: Timestamp | None
             The end of the spectro dataset.
             Defaulted to the end of the last file.
+        timezone: str | pytz.timezone | None
+            The timezone in which the file should be localized.
+            If None, the file begin/end will be tz-naive.
+            If different from a timezone parsed from the filename, the timestamps'
+            timezone will be converted from the parsed timezone
+            to the specified timezone.
         data_duration: Timedelta | None
             Duration of the spectro data objects.
             If provided, spectro data will be evenly distributed between begin and end.
             Else, one data object will cover the whole time period.
+        kwargs: any
+            Keyword arguments passed to the BaseDataset.from_folder classmethod.
 
         Returns
         -------
         Spectrodataset:
-            The spectro dataset.
+            The audio dataset.
 
         """
-        files = [
-            SpectroFile(file, strptime_format=strptime_format)
-            for file in folder.glob("*.npz")
-        ]
-        base_dataset = BaseDataset.from_files(files, begin, end, data_duration)
-        return cls.from_base_dataset(base_dataset, files[0].get_fft())
+        kwargs.update(
+            {"file_class": SpectroFile, "supported_file_extensions": [".npz"]},
+        )
+        base_dataset = BaseDataset.from_folder(
+            folder=folder,
+            strptime_format=strptime_format,
+            begin=begin,
+            end=end,
+            timezone=timezone,
+            data_duration=data_duration,
+            **kwargs,
+        )
+        sft = next(iter(base_dataset.files)).get_fft()
+        return cls.from_base_dataset(base_dataset, sft)
 
     @classmethod
     def from_base_dataset(

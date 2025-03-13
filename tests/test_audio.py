@@ -797,7 +797,7 @@ def test_audio_dataset_from_files(
             [],
             pytest.raises(
                 FileNotFoundError,
-                match="No valid audio file found in ",
+                match="No valid file found in ",
             ),
             id="no_file",
         ),
@@ -817,7 +817,7 @@ def test_audio_dataset_from_files(
             [],
             pytest.raises(
                 FileNotFoundError,
-                match="No valid audio file found in ",
+                match="No valid file found in ",
             ),
             id="corrupted_audio_files",
         ),
@@ -892,7 +892,7 @@ def test_audio_dataset_from_files(
             ],
             pytest.raises(
                 FileNotFoundError,
-                match="No valid audio file found in ",
+                match="No valid file found in ",
             ),
             id="all_but_ok_audio",
         ),

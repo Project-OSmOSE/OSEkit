@@ -511,31 +511,25 @@ def test_reformat_timestamp(
         pytest.param(
             Timestamp("2024-10-17 10:14:11"),
             "UTC",
-            Timestamp("2024-10-17 10:14:11+0000"),
+            Timestamp("2024-10-17 10:14:11+0000", tz="UTC"),
             id="UTC_timezone",
         ),
         pytest.param(
             Timestamp("2024-10-17 10:14:11"),
             "Pacific/Rarotonga",
-            Timestamp("2024-10-17 10:14:11-1000"),
+            Timestamp("2024-10-17 10:14:11-1000", tz="Pacific/Rarotonga"),
             id="Non-UTC_timezone",
         ),
         pytest.param(
             Timestamp("2024-10-17 10:14:11"),
             "+03:00",
-            Timestamp("2024-10-17 10:14:11+0300"),
+            Timestamp("2024-10-17 10:14:11+0300", tz="UTC+03:00"),
             id="UTC_offset_timezone",
-        ),
-        pytest.param(
-            Timestamp("2024-10-17 10:14:11"),
-            None,
-            Timestamp("2024-10-17 10:14:11", tz="UTC"),
-            id="No_timezone_defaults_to_UTC",
         ),
         pytest.param(
             Timestamp("2024-10-17 10:14:11+0200"),
             "+02:00",
-            Timestamp("2024-10-17 10:14:11+0200"),
+            Timestamp("2024-10-17 10:14:11+0200", tz="UTC+02:00"),
             id="tz-aware_timestamp",
         ),
         pytest.param(
@@ -547,19 +541,19 @@ def test_reformat_timestamp(
         pytest.param(
             Timestamp("2024-10-17 10:14:11"),
             "+0200",
-            Timestamp("2024-10-17T10:14:11.000+0200"),
+            Timestamp("2024-10-17T10:14:11.000+0200", tz="UTC+02:00"),
             id="UTC_offset_timezone_without_colon",
         ),
         pytest.param(
             Timestamp("2024-10-17 10:14:11"),
             "-0700",
-            Timestamp("2024-10-17T10:14:11.000-0700"),
+            Timestamp("2024-10-17T10:14:11.000-0700", tz="UTC-07:00"),
             id="negative_UTC_offset_timezone",
         ),
         pytest.param(
             Timestamp("2024-10-17 10:14:11"),
             "-0000",
-            "2024-10-17T10:14:11.000+0000",
+            Timestamp("2024-10-17T10:14:11.000+0000", tz="UTC"),
             id="negative_zero_UTC_offset_timezone",
         ),
     ],
@@ -569,7 +563,7 @@ def test_localize_timestamp(
     timezone: str,
     expected: Timestamp,
 ) -> None:
-    pass
+    assert localize_timestamp(timestamp, timezone) == expected
 
 
 @pytest.mark.unit
