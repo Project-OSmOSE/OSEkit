@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -9,14 +9,12 @@ import pytest
 import soundfile as sf
 
 from OSmOSE.config import TIMESTAMP_FORMAT_TEST_FILES
+from OSmOSE.core_api import audio_file_manager as afm
 from OSmOSE.core_api.audio_data import AudioData
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.audio_file import AudioFile
 from OSmOSE.core_api.audio_item import AudioItem
 from OSmOSE.utils.audio_utils import generate_sample_audio
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 @pytest.mark.parametrize(
@@ -1196,3 +1194,61 @@ def test_split_data_frames(
 
     assert ad.begin == expected_begin
     assert np.array_equal(ad.get_value(), expected_data)
+
+
+@pytest.mark.parametrize(
+    "audio_files",
+    [
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            id="move_one_audio_file",
+        ),
+    ],
+    indirect=["audio_files"],
+)
+def test_move_audio_file(
+    tmp_path: Path,
+    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+) -> None:
+    ad = AudioDataset.from_folder(
+        tmp_path,
+        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+    ).data[0]
+    af = next(iter(ad.files))
+
+    destination_folder = tmp_path / "cool"
+
+    old_path = str(af.path)
+    af_name = af.path.name
+
+    # Moving file without opening it first
+    af.move(destination_folder)
+
+    assert (destination_folder / af_name).exists()
+    assert not Path(old_path).exists()
+    assert afm.opened_file is None
+
+    # Accessing the file at the new path
+    ad.get_value()
+
+    assert afm.opened_file is not None
+    assert afm.opened_file.name == str(af.path)
+
+    # Moving it back after opening it in the afm
+    # afm should close the file to allow the moving
+    af.move(tmp_path)
+
+    assert afm.opened_file is None
+    assert not (destination_folder / af_name).exists()
+    assert Path(old_path).exists()
+
+    # Reading the file again
+    ad.get_value()
+
+    assert afm.opened_file is not None
+    assert afm.opened_file.name == str(af.path)
