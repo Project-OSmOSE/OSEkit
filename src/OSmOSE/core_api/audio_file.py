@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from os import PathLike
 
     import numpy as np
+    import pytz
 from math import floor
 
 from pandas import Timedelta, Timestamp
@@ -25,6 +26,7 @@ class AudioFile(BaseFile):
         path: PathLike | str,
         begin: Timestamp | None = None,
         strptime_format: str | None = None,
+        timezone: str | pytz.timezone | None = None,
     ) -> None:
         """Initialize an AudioFile object with a path and a begin timestamp.
 
@@ -44,9 +46,17 @@ class AudioFile(BaseFile):
             The strptime format used in the text.
             It should use valid strftime codes (https://strftime.org/).
             Example: '%y%m%d_%H:%M:%S'.
+        timezone: str | pytz.timezone | None
+            The timezone in which the file should be localized.
+            If None, the file begin/end will be tz-naive.
+            If different from a timezone parsed from the filename, the timestamps'
+            timezone will be converted from the parsed timezone
+            to the specified timezone.
 
         """
-        super().__init__(path=path, begin=begin, strptime_format=strptime_format)
+        super().__init__(
+            path=path, begin=begin, strptime_format=strptime_format, timezone=timezone
+        )
         sample_rate, frames, channels = afm.info(path)
         duration = frames / sample_rate
         self.sample_rate = sample_rate

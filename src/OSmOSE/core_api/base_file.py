@@ -8,14 +8,18 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
+from OSmOSE.utils.timestamp_utils import localize_timestamp
 
 if TYPE_CHECKING:
     from os import PathLike
 
     import numpy as np
+    import pytz
     from pandas import Timestamp
 
 from pathlib import Path
+
+from pandas import Timedelta
 
 from OSmOSE.core_api.event import Event
 from OSmOSE.utils.timestamp_utils import strptime_from_text
@@ -33,6 +37,7 @@ class BaseFile(Event):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         strptime_format: str | None = None,
+        timezone: str | pytz.timezone | None = None,
     ) -> None:
         """Initialize a File object with a path and timestamps.
 
@@ -54,6 +59,12 @@ class BaseFile(Event):
             The strptime format used in the text.
             It should use valid strftime codes (https://strftime.org/).
             Example: '%y%m%d_%H:%M:%S'.
+        timezone: str | pytz.timezone | None
+            The timezone in which the file should be localized.
+            If None, the file begin/end will be tz-naive.
+            If different from a timezone parsed from the filename, the timestamps'
+            timezone will be converted from the parsed timezone
+            to the specified timezone.
 
         """
         self.path = Path(path)
@@ -69,7 +80,11 @@ class BaseFile(Event):
                 datetime_template=strptime_format,
             )
         )
-        self.end = end if end is not None else self.begin
+
+        if timezone:
+            self.begin = localize_timestamp(self.begin, timezone)
+
+        self.end = end if end is not None else (self.begin + Timedelta(seconds=1))
 
     def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray:
         """Return the data that is between start and stop from the file.

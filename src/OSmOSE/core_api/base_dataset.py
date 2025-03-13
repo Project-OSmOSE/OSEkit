@@ -8,9 +8,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Generic, TypeVar
 
+import pytz
 from pandas import Timedelta, Timestamp, date_range
+from soundfile import LibsndfileError
 
 from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
+from OSmOSE.config import global_logging_context as glc
 from OSmOSE.core_api.base_data import BaseData
 from OSmOSE.core_api.base_file import BaseFile
 from OSmOSE.core_api.event import Event
@@ -160,7 +163,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         if data_duration:
             data_base = [
                 BaseData.from_files(files, begin=b, end=b + data_duration)
-                for b in date_range(begin, end, freq=data_duration)[:-1]
+                for b in date_range(begin, end, freq=data_duration, inclusive="left")
             ]
         else:
             data_base = [BaseData.from_files(files, begin=begin, end=end)]
@@ -169,3 +172,74 @@ class BaseDataset(Generic[TData, TFile], Event):
     def move(self, destination_folder: Path) -> None:
         for file in self.files:
             file.move(destination_folder)
+
+    @classmethod
+    def from_folder(  # noqa: PLR0913
+        cls,
+        folder: Path,
+        strptime_format: str,
+        file_class: type[TFile] = BaseFile,
+        supported_file_extensions: list[str] | None = None,
+        begin: Timestamp | None = None,
+        end: Timestamp | None = None,
+        timezone: str | pytz.timezone | None = None,
+        data_duration: Timedelta | None = None,
+    ) -> BaseDataset:
+        """Return a BaseDataset from a folder containing the base files.
+
+        Parameters
+        ----------
+        folder: Path
+            The folder containing the files.
+        strptime_format: str
+            The strptime format of the timestamps in the file names.
+        file_class: type[Tfile]
+            Derived type of BaseFile used to instantiate the dataset.
+        supported_file_extensions: list[str]
+            List of supported file extensions for parsing TFiles.
+        begin: Timestamp | None
+            The begin of the dataset.
+            Defaulted to the begin of the first file.
+        end: Timestamp | None
+            The end of the dataset.
+            Defaulted to the end of the last file.
+        timezone: str | pytz.timezone | None
+            The timezone in which the file should be localized.
+            If None, the file begin/end will be tz-naive.
+            If different from a timezone parsed from the filename, the timestamps'
+            timezone will be converted from the parsed timezone
+            to the specified timezone.
+        data_duration: Timedelta | None
+            Duration of the data objects.
+            If provided, data will be evenly distributed between begin and end.
+            Else, one object will cover the whole time period.
+
+        Returns
+        -------
+        Basedataset:
+            The base dataset.
+
+        """
+        if supported_file_extensions is None:
+            supported_file_extensions = []
+        valid_files = []
+        rejected_files = []
+        for file in folder.iterdir():
+            if file.suffix.lower() not in supported_file_extensions:
+                continue
+            try:
+                f = file_class(file, strptime_format=strptime_format, timezone=timezone)
+                valid_files.append(f)
+            except (ValueError, LibsndfileError):
+                rejected_files.append(file)
+
+        if rejected_files:
+            rejected_files = "\n\t".join(f.name for f in rejected_files)
+            glc.logger.warn(
+                f"The following files couldn't be parsed:\n\t{rejected_files}",
+            )
+
+        if not valid_files:
+            raise FileNotFoundError(f"No valid file found in {folder}.")
+
+        return BaseDataset.from_files(valid_files, begin, end, data_duration)

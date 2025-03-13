@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from typing import Iterable, List
 
 import pandas as pd
+import pytz
 from pandas import Timestamp
 
 from OSmOSE.config import FORBIDDEN_FILENAME_CHARACTERS, TIMESTAMP_FORMAT_AUDIO_FILE
@@ -89,14 +90,16 @@ def to_timestamp(string: str) -> pd.Timestamp:
         )
 
 
-def localize_timestamp(timestamp: Timestamp, timezone: str) -> Timestamp:
+def localize_timestamp(
+    timestamp: Timestamp, timezone: str | pytz.timezone
+) -> Timestamp:
     """Localize a timestamp in the given timezone.
 
     Parameters
     ----------
     timestamp: pandas.Timestamp
         The timestamp to localize.
-    timezone: str
+    timezone: str | pytz.timezone
         The timezone in which the timestamp is localized.
 
     Returns
