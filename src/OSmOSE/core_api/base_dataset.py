@@ -170,6 +170,15 @@ class BaseDataset(Generic[TData, TFile], Event):
         return cls(data_base)
 
     def move(self, destination_folder: Path) -> None:
+        """Move the dataset to the specified destination folder.
+
+        Parameters
+        ----------
+        destination_folder: Path
+            The folder in which the dataset will be moved.
+            It will be created if it does not exist.
+
+        """
         for file in self.files:
             file.move(destination_folder)
 
