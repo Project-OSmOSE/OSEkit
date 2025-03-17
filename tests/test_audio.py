@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 import pandas as pd
@@ -581,7 +582,7 @@ def test_audio_resample_sample_count(
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "begin", "end", "duration", "expected_audio_data"),
+    ("audio_files", "begin", "end", "bound", "duration", "expected_audio_data"),
     [
         pytest.param(
             {
@@ -593,6 +594,7 @@ def test_audio_resample_sample_count(
             },
             None,
             None,
+            "data_duration",
             None,
             generate_sample_audio(1, 48_000),
             id="one_entire_file",
@@ -607,6 +609,7 @@ def test_audio_resample_sample_count(
             },
             None,
             None,
+            "data_duration",
             pd.Timedelta(seconds=1),
             generate_sample_audio(
                 nb_files=3,
@@ -626,6 +629,7 @@ def test_audio_resample_sample_count(
             },
             None,
             None,
+            "data_duration",
             pd.Timedelta(seconds=1),
             [
                 generate_sample_audio(nb_files=1, nb_samples=96_000)[0][0:48_000],
@@ -650,9 +654,63 @@ def test_audio_resample_sample_count(
             },
             None,
             None,
+            "data_duration",
             pd.Timedelta(seconds=1),
             generate_sample_audio(nb_files=2, nb_samples=48_000),
             id="overlapping_files",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 3,
+                "inter_file_duration": 0,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            None,
+            None,
+            "files",
+            None,
+            generate_sample_audio(
+                nb_files=3, nb_samples=48_000, series_type="increase"
+            ),
+            id="files_bound_without_overlap",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 2,
+                "inter_file_duration": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            None,
+            None,
+            "files",
+            None,
+            [
+                generate_sample_audio(nb_files=1, nb_samples=96_000)[0][0:48_000],
+                generate_sample_audio(nb_files=1, nb_samples=96_000)[0][48_000:],
+            ],
+            id="files_bound_with_gap",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 3,
+                "inter_file_duration": -0.5,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "repeat",
+            },
+            None,
+            None,
+            "files",
+            None,
+            generate_sample_audio(nb_files=2, nb_samples=48_000),
+            id="files_bound_with_overlap",
         ),
     ],
     indirect=["audio_files"],
@@ -662,6 +720,7 @@ def test_audio_dataset_from_folder(
     audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
     begin: pd.Timestamp | None,
     end: pd.Timestamp | None,
+    bound: Literal["files", "timedelta"],
     duration: pd.Timedelta | None,
     expected_audio_data: list[np.ndarray],
 ) -> None:
@@ -670,6 +729,7 @@ def test_audio_dataset_from_folder(
         strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
         begin=begin,
         end=end,
+        bound=bound,
         data_duration=duration,
     )
     assert all(

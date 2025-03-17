@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Literal
 
 import pytest
 from pandas import Timedelta, Timestamp
@@ -328,3 +329,213 @@ def test_move_file(
 
     if destination_folder:
         assert not (tmp_path / filename).exists()
+
+
+@pytest.mark.parametrize(
+    ("files", "bound", "data_duration", "expected_data"),
+    [
+        pytest.param(
+            [
+                BaseFile(
+                    path=Path("cool"),
+                    begin=Timestamp("2022-04-22 12:12:12"),
+                    end=Timestamp("2022-04-22 12:12:13"),
+                ),
+            ],
+            "timedelta",
+            None,
+            [
+                (
+                    Event(
+                        begin=Timestamp("2022-04-22 12:12:12"),
+                        end=Timestamp("2022-04-22 12:12:13"),
+                    ),
+                    ["cool"],
+                ),
+            ],
+            id="timedelta_bound_with_no_duration",
+        ),
+        pytest.param(
+            [
+                BaseFile(
+                    path=Path("cool"),
+                    begin=Timestamp("2022-04-22 12:12:12"),
+                    end=Timestamp("2022-04-22 12:12:13"),
+                ),
+            ],
+            "timedelta",
+            Timedelta(seconds=0.5),
+            [
+                (
+                    Event(
+                        begin=Timestamp("2022-04-22 12:12:12"),
+                        end=Timestamp("2022-04-22 12:12:12.5"),
+                    ),
+                    ["cool"],
+                ),
+                (
+                    Event(
+                        begin=Timestamp("2022-04-22 12:12:12.5"),
+                        end=Timestamp("2022-04-22 12:12:13"),
+                    ),
+                    ["cool"],
+                ),
+            ],
+            id="timedelta_bound_with_duration",
+        ),
+        pytest.param(
+            [
+                BaseFile(
+                    path=Path("cool"),
+                    begin=Timestamp("2022-04-22 12:12:12"),
+                    end=Timestamp("2022-04-22 12:12:13"),
+                ),
+                BaseFile(
+                    path=Path("fun"),
+                    begin=Timestamp("2022-04-22 12:12:13"),
+                    end=Timestamp("2022-04-22 12:12:14"),
+                ),
+            ],
+            "timedelta",
+            Timedelta(seconds=0.5),
+            [
+                (
+                    Event(
+                        begin=Timestamp("2022-04-22 12:12:12"),
+                        end=Timestamp("2022-04-22 12:12:12.5"),
+                    ),
+                    ["cool"],
+                ),
+                (
+                    Event(
+                        begin=Timestamp("2022-04-22 12:12:12.5"),
+                        end=Timestamp("2022-04-22 12:12:13"),
+                    ),
+                    ["cool"],
+                ),
+                (
+                    Event(
+                        begin=Timestamp("2022-04-22 12:12:13"),
+                        end=Timestamp("2022-04-22 12:12:13.5"),
+                    ),
+                    ["fun"],
+                ),
+                (
+                    Event(
+                        begin=Timestamp("2022-04-22 12:12:13.5"),
+                        end=Timestamp("2022-04-22 12:12:14"),
+                    ),
+                    ["fun"],
+                ),
+            ],
+            id="timedelta_bound_with_duration_multiple_files",
+        ),
+        pytest.param(
+            [
+                BaseFile(
+                    path=Path("cool"),
+                    begin=Timestamp("2022-04-22 12:12:12"),
+                    end=Timestamp("2022-04-22 12:12:13"),
+                ),
+            ],
+            "files",
+            None,
+            [
+                (
+                    Event(
+                        begin=Timestamp("2022-04-22 12:12:12"),
+                        end=Timestamp("2022-04-22 12:12:13"),
+                    ),
+                    ["cool"],
+                ),
+            ],
+            id="files_bound_with_one_file",
+        ),
+        pytest.param(
+            [
+                BaseFile(
+                    path=Path("cool"),
+                    begin=Timestamp("2022-04-22 12:12:12"),
+                    end=Timestamp("2022-04-22 12:12:13"),
+                ),
+                BaseFile(
+                    path=Path("fun"),
+                    begin=Timestamp("2022-04-22 12:12:13"),
+                    end=Timestamp("2022-04-22 12:12:14"),
+                ),
+            ],
+            "files",
+            None,
+            [
+                (
+                    Event(
+                        begin=Timestamp("2022-04-22 12:12:12"),
+                        end=Timestamp("2022-04-22 12:12:13"),
+                    ),
+                    ["cool"],
+                ),
+                (
+                    Event(
+                        begin=Timestamp("2022-04-22 12:12:13"),
+                        end=Timestamp("2022-04-22 12:12:14"),
+                    ),
+                    ["fun"],
+                ),
+            ],
+            id="files_bound_with_multiple_files",
+        ),
+        pytest.param(
+            [
+                BaseFile(
+                    path=Path("cool"),
+                    begin=Timestamp("2022-04-22 12:12:12"),
+                    end=Timestamp("2022-04-22 12:12:13"),
+                ),
+                BaseFile(
+                    path=Path("fun"),
+                    begin=Timestamp("2022-04-22 12:12:13"),
+                    end=Timestamp("2022-04-22 12:12:14"),
+                ),
+            ],
+            "files",
+            Timedelta(seconds=0.1),
+            [
+                (
+                    Event(
+                        begin=Timestamp("2022-04-22 12:12:12"),
+                        end=Timestamp("2022-04-22 12:12:13"),
+                    ),
+                    ["cool"],
+                ),
+                (
+                    Event(
+                        begin=Timestamp("2022-04-22 12:12:13"),
+                        end=Timestamp("2022-04-22 12:12:14"),
+                    ),
+                    ["fun"],
+                ),
+            ],
+            id="files_bound_ignores_data_duration",
+        ),
+    ],
+)
+def test_base_dataset_file_bound(
+    tmp_path: pytest.fixture,
+    files: list[BaseFile],
+    bound: Literal["files", "timedelta"],
+    data_duration: Timedelta | None,
+    expected_data: list[tuple[Event, str]],
+) -> None:
+
+    ds = BaseDataset.from_files(
+        files=files,
+        bound=bound,
+        data_duration=data_duration,
+    )
+
+    assert all(
+        d.begin == e[0].begin
+        and d.end == e[0].end
+        and [file.path.name for file in d.files] == e[1]
+        for d, e in zip(ds.data, expected_data)
+    )
