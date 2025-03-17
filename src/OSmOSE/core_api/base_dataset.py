@@ -6,9 +6,8 @@ that simplify repeated operations on the data.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, Literal, TypeVar
 
-import pytz
 from pandas import Timedelta, Timestamp, date_range
 from soundfile import LibsndfileError
 
@@ -21,6 +20,8 @@ from OSmOSE.core_api.json_serializer import deserialize_json, serialize_json
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    import pytz
 
 TData = TypeVar("TData", bound=BaseData)
 TFile = TypeVar("TFile", bound=BaseFile)
@@ -131,6 +132,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         files: list[TFile],
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
+        bound: Literal["files", "timedelta"] = "timedelta",
         data_duration: Timedelta | None = None,
     ) -> BaseDataset:
         """Return a base BaseDataset object from a list of Files.
@@ -145,8 +147,14 @@ class BaseDataset(Generic[TData, TFile], Event):
         end: Timestamp | None
             End of the last data object.
             Defaulted to the end of the last file.
+        bound: Literal["files", "timedelta"]
+            Bound between the original files and the dataset data.
+            "files": one data will be created for each file.
+            "timedelta": data objects of duration equal to data_duration will
+            be created.
         data_duration: Timedelta | None
             Duration of the data objects.
+            If bound is set to "files", this parameter has no effect.
             If provided, data will be evenly distributed between begin and end.
             Else, one data object will cover the whole time period.
 
@@ -156,6 +164,10 @@ class BaseDataset(Generic[TData, TFile], Event):
         The DataBase object.
 
         """
+        if bound == "files":
+            data_base = [BaseData.from_files([f]) for f in files]
+            return cls(data_base)
+
         if not begin:
             begin = min(file.begin for file in files)
         if not end:
@@ -192,6 +204,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         timezone: str | pytz.timezone | None = None,
+        bound: Literal["files", "timedelta"] = "timedelta",
         data_duration: Timedelta | None = None,
     ) -> BaseDataset:
         """Return a BaseDataset from a folder containing the base files.
@@ -218,8 +231,14 @@ class BaseDataset(Generic[TData, TFile], Event):
             If different from a timezone parsed from the filename, the timestamps'
             timezone will be converted from the parsed timezone
             to the specified timezone.
+        bound: Literal["files", "timedelta"]
+            Bound between the original files and the dataset data.
+            "files": one data will be created for each file.
+            "timedelta": data objects of duration equal to data_duration will
+            be created.
         data_duration: Timedelta | None
             Duration of the data objects.
+            If bound is set to "files", this parameter has no effect.
             If provided, data will be evenly distributed between begin and end.
             Else, one object will cover the whole time period.
 
@@ -251,4 +270,4 @@ class BaseDataset(Generic[TData, TFile], Event):
         if not valid_files:
             raise FileNotFoundError(f"No valid file found in {folder}.")
 
-        return BaseDataset.from_files(valid_files, begin, end, data_duration)
+        return BaseDataset.from_files(valid_files, begin, end, bound, data_duration)

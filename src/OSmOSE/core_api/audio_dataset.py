@@ -7,9 +7,7 @@ that simplify repeated operations on the audio data.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
-
-import pytz
+from typing import TYPE_CHECKING, Literal
 
 from OSmOSE.core_api.audio_data import AudioData
 from OSmOSE.core_api.audio_file import AudioFile
@@ -20,6 +18,7 @@ if TYPE_CHECKING:
 
     from pathlib import Path
 
+    import pytz
     from pandas import Timedelta, Timestamp
 
 
@@ -99,6 +98,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         timezone: str | pytz.timezone | None = None,
+        bound: Literal["files", "timedelta"] = "timedelta",
         data_duration: Timedelta | None = None,
         **kwargs: any,
     ) -> AudioDataset:
@@ -122,8 +122,14 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             If different from a timezone parsed from the filename, the timestamps'
             timezone will be converted from the parsed timezone
             to the specified timezone.
+        bound: Literal["files", "timedelta"]
+            Bound between the original files and the dataset data.
+            "files": one data will be created for each file.
+            "timedelta": data objects of duration equal to data_duration will
+            be created.
         data_duration: Timedelta | None
             Duration of the audio data objects.
+            If bound is set to "files", this parameter has no effect.
             If provided, audio data will be evenly distributed between begin and end.
             Else, one data object will cover the whole time period.
         kwargs: any
@@ -144,6 +150,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             begin=begin,
             end=end,
             timezone=timezone,
+            bound=bound,
             data_duration=data_duration,
             **kwargs,
         )
@@ -155,6 +162,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         files: list[AudioFile],
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
+        bound: Literal["files", "timedelta"] = "timedelta",
         data_duration: Timedelta | None = None,
     ) -> AudioDataset:
         """Return an AudioDataset object from a list of AudioFiles.
@@ -169,8 +177,14 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         end: Timestamp | None
             End of the last data object.
             Defaulted to the end of the last file.
+        bound: Literal["files", "timedelta"]
+            Bound between the original files and the dataset data.
+            "files": one data will be created for each file.
+            "timedelta": data objects of duration equal to data_duration will
+            be created.
         data_duration: Timedelta | None
             Duration of the data objects.
+            If bound is set to "files", this parameter has no effect.
             If provided, data will be evenly distributed between begin and end.
             Else, one data object will cover the whole time period.
 
@@ -180,7 +194,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         The DataBase object.
 
         """
-        base = BaseDataset.from_files(files, begin, end, data_duration)
+        base = BaseDataset.from_files(files, begin, end, bound, data_duration)
         return cls.from_base_dataset(base)
 
     @classmethod

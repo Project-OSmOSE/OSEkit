@@ -6,10 +6,9 @@ that simplify repeated operations on the spectro data.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
-import pytz
 from scipy.signal import ShortTimeFFT
 
 from OSmOSE.core_api.base_dataset import BaseDataset
@@ -20,6 +19,7 @@ from OSmOSE.core_api.spectro_file import SpectroFile
 if TYPE_CHECKING:
     from pathlib import Path
 
+    import pytz
     from pandas import Timedelta, Timestamp
 
     from OSmOSE.core_api.audio_dataset import AudioDataset
@@ -131,13 +131,14 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         return cls(sd)
 
     @classmethod
-    def from_folder(
+    def from_folder(  # noqa: PLR0913
         cls,
         folder: Path,
         strptime_format: str,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         timezone: str | pytz.timezone | None = None,
+        bound: Literal["files", "timedelta"] = "timedelta",
         data_duration: Timedelta | None = None,
         **kwargs: any,
     ) -> SpectroDataset:
@@ -161,8 +162,14 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             If different from a timezone parsed from the filename, the timestamps'
             timezone will be converted from the parsed timezone
             to the specified timezone.
+        bound: Literal["files", "timedelta"]
+            Bound between the original files and the dataset data.
+            "files": one data will be created for each file.
+            "timedelta": data objects of duration equal to data_duration will
+            be created.
         data_duration: Timedelta | None
             Duration of the spectro data objects.
+            If bound is set to "files", this parameter has no effect.
             If provided, spectro data will be evenly distributed between begin and end.
             Else, one data object will cover the whole time period.
         kwargs: any
