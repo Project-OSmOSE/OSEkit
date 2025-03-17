@@ -166,6 +166,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         """
         if bound == "files":
             data_base = [BaseData.from_files([f]) for f in files]
+            data_base = BaseData.remove_overlaps(data_base)
             return cls(data_base)
 
         if not begin:

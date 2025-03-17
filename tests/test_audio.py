@@ -673,7 +673,9 @@ def test_audio_resample_sample_count(
             "files",
             None,
             generate_sample_audio(
-                nb_files=3, nb_samples=48_000, series_type="increase"
+                nb_files=3,
+                nb_samples=48_000,
+                series_type="increase",
             ),
             id="files_bound_without_overlap",
         ),
@@ -709,7 +711,11 @@ def test_audio_resample_sample_count(
             None,
             "files",
             None,
-            generate_sample_audio(nb_files=2, nb_samples=48_000),
+            [
+                generate_sample_audio(nb_files=1, nb_samples=48_000)[0][0:24_000],
+                generate_sample_audio(nb_files=1, nb_samples=48_000)[0][0:24_000],
+                generate_sample_audio(nb_files=1, nb_samples=48_000)[0],
+            ],
             id="files_bound_with_overlap",
         ),
     ],
@@ -732,10 +738,9 @@ def test_audio_dataset_from_folder(
         bound=bound,
         data_duration=duration,
     )
-    assert all(
-        np.array_equal(data.get_value(), expected)
-        for (data, expected) in zip(dataset.data, expected_audio_data)
-    )
+    for idx, data in enumerate(dataset.data):
+        vs = data.get_value()
+        assert np.array_equal(expected_audio_data[idx], vs)
 
 
 @pytest.mark.parametrize(
