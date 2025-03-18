@@ -6,6 +6,7 @@ from typing import Literal
 import pytest
 from pandas import Timedelta, Timestamp
 
+from OSmOSE.core_api.base_data import BaseData
 from OSmOSE.core_api.base_dataset import BaseDataset
 from OSmOSE.core_api.base_file import BaseFile
 from OSmOSE.core_api.event import Event
@@ -539,3 +540,178 @@ def test_base_dataset_file_bound(
         and [file.path.name for file in d.files] == e[1]
         for d, e in zip(ds.data, expected_data)
     )
+
+
+@pytest.mark.parametrize(
+    ("files", "begin", "end", "expected_data"),
+    [
+        pytest.param(
+            [
+                BaseFile(
+                    path=Path("cool"),
+                    begin=Timestamp("2022-04-22 12:12:12"),
+                    end=Timestamp("2022-04-22 12:12:13"),
+                ),
+            ],
+            None,
+            None,
+            Event(
+                begin=Timestamp("2022-04-22 12:12:12"),
+                end=Timestamp("2022-04-22 12:12:13"),
+            ),
+            id="no_boundary_change",
+        ),
+        pytest.param(
+            [
+                BaseFile(
+                    path=Path("cool"),
+                    begin=Timestamp("2022-04-22 12:12:12"),
+                    end=Timestamp("2022-04-22 12:12:13"),
+                ),
+            ],
+            Timestamp("2022-04-22 12:12:12.5"),
+            None,
+            Event(
+                begin=Timestamp("2022-04-22 12:12:12.5"),
+                end=Timestamp("2022-04-22 12:12:13"),
+            ),
+            id="begin_after_start",
+        ),
+        pytest.param(
+            [
+                BaseFile(
+                    path=Path("cool"),
+                    begin=Timestamp("2022-04-22 12:12:12"),
+                    end=Timestamp("2022-04-22 12:12:13"),
+                ),
+            ],
+            Timestamp("2022-04-22 12:12:11.5"),
+            None,
+            Event(
+                begin=Timestamp("2022-04-22 12:12:12"),
+                end=Timestamp("2022-04-22 12:12:13"),
+            ),
+            id="begin_before_start_has_no_effect",
+        ),
+        pytest.param(
+            [
+                BaseFile(
+                    path=Path("cool"),
+                    begin=Timestamp("2022-04-22 12:12:12"),
+                    end=Timestamp("2022-04-22 12:12:13"),
+                ),
+            ],
+            None,
+            Timestamp("2022-04-22 12:12:12.5"),
+            Event(
+                begin=Timestamp("2022-04-22 12:12:12"),
+                end=Timestamp("2022-04-22 12:12:12.5"),
+            ),
+            id="end_before_stop",
+        ),
+        pytest.param(
+            [
+                BaseFile(
+                    path=Path("cool"),
+                    begin=Timestamp("2022-04-22 12:12:12"),
+                    end=Timestamp("2022-04-22 12:12:13"),
+                ),
+            ],
+            None,
+            Timestamp("2022-04-22 12:12:14"),
+            Event(
+                begin=Timestamp("2022-04-22 12:12:12"),
+                end=Timestamp("2022-04-22 12:12:13"),
+            ),
+            id="end_after_stop_has_no_effect",
+        ),
+        pytest.param(
+            [
+                BaseFile(
+                    path=Path("cool"),
+                    begin=Timestamp("2022-04-22 12:12:12"),
+                    end=Timestamp("2022-04-22 12:12:13"),
+                ),
+                BaseFile(
+                    path=Path("fun"),
+                    begin=Timestamp("2022-04-22 12:12:14"),
+                    end=Timestamp("2022-04-22 12:12:15"),
+                ),
+            ],
+            Timestamp("2022-04-22 12:12:12.5"),
+            Timestamp("2022-04-22 12:12:14.5"),
+            Event(
+                begin=Timestamp("2022-04-22 12:12:12.5"),
+                end=Timestamp("2022-04-22 12:12:14.5"),
+            ),
+            id="valid_change_within_multiple_files",
+        ),
+        pytest.param(
+            [
+                BaseFile(
+                    path=Path("cool"),
+                    begin=Timestamp("2022-04-22 12:12:12"),
+                    end=Timestamp("2022-04-22 12:12:13"),
+                ),
+                BaseFile(
+                    path=Path("fun"),
+                    begin=Timestamp("2022-04-22 12:12:14"),
+                    end=Timestamp("2022-04-22 12:12:15"),
+                ),
+            ],
+            Timestamp("2022-04-22 12:12:13.1"),
+            None,
+            Event(
+                begin=Timestamp("2022-04-22 12:12:13.1"),
+                end=Timestamp("2022-04-22 12:12:15"),
+            ),
+            id="valid_change_excluding_one_files",
+        ),
+        pytest.param(
+            [
+                BaseFile(
+                    path=Path("cool"),
+                    begin=Timestamp("2022-04-22 12:12:12"),
+                    end=Timestamp("2022-04-22 12:12:13"),
+                ),
+                BaseFile(
+                    path=Path("fun"),
+                    begin=Timestamp("2022-04-22 12:12:14"),
+                    end=Timestamp("2022-04-22 12:12:15"),
+                ),
+            ],
+            Timestamp("2022-04-22 12:12:13.1"),
+            Timestamp("2022-04-22 12:12:13.9"),
+            Event(
+                begin=Timestamp("2022-04-22 12:12:13.1"),
+                end=Timestamp("2022-04-22 12:12:13.9"),
+            ),
+            id="valid_change_excluding_all_files",
+        ),
+    ],
+)
+def test_base_data_boundaries(
+    monkeypatch: pytest.fixture,
+    files: list[BaseFile],
+    begin: Timestamp,
+    end: Timestamp,
+    expected_data: Event,
+) -> None:
+    data = BaseData.from_files(files=files)
+    if begin:
+        data.begin = begin
+    if end:
+        data.end = end
+    assert data.begin == expected_data.begin
+    assert data.end == expected_data.end
+
+    def mocked_get_value(self: BaseData) -> None:
+        for item in data.items:
+            if item.is_empty:
+                continue
+            assert item.file.begin <= item.begin
+            assert item.file.end >= item.end
+
+    monkeypatch.setattr(BaseData, "get_value", mocked_get_value)
+
+    data.get_value()
