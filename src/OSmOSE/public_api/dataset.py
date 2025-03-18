@@ -6,6 +6,7 @@ from typing import TypeVar
 
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.spectro_dataset import SpectroDataset
+from OSmOSE.utils.path_utils import move_tree
 
 
 class Dataset:
@@ -45,6 +46,11 @@ class Dataset:
             bound="files",
         )
         self.datasets["original"] = ads
+        move_tree(
+            self.folder,
+            self.folder / "other",
+            {file.path for file in self.datasets["original"].files},
+        )
         self._sort_data(self.datasets["original"])
 
     def reset(self) -> None:
@@ -56,6 +62,10 @@ class Dataset:
         """
         files_to_remove = list(self.folder.iterdir())
         self.datasets["original"].move(self.folder)
+
+        if self.folder / "other" in files_to_remove:
+            move_tree(self.folder / "other", self.folder)
+
         for file in files_to_remove:
             shutil.rmtree(file)
 

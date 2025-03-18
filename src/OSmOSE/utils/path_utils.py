@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import shutil
 from pathlib import Path
 
 from OSmOSE.config import DPDEFAULT
@@ -41,3 +44,24 @@ def str2Path(path: str) -> Path:
 
     """
     return Path(path)
+
+
+def move_tree(
+    source: Path, destination: Path, excluded_files: set[Path] | None = None
+) -> None:
+    """Move all content from a source folder to a destination folder.
+
+    Paths given in excluded_files will not be affected.
+
+    """
+    if excluded_files is None:
+        excluded_files = set()
+    destination.mkdir(parents=True, exist_ok=True)
+    for file in source.glob("*"):
+        if file in excluded_files or file == destination:
+            continue
+        file_destination = destination / file.parent.relative_to(source)
+        file_destination.mkdir(parents=True, exist_ok=True)
+        shutil.move(file, file_destination / file.name)
+    if not any(destination.iterdir()):
+        destination.rmdir()
