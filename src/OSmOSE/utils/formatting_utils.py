@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from OSmOSE.config import FORBIDDEN_FILENAME_CHARACTERS
 from OSmOSE.config import global_logging_context as glc
@@ -13,19 +13,23 @@ if TYPE_CHECKING:
 
 
 def aplose2raven(
-    df: pd.DataFrame, audio_datetimes: list[pd.Timestamp], audio_durations: list[float]
+    aplose_result: pd.DataFrame,
+    audio_datetimes: list[pd.Timestamp],
+    audio_durations: list[float],
 ) -> pd.DataFrame:
-    """
-    Exports an APLOSE formatted result file to Raven formatted DataFrame
-    provided the list of audio files / durations considered for the Raven campaign.
+    r"""Format an APLOSE result DataFrame to a Raven result DataFrame.
+
+    The list of audio files and durations considered for the Raven campaign should be
+    provided to account for the deviations between the advertised and actual
+    file durations.
 
     Parameters
     ----------
-    df: Dataframe,
+    aplose_result: Dataframe,
         APLOSE formatted result DataFrame.
 
     audio_datetimes: list[pd.Timestamp]
-        list of non-naïve timestamps from considered audio files.
+        list of tz-aware timestamps from considered audio files.
 
     audio_durations: list[float]
         list of all considered audio file durations.
@@ -40,19 +44,21 @@ def aplose2raven(
     timestamp_list = list(filenames)
     duration_list = list(durations)
 
-    df = (
+    aplose_result = (
         pd.read_csv(aplose_file, parse_dates=["start_datetime", "end_datetime"])
         .sort_values("start_datetime")
         .reset_index(drop=True)
     )
-    df_raven = aplose2raven(df, filename_list, duration_list)
+    raven_result = aplose2raven(aplose_result, filename_list, duration_list)
 
-    # export to Raven format
-    df2raven.to_csv('path/to/result/file.txt', sep='\t', index=False) # Raven export tab-separated files with a txt extension
+    # export to Raven format: tab-separated files with a txt extension
+    raven_result.to_csv('path/to/result/file.txt', sep='\t', index=False)
+
     """
     # index of the corresponding wav file for each detection
     index_detection = (
-        np.searchsorted(audio_datetimes, df["start_datetime"], side="right") - 1
+        np.searchsorted(audio_datetimes, aplose_result["start_datetime"], side="right")
+        - 1
     )
 
     # time differences between consecutive datetimes and add wav_duration
@@ -64,11 +70,11 @@ def aplose2raven(
     # adjusted datetimes to match Raven annoying functioning
     begin_datetime_adjusted = [
         det + pd.Timedelta(seconds=cumsum_adjust[ind])
-        for (det, ind) in zip(df["start_datetime"], index_detection)
+        for (det, ind) in zip(aplose_result["start_datetime"], index_detection)
     ]
     end_datetime_adjusted = [
         det + pd.Timedelta(seconds=cumsum_adjust[ind])
-        for (det, ind) in zip(df["end_datetime"], index_detection)
+        for (det, ind) in zip(aplose_result["end_datetime"], index_detection)
     ]
     begin_time_adjusted = [
         (d - audio_datetimes[0]).total_seconds() for d in begin_datetime_adjusted
@@ -77,15 +83,17 @@ def aplose2raven(
         (d - audio_datetimes[0]).total_seconds() for d in end_datetime_adjusted
     ]
 
-    df2raven = pd.DataFrame()
-    df2raven["Selection"] = list(range(1, len(df) + 1))
-    df2raven["View"], df2raven["Channel"] = [1] * len(df), [1] * len(df)
-    df2raven["Begin Time (s)"] = begin_time_adjusted
-    df2raven["End Time (s)"] = end_time_adjusted
-    df2raven["Low Freq (Hz)"] = df["start_frequency"]
-    df2raven["High Freq (Hz)"] = df["end_frequency"]
+    raven_result = pd.DataFrame()
+    raven_result["Selection"] = list(range(1, len(aplose_result) + 1))
+    raven_result["View"], raven_result["Channel"] = [1] * len(aplose_result), [1] * len(
+        aplose_result
+    )
+    raven_result["Begin Time (s)"] = begin_time_adjusted
+    raven_result["End Time (s)"] = end_time_adjusted
+    raven_result["Low Freq (Hz)"] = aplose_result["start_frequency"]
+    raven_result["High Freq (Hz)"] = aplose_result["end_frequency"]
 
-    return df2raven
+    return raven_result
 
 
 def clean_filenames(filenames: list[Path]) -> tuple[list[Path], dict[Path, Path]]:
