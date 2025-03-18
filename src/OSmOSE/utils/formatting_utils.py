@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from OSmOSE.config import FORBIDDEN_FILENAME_CHARACTERS
 from OSmOSE.config import global_logging_context as glc
@@ -13,11 +13,15 @@ if TYPE_CHECKING:
 
 
 def aplose2raven(
-    df: pd.DataFrame, audio_datetimes: list[pd.Timestamp], audio_durations: list[float]
+    df: pd.DataFrame,
+    audio_datetimes: list[pd.Timestamp],
+    audio_durations: list[float],
 ) -> pd.DataFrame:
-    """
-    Exports an APLOSE formatted result file to Raven formatted DataFrame
-    provided the list of audio files / durations considered for the Raven campaign.
+    r"""Format an APLOSE result DataFrame to a Raven result DataFrame.
+
+    The list of audio files and durations considered for the Raven campaign should be
+    provided to account for the deviations between the advertised and actual
+    file durations.
 
     Parameters
     ----------
@@ -25,7 +29,7 @@ def aplose2raven(
         APLOSE formatted result DataFrame.
 
     audio_datetimes: list[pd.Timestamp]
-        list of non-naïve timestamps from considered audio files.
+        list of tc-aware timestamps from considered audio files.
 
     audio_durations: list[float]
         list of all considered audio file durations.
@@ -48,7 +52,9 @@ def aplose2raven(
     df_raven = aplose2raven(df, filename_list, duration_list)
 
     # export to Raven format
-    df2raven.to_csv('path/to/result/file.txt', sep='\t', index=False) # Raven export tab-separated files with a txt extension
+    df2raven.to_csv('path/to/result/file.txt', sep='\t', index=False)
+    # Raven export tab-separated files with a txt extension
+
     """
     # index of the corresponding wav file for each detection
     index_detection = (
