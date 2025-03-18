@@ -9,14 +9,14 @@ It has additionnal metadata that can be exported, e.g. to APLOSE.
 from __future__ import annotations
 
 import shutil
-from typing import TYPE_CHECKING, TypeVar
+from pathlib import Path
+from typing import TypeVar
 
 from OSmOSE.core_api.audio_dataset import AudioDataset
+from OSmOSE.core_api.base_dataset import BaseDataset
+from OSmOSE.core_api.json_serializer import deserialize_json, serialize_json
 from OSmOSE.core_api.spectro_dataset import SpectroDataset
 from OSmOSE.utils.path_utils import move_tree
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 class Dataset:
@@ -35,6 +35,7 @@ class Dataset:
         gps_coordinates: str | list | tuple = (0, 0),
         depth: str | int = 0,
         timezone: str | None = None,
+        datasets: dict | None = None,
     ) -> None:
         """Initialize a Dataset."""
         self.folder = folder
@@ -42,7 +43,7 @@ class Dataset:
         self.gps_coordinates = gps_coordinates
         self.depth = depth
         self.timezone = timezone
-        self.datasets = {}
+        self.datasets = datasets if datasets is not None else {}
 
     def build(self) -> None:
         """Build the Dataset.
@@ -56,14 +57,15 @@ class Dataset:
             strptime_format=self.strptime_format,
             bound="files",
         )
-        self.datasets["original"] = ads
+        self.datasets["original"] = {"class": type(ads).__name__, "dataset": ads}
         move_tree(
             self.folder,
             self.folder / "other",
-            {file.path for file in self.datasets["original"].files},
+            {file.path for file in self.datasets["original"]["dataset"].files},
         )
-        self._sort_dataset(self.datasets["original"])
+        self._sort_dataset(self.datasets["original"]["dataset"])
         ads.write_json(ads.folder)
+        self.write_json()
 
     def reset(self) -> None:
         """Reset the Dataset.
@@ -73,13 +75,18 @@ class Dataset:
         WARNING: all other files and folders will be deleted.
         """
         files_to_remove = list(self.folder.iterdir())
-        self.datasets["original"].folder = self.folder
+        self.datasets["original"]["dataset"].folder = self.folder
 
         if self.folder / "other" in files_to_remove:
             move_tree(self.folder / "other", self.folder)
 
         for file in files_to_remove:
-            shutil.rmtree(file)
+            if file.is_dir():
+                shutil.rmtree(file)
+            else:
+                file.unlink()
+
+        self.datasets = {}
 
     def _sort_dataset(self, dataset: type[DatasetChild]) -> None:
         if type(dataset) is AudioDataset:
@@ -106,5 +113,77 @@ class Dataset:
     def _sort_spectro_dataset(self, dataset: SpectroDataset) -> None:
         pass
 
+    def to_dict(self) -> dict:
+        return {
+            "datasets": {
+                name: {
+                    "class": dataset["class"],
+                    "json": str(dataset["dataset"].serialized_file),
+                }
+                for name, dataset in self.datasets.items()
+            },
+            "depth": self.depth,
+            "folder": str(self.folder),
+            "gps_coordinates": self.gps_coordinates,
+            "strptime_format": self.strptime_format,
+            "timezone": self.timezone,
+        }
 
-DatasetChild = TypeVar("DatasetChild", bound=Dataset)
+    """
+        folder: Path,
+        strptime_format: str,
+        gps_coordinates: str | list | tuple = (0, 0),
+        depth: str | int = 0,
+        timezone: str | None = None,
+    """
+
+    @classmethod
+    def from_dict(cls, dictionary: dict) -> Dataset:
+        datasets = {}
+        for name, dataset in dictionary["datasets"].items():
+            dataset_class = (
+                AudioDataset
+                if dataset["class"] == "AudioDataset"
+                else (
+                    SpectroDataset
+                    if dataset["class"] == "SpectroDataset"
+                    else BaseDataset
+                )
+            )
+            datasets[name] = {
+                "class": dataset["class"],
+                "dataset": dataset_class.from_json(Path(dataset["json"])),
+            }
+        return cls(
+            folder=Path(dictionary["folder"]),
+            strptime_format=dictionary["strptime_format"],
+            gps_coordinates=dictionary["gps_coordinates"],
+            depth=dictionary["depth"],
+            timezone=dictionary["timezone"],
+            datasets=datasets,
+        )
+
+    def write_json(self, folder: Path | None = None) -> None:
+        """Write a serialized Dataset to a JSON file."""
+        folder = folder if folder is not None else self.folder
+        serialize_json(folder / "dataset.json", self.to_dict())
+
+    @classmethod
+    def from_json(cls, file: Path) -> Dataset:
+        """Deserialize a Dataset from a JSON file.
+
+        Parameters
+        ----------
+        file: Path
+            Path to the serialized JSON file representing the Dataset.
+
+        Returns
+        -------
+        Dataset
+            The deserialized BaseDataset.
+
+        """
+        return cls.from_dict(deserialize_json(file))
+
+
+DatasetChild = TypeVar("DatasetChild", bound=BaseDataset)
