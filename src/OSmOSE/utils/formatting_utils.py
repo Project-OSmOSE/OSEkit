@@ -29,7 +29,7 @@ def aplose2raven(
         APLOSE formatted result DataFrame.
 
     audio_datetimes: list[pd.Timestamp]
-        list of tc-aware timestamps from considered audio files.
+        list of tz-aware timestamps from considered audio files.
 
     audio_durations: list[float]
         list of all considered audio file durations.
