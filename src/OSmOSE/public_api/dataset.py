@@ -63,6 +63,7 @@ class Dataset:
             {file.path for file in self.datasets["original"].files},
         )
         self._sort_dataset(self.datasets["original"])
+        ads.write_json(ads.folder)
 
     def reset(self) -> None:
         """Reset the Dataset.
