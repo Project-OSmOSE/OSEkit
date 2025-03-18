@@ -105,7 +105,7 @@ def test_aplose2raven(
     raven_durations: pytest.fixture,
 ) -> None:
     raven_dataframe = aplose2raven(
-        df=aplose_dataframe,
+        aplose_result=aplose_dataframe,
         audio_datetimes=raven_timestamps,
         audio_durations=raven_durations,
     )
