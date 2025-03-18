@@ -42,6 +42,7 @@ class Dataset:
         ads = AudioDataset.from_folder(
             self.folder,
             strptime_format=self.strptime_format,
+            bound="files",
         )
         self.datasets["original"] = ads
         self._sort_data(self.datasets["original"])
