@@ -32,7 +32,7 @@ def aplose2raven(
         list of tz-aware timestamps from considered audio files.
 
     audio_durations: list[float]
-        list of all considered audio file durations.
+        list of all considered audio file durations in seconds.
 
     Returns
     -------
@@ -85,9 +85,8 @@ def aplose2raven(
 
     raven_result = pd.DataFrame()
     raven_result["Selection"] = list(range(1, len(aplose_result) + 1))
-    raven_result["View"], raven_result["Channel"] = [1] * len(aplose_result), [1] * len(
-        aplose_result
-    )
+    raven_result["View"] = [1] * len(aplose_result)
+    raven_result["Channel"] = [1] * len(aplose_result)
     raven_result["Begin Time (s)"] = begin_time_adjusted
     raven_result["End Time (s)"] = end_time_adjusted
     raven_result["Low Freq (Hz)"] = aplose_result["start_frequency"]
