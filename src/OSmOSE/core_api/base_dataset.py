@@ -58,6 +58,25 @@ class BaseDataset(Generic[TData, TFile], Event):
         return {file for data in self.data for file in data.files}
 
     @property
+    def folder(self) -> Path:
+        """Folder in which the dataset files are located."""
+        return next(iter(file.path.parent for file in self.files))
+
+    @folder.setter
+    def folder(self, folder: Path) -> None:
+        """Move the dataset to the specified destination folder.
+
+        Parameters
+        ----------
+        folder: Path
+            The folder in which the dataset will be moved.
+            It will be created if it does not exist.
+
+        """
+        for file in self.files:
+            file.move(folder)
+
+    @property
     def data_duration(self) -> set[Timedelta] | Timedelta:
         """Return the sample rate of the audio data."""
         data_duration = {Timedelta(data.duration) for data in self.data}
@@ -181,19 +200,6 @@ class BaseDataset(Generic[TData, TFile], Event):
         else:
             data_base = [BaseData.from_files(files, begin=begin, end=end)]
         return cls(data_base)
-
-    def move(self, destination_folder: Path) -> None:
-        """Move the dataset to the specified destination folder.
-
-        Parameters
-        ----------
-        destination_folder: Path
-            The folder in which the dataset will be moved.
-            It will be created if it does not exist.
-
-        """
-        for file in self.files:
-            file.move(destination_folder)
 
     @classmethod
     def from_folder(  # noqa: PLR0913
