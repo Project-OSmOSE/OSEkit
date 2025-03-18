@@ -51,9 +51,8 @@ def aplose2raven(
     )
     df_raven = aplose2raven(df, filename_list, duration_list)
 
-    # export to Raven format
+    # export to Raven format: tab-separated files with a txt extension
     df2raven.to_csv('path/to/result/file.txt', sep='\t', index=False)
-    # Raven export tab-separated files with a txt extension
 
     """
     # index of the corresponding wav file for each detection
