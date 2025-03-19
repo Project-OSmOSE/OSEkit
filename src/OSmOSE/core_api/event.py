@@ -69,7 +69,9 @@ class Event:
         """
         output = []
         start_index = bisect.bisect_left(
-            events, self.begin, key=lambda event: event.begin
+            events,
+            self.begin,
+            key=lambda event: event.end,
         )
         for i in range(start_index, len(events)):
             if events[i] is self:
@@ -77,7 +79,8 @@ class Event:
             if self.overlaps(events[i]):
                 output.append(events[i])
                 continue
-            break
+            if events[i].begin >= self.end:
+                break
         return output
 
     @classmethod
