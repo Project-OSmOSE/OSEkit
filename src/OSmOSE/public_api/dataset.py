@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import TypeVar
 
 from OSmOSE.core_api.audio_dataset import AudioDataset
+from OSmOSE.core_api.audio_file import AudioFile
 from OSmOSE.core_api.base_dataset import BaseDataset
 from OSmOSE.core_api.json_serializer import deserialize_json, serialize_json
 from OSmOSE.core_api.spectro_dataset import SpectroDataset
@@ -44,6 +45,20 @@ class Dataset:
         self.depth = depth
         self.timezone = timezone
         self.datasets = datasets if datasets is not None else {}
+
+    @property
+    def origin_files(self) -> set[AudioFile]:
+        """Return the original audio files from which this Dataset has been built."""
+        return None if self.origin_dataset is None else self.origin_dataset.files
+
+    @property
+    def origin_dataset(self) -> AudioDataset:
+        """Return the AudioDataset from which this Dataset has been built."""
+        return (
+            None
+            if "original" not in self.datasets
+            else self.datasets["original"]["dataset"]
+        )
 
     def build(self) -> None:
         """Build the Dataset.
