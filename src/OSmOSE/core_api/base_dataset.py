@@ -77,6 +77,11 @@ class BaseDataset(Generic[TData, TFile], Event):
             file.move(folder)
 
     @property
+    def serialized_file(self) -> Path:
+        """Return the path of the serialized file of this dataset."""
+        return self.folder / f"{self}.json"
+
+    @property
     def data_duration(self) -> set[Timedelta] | Timedelta:
         """Return the sample rate of the audio data."""
         data_duration = {Timedelta(data.duration) for data in self.data}
