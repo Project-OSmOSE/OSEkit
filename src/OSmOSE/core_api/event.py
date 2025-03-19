@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import bisect
 import copy
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, TypeVar
@@ -49,6 +50,36 @@ class Event:
         """  # noqa: E501
         return self.begin < other.end and self.end > other.begin
 
+    def get_overlapping_events(self, events: list[TEvent]) -> list[TEvent]:
+        """Return a list of events that overlap with the current event.
+
+        The events input list must be sorted by begin and end Timestamps.
+
+        Parameters
+        ----------
+        events: list[TEvent]
+            The list of events to be filtered by overlap.
+            It must be sorted by begin and end Timestamps.
+
+        Returns
+        -------
+        list[TEvent]:
+            The events from the events input list that overlap with the current event.
+
+        """
+        output = []
+        start_index = bisect.bisect_left(
+            events, self.begin, key=lambda event: event.begin
+        )
+        for i in range(start_index, len(events)):
+            if events[i] is self:
+                continue
+            if self.overlaps(events[i]):
+                output.append(events[i])
+                continue
+            break
+        return output
+
     @classmethod
     def remove_overlaps(cls, events: list[TEvent]) -> list[TEvent]:
         """Resolve overlaps between events.
@@ -82,16 +113,12 @@ class Event:
         """  # noqa: E501
         events = sorted(
             [copy.copy(event) for event in events],
-            key=lambda event: (event.begin, event.begin - event.end),
+            key=lambda event: (event.begin, event.end),
         )
         concatenated_events = []
         for event in events:
             concatenated_events.append(event)
-            overlapping_events = [
-                event2
-                for event2 in events
-                if event2 is not event and event.overlaps(event2)
-            ]
+            overlapping_events = event.get_overlapping_events(events)
             if not overlapping_events:
                 continue
             kept_overlapping_event = max(overlapping_events, key=lambda item: item.end)
