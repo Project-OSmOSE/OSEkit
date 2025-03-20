@@ -1030,7 +1030,7 @@ def test_audio_dataset_from_folder_errors_warnings(
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "subtype", "expected_audio_data"),
+    ("audio_files", "subtype", "link", "expected_audio_data"),
     [
         pytest.param(
             {
@@ -1040,6 +1040,7 @@ def test_audio_dataset_from_folder_errors_warnings(
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
             },
             "DOUBLE",
+            False,
             generate_sample_audio(1, 48_000, dtype=np.float64),
             id="float64_file",
         ),
@@ -1051,6 +1052,7 @@ def test_audio_dataset_from_folder_errors_warnings(
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
             },
             "FLOAT",
+            False,
             generate_sample_audio(1, 48_000, dtype=np.float32),
             id="float32_file",
         ),
@@ -1063,8 +1065,22 @@ def test_audio_dataset_from_folder_errors_warnings(
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
             },
             "DOUBLE",
+            False,
             generate_sample_audio(1, 48_000, dtype=np.float64),
             id="padded_file",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 2,
+                "inter_file_duration": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            "DOUBLE",
+            True,
+            generate_sample_audio(1, 48_000, dtype=np.float64),
+            id="link_to_written_file",
         ),
     ],
     indirect=["audio_files"],
@@ -1073,6 +1089,7 @@ def test_write_files(
     tmp_path: Path,
     audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
     subtype: str,
+    link: bool,
     expected_audio_data: list[np.ndarray],
 ) -> None:
     dataset = AudioDataset.from_folder(
@@ -1080,10 +1097,13 @@ def test_write_files(
         strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
     )
     output_path = tmp_path / "output"
-    dataset.write(output_path, subtype=subtype)
+    dataset.write(output_path, subtype=subtype, link=link)
     for data in dataset.data:
         assert f"{data}.wav" in [f.name for f in output_path.glob("*.wav")]
         assert np.allclose(data.get_value(), sf.read(output_path / f"{data}.wav")[0])
+
+        if link:
+            assert str(next(iter(data.files)).path) == str(output_path / f"{data}.wav")
 
 
 @pytest.mark.parametrize(

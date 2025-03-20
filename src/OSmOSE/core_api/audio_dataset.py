@@ -57,7 +57,9 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         for data in self.data:
             data.sample_rate = sample_rate
 
-    def write(self, folder: Path, subtype: str | None = None) -> None:
+    def write(
+        self, folder: Path, subtype: str | None = None, link: bool = False
+    ) -> None:  # noqa: FBT001, FBT002
         """Write all data objects in the specified folder.
 
         Parameters
@@ -67,11 +69,15 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         subtype: str | None
             Subtype as provided by the soundfile module.
             Defaulted as the default 16-bit PCM for WAV audio files.
+        link: bool
+            If True, each AudioData will be bound to the corresponding written file.
+            Their items will be replaced with a single item, which will match the whole
+            new AudioFile.
 
 
         """
         for data in self.data:
-            data.write(folder, subtype)
+            data.write(folder=folder, subtype=subtype, link=link)
 
     @classmethod
     def from_dict(cls, dictionary: dict) -> AudioDataset:
