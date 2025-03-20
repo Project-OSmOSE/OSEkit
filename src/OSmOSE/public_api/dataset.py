@@ -12,6 +12,9 @@ import shutil
 from pathlib import Path
 from typing import TypeVar
 
+from pandas import Timedelta, Timestamp
+
+from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.audio_file import AudioFile
 from OSmOSE.core_api.base_dataset import BaseDataset
@@ -103,6 +106,37 @@ class Dataset:
 
         self.datasets = {}
 
+    def reshape(self, begin: Timestamp | None = None, end: Timestamp | None = None, data_duration: Timedelta | None = None, sample_rate: float | None = None) -> None:
+        ads = AudioDataset.from_files(
+            files=list(self.origin_files),
+            begin=begin,
+            end=end,
+            data_duration=data_duration,
+        )
+        if sample_rate is not None:
+            ads.sample_rate = sample_rate
+        ads_folder = self._get_audio_dataset_subpath(ads)
+
+        #TODO: add a parameter to BaseData (and children) write method to link the data to the written file.
+
+        ads.write(ads_folder)
+        ads = AudioDataset.from_folder(ads_folder, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES, bound="files")
+        self.datasets[str(ads)] = {"class": type(ads).__name__, "dataset": ads}
+        ads.write_json(ads.folder)
+        self.write_json()
+
+    def _get_audio_dataset_subpath(self, dataset: AudioDataset) -> Path:
+        data_duration = dataset.data_duration
+        sample_rate = dataset.sample_rate
+        data_duration, sample_rate = (
+            parameter if type(parameter) is not set else next(iter(parameter))
+            for parameter in (data_duration, sample_rate)
+        )
+        return (self.folder
+            / "data"
+            / "audio"
+            / f"{round(data_duration.total_seconds())}_{round(sample_rate)}")
+
     def _sort_dataset(self, dataset: type[DatasetChild]) -> None:
         if type(dataset) is AudioDataset:
             self._sort_audio_dataset(dataset)
@@ -112,18 +146,7 @@ class Dataset:
             return
 
     def _sort_audio_dataset(self, dataset: AudioDataset) -> None:
-        data_duration = dataset.data_duration
-        sample_rate = dataset.sample_rate
-        data_duration, sample_rate = (
-            parameter if type(parameter) is not set else next(iter(parameter))
-            for parameter in (data_duration, sample_rate)
-        )
-        dataset.folder = (
-            self.folder
-            / "data"
-            / "audio"
-            / f"{round(data_duration.total_seconds())}_{round(sample_rate)}"
-        )
+        dataset.folder = self._get_audio_dataset_subpath(dataset)
 
     def _sort_spectro_dataset(self, dataset: SpectroDataset) -> None:
         pass
