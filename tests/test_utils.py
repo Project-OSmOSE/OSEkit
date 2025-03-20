@@ -59,7 +59,7 @@ def test_read_header(input_dir):
 
 
 @pytest.fixture
-def aplose_dataframe():
+def aplose_dataframe() -> pd.DataFrame:
     data = pd.DataFrame(
         {
             "dataset": ["dataset_test", "dataset_test", "dataset_test"],
@@ -87,9 +87,33 @@ def aplose_dataframe():
     return data.reset_index(drop=True)
 
 
+@pytest.fixture
+def raven_timestamps() -> list:
+    return list(
+        pd.date_range(
+            start="2020-05-29T11:30:00.000+00:00",
+            end="2020-05-29T11:35:00.000+00:00",
+            freq="1min",
+        ),
+    )
+
+
+@pytest.fixture
+def raven_durations(raven_timestamps: pytest.fixture) -> list:
+    return [60] * len(raven_timestamps)
+
+
 @pytest.mark.unit
-def test_aplose2raven(aplose_dataframe):
-    raven_dataframe = aplose2raven(df=aplose_dataframe)
+def test_aplose2raven(
+    aplose_dataframe: pytest.fixture,
+    raven_timestamps: pytest.fixture,
+    raven_durations: pytest.fixture,
+) -> None:
+    raven_dataframe = aplose2raven(
+        aplose_result=aplose_dataframe,
+        audio_datetimes=raven_timestamps,
+        audio_durations=raven_durations,
+    )
 
     expected_raven_dataframe = pd.DataFrame(
         {
@@ -97,7 +121,7 @@ def test_aplose2raven(aplose_dataframe):
             "View": [1, 1, 1],
             "Channel": [1, 1, 1],
             "Begin Time (s)": [0.0, 60.0, 65.9],
-            "End Time (s)": [60.0, 120.0, 68.1],
+            "End Time (s)": [60.0, 120.0, 128.1],
             "Low Freq (Hz)": [0.0, 0.0, 18500.0],
             "High Freq (Hz)": [96000.0, 96000.0, 53000.0],
         },
