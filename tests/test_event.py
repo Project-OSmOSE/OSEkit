@@ -216,3 +216,109 @@ def test_remove_overlaps(events: list[Event], expected: list[Event]) -> None:
 def test_fill_event_gaps(events: list[Event], expected: list[Event]) -> None:
     filled_events = Event.fill_gaps(events, Event)
     assert filled_events == expected
+
+
+@pytest.mark.parametrize(
+    ("event", "events", "expected"),
+    [
+        pytest.param(
+            Event(begin=Timestamp("00:00:00"), end=Timestamp("00:00:10")),
+            [],
+            [],
+            id="no_event",
+        ),
+        pytest.param(
+            Event(begin=Timestamp("00:00:00"), end=Timestamp("00:00:10")),
+            [
+                Event(begin=Timestamp("00:00:00"), end=Timestamp("00:00:10")),
+            ],
+            [
+                Event(begin=Timestamp("00:00:00"), end=Timestamp("00:00:10")),
+            ],
+            id="one_identical_event",
+        ),
+        pytest.param(
+            Event(begin=Timestamp("00:00:05"), end=Timestamp("00:00:15")),
+            [
+                Event(begin=Timestamp("00:00:00"), end=Timestamp("00:00:10")),
+            ],
+            [
+                Event(begin=Timestamp("00:00:00"), end=Timestamp("00:00:10")),
+            ],
+            id="one_overlapping_from_start",
+        ),
+        pytest.param(
+            Event(begin=Timestamp("00:00:00"), end=Timestamp("00:00:10")),
+            [
+                Event(begin=Timestamp("00:00:05"), end=Timestamp("00:00:15")),
+            ],
+            [
+                Event(begin=Timestamp("00:00:05"), end=Timestamp("00:00:15")),
+            ],
+            id="one_overlapping_from_end",
+        ),
+        pytest.param(
+            Event(begin=Timestamp("00:00:00"), end=Timestamp("00:00:10")),
+            [
+                Event(begin=Timestamp("00:00:15"), end=Timestamp("00:00:20")),
+            ],
+            [],
+            id="one_not_overlapping",
+        ),
+        pytest.param(
+            Event(begin=Timestamp("00:00:05"), end=Timestamp("00:00:10")),
+            [
+                Event(begin=Timestamp("00:00:00"), end=Timestamp("00:00:05")),
+                Event(begin=Timestamp("00:00:10"), end=Timestamp("00:00:15")),
+            ],
+            [],
+            id="direct_following_is_not_overlapping",
+        ),
+        pytest.param(
+            Event(begin=Timestamp("00:00:10"), end=Timestamp("00:00:20")),
+            [
+                Event(begin=Timestamp("00:00:00"), end=Timestamp("00:00:05")),
+                Event(begin=Timestamp("00:00:00"), end=Timestamp("00:00:07")),
+                Event(begin=Timestamp("00:00:00"), end=Timestamp("00:00:12")),
+                Event(begin=Timestamp("00:00:05"), end=Timestamp("00:00:10")),
+                Event(begin=Timestamp("00:00:08"), end=Timestamp("00:00:15")),
+                Event(begin=Timestamp("00:00:12"), end=Timestamp("00:00:18")),
+                Event(begin=Timestamp("00:00:16"), end=Timestamp("00:00:24")),
+                Event(begin=Timestamp("00:00:18"), end=Timestamp("00:00:30")),
+                Event(begin=Timestamp("00:00:20"), end=Timestamp("00:00:25")),
+                Event(begin=Timestamp("00:00:30"), end=Timestamp("00:00:35")),
+            ],
+            [
+                Event(begin=Timestamp("00:00:00"), end=Timestamp("00:00:12")),
+                Event(begin=Timestamp("00:00:08"), end=Timestamp("00:00:15")),
+                Event(begin=Timestamp("00:00:12"), end=Timestamp("00:00:18")),
+                Event(begin=Timestamp("00:00:16"), end=Timestamp("00:00:24")),
+                Event(begin=Timestamp("00:00:18"), end=Timestamp("00:00:30")),
+            ],
+            id="full_mix",
+        ),
+    ],
+)
+def test_get_overlapping_events(
+    event: Event, events: list[Event], expected: list[Event]
+) -> None:
+    events = sorted(events, key=lambda e: (e.begin, e.end))
+
+    overlap_result = sorted(event.get_overlapping_events(events), key=lambda e: e.begin)
+    expected_result = sorted(expected, key=lambda e: e.begin)
+
+    assert all(
+        result == expected for result, expected in zip(overlap_result, expected_result)
+    )
+
+    assert len(overlap_result) == len(expected_result)
+
+    # event instance that is in the events list should be excluded
+    events.append(event)
+    events = sorted(events, key=lambda e: (e.begin, e.end))
+    overlap_result = sorted(event.get_overlapping_events(events), key=lambda e: e.begin)
+    assert all(
+        result == expected for result, expected in zip(overlap_result, expected_result)
+    )
+
+    assert len(overlap_result) == len(expected_result)
