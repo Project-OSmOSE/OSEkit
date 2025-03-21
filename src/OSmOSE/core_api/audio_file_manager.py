@@ -22,7 +22,8 @@ class AudioFileManager:
         """Initialize an audio file manager."""
         self.opened_file = None
 
-    def _close(self) -> None:
+    def close(self) -> None:
+        """Close the currently opened file."""
         if self.opened_file is None:
             return
         self.opened_file.close()
@@ -36,7 +37,7 @@ class AudioFileManager:
             self._open(path)
         if self.opened_file.name == str(path):
             return
-        self._close()
+        self.close()
         self._open(path)
 
     def read(

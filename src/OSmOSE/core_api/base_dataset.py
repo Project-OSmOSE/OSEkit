@@ -6,9 +6,8 @@ that simplify repeated operations on the data.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, Literal, TypeVar
 
-import pytz
 from pandas import Timedelta, Timestamp, date_range
 from soundfile import LibsndfileError
 
@@ -21,6 +20,8 @@ from OSmOSE.core_api.json_serializer import deserialize_json, serialize_json
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    import pytz
 
 TData = TypeVar("TData", bound=BaseData)
 TFile = TypeVar("TFile", bound=BaseFile)
@@ -55,6 +56,38 @@ class BaseDataset(Generic[TData, TFile], Event):
     def files(self) -> set[TFile]:
         """All files referred to by the Dataset."""
         return {file for data in self.data for file in data.files}
+
+    @property
+    def folder(self) -> Path:
+        """Folder in which the dataset files are located."""
+        return next(iter(file.path.parent for file in self.files), None)
+
+    @folder.setter
+    def folder(self, folder: Path) -> None:
+        """Move the dataset to the specified destination folder.
+
+        Parameters
+        ----------
+        folder: Path
+            The folder in which the dataset will be moved.
+            It will be created if it does not exist.
+
+        """
+        for file in self.files:
+            file.move(folder)
+
+    @property
+    def serialized_file(self) -> Path:
+        """Return the path of the serialized file of this dataset."""
+        return self.folder / f"{self}.json"
+
+    @property
+    def data_duration(self) -> set[Timedelta] | Timedelta:
+        """Return the durations of the data of this dataset."""
+        data_duration = {
+            Timedelta(data.duration).round(freq="1s") for data in self.data
+        }
+        return data_duration if len(data_duration) > 1 else next(iter(data_duration))
 
     def write(self, folder: Path) -> None:
         """Write all data objects in the specified folder.
@@ -123,6 +156,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         files: list[TFile],
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
+        bound: Literal["files", "timedelta"] = "timedelta",
         data_duration: Timedelta | None = None,
     ) -> BaseDataset:
         """Return a base BaseDataset object from a list of Files.
@@ -137,8 +171,14 @@ class BaseDataset(Generic[TData, TFile], Event):
         end: Timestamp | None
             End of the last data object.
             Defaulted to the end of the last file.
+        bound: Literal["files", "timedelta"]
+            Bound between the original files and the dataset data.
+            "files": one data will be created for each file.
+            "timedelta": data objects of duration equal to data_duration will
+            be created.
         data_duration: Timedelta | None
             Duration of the data objects.
+            If bound is set to "files", this parameter has no effect.
             If provided, data will be evenly distributed between begin and end.
             Else, one data object will cover the whole time period.
 
@@ -148,6 +188,11 @@ class BaseDataset(Generic[TData, TFile], Event):
         The DataBase object.
 
         """
+        if bound == "files":
+            data_base = [BaseData.from_files([f]) for f in files]
+            data_base = BaseData.remove_overlaps(data_base)
+            return cls(data_base)
+
         if not begin:
             begin = min(file.begin for file in files)
         if not end:
@@ -171,6 +216,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         timezone: str | pytz.timezone | None = None,
+        bound: Literal["files", "timedelta"] = "timedelta",
         data_duration: Timedelta | None = None,
     ) -> BaseDataset:
         """Return a BaseDataset from a folder containing the base files.
@@ -197,8 +243,14 @@ class BaseDataset(Generic[TData, TFile], Event):
             If different from a timezone parsed from the filename, the timestamps'
             timezone will be converted from the parsed timezone
             to the specified timezone.
+        bound: Literal["files", "timedelta"]
+            Bound between the original files and the dataset data.
+            "files": one data will be created for each file.
+            "timedelta": data objects of duration equal to data_duration will
+            be created.
         data_duration: Timedelta | None
             Duration of the data objects.
+            If bound is set to "files", this parameter has no effect.
             If provided, data will be evenly distributed between begin and end.
             Else, one object will cover the whole time period.
 
@@ -230,4 +282,4 @@ class BaseDataset(Generic[TData, TFile], Event):
         if not valid_files:
             raise FileNotFoundError(f"No valid file found in {folder}.")
 
-        return BaseDataset.from_files(valid_files, begin, end, data_duration)
+        return BaseDataset.from_files(valid_files, begin, end, bound, data_duration)

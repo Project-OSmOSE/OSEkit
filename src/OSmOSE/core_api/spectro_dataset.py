@@ -6,10 +6,9 @@ that simplify repeated operations on the spectro data.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
-import pytz
 from scipy.signal import ShortTimeFFT
 
 from OSmOSE.core_api.base_dataset import BaseDataset
@@ -20,6 +19,7 @@ from OSmOSE.core_api.spectro_file import SpectroFile
 if TYPE_CHECKING:
     from pathlib import Path
 
+    import pytz
     from pandas import Timedelta, Timestamp
 
     from OSmOSE.core_api.audio_dataset import AudioDataset
@@ -36,6 +36,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
     def __init__(self, data: list[SpectroData]) -> None:
         """Initialize a SpectroDataset."""
         super().__init__(data)
+        self._folder = None
 
     @property
     def fft(self) -> ShortTimeFFT:
@@ -46,6 +47,26 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
     def fft(self, fft: ShortTimeFFT) -> None:
         for data in self.data:
             data.fft = fft
+
+    @property
+    def folder(self) -> Path:
+        """Folder in which the dataset files are located."""
+        return self._folder if self._folder is not None else super().folder
+
+    @folder.setter
+    def folder(self, folder: Path) -> None:
+        """Move the dataset to the specified destination folder.
+
+        Parameters
+        ----------
+        folder: Path
+            The folder in which the dataset will be moved.
+            It will be created if it does not exist.
+
+        """
+        self._folder = folder
+        for file in self.files:
+            file.move(folder)
 
     def save_spectrogram(self, folder: Path) -> None:
         """Export all spectrogram data as png images in the specified folder.
@@ -58,6 +79,22 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         """
         for data in self.data:
             data.save_spectrogram(folder)
+
+    def save_all(self, matrix_folder: Path, spectrogram_folder: Path) -> None:
+        """Export both Sx matrices as npz files and spectrograms for each data.
+
+        Parameters
+        ----------
+        matrix_folder: Path
+            Path to the folder in which the Sx matrices npz files will be saved.
+        spectrogram_folder: Path
+            Path to the folder in which the spectrograms png files will be saved.
+
+        """
+        for data in self.data:
+            sx = data.get_value()
+            data.write(folder=matrix_folder, sx=sx)
+            data.save_spectrogram(folder=spectrogram_folder, sx=sx)
 
     def to_dict(self) -> dict:
         """Serialize a SpectroDataset to a dictionary.
@@ -131,13 +168,14 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         return cls(sd)
 
     @classmethod
-    def from_folder(
+    def from_folder(  # noqa: PLR0913
         cls,
         folder: Path,
         strptime_format: str,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         timezone: str | pytz.timezone | None = None,
+        bound: Literal["files", "timedelta"] = "timedelta",
         data_duration: Timedelta | None = None,
         **kwargs: any,
     ) -> SpectroDataset:
@@ -161,8 +199,14 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             If different from a timezone parsed from the filename, the timestamps'
             timezone will be converted from the parsed timezone
             to the specified timezone.
+        bound: Literal["files", "timedelta"]
+            Bound between the original files and the dataset data.
+            "files": one data will be created for each file.
+            "timedelta": data objects of duration equal to data_duration will
+            be created.
         data_duration: Timedelta | None
             Duration of the spectro data objects.
+            If bound is set to "files", this parameter has no effect.
             If provided, spectro data will be evenly distributed between begin and end.
             Else, one data object will cover the whole time period.
         kwargs: any

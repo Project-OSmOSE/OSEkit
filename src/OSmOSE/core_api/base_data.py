@@ -56,13 +56,43 @@ class BaseData(Generic[TItem, TFile], Event):
         if not items:
             items = [BaseItem(begin=begin, end=end)]
         self.items = items
-        self.begin = min(item.begin for item in self.items)
-        self.end = max(item.end for item in self.items)
+        self._begin = min(item.begin for item in self.items)
+        self._end = max(item.end for item in self.items)
 
     @property
     def is_empty(self) -> bool:
         """Return true if every item of this data object is empty."""
         return all(item.is_empty for item in self.items)
+
+    @property
+    def begin(self) -> Timestamp:
+        """Return the begin timestamp of the data."""
+        return min(item.begin for item in self.items)
+
+    @begin.setter
+    def begin(self, value: Timestamp) -> None:
+        """Trim the beginning of the data.
+
+        Begin can only be set to a posterior date from the original begin.
+
+        """
+        for item in self.items:
+            item.begin = max(item.begin, value)
+
+    @property
+    def end(self) -> Timestamp:
+        """Trim the end timestamp of the data.
+
+        End can only be set to an anterior date from the original end.
+
+        """
+        return max(item.end for item in self.items)
+
+    @end.setter
+    def end(self, value: Timestamp) -> None:
+        """Return true if every item of this data object is empty."""
+        for item in self.items:
+            item.end = min(item.end, value)
 
     def get_value(self) -> np.ndarray:
         """Get the concatenated values from all Items."""
