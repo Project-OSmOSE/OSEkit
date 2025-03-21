@@ -36,6 +36,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
     def __init__(self, data: list[SpectroData]) -> None:
         """Initialize a SpectroDataset."""
         super().__init__(data)
+        self._folder = None
 
     @property
     def fft(self) -> ShortTimeFFT:
@@ -46,6 +47,26 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
     def fft(self, fft: ShortTimeFFT) -> None:
         for data in self.data:
             data.fft = fft
+
+    @property
+    def folder(self) -> Path:
+        """Folder in which the dataset files are located."""
+        return self._folder if self._folder is not None else super().folder
+
+    @folder.setter
+    def folder(self, folder: Path) -> None:
+        """Move the dataset to the specified destination folder.
+
+        Parameters
+        ----------
+        folder: Path
+            The folder in which the dataset will be moved.
+            It will be created if it does not exist.
+
+        """
+        self._folder = folder
+        for file in self.files:
+            file.move(folder)
 
     def save_spectrogram(self, folder: Path) -> None:
         """Export all spectrogram data as png images in the specified folder.
@@ -58,6 +79,22 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         """
         for data in self.data:
             data.save_spectrogram(folder)
+
+    def save_all(self, matrix_folder: Path, spectrogram_folder: Path) -> None:
+        """Export both Sx matrices as npz files and spectrograms for each data.
+
+        Parameters
+        ----------
+        matrix_folder: Path
+            Path to the folder in which the Sx matrices npz files will be saved.
+        spectrogram_folder: Path
+            Path to the folder in which the spectrograms png files will be saved.
+
+        """
+        for data in self.data:
+            sx = data.get_value()
+            data.write(folder=matrix_folder, sx=sx)
+            data.save_spectrogram(folder=spectrogram_folder, sx=sx)
 
     def to_dict(self) -> dict:
         """Serialize a SpectroDataset to a dictionary.
