@@ -10,16 +10,18 @@ from __future__ import annotations
 
 import shutil
 from pathlib import Path
-from typing import TypeVar
-
-from pandas import Timedelta, Timestamp
+from typing import TYPE_CHECKING, TypeVar
 
 from OSmOSE.core_api.audio_dataset import AudioDataset
-from OSmOSE.core_api.audio_file import AudioFile
 from OSmOSE.core_api.base_dataset import BaseDataset
 from OSmOSE.core_api.json_serializer import deserialize_json, serialize_json
 from OSmOSE.core_api.spectro_dataset import SpectroDataset
 from OSmOSE.utils.path_utils import move_tree
+
+if TYPE_CHECKING:
+    from pandas import Timedelta, Timestamp
+
+    from OSmOSE.core_api.audio_file import AudioFile
 
 
 class Dataset:
@@ -31,7 +33,7 @@ class Dataset:
 
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         folder: Path,
         strptime_format: str,
@@ -113,18 +115,50 @@ class Dataset:
         sample_rate: float | None = None,
         name: str | None = None,
     ) -> None:
+        """Create and write a new AudioDataset from the original audio files.
+
+        The parameters of this method allow for a reshaping and resampling
+        of the audio data.
+        The created AudioDataset's files will be written to disk along with
+        a JSON serialized file.
+
+        Parameters
+        ----------
+        begin: Timestamp | None
+            The begin of the audio dataset.
+            Defaulted to the begin of the original dataset.
+        end: Timestamp | None
+            The end of the audio dataset.
+            Defaulted to the end of the original dataset.
+        data_duration: Timedelta | None
+            Duration of the audio data within the new dataset.
+            If provided, audio data will be evenly distributed between begin and end.
+            Else, one data object will cover the whole time period.
+        sample_rate: float | None
+            Sample rate of the new audio data.
+            Audio data will be resampled if provided, else the sample rate
+            will be set to the one of the original dataset.
+        name: str | None
+            Name of the new dataset.
+            Defaulted as the begin timestamp of the new dataset.
+
+        """
         ads = AudioDataset.from_files(
             files=list(self.origin_files),
             begin=begin,
             end=end,
             data_duration=data_duration,
         )
+
         if sample_rate is not None:
             ads.sample_rate = sample_rate
+
         ads_folder = self._get_audio_dataset_subpath(ads)
         ads.write(ads_folder, link=True)
+
         dataset_name = str(ads) if name is None else name
         self.datasets[dataset_name] = {"class": type(ads).__name__, "dataset": ads}
+
         ads.write_json(ads.folder)
         self.write_json()
 
@@ -157,6 +191,14 @@ class Dataset:
         pass
 
     def to_dict(self) -> dict:
+        """Serialize a dataset to a dictionary.
+
+        Returns
+        -------
+        dict:
+            The serialized dictionary representing the dataset.
+
+        """
         return {
             "datasets": {
                 name: {
@@ -182,6 +224,19 @@ class Dataset:
 
     @classmethod
     def from_dict(cls, dictionary: dict) -> Dataset:
+        """Deserialize a dataset from a dictionary.
+
+        Parameters
+        ----------
+        dictionary: dict
+            The serialized dictionary representing the dataset.
+
+        Returns
+        -------
+        Dataset
+            The deserialized dataset.
+
+        """
         datasets = {}
         for name, dataset in dictionary["datasets"].items():
             dataset_class = (

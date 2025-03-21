@@ -58,8 +58,11 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             data.sample_rate = sample_rate
 
     def write(
-        self, folder: Path, subtype: str | None = None, link: bool = False
-    ) -> None:  # noqa: FBT001, FBT002
+        self,
+        folder: Path,
+        subtype: str | None = None,
+        link: bool = False,  # noqa: FBT001, FBT002
+    ) -> None:
         """Write all data objects in the specified folder.
 
         Parameters
