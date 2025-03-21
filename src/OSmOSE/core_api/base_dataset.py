@@ -60,7 +60,7 @@ class BaseDataset(Generic[TData, TFile], Event):
     @property
     def folder(self) -> Path:
         """Folder in which the dataset files are located."""
-        return next(iter(file.path.parent for file in self.files))
+        return next(iter(file.path.parent for file in self.files), None)
 
     @folder.setter
     def folder(self, folder: Path) -> None:
