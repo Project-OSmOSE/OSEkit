@@ -9,8 +9,11 @@ It has additionnal metadata that can be exported, e.g. to APLOSE.
 from __future__ import annotations
 
 import shutil
+from enum import Flag, auto
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar
+
+from scipy.signal import ShortTimeFFT
 
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.base_dataset import BaseDataset
@@ -22,6 +25,12 @@ if TYPE_CHECKING:
     from pandas import Timedelta, Timestamp
 
     from OSmOSE.core_api.audio_file import AudioFile
+
+
+class SpectroOutput(Flag):
+    AUDIO = auto()
+    MATRIX = auto()
+    SPECTROGRAM = auto()
 
 
 class Dataset:
@@ -153,6 +162,9 @@ class Dataset:
         if sample_rate is not None:
             ads.sample_rate = sample_rate
 
+        self._add_audio_dataset(ads=ads, name=name)
+
+    def _add_audio_dataset(self, ads: AudioDataset, name: str | None = None) -> None:
         ads_folder = self._get_audio_dataset_subpath(ads)
         ads.write(ads_folder, link=True)
 
@@ -162,9 +174,9 @@ class Dataset:
         ads.write_json(ads.folder)
         self.write_json()
 
-    def _get_audio_dataset_subpath(self, dataset: AudioDataset) -> Path:
-        data_duration = dataset.data_duration
-        sample_rate = dataset.sample_rate
+    def _get_audio_dataset_subpath(self, ads: AudioDataset) -> Path:
+        data_duration = ads.data_duration
+        sample_rate = ads.sample_rate
         data_duration, sample_rate = (
             parameter if type(parameter) is not set else next(iter(parameter))
             for parameter in (data_duration, sample_rate)
@@ -174,6 +186,71 @@ class Dataset:
             / "data"
             / "audio"
             / f"{round(data_duration.total_seconds())}_{round(sample_rate)}"
+        )
+
+    def spectra(
+        self,
+        fft: ShortTimeFFT,
+        begin: Timestamp | None = None,
+        end: Timestamp | None = None,
+        data_duration: Timedelta | None = None,
+        sample_rate: float | None = None,
+        name: str | None = None,
+        export: SpectroOutput = SpectroOutput.SPECTROGRAM,
+    ) -> None:
+        ads = AudioDataset.from_files(
+            files=list(self.origin_files),
+            begin=begin,
+            end=end,
+            data_duration=data_duration,
+        )
+        if sample_rate is not None:
+            ads.sample_rate = sample_rate
+
+        if SpectroOutput.AUDIO in export:
+            self._add_audio_dataset(ads=ads, name=name)
+
+        sds = SpectroDataset.from_audio_dataset(audio_dataset=ads, fft=fft)
+        self._add_spectro_dataset(sds=sds, name=name, export=export)
+
+    def _add_spectro_dataset(
+        self, sds: SpectroDataset, export: SpectroOutput, name: str | None = None
+    ) -> None:
+        sds.folder = self._get_spectro_dataset_subpath(sds)
+
+        if SpectroOutput.MATRIX in export and SpectroOutput.SPECTROGRAM in export:
+            sds.save_all(
+                matrix_folder=sds.folder / "welch",
+                spectrogram_folder=sds.folder / "spectrogram",
+            )
+        elif SpectroOutput.SPECTROGRAM in export:
+            sds.save_spectrogram(
+                folder=sds.folder / "spectrogram",
+            )
+        elif SpectroOutput.MATRIX in export:
+            sds.write(
+                folder=sds.folder / "welch",
+            )
+
+        dataset_name = str(sds) if name is None else name
+        self.datasets[dataset_name] = {"class": type(sds).__name__, "dataset": sds}
+
+        sds.write_json(sds.folder)
+        self.write_json()
+
+    def _get_spectro_dataset_subpath(self, sds: SpectroDataset) -> Path:
+        data_duration = sds.data_duration
+        sample_rate = sds.fft.fs
+        data_duration, sample_rate = (
+            parameter if type(parameter) is not set else next(iter(parameter))
+            for parameter in (data_duration, sample_rate)
+        )
+        fft_folder = f"{sds.fft.mfft}_{sds.fft.win.shape[0]}_{sds.fft.hop}_linear"
+        return (
+            self.folder
+            / "processed"
+            / f"{round(data_duration.total_seconds())}_{round(sample_rate)}"
+            / fft_folder
         )
 
     def _sort_dataset(self, dataset: type[DatasetChild]) -> None:
