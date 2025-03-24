@@ -42,17 +42,22 @@ def audio_files(
         series_type=series_type,
     )
     files = []
-    for index, begin_time in enumerate(
+    file_begin_timestamps = (
         list(
             pd.date_range(
                 date_begin,
                 periods=nb_files,
                 freq=pd.Timedelta(seconds=duration + inter_file_duration),
-            ),
-        ),
-    ):
+            )
+        )
+        if duration + inter_file_duration != 0
+        else [date_begin] * nb_files
+    )
+    for index, begin_time in enumerate(file_begin_timestamps):
         time_str = begin_time.strftime(format=TIMESTAMP_FORMAT_TEST_FILES)
-        file = tmp_path / f"audio_{time_str}.{format}"
+        idx = 0
+        while (file := tmp_path / f"audio_{time_str}_{idx}.{format}").exists():
+            idx += 1
         files.append(file)
         kwargs = {
             "file": file,
