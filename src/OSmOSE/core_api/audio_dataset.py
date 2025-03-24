@@ -48,9 +48,9 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
 
     @property
     def sample_rate(self) -> set[float] | float:
-        """Return the sample rate of the audio data."""
-        sample_rates = {data.sample_rate for data in self.data}
-        return sample_rates if len(list(sample_rates)) > 1 else next(iter(sample_rates))
+        """Return the most frequent sample rate among sample rates of the data of this dataset of the audio data."""
+        sample_rates = [data.sample_rate for data in self.data]
+        return max(set(sample_rates), key=sample_rates.count)
 
     @sample_rate.setter
     def sample_rate(self, sample_rate: float) -> None:

@@ -44,7 +44,9 @@ class BaseDataset(Generic[TData, TFile], Event):
 
     def __eq__(self, other: BaseDataset) -> bool:
         """Overwrite __eq__."""
-        return sorted(self.data) == sorted(other.data)
+        return sorted(self.data, key=lambda e: (e.begin, e.end)) == sorted(
+            other.data, key=lambda e: (e.begin, e.end)
+        )
 
     @property
     def begin(self) -> Timestamp:
@@ -86,12 +88,12 @@ class BaseDataset(Generic[TData, TFile], Event):
         return self.folder / f"{self}.json"
 
     @property
-    def data_duration(self) -> set[Timedelta] | Timedelta:
-        """Return the durations of the data of this dataset."""
-        data_duration = {
+    def data_duration(self) -> Timedelta:
+        """Return the most frequent duration among durations of the data of this dataset, rounded to the nearest second."""
+        data_durations = [
             Timedelta(data.duration).round(freq="1s") for data in self.data
-        }
-        return data_duration if len(data_duration) > 1 else next(iter(data_duration))
+        ]
+        return max(set(data_durations), key=data_durations.count)
 
     def write(self, folder: Path) -> None:
         """Write all data objects in the specified folder.
