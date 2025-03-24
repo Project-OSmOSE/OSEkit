@@ -53,3 +53,11 @@ print_logger = logging.getLogger("printer")
 BUILD_DURATION_DELTA_THRESHOLD = 0.05
 
 FileName: TypeAlias = str | bytes | os.PathLike
+
+_dataset_paths = {
+    "audio": Path("data/audio"),
+    "spectrogram": Path("processed/spectrogram"),
+    "matrix": Path("processed/welch"),
+    "LTAS": Path("processed/LTAS"),
+}
+DATASET_PATHS = namedtuple("dataset_paths", _dataset_paths.keys())(**_dataset_paths)
