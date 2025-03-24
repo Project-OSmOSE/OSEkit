@@ -127,6 +127,10 @@ class BaseFile(Event):
         """Overwrite __str__."""
         return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)
 
+    def __eq__(self, other: BaseFile):
+        """Override __eq__."""
+        return self.path == other.path and super().__eq__(other)
+
     def move(self, destination_folder: Path):
         destination_path = destination_folder / self.path.name
         destination_folder.mkdir(exist_ok=True, parents=True)
