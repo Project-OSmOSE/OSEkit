@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import soundfile as sf
+from pandas import Timestamp
 
 from OSmOSE.config import TIMESTAMP_FORMAT_TEST_FILES
 from OSmOSE.core_api import audio_file_manager as afm
@@ -1337,3 +1338,143 @@ def test_move_audio_file(
 
     assert afm.opened_file is not None
     assert afm.opened_file.name == str(af.path)
+
+
+@pytest.mark.parametrize(
+    (
+        "audio_files",
+        "ad1_begin",
+        "ad2_begin",
+        "ad1_end",
+        "ad2_end",
+        "ad1_sample_rate",
+        "ad2_sample_rate",
+        "expected",
+    ),
+    [
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            Timestamp("2024-01-01 12:00:00"),
+            Timestamp("2024-01-01 12:00:00"),
+            Timestamp("2024-01-01 12:00:01"),
+            Timestamp("2024-01-01 12:00:01"),
+            48_000,
+            48_000,
+            True,
+            id="equal_data",
+        ),
+        pytest.param(
+            {
+                "duration": 2,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            Timestamp("2024-01-01 12:00:00"),
+            Timestamp("2024-01-01 12:00:01"),
+            Timestamp("2024-01-01 12:00:02"),
+            Timestamp("2024-01-01 12:00:02"),
+            48_000,
+            48_000,
+            False,
+            id="different_begin",
+        ),
+        pytest.param(
+            {
+                "duration": 2,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            Timestamp("2024-01-01 12:00:00"),
+            Timestamp("2024-01-01 12:00:00"),
+            Timestamp("2024-01-01 12:00:01"),
+            Timestamp("2024-01-01 12:00:02"),
+            48_000,
+            48_000,
+            False,
+            id="different_end",
+        ),
+        pytest.param(
+            {
+                "duration": 2,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            Timestamp("2024-01-01 12:00:00"),
+            Timestamp("2024-01-01 12:00:00"),
+            Timestamp("2024-01-01 12:00:02"),
+            Timestamp("2024-01-01 12:00:02"),
+            48_000,
+            24_000,
+            False,
+            id="different_sample_rate",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 2,
+                "inter_file_duration": -1.0,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            Timestamp("2024-01-01 12:00:00"),
+            Timestamp("2024-01-01 12:00:00"),
+            Timestamp("2024-01-01 12:00:01"),
+            Timestamp("2024-01-01 12:00:01"),
+            48_000,
+            48_000,
+            False,
+            id="different_files",
+        ),
+    ],
+    indirect=["audio_files"],
+)
+def test_audio_data_equality(
+    tmp_path: pytest.fixture,
+    audio_files: pytest.fixture,
+    ad1_begin: Timestamp,
+    ad2_begin: Timestamp,
+    ad1_end: Timestamp,
+    ad2_end: Timestamp,
+    ad1_sample_rate: float,
+    ad2_sample_rate: float,
+    expected: bool,
+) -> None:
+    afs = iter(
+        AudioFile(f, strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
+        for f in tmp_path.glob("*.wav")
+    )
+    af1 = next(afs)
+    af2 = next(afs, af1)
+
+    ad1 = AudioData.from_files(
+        [af1],
+        begin=ad1_begin,
+        end=ad1_end,
+    )
+    ad1.sample_rate = ad1_sample_rate
+
+    ad2 = AudioData.from_files(
+        [af2],
+        begin=ad2_begin,
+        end=ad2_end,
+    )
+    ad2.sample_rate = ad2_sample_rate
+
+    assert (ad1 == ad2) == expected
+
+    # AudioDataset scope
+    ads1 = AudioDataset([ad1])
+    ads2 = AudioDataset([ad2])
+    assert (ads1 == ads2) == expected
+    ads2.sample_rate = 500
+
+    # AudioDataset equality should account for sample rate
+    assert ads1 != ads2
