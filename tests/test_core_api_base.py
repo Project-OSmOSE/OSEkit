@@ -715,3 +715,240 @@ def test_base_data_boundaries(
     monkeypatch.setattr(BaseData, "get_value", mocked_get_value)
 
     data.get_value()
+
+
+@pytest.mark.parametrize(
+    ("data1", "data2", "expected"),
+    [
+        pytest.param(
+            BaseData.from_files(
+                [
+                    BaseFile(
+                        "cherry",
+                        begin=Timestamp("2015-08-28 12:12:12"),
+                        end=Timestamp("2015-08-28 12:13:12"),
+                    ),
+                ],
+                begin=None,
+                end=None,
+            ),
+            BaseData.from_files(
+                [
+                    BaseFile(
+                        "cherry",
+                        begin=Timestamp("2015-08-28 12:12:12"),
+                        end=Timestamp("2015-08-28 12:13:12"),
+                    ),
+                ],
+                begin=None,
+                end=None,
+            ),
+            True,
+            id="same_one_full_file",
+        ),
+        pytest.param(
+            BaseData.from_files(
+                [
+                    BaseFile(
+                        "cherry",
+                        begin=Timestamp("2015-08-28 12:12:12"),
+                        end=Timestamp("2015-08-28 12:13:12"),
+                    ),
+                ],
+                begin=None,
+                end=None,
+            ),
+            BaseData.from_files(
+                [
+                    BaseFile(
+                        "cherry",
+                        begin=Timestamp("2015-08-28 12:12:12"),
+                        end=Timestamp("2015-08-28 12:13:12"),
+                    ),
+                ],
+                begin=Timestamp("2015-08-28 12:12:12"),
+                end=Timestamp("2015-08-28 12:13:12"),
+            ),
+            True,
+            id="same_one_full_file_explicit_timestamps",
+        ),
+        pytest.param(
+            BaseData.from_files(
+                [
+                    BaseFile(
+                        "cherry",
+                        begin=Timestamp("2015-08-28 12:12:12"),
+                        end=Timestamp("2015-08-28 12:13:12"),
+                    ),
+                ],
+                begin=None,
+                end=None,
+            ),
+            BaseData.from_files(
+                [
+                    BaseFile(
+                        "cherry",
+                        begin=Timestamp("2015-08-28 12:12:12"),
+                        end=Timestamp("2015-08-28 12:13:12"),
+                    ),
+                ],
+                begin=Timestamp("2015-08-28 12:12:13"),
+                end=None,
+            ),
+            False,
+            id="different_begin",
+        ),
+        pytest.param(
+            BaseData.from_files(
+                [
+                    BaseFile(
+                        "cherry",
+                        begin=Timestamp("2015-08-28 12:12:12"),
+                        end=Timestamp("2015-08-28 12:13:12"),
+                    ),
+                ],
+                begin=None,
+                end=None,
+            ),
+            BaseData.from_files(
+                [
+                    BaseFile(
+                        "cherry",
+                        begin=Timestamp("2015-08-28 12:12:12"),
+                        end=Timestamp("2015-08-28 12:13:12"),
+                    ),
+                ],
+                begin=None,
+                end=Timestamp("2015-08-28 12:13:10"),
+            ),
+            False,
+            id="different_end",
+        ),
+        pytest.param(
+            BaseData.from_files(
+                [
+                    BaseFile(
+                        "cherry",
+                        begin=Timestamp("2015-08-28 12:12:12"),
+                        end=Timestamp("2015-08-28 12:13:12"),
+                    ),
+                ],
+                begin=None,
+                end=None,
+            ),
+            BaseData.from_files(
+                [
+                    BaseFile(
+                        "cherry",
+                        begin=Timestamp("2015-08-28 12:12:12"),
+                        end=Timestamp("2015-08-28 12:13:12"),
+                    ),
+                ],
+                begin=Timestamp("2015-08-28 12:12:13"),
+                end=Timestamp("2015-08-28 12:13:10"),
+            ),
+            False,
+            id="different_begin_and_end",
+        ),
+        pytest.param(
+            BaseData.from_files(
+                [
+                    BaseFile(
+                        "beach",
+                        begin=Timestamp("2015-08-28 12:12:12"),
+                        end=Timestamp("2015-08-28 12:13:12"),
+                    ),
+                ],
+                begin=None,
+                end=None,
+            ),
+            BaseData.from_files(
+                [
+                    BaseFile(
+                        "house",
+                        begin=Timestamp("2015-08-28 12:12:12"),
+                        end=Timestamp("2015-08-28 12:13:12"),
+                    ),
+                ],
+                begin=None,
+                end=None,
+            ),
+            False,
+            id="different_file",
+        ),
+        pytest.param(
+            BaseData.from_files(
+                [
+                    BaseFile(
+                        "beach",
+                        begin=Timestamp("2015-08-28 12:12:12"),
+                        end=Timestamp("2015-08-28 12:13:12"),
+                    ),
+                    BaseFile(
+                        "house",
+                        begin=Timestamp("2015-08-28 12:12:14"),
+                        end=Timestamp("2015-08-28 12:13:15"),
+                    ),
+                ],
+                begin=None,
+                end=None,
+            ),
+            BaseData.from_files(
+                [
+                    BaseFile(
+                        "beach",
+                        begin=Timestamp("2015-08-28 12:12:12"),
+                        end=Timestamp("2015-08-28 12:13:12"),
+                    ),
+                    BaseFile(
+                        "house",
+                        begin=Timestamp("2015-08-28 12:12:14"),
+                        end=Timestamp("2015-08-28 12:13:15"),
+                    ),
+                ],
+                begin=None,
+                end=None,
+            ),
+            True,
+            id="same_two_files",
+        ),
+        pytest.param(
+            BaseData.from_files(
+                [
+                    BaseFile(
+                        "beach",
+                        begin=Timestamp("2015-08-28 12:12:12"),
+                        end=Timestamp("2015-08-28 12:13:12"),
+                    ),
+                    BaseFile(
+                        "house",
+                        begin=Timestamp("2015-08-28 12:12:14"),
+                        end=Timestamp("2015-08-28 12:13:15"),
+                    ),
+                ],
+                begin=None,
+                end=None,
+            ),
+            BaseData.from_files(
+                [
+                    BaseFile(
+                        "cherry",
+                        begin=Timestamp("2015-08-28 12:12:12"),
+                        end=Timestamp("2015-08-28 12:13:12"),
+                    ),
+                    BaseFile(
+                        "house",
+                        begin=Timestamp("2015-08-28 12:12:14"),
+                        end=Timestamp("2015-08-28 12:13:15"),
+                    ),
+                ],
+                begin=None,
+                end=None,
+            ),
+            False,
+            id="different_one_out_of_two_files",
+        ),
+    ],
+)
+def test_base_data_equality(data1: BaseData, data2: BaseData, expected: bool) -> None:
+    assert (data1 == data2) == expected
