@@ -73,6 +73,10 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         """Overwrite __str__."""
         return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)
 
+    def __eq__(self, other: AudioData):
+        """Override __eq__."""
+        return self.sample_rate == other.sample_rate and super().__eq__(other)
+
     def _set_sample_rate(self, sample_rate: int | None = None) -> None:
         """Set the AudioFile sample rate.
 
@@ -120,8 +124,11 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         return data
 
     def write(
-        self, folder: Path, subtype: str | None = None, link: bool = False
-    ) -> None:  # noqa: FBT001, FBT002
+        self,
+        folder: Path,
+        subtype: str | None = None,
+        link: bool = False,
+    ) -> None:
         """Write the audio data to file.
 
         Parameters

@@ -59,6 +59,10 @@ class BaseData(Generic[TItem, TFile], Event):
         self._begin = min(item.begin for item in self.items)
         self._end = max(item.end for item in self.items)
 
+    def __eq__(self, other: BaseData) -> bool:
+        """Override __eq__."""
+        return self.items == other.items
+
     @property
     def is_empty(self) -> bool:
         """Return true if every item of this data object is empty."""

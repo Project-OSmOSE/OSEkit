@@ -42,6 +42,10 @@ class BaseDataset(Generic[TData, TFile], Event):
         """Overwrite __str__."""
         return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)
 
+    def __eq__(self, other: BaseDataset) -> bool:
+        """Overwrite __eq__."""
+        return sorted(self.data) == sorted(other.data)
+
     @property
     def begin(self) -> Timestamp:
         """Begin of the first data object."""
