@@ -193,7 +193,8 @@ class Dataset:
         self._add_audio_dataset(ads=ads, name=name)
 
     def _add_audio_dataset(self, ads: AudioDataset, name: str | None = None) -> None:
-        ads_folder = self._get_audio_dataset_subpath(ads)
+        ads_folder = self._get_audio_dataset_subpath(ads=ads, name=name)
+        ()
         ads.write(ads_folder, link=True)
 
         dataset_name = str(ads) if name is None else name
@@ -202,12 +203,18 @@ class Dataset:
         ads.write_json(ads.folder)
         self.write_json()
 
-    def _get_audio_dataset_subpath(self, ads: AudioDataset) -> Path:
+    def _get_audio_dataset_subpath(
+        self, ads: AudioDataset, name: str | None = None
+    ) -> Path:
         return (
             self.folder
             / "data"
             / "audio"
-            / f"{round(ads.data_duration.total_seconds())}_{round(ads.sample_rate)}"
+            / (
+                f"{round(ads.data_duration.total_seconds())}_{round(ads.sample_rate)}"
+                if name is None
+                else name
+            )
         )
 
     def spectra(
@@ -241,7 +248,7 @@ class Dataset:
         export: SpectroOutput,
         name: str | None = None,
     ) -> None:
-        sds.folder = self._get_spectro_dataset_subpath(sds)
+        sds.folder = self._get_spectro_dataset_subpath(sds=sds, name=name)
 
         if SpectroOutput.MATRIX in export and SpectroOutput.SPECTROGRAM in export:
             sds.save_all(
@@ -265,19 +272,17 @@ class Dataset:
         sds.write_json(sds.folder)
         self.write_json()
 
-    def _get_spectro_dataset_subpath(self, sds: SpectroDataset) -> Path:
-        data_duration = sds.data_duration
-        sample_rate = sds.fft.fs
-        data_duration, sample_rate = (
-            parameter if type(parameter) is not set else next(iter(parameter))
-            for parameter in (data_duration, sample_rate)
+    def _get_spectro_dataset_subpath(
+        self, sds: SpectroDataset, name: str | None = None
+    ) -> Path:
+        ads_folder = Path(
+            f"{round(sds.data_duration.total_seconds())}_{round(sds.fft.fs)}"
         )
         fft_folder = f"{sds.fft.mfft}_{sds.fft.win.shape[0]}_{sds.fft.hop}_linear"
         return (
             self.folder
             / "processed"
-            / f"{round(data_duration.total_seconds())}_{round(sample_rate)}"
-            / fft_folder
+            / (ads_folder / fft_folder if name is None else name)
         )
 
     def _sort_dataset(self, dataset: type[DatasetChild]) -> None:
@@ -289,7 +294,7 @@ class Dataset:
             return
 
     def _sort_audio_dataset(self, dataset: AudioDataset) -> None:
-        dataset.folder = self._get_audio_dataset_subpath(dataset)
+        dataset.folder = self._get_audio_dataset_subpath(dataset, name="original")
 
     def _sort_spectro_dataset(self, dataset: SpectroDataset) -> None:
         pass

@@ -175,11 +175,11 @@ def test_dataset_build(
     # Expected moved original dataset
     moved_original_dataset = deepcopy(original_dataset)
     for file in moved_original_dataset.files:
-        file.path = file.path.parent / "data" / "audio" / "1_48000" / file.path.name
+        file.path = file.path.parent / "data" / "audio" / "original" / file.path.name
 
     # The original dataset should be moved to the correct folder
     assert moved_original_dataset == AudioDataset.from_folder(
-        folder=tmp_path / "data" / "audio" / "1_48000",
+        folder=tmp_path / "data" / "audio" / "original",
         strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
         bound="files",
     )
