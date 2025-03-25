@@ -202,7 +202,7 @@ class Dataset:
             ads.sample_rate = sample_rate
 
         if SpectroOutput.AUDIO in export:
-            self._add_audio_dataset(ads=ads, name=name)
+            self._add_audio_dataset(ads=ads, name=f"{name}_audio")
 
         sds = SpectroDataset.from_audio_dataset(audio_dataset=ads, fft=fft)
         self._add_spectro_dataset(sds=sds, name=name, export=export)
