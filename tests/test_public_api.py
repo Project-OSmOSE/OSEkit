@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from copy import deepcopy
 
+import numpy as np
 import pytest
-from pandas import Timestamp
+from pandas import Timedelta, Timestamp
 
-from OSmOSE.config import TIMESTAMP_FORMAT_TEST_FILES
+from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES, TIMESTAMP_FORMAT_TEST_FILES
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.event import Event
 from OSmOSE.public_api.dataset import Dataset
@@ -207,3 +208,161 @@ def test_dataset_build(
     assert sorted(str(file) for file in tmp_path.rglob("*")) == sorted(
         str(file) for file in files_before_build
     )
+
+
+@pytest.mark.parametrize(
+    ("audio_files", "ads_name", "begin", "end", "data_duration", "sample_rate"),
+    [
+        pytest.param(
+            {
+                "duration": 5,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00"),
+            },
+            None,
+            None,
+            None,
+            None,
+            None,
+            id="same_format_as_original",
+        ),
+        pytest.param(
+            {
+                "duration": 5,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00"),
+            },
+            "cool",
+            None,
+            None,
+            None,
+            None,
+            id="named_dataset",
+        ),
+        pytest.param(
+            {
+                "duration": 5,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00"),
+            },
+            None,
+            Timestamp("2024-01-01 12:00:02"),
+            Timestamp("2024-01-01 12:00:04"),
+            None,
+            None,
+            id="part_of_the_timespan",
+        ),
+        pytest.param(
+            {
+                "duration": 5,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00"),
+            },
+            None,
+            None,
+            None,
+            Timedelta(seconds=1),
+            None,
+            id="resize_data_with_data_duration",
+        ),
+        pytest.param(
+            {
+                "duration": 5,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00"),
+            },
+            None,
+            None,
+            None,
+            None,
+            24_000,
+            id="reshaping_data",
+        ),
+        pytest.param(
+            {
+                "duration": 5,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00"),
+            },
+            "fun",
+            Timestamp("2024-01-01 12:00:01"),
+            Timestamp("2024-01-01 12:00:04"),
+            Timedelta(seconds=0.5),
+            24_000,
+            id="full_reshape",
+        ),
+    ],
+    indirect=["audio_files"],
+)
+def test_reshape(
+    tmp_path: pytest.fixture,
+    audio_files: pytest.fixture,
+    ads_name: str | None,
+    begin: Timestamp | None,
+    end: Timestamp | None,
+    data_duration: Timedelta | None,
+    sample_rate: float | None,
+) -> None:
+
+    dataset = Dataset(folder=tmp_path, strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
+    dataset.build()
+    dataset.reshape(
+        begin=begin,
+        end=end,
+        data_duration=data_duration,
+        sample_rate=sample_rate,
+        name=ads_name,
+        subtype="DOUBLE",
+    )
+
+    expected_ads = AudioDataset.from_files(
+        list(dataset.origin_dataset.files),
+        begin=begin,
+        end=end,
+        data_duration=data_duration,
+    )
+    if sample_rate is not None:
+        expected_ads.sample_rate = sample_rate
+
+    ads_key = (
+        ads_name
+        if ads_name
+        else expected_ads.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)
+    )
+
+    # The new dataset should be added to the datasets property
+    ads = dataset.get_dataset(ads_key)
+    assert ads is not None
+    assert type(ads) is AudioDataset
+
+    # Test ads values
+    assert all(
+        np.array_equal(ad.get_value(), expected_ad.get_value())
+        for ad, expected_ad in zip(
+            sorted(ads.data, key=lambda ad: ad.begin),
+            sorted(expected_ads.data, key=lambda ad: ad.begin),
+        )
+    )
+
+    # ads folder should match the ads name
+    ads_folder_name = (
+        ads_name
+        if ads_name
+        else f"{round(ads.data_duration.total_seconds())}_{ads.sample_rate}"
+    )
+    assert ads.folder.name == ads_folder_name
+
+    # ads should be linked to the new files instead of the originals
+    assert all(file not in dataset.origin_files for file in ads.files)
+
+    # ads should be deserializable from the exported JSON file
+    json_file = ads.folder / f"{ads_key}.json"
+    assert json_file.exists()
+    deserialized_ads = AudioDataset.from_json(json_file)
+    assert deserialized_ads == ads
