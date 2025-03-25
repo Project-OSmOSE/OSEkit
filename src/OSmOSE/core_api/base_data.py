@@ -110,7 +110,7 @@ class BaseData(Generic[TItem, TFile], Event):
         """
         path.mkdir(parents=True, exist_ok=True, mode=DPDEFAULT)
 
-    def write(self, folder: Path) -> None:
+    def write(self, folder: Path, link: bool = False) -> None:
         """Abstract method for writing data to file."""
 
     def to_dict(self) -> dict:

@@ -219,6 +219,7 @@ class Dataset:
             sds.save_all(
                 matrix_folder=sds.folder / "welch",
                 spectrogram_folder=sds.folder / "spectrogram",
+                link=True,
             )
         elif SpectroOutput.SPECTROGRAM in export:
             sds.save_spectrogram(
@@ -227,6 +228,7 @@ class Dataset:
         elif SpectroOutput.MATRIX in export:
             sds.write(
                 folder=sds.folder / "welch",
+                link=True,
             )
 
         dataset_name = str(sds) if name is None else name

@@ -80,7 +80,9 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         for data in self.data:
             data.save_spectrogram(folder)
 
-    def save_all(self, matrix_folder: Path, spectrogram_folder: Path) -> None:
+    def save_all(
+        self, matrix_folder: Path, spectrogram_folder: Path, link: bool = False
+    ) -> None:
         """Export both Sx matrices as npz files and spectrograms for each data.
 
         Parameters
@@ -89,11 +91,15 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             Path to the folder in which the Sx matrices npz files will be saved.
         spectrogram_folder: Path
             Path to the folder in which the spectrograms png files will be saved.
+        link: bool
+            If True, the SpectroData will be bound to the written npz file.
+            Its items will be replaced with a single item, which will match the whole
+            new SpectroFile.
 
         """
         for data in self.data:
             sx = data.get_value()
-            data.write(folder=matrix_folder, sx=sx)
+            data.write(folder=matrix_folder, sx=sx, link=link)
             data.save_spectrogram(folder=spectrogram_folder, sx=sx)
 
     def to_dict(self) -> dict:

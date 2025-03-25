@@ -45,7 +45,8 @@ class BaseDataset(Generic[TData, TFile], Event):
     def __eq__(self, other: BaseDataset) -> bool:
         """Overwrite __eq__."""
         return sorted(self.data, key=lambda e: (e.begin, e.end)) == sorted(
-            other.data, key=lambda e: (e.begin, e.end)
+            other.data,
+            key=lambda e: (e.begin, e.end),
         )
 
     @property
@@ -95,17 +96,21 @@ class BaseDataset(Generic[TData, TFile], Event):
         ]
         return max(set(data_durations), key=data_durations.count)
 
-    def write(self, folder: Path) -> None:
+    def write(self, folder: Path, link: bool = False) -> None:
         """Write all data objects in the specified folder.
 
         Parameters
         ----------
         folder: Path
             Folder in which to write the data.
+        link: bool
+            If True, the SpectroData will be bound to the written npz file.
+            Its items will be replaced with a single item, which will match the whole
+            new SpectroFile.
 
         """
         for data in self.data:
-            data.write(folder)
+            data.write(folder=folder, link=link)
 
     def to_dict(self) -> dict:
         """Serialize a BaseDataset to a dictionary.

@@ -199,7 +199,9 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         plt.savefig(f"{folder / str(self)}", bbox_inches="tight", pad_inches=0)
         plt.close()
 
-    def write(self, folder: Path, sx: np.ndarray | None = None) -> None:
+    def write(
+        self, folder: Path, sx: np.ndarray | None = None, link: bool = False
+    ) -> None:
         """Write the Spectro data to file.
 
         Parameters
@@ -208,6 +210,10 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             Folder in which to write the Spectro file.
         sx: np.ndarray | None
             Spectrogram sx values. Will be computed if not provided.
+        link: bool
+            If True, the SpectroData will be bound to the written npz file.
+            Its items will be replaced with a single item, which will match the whole
+            new SpectroFile.
 
         """
         super().create_directories(path=folder)
@@ -230,6 +236,12 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             mfft=mfft,
             timestamps="_".join(timestamps),
         )
+        if link:
+            file = SpectroFile(
+                path=folder / f"{self}.npz",
+                strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
+            )
+            self.items = SpectroData.from_files([file]).items
 
     def split(self, nb_subdata: int = 2) -> list[SpectroData]:
         """Split the spectro data object in the specified number of spectro subdata.
