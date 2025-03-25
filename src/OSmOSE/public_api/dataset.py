@@ -175,17 +175,11 @@ class Dataset:
         self.write_json()
 
     def _get_audio_dataset_subpath(self, ads: AudioDataset) -> Path:
-        data_duration = ads.data_duration
-        sample_rate = ads.sample_rate
-        data_duration, sample_rate = (
-            parameter if type(parameter) is not set else next(iter(parameter))
-            for parameter in (data_duration, sample_rate)
-        )
         return (
             self.folder
             / "data"
             / "audio"
-            / f"{round(data_duration.total_seconds())}_{round(sample_rate)}"
+            / f"{round(ads.data_duration.total_seconds())}_{round(ads.sample_rate)}"
         )
 
     def spectra(
@@ -214,7 +208,10 @@ class Dataset:
         self._add_spectro_dataset(sds=sds, name=name, export=export)
 
     def _add_spectro_dataset(
-        self, sds: SpectroDataset, export: SpectroOutput, name: str | None = None
+        self,
+        sds: SpectroDataset,
+        export: SpectroOutput,
+        name: str | None = None,
     ) -> None:
         sds.folder = self._get_spectro_dataset_subpath(sds)
 
