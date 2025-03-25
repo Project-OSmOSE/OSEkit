@@ -84,11 +84,6 @@ class BaseDataset(Generic[TData, TFile], Event):
             file.move(folder)
 
     @property
-    def serialized_file(self) -> Path:
-        """Return the path of the serialized file of this dataset."""
-        return self.folder / f"{self}.json"
-
-    @property
     def data_duration(self) -> Timedelta:
         """Return the most frequent duration among durations of the data of this dataset, rounded to the nearest second."""
         data_durations = [

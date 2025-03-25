@@ -115,7 +115,7 @@ class Dataset:
             {file.path for file in self.datasets["original"]["dataset"].files},
         )
         self._sort_dataset(self.datasets["original"]["dataset"])
-        ads.write_json(ads.folder)
+        ads.write_json(ads.folder, name="original")
         self.write_json()
 
     def reset(self) -> None:
@@ -324,7 +324,7 @@ class Dataset:
             "datasets": {
                 name: {
                     "class": dataset["class"],
-                    "json": str(dataset["dataset"].serialized_file),
+                    "json": str(dataset["dataset"].folder / f"{name}.json"),
                 }
                 for name, dataset in self.datasets.items()
             },
