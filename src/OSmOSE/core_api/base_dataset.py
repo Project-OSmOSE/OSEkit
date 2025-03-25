@@ -140,9 +140,10 @@ class BaseDataset(Generic[TData, TFile], Event):
         """
         return cls([BaseData.from_dict(d) for d in dictionary.values()])
 
-    def write_json(self, folder: Path) -> None:
+    def write_json(self, folder: Path, name: str | None = None) -> None:
         """Write a serialized BaseDataset to a JSON file."""
-        serialize_json(folder / f"{self}.json", self.to_dict())
+        name = str(self) if name is None else name
+        serialize_json(folder / f"{name}.json", self.to_dict())
 
     @classmethod
     def from_json(cls, file: Path) -> BaseDataset:

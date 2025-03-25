@@ -192,7 +192,10 @@ class Dataset:
         self._add_audio_dataset(ads=ads, name=name, subtype=subtype)
 
     def _add_audio_dataset(
-        self, ads: AudioDataset, name: str | None = None, subtype: str | None = None
+        self,
+        ads: AudioDataset,
+        name: str | None = None,
+        subtype: str | None = None,
     ) -> None:
         ads_folder = self._get_audio_dataset_subpath(ads=ads, name=name)
         ads.write(ads_folder, link=True, subtype=subtype)
@@ -200,7 +203,7 @@ class Dataset:
         dataset_name = str(ads) if name is None else name
         self.datasets[dataset_name] = {"class": type(ads).__name__, "dataset": ads}
 
-        ads.write_json(ads.folder)
+        ads.write_json(folder=ads.folder, name=dataset_name)
         self.write_json()
 
     def _get_audio_dataset_subpath(
@@ -268,10 +271,10 @@ class Dataset:
                 link=True,
             )
 
-        dataset_name = str(sds) if name is None else name
-        self.datasets[dataset_name] = {"class": type(sds).__name__, "dataset": sds}
+        sds_name = str(sds) if name is None else name
+        self.datasets[sds_name] = {"class": type(sds).__name__, "dataset": sds}
 
-        sds.write_json(sds.folder)
+        sds.write_json(folder=sds.folder, name=sds_name)
         self.write_json()
 
     def _get_spectro_dataset_subpath(
