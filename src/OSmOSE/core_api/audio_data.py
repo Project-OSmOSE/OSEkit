@@ -73,7 +73,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         """Overwrite __str__."""
         return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)
 
-    def __eq__(self, other: AudioData):
+    def __eq__(self, other: AudioData) -> bool:
         """Override __eq__."""
         return self.sample_rate == other.sample_rate and super().__eq__(other)
 

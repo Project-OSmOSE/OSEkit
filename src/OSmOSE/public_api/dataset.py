@@ -13,8 +13,6 @@ from enum import Flag, auto
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar
 
-from scipy.signal import ShortTimeFFT
-
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.base_dataset import BaseDataset
 from OSmOSE.core_api.json_serializer import deserialize_json, serialize_json
@@ -23,6 +21,7 @@ from OSmOSE.utils.path_utils import move_tree
 
 if TYPE_CHECKING:
     from pandas import Timedelta, Timestamp
+    from scipy.signal import ShortTimeFFT
 
     from OSmOSE.core_api.audio_file import AudioFile
 
@@ -95,11 +94,7 @@ class Dataset:
     @property
     def origin_dataset(self) -> AudioDataset:
         """Return the AudioDataset from which this Dataset has been built."""
-        return (
-            None
-            if "original" not in self.datasets
-            else self.datasets["original"]["dataset"]
-        )
+        return self.get_dataset("original")
 
     def build(self) -> None:
         """Build the Dataset.
@@ -151,6 +146,7 @@ class Dataset:
         data_duration: Timedelta | None = None,
         sample_rate: float | None = None,
         name: str | None = None,
+        subtype: str | None = None,
     ) -> None:
         """Create and write a new AudioDataset from the original audio files.
 
@@ -178,6 +174,9 @@ class Dataset:
         name: str | None
             Name of the new dataset.
             Defaulted as the begin timestamp of the new dataset.
+        subtype: str | None
+            Subtype of the written audio files as provided by the soundfile module.
+            Defaulted as the default 16-bit PCM for WAV audio files.
 
         """
         ads = AudioDataset.from_files(
@@ -190,12 +189,13 @@ class Dataset:
         if sample_rate is not None:
             ads.sample_rate = sample_rate
 
-        self._add_audio_dataset(ads=ads, name=name)
+        self._add_audio_dataset(ads=ads, name=name, subtype=subtype)
 
-    def _add_audio_dataset(self, ads: AudioDataset, name: str | None = None) -> None:
+    def _add_audio_dataset(
+        self, ads: AudioDataset, name: str | None = None, subtype: str | None = None
+    ) -> None:
         ads_folder = self._get_audio_dataset_subpath(ads=ads, name=name)
-        ()
-        ads.write(ads_folder, link=True)
+        ads.write(ads_folder, link=True, subtype=subtype)
 
         dataset_name = str(ads) if name is None else name
         self.datasets[dataset_name] = {"class": type(ads).__name__, "dataset": ads}
@@ -204,7 +204,9 @@ class Dataset:
         self.write_json()
 
     def _get_audio_dataset_subpath(
-        self, ads: AudioDataset, name: str | None = None
+        self,
+        ads: AudioDataset,
+        name: str | None = None,
     ) -> Path:
         return (
             self.folder
@@ -273,10 +275,12 @@ class Dataset:
         self.write_json()
 
     def _get_spectro_dataset_subpath(
-        self, sds: SpectroDataset, name: str | None = None
+        self,
+        sds: SpectroDataset,
+        name: str | None = None,
     ) -> Path:
         ads_folder = Path(
-            f"{round(sds.data_duration.total_seconds())}_{round(sds.fft.fs)}"
+            f"{round(sds.data_duration.total_seconds())}_{round(sds.fft.fs)}",
         )
         fft_folder = f"{sds.fft.mfft}_{sds.fft.win.shape[0]}_{sds.fft.hop}_linear"
         return (
@@ -297,7 +301,12 @@ class Dataset:
         dataset.folder = self._get_audio_dataset_subpath(dataset, name="original")
 
     def _sort_spectro_dataset(self, dataset: SpectroDataset) -> None:
-        pass
+        raise NotImplementedError
+
+    def get_dataset(self, dataset_name: str) -> type[DatasetChild] | None:
+        if dataset_name not in self.datasets:
+            return None
+        return self.datasets[dataset_name]["dataset"]
 
     def to_dict(self) -> dict:
         """Serialize a dataset to a dictionary.
