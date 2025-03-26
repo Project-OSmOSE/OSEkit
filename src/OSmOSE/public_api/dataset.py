@@ -107,6 +107,7 @@ class Dataset:
             self.folder,
             strptime_format=self.strptime_format,
             bound="files",
+            timezone=self.timezone,
         )
         self.datasets["original"] = {"class": type(ads).__name__, "dataset": ads}
         move_tree(
@@ -222,7 +223,7 @@ class Dataset:
             )
         )
 
-    def spectra(
+    def generate_spectra(
         self,
         fft: ShortTimeFFT,
         begin: Timestamp | None = None,
