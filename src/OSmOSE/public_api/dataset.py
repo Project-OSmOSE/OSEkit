@@ -26,8 +26,8 @@ if TYPE_CHECKING:
     from OSmOSE.core_api.audio_file import AudioFile
 
 
-class SpectroOutput(Flag):
-    """Enum of flags that should be use to specify the outputs of a spectra generation.
+class Analysis(Flag):
+    """Enum of flags that should be use to specify the type of analysis to run.
 
     AUDIO:
         Will add an AudioDataset to the datasets and write the reshaped audio files
@@ -41,16 +41,17 @@ class SpectroOutput(Flag):
         Will export the spectrogram png images.
 
     Multiple flags can be enabled thanks to the logical or | operator:
-    SpectroOutput.AUDIO | SpectroOutput.SPECTROGRAM will export both audio files and
+    Analysis.AUDIO | Analysis.SPECTROGRAM will export both audio files and
     spectrogram images.
 
-    >>> # Exporting both the reshaped audio and the spectrograms (without the npz matrices):
-    >>> export = SpectroOutput.AUDIO | SpectroOutput.SPECTROGRAM
-    >>> SpectroOutput.AUDIO in export
+    >>> # Exporting both the reshaped audio and the spectrograms
+    >>> # (without the npz matrices):
+    >>> export = Analysis.AUDIO | Analysis.SPECTROGRAM
+    >>> Analysis.AUDIO in export
     True
-    >>> SpectroOutput.SPECTROGRAM in export
+    >>> Analysis.SPECTROGRAM in export
     True
-    >>> SpectroOutput.MATRIX in export
+    >>> Analysis.MATRIX in export
     False
 
     """
@@ -140,46 +141,69 @@ class Dataset:
 
         self.datasets = {}
 
-    def reshape(
-        self,
+    def create_analysis(
+        self,  # noqa: PLR0913
+        analysis: Analysis,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         data_duration: Timedelta | None = None,
         sample_rate: float | None = None,
         name: str | None = None,
         subtype: str | None = None,
+        fft: ShortTimeFFT | None = None,
     ) -> None:
-        """Create and write a new AudioDataset from the original audio files.
+        """Create a new analysis dataset from the original audio files.
 
-        The parameters of this method allow for a reshaping and resampling
-        of the audio data.
-        The created AudioDataset's files will be written to disk along with
-        a JSON serialized file.
+        The analysis parameter sets which type(s) of core_api dataset(s) will be
+        created and added to the Dataset.datasets property, plus which output
+        files will be written to disk (reshaped audio files, npz spectra matrices,
+        png spectrograms...).
 
         Parameters
         ----------
+        analysis: Analysis
+            Flags that should be use to specify the type of analysis to run.
+            See Dataset.Analysis docstring for more info.
         begin: Timestamp | None
-            The begin of the audio dataset.
+            The begin of the analysis dataset.
             Defaulted to the begin of the original dataset.
         end: Timestamp | None
-            The end of the audio dataset.
+            The end of the analysis dataset.
             Defaulted to the end of the original dataset.
         data_duration: Timedelta | None
-            Duration of the audio data within the new dataset.
+            Duration of the data within the analysis dataset.
             If provided, audio data will be evenly distributed between begin and end.
             Else, one data object will cover the whole time period.
         sample_rate: float | None
-            Sample rate of the new audio data.
+            Sample rate of the new analysis data.
             Audio data will be resampled if provided, else the sample rate
             will be set to the one of the original dataset.
         name: str | None
-            Name of the new dataset.
-            Defaulted as the begin timestamp of the new dataset.
+            Name of the analysis dataset.
+            Defaulted as the begin timestamp of the analysis dataset.
+            If both audio and spectro analyses are selected, the audio
+            analysis dataset name will be suffixed with "_audio".
         subtype: str | None
             Subtype of the written audio files as provided by the soundfile module.
             Defaulted as the default 16-bit PCM for WAV audio files.
+            This parameter has no effect if Analysis.AUDIO is not in analysis.
+        fft: ShortTimeFFT | None
+            FFT to use for computing the spectra.
+            This parameter is mandatory if either Analysis.MATRIX or Analysis.SPECTROGRAM
+            is in analysis.
+            This parameter has no effect if neither Analysis.MATRIX nor Analysis.SPECTROGRAM
+            is in the analysis.
 
         """
+        is_spectro = any(
+            flag in analysis for flag in (Analysis.MATRIX, Analysis.SPECTROGRAM)
+        )
+
+        if is_spectro and fft is None:
+            raise ValueError(
+                "FFT parameter should be given if spectra outputs are selected."
+            )
+
         ads = AudioDataset.from_files(
             files=list(self.origin_files),
             begin=begin,
@@ -190,7 +214,13 @@ class Dataset:
         if sample_rate is not None:
             ads.sample_rate = sample_rate
 
-        self._add_audio_dataset(ads=ads, name=name, subtype=subtype)
+        if Analysis.AUDIO in analysis:
+            audio_name = name if not is_spectro else f"{name}_audio"
+            self._add_audio_dataset(ads=ads, name=audio_name, subtype=subtype)
+
+        if is_spectro:
+            sds = SpectroDataset.from_audio_dataset(audio_dataset=ads, fft=fft)
+            self._add_spectro_dataset(sds=sds, name=name, export=analysis)
 
     def _add_audio_dataset(
         self,
@@ -223,50 +253,25 @@ class Dataset:
             )
         )
 
-    def generate_spectra(
-        self,
-        fft: ShortTimeFFT,
-        begin: Timestamp | None = None,
-        end: Timestamp | None = None,
-        data_duration: Timedelta | None = None,
-        sample_rate: float | None = None,
-        name: str | None = None,
-        export: SpectroOutput = SpectroOutput.SPECTROGRAM,
-    ) -> None:
-        ads = AudioDataset.from_files(
-            files=list(self.origin_files),
-            begin=begin,
-            end=end,
-            data_duration=data_duration,
-        )
-        if sample_rate is not None:
-            ads.sample_rate = sample_rate
-
-        if SpectroOutput.AUDIO in export:
-            self._add_audio_dataset(ads=ads, name=f"{name}_audio")
-
-        sds = SpectroDataset.from_audio_dataset(audio_dataset=ads, fft=fft)
-        self._add_spectro_dataset(sds=sds, name=name, export=export)
-
     def _add_spectro_dataset(
         self,
         sds: SpectroDataset,
-        export: SpectroOutput,
+        export: Analysis,
         name: str | None = None,
     ) -> None:
         sds.folder = self._get_spectro_dataset_subpath(sds=sds, name=name)
 
-        if SpectroOutput.MATRIX in export and SpectroOutput.SPECTROGRAM in export:
+        if Analysis.MATRIX in export and Analysis.SPECTROGRAM in export:
             sds.save_all(
                 matrix_folder=sds.folder / "welch",
                 spectrogram_folder=sds.folder / "spectrogram",
                 link=True,
             )
-        elif SpectroOutput.SPECTROGRAM in export:
+        elif Analysis.SPECTROGRAM in export:
             sds.save_spectrogram(
                 folder=sds.folder / "spectrogram",
             )
-        elif SpectroOutput.MATRIX in export:
+        elif Analysis.MATRIX in export:
             sds.write(
                 folder=sds.folder / "welch",
                 link=True,

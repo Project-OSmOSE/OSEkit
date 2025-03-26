@@ -13,7 +13,7 @@ from OSmOSE.config import (
 )
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.event import Event
-from OSmOSE.public_api.dataset import Dataset
+from OSmOSE.public_api.dataset import Analysis, Dataset
 
 
 @pytest.mark.parametrize(
@@ -255,7 +255,9 @@ def test_dataset_build(
     )
 
     dataset = Dataset(
-        folder=tmp_path, strptime_format=timestamp_format, timezone=timezone
+        folder=tmp_path,
+        strptime_format=timestamp_format,
+        timezone=timezone,
     )
 
     dataset.build()
@@ -402,7 +404,8 @@ def test_reshape(
 
     dataset = Dataset(folder=tmp_path, strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
     dataset.build()
-    dataset.reshape(
+    dataset.create_analysis(
+        analysis=Analysis.AUDIO,
         begin=begin,
         end=end,
         data_duration=data_duration,
