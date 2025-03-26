@@ -219,11 +219,35 @@ def test_build_regex_from_datetime_template(
             Timestamp("2023-04-05 14:49:06.123000", tz="UTC"),
             id="underscore_after_%Z",
         ),
+        pytest.param(
+            "14:49:06.1232023-04-05_UTC_soundfile.wav",
+            ["%H:%M:%S.%f%Y-%m-%d_%Z", "%y%m%d%H%M%S_%Z"],
+            Timestamp("2023-04-05 14:49:06.123000", tz="UTC"),
+            id="first_template_from_list_is_matching",
+        ),
+        pytest.param(
+            "14:49:06.1232023-04-05_UTC_soundfile.wav",
+            ["%y%m%d%H%M%S_%Z", "%H:%M:%S.%f%Y-%m-%d_%Z"],
+            Timestamp("2023-04-05 14:49:06.123000", tz="UTC"),
+            id="first_unmatching_but_second_matching",
+        ),
+        pytest.param(
+            "14:49:06.1232023-04-05_UTC_soundfile.wav",
+            ["%y%m%d%H%M%%S", "%H:%M:%S.%f%Y-%m-%d_%Z"],
+            Timestamp("2023-04-05 14:49:06.123000", tz="UTC"),
+            id="first_invalid_but_second_matching",
+        ),
+        pytest.param(
+            "14:49:06.1232023-04-05_UTC_soundfile.wav",
+            ["%y%m%d%H%M%%S", "%y%m%d%H%M%S_%Z", "%H:%M:%S.%f%Y-%m-%d_%Z"],
+            Timestamp("2023-04-05 14:49:06.123000", tz="UTC"),
+            id="invalid_then_unmatching_then_matching",
+        ),
     ],
 )
 def test_strptime_from_text(
     text: str,
-    datetime_template: str,
+    datetime_template: str | list[str],
     expected: Timestamp,
 ) -> None:
     assert strptime_from_text(text, datetime_template) == expected
@@ -329,6 +353,39 @@ def test_strptime_from_text(
                 "the given %Y-%m-%dT%H:%M:%S.%f%z template",
             ),
             id="no_specified_%f",
+        ),
+        pytest.param(
+            "2023-04-05T14:49:06.-0200.wav",
+            ["%Y-%m-%dT%H:%M:%S.%f%z", "%Y-%m-%dU%H:%M:%S.%f"],
+            pytest.raises(
+                ValueError,
+                match="2023-04-05T14:49:06.-0200.wav did not match "
+                "the given %Y-%m-%dT%H:%M:%S.%f%z template\n"
+                "2023-04-05T14:49:06.-0200.wav did not match "
+                "the given %Y-%m-%dU%H:%M:%S.%f template",
+            ),
+            id="no_matching_template_in_list",
+        ),
+        pytest.param(
+            "2023-04-05T14:49:06.-0200.wav",
+            ["%Y-%m-%dT%H:%M:%S.%k", "%a-%m-%dT%H:%M:%S.%f"],
+            pytest.raises(
+                ValueError,
+                match="%Y-%m-%dT%H:%M:%S.%k is not a supported strftime template\n"
+                "%a-%m-%dT%H:%M:%S.%f is not a supported strftime template",
+            ),
+            id="no_valid_template_in_list",
+        ),
+        pytest.param(
+            "2023-04-05T14:49:06.-0200.wav",
+            ["%Y-%m-%dT%H:%M:%S.%f%z", "%a-%m-%dT%H:%M:%S.%f"],
+            pytest.raises(
+                ValueError,
+                match="2023-04-05T14:49:06.-0200.wav did not match "
+                "the given %Y-%m-%dT%H:%M:%S.%f%z template\n"
+                "%a-%m-%dT%H:%M:%S.%f is not a supported strftime template",
+            ),
+            id="error_mix",
         ),
     ],
 )
