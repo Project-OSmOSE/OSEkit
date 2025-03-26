@@ -7,7 +7,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
+from OSmOSE.config import (
+    TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
+)
 from OSmOSE.utils.timestamp_utils import localize_timestamp
 
 if TYPE_CHECKING:
@@ -115,8 +117,8 @@ class BaseFile(Event):
         """
         return {
             "path": str(self.path),
-            "begin": self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES),
-            "end": self.end.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES),
+            "begin": self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ),
+            "end": self.end.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ),
         }
 
     def __hash__(self) -> int:
@@ -125,7 +127,7 @@ class BaseFile(Event):
 
     def __str__(self) -> str:
         """Overwrite __str__."""
-        return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)
+        return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ)
 
     def __eq__(self, other: BaseFile):
         """Override __eq__."""

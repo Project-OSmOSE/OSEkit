@@ -10,16 +10,18 @@ from pathlib import Path
 from typing import Generic, TypeVar
 
 import numpy as np
-from pandas import Timestamp, date_range, to_datetime
+from pandas import Timestamp, date_range
 
 from OSmOSE.config import (
     DPDEFAULT,
     TIMESTAMP_FORMAT_AUDIO_FILE,
     TIMESTAMP_FORMAT_EXPORTED_FILES,
+    TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
 )
 from OSmOSE.core_api.base_file import BaseFile
 from OSmOSE.core_api.base_item import BaseItem
 from OSmOSE.core_api.event import Event
+from OSmOSE.utils.timestamp_utils import strptime_from_text
 
 TItem = TypeVar("TItem", bound=BaseItem)
 TFile = TypeVar("TFile", bound=BaseFile)
@@ -146,11 +148,20 @@ class BaseData(Generic[TItem, TFile], Event):
         files = [
             BaseFile(
                 Path(file["path"]),
-                begin=to_datetime(
+                begin=strptime_from_text(
                     file["begin"],
-                    format=TIMESTAMP_FORMAT_EXPORTED_FILES,
+                    datetime_template=[
+                        TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
+                        TIMESTAMP_FORMAT_EXPORTED_FILES,
+                    ],
                 ),
-                end=to_datetime(file["end"], format=TIMESTAMP_FORMAT_EXPORTED_FILES),
+                end=strptime_from_text(
+                    file["end"],
+                    datetime_template=[
+                        TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
+                        TIMESTAMP_FORMAT_EXPORTED_FILES,
+                    ],
+                ),
             )
             for file in dictionary["files"].values()
         ]
