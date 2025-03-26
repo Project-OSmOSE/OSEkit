@@ -91,7 +91,8 @@ def to_timestamp(string: str) -> pd.Timestamp:
 
 
 def localize_timestamp(
-    timestamp: Timestamp, timezone: str | pytz.timezone
+    timestamp: Timestamp,
+    timezone: str | pytz.timezone,
 ) -> Timestamp:
     """Localize a timestamp in the given timezone.
 
@@ -239,17 +240,19 @@ def is_datetime_template_valid(datetime_template: str) -> bool:
     return True
 
 
-def strptime_from_text(text: str, datetime_template: str) -> Timestamp:
+def strptime_from_text(text: str, datetime_template: str | list[str]) -> Timestamp:
     """Extract a Timestamp written in a string with a specified format.
 
     Parameters
     ----------
     text: str
         The text in which the timestamp should be extracted, ex '2016_06_13_14:12.txt'.
-    datetime_template: str
+    datetime_template: str | list[str]
          The datetime template used in the text.
          It should use valid strftime codes (https://strftime.org/).
          Example: '%y%m%d_%H:%M:%S'.
+         If datetime_template is a list of strings, the datetime will be parsed from
+         the first template of the list that matches the input text.
 
     Returns
     -------
@@ -262,23 +265,41 @@ def strptime_from_text(text: str, datetime_template: str) -> Timestamp:
     Timestamp('2016-06-13 14:12:00')
     >>> strptime_from_text('D_12_03_21_hour_11:45:10_PM', '%y_%m_%d_hour_%I:%M:%S_%p')
     Timestamp('2012-03-21 23:45:10')
+    >>> strptime_from_text('2016_06_13_14:12.txt', ['%Y_%m_%d_%H:%M%z','%Y_%m_%d_%H:%M'])
+    Timestamp('2016-06-13 14:12:00')
+    >>> strptime_from_text('2016_06_13_14:12+0500.txt', ['%Y_%m_%d_%H:%M%z','%Y_%m_%d_%H:%M'])
+    Timestamp('2016-06-13 14:12:00+0500', tz='UTC+05:00')
 
-    """
-    if not is_datetime_template_valid(datetime_template):
-        msg = f"{datetime_template} is not a supported strftime template"
-        raise ValueError(msg)
+    """  # noqa: E501
+    if type(datetime_template) is str:
+        datetime_template = [datetime_template]
 
-    regex_pattern = build_regex_from_datetime_template(datetime_template)
-    regex_result = re.findall(regex_pattern, text)
+    valid_datetime_template = ""
+    regex_result = []
+    msg = []
 
-    if not regex_result:
-        msg = f"{text} did not match the given {datetime_template} template"
-        raise ValueError(msg)
+    for template in datetime_template:
+        if not is_datetime_template_valid(template):
+            msg.append(f"{template} is not a supported strftime template")
+            continue
+
+        regex_pattern = build_regex_from_datetime_template(template)
+        regex_result = re.findall(regex_pattern, text)
+
+        if not regex_result:
+            msg.append(f"{text} did not match the given {template} template")
+            continue
+
+        valid_datetime_template = template
+        break
+
+    if not valid_datetime_template:
+        raise ValueError("\n".join(msg))
 
     date_string = "_".join(regex_result[0])
     cleaned_date_template = "_".join(
-        c + datetime_template[i + 1]
-        for i, c in enumerate(datetime_template)
+        c + valid_datetime_template[i + 1]
+        for i, c in enumerate(valid_datetime_template)
         if c == "%"
     )
     return pd.to_datetime(date_string, format=cleaned_date_template)
