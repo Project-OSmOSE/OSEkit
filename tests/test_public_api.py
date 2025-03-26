@@ -6,14 +6,24 @@ import numpy as np
 import pytest
 from pandas import Timedelta, Timestamp
 
-from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES, TIMESTAMP_FORMAT_TEST_FILES
+from OSmOSE.config import (
+    TIMESTAMP_FORMAT_EXPORTED_FILES,
+    TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
+    TIMESTAMP_FORMAT_TEST_FILES,
+)
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.event import Event
 from OSmOSE.public_api.dataset import Dataset
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "other_files", "expected_audio_events"),
+    (
+        "audio_files",
+        "other_files",
+        "timestamp_format",
+        "timezone",
+        "expected_audio_events",
+    ),
     [
         pytest.param(
             {
@@ -23,6 +33,8 @@ from OSmOSE.public_api.dataset import Dataset
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             [],
+            None,
+            None,
             [
                 Event(
                     begin=Timestamp("2024-01-01 12:00:00"),
@@ -39,6 +51,8 @@ from OSmOSE.public_api.dataset import Dataset
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             [],
+            None,
+            None,
             [
                 Event(
                     begin=Timestamp("2024-01-01 12:00:00"),
@@ -60,6 +74,8 @@ from OSmOSE.public_api.dataset import Dataset
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             [],
+            None,
+            None,
             [
                 Event(
                     begin=Timestamp("2024-01-01 12:00:00"),
@@ -81,6 +97,8 @@ from OSmOSE.public_api.dataset import Dataset
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             [],
+            None,
+            None,
             [
                 Event(
                     begin=Timestamp("2024-01-01 12:00:00"),
@@ -105,6 +123,8 @@ from OSmOSE.public_api.dataset import Dataset
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             ["foo.txt", "bar.png"],
+            None,
+            None,
             [
                 Event(
                     begin=Timestamp("2024-01-01 12:00:00"),
@@ -121,6 +141,8 @@ from OSmOSE.public_api.dataset import Dataset
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             ["foo.txt", "foo/bar.png", "foo/cool.txt"],
+            None,
+            None,
             [
                 Event(
                     begin=Timestamp("2024-01-01 12:00:00"),
@@ -137,6 +159,8 @@ from OSmOSE.public_api.dataset import Dataset
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             ["foo.wav", "cool/bar.wav"],
+            None,
+            None,
             [
                 Event(
                     begin=Timestamp("2024-01-01 12:00:00"),
@@ -145,6 +169,62 @@ from OSmOSE.public_api.dataset import Dataset
             ],
             id="non_audio_files_with_audio_extensions_are_moved_to_others",
         ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00", tz="America/Chihuahua"),
+                "datetime_format": TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
+            },
+            ["foo.wav", "cool/bar.wav"],
+            TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
+            None,
+            [
+                Event(
+                    begin=Timestamp("2024-01-01 12:00:00", tz="America/Chihuahua"),
+                    end=Timestamp("2024-01-01 12:00:01", tz="America/Chihuahua"),
+                ),
+            ],
+            id="tz-aware_files",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00"),
+            },
+            ["foo.wav", "cool/bar.wav"],
+            None,
+            "America/Chihuahua",
+            [
+                Event(
+                    begin=Timestamp("2024-01-01 12:00:00", tz="America/Chihuahua"),
+                    end=Timestamp("2024-01-01 12:00:01", tz="America/Chihuahua"),
+                ),
+            ],
+            id="tz-naive_files_with_provided_tz",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00", tz="America/Chihuahua"),
+                "datetime_format": TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
+            },
+            ["foo.wav", "cool/bar.wav"],
+            TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
+            "Indian/Kerguelen",
+            [
+                Event(
+                    begin=Timestamp("2024-01-01 23:00:00", tz="Indian/Kerguelen"),
+                    end=Timestamp("2024-01-01 23:00:01", tz="Indian/Kerguelen"),
+                ),
+            ],
+            id="providing_tz_should_convert_tz-aware_files",
+        ),
     ],
     indirect=["audio_files"],
 )
@@ -152,8 +232,14 @@ def test_dataset_build(
     tmp_path: pytest.fixture,
     audio_files: pytest.fixture,
     other_files: list[str],
+    timestamp_format: str | None,
+    timezone: str | None,
     expected_audio_events: list[Event],
 ) -> None:
+
+    timestamp_format = (
+        TIMESTAMP_FORMAT_TEST_FILES if timestamp_format is None else timestamp_format
+    )
 
     # add other files
     for file in other_files:
@@ -163,11 +249,14 @@ def test_dataset_build(
     files_before_build = list(tmp_path.rglob("*"))
     original_dataset = AudioDataset.from_folder(
         tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+        strptime_format=timestamp_format,
         bound="files",
+        timezone=timezone,
     )
 
-    dataset = Dataset(folder=tmp_path, strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
+    dataset = Dataset(
+        folder=tmp_path, strptime_format=timestamp_format, timezone=timezone
+    )
 
     dataset.build()
 
@@ -181,8 +270,9 @@ def test_dataset_build(
     # The original dataset should be moved to the correct folder
     assert moved_original_dataset == AudioDataset.from_folder(
         folder=tmp_path / "data" / "audio" / "original",
-        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+        strptime_format=timestamp_format,
         bound="files",
+        timezone=timezone,
     )
 
     # The original dataset should be added to the public Dataset's datasets:
