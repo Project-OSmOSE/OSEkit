@@ -142,7 +142,7 @@ class Dataset:
         self.datasets = {}
 
     def create_analysis(
-        self,  # noqa: PLR0913
+        self,
         analysis: Analysis,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
@@ -201,7 +201,7 @@ class Dataset:
 
         if is_spectro and fft is None:
             raise ValueError(
-                "FFT parameter should be given if spectra outputs are selected."
+                "FFT parameter should be given if spectra outputs are selected.",
             )
 
         ads = AudioDataset.from_files(
@@ -313,6 +313,19 @@ class Dataset:
         raise NotImplementedError
 
     def get_dataset(self, dataset_name: str) -> type[DatasetChild] | None:
+        """Get an analysis dataset from its name.
+
+        Parameters
+        ----------
+        dataset_name: str
+            Name of the analysis dataset.
+
+        Returns
+        -------
+        type[DatasetChild]:
+            Analysis dataset from the dataset.datasets property.
+
+        """
         if dataset_name not in self.datasets:
             return None
         return self.datasets[dataset_name]["dataset"]
