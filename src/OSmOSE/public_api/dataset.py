@@ -109,15 +109,16 @@ class Dataset:
             strptime_format=self.strptime_format,
             bound="files",
             timezone=self.timezone,
+            name="original",
         )
-        self.datasets["original"] = {"class": type(ads).__name__, "dataset": ads}
+        self.datasets[ads.name] = {"class": type(ads).__name__, "dataset": ads}
         move_tree(
             self.folder,
             self.folder / "other",
-            {file.path for file in self.datasets["original"]["dataset"].files},
+            {file.path for file in ads.files},
         )
-        self._sort_dataset(self.datasets["original"]["dataset"])
-        ads.write_json(ads.folder, name="original")
+        self._sort_dataset(ads)
+        ads.write_json(ads.folder)
         self.write_json()
 
     def reset(self) -> None:
@@ -128,7 +129,7 @@ class Dataset:
         WARNING: all other files and folders will be deleted.
         """
         files_to_remove = list(self.folder.iterdir())
-        self.datasets["original"]["dataset"].folder = self.folder
+        self.get_dataset("original").folder = self.folder
 
         if self.folder / "other" in files_to_remove:
             move_tree(self.folder / "other", self.folder)
@@ -209,38 +210,37 @@ class Dataset:
             begin=begin,
             end=end,
             data_duration=data_duration,
+            name=name,
         )
 
         if sample_rate is not None:
             ads.sample_rate = sample_rate
 
         if Analysis.AUDIO in analysis:
-            audio_name = name if not is_spectro else f"{name}_audio"
-            self._add_audio_dataset(ads=ads, name=audio_name, subtype=subtype)
+            if is_spectro and name is not None:
+                ads.name = f"{ads.name}_audio"
+            self._add_audio_dataset(ads=ads, subtype=subtype)
 
         if is_spectro:
             sds = SpectroDataset.from_audio_dataset(audio_dataset=ads, fft=fft)
-            self._add_spectro_dataset(sds=sds, name=name, export=analysis)
+            self._add_spectro_dataset(sds=sds, export=analysis)
 
     def _add_audio_dataset(
         self,
         ads: AudioDataset,
-        name: str | None = None,
         subtype: str | None = None,
     ) -> None:
-        ads_folder = self._get_audio_dataset_subpath(ads=ads, name=name)
+        ads_folder = self._get_audio_dataset_subpath(ads=ads)
         ads.write(ads_folder, link=True, subtype=subtype)
 
-        dataset_name = str(ads) if name is None else name
-        self.datasets[dataset_name] = {"class": type(ads).__name__, "dataset": ads}
+        self.datasets[ads.name] = {"class": type(ads).__name__, "dataset": ads}
 
-        ads.write_json(folder=ads.folder, name=dataset_name)
+        ads.write_json(folder=ads.folder)
         self.write_json()
 
     def _get_audio_dataset_subpath(
         self,
         ads: AudioDataset,
-        name: str | None = None,
     ) -> Path:
         return (
             self.folder
@@ -248,8 +248,8 @@ class Dataset:
             / "audio"
             / (
                 f"{round(ads.data_duration.total_seconds())}_{round(ads.sample_rate)}"
-                if name is None
-                else name
+                if ads.has_default_name
+                else ads.name
             )
         )
 
@@ -257,9 +257,8 @@ class Dataset:
         self,
         sds: SpectroDataset,
         export: Analysis,
-        name: str | None = None,
     ) -> None:
-        sds.folder = self._get_spectro_dataset_subpath(sds=sds, name=name)
+        sds.folder = self._get_spectro_dataset_subpath(sds=sds)
 
         if Analysis.MATRIX in export and Analysis.SPECTROGRAM in export:
             sds.save_all(
@@ -277,16 +276,14 @@ class Dataset:
                 link=True,
             )
 
-        sds_name = str(sds) if name is None else name
-        self.datasets[sds_name] = {"class": type(sds).__name__, "dataset": sds}
+        self.datasets[sds.name] = {"class": type(sds).__name__, "dataset": sds}
 
-        sds.write_json(folder=sds.folder, name=sds_name)
+        sds.write_json(folder=sds.folder)
         self.write_json()
 
     def _get_spectro_dataset_subpath(
         self,
         sds: SpectroDataset,
-        name: str | None = None,
     ) -> Path:
         ads_folder = Path(
             f"{round(sds.data_duration.total_seconds())}_{round(sds.fft.fs)}",
@@ -295,7 +292,7 @@ class Dataset:
         return (
             self.folder
             / "processed"
-            / (ads_folder / fft_folder if name is None else name)
+            / (ads_folder / fft_folder if sds.has_default_name is None else sds.name)
         )
 
     def _sort_dataset(self, dataset: type[DatasetChild]) -> None:
@@ -307,7 +304,7 @@ class Dataset:
             return
 
     def _sort_audio_dataset(self, dataset: AudioDataset) -> None:
-        dataset.folder = self._get_audio_dataset_subpath(dataset, name="original")
+        dataset.folder = self._get_audio_dataset_subpath(dataset)
 
     def _sort_spectro_dataset(self, dataset: SpectroDataset) -> None:
         raise NotImplementedError

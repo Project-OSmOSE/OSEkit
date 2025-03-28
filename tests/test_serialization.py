@@ -117,7 +117,7 @@ def test_audio_data_serialization(
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "data_duration", "sample_rate"),
+    ("audio_files", "data_duration", "sample_rate", "name"),
     [
         pytest.param(
             {
@@ -127,6 +127,7 @@ def test_audio_data_serialization(
             },
             Timedelta(seconds=1),
             48_000,
+            None,
             id="one_audio_data_one_file_no_resample",
         ),
         pytest.param(
@@ -137,6 +138,7 @@ def test_audio_data_serialization(
             },
             Timedelta(seconds=2),
             48_000,
+            None,
             id="one_audio_data_two_files_no_resample",
         ),
         pytest.param(
@@ -147,6 +149,7 @@ def test_audio_data_serialization(
             },
             Timedelta(seconds=2),
             24_000,
+            None,
             id="one_audio_data_two_files_downsample",
         ),
         pytest.param(
@@ -157,7 +160,19 @@ def test_audio_data_serialization(
             },
             Timedelta(seconds=1),
             [12_000, 24_000, 48_000, 96_000],
+            None,
             id="multiple_audio_data_different_sample_rates",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+            },
+            Timedelta(seconds=1),
+            48_000,
+            "merriweather post pavilion",
+            id="named_ads",
         ),
     ],
     indirect=["audio_files"],
@@ -167,12 +182,14 @@ def test_audio_dataset_serialization(
     audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
     data_duration: Timestamp | None,
     sample_rate: float | list[float],
+    name: str | None,
 ) -> None:
 
     ads = AudioDataset.from_folder(
         tmp_path,
         strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
         data_duration=data_duration,
+        name=name,
     )
 
     if type(sample_rate) is list:
@@ -191,6 +208,8 @@ def test_audio_dataset_serialization(
     ads2 = AudioDataset.from_json(tmp_path / f"{ads}.json")
 
     assert str(ads) == str(ads2)
+    assert ads.name == ads2.name
+    assert ads.has_default_name == ads2.has_default_name
     assert ads.sample_rate == ads2.sample_rate
 
     assert all(
@@ -352,7 +371,7 @@ def test_spectro_data_serialization(
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "data_duration", "sample_rate", "sfts"),
+    ("audio_files", "data_duration", "sample_rate", "sfts", "name"),
     [
         pytest.param(
             {
@@ -363,6 +382,7 @@ def test_spectro_data_serialization(
             Timedelta(seconds=1),
             48_000,
             [ShortTimeFFT(win=hamming(1024), hop=1024, fs=48_000, mfft=1024)],
+            None,
             id="one_spectro_data",
         ),
         pytest.param(
@@ -374,6 +394,7 @@ def test_spectro_data_serialization(
             Timedelta(seconds=0.1),
             48_000,
             [ShortTimeFFT(win=hamming(1024), hop=1024, fs=48_000, mfft=1024)],
+            None,
             id="ten_spectro_data_one_sft",
         ),
         pytest.param(
@@ -388,6 +409,7 @@ def test_spectro_data_serialization(
                 ShortTimeFFT(win=hamming(1024), hop=1024, fs=48_000, mfft=1024),
                 ShortTimeFFT(win=hann(1024), hop=512, fs=48_000, mfft=2048),
             ],
+            None,
             id="ten_spectro_data_two_sfts",
         ),
     ],
@@ -399,6 +421,7 @@ def test_spectro_dataset_serialization(
     data_duration: Timestamp | None,
     sample_rate: float | list[float],
     sfts: list[ShortTimeFFT],
+    name: str | None,
 ) -> None:
 
     ads = AudioDataset.from_folder(
@@ -409,7 +432,7 @@ def test_spectro_dataset_serialization(
 
     ads.sample_rate = sample_rate
 
-    sds = SpectroDataset.from_audio_dataset(ads, sfts[0])
+    sds = SpectroDataset.from_audio_dataset(audio_dataset=ads, fft=sfts[0], name=name)
     for idx, sd in enumerate(sds.data):  # Apply different SFTs to the sds data
         sd.fft = sfts[idx // (len(sds.data) // len(sfts))]
 
@@ -418,6 +441,8 @@ def test_spectro_dataset_serialization(
     sds2 = SpectroDataset.from_json(tmp_path / f"{sds}.json")
 
     assert str(sds) == str(sds2)
+    assert sds.name == sds2.name
+    assert sds.has_default_name == sds2.has_default_name
     assert all(
         np.array_equal(sd.get_value(), sd2.get_value())
         for sd, sd2 in zip(sds.data, sds2.data)
