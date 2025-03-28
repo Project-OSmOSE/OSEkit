@@ -10,16 +10,18 @@ from pathlib import Path
 from typing import Generic, TypeVar
 
 import numpy as np
-from pandas import Timestamp, date_range, to_datetime
+from pandas import Timestamp, date_range
 
 from OSmOSE.config import (
     DPDEFAULT,
     TIMESTAMP_FORMAT_AUDIO_FILE,
     TIMESTAMP_FORMAT_EXPORTED_FILES,
+    TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
 )
 from OSmOSE.core_api.base_file import BaseFile
 from OSmOSE.core_api.base_item import BaseItem
 from OSmOSE.core_api.event import Event
+from OSmOSE.utils.timestamp_utils import strptime_from_text
 
 TItem = TypeVar("TItem", bound=BaseItem)
 TFile = TypeVar("TFile", bound=BaseFile)
@@ -56,13 +58,47 @@ class BaseData(Generic[TItem, TFile], Event):
         if not items:
             items = [BaseItem(begin=begin, end=end)]
         self.items = items
-        self.begin = min(item.begin for item in self.items)
-        self.end = max(item.end for item in self.items)
+        self._begin = min(item.begin for item in self.items)
+        self._end = max(item.end for item in self.items)
+
+    def __eq__(self, other: BaseData) -> bool:
+        """Override __eq__."""
+        return self.items == other.items
 
     @property
     def is_empty(self) -> bool:
         """Return true if every item of this data object is empty."""
         return all(item.is_empty for item in self.items)
+
+    @property
+    def begin(self) -> Timestamp:
+        """Return the begin timestamp of the data."""
+        return min(item.begin for item in self.items)
+
+    @begin.setter
+    def begin(self, value: Timestamp) -> None:
+        """Trim the beginning of the data.
+
+        Begin can only be set to a posterior date from the original begin.
+
+        """
+        for item in self.items:
+            item.begin = max(item.begin, value)
+
+    @property
+    def end(self) -> Timestamp:
+        """Trim the end timestamp of the data.
+
+        End can only be set to an anterior date from the original end.
+
+        """
+        return max(item.end for item in self.items)
+
+    @end.setter
+    def end(self, value: Timestamp) -> None:
+        """Return true if every item of this data object is empty."""
+        for item in self.items:
+            item.end = min(item.end, value)
 
     def get_value(self) -> np.ndarray:
         """Get the concatenated values from all Items."""
@@ -76,7 +112,7 @@ class BaseData(Generic[TItem, TFile], Event):
         """
         path.mkdir(parents=True, exist_ok=True, mode=DPDEFAULT)
 
-    def write(self, folder: Path) -> None:
+    def write(self, folder: Path, link: bool = False) -> None:
         """Abstract method for writing data to file."""
 
     def to_dict(self) -> dict:
@@ -112,11 +148,20 @@ class BaseData(Generic[TItem, TFile], Event):
         files = [
             BaseFile(
                 Path(file["path"]),
-                begin=to_datetime(
+                begin=strptime_from_text(
                     file["begin"],
-                    format=TIMESTAMP_FORMAT_EXPORTED_FILES,
+                    datetime_template=[
+                        TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
+                        TIMESTAMP_FORMAT_EXPORTED_FILES,
+                    ],
                 ),
-                end=to_datetime(file["end"], format=TIMESTAMP_FORMAT_EXPORTED_FILES),
+                end=strptime_from_text(
+                    file["end"],
+                    datetime_template=[
+                        TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
+                        TIMESTAMP_FORMAT_EXPORTED_FILES,
+                    ],
+                ),
             )
             for file in dictionary["files"].values()
         ]

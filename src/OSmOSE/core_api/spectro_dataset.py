@@ -6,10 +6,9 @@ that simplify repeated operations on the spectro data.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
-import pytz
 from scipy.signal import ShortTimeFFT
 
 from OSmOSE.core_api.base_dataset import BaseDataset
@@ -20,6 +19,7 @@ from OSmOSE.core_api.spectro_file import SpectroFile
 if TYPE_CHECKING:
     from pathlib import Path
 
+    import pytz
     from pandas import Timedelta, Timestamp
 
     from OSmOSE.core_api.audio_dataset import AudioDataset
@@ -33,9 +33,17 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
     """
 
-    def __init__(self, data: list[SpectroData]) -> None:
+    def __init__(self, data: list[SpectroData], name: str | None = None) -> None:
         """Initialize a SpectroDataset."""
-        super().__init__(data)
+        super().__init__(data, name)
+        self._folder = None
+
+    @property
+    def name(self) -> str:
+        """Name of the dataset."""
+        if self.has_default_name:
+            return f"{super().name}_spectro"
+        return super().name
 
     @property
     def fft(self) -> ShortTimeFFT:
@@ -46,6 +54,26 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
     def fft(self, fft: ShortTimeFFT) -> None:
         for data in self.data:
             data.fft = fft
+
+    @property
+    def folder(self) -> Path:
+        """Folder in which the dataset files are located."""
+        return self._folder if self._folder is not None else super().folder
+
+    @folder.setter
+    def folder(self, folder: Path) -> None:
+        """Move the dataset to the specified destination folder.
+
+        Parameters
+        ----------
+        folder: Path
+            The folder in which the dataset will be moved.
+            It will be created if it does not exist.
+
+        """
+        self._folder = folder
+        for file in self.files:
+            file.move(folder)
 
     def save_spectrogram(self, folder: Path) -> None:
         """Export all spectrogram data as png images in the specified folder.
@@ -58,6 +86,31 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         """
         for data in self.data:
             data.save_spectrogram(folder)
+
+    def save_all(
+        self,
+        matrix_folder: Path,
+        spectrogram_folder: Path,
+        link: bool = False,
+    ) -> None:
+        """Export both Sx matrices as npz files and spectrograms for each data.
+
+        Parameters
+        ----------
+        matrix_folder: Path
+            Path to the folder in which the Sx matrices npz files will be saved.
+        spectrogram_folder: Path
+            Path to the folder in which the spectrograms png files will be saved.
+        link: bool
+            If True, the SpectroData will be bound to the written npz file.
+            Its items will be replaced with a single item, which will match the whole
+            new SpectroFile.
+
+        """
+        for data in self.data:
+            sx = data.get_value()
+            data.write(folder=matrix_folder, sx=sx, link=link)
+            data.save_spectrogram(folder=spectrogram_folder, sx=sx)
 
     def to_dict(self) -> dict:
         """Serialize a SpectroDataset to a dictionary.
@@ -92,7 +145,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
                 continue
             sft["spectro_data"].append(str(data))
         spectro_data_dict = {str(d): d.to_dict(embed_sft=False) for d in self.data}
-        return {"data": spectro_data_dict} | {"sft": sft_dict}
+        return {"data": spectro_data_dict} | {"sft": sft_dict} | {"name": self._name}
 
     @classmethod
     def from_dict(cls, dictionary: dict) -> SpectroDataset:
@@ -128,17 +181,19 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             )
             for name, params in dictionary["data"].items()
         ]
-        return cls(sd)
+        return cls(data=sd, name=dictionary["name"])
 
     @classmethod
-    def from_folder(
+    def from_folder(  # noqa: PLR0913
         cls,
         folder: Path,
         strptime_format: str,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         timezone: str | pytz.timezone | None = None,
+        bound: Literal["files", "timedelta"] = "timedelta",
         data_duration: Timedelta | None = None,
+        name: str | None = None,
         **kwargs: any,
     ) -> SpectroDataset:
         """Return a SpectroDataset from a folder containing the audio files.
@@ -161,10 +216,18 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             If different from a timezone parsed from the filename, the timestamps'
             timezone will be converted from the parsed timezone
             to the specified timezone.
+        bound: Literal["files", "timedelta"]
+            Bound between the original files and the dataset data.
+            "files": one data will be created for each file.
+            "timedelta": data objects of duration equal to data_duration will
+            be created.
         data_duration: Timedelta | None
             Duration of the spectro data objects.
+            If bound is set to "files", this parameter has no effect.
             If provided, spectro data will be evenly distributed between begin and end.
             Else, one data object will cover the whole time period.
+        name: str|None
+            Name of the dataset.
         kwargs: any
             Keyword arguments passed to the BaseDataset.from_folder classmethod.
 
@@ -183,21 +246,24 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             begin=begin,
             end=end,
             timezone=timezone,
+            bound=bound,
             data_duration=data_duration,
             **kwargs,
         )
         sft = next(iter(base_dataset.files)).get_fft()
-        return cls.from_base_dataset(base_dataset, sft)
+        return cls.from_base_dataset(base_dataset=base_dataset, fft=sft, name=name)
 
     @classmethod
     def from_base_dataset(
         cls,
         base_dataset: BaseDataset,
         fft: ShortTimeFFT,
+        name: str | None = None,
     ) -> SpectroDataset:
         """Return a SpectroDataset object from a BaseDataset object."""
         return cls(
             [SpectroData.from_base_data(data, fft) for data in base_dataset.data],
+            name=name,
         )
 
     @classmethod
@@ -205,12 +271,16 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         cls,
         audio_dataset: AudioDataset,
         fft: ShortTimeFFT,
+        name: str | None = None,
     ) -> SpectroDataset:
         """Return a SpectroDataset object from an AudioDataset object.
 
         The SpectroData is computed from the AudioData using the given fft.
         """
-        return cls([SpectroData.from_audio_data(d, fft) for d in audio_dataset.data])
+        return cls(
+            data=[SpectroData.from_audio_data(d, fft) for d in audio_dataset.data],
+            name=name,
+        )
 
     @classmethod
     def from_json(cls, file: Path) -> SpectroDataset:

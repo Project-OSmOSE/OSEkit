@@ -73,6 +73,10 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         """Overwrite __str__."""
         return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)
 
+    def __eq__(self, other: AudioData) -> bool:
+        """Override __eq__."""
+        return self.sample_rate == other.sample_rate and super().__eq__(other)
+
     def _set_sample_rate(self, sample_rate: int | None = None) -> None:
         """Set the AudioFile sample rate.
 
@@ -119,7 +123,12 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             data -= data.mean()
         return data
 
-    def write(self, folder: Path, subtype: str | None = None) -> None:
+    def write(
+        self,
+        folder: Path,
+        subtype: str | None = None,
+        link: bool = False,
+    ) -> None:
         """Write the audio data to file.
 
         Parameters
@@ -129,6 +138,10 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         subtype: str | None
             Subtype as provided by the soundfile module.
             Defaulted as the default 16-bit PCM for WAV audio files.
+        link: bool
+            If True, the AudioData will be bound to the written file.
+            Its items will be replaced with a single item, which will match the whole
+            new AudioFile.
 
         """
         super().create_directories(path=folder)
@@ -138,6 +151,12 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             self.sample_rate,
             subtype=subtype,
         )
+        if link:
+            file = AudioFile(
+                path=folder / f"{self}.wav",
+                strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
+            )
+            self.items = AudioData.from_files([file]).items
 
     def _get_item_value(self, item: AudioItem) -> np.ndarray:
         """Return the resampled (if needed) data from the audio item."""

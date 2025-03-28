@@ -6,9 +6,8 @@ that simplify repeated operations on the data.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, Literal, TypeVar
 
-import pytz
 from pandas import Timedelta, Timestamp, date_range
 from soundfile import LibsndfileError
 
@@ -22,6 +21,8 @@ from OSmOSE.core_api.json_serializer import deserialize_json, serialize_json
 if TYPE_CHECKING:
     from pathlib import Path
 
+    import pytz
+
 TData = TypeVar("TData", bound=BaseData)
 TFile = TypeVar("TFile", bound=BaseFile)
 
@@ -33,13 +34,40 @@ class BaseDataset(Generic[TData, TFile], Event):
     that simplify repeated operations on the data.
     """
 
-    def __init__(self, data: list[TData]) -> None:
+    def __init__(self, data: list[TData], name: str | None = None) -> None:
         """Instantiate a Dataset object from the Data objects."""
         self.data = data
+        self._name = name
+        self._has_default_name = name is None
 
     def __str__(self) -> str:
         """Overwrite __str__."""
-        return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)
+        return self.name
+
+    def __eq__(self, other: BaseDataset) -> bool:
+        """Overwrite __eq__."""
+        return sorted(self.data, key=lambda e: (e.begin, e.end)) == sorted(
+            other.data,
+            key=lambda e: (e.begin, e.end),
+        )
+
+    @property
+    def name(self) -> str:
+        """Name of the dataset."""
+        return (
+            self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)
+            if self._name is None
+            else self._name
+        )
+
+    @name.setter
+    def name(self, name: str | None) -> None:
+        self._name = name
+
+    @property
+    def has_default_name(self) -> bool:
+        """Return True if the dataset has a default name, False if it has a given name."""
+        return self._has_default_name
 
     @property
     def begin(self) -> Timestamp:
@@ -56,17 +84,48 @@ class BaseDataset(Generic[TData, TFile], Event):
         """All files referred to by the Dataset."""
         return {file for data in self.data for file in data.files}
 
-    def write(self, folder: Path) -> None:
+    @property
+    def folder(self) -> Path:
+        """Folder in which the dataset files are located."""
+        return next(iter(file.path.parent for file in self.files), None)
+
+    @folder.setter
+    def folder(self, folder: Path) -> None:
+        """Move the dataset to the specified destination folder.
+
+        Parameters
+        ----------
+        folder: Path
+            The folder in which the dataset will be moved.
+            It will be created if it does not exist.
+
+        """
+        for file in self.files:
+            file.move(folder)
+
+    @property
+    def data_duration(self) -> Timedelta:
+        """Return the most frequent duration among durations of the data of this dataset, rounded to the nearest second."""
+        data_durations = [
+            Timedelta(data.duration).round(freq="1s") for data in self.data
+        ]
+        return max(set(data_durations), key=data_durations.count)
+
+    def write(self, folder: Path, link: bool = False) -> None:
         """Write all data objects in the specified folder.
 
         Parameters
         ----------
         folder: Path
             Folder in which to write the data.
+        link: bool
+            If True, the SpectroData will be bound to the written npz file.
+            Its items will be replaced with a single item, which will match the whole
+            new SpectroFile.
 
         """
         for data in self.data:
-            data.write(folder)
+            data.write(folder=folder, link=link)
 
     def to_dict(self) -> dict:
         """Serialize a BaseDataset to a dictionary.
@@ -77,7 +136,7 @@ class BaseDataset(Generic[TData, TFile], Event):
             The serialized dictionary representing the BaseDataset.
 
         """
-        return {str(d): d.to_dict() for d in self.data}
+        return {"data": {str(d): d.to_dict() for d in self.data}, "name": self._name}
 
     @classmethod
     def from_dict(cls, dictionary: dict) -> BaseDataset:
@@ -94,11 +153,14 @@ class BaseDataset(Generic[TData, TFile], Event):
             The deserialized BaseDataset.
 
         """
-        return cls([BaseData.from_dict(d) for d in dictionary.values()])
+        return cls(
+            [BaseData.from_dict(d) for d in dictionary["data"].values()],
+            name=dictionary["name"],
+        )
 
     def write_json(self, folder: Path) -> None:
         """Write a serialized BaseDataset to a JSON file."""
-        serialize_json(folder / f"{self}.json", self.to_dict())
+        serialize_json(folder / f"{self.name}.json", self.to_dict())
 
     @classmethod
     def from_json(cls, file: Path) -> BaseDataset:
@@ -118,12 +180,14 @@ class BaseDataset(Generic[TData, TFile], Event):
         return cls.from_dict(deserialize_json(file))
 
     @classmethod
-    def from_files(
+    def from_files(  # noqa: PLR0913
         cls,
         files: list[TFile],
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
+        bound: Literal["files", "timedelta"] = "timedelta",
         data_duration: Timedelta | None = None,
+        name: str | None = None,
     ) -> BaseDataset:
         """Return a base BaseDataset object from a list of Files.
 
@@ -137,10 +201,18 @@ class BaseDataset(Generic[TData, TFile], Event):
         end: Timestamp | None
             End of the last data object.
             Defaulted to the end of the last file.
+        bound: Literal["files", "timedelta"]
+            Bound between the original files and the dataset data.
+            "files": one data will be created for each file.
+            "timedelta": data objects of duration equal to data_duration will
+            be created.
         data_duration: Timedelta | None
             Duration of the data objects.
+            If bound is set to "files", this parameter has no effect.
             If provided, data will be evenly distributed between begin and end.
             Else, one data object will cover the whole time period.
+        name: str|None
+            Name of the dataset.
 
         Returns
         -------
@@ -148,6 +220,11 @@ class BaseDataset(Generic[TData, TFile], Event):
         The DataBase object.
 
         """
+        if bound == "files":
+            data_base = [BaseData.from_files([f]) for f in files]
+            data_base = BaseData.remove_overlaps(data_base)
+            return cls(data=data_base, name=name)
+
         if not begin:
             begin = min(file.begin for file in files)
         if not end:
@@ -159,7 +236,7 @@ class BaseDataset(Generic[TData, TFile], Event):
             ]
         else:
             data_base = [BaseData.from_files(files, begin=begin, end=end)]
-        return cls(data_base)
+        return cls(data_base, name=name)
 
     @classmethod
     def from_folder(  # noqa: PLR0913
@@ -171,7 +248,9 @@ class BaseDataset(Generic[TData, TFile], Event):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         timezone: str | pytz.timezone | None = None,
+        bound: Literal["files", "timedelta"] = "timedelta",
         data_duration: Timedelta | None = None,
+        name: str | None = None,
     ) -> BaseDataset:
         """Return a BaseDataset from a folder containing the base files.
 
@@ -197,10 +276,18 @@ class BaseDataset(Generic[TData, TFile], Event):
             If different from a timezone parsed from the filename, the timestamps'
             timezone will be converted from the parsed timezone
             to the specified timezone.
+        bound: Literal["files", "timedelta"]
+            Bound between the original files and the dataset data.
+            "files": one data will be created for each file.
+            "timedelta": data objects of duration equal to data_duration will
+            be created.
         data_duration: Timedelta | None
             Duration of the data objects.
+            If bound is set to "files", this parameter has no effect.
             If provided, data will be evenly distributed between begin and end.
             Else, one object will cover the whole time period.
+        name: str|None
+            Name of the dataset.
 
         Returns
         -------
@@ -230,4 +317,11 @@ class BaseDataset(Generic[TData, TFile], Event):
         if not valid_files:
             raise FileNotFoundError(f"No valid file found in {folder}.")
 
-        return BaseDataset.from_files(valid_files, begin, end, data_duration)
+        return BaseDataset.from_files(
+            files=valid_files,
+            begin=begin,
+            end=end,
+            bound=bound,
+            data_duration=data_duration,
+            name=name,
+        )
