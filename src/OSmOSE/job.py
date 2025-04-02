@@ -35,7 +35,7 @@ JOB_CONFIG_TEMPLATE = namedtuple(
 
 
 class Job_builder:
-    def __init__(self, config_file: str = None):
+    def __init__(self, config_file: str = None, nb_jobs: int = 1):
         if config_file is None:
             self.__configfile = "config.toml"
             self.__full_config: NamedTuple = read_config(
@@ -52,6 +52,8 @@ class Job_builder:
         self.__ongoing_jobs = []
         self.__finished_jobs = []
         self.__cancelled_jobs = []
+
+        self.nb_jobs = nb_jobs
 
         required_properties = [
             "job_scheduler",

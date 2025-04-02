@@ -34,11 +34,19 @@ class BaseDataset(Generic[TData, TFile], Event):
     that simplify repeated operations on the data.
     """
 
-    def __init__(self, data: list[TData], name: str | None = None) -> None:
+    def __init__(
+        self,
+        data: list[TData],
+        name: str | None = None,
+        suffix: str = "",
+        folder: Path | None = None,
+    ) -> None:
         """Instantiate a Dataset object from the Data objects."""
         self.data = data
         self._name = name
         self._has_default_name = name is None
+        self._suffix = suffix
+        self._folder = folder
 
     def __str__(self) -> str:
         """Overwrite __str__."""
@@ -54,15 +62,30 @@ class BaseDataset(Generic[TData, TFile], Event):
     @property
     def name(self) -> str:
         """Name of the dataset."""
-        return (
+        base_name = (
             self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)
             if self._name is None
             else self._name
         )
+        return base_name if not self.suffix else f"{base_name}_{self.suffix}"
 
     @name.setter
     def name(self, name: str | None) -> None:
         self._name = name
+
+    @property
+    def suffix(self) -> str:
+        """Suffix that is applied to the name of the ads.
+
+        This is used by the public API, for suffixing multiple core_api datasets
+        that are created simultaneously and share the same namewith their specific type,
+         e.g. _audio or _spectro.
+        """
+        return self._suffix
+
+    @suffix.setter
+    def suffix(self, suffix: str | None) -> None:
+        self._suffix = suffix
 
     @property
     def has_default_name(self) -> bool:
@@ -86,8 +109,12 @@ class BaseDataset(Generic[TData, TFile], Event):
 
     @property
     def folder(self) -> Path:
-        """Folder in which the dataset files are located."""
-        return next(iter(file.path.parent for file in self.files), None)
+        """Folder in which the dataset files are located or to be written."""
+        return (
+            self._folder
+            if self._folder is not None
+            else next(iter(file.path.parent for file in self.files), None)
+        )
 
     @folder.setter
     def folder(self, folder: Path) -> None:
@@ -100,8 +127,20 @@ class BaseDataset(Generic[TData, TFile], Event):
             It will be created if it does not exist.
 
         """
+        self._folder = folder
+
+    def move_files(self, folder: Path) -> None:
+        """Move the dataset files to the destination folder.
+
+        Parameters
+        ----------
+        folder: Path
+            Destination folder in which the dataset files will be moved.
+
+        """
         for file in self.files:
             file.move(folder)
+        self._folder = folder
 
     @property
     def data_duration(self) -> Timedelta:
@@ -111,7 +150,13 @@ class BaseDataset(Generic[TData, TFile], Event):
         ]
         return max(set(data_durations), key=data_durations.count)
 
-    def write(self, folder: Path, link: bool = False) -> None:
+    def write(
+        self,
+        folder: Path,
+        link: bool = False,
+        first: int = 0,
+        last: int | None = None,
+    ) -> None:
         """Write all data objects in the specified folder.
 
         Parameters
@@ -119,12 +164,17 @@ class BaseDataset(Generic[TData, TFile], Event):
         folder: Path
             Folder in which to write the data.
         link: bool
-            If True, the SpectroData will be bound to the written npz file.
+            If True, the Data will be bound to the written file.
             Its items will be replaced with a single item, which will match the whole
-            new SpectroFile.
+            new File.
+        first: int
+            Index of the first data object to write.
+        last: int | None
+            Index after the last data object to write.
 
         """
-        for data in self.data:
+        last = len(self.data) if last is None else last
+        for data in self.data[first:last]:
             data.write(folder=folder, link=link)
 
     def to_dict(self) -> dict:
@@ -136,7 +186,12 @@ class BaseDataset(Generic[TData, TFile], Event):
             The serialized dictionary representing the BaseDataset.
 
         """
-        return {"data": {str(d): d.to_dict() for d in self.data}, "name": self._name}
+        return {
+            "data": {str(d): d.to_dict() for d in self.data},
+            "name": self._name,
+            "suffix": self.suffix,
+            "folder": str(self.folder),
+        }
 
     @classmethod
     def from_dict(cls, dictionary: dict) -> BaseDataset:
@@ -156,6 +211,8 @@ class BaseDataset(Generic[TData, TFile], Event):
         return cls(
             [BaseData.from_dict(d) for d in dictionary["data"].values()],
             name=dictionary["name"],
+            suffix=dictionary["suffix"],
+            folder=Path(dictionary["folder"]),
         )
 
     def write_json(self, folder: Path) -> None:

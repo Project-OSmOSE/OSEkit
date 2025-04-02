@@ -9,7 +9,7 @@ It has additionnal metadata that can be exported, e.g. to APLOSE.
 from __future__ import annotations
 
 import shutil
-from enum import Flag, auto
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar
 
@@ -17,6 +17,11 @@ from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.base_dataset import BaseDataset
 from OSmOSE.core_api.json_serializer import deserialize_json, serialize_json
 from OSmOSE.core_api.spectro_dataset import SpectroDataset
+from OSmOSE.public_api import Analysis
+from OSmOSE.utils.core_utils import (
+    file_indexes_per_batch,
+    get_umask,
+)
 from OSmOSE.utils.path_utils import move_tree
 
 if TYPE_CHECKING:
@@ -24,41 +29,7 @@ if TYPE_CHECKING:
     from scipy.signal import ShortTimeFFT
 
     from OSmOSE.core_api.audio_file import AudioFile
-
-
-class Analysis(Flag):
-    """Enum of flags that should be use to specify the type of analysis to run.
-
-    AUDIO:
-        Will add an AudioDataset to the datasets and write the reshaped audio files
-        to disk.
-        The new AudioDataset will be linked to the reshaped audio files rather than to
-        the original files.
-    MATRIX:
-        Will write the npz SpectroFiles to disk and link the SpectroDataset to
-        these files.
-    SPECTROGRAM:
-        Will export the spectrogram png images.
-
-    Multiple flags can be enabled thanks to the logical or | operator:
-    Analysis.AUDIO | Analysis.SPECTROGRAM will export both audio files and
-    spectrogram images.
-
-    >>> # Exporting both the reshaped audio and the spectrograms
-    >>> # (without the npz matrices):
-    >>> export = Analysis.AUDIO | Analysis.SPECTROGRAM
-    >>> Analysis.AUDIO in export
-    True
-    >>> Analysis.SPECTROGRAM in export
-    True
-    >>> Analysis.MATRIX in export
-    False
-
-    """
-
-    AUDIO = auto()
-    MATRIX = auto()
-    SPECTROGRAM = auto()
+    from OSmOSE.job import Job_builder
 
 
 class Dataset:
@@ -78,6 +49,7 @@ class Dataset:
         depth: str | int = 0,
         timezone: str | None = None,
         datasets: dict | None = None,
+        job_builder: Job_builder | None = None,
     ) -> None:
         """Initialize a Dataset."""
         self.folder = folder
@@ -86,6 +58,7 @@ class Dataset:
         self.depth = depth
         self.timezone = timezone
         self.datasets = datasets if datasets is not None else {}
+        self.job_builder = job_builder
 
     @property
     def origin_files(self) -> set[AudioFile]:
@@ -129,7 +102,7 @@ class Dataset:
         WARNING: all other files and folders will be deleted.
         """
         files_to_remove = list(self.folder.iterdir())
-        self.get_dataset("original").folder = self.folder
+        self.get_dataset("original").move_files(self.folder)
 
         if self.folder / "other" in files_to_remove:
             move_tree(self.folder / "other", self.folder)
@@ -142,7 +115,7 @@ class Dataset:
 
         self.datasets = {}
 
-    def create_analysis(
+    def run_analysis(  # noqa: PLR0913
         self,
         analysis: Analysis,
         begin: Timestamp | None = None,
@@ -190,10 +163,10 @@ class Dataset:
             This parameter has no effect if Analysis.AUDIO is not in analysis.
         fft: ShortTimeFFT | None
             FFT to use for computing the spectra.
-            This parameter is mandatory if either Analysis.MATRIX or Analysis.SPECTROGRAM
-            is in analysis.
-            This parameter has no effect if neither Analysis.MATRIX nor Analysis.SPECTROGRAM
-            is in the analysis.
+            This parameter is mandatory if either Analysis.MATRIX
+            or Analysis.SPECTROGRAM is in analysis.
+            This parameter has no effect if neither Analysis.MATRIX
+            nor Analysis.SPECTROGRAM is in the analysis.
 
         """
         is_spectro = any(
@@ -217,26 +190,36 @@ class Dataset:
             ads.sample_rate = sample_rate
 
         if Analysis.AUDIO in analysis:
-            if is_spectro and name is not None:
-                ads.name = f"{ads.name}_audio"
-            self._add_audio_dataset(ads=ads, subtype=subtype)
+            if is_spectro:
+                ads.suffix = "audio"
+            self._add_audio_dataset(ads=ads)
 
+        sds = None
         if is_spectro:
-            sds = SpectroDataset.from_audio_dataset(audio_dataset=ads, fft=fft)
-            self._add_spectro_dataset(sds=sds, export=analysis)
+            sds = SpectroDataset.from_audio_dataset(
+                audio_dataset=ads,
+                fft=fft,
+                name=name,
+            )
+            self._add_spectro_dataset(sds=sds)
+
+        self.export_analysis(
+            analysis=analysis,
+            ads=ads,
+            sds=sds,
+            link=True,
+            subtype=subtype,
+        )
+
+        self.write_json()
 
     def _add_audio_dataset(
         self,
         ads: AudioDataset,
-        subtype: str | None = None,
     ) -> None:
-        ads_folder = self._get_audio_dataset_subpath(ads=ads)
-        ads.write(ads_folder, link=True, subtype=subtype)
-
+        ads.folder = self._get_audio_dataset_subpath(ads=ads)
         self.datasets[ads.name] = {"class": type(ads).__name__, "dataset": ads}
-
-        ads.write_json(folder=ads.folder)
-        self.write_json()
+        ads.write_json(ads.folder)
 
     def _get_audio_dataset_subpath(
         self,
@@ -253,33 +236,96 @@ class Dataset:
             )
         )
 
+    def export_analysis(
+        self,
+        analysis: Analysis,
+        ads: AudioDataset | None = None,
+        sds: SpectroDataset | None = None,
+        link: bool = False,
+        subtype: str | None = None,
+        matrix_folder_name: str = "welches",
+        spectrogram_folder_name: str = "spectrogram",
+    ) -> None:
+        """Perform an analysis and write the results on disk.
+
+        An analysis is defined as a manipulation of the original audio files:
+        reshaping the audio, exporting spectrograms or npz matrices (or a mix of
+        those three) are examples of analyses.
+        The tasks will be distributed to jobs if self.job_builder
+        is not None, else it will be distributed on self.job_builder.nb_jobs jobs.
+
+        Parameters
+        ----------
+        spectrogram_folder_name
+            The name of the folder in which the png spectrograms will be
+            exported (relative to sds.folder)
+        matrix_folder_name:
+            The name of the folder in which the npz matrices will be
+            exported (relative to sds.folder)
+        sds: SpectroDataset
+            The SpectroDataset on which the data should be written.
+        analysis : Analysis
+            Analysis to be performed.
+            AudioDataset and SpectroDataset instances will be
+            created depending on the flags.
+            See OSmOSE.public_api.dataset.Analysis docstring for more information.
+        ads: AudioDataset
+            The AudioDataset on which the data should be written.
+        link: bool
+            If set to True, the ads data will be linked to the exported files.
+        subtype: str | None
+            The subtype of the audio files as provided by the soundfile module.
+
+        """
+        # Import here to avoid circular imports since the script needs to import Dataset
+        from OSmOSE.public_api import export_analysis
+
+        if self.job_builder is None:
+            export_analysis.write_analysis(
+                analysis=analysis,
+                ads=ads,
+                sds=sds,
+                link=link,
+                subtype=subtype,
+                matrix_folder_name=matrix_folder_name,
+                spectrogram_folder_name=spectrogram_folder_name,
+            )
+            return
+
+        batch_indexes = file_indexes_per_batch(
+            total_nb_files=len(ads.data),
+            nb_batches=self.job_builder.nb_jobs,
+        )
+
+        for start, stop in batch_indexes:
+            self.job_builder.build_job_file(
+                script_path=export_analysis.__file__,
+                script_args=f"--dataset-json-path {self.folder / 'dataset.json'} "
+                f"--analysis {sum(v.value for v in list(analysis))} "
+                f"--ads-name {ads.name if ads is not None else ''} "
+                f"--sds-name {sds.name if sds is not None else ''} "
+                f"--subtype {subtype} "
+                f"--matrix-folder-name {matrix_folder_name} "
+                f"--spectrogram-folder-name {spectrogram_folder_name} "
+                f"--first {start} "
+                f"--last {stop} "
+                f"--umask {get_umask()} ",
+                jobname="OSmOSE_Analysis",
+                preset="low",
+                env_name=sys.executable.replace("/bin/python", ""),
+                mem="32G",
+                walltime="01:00:00",
+                logdir=self.folder / "log",
+            )
+        self.job_builder.submit_job()
+
     def _add_spectro_dataset(
         self,
         sds: SpectroDataset,
-        export: Analysis,
     ) -> None:
         sds.folder = self._get_spectro_dataset_subpath(sds=sds)
-
-        if Analysis.MATRIX in export and Analysis.SPECTROGRAM in export:
-            sds.save_all(
-                matrix_folder=sds.folder / "welch",
-                spectrogram_folder=sds.folder / "spectrogram",
-                link=True,
-            )
-        elif Analysis.SPECTROGRAM in export:
-            sds.save_spectrogram(
-                folder=sds.folder / "spectrogram",
-            )
-        elif Analysis.MATRIX in export:
-            sds.write(
-                folder=sds.folder / "welch",
-                link=True,
-            )
-
         self.datasets[sds.name] = {"class": type(sds).__name__, "dataset": sds}
-
-        sds.write_json(folder=sds.folder)
-        self.write_json()
+        sds.write_json(sds.folder)
 
     def _get_spectro_dataset_subpath(
         self,
@@ -304,7 +350,7 @@ class Dataset:
             return
 
     def _sort_audio_dataset(self, dataset: AudioDataset) -> None:
-        dataset.folder = self._get_audio_dataset_subpath(dataset)
+        dataset.move_files(self._get_audio_dataset_subpath(dataset))
 
     def _sort_spectro_dataset(self, dataset: SpectroDataset) -> None:
         raise NotImplementedError

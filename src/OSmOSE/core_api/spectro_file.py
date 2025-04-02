@@ -31,7 +31,7 @@ class SpectroFile(BaseFile):
         self,
         path: PathLike | str,
         begin: Timestamp | None = None,
-        strptime_format: str | None = None,
+        strptime_format: str | list[str] | None = None,
         timezone: str | pytz.timezone | None = None,
     ) -> None:
         """Initialize a SpectroFile object with a path and a begin timestamp.
@@ -61,7 +61,10 @@ class SpectroFile(BaseFile):
 
         """
         super().__init__(
-            path=path, begin=begin, strptime_format=strptime_format, timezone=timezone
+            path=path,
+            begin=begin,
+            strptime_format=strptime_format,
+            timezone=timezone,
         )
         self._read_metadata(path=path)
 

@@ -405,7 +405,7 @@ def test_reshape(
 
     dataset = Dataset(folder=tmp_path, strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
     dataset.build()
-    dataset.create_analysis(
+    dataset.run_analysis(
         analysis=Analysis.AUDIO,
         begin=begin,
         end=end,
@@ -425,14 +425,15 @@ def test_reshape(
     if sample_rate is not None:
         expected_ads.sample_rate = sample_rate
 
-    ads_key = (
+    expected_ads_name = (
         ads_name
         if ads_name
-        else f"{expected_ads.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)}_audio"
+        else f"{expected_ads.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)}"
     )
 
     # The new dataset should be added to the datasets property
-    ads = dataset.get_dataset(ads_key)
+    assert expected_ads_name in dataset.datasets
+    ads = dataset.get_dataset(expected_ads_name)
     assert ads is not None
     assert type(ads) is AudioDataset
 
@@ -457,7 +458,7 @@ def test_reshape(
     assert all(file not in dataset.origin_files for file in ads.files)
 
     # ads should be deserializable from the exported JSON file
-    json_file = ads.folder / f"{ads_key}.json"
+    json_file = ads.folder / f"{expected_ads_name}.json"
     assert json_file.exists()
     deserialized_ads = AudioDataset.from_json(json_file)
     assert deserialized_ads == ads

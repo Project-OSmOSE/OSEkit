@@ -7,7 +7,12 @@ import pandas as pd
 import pytest
 import soundfile as sf
 
-from OSmOSE.utils.core_utils import read_header, safe_read
+from OSmOSE.utils.core_utils import (
+    file_indexes_per_batch,
+    nb_files_per_batch,
+    read_header,
+    safe_read,
+)
 from OSmOSE.utils.formatting_utils import aplose2raven
 from OSmOSE.utils.path_utils import move_tree
 
@@ -203,3 +208,115 @@ def test_move_tree(
 
     if not files - unmoved_files:
         assert not destination.exists()
+
+
+@pytest.mark.parametrize(
+    ("total_nb_files", "nb_batches", "expected"),
+    [
+        pytest.param(
+            10,
+            1,
+            [10],
+            id="only_one_batch",
+        ),
+        pytest.param(
+            10,
+            5,
+            [2, 2, 2, 2, 2],
+            id="no_remainder",
+        ),
+        pytest.param(
+            11,
+            5,
+            [3, 2, 2, 2, 2],
+            id="first_batch_has_remainder",
+        ),
+        pytest.param(
+            13,
+            5,
+            [3, 3, 3, 2, 2],
+            id="remainder_is_fairly_distributed",
+        ),
+        pytest.param(
+            3,
+            5,
+            [1, 1, 1, 0, 0],
+            id="more_jobs_than_files",
+        ),
+        pytest.param(
+            0,
+            5,
+            [0, 0, 0, 0, 0],
+            id="no_file",
+        ),
+        pytest.param(
+            5,
+            0,
+            [],
+            id="no_job",
+        ),
+    ],
+)
+def test_nb_files_per_batch(
+    total_nb_files: int, nb_batches: int, expected: list[int]
+) -> None:
+    assert (
+        nb_files_per_batch(total_nb_files=total_nb_files, nb_batches=nb_batches)
+        == expected
+    )
+
+
+@pytest.mark.parametrize(
+    ("total_nb_files", "nb_batches", "expected"),
+    [
+        pytest.param(
+            10,
+            1,
+            [(0, 10)],
+            id="only_one_batch",
+        ),
+        pytest.param(
+            10,
+            5,
+            [(0, 2), (2, 4), (4, 6), (6, 8), (8, 10)],
+            id="no_remainder",
+        ),
+        pytest.param(
+            11,
+            5,
+            [(0, 3), (3, 5), (5, 7), (7, 9), (9, 11)],
+            id="first_batch_has_remainder",
+        ),
+        pytest.param(
+            13,
+            5,
+            [(0, 3), (3, 6), (6, 9), (9, 11), (11, 13)],
+            id="remainder_is_fairly_distributed",
+        ),
+        pytest.param(
+            3,
+            5,
+            [(0, 1), (1, 2), (2, 3)],
+            id="more_jobs_than_files_should_cut_unused_batches",
+        ),
+        pytest.param(
+            0,
+            5,
+            [],
+            id="no_file",
+        ),
+        pytest.param(
+            5,
+            0,
+            [],
+            id="no_job",
+        ),
+    ],
+)
+def test_file_indexes_per_batch(
+    total_nb_files: int, nb_batches: int, expected: list[tuple[int, int]]
+) -> None:
+    assert (
+        file_indexes_per_batch(total_nb_files=total_nb_files, nb_batches=nb_batches)
+        == expected
+    )

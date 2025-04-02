@@ -25,7 +25,7 @@ class AudioFile(BaseFile):
         self,
         path: PathLike | str,
         begin: Timestamp | None = None,
-        strptime_format: str | None = None,
+        strptime_format: str | list[str] | None = None,
         timezone: str | pytz.timezone | None = None,
     ) -> None:
         """Initialize an AudioFile object with a path and a begin timestamp.
@@ -55,7 +55,10 @@ class AudioFile(BaseFile):
 
         """
         super().__init__(
-            path=path, begin=begin, strptime_format=strptime_format, timezone=timezone
+            path=path,
+            begin=begin,
+            strptime_format=strptime_format,
+            timezone=timezone,
         )
         sample_rate, frames, channels = afm.info(path)
         duration = frames / sample_rate
@@ -112,6 +115,14 @@ class AudioFile(BaseFile):
         """Return an AudioFile object from a BaseFile object."""
         return cls(path=file.path, begin=file.begin)
 
-    def move(self, destination_folder: Path):
+    def move(self, folder: Path) -> None:
+        """Move the file to the target folder.
+
+        Parameters
+        ----------
+        folder: Path
+            destination folder where the file will be moved.
+
+        """
         afm.close()
-        super().move(destination_folder)
+        super().move(folder)

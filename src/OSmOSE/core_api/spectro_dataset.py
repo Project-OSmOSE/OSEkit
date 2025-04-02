@@ -6,6 +6,7 @@ that simplify repeated operations on the spectro data.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
 import numpy as np
@@ -17,7 +18,6 @@ from OSmOSE.core_api.spectro_data import SpectroData
 from OSmOSE.core_api.spectro_file import SpectroFile
 
 if TYPE_CHECKING:
-    from pathlib import Path
 
     import pytz
     from pandas import Timedelta, Timestamp
@@ -33,17 +33,15 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
     """
 
-    def __init__(self, data: list[SpectroData], name: str | None = None) -> None:
+    def __init__(
+        self,
+        data: list[SpectroData],
+        name: str | None = None,
+        suffix: str = "",
+        folder: Path | None = None,
+    ) -> None:
         """Initialize a SpectroDataset."""
-        super().__init__(data, name)
-        self._folder = None
-
-    @property
-    def name(self) -> str:
-        """Name of the dataset."""
-        if self.has_default_name:
-            return f"{super().name}_spectro"
-        return super().name
+        super().__init__(data=data, name=name, suffix=suffix, folder=folder)
 
     @property
     def fft(self) -> ShortTimeFFT:
@@ -75,16 +73,27 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         for file in self.files:
             file.move(folder)
 
-    def save_spectrogram(self, folder: Path) -> None:
+    def save_spectrogram(
+        self,
+        folder: Path,
+        first: int = 0,
+        last: int | None = None,
+    ) -> None:
         """Export all spectrogram data as png images in the specified folder.
 
         Parameters
         ----------
         folder: Path
             Folder in which the spectrograms should be saved.
+        first: int
+            Index of the first SpectroData object to export.
+        last: int|None
+            Index after the last SpectroData object to export.
+
 
         """
-        for data in self.data:
+        last = len(self.data) if last is None else last
+        for data in self.data[first:last]:
             data.save_spectrogram(folder)
 
     def save_all(
@@ -92,6 +101,8 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         matrix_folder: Path,
         spectrogram_folder: Path,
         link: bool = False,
+        first: int = 0,
+        last: int | None = None,
     ) -> None:
         """Export both Sx matrices as npz files and spectrograms for each data.
 
@@ -105,12 +116,46 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             If True, the SpectroData will be bound to the written npz file.
             Its items will be replaced with a single item, which will match the whole
             new SpectroFile.
+        first: int
+            Index of the first SpectroData object to export.
+        last: int|None
+            Index after the last SpectroData object to export.
 
         """
-        for data in self.data:
+        last = len(self.data) if last is None else last
+        for data in self.data[first:last]:
             sx = data.get_value()
             data.write(folder=matrix_folder, sx=sx, link=link)
             data.save_spectrogram(folder=spectrogram_folder, sx=sx)
+
+    def link_audio_dataset(
+        self,
+        audio_dataset: AudioDataset,
+        first: int = 0,
+        last: int | None = None,
+    ) -> None:
+        """Link the SpectroData of the SpectroDataset to the AudioData of the AudioDataset.
+
+        Parameters
+        ----------
+        audio_dataset: AudioDataset
+            The AudioDataset which data will be linked to the SpectroDataset data.
+
+        """
+        if len(audio_dataset.data) != len(self.data):
+            raise ValueError(
+                "The audio dataset doesn't contain the same number of data as the spectro dataset.",
+            )
+
+        last = len(self.data) if last is None else last
+
+        for sd, ad in list(
+            zip(
+                sorted(self.data, key=lambda d: (d.begin, d.end)),
+                sorted(audio_dataset.data, key=lambda d: (d.begin, d.end)),
+            ),
+        )[first:last]:
+            sd.link_audio_data(ad)
 
     def to_dict(self) -> dict:
         """Serialize a SpectroDataset to a dictionary.
@@ -145,7 +190,13 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
                 continue
             sft["spectro_data"].append(str(data))
         spectro_data_dict = {str(d): d.to_dict(embed_sft=False) for d in self.data}
-        return {"data": spectro_data_dict} | {"sft": sft_dict} | {"name": self._name}
+        return {
+            "data": spectro_data_dict,
+            "sft": sft_dict,
+            "name": self._name,
+            "suffix": self.suffix,
+            "folder": str(self.folder),
+        }
 
     @classmethod
     def from_dict(cls, dictionary: dict) -> SpectroDataset:
@@ -181,7 +232,12 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             )
             for name, params in dictionary["data"].items()
         ]
-        return cls(data=sd, name=dictionary["name"])
+        return cls(
+            data=sd,
+            name=dictionary["name"],
+            suffix=dictionary["suffix"],
+            folder=Path(dictionary["folder"]),
+        )
 
     @classmethod
     def from_folder(  # noqa: PLR0913

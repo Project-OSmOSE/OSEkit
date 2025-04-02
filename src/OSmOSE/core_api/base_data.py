@@ -115,6 +115,21 @@ class BaseData(Generic[TItem, TFile], Event):
     def write(self, folder: Path, link: bool = False) -> None:
         """Abstract method for writing data to file."""
 
+    def link(self, folder: Path) -> None:
+        """Abstract method for linking data to a file in a given folder.
+
+        Linking is intended for data objects that have been written to disk.
+        After linking the data to the written file, it will have a single
+        item that matches the File properties.
+        The folder should contain a file named as str(self).extension.
+
+        Parameters
+        ----------
+        folder: Path
+            Folder in which is the file to which the BaseData instance should be linked.
+
+        """
+
     def to_dict(self) -> dict:
         """Serialize a BaseData to a dictionary.
 

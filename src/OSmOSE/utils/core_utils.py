@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import glob
 import json
 import math
@@ -876,3 +878,77 @@ def get_umask() -> int:
     umask = os.umask(0)
     os.umask(umask)
     return umask
+
+
+def file_indexes_per_batch(
+    total_nb_files: int,
+    nb_batches: int,
+) -> list[tuple[int, int]]:
+    """Compute the start and stop file indexes for each batch.
+
+    The number of files is equitably distributed among batches.
+    Example: 10 files distributed among 4 batches will lead to
+    batches indexes [(0,3), (3,6), (6,8), (8,10)].
+
+    Parameters
+    ----------
+    total_nb_files: int
+        Number of files processed by ball batches
+    nb_batches: int
+        Number of batches in the analysis
+
+    Returns
+    -------
+    list[tuple[int,int]]:
+    A list of tuples representing the start and stop index of files processed by each batch in the analysis.
+
+    Examples
+    --------
+    >>> file_indexes_per_batch(10,4)
+    [(0, 3), (3, 6), (6, 8), (8, 10)]
+    >>> file_indexes_per_batch(1448,10)
+    [(0, 145), (145, 290), (290, 435), (435, 580), (580, 725), (725, 870), (870, 1015), (1015, 1160), (1160, 1304), (1304, 1448)]
+
+    """
+    batch_lengths = [
+        length
+        for length in nb_files_per_batch(total_nb_files, nb_batches)
+        if length > 0
+    ]
+    return [
+        (sum(batch_lengths[:b]), sum(batch_lengths[:b]) + batch_lengths[b])
+        for b in range(len(batch_lengths))
+    ]
+
+
+def nb_files_per_batch(total_nb_files: int, nb_batches: int) -> list[int]:
+    """Compute the number of files processed by each batch in the analysis.
+
+    The number of files is equitably distributed among batches.
+    Example: 10 files distributed among 4 batches will lead to
+    batches containing [3,3,2,2] files.
+
+    Parameters
+    ----------
+    total_nb_files: int
+        Number of files processed by ball batches
+    nb_batches: int
+        Number of batches in the analysis
+
+    Returns
+    -------
+    list(int):
+    A list representing the number of files processed by each batch in the analysis.
+
+    Examples
+    --------
+    >>> nb_files_per_batch(10,4)
+    [3, 3, 2, 2]
+    >>> nb_files_per_batch(1448,10)
+    [145, 145, 145, 145, 145, 145, 145, 145, 144, 144]
+
+    """
+    return [
+        total_nb_files // nb_batches + (1 if i < total_nb_files % nb_batches else 0)
+        for i in range(nb_batches)
+    ]

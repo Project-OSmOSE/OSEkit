@@ -7,6 +7,7 @@ that simplify repeated operations on the audio data.
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
 from OSmOSE.core_api.audio_data import AudioData
@@ -15,8 +16,6 @@ from OSmOSE.core_api.base_dataset import BaseDataset
 from OSmOSE.core_api.json_serializer import deserialize_json
 
 if TYPE_CHECKING:
-
-    from pathlib import Path
 
     import pytz
     from pandas import Timedelta, Timestamp
@@ -30,7 +29,13 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
 
     """
 
-    def __init__(self, data: list[AudioData], name: str | None = None) -> None:
+    def __init__(
+        self,
+        data: list[AudioData],
+        name: str | None = None,
+        suffix: str = "",
+        folder: Path | None = None,
+    ) -> None:
         """Initialize an AudioDataset."""
         if (
             len(
@@ -44,14 +49,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         else:
             for empty_data in (data for data in data if data.sample_rate is None):
                 empty_data.sample_rate = min(sample_rates)
-        super().__init__(data, name)
-
-    @property
-    def name(self) -> str:
-        """Name of the dataset."""
-        if self.has_default_name:
-            return f"{super().name}_audio"
-        return super().name
+        super().__init__(data=data, name=name, suffix=suffix, folder=folder)
 
     @property
     def sample_rate(self) -> set[float] | float:
@@ -68,7 +66,9 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         self,
         folder: Path,
         subtype: str | None = None,
-        link: bool = False,  # noqa: FBT001, FBT002
+        link: bool = False,  # noqa: FBT001, FBT002,
+        first: int = 0,
+        last: int | None = None,
     ) -> None:
         """Write all data objects in the specified folder.
 
@@ -83,10 +83,15 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             If True, each AudioData will be bound to the corresponding written file.
             Their items will be replaced with a single item, which will match the whole
             new AudioFile.
+        first: int
+            Index of the first AudioData object to write.
+        last: int | None
+            Index after the last AudioData object to write.
 
 
         """
-        for data in self.data:
+        last = len(self.data) if last is None else last
+        for data in self.data[first:last]:
             data.write(folder=folder, subtype=subtype, link=link)
 
     @classmethod
@@ -107,6 +112,8 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         return cls(
             [AudioData.from_dict(d) for d in dictionary["data"].values()],
             name=dictionary["name"],
+            suffix=dictionary["suffix"],
+            folder=Path(dictionary["folder"]),
         )
 
     @classmethod
