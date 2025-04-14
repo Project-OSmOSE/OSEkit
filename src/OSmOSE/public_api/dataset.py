@@ -13,6 +13,7 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar
 
+from OSmOSE.config import resample_quality_settings
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.base_dataset import BaseDataset
 from OSmOSE.core_api.json_serializer import deserialize_json, serialize_json
@@ -309,6 +310,8 @@ class Dataset:
                 f"--spectrogram-folder-name {spectrogram_folder_name} "
                 f"--first {start} "
                 f"--last {stop} "
+                f"--downsampling-quality {resample_quality_settings['downsample']} "
+                f"--upsampling-quality {resample_quality_settings['upsample']} "
                 f"--umask {get_umask()} ",
                 jobname="OSmOSE_Analysis",
                 preset="low",

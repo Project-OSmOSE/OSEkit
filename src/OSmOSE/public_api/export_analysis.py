@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from OSmOSE.config import resample_quality_settings
 from OSmOSE.public_api import Analysis
 from OSmOSE.public_api.dataset import Dataset
 
@@ -164,6 +165,22 @@ if __name__ == "__main__":
         default=-1,
     )
     parser.add_argument(
+        "--downsampling-quality",
+        "-dq",
+        required=False,
+        help="The downsampling quality preset as specified in the soxr library.",
+        type=str,
+        default=None,
+    )
+    parser.add_argument(
+        "--upsampling-quality",
+        "-uq",
+        required=False,
+        help="The upsampling quality preset as specified in the soxr library.",
+        type=str,
+        default=None,
+    )
+    parser.add_argument(
         "--umask",
         type=int,
         default=0o002,
@@ -173,6 +190,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     os.umask(args.umask)
+
+    if args.downsampling_quality is not None:
+        resample_quality_settings["downsample"] = args.downsampling_quality
+    if args.upsampling_quality is not None:
+        resample_quality_settings["upsample"] = args.upsampling_quality
 
     dataset = Dataset.from_json(file=Path(args.dataset_json_path))
 
