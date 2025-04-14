@@ -12,7 +12,7 @@ from OSmOSE.config import (
     AUDIO_METADATA,
     BUILD_DURATION_DELTA_THRESHOLD,
     SUPPORTED_AUDIO_FORMAT,
-    resample_quality_setting,
+    resample_quality_settings,
 )
 
 
@@ -205,8 +205,8 @@ def resample(data: np.ndarray, origin_sr: float, target_sr: float) -> np.ndarray
 
     """
     quality = (
-        resample_quality_setting["upsample"]
+        resample_quality_settings["upsample"]
         if target_sr > origin_sr
-        else resample_quality_setting["downsample"]
+        else resample_quality_settings["downsample"]
     )
     return soxr.resample(data, origin_sr, target_sr, quality=quality)

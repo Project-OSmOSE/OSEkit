@@ -10,7 +10,7 @@ import pytest
 import soundfile as sf
 
 import OSmOSE
-from OSmOSE.config import TIMESTAMP_FORMAT_TEST_FILES, resample_quality_setting
+from OSmOSE.config import TIMESTAMP_FORMAT_TEST_FILES, resample_quality_settings
 from OSmOSE.core_api.audio_data import AudioData
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.audio_file import AudioFile
@@ -650,13 +650,13 @@ def test_audio_resample_quality(
     files, _ = audio_files
     af = AudioFile(files[0], strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
 
-    downsampling_default = resample_quality_setting["downsample"]
-    upsampling_default = resample_quality_setting["upsample"]
+    downsampling_default = resample_quality_settings["downsample"]
+    upsampling_default = resample_quality_settings["upsample"]
 
     if downsampling_quality is not None:
-        OSmOSE.config.resample_quality_setting["downsample"] = downsampling_quality
+        OSmOSE.config.resample_quality_settings["downsample"] = downsampling_quality
     if upsampling_quality is not None:
-        OSmOSE.config.resample_quality_setting["upsample"] = upsampling_quality
+        OSmOSE.config.resample_quality_settings["upsample"] = upsampling_quality
 
     def resample_mkptch(
         data: np.ndarray,
@@ -664,9 +664,9 @@ def test_audio_resample_quality(
         target_sr: float,
     ) -> np.ndarray:
         return (
-            OSmOSE.config.resample_quality_setting["upsample"]
+            OSmOSE.config.resample_quality_settings["upsample"]
             if target_sr > origin_sr
-            else OSmOSE.config.resample_quality_setting["downsample"]
+            else OSmOSE.config.resample_quality_settings["downsample"]
         )
 
     monkeypatch.setattr(audio_utils, "resample", resample_mkptch)
