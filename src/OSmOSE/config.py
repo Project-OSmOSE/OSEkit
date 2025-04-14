@@ -62,3 +62,8 @@ _dataset_paths = {
     "LTAS": Path("processed/LTAS"),
 }
 DATASET_PATHS = namedtuple("dataset_paths", _dataset_paths.keys())(**_dataset_paths)
+
+resample_quality_settings = {
+    "downsample": "QQ",
+    "upsample": "MQ",
+}

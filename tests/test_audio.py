@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import logging
 from pathlib import Path
 from typing import Literal
@@ -10,12 +11,14 @@ import pytest
 import soundfile as sf
 from pandas import Timestamp
 
-from OSmOSE.config import TIMESTAMP_FORMAT_TEST_FILES
+import OSmOSE
+from OSmOSE.config import TIMESTAMP_FORMAT_TEST_FILES, resample_quality_settings
 from OSmOSE.core_api import audio_file_manager as afm
 from OSmOSE.core_api.audio_data import AudioData
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.audio_file import AudioFile
 from OSmOSE.core_api.audio_item import AudioItem
+from OSmOSE.utils import audio_utils
 from OSmOSE.utils.audio_utils import generate_sample_audio
 
 
@@ -583,6 +586,114 @@ def test_audio_resample_sample_count(
 
 
 @pytest.mark.parametrize(
+    ("audio_files", "downsampling_quality", "upsampling_quality"),
+    [
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            None,
+            None,
+            id="default_qualities",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            "HQ",
+            None,
+            id="downsample_quality_to_HQ",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            None,
+            "QQ",
+            id="upsample_quality_to_QQ",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            "VHQ",
+            "VHQ",
+            id="both_qualities_to_VHQ",
+        ),
+    ],
+    indirect=["audio_files"],
+)
+def test_audio_resample_quality(
+    audio_files: pytest.fixture,
+    monkeypatch: pytest.MonkeyPatch,
+    downsampling_quality: str | None,
+    upsampling_quality: str | None,
+) -> None:
+    importlib.reload(OSmOSE.config)
+
+    files, _ = audio_files
+    af = AudioFile(files[0], strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
+
+    downsampling_default = resample_quality_settings["downsample"]
+    upsampling_default = resample_quality_settings["upsample"]
+
+    if downsampling_quality is not None:
+        OSmOSE.config.resample_quality_settings["downsample"] = downsampling_quality
+    if upsampling_quality is not None:
+        OSmOSE.config.resample_quality_settings["upsample"] = upsampling_quality
+
+    def resample_mkptch(
+        data: np.ndarray,
+        origin_sr: float,
+        target_sr: float,
+    ) -> np.ndarray:
+        return (
+            OSmOSE.config.resample_quality_settings["upsample"]
+            if target_sr > origin_sr
+            else OSmOSE.config.resample_quality_settings["downsample"]
+        )
+
+    monkeypatch.setattr(audio_utils, "resample", resample_mkptch)
+
+    ad = AudioData.from_files([af])
+
+    downsampling_frequency, upsampling_frequency = (
+        ratio * ad.sample_rate for ratio in (0.5, 1.5)
+    )
+
+    assert audio_utils.resample(
+        ad.get_value(),
+        ad.sample_rate,
+        downsampling_frequency,
+    ) == (
+        downsampling_quality
+        if downsampling_quality is not None
+        else downsampling_default
+    )
+    assert audio_utils.resample(
+        ad.get_value(),
+        ad.sample_rate,
+        upsampling_frequency,
+    ) == (upsampling_quality if upsampling_quality is not None else upsampling_default)
+
+
+@pytest.mark.parametrize(
     ("audio_files", "begin", "end", "bound", "duration", "expected_audio_data"),
     [
         pytest.param(
@@ -997,12 +1108,12 @@ def test_audio_dataset_from_files(
 )
 def test_audio_dataset_from_folder_errors_warnings(
     tmp_path: Path,
-    caplog,
+    caplog: pytest.LogCaptureFixture,
     audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
     expected_audio_data: list[np.ndarray],
     corrupted_audio_files: list[str],
     non_audio_files: list[str],
-    error,
+    error: type[Exception],
 ) -> None:
 
     for corrupted_file in corrupted_audio_files:
