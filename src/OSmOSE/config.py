@@ -53,3 +53,8 @@ print_logger = logging.getLogger("printer")
 BUILD_DURATION_DELTA_THRESHOLD = 0.05
 
 FileName: TypeAlias = str | bytes | os.PathLike
+
+resample_quality_settings = {
+    "downsample": "QQ",
+    "upsample": "MQ",
+}
