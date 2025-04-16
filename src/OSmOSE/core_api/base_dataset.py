@@ -118,13 +118,12 @@ class BaseDataset(Generic[TData, TFile], Event):
 
     @folder.setter
     def folder(self, folder: Path) -> None:
-        """Move the dataset to the specified destination folder.
+        """Set the folder in which the dataset files might be written.
 
         Parameters
         ----------
         folder: Path
-            The folder in which the dataset will be moved.
-            It will be created if it does not exist.
+            The folder in which the dataset files might be written.
 
         """
         self._folder = folder

@@ -332,6 +332,33 @@ def test_move_file(
         assert not (tmp_path / filename).exists()
 
 
+def test_dataset_move(
+    tmp_path: Path,
+    base_dataset: BaseDataset,
+) -> None:
+    origin_files = [Path(str(file.path)) for file in base_dataset.files]
+
+    # The starting folder of the dataset is the folder where the files are located
+    assert base_dataset.folder == tmp_path
+
+    destination = tmp_path / "destination"
+    base_dataset.folder = destination
+
+    # Setting the folder shouldn't move the files
+    assert all(file.path.parent == tmp_path for file in base_dataset.files)
+    assert all(file.exists for file in origin_files)
+
+    # Folder should be changed when dataset is moved
+    new_destination = tmp_path / "new_destination"
+    base_dataset.move_files(new_destination)
+
+    assert new_destination.exists()
+    assert new_destination.is_dir()
+    assert base_dataset.folder == new_destination
+    assert all((new_destination / file.name).exists() for file in origin_files)
+    assert not any(file.exists() for file in origin_files)
+
+
 @pytest.mark.parametrize(
     ("files", "bound", "data_duration", "expected_data"),
     [
