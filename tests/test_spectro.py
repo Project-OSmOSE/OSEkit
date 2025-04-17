@@ -458,7 +458,8 @@ def test_spectrogram_sx_dtype(
             ),
             1_024,
             pytest.raises(
-                ValueError, match="The begin of the audio data doesn't match."
+                ValueError,
+                match="The begin of the audio data doesn't match.",
             ),
             id="different_begin",
         ),
@@ -500,7 +501,8 @@ def test_spectrogram_sx_dtype(
             ),
             2_048,
             pytest.raises(
-                ValueError, match="The sample rate of the audio data doesn't match."
+                ValueError,
+                match="The sample rate of the audio data doesn't match.",
             ),
             id="different_sample_rate",
         ),
@@ -522,7 +524,8 @@ def test_spectrogram_sx_dtype(
             ),
             1_024,
             pytest.raises(
-                ValueError, match="The begin of the audio data doesn't match."
+                ValueError,
+                match="The begin of the audio data doesn't match.",
             ),
             id="different_timespan",
         ),
@@ -549,7 +552,8 @@ def test_link_audio_data(
     ad2.sample_rate = ad2_sr
 
     sd = SpectroData.from_audio_data(
-        ad1, ShortTimeFFT(hamming(128), 128, ad1.sample_rate)
+        ad1,
+        ShortTimeFFT(hamming(128), 128, ad1.sample_rate),
     )
 
     assert sd.audio_data is ad1
@@ -563,3 +567,162 @@ def test_link_audio_data(
 
     assert sd.audio_data is not ad1
     assert sd.audio_data is ad2
+
+
+@pytest.mark.parametrize(
+    (
+        "audio_files",
+        "ads1_data_duration",
+        "ads2_data_duration",
+        "ads2_sample_rate",
+        "start_index",
+        "stop_index",
+        "expected_exception",
+    ),
+    [
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 1_024,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            Timedelta(seconds=0.1),
+            Timedelta(seconds=0.1),
+            1_024,
+            None,
+            None,
+            nullcontext(),
+            id="default_indexes_is_full_dataset",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 1_024,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            Timedelta(seconds=0.1),
+            Timedelta(seconds=0.1),
+            1_024,
+            2,
+            6,
+            nullcontext(),
+            id="link_a_part_of_the_data",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 1_024,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            Timedelta(seconds=0.1),
+            Timedelta(seconds=0.1),
+            2_048,
+            None,
+            None,
+            pytest.raises(
+                ValueError, match="The sample rate of the audio data doesn't match.",
+            ),
+            id="different_sample_rate",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 1_024,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            Timedelta(seconds=0.1),
+            Timedelta(seconds=0.5),
+            1_024,
+            None,
+            None,
+            pytest.raises(
+                ValueError,
+                match="The audio dataset doesn't contain the same number of data as the"
+                      " spectro dataset.",
+            ),
+            id="different_number_of_data",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 1_024,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            Timedelta(seconds=0.1),
+            Timedelta(seconds=0.101),
+            1_024,
+            None,
+            None,
+            pytest.raises(ValueError, match="The end of the audio data doesn't match."),
+            id="different_end_of_first_data",
+        ),
+    ],
+    indirect=["audio_files"],
+)
+def test_link_audio_dataset(
+    audio_files: pytest.fixture,
+    tmp_path: pytest.fixture,
+    ads1_data_duration: Timedelta,
+    ads2_data_duration: Timedelta,
+    ads2_sample_rate: float,
+    start_index: int,
+    stop_index: int,
+    expected_exception: type[Exception],
+) -> None:
+
+    ads1 = AudioDataset.from_folder(
+        tmp_path,
+        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+        data_duration=ads1_data_duration,
+    )
+    ads2 = AudioDataset.from_folder(
+        tmp_path,
+        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+        data_duration=ads2_data_duration,
+    )
+    ads2.sample_rate = ads2_sample_rate
+
+    sds = SpectroDataset.from_audio_dataset(
+        ads1, fft=ShortTimeFFT(hamming(128), 128, ads1.sample_rate),
+    )
+
+    with expected_exception as e:
+        assert sds.link_audio_dataset(ads2, first=start_index, last=stop_index) == e
+
+    if type(expected_exception) is not nullcontext:
+        return
+
+    start_index = 0 if start_index is None else start_index
+    stop_index = len(ads1.data) if stop_index is None else stop_index
+
+    for idx, sd in enumerate(sds.data):
+        if idx in range(start_index, stop_index):
+            assert sd.audio_data is not ads1.data[idx]
+            assert sd.audio_data is ads2.data[idx]
+        else:
+            assert sd.audio_data is ads1.data[idx]
+            assert sd.audio_data is not ads2.data[idx]
+
+    # linking should fail if the length of the audio datasets differ:
+    ads_err = AudioDataset(
+        [*ads2.data, ads2.data[0]],
+    )  # Adding one data to the destination ads
+    with pytest.raises(
+        ValueError,
+        match="The audio dataset doesn't contain the same number of data as the "
+              "spectro dataset.",
+    ) as exc_info:
+        assert sds.link_audio_dataset(ads_err) == exc_info
+
+    # linking should fail if any of the data can't be linked
+    ads_err = AudioDataset(ads1.data)
+    ads1.data[-1].sample_rate = ads2_sample_rate * 0.5
+    with pytest.raises(
+        ValueError, match="The sample rate of the audio data doesn't match.",
+    ):
+        assert sds.link_audio_dataset(ads_err) == exc_info
