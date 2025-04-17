@@ -280,7 +280,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         if self.begin != audio_data.begin:
             raise ValueError("The begin of the audio data doesn't match.")
         if self.end != audio_data.end:
-            raise ValueError("The begin of the audio data doesn't match.")
+            raise ValueError("The end of the audio data doesn't match.")
         if self.fft.fs != audio_data.sample_rate:
             raise ValueError("The sample rate of the audio data doesn't match.")
         self.audio_data = audio_data

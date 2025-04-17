@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import nullcontext
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -13,6 +14,7 @@ from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES, TIMESTAMP_FORMAT_TEST
 from OSmOSE.core_api.audio_data import AudioData
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.audio_file import AudioFile
+from OSmOSE.core_api.event import Event
 from OSmOSE.core_api.ltas_data import LTASData
 from OSmOSE.core_api.spectro_data import SpectroData
 from OSmOSE.core_api.spectro_dataset import SpectroDataset
@@ -390,7 +392,8 @@ def test_spectrogram_sx_dtype(
     sd.write(tmp_path / "npz")
 
     sf = SpectroFile(
-        tmp_path / "npz" / f"{sd}.npz", strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES
+        tmp_path / "npz" / f"{sd}.npz",
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
     )
 
     assert sf.sx_dtype is origin_dtype
@@ -406,9 +409,157 @@ def test_spectrogram_sx_dtype(
     if type(expected_value_dtype) is type:
         assert sd2.get_value().dtype == expected_value_dtype
     else:
-        with expected_value_dtype as e:
+        with expected_value_dtype:
             assert sd2.get_value().dtype == expected_value_dtype
 
     sd2.sx_dtype = origin_dtype
 
     assert sd2.get_value().dtype == origin_dtype
+
+
+@pytest.mark.parametrize(
+    ("audio_files", "ad1", "ad1_sr", "ad2", "ad2_sr", "expected_exception"),
+    [
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 1_024,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            Event(
+                begin=pd.Timestamp("2024-01-01 12:00:00"),
+                end=pd.Timestamp("2024-01-01 12:00:01"),
+            ),
+            1_024,
+            Event(
+                begin=pd.Timestamp("2024-01-01 12:00:00"),
+                end=pd.Timestamp("2024-01-01 12:00:01"),
+            ),
+            1_024,
+            nullcontext(),
+            id="equal_audio_data",
+        ),
+        pytest.param(
+            {
+                "duration": 2,
+                "sample_rate": 1_024,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            Event(
+                begin=pd.Timestamp("2024-01-01 12:00:00"),
+                end=pd.Timestamp("2024-01-01 12:00:02"),
+            ),
+            1_024,
+            Event(
+                begin=pd.Timestamp("2024-01-01 12:00:01"),
+                end=pd.Timestamp("2024-01-01 12:00:02"),
+            ),
+            1_024,
+            pytest.raises(
+                ValueError, match="The begin of the audio data doesn't match."
+            ),
+            id="different_begin",
+        ),
+        pytest.param(
+            {
+                "duration": 2,
+                "sample_rate": 1_024,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            Event(
+                begin=pd.Timestamp("2024-01-01 12:00:00"),
+                end=pd.Timestamp("2024-01-01 12:00:02"),
+            ),
+            1_024,
+            Event(
+                begin=pd.Timestamp("2024-01-01 12:00:00"),
+                end=pd.Timestamp("2024-01-01 12:00:01"),
+            ),
+            1_024,
+            pytest.raises(ValueError, match="The end of the audio data doesn't match."),
+            id="different_end",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 1_024,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            Event(
+                begin=pd.Timestamp("2024-01-01 12:00:00"),
+                end=pd.Timestamp("2024-01-01 12:00:01"),
+            ),
+            1_024,
+            Event(
+                begin=pd.Timestamp("2024-01-01 12:00:00"),
+                end=pd.Timestamp("2024-01-01 12:00:01"),
+            ),
+            2_048,
+            pytest.raises(
+                ValueError, match="The sample rate of the audio data doesn't match."
+            ),
+            id="different_sample_rate",
+        ),
+        pytest.param(
+            {
+                "duration": 2,
+                "sample_rate": 1_024,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            Event(
+                begin=pd.Timestamp("2024-01-01 12:00:00"),
+                end=pd.Timestamp("2024-01-01 12:00:01"),
+            ),
+            1_024,
+            Event(
+                begin=pd.Timestamp("2024-01-01 12:00:01"),
+                end=pd.Timestamp("2024-01-01 12:00:02"),
+            ),
+            1_024,
+            pytest.raises(
+                ValueError, match="The begin of the audio data doesn't match."
+            ),
+            id="different_timespan",
+        ),
+    ],
+    indirect=["audio_files"],
+)
+def test_link_audio_data(
+    audio_files: pytest.fixture,
+    tmp_path: Path,
+    ad1: Event,
+    ad1_sr: float,
+    ad2: Event,
+    ad2_sr: float,
+    expected_exception: type[Exception],
+) -> None:
+
+    audio_file, request = audio_files
+    af = AudioFile(audio_file[0], strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
+
+    ad1 = AudioData.from_files([af], begin=ad1.begin, end=ad1.end)
+    ad1.sample_rate = ad1_sr
+
+    ad2 = AudioData.from_files([af], begin=ad2.begin, end=ad2.end)
+    ad2.sample_rate = ad2_sr
+
+    sd = SpectroData.from_audio_data(
+        ad1, ShortTimeFFT(hamming(128), 128, ad1.sample_rate)
+    )
+
+    assert sd.audio_data is ad1
+    assert sd.audio_data is not ad2
+
+    with expected_exception as e:
+        assert sd.link_audio_data(ad2) == e
+
+    if type(expected_exception) is not nullcontext:
+        return
+
+    assert sd.audio_data is not ad1
+    assert sd.audio_data is ad2

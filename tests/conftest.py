@@ -25,18 +25,31 @@ def audio_files(
     tmp_path: Path,
     request: pytest.fixtures.Subrequest,
 ) -> tuple[list[Path], pytest.fixtures.Subrequest]:
-    nb_files = request.param.get("nb_files", 1)
+    nb_files = request.param.get("nb_files", 1) if hasattr(request, "param") else 1
 
     if nb_files == 0:
         return [], request
 
-    sample_rate = request.param.get("sample_rate", 48_000)
-    duration = request.param.get("duration", 1.0)
-    date_begin = request.param.get("date_begin", pd.Timestamp("2000-01-01 00:00:00"))
-    inter_file_duration = request.param.get("inter_file_duration", 0)
-    series_type = request.param.get("series_type", "repeat")
-    format = request.param.get("format", "wav")
-    datetime_format = request.param.get("datetime_format", TIMESTAMP_FORMAT_TEST_FILES)
+    if hasattr(request, "param"):
+        sample_rate = request.param.get("sample_rate", 48_000)
+        duration = request.param.get("duration", 1.0)
+        date_begin = request.param.get(
+            "date_begin", pd.Timestamp("2000-01-01 00:00:00")
+        )
+        inter_file_duration = request.param.get("inter_file_duration", 0)
+        series_type = request.param.get("series_type", "repeat")
+        format = request.param.get("format", "wav")
+        datetime_format = request.param.get(
+            "datetime_format", TIMESTAMP_FORMAT_TEST_FILES
+        )
+    else:
+        sample_rate = 48_000
+        duration = 1.0
+        date_begin = pd.Timestamp("2000-01-01 00:00:00")
+        inter_file_duration = 0
+        series_type = "repeat"
+        format = "wav"
+        datetime_format = TIMESTAMP_FORMAT_TEST_FILES
 
     nb_samples = int(round(duration * sample_rate))
     data = generate_sample_audio(
@@ -138,7 +151,9 @@ def base_dataset(tmp_path: Path) -> BaseDataset:
     for file in files:
         file.touch()
     timestamps = pd.date_range(
-        start=pd.Timestamp("2000-01-01 00:00:00"), freq="1s", periods=5
+        start=pd.Timestamp("2000-01-01 00:00:00"),
+        freq="1s",
+        periods=5,
     )
 
     bfs = [
