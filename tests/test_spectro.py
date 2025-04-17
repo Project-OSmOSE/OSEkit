@@ -623,7 +623,8 @@ def test_link_audio_data(
             None,
             None,
             pytest.raises(
-                ValueError, match="The sample rate of the audio data doesn't match.",
+                ValueError,
+                match="The sample rate of the audio data doesn't match.",
             ),
             id="different_sample_rate",
         ),
@@ -642,7 +643,7 @@ def test_link_audio_data(
             pytest.raises(
                 ValueError,
                 match="The audio dataset doesn't contain the same number of data as the"
-                      " spectro dataset.",
+                " spectro dataset.",
             ),
             id="different_number_of_data",
         ),
@@ -688,7 +689,8 @@ def test_link_audio_dataset(
     ads2.sample_rate = ads2_sample_rate
 
     sds = SpectroDataset.from_audio_dataset(
-        ads1, fft=ShortTimeFFT(hamming(128), 128, ads1.sample_rate),
+        ads1,
+        fft=ShortTimeFFT(hamming(128), 128, ads1.sample_rate),
     )
 
     with expected_exception as e:
@@ -715,7 +717,7 @@ def test_link_audio_dataset(
     with pytest.raises(
         ValueError,
         match="The audio dataset doesn't contain the same number of data as the "
-              "spectro dataset.",
+        "spectro dataset.",
     ) as exc_info:
         assert sds.link_audio_dataset(ads_err) == exc_info
 
@@ -723,6 +725,7 @@ def test_link_audio_dataset(
     ads_err = AudioDataset(ads1.data)
     ads1.data[-1].sample_rate = ads2_sample_rate * 0.5
     with pytest.raises(
-        ValueError, match="The sample rate of the audio data doesn't match.",
+        ValueError,
+        match="The sample rate of the audio data doesn't match.",
     ):
         assert sds.link_audio_dataset(ads_err) == exc_info

@@ -1,3 +1,5 @@
+"""Functions used to serialize the API objects to json files."""
+
 import json
 from pathlib import Path
 
@@ -15,7 +17,7 @@ def serialize_json(path: Path, serialized_dict: dict) -> None:
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w") as file:
-        file.write(json.dumps(serialized_dict))
+        file.write(json.dumps(serialized_dict, sort_keys=True, indent=4))
 
 
 def deserialize_json(path: Path) -> dict:
