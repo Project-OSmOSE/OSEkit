@@ -341,7 +341,7 @@ class Dataset:
         return (
             self.folder
             / "processed"
-            / (ads_folder / fft_folder if sds.has_default_name is None else sds.name)
+            / (ads_folder / fft_folder if sds.has_default_name else sds.name)
         )
 
     def _sort_dataset(self, dataset: type[DatasetChild]) -> None:
