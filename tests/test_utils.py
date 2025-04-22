@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 import numpy as np
@@ -9,6 +10,7 @@ import soundfile as sf
 
 from OSmOSE.utils.core_utils import (
     file_indexes_per_batch,
+    locked,
     nb_files_per_batch,
     read_header,
     safe_read,
@@ -258,7 +260,9 @@ def test_move_tree(
     ],
 )
 def test_nb_files_per_batch(
-    total_nb_files: int, nb_batches: int, expected: list[int]
+    total_nb_files: int,
+    nb_batches: int,
+    expected: list[int],
 ) -> None:
     assert (
         nb_files_per_batch(total_nb_files=total_nb_files, nb_batches=nb_batches)
@@ -314,9 +318,52 @@ def test_nb_files_per_batch(
     ],
 )
 def test_file_indexes_per_batch(
-    total_nb_files: int, nb_batches: int, expected: list[tuple[int, int]]
+    total_nb_files: int,
+    nb_batches: int,
+    expected: list[tuple[int, int]],
 ) -> None:
     assert (
         file_indexes_per_batch(total_nb_files=total_nb_files, nb_batches=nb_batches)
         == expected
     )
+
+
+def test_locked(tmp_path: pytest.fixture, monkeypatch: pytest.MonkeyPatch) -> None:
+    file = tmp_path / "file.txt"
+    lock_file = tmp_path / "lock.lock"
+
+    file.touch()
+
+    @locked(lock_file=lock_file)
+    def edit_file(line_to_add: str) -> None:
+
+        # locked decorator should create the lock file
+        assert lock_file.exists()
+
+        with file.open("a") as f:
+            f.write(line_to_add)
+
+    assert not lock_file.exists()
+
+    edit_file("yoyoyo")
+
+    # Lock file should be released
+    assert not lock_file.exists()
+
+    # Decorated function should have been called
+    with file.open("r") as f:
+        assert "yoyoyo" in f.read()
+
+    def sleep_patch(*args: any, **kwargs: any) -> None:
+        msg = "Lock file present."
+        raise PermissionError(msg)
+
+    monkeypatch.setattr(time, "sleep", sleep_patch)
+
+    # time.sleep should not be called if lock file doesn't exist
+    edit_file("coolcoolcool")
+
+    # time.sleep should be called if lock file exists
+    lock_file.touch()
+    with pytest.raises(PermissionError, match="Lock file present.") as e:
+        assert edit_file("") == e

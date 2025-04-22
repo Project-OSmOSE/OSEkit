@@ -16,6 +16,7 @@ from OSmOSE.core_api.base_dataset import BaseDataset
 from OSmOSE.core_api.json_serializer import deserialize_json
 from OSmOSE.core_api.spectro_data import SpectroData
 from OSmOSE.core_api.spectro_file import SpectroFile
+from OSmOSE.utils.core_utils import locked
 
 if TYPE_CHECKING:
 
@@ -156,6 +157,31 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             ),
         )[first:last]:
             sd.link_audio_data(ad)
+
+    def update_json_audio_data(self, first: int, last: int) -> None:
+        """Update the serialized JSON file with the spectro data from first to int.
+
+        The update is done while using the locked decorator.
+        That way, if a SpectroDataset is processed through multiple jobs,
+        each one can update the JSON file safely.
+
+        Parameters
+        ----------
+        first: int
+            Index of the first data to update.
+        last: int
+            Index of the last data to update.
+
+        """
+        json_file = self.folder / f"{self.name}.json"
+
+        @locked(lock_file=self.folder / "lock.lock")
+        def update(first: int, last: int) -> None:
+            sds_to_update = SpectroDataset.from_json(file=json_file)
+            sds_to_update.data[first:last] = self.data[first:last]
+            sds_to_update.write_json(folder=self.folder)
+
+        update(first=first, last=last)
 
     def to_dict(self) -> dict:
         """Serialize a SpectroDataset to a dictionary.

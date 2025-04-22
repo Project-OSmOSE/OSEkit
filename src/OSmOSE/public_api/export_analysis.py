@@ -91,7 +91,8 @@ def write_analysis(
             last=last,
         )
 
-    sds.write_json(sds.folder)
+    # Update the sds from the JSON in case it has already been modified in another job
+    sds.update_json_audio_data(first=first, last=last)
 
 
 if __name__ == "__main__":

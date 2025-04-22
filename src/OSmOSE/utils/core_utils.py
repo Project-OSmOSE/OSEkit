@@ -7,6 +7,7 @@ import os
 import random
 import shutil
 import struct
+import time
 from importlib.resources import as_file
 from importlib.util import find_spec
 from pathlib import Path
@@ -900,7 +901,8 @@ def file_indexes_per_batch(
     Returns
     -------
     list[tuple[int,int]]:
-    A list of tuples representing the start and stop index of files processed by each batch in the analysis.
+    A list of tuples representing the start and stop index of files processed by each
+    batch in the analysis.
 
     Examples
     --------
@@ -909,7 +911,7 @@ def file_indexes_per_batch(
     >>> file_indexes_per_batch(1448,10)
     [(0, 145), (145, 290), (290, 435), (435, 580), (580, 725), (725, 870), (870, 1015), (1015, 1160), (1160, 1304), (1304, 1448)]
 
-    """
+    """  # noqa: E501
     batch_lengths = [
         length
         for length in nb_files_per_batch(total_nb_files, nb_batches)
@@ -952,3 +954,41 @@ def nb_files_per_batch(total_nb_files: int, nb_batches: int) -> list[int]:
         total_nb_files // nb_batches + (1 if i < total_nb_files % nb_batches else 0)
         for i in range(nb_batches)
     ]
+
+
+def locked(lock_file: Path) -> callable:
+    """Use a lock file for managing priorities between processes.
+
+    If the specified lock file already exists, the decorated function execution will be
+    suspended until the lock file is removed.
+
+    The lock_file will then be created before the execution of the decorated function,
+    and removed once the function has been executed.
+
+    Parameters
+    ----------
+    lock_file: Path
+        Path to the lock file.
+
+    """
+
+    def inner(func: callable) -> callable:
+        def wrapper(*args: any, **kwargs: any) -> any:
+
+            # Wait for the lock to be released
+            while lock_file.exists():
+                time.sleep(1)
+
+            # Create lock file
+            lock_file.touch()
+
+            r = func(*args, **kwargs)
+
+            # Release lock file
+            lock_file.unlink()
+
+            return r
+
+        return wrapper
+
+    return inner
