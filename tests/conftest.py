@@ -34,13 +34,17 @@ def audio_files(
         sample_rate = request.param.get("sample_rate", 48_000)
         duration = request.param.get("duration", 1.0)
         date_begin = request.param.get(
-            "date_begin", pd.Timestamp("2000-01-01 00:00:00")
+            "date_begin",
+            pd.Timestamp("2000-01-01 00:00:00"),
         )
         inter_file_duration = request.param.get("inter_file_duration", 0)
         series_type = request.param.get("series_type", "repeat")
+        sine_frequency = request.param.get("sine_frequency", 1000.0)
+        magnitude = request.param.get("magnitude", 1.0)
         format = request.param.get("format", "wav")
         datetime_format = request.param.get(
-            "datetime_format", TIMESTAMP_FORMAT_TEST_FILES
+            "datetime_format",
+            TIMESTAMP_FORMAT_TEST_FILES,
         )
     else:
         sample_rate = 48_000
@@ -48,6 +52,8 @@ def audio_files(
         date_begin = pd.Timestamp("2000-01-01 00:00:00")
         inter_file_duration = 0
         series_type = "repeat"
+        sine_frequency = 1000.0
+        magnitude = 1.0
         format = "wav"
         datetime_format = TIMESTAMP_FORMAT_TEST_FILES
 
@@ -56,6 +62,9 @@ def audio_files(
         nb_files=nb_files,
         nb_samples=nb_samples,
         series_type=series_type,
+        sine_frequency=sine_frequency,
+        max_value=magnitude,
+        duration=duration,
     )
     files = []
     file_begin_timestamps = (

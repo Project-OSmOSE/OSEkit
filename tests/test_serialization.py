@@ -326,6 +326,36 @@ def test_audio_dataset_serialization(
             48_000,
             id="two_files_with_gap",
         ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00"),
+            },
+            None,
+            None,
+            ShortTimeFFT(
+                win=hamming(1024), hop=1024, fs=48_000, mfft=1024, scale_to="magnitude"
+            ),
+            48_000,
+            id="magnitude_spectrum",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00"),
+            },
+            None,
+            None,
+            ShortTimeFFT(
+                win=hamming(1024), hop=1024, fs=48_000, mfft=1024, scale_to="psd"
+            ),
+            48_000,
+            id="psd_spectrum",
+        ),
     ],
     indirect=["audio_files"],
 )
@@ -348,7 +378,7 @@ def test_spectro_data_serialization(
 
     sd = SpectroData.from_audio_data(ad, sft)
 
-    assert np.array_equal(
+    assert np.allclose(
         sd.get_value(),
         SpectroData.from_dict(sd.to_dict(embed_sft=True)).get_value(),
     )

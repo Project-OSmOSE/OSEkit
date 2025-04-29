@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, TypeVar
 from OSmOSE.config import resample_quality_settings
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.base_dataset import BaseDataset
+from OSmOSE.core_api.instrument import Instrument
 from OSmOSE.core_api.json_serializer import deserialize_json, serialize_json
 from OSmOSE.core_api.spectro_dataset import SpectroDataset
 from OSmOSE.public_api import Analysis
@@ -51,6 +52,7 @@ class Dataset:
         timezone: str | None = None,
         datasets: dict | None = None,
         job_builder: Job_builder | None = None,
+        instrument: Instrument | None = None,
     ) -> None:
         """Initialize a Dataset."""
         self.folder = folder
@@ -60,6 +62,7 @@ class Dataset:
         self.timezone = timezone
         self.datasets = datasets if datasets is not None else {}
         self.job_builder = job_builder
+        self.instrument = instrument
 
     @property
     def origin_files(self) -> set[AudioFile]:
@@ -84,6 +87,7 @@ class Dataset:
             bound="files",
             timezone=self.timezone,
             name="original",
+            instrument=self.instrument,
         )
         self.datasets[ads.name] = {"class": type(ads).__name__, "dataset": ads}
         move_tree(
@@ -185,6 +189,7 @@ class Dataset:
             end=end,
             data_duration=data_duration,
             name=name,
+            instrument=self.instrument,
         )
 
         if sample_rate is not None:
@@ -393,20 +398,15 @@ class Dataset:
                 }
                 for name, dataset in self.datasets.items()
             },
+            "instrument": (
+                None if self.instrument is None else self.instrument.to_dict()
+            ),
             "depth": self.depth,
             "folder": str(self.folder),
             "gps_coordinates": self.gps_coordinates,
             "strptime_format": self.strptime_format,
             "timezone": self.timezone,
         }
-
-    """
-        folder: Path,
-        strptime_format: str,
-        gps_coordinates: str | list | tuple = (0, 0),
-        depth: str | int = 0,
-        timezone: str | None = None,
-    """
 
     @classmethod
     def from_dict(cls, dictionary: dict) -> Dataset:
@@ -440,6 +440,7 @@ class Dataset:
             }
         return cls(
             folder=Path(dictionary["folder"]),
+            instrument=Instrument.from_dict(dictionary["instrument"]),
             strptime_format=dictionary["strptime_format"],
             gps_coordinates=dictionary["gps_coordinates"],
             depth=dictionary["depth"],

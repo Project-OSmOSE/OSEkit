@@ -202,6 +202,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
                     and data.fft.hop == sft["hop"]
                     and data.fft.fs == sft["fs"]
                     and data.fft.mfft == sft["mfft"]
+                    and data.fft.scaling == sft["scale_to"]
                 ),
                 None,
             )
@@ -212,6 +213,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
                     "fs": data.fft.fs,
                     "mfft": data.fft.mfft,
                     "spectro_data": [str(data)],
+                    "scale_to": data.fft.scaling,
                 }
                 continue
             sft["spectro_data"].append(str(data))

@@ -5,6 +5,8 @@ from copy import deepcopy
 import numpy as np
 import pytest
 from pandas import Timedelta, Timestamp
+from scipy.signal import ShortTimeFFT
+from scipy.signal.windows import hamming
 
 from OSmOSE.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES,
@@ -13,6 +15,8 @@ from OSmOSE.config import (
 )
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.event import Event
+from OSmOSE.core_api.instrument import Instrument
+from OSmOSE.core_api.spectro_dataset import SpectroDataset
 from OSmOSE.public_api.dataset import Analysis, Dataset
 
 
@@ -462,3 +466,144 @@ def test_reshape(
     assert json_file.exists()
     deserialized_ads = AudioDataset.from_json(json_file)
     assert deserialized_ads == ads
+
+
+@pytest.mark.parametrize(
+    (
+        "audio_files",
+        "instrument",
+        "analysis_name",
+        "begin",
+        "end",
+        "data_duration",
+        "sample_rate",
+        "analysis",
+        "fft",
+        "expected_level",
+    ),
+    [
+        pytest.param(
+            {
+                "duration": 3,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00"),
+                "series_type": "sine",
+                "sine_frequency": 1_000,
+                "magnitude": 0.1,
+            },
+            Instrument(end_to_end_db=150),
+            "pingu",
+            Timestamp("2024-01-01 12:00:00"),
+            Timestamp("2024-01-01 12:00:01"),
+            Timedelta(seconds=1.0),
+            24_000,
+            Analysis.AUDIO | Analysis.SPECTROGRAM,
+            ShortTimeFFT(
+                win=hamming(1024),
+                hop=100,
+                fs=24_000,
+                scale_to="magnitude",
+            ),
+            130,
+            id="all_parameters_without_npz",
+        ),
+        pytest.param(
+            {
+                "duration": 3,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00"),
+                "series_type": "sine",
+                "sine_frequency": 1_000,
+                "magnitude": 0.1,
+            },
+            Instrument(end_to_end_db=150),
+            "pingu",
+            Timestamp("2024-01-01 12:00:00"),
+            Timestamp("2024-01-01 12:00:01"),
+            Timedelta(seconds=1.0),
+            24_000,
+            Analysis.AUDIO | Analysis.MATRIX | Analysis.SPECTROGRAM,
+            ShortTimeFFT(
+                win=hamming(1024),
+                hop=100,
+                fs=24_000,
+                scale_to="magnitude",
+            ),
+            130,
+            id="all_parameters_with_npz",
+        ),
+    ],
+    indirect=["audio_files"],
+)
+def test_serialization(
+    tmp_path: pytest.fixture,
+    audio_files: pytest.fixture,
+    instrument: Instrument | None,
+    analysis_name: str | None,
+    begin: Timestamp | None,
+    end: Timestamp | None,
+    data_duration: Timedelta | None,
+    sample_rate: float | None,
+    analysis: Analysis,
+    fft: ShortTimeFFT | None,
+    expected_level: float | None,
+) -> None:
+    dataset = Dataset(
+        folder=tmp_path,
+        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+        instrument=instrument,
+    )
+    dataset.build()
+    dataset.run_analysis(
+        analysis=analysis,
+        begin=begin,
+        end=end,
+        data_duration=data_duration,
+        sample_rate=sample_rate,
+        name=analysis_name,
+        fft=fft,
+        subtype="DOUBLE",
+    )
+    _, request = audio_files
+    sine_frequency = request.param["sine_frequency"]
+
+    assert analysis_name in dataset.datasets
+
+    is_spectro_analysis = any(
+        spectro in analysis for spectro in (Analysis.MATRIX, Analysis.SPECTROGRAM)
+    )
+
+    if Analysis.AUDIO in analysis and is_spectro_analysis:
+        assert f"{analysis_name}_audio" in dataset.datasets
+
+    if is_spectro_analysis:
+        bin_idx = min(enumerate(fft.f), key=lambda t: abs(t[1] - sine_frequency))[0]
+        sd = dataset.get_dataset(analysis_name).data[0]
+        level_tolerance = 8
+        equalized_sx = sd.to_db(sd.get_value())
+        computed_level = equalized_sx[bin_idx, :].mean()
+        assert abs(computed_level - expected_level) < level_tolerance
+
+    deserialized = Dataset.from_json(tmp_path / "dataset.json")
+
+    for (t_o, d_o), (t_d, d_d) in list(
+        zip(
+            sorted(dataset.datasets.items(), key=lambda d: d[0]),
+            sorted(deserialized.datasets.items(), key=lambda d: d[0]),
+        ),
+    ):
+        # Same analysis dataset type
+        assert t_o == t_d
+
+        if t_o is AudioDataset:
+            assert np.array_equal(
+                d_o.data[0].get_value_calibrated(),
+                d_d.data[0].get_value_calibrated(),
+            )
+        if t_o is SpectroDataset:
+            assert np.array_equal(
+                d_o.data[0].to_db(d_o.data[0].get_value()),
+                d_d.data[0].to_db(d_d.data[0].get_value()),
+            )

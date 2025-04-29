@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import soundfile as sf
 import soxr
+from pandas import Timedelta
 
 from OSmOSE.config import (
     AUDIO_METADATA,
@@ -140,9 +141,11 @@ def check_audio(
 def generate_sample_audio(
     nb_files: int,
     nb_samples: int,
-    series_type: Literal["repeat", "increase"] = "repeat",
+    series_type: Literal["repeat", "increase", "sine"] = "repeat",
+    sine_frequency: float = 1000.0,
     min_value: float = 0.0,
     max_value: float = 1.0,
+    duration: float = 1.0,
     dtype: np.dtype = np.float64,
 ) -> list[np.ndarray]:
     """Generate sample audio data.
@@ -153,14 +156,21 @@ def generate_sample_audio(
         Number of audio data to generate.
     nb_samples: int
         Number of samples per audio data.
-    series_type: Literal["repeat", "increase"] (Optional)
+    series_type: Literal["repeat", "increase", "sine"] (Optional)
         "repeat": audio data contain the same linear values from min to max.
         "increase": audio data contain increasing values from min to max.
+        "sine": audio data contain sine waves with a peak value of max_value.
         Defaults to "repeat".
+    sine_frequency: float (Optional)
+        Frequency of the sine waves.
+        Has no effect if series_type is not "sine".
     min_value: float
         Minimum value of the audio data.
     max_value: float
         Maximum value of the audio data.
+    duration: float
+        Duration of the audio data in seconds.
+        Used to compute the frequency of sine waves.
     dtype: np.dtype
         The type of the output array.
 
@@ -170,6 +180,8 @@ def generate_sample_audio(
         The generated audio data.
 
     """
+    if duration is None:
+        duration = Timedelta(seconds=1)
     if series_type == "repeat":
         return np.split(
             np.tile(
@@ -181,6 +193,15 @@ def generate_sample_audio(
     if series_type == "increase":
         return np.split(
             np.linspace(min_value, max_value, nb_samples * nb_files, dtype=dtype),
+            nb_files,
+        )
+    if series_type == "sine":
+        t = np.linspace(0, duration, nb_samples)
+        return np.split(
+            np.tile(
+                np.sin(2 * np.pi * sine_frequency * t, dtype=dtype) * max_value,
+                nb_files,
+            ),
             nb_files,
         )
     return np.split(np.empty(nb_samples * nb_files, dtype=dtype), nb_files)
