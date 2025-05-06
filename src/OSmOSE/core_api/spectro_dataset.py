@@ -280,7 +280,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         name: str | None = None,
         **kwargs: any,
     ) -> SpectroDataset:
-        """Return a SpectroDataset from a folder containing the audio files.
+        """Return a SpectroDataset from a folder containing the spectro files.
 
         Parameters
         ----------
