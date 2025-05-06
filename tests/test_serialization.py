@@ -519,7 +519,15 @@ def test_spectro_data_serialization(
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "data_duration", "sample_rate", "sfts", "name"),
+    (
+        "audio_files",
+        "data_duration",
+        "sample_rate",
+        "sfts",
+        "instrument",
+        "v_lim",
+        "name",
+    ),
     [
         pytest.param(
             {
@@ -530,6 +538,8 @@ def test_spectro_data_serialization(
             Timedelta(seconds=1),
             48_000,
             [ShortTimeFFT(win=hamming(1024), hop=1024, fs=48_000, mfft=1024)],
+            None,
+            None,
             None,
             id="one_spectro_data",
         ),
@@ -543,7 +553,51 @@ def test_spectro_data_serialization(
             48_000,
             [ShortTimeFFT(win=hamming(1024), hop=1024, fs=48_000, mfft=1024)],
             None,
+            None,
+            None,
             id="ten_spectro_data_one_sft",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+            },
+            Timedelta(seconds=0.1),
+            48_000,
+            [ShortTimeFFT(win=hamming(1024), hop=1024, fs=48_000, mfft=1024)],
+            Instrument(end_to_end_db=150.0),
+            None,
+            None,
+            id="specified_instrument",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+            },
+            Timedelta(seconds=0.1),
+            48_000,
+            [ShortTimeFFT(win=hamming(1024), hop=1024, fs=48_000, mfft=1024)],
+            None,
+            (-100.0, 0.0),
+            None,
+            id="specified_v_lim",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+            },
+            Timedelta(seconds=0.1),
+            48_000,
+            [ShortTimeFFT(win=hamming(1024), hop=1024, fs=48_000, mfft=1024)],
+            Instrument(end_to_end_db=150.0),
+            (0.0, 150.0),
+            None,
+            id="specified_instrument_and_v_lim",
         ),
         pytest.param(
             {
@@ -558,6 +612,8 @@ def test_spectro_data_serialization(
                 ShortTimeFFT(win=hann(1024), hop=512, fs=48_000, mfft=2048),
             ],
             None,
+            None,
+            None,
             id="ten_spectro_data_two_sfts",
         ),
     ],
@@ -569,6 +625,8 @@ def test_spectro_dataset_serialization(
     data_duration: Timestamp | None,
     sample_rate: float | list[float],
     sfts: list[ShortTimeFFT],
+    instrument: Instrument | None,
+    v_lim: tuple[float, float] | None,
     name: str | None,
 ) -> None:
 
@@ -576,11 +634,14 @@ def test_spectro_dataset_serialization(
         tmp_path,
         strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
         data_duration=data_duration,
+        instrument=instrument,
     )
 
     ads.sample_rate = sample_rate
 
-    sds = SpectroDataset.from_audio_dataset(audio_dataset=ads, fft=sfts[0], name=name)
+    sds = SpectroDataset.from_audio_dataset(
+        audio_dataset=ads, fft=sfts[0], name=name, v_lim=v_lim
+    )
     for idx, sd in enumerate(sds.data):  # Apply different SFTs to the sds data
         sd.fft = sfts[idx // (len(sds.data) // len(sfts))]
 
@@ -595,6 +656,11 @@ def test_spectro_dataset_serialization(
         np.array_equal(sd.get_value(), sd2.get_value())
         for sd, sd2 in zip(sds.data, sds2.data)
     )
+    assert all(sd.db_ref == sd2.db_ref for sd, sd2 in zip(sds.data, sds2.data))
+    assert all(
+        np.array_equal(sd.to_db(sd.get_value()), sd2.to_db(sd2.get_value()))
+        for sd, sd2 in zip(sds.data, sds2.data)
+    )
 
     # Deserialized spectro data that share a same SFT should point to the same instance
     if len(sds2.data) > 1:
@@ -605,15 +671,18 @@ def test_spectro_dataset_serialization(
     for sd in sds.data:
         sd.write(tmp_path)
 
-    sds3 = SpectroDataset.from_files(
-        [
-            SpectroFile(file, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES)
-            for file in tmp_path.glob("*.npz")
-        ],
+    sds3 = SpectroDataset.from_folder(
+        tmp_path,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
         data_duration=data_duration,
     )
 
     assert all(
         np.array_equal(sd.get_value(), sd3.get_value())
+        for sd, sd3 in zip(sds.data, sds3.data)
+    )
+    assert all(sd.db_ref == sd3.db_ref for sd, sd3 in zip(sds.data, sds3.data))
+    assert all(
+        np.array_equal(sd.to_db(sd.get_value()), sd3.to_db(sd3.get_value()))
         for sd, sd3 in zip(sds.data, sds3.data)
     )
