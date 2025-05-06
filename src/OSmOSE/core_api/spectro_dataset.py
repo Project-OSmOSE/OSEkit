@@ -356,13 +356,17 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         audio_dataset: AudioDataset,
         fft: ShortTimeFFT,
         name: str | None = None,
+        v_lim: tuple[float, float] | None = None,
     ) -> SpectroDataset:
         """Return a SpectroDataset object from an AudioDataset object.
 
         The SpectroData is computed from the AudioData using the given fft.
         """
         return cls(
-            data=[SpectroData.from_audio_data(d, fft) for d in audio_dataset.data],
+            data=[
+                SpectroData.from_audio_data(data=d, fft=fft, v_lim=v_lim)
+                for d in audio_dataset.data
+            ],
             name=name,
         )
 
