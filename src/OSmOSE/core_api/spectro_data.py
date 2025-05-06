@@ -442,8 +442,6 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         instance = cls.from_base_data(
             BaseData.from_files(files, begin, end),
             fft=files[0].get_fft(),
-            db_ref=files[0].db_ref,
-            v_lim=files[0].v_lim,
         )
         if not any(file.sx_dtype is complex for file in files):
             instance.sx_dtype = float
@@ -454,8 +452,6 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         cls,
         data: BaseData,
         fft: ShortTimeFFT,
-        db_ref: float | None = None,
-        v_lim: tuple[float, float] | None = None,
     ) -> SpectroData:
         """Return an SpectroData object from a BaseData object.
 
@@ -472,6 +468,9 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             The SpectroData object.
 
         """
+        items = [SpectroItem.from_base_item(item) for item in data.items]
+        db_ref = next((f.file.db_ref for f in items if f.file.db_ref is not None), None)
+        v_lim = next((f.file.v_lim for f in items if f.file.v_lim is not None), None)
         return cls(
             [SpectroItem.from_base_item(item) for item in data.items],
             fft=fft,
@@ -494,6 +493,9 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             Audio data from which the SpectroData should be computed.
         fft: ShortTimeFFT
             The ShortTimeFFT used to compute the spectrogram.
+        v_lim: tuple[float,float]
+            Lower and upper limits (in dB) of the colormap used
+            for plotting the spectrogram.
 
         Returns
         -------
@@ -502,7 +504,11 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         """
         return cls(
-            audio_data=data, fft=fft, begin=data.begin, end=data.end, v_lim=v_lim
+            audio_data=data,
+            fft=fft,
+            begin=data.begin,
+            end=data.end,
+            v_lim=v_lim,
         )
 
     def to_dict(self, embed_sft: bool = True) -> dict:
@@ -577,7 +583,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         if dictionary["audio_data"] is None:
             base_data = BaseData.from_dict(dictionary)
-            return cls.from_base_data(base_data, sft)
+            return cls.from_base_data(data=base_data, fft=sft)
 
         audio_data = AudioData.from_dict(dictionary["audio_data"])
         return cls.from_audio_data(audio_data, sft, v_lim=dictionary["v_lim"])

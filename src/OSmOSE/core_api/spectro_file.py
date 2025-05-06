@@ -78,7 +78,7 @@ class SpectroFile(BaseFile):
             mfft = data["mfft"][0]
             timestamps = str(data["timestamps"])
             db_ref = data["db_ref"][0]
-            v_lim = data["v_lim"]
+            v_lim = tuple(data["v_lim"])
             is_complex = np.iscomplexobj(data["sx"])
 
         self.sample_rate = sample_rate
