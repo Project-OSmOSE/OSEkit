@@ -130,6 +130,7 @@ class Dataset:
         name: str | None = None,
         subtype: str | None = None,
         fft: ShortTimeFFT | None = None,
+        v_lim: tuple[float, float] | None = None,
     ) -> None:
         """Create a new analysis dataset from the original audio files.
 
@@ -172,6 +173,9 @@ class Dataset:
             or Analysis.SPECTROGRAM is in analysis.
             This parameter has no effect if neither Analysis.MATRIX
             nor Analysis.SPECTROGRAM is in the analysis.
+        v_lim: tuple[float, float] | None
+            Limits (in dB) of the colormap used for plotting the spectrogram.
+            Has no effect if Analysis.SPECTROGRAM is not in analysis.
 
         """
         is_spectro = any(
@@ -206,6 +210,7 @@ class Dataset:
                 audio_dataset=ads,
                 fft=fft,
                 name=name,
+                v_lim=v_lim,
             )
             self._add_spectro_dataset(sds=sds)
 
