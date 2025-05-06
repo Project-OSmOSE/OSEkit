@@ -78,6 +78,7 @@ class SpectroFile(BaseFile):
             mfft = data["mfft"][0]
             timestamps = str(data["timestamps"])
             db_ref = data["db_ref"][0]
+            v_lim = data["v_lim"]
             is_complex = np.iscomplexobj(data["sx"])
 
         self.sample_rate = sample_rate
@@ -96,6 +97,7 @@ class SpectroFile(BaseFile):
         self.sx_dtype = complex if is_complex else float
 
         self.db_ref = db_ref
+        self.v_lim = v_lim
 
     def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray:
         """Return the spectro data between start and stop from the file.

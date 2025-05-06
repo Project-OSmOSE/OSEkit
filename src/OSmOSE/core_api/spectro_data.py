@@ -42,6 +42,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         end: Timestamp | None = None,
         fft: ShortTimeFFT | None = None,
         db_ref: float | None = None,
+        v_lim: tuple[float, float] | None = None,
     ) -> None:
         """Initialize a SpectroData from a list of SpectroItems.
 
@@ -59,6 +60,11 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             Set the end of the empty data.
         fft: ShortTimeFFT
             The short time FFT used for computing the spectrogram.
+        db_ref: float | None
+            Reference value for computing sx values in decibel.
+        v_lim: tuple[float,float]
+            Lower and upper limits (in dB) of the colormap used
+            for plotting the spectrogram.
 
         """
         super().__init__(items=items, begin=begin, end=end)
@@ -66,6 +72,11 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         self.fft = fft
         self._sx_dtype = complex
         self._db_ref = db_ref
+        self._v_lim = (
+            v_lim
+            if v_lim is not None
+            else (-120.0, 0.0) if db_ref is None else (0.0, 170.0)
+        )
 
     @staticmethod
     def get_default_ax() -> plt.Axes:
@@ -155,6 +166,15 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
     def db_ref(self, db_ref: float) -> None:
         self._db_ref = db_ref
 
+    @property
+    def v_lim(self) -> tuple[float, float]:
+        """Limits (in dB) of the colormap used for plotting the spectrogram."""
+        return self._v_lim
+
+    @v_lim.setter
+    def v_lim(self, v_lim: tuple[float, float]) -> None:
+        self._v_lim = v_lim
+
     def __str__(self) -> str:
         """Overwrite __str__."""
         return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ)
@@ -199,7 +219,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         time = np.arange(sx.shape[1]) * self.duration.total_seconds() / sx.shape[1]
         freq = self.fft.f
 
-        ax.pcolormesh(time, freq, sx, vmin=0, vmax=100)
+        ax.pcolormesh(time, freq, sx, vmin=self._v_lim[0], vmax=self._v_lim[1])
 
     def to_db(self, sx: np.ndarray) -> np.ndarray:
         """Convert the sx values to dB.
@@ -278,6 +298,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         fs = [self.fft.fs]
         mfft = [self.fft.mfft]
         db_ref = [self.db_ref]
+        v_lim = self._v_lim
         timestamps = (str(t) for t in (self.begin, self.end))
         np.savez(
             file=folder / f"{self}.npz",
@@ -289,6 +310,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             sx=sx,
             mfft=mfft,
             db_ref=db_ref,
+            v_lim=v_lim,
             timestamps="_".join(timestamps),
         )
         if link:
@@ -421,6 +443,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             BaseData.from_files(files, begin, end),
             fft=files[0].get_fft(),
             db_ref=files[0].db_ref,
+            v_lim=files[0].v_lim,
         )
         if not any(file.sx_dtype is complex for file in files):
             instance.sx_dtype = float
@@ -432,6 +455,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         data: BaseData,
         fft: ShortTimeFFT,
         db_ref: float | None = None,
+        v_lim: tuple[float, float] | None = None,
     ) -> SpectroData:
         """Return an SpectroData object from a BaseData object.
 
@@ -452,10 +476,16 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             [SpectroItem.from_base_item(item) for item in data.items],
             fft=fft,
             db_ref=db_ref,
+            v_lim=v_lim,
         )
 
     @classmethod
-    def from_audio_data(cls, data: AudioData, fft: ShortTimeFFT) -> SpectroData:
+    def from_audio_data(
+        cls,
+        data: AudioData,
+        fft: ShortTimeFFT,
+        v_lim: tuple[float, float] | None = None,
+    ) -> SpectroData:
         """Instantiate a SpectroData object from a AudioData object.
 
         Parameters
@@ -471,7 +501,9 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             The SpectroData object.
 
         """
-        return cls(audio_data=data, fft=fft, begin=data.begin, end=data.end)
+        return cls(
+            audio_data=data, fft=fft, begin=data.begin, end=data.end, v_lim=v_lim
+        )
 
     def to_dict(self, embed_sft: bool = True) -> dict:
         """Serialize a SpectroData to a dictionary.
@@ -513,7 +545,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
                 else None
             ),
         }
-        return base_dict | audio_dict | sft_dict
+        return base_dict | audio_dict | sft_dict | {"v_lim": self.v_lim}
 
     @classmethod
     def from_dict(
@@ -548,4 +580,4 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             return cls.from_base_data(base_data, sft)
 
         audio_data = AudioData.from_dict(dictionary["audio_data"])
-        return cls.from_audio_data(audio_data, sft)
+        return cls.from_audio_data(audio_data, sft, v_lim=dictionary["v_lim"])
