@@ -8,6 +8,7 @@ It has additionnal metadata that can be exported, e.g. to APLOSE.
 
 from __future__ import annotations
 
+import random
 import shutil
 import sys
 from pathlib import Path
@@ -18,8 +19,9 @@ from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.base_dataset import BaseDataset
 from OSmOSE.core_api.instrument import Instrument
 from OSmOSE.core_api.json_serializer import deserialize_json, serialize_json
+from OSmOSE.core_api.spectro_data import SpectroData
 from OSmOSE.core_api.spectro_dataset import SpectroDataset
-from OSmOSE.public_api import Analysis
+from OSmOSE.public_api.analysis import Analysis, AnalysisType
 from OSmOSE.utils.core_utils import (
     file_indexes_per_batch,
     get_umask,
@@ -27,8 +29,6 @@ from OSmOSE.utils.core_utils import (
 from OSmOSE.utils.path_utils import move_tree
 
 if TYPE_CHECKING:
-    from pandas import Timedelta, Timestamp
-    from scipy.signal import ShortTimeFFT
 
     from OSmOSE.core_api.audio_file import AudioFile
     from OSmOSE.job import Job_builder
@@ -120,17 +120,47 @@ class Dataset:
 
         self.datasets = {}
 
-    def run_analysis(  # noqa: PLR0913
+    def sample_spectra(
         self,
         analysis: Analysis,
-        begin: Timestamp | None = None,
-        end: Timestamp | None = None,
-        data_duration: Timedelta | None = None,
-        sample_rate: float | None = None,
-        name: str | None = None,
-        subtype: str | None = None,
-        fft: ShortTimeFFT | None = None,
-        v_lim: tuple[float, float] | None = None,
+        nb_spectra: int = 1,
+    ) -> list[SpectroData]:
+        """Return a list of sample SpectroData.
+
+        These SpectroData can be plotted to check the validity of the
+        parameters before running a full analysis.
+
+        Parameters
+        ----------
+        analysis: Analysis
+            Analysis for which to generate sample SpectroData objects.
+            See the public_api.Analysis.Analysis docstring for more info.
+        nb_spectra: int
+            The number of sample SpectroData to return.
+
+        Returns
+        -------
+        list[SpectroData]:
+            List of nb_spectra sample SpectroData objects.
+
+        """
+        ads = AudioDataset.from_files(
+            files=list(self.origin_files),
+            begin=analysis.begin,
+            end=analysis.end,
+            data_duration=analysis.data_duration,
+            instrument=self.instrument,
+        )
+        ads.sample_rate = analysis.sample_rate
+        ads = random.sample(ads.data, nb_spectra)
+        return [
+            SpectroData.from_audio_data(data=ad, fft=analysis.fft, v_lim=analysis.v_lim)
+            for ad in ads
+        ]
+
+    def run_analysis(
+        self,
+        analysis: Analysis,
     ) -> None:
         """Create a new analysis dataset from the original audio files.
 
@@ -142,84 +172,44 @@ class Dataset:
         Parameters
         ----------
         analysis: Analysis
-            Flags that should be use to specify the type of analysis to run.
-            See Dataset.Analysis docstring for more info.
-        begin: Timestamp | None
-            The begin of the analysis dataset.
-            Defaulted to the begin of the original dataset.
-        end: Timestamp | None
-            The end of the analysis dataset.
-            Defaulted to the end of the original dataset.
-        data_duration: Timedelta | None
-            Duration of the data within the analysis dataset.
-            If provided, audio data will be evenly distributed between begin and end.
-            Else, one data object will cover the whole time period.
-        sample_rate: float | None
-            Sample rate of the new analysis data.
-            Audio data will be resampled if provided, else the sample rate
-            will be set to the one of the original dataset.
-        name: str | None
-            Name of the analysis dataset.
-            Defaulted as the begin timestamp of the analysis dataset.
-            If both audio and spectro analyses are selected, the audio
-            analysis dataset name will be suffixed with "_audio".
-        subtype: str | None
-            Subtype of the written audio files as provided by the soundfile module.
-            Defaulted as the default 16-bit PCM for WAV audio files.
-            This parameter has no effect if Analysis.AUDIO is not in analysis.
-        fft: ShortTimeFFT | None
-            FFT to use for computing the spectra.
-            This parameter is mandatory if either Analysis.MATRIX
-            or Analysis.SPECTROGRAM is in analysis.
-            This parameter has no effect if neither Analysis.MATRIX
-            nor Analysis.SPECTROGRAM is in the analysis.
-        v_lim: tuple[float, float] | None
-            Limits (in dB) of the colormap used for plotting the spectrogram.
-            Has no effect if Analysis.SPECTROGRAM is not in analysis.
+            Analysis to run.
+            Contains the analysis type and required info.
+            See the public_api.Analysis.Analysis docstring for more info.
 
         """
-        is_spectro = any(
-            flag in analysis for flag in (Analysis.MATRIX, Analysis.SPECTROGRAM)
-        )
-
-        if is_spectro and fft is None:
-            raise ValueError(
-                "FFT parameter should be given if spectra outputs are selected.",
-            )
-
         ads = AudioDataset.from_files(
             files=list(self.origin_files),
-            begin=begin,
-            end=end,
-            data_duration=data_duration,
-            name=name,
+            begin=analysis.begin,
+            end=analysis.end,
+            data_duration=analysis.data_duration,
+            name=analysis.name,
             instrument=self.instrument,
         )
 
-        if sample_rate is not None:
-            ads.sample_rate = sample_rate
+        if analysis.sample_rate is not None:
+            ads.sample_rate = analysis.sample_rate
 
-        if Analysis.AUDIO in analysis:
-            if is_spectro:
+        if AnalysisType.AUDIO in analysis.analysis_type:
+            if analysis.is_spectro:
                 ads.suffix = "audio"
             self._add_audio_dataset(ads=ads)
 
         sds = None
-        if is_spectro:
+        if analysis.is_spectro:
             sds = SpectroDataset.from_audio_dataset(
                 audio_dataset=ads,
-                fft=fft,
-                name=name,
-                v_lim=v_lim,
+                fft=analysis.fft,
+                name=analysis.name,
+                v_lim=analysis.v_lim,
             )
             self._add_spectro_dataset(sds=sds)
 
         self.export_analysis(
-            analysis=analysis,
+            analysis_type=analysis.analysis_type,
             ads=ads,
             sds=sds,
             link=True,
-            subtype=subtype,
+            subtype=analysis.subtype,
         )
 
         self.write_json()
@@ -249,7 +239,7 @@ class Dataset:
 
     def export_analysis(
         self,
-        analysis: Analysis,
+        analysis_type: AnalysisType,
         ads: AudioDataset | None = None,
         sds: SpectroDataset | None = None,
         link: bool = False,
@@ -275,11 +265,11 @@ class Dataset:
             exported (relative to sds.folder)
         sds: SpectroDataset
             The SpectroDataset on which the data should be written.
-        analysis : Analysis
-            Analysis to be performed.
+        analysis_type : AnalysisType
+            Type of the analysis to be performed.
             AudioDataset and SpectroDataset instances will be
             created depending on the flags.
-            See OSmOSE.public_api.dataset.Analysis docstring for more information.
+            See OSmOSE.public_api.analysis.AnalysisType docstring for more information.
         ads: AudioDataset
             The AudioDataset on which the data should be written.
         link: bool
@@ -293,7 +283,7 @@ class Dataset:
 
         if self.job_builder is None:
             export_analysis.write_analysis(
-                analysis=analysis,
+                analysis_type=analysis_type,
                 ads=ads,
                 sds=sds,
                 link=link,
@@ -312,7 +302,7 @@ class Dataset:
             self.job_builder.build_job_file(
                 script_path=export_analysis.__file__,
                 script_args=f"--dataset-json-path {self.folder / 'dataset.json'} "
-                f"--analysis {sum(v.value for v in list(analysis))} "
+                f"--analysis {sum(v.value for v in list(analysis_type))} "
                 f"--ads-name {ads.name if ads is not None else ''} "
                 f"--sds-name {sds.name if sds is not None else ''} "
                 f"--subtype {subtype} "

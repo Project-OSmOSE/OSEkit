@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from OSmOSE.config import resample_quality_settings
-from OSmOSE.public_api import Analysis
+from OSmOSE.public_api.analysis import AnalysisType
 from OSmOSE.public_api.dataset import Dataset
 
 if TYPE_CHECKING:
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 def write_analysis(
-    analysis: Analysis,
+    analysis_type: AnalysisType,
     ads: AudioDataset,
     sds: SpectroDataset,
     subtype: str,
@@ -29,9 +29,9 @@ def write_analysis(
 
     Parameters
     ----------
-    analysis: Analysis
+    analysis_type: AnalysisType
         Flags that should be use to specify the type of analysis to run.
-        See Dataset.Analysis docstring for more info.
+        See Analysis.AnalysisType docstring for more info.
     subtype: str | None
         Subtype of the written audio files as provided by the soundfile module.
         Defaulted as the default 16-bit PCM for WAV audio files.
@@ -52,7 +52,7 @@ def write_analysis(
         Index after the last data object to write.
 
     """
-    if Analysis.AUDIO in analysis:
+    if AnalysisType.AUDIO in analysis_type:
         ads.write(
             folder=ads.folder,
             subtype=subtype,
@@ -62,14 +62,20 @@ def write_analysis(
         )
         ads.write_json(ads.folder)
 
-    if Analysis.MATRIX not in analysis and Analysis.SPECTROGRAM not in analysis:
+    if (
+        AnalysisType.MATRIX not in analysis_type
+        and AnalysisType.SPECTROGRAM not in analysis_type
+    ):
         return
 
     # Avoid re-computing the reshaped audio
-    if Analysis.AUDIO in analysis:
+    if AnalysisType.AUDIO in analysis_type:
         sds.link_audio_dataset(ads, first=first, last=last)
 
-    if Analysis.MATRIX in analysis and Analysis.SPECTROGRAM in analysis:
+    if (
+        AnalysisType.MATRIX in analysis_type
+        and AnalysisType.SPECTROGRAM in analysis_type
+    ):
         sds.save_all(
             matrix_folder=sds.folder / matrix_folder_name,
             spectrogram_folder=sds.folder / spectrogram_folder_name,
@@ -77,13 +83,13 @@ def write_analysis(
             first=first,
             last=last,
         )
-    elif Analysis.SPECTROGRAM in analysis:
+    elif AnalysisType.SPECTROGRAM in analysis_type:
         sds.save_spectrogram(
             folder=sds.folder / spectrogram_folder_name,
             first=first,
             last=last,
         )
-    elif Analysis.MATRIX in analysis:
+    elif AnalysisType.MATRIX in analysis_type:
         sds.write(
             folder=sds.folder / matrix_folder_name,
             link=link,
@@ -205,10 +211,10 @@ if __name__ == "__main__":
     )
     subtype = None if args.subtype.lower() == "none" else args.subtype
 
-    analysis = Analysis(args.analysis)
+    analysis_type = AnalysisType(args.analysis)
 
     write_analysis(
-        analysis=analysis,
+        analysis_type=analysis_type,
         ads=ads,
         sds=sds,
         subtype=subtype,

@@ -17,7 +17,8 @@ from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.event import Event
 from OSmOSE.core_api.instrument import Instrument
 from OSmOSE.core_api.spectro_dataset import SpectroDataset
-from OSmOSE.public_api.dataset import Analysis, Dataset
+from OSmOSE.public_api.analysis import Analysis, AnalysisType
+from OSmOSE.public_api.dataset import Dataset
 
 
 @pytest.mark.parametrize(
@@ -308,7 +309,7 @@ def test_dataset_build(
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "ads_name", "begin", "end", "data_duration", "sample_rate"),
+    ("audio_files", "analysis"),
     [
         pytest.param(
             {
@@ -317,11 +318,15 @@ def test_dataset_build(
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
-            None,
-            None,
-            None,
-            None,
-            None,
+            Analysis(
+                analysis_type=AnalysisType.AUDIO,
+                name=None,
+                begin=None,
+                end=None,
+                data_duration=None,
+                sample_rate=None,
+                subtype="DOUBLE",
+            ),
             id="same_format_as_original",
         ),
         pytest.param(
@@ -331,11 +336,15 @@ def test_dataset_build(
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
-            "cool",
-            None,
-            None,
-            None,
-            None,
+            Analysis(
+                analysis_type=AnalysisType.AUDIO,
+                name="cool",
+                begin=None,
+                end=None,
+                data_duration=None,
+                sample_rate=None,
+                subtype="DOUBLE",
+            ),
             id="named_dataset",
         ),
         pytest.param(
@@ -345,11 +354,15 @@ def test_dataset_build(
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
-            None,
-            Timestamp("2024-01-01 12:00:02"),
-            Timestamp("2024-01-01 12:00:04"),
-            None,
-            None,
+            Analysis(
+                analysis_type=AnalysisType.AUDIO,
+                name=None,
+                begin=Timestamp("2024-01-01 12:00:02"),
+                end=Timestamp("2024-01-01 12:00:04"),
+                data_duration=None,
+                sample_rate=None,
+                subtype="DOUBLE",
+            ),
             id="part_of_the_timespan",
         ),
         pytest.param(
@@ -359,11 +372,15 @@ def test_dataset_build(
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
-            None,
-            None,
-            None,
-            Timedelta(seconds=1),
-            None,
+            Analysis(
+                analysis_type=AnalysisType.AUDIO,
+                name=None,
+                begin=None,
+                end=None,
+                data_duration=Timedelta(seconds=1),
+                sample_rate=None,
+                subtype="DOUBLE",
+            ),
             id="resize_data_with_data_duration",
         ),
         pytest.param(
@@ -373,11 +390,15 @@ def test_dataset_build(
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
-            None,
-            None,
-            None,
-            None,
-            24_000,
+            Analysis(
+                analysis_type=AnalysisType.AUDIO,
+                name=None,
+                begin=None,
+                end=None,
+                data_duration=None,
+                sample_rate=24_000,
+                subtype="DOUBLE",
+            ),
             id="reshaping_data",
         ),
         pytest.param(
@@ -387,11 +408,15 @@ def test_dataset_build(
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
-            "fun",
-            Timestamp("2024-01-01 12:00:01"),
-            Timestamp("2024-01-01 12:00:04"),
-            Timedelta(seconds=0.5),
-            24_000,
+            Analysis(
+                analysis_type=AnalysisType.AUDIO,
+                name="fun",
+                begin=Timestamp("2024-01-01 12:00:01"),
+                end=Timestamp("2024-01-01 12:00:04"),
+                data_duration=Timedelta(seconds=0.5),
+                sample_rate=24_000,
+                subtype="DOUBLE",
+            ),
             id="full_reshape",
         ),
     ],
@@ -400,38 +425,28 @@ def test_dataset_build(
 def test_reshape(
     tmp_path: pytest.fixture,
     audio_files: pytest.fixture,
-    ads_name: str | None,
-    begin: Timestamp | None,
-    end: Timestamp | None,
-    data_duration: Timedelta | None,
-    sample_rate: float | None,
+    analysis: Analysis,
 ) -> None:
 
     dataset = Dataset(folder=tmp_path, strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
     dataset.build()
     dataset.run_analysis(
-        analysis=Analysis.AUDIO,
-        begin=begin,
-        end=end,
-        data_duration=data_duration,
-        sample_rate=sample_rate,
-        name=ads_name,
-        subtype="DOUBLE",
+        analysis=analysis,
     )
 
     expected_ads = AudioDataset.from_files(
         list(dataset.origin_dataset.files),
-        begin=begin,
-        end=end,
-        data_duration=data_duration,
-        name=ads_name,
+        begin=analysis.begin,
+        end=analysis.end,
+        data_duration=analysis.data_duration,
+        name=analysis.name,
     )
-    if sample_rate is not None:
-        expected_ads.sample_rate = sample_rate
+    if analysis.sample_rate is not None:
+        expected_ads.sample_rate = analysis.sample_rate
 
     expected_ads_name = (
-        ads_name
-        if ads_name
+        analysis.name
+        if analysis.name
         else f"{expected_ads.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)}"
     )
 
@@ -452,8 +467,8 @@ def test_reshape(
 
     # ads folder should match the ads name
     ads_folder_name = (
-        ads_name
-        if ads_name
+        analysis.name
+        if analysis.name
         else f"{round(ads.data_duration.total_seconds())}_{ads.sample_rate}"
     )
     assert ads.folder.name == ads_folder_name
@@ -472,13 +487,7 @@ def test_reshape(
     (
         "audio_files",
         "instrument",
-        "analysis_name",
-        "begin",
-        "end",
-        "data_duration",
-        "sample_rate",
         "analysis",
-        "fft",
         "expected_level",
     ),
     [
@@ -493,17 +502,20 @@ def test_reshape(
                 "magnitude": 0.1,
             },
             Instrument(end_to_end_db=150),
-            "pingu",
-            Timestamp("2024-01-01 12:00:00"),
-            Timestamp("2024-01-01 12:00:01"),
-            Timedelta(seconds=1.0),
-            24_000,
-            Analysis.AUDIO | Analysis.SPECTROGRAM,
-            ShortTimeFFT(
-                win=hamming(1024),
-                hop=100,
-                fs=24_000,
-                scale_to="magnitude",
+            Analysis(
+                analysis_type=AnalysisType.AUDIO | AnalysisType.SPECTROGRAM,
+                name="pingu",
+                begin=Timestamp("2024-01-01 12:00:00"),
+                end=Timestamp("2024-01-01 12:00:01"),
+                data_duration=Timedelta(seconds=1.0),
+                sample_rate=24_000,
+                fft=ShortTimeFFT(
+                    win=hamming(1024),
+                    hop=100,
+                    fs=24_000,
+                    scale_to="magnitude",
+                ),
+                subtype="DOUBLE",
             ),
             130,
             id="all_parameters_without_npz",
@@ -519,17 +531,22 @@ def test_reshape(
                 "magnitude": 0.1,
             },
             Instrument(end_to_end_db=150),
-            "pingu",
-            Timestamp("2024-01-01 12:00:00"),
-            Timestamp("2024-01-01 12:00:01"),
-            Timedelta(seconds=1.0),
-            24_000,
-            Analysis.AUDIO | Analysis.MATRIX | Analysis.SPECTROGRAM,
-            ShortTimeFFT(
-                win=hamming(1024),
-                hop=100,
-                fs=24_000,
-                scale_to="magnitude",
+            Analysis(
+                analysis_type=AnalysisType.AUDIO
+                | AnalysisType.MATRIX
+                | AnalysisType.SPECTROGRAM,
+                name="pingu",
+                begin=Timestamp("2024-01-01 12:00:00"),
+                end=Timestamp("2024-01-01 12:00:01"),
+                data_duration=Timedelta(seconds=1.0),
+                sample_rate=24_000,
+                fft=ShortTimeFFT(
+                    win=hamming(1024),
+                    hop=100,
+                    fs=24_000,
+                    scale_to="magnitude",
+                ),
+                subtype="DOUBLE",
             ),
             130,
             id="all_parameters_with_npz",
@@ -541,13 +558,7 @@ def test_serialization(
     tmp_path: pytest.fixture,
     audio_files: pytest.fixture,
     instrument: Instrument | None,
-    analysis_name: str | None,
-    begin: Timestamp | None,
-    end: Timestamp | None,
-    data_duration: Timedelta | None,
-    sample_rate: float | None,
     analysis: Analysis,
-    fft: ShortTimeFFT | None,
     expected_level: float | None,
 ) -> None:
     dataset = Dataset(
@@ -558,29 +569,21 @@ def test_serialization(
     dataset.build()
     dataset.run_analysis(
         analysis=analysis,
-        begin=begin,
-        end=end,
-        data_duration=data_duration,
-        sample_rate=sample_rate,
-        name=analysis_name,
-        fft=fft,
-        subtype="DOUBLE",
     )
     _, request = audio_files
     sine_frequency = request.param["sine_frequency"]
 
-    assert analysis_name in dataset.datasets
+    assert analysis.name in dataset.datasets
 
-    is_spectro_analysis = any(
-        spectro in analysis for spectro in (Analysis.MATRIX, Analysis.SPECTROGRAM)
-    )
+    if AnalysisType.AUDIO in analysis.analysis_type and analysis.is_spectro:
+        assert f"{analysis.name}_audio" in dataset.datasets
 
-    if Analysis.AUDIO in analysis and is_spectro_analysis:
-        assert f"{analysis_name}_audio" in dataset.datasets
-
-    if is_spectro_analysis:
-        bin_idx = min(enumerate(fft.f), key=lambda t: abs(t[1] - sine_frequency))[0]
-        sd = dataset.get_dataset(analysis_name).data[0]
+    if analysis.is_spectro:
+        bin_idx = min(
+            enumerate(analysis.fft.f),
+            key=lambda t: abs(t[1] - sine_frequency),
+        )[0]
+        sd = dataset.get_dataset(analysis.name).data[0]
         level_tolerance = 8
         equalized_sx = sd.to_db(sd.get_value())
         computed_level = equalized_sx[bin_idx, :].mean()
@@ -607,3 +610,81 @@ def test_serialization(
                 d_o.data[0].to_db(d_o.data[0].get_value()),
                 d_d.data[0].to_db(d_d.data[0].get_value()),
             )
+
+
+@pytest.mark.parametrize(
+    "analysis_type",
+    [
+        pytest.param(
+            AnalysisType.SPECTROGRAM,
+            id="spectro_only",
+        ),
+        pytest.param(
+            AnalysisType.SPECTROGRAM,
+            id="matrix_only",
+        ),
+        pytest.param(
+            AnalysisType.SPECTROGRAM,
+            id="both_spectral_flags",
+        ),
+    ],
+)
+def test_spectral_analysis_error_if_no_provided_fft(analysis_type: Analysis) -> None:
+    with pytest.raises(
+        ValueError,
+        match="FFT parameter should be given if spectra outputs are selected.",
+    ) as e:
+        assert (
+            Analysis(
+                analysis_type=AnalysisType.SPECTROGRAM,
+            )
+            == e
+        )
+
+
+@pytest.mark.parametrize(
+    ("analysis", "expected"),
+    [
+        pytest.param(
+            Analysis(analysis_type=AnalysisType.AUDIO),
+            False,
+            id="audio_only",
+        ),
+        pytest.param(
+            Analysis(
+                analysis_type=AnalysisType.SPECTROGRAM,
+                fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
+            ),
+            True,
+            id="spectro_only",
+        ),
+        pytest.param(
+            Analysis(
+                analysis_type=AnalysisType.MATRIX,
+                fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
+            ),
+            True,
+            id="matrix_only",
+        ),
+        pytest.param(
+            Analysis(
+                analysis_type=AnalysisType.MATRIX | AnalysisType.SPECTROGRAM,
+                fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
+            ),
+            True,
+            id="matrix_and_spectro",
+        ),
+        pytest.param(
+            Analysis(
+                analysis_type=AnalysisType.MATRIX
+                | AnalysisType.SPECTROGRAM
+                | AnalysisType.AUDIO,
+                fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
+            ),
+            True,
+            id="all_flags",
+        ),
+    ],
+)
+def test_analysis_is_spectro(analysis: Analysis, expected: bool) -> None:
+    assert analysis.is_spectro is expected
