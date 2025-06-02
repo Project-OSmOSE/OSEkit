@@ -223,6 +223,41 @@ class Dataset:
 
         return ads
 
+    def get_analysis_spectrodataset(
+        self, analysis: Analysis, audio_dataset: AudioDataset | None = None
+    ) -> SpectroDataset:
+        """Return a SpectroDataset created from the analysis parameters.
+
+        Parameters
+        ----------
+        analysis: Analysis
+            Analysis for which to generate an AudioDataset object.
+        audio_dataset: AudioDataset|None
+            If provided, the SpectroDataset will be initialized from this
+            AudioDataset. This can be used to edit the analysis (e.g. adding/removing data)
+            before running it.
+
+        Returns
+        -------
+        SpectroDataset:
+            The SpectroDataset that match the analysis parameters.
+            This SpectroDataset can be used, for example, to have a peek at the
+            analysis output before running it.
+
+        """
+        ads = (
+            self.get_analysis_audiodataset(analysis=analysis)
+            if audio_dataset is None
+            else audio_dataset
+        )
+
+        return SpectroDataset.from_audio_dataset(
+            audio_dataset=ads,
+            fft=analysis.fft,
+            name=analysis.name,
+            v_lim=analysis.v_lim,
+        )
+
     def run_analysis(
         self,
         analysis: Analysis,
@@ -259,11 +294,8 @@ class Dataset:
 
         sds = None
         if analysis.is_spectro:
-            sds = SpectroDataset.from_audio_dataset(
-                audio_dataset=ads,
-                fft=analysis.fft,
-                name=analysis.name,
-                v_lim=analysis.v_lim,
+            sds = self.get_analysis_spectrodataset(
+                analysis=analysis, audio_dataset=audio_dataset
             )
             self._add_spectro_dataset(sds=sds)
 
