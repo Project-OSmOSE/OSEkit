@@ -185,7 +185,6 @@ def test_audio_dataset_serialization(
     sample_rate: float | list[float],
     name: str | None,
 ) -> None:
-
     ads = AudioDataset.from_folder(
         tmp_path,
         strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
@@ -194,14 +193,16 @@ def test_audio_dataset_serialization(
     )
 
     if type(sample_rate) is list:
-        for data, sr in zip(ads.data, sample_rate):
+        for data, sr in zip(ads.data, sample_rate, strict=False):
             data.sample_rate = sr
     else:
         ads.sample_rate = sample_rate
 
     assert all(
         np.array_equal(ad.get_value(), ad2.get_value())
-        for ad, ad2 in zip(ads.data, AudioDataset.from_dict(ads.to_dict()).data)
+        for ad, ad2 in zip(
+            ads.data, AudioDataset.from_dict(ads.to_dict()).data, strict=False
+        )
     )
 
     ads.write_json(tmp_path)
@@ -215,7 +216,7 @@ def test_audio_dataset_serialization(
 
     assert all(
         np.array_equal(ad.get_value(), ad2.get_value())
-        for ad, ad2 in zip(ads.data, ads2.data)
+        for ad, ad2 in zip(ads.data, ads2.data, strict=False)
     )
 
 
@@ -629,7 +630,6 @@ def test_spectro_dataset_serialization(
     v_lim: tuple[float, float] | None,
     name: str | None,
 ) -> None:
-
     ads = AudioDataset.from_folder(
         tmp_path,
         strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
@@ -640,7 +640,10 @@ def test_spectro_dataset_serialization(
     ads.sample_rate = sample_rate
 
     sds = SpectroDataset.from_audio_dataset(
-        audio_dataset=ads, fft=sfts[0], name=name, v_lim=v_lim
+        audio_dataset=ads,
+        fft=sfts[0],
+        name=name,
+        v_lim=v_lim,
     )
     for idx, sd in enumerate(sds.data):  # Apply different SFTs to the sds data
         sd.fft = sfts[idx // (len(sds.data) // len(sfts))]
@@ -654,12 +657,14 @@ def test_spectro_dataset_serialization(
     assert sds.has_default_name == sds2.has_default_name
     assert all(
         np.array_equal(sd.get_value(), sd2.get_value())
-        for sd, sd2 in zip(sds.data, sds2.data)
+        for sd, sd2 in zip(sds.data, sds2.data, strict=False)
     )
-    assert all(sd.db_ref == sd2.db_ref for sd, sd2 in zip(sds.data, sds2.data))
+    assert all(
+        sd.db_ref == sd2.db_ref for sd, sd2 in zip(sds.data, sds2.data, strict=False)
+    )
     assert all(
         np.array_equal(sd.to_db(sd.get_value()), sd2.to_db(sd2.get_value()))
-        for sd, sd2 in zip(sds.data, sds2.data)
+        for sd, sd2 in zip(sds.data, sds2.data, strict=False)
     )
 
     # Deserialized spectro data that share a same SFT should point to the same instance
@@ -679,10 +684,12 @@ def test_spectro_dataset_serialization(
 
     assert all(
         np.array_equal(sd.get_value(), sd3.get_value())
-        for sd, sd3 in zip(sds.data, sds3.data)
+        for sd, sd3 in zip(sds.data, sds3.data, strict=False)
     )
-    assert all(sd.db_ref == sd3.db_ref for sd, sd3 in zip(sds.data, sds3.data))
+    assert all(
+        sd.db_ref == sd3.db_ref for sd, sd3 in zip(sds.data, sds3.data, strict=False)
+    )
     assert all(
         np.array_equal(sd.to_db(sd.get_value()), sd3.to_db(sd3.get_value()))
-        for sd, sd3 in zip(sds.data, sds3.data)
+        for sd, sd3 in zip(sds.data, sds3.data, strict=False)
     )

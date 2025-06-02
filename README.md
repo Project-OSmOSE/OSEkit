@@ -8,11 +8,11 @@
 <br>
 <br>
 
-![version](https://img.shields.io/badge/package_version-0.1.7-orange)
+![version](https://img.shields.io/badge/package_version-0.2.5-orange)
 ![PyPI status](https://img.shields.io/pypi/status/ansicolortags.svg)
 ![license](https://img.shields.io/github/license/mashape/apistatus.svg)
 ![Open Source Love](https://img.shields.io/badge/open%20source-♡-lightgrey)
-![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)
+![Python 3.10](https://img.shields.io/badge/python-3.12-blue.svg)
 
 **OSEkit** is an open source suite of tools written in python and dedicated to the management and analysis of data in underwater passive acoustics.
 

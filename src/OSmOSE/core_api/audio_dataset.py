@@ -16,7 +16,6 @@ from OSmOSE.core_api.base_dataset import BaseDataset
 from OSmOSE.core_api.json_serializer import deserialize_json
 
 if TYPE_CHECKING:
-
     import pytz
     from pandas import Timedelta, Timestamp
 
@@ -58,12 +57,13 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             self.instrument = instrument
         else:
             self.instrument = next(
-                (d.instrument for d in data if d.instrument is not None), None
+                (d.instrument for d in data if d.instrument is not None),
+                None,
             )
 
     @property
     def sample_rate(self) -> set[float] | float:
-        """Return the most frequent sample rate among sample rates of the data of this dataset."""
+        """Return the most frequent sample rate among those of this dataset data."""
         sample_rates = [data.sample_rate for data in self.data]
         return max(set(sample_rates), key=sample_rates.count)
 
@@ -74,7 +74,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
 
     @property
     def instrument(self) -> Instrument | None:
-        """Instrument that might be used to obtain acoustic pressure from the wav audio data."""
+        """Instrument that can be used to get acoustic pressure from wav audio data."""
         return self._instrument
 
     @instrument.setter

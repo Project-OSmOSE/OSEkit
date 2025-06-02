@@ -75,7 +75,9 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         self._v_lim = (
             v_lim
             if v_lim is not None
-            else (-120.0, 0.0) if db_ref is None else (0.0, 170.0)
+            else (-120.0, 0.0)
+            if db_ref is None
+            else (0.0, 170.0)
         )
 
     @staticmethod
@@ -320,14 +322,16 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         """Link the SpectroData to a SpectroFile in the folder.
 
         The given folder should contain a file named "str(self).npz".
-        Linking is intended for SpectroData objects that have already been written to disk.
+        Linking is intended for SpectroData objects that have already been
+        written to disk.
         After linking, the SpectroData will have a single item with the same
         properties of the target SpectroFile.
 
         Parameters
         ----------
         folder: Path
-            Folder in which is located the SpectroFile to which the SpectroData instance should be linked.
+            Folder in which is located the SpectroFile to which the SpectroData
+            instance should be linked.
 
         """
         file = SpectroFile(
@@ -380,7 +384,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         ad_split = [
             self.audio_data.split_frames(start_frame=a, stop_frame=b)
-            for a, b in zip(split_frames, split_frames[1:])
+            for a, b in zip(split_frames, split_frames[1:], strict=False)
         ]
         return [SpectroData.from_audio_data(ad, self.fft) for ad in ad_split]
 

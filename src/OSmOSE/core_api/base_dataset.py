@@ -366,7 +366,7 @@ class BaseDataset(Generic[TData, TFile], Event):
 
         if rejected_files:
             rejected_files = "\n\t".join(f.name for f in rejected_files)
-            glc.logger.warn(
+            glc.logger.warning(
                 f"The following files couldn't be parsed:\n\t{rejected_files}",
             )
 

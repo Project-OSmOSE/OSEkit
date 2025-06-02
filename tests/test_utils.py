@@ -3,66 +3,16 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import pytest
-import soundfile as sf
 
 from OSmOSE.utils.core_utils import (
     file_indexes_per_batch,
     locked,
     nb_files_per_batch,
-    read_header,
-    safe_read,
 )
 from OSmOSE.utils.formatting_utils import aplose2raven
 from OSmOSE.utils.path_utils import move_tree
-
-
-@pytest.mark.unit
-@pytest.mark.filterwarnings("ignore:3 NaN detected")
-def test_safe_read(input_dir):
-    rate = 44100  # samples per second
-    duration = 3
-    rng = np.random.default_rng()
-
-    data = rng.standard_normal(duration * rate)
-    sf.write(
-        input_dir.joinpath("nonan.wav"),
-        data,
-        rate,
-        format="WAV",
-        subtype="DOUBLE",
-    )
-
-    assert np.array_equal(data, safe_read(input_dir.joinpath("nonan.wav"))[0])
-
-    nandata = data.copy()
-    expected = data.copy()
-    nandata[0], nandata[137], nandata[2055] = np.nan, np.nan, np.nan
-    expected[0], expected[137], expected[2055] = 0.0, 0.0, 0.0
-    sf.write(
-        input_dir.joinpath("nan.wav"),
-        nandata,
-        rate,
-        format="WAV",
-        subtype="DOUBLE",
-    )
-
-    assert np.array_equal(expected, safe_read(input_dir.joinpath("nan.wav"))[0])
-
-
-@pytest.mark.unit
-def test_read_header(input_dir):
-    sr = 44100
-    frames = float(sr * 3)
-    channels = 1
-    sampwidth = 4
-    size = 529272
-
-    assert (sr, frames, sampwidth, channels, size) == read_header(
-        input_dir.joinpath("test.wav"),
-    )
 
 
 @pytest.fixture
@@ -184,7 +134,6 @@ def test_move_tree(
     destination: Path,
     excluded_files: set[str],
 ) -> None:
-
     for f in files:
         (tmp_path / f).parent.mkdir(exist_ok=True, parents=True)
         (tmp_path / f).touch()
@@ -336,7 +285,6 @@ def test_locked(tmp_path: pytest.fixture, monkeypatch: pytest.MonkeyPatch) -> No
 
     @locked(lock_file=lock_file)
     def edit_file(line_to_add: str) -> None:
-
         # locked decorator should create the lock file
         assert lock_file.exists()
 

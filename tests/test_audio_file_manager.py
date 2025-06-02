@@ -60,7 +60,6 @@ def test_read(
     frames: tuple[int, int],
     expected: np.ndarray,
 ) -> None:
-
     audio_files, _ = audio_files
     afm = AudioFileManager()
     params = {"start": frames[0], "stop": frames[1]}
@@ -191,7 +190,6 @@ def test_switch(
     patch_afm_open: list[Path],
     expected_opened_files: list[int],
 ) -> None:
-
     afm = AudioFileManager()
     audio_files, _ = audio_files
     for file in file_openings:

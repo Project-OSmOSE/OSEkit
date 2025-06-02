@@ -1,12 +1,14 @@
+# Python-generated files
 __pycache__/
-.pytest-cache
-.coverage
-/_site
-*.git
-dist
-.vscode
-ongoing_jobs
-log_job
-archive/
-.github
-.spyproject
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+.python-version
+
+# Pycharm stuff
+.idea/

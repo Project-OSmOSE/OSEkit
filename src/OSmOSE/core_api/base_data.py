@@ -204,7 +204,7 @@ class BaseData(Generic[TItem, TFile], Event):
 
         """
         dates = date_range(self.begin, self.end, periods=nb_subdata + 1)
-        subdata_dates = zip(dates, dates[1:])
+        subdata_dates = zip(dates, dates[1:], strict=False)
         return [
             BaseData.from_files(files=list(self.files), begin=b, end=e)
             for b, e in subdata_dates

@@ -19,7 +19,6 @@ from OSmOSE.core_api.spectro_file import SpectroFile
 from OSmOSE.utils.core_utils import locked
 
 if TYPE_CHECKING:
-
     import pytz
     from pandas import Timedelta, Timestamp
 
@@ -154,6 +153,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             zip(
                 sorted(self.data, key=lambda d: (d.begin, d.end)),
                 sorted(audio_dataset.data, key=lambda d: (d.begin, d.end)),
+                strict=False,
             ),
         )[first:last]:
             sd.link_audio_data(ad)

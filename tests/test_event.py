@@ -300,7 +300,9 @@ def test_fill_event_gaps(events: list[Event], expected: list[Event]) -> None:
     ],
 )
 def test_get_overlapping_events(
-    event: Event, events: list[Event], expected: list[Event]
+    event: Event,
+    events: list[Event],
+    expected: list[Event],
 ) -> None:
     events = sorted(events, key=lambda e: (e.begin, e.end))
 
@@ -308,7 +310,8 @@ def test_get_overlapping_events(
     expected_result = sorted(expected, key=lambda e: e.begin)
 
     assert all(
-        result == expected for result, expected in zip(overlap_result, expected_result)
+        result == expected
+        for result, expected in zip(overlap_result, expected_result, strict=False)
     )
 
     assert len(overlap_result) == len(expected_result)
@@ -318,7 +321,8 @@ def test_get_overlapping_events(
     events = sorted(events, key=lambda e: (e.begin, e.end))
     overlap_result = sorted(event.get_overlapping_events(events), key=lambda e: e.begin)
     assert all(
-        result == expected for result, expected in zip(overlap_result, expected_result)
+        result == expected
+        for result, expected in zip(overlap_result, expected_result, strict=False)
     )
 
     assert len(overlap_result) == len(expected_result)

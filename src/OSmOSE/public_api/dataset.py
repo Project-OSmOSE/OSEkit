@@ -29,7 +29,6 @@ from OSmOSE.utils.core_utils import (
 from OSmOSE.utils.path_utils import move_tree
 
 if TYPE_CHECKING:
-
     from OSmOSE.core_api.audio_file import AudioFile
     from OSmOSE.job import Job_builder
 
@@ -48,13 +47,44 @@ class Dataset:
         folder: Path,
         strptime_format: str,
         gps_coordinates: str | list | tuple = (0, 0),
-        depth: str | int = 0,
+        depth: float = 0.0,
         timezone: str | None = None,
         datasets: dict | None = None,
         job_builder: Job_builder | None = None,
         instrument: Instrument | None = None,
     ) -> None:
-        """Initialize a Dataset."""
+        """Initialize a Dataset.
+
+        Parameters
+        ----------
+        folder: Path
+            Path to the folder containing the original audio files.
+        strptime_format: str
+            The strptime format used in the filenames.
+            It should use valid strftime codes (https://strftime.org/).
+        gps_coordinates: str | list | tuple
+            GPS coordinates of the location were audio files were recorded.
+        depth: float
+            Depth at which the audio files were recorded.
+        timezone: str | None
+            Timezone in which the audio data will be located.
+            If the audio file timestamps are parsed with a tz-aware strptime_format
+            (%z or %Z code), the AudioFiles will be converted from the parsed timezone
+            to the specified timezone.
+        datasets: dict | None
+            Core API datasets that already belong to this dataset.
+            Mainly used for deserialization.
+        job_builder: Job_builder | None
+            If None, analyses from this Dataset will be run locally.
+            Otherwise, PBS job files will be created and submitted when
+            analyses are run.
+            See the OSmOSE.job module for more info.
+        instrument: Instrument | None
+            Instrument that might be used to obtain acoustic pressure from
+            the wav audio data.
+            See the OSmOSE.core_api.instrument module for more info.
+
+        """
         self.folder = folder
         self.strptime_format = strptime_format
         self.gps_coordinates = gps_coordinates

@@ -1,17 +1,19 @@
 """LTASData is a special form of SpectroData.
 
 The Sx values from a LTASData object are computed recursively.
-LTAS should be preferred to classic spectrograms in cases where the audio is really long.
+LTAS should be preferred in cases where the audio is really long.
 In that case, the corresponding number of time bins (scipy.ShortTimeFTT.p_nums) is
 too long for the whole Sx matrix to be computed once.
 
-The LTAS are rather computed recursively. If the number of temporal bins is higher than
-a target p_num value, the audio is split in p_num parts. A separate sft is computed
-on each of these bits and averaged so that the end Sx presents p_num temporal windows.
+The LTAS are rather computed recursively. If the number of temporal bins is higher
+than a target p_num value, the audio is split in p_num parts.
+A separate sft is computed on each of these bits and averaged so that the end Sx
+presents p_num temporal windows.
 
-This averaging is performed recursively: if the audio data is such that after a first split,
-the p_nums for each part still is higher than p_num, the parts are further split and
-each part is replaced with an average of the stft performed within it.
+This averaging is performed recursively:
+if the audio data is such that after a first split, the p_nums for each part
+still is higher than p_num, the parts are further split
+and each part is replaced with an average of the stft performed within it.
 
 """
 
@@ -26,7 +28,6 @@ from tqdm import tqdm
 from OSmOSE.core_api.spectro_data import SpectroData
 
 if TYPE_CHECKING:
-
     from pandas import Timestamp
 
     from OSmOSE.core_api.audio_data import AudioData
@@ -37,17 +38,19 @@ class LTASData(SpectroData):
     """LTASData is a special form of SpectroData.
 
     The Sx values from a LTASData object are computed recursively.
-    LTAS should be preferred to classic spectrograms in cases where the audio is really long.
+    LTAS should be preferred in cases where the audio is really long.
     In that case, the corresponding number of time bins (scipy.ShortTimeFTT.p_nums) is
     too long for the whole Sx matrix to be computed once.
 
-    The LTAS are rather computed recursively. If the number of temporal bins is higher than
-    a target p_num value, the audio is split in p_num parts. A separate sft is computed
-    on each of these bits and averaged so that the end Sx presents p_num temporal windows.
+    The LTAS are rather computed recursively. If the number of temporal bins is higher
+    than a target p_num value, the audio is split in p_num parts.
+    A separate sft is computed on each of these bits and averaged so that the end Sx
+    presents p_num temporal windows.
 
-    This averaging is performed recursively: if the audio data is such that after a first split,
-    the p_nums for each part still is higher than p_num, the parts are further split and
-    each part is replaced with an average of the stft performed within it.
+    This averaging is performed recursively:
+    if the audio data is such that after a first split, the p_nums for each part
+    still is higher than p_num, the parts are further split
+    and each part is replaced with an average of the stft performed within it.
 
     """
 

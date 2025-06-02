@@ -952,7 +952,7 @@ def test_audio_dataset_from_files(
     )
     assert all(
         np.array_equal(data.get_value(), expected)
-        for (data, expected) in zip(dataset.data, expected_audio_data)
+        for (data, expected) in zip(dataset.data, expected_audio_data, strict=False)
     )
 
 
@@ -1115,7 +1115,6 @@ def test_audio_dataset_from_folder_errors_warnings(
     non_audio_files: list[str],
     error: type[Exception],
 ) -> None:
-
     for corrupted_file in corrupted_audio_files:
         (tmp_path / corrupted_file).open("a").close()  # Write empty audio files.
 
@@ -1136,7 +1135,9 @@ def test_audio_dataset_from_folder_errors_warnings(
             )
             assert all(
                 np.array_equal(data.get_value(), expected)
-                for (data, expected) in zip(dataset.data, expected_audio_data)
+                for (data, expected) in zip(
+                    dataset.data, expected_audio_data, strict=False
+                )
             )
         assert all(f in caplog.text for f in corrupted_audio_files)
 
@@ -1294,6 +1295,7 @@ def test_split_data(
         for subdata, data_range in zip(
             data.split(nb_subdata),
             range(0, data.shape, subdata_shape),
+            strict=False,
         ):
             assert np.array_equal(
                 subdata.get_value(),

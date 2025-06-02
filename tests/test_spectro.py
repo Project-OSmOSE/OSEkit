@@ -64,7 +64,7 @@ def test_spectrogram_shape(
         strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
     )
     spectro_dataset = SpectroDataset.from_audio_dataset(dataset, sft)
-    for audio, spectro in zip(dataset.data, spectro_dataset.data):
+    for audio, spectro in zip(dataset.data, spectro_dataset.data, strict=False):
         assert spectro.shape == spectro.get_value().shape
         assert spectro.shape == (sft.f.shape[0], sft.p_num(audio.shape))
 
@@ -131,7 +131,6 @@ def test_spectro_parameters_in_npz_files(
     date_begin: pd.Timestamp,
     sft: ShortTimeFFT,
 ) -> None:
-
     af = next(AudioFile(f, begin=date_begin) for f in tmp_path.glob("*.wav"))
 
     ad = AudioData.from_files([af])
@@ -541,7 +540,6 @@ def test_link_audio_data(
     ad2_sr: float,
     expected_exception: type[Exception],
 ) -> None:
-
     audio_file, request = audio_files
     af = AudioFile(audio_file[0], strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
 
@@ -675,7 +673,6 @@ def test_link_audio_dataset(
     stop_index: int,
     expected_exception: type[Exception],
 ) -> None:
-
     ads1 = AudioDataset.from_folder(
         tmp_path,
         strptime_format=TIMESTAMP_FORMAT_TEST_FILES,

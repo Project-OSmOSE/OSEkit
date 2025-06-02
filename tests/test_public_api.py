@@ -241,7 +241,6 @@ def test_dataset_build(
     timezone: str | None,
     expected_audio_events: list[Event],
 ) -> None:
-
     timestamp_format = (
         TIMESTAMP_FORMAT_TEST_FILES if timestamp_format is None else timestamp_format
     )
@@ -427,7 +426,6 @@ def test_reshape(
     audio_files: pytest.fixture,
     analysis: Analysis,
 ) -> None:
-
     dataset = Dataset(folder=tmp_path, strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
     dataset.build()
     dataset.run_analysis(
@@ -462,6 +460,7 @@ def test_reshape(
         for ad, expected_ad in zip(
             sorted(ads.data, key=lambda ad: ad.begin),
             sorted(expected_ads.data, key=lambda ad: ad.begin),
+            strict=False,
         )
     )
 
@@ -595,6 +594,7 @@ def test_serialization(
         zip(
             sorted(dataset.datasets.items(), key=lambda d: d[0]),
             sorted(deserialized.datasets.items(), key=lambda d: d[0]),
+            strict=False,
         ),
     ):
         # Same analysis dataset type

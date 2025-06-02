@@ -25,7 +25,7 @@ pbshead = """#!/bin/bash
 
 
 @pytest.mark.unit
-def test_build_job_file(output_dir):
+def test_build_job_file(tmp_path: pytest.fixture) -> None:
     script_path = "/path/to/script"
     script_args = "--arg1 value1 --arg2 value2"
     jobname = "test_job"
@@ -36,10 +36,10 @@ def test_build_job_file(output_dir):
         script_path=script_path,
         script_args=script_args,
         jobname=jobname,
-        logdir=output_dir,
+        logdir=tmp_path,
     )
 
-    with open(jb.prepared_jobs[0]["path"]) as f:
+    with jb.prepared_jobs[0]["path"].open() as f:
         text = "".join(f.readlines())
 
     assert pbshead in text

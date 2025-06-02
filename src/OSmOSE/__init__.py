@@ -5,23 +5,16 @@ from pathlib import Path
 import yaml
 
 from OSmOSE import utils
-from OSmOSE.Auxiliary import Auxiliary
-from OSmOSE.config import FileName
-from OSmOSE.Dataset import Dataset
 from OSmOSE.job import Job_builder
-from OSmOSE.Spectrogram import Spectrogram
 
 __all__ = [
-    "Auxiliary",
-    "Dataset",
     "Job_builder",
-    "Spectrogram",
     "utils",
 ]
 
 
 def _setup_logging(
-    config_file: FileName = "logging_config.yaml",
+    config_file="logging_config.yaml",
     default_level: int = logging.INFO,
 ) -> None:
     user_config_file_path = Path(os.getenv("OSMOSE_USER_CONFIG", ".")) / config_file

@@ -469,7 +469,7 @@ class Job_builder:
                     .stdout.decode("utf-8")
                     .rstrip("\n")
                 )
-                print(f'Sent command {" ".join(cmd)}')
+                print(f"Sent command {' '.join(cmd)}")
                 jobid_list.append(jobid)
             elif "slurm" in str(jobinfo["path"]).lower():
                 dep = f"-d afterok:{dependency}" if dependency else ""
