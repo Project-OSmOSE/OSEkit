@@ -688,3 +688,246 @@ def test_spectral_analysis_error_if_no_provided_fft(analysis_type: Analysis) -> 
 )
 def test_analysis_is_spectro(analysis: Analysis, expected: bool) -> None:
     assert analysis.is_spectro is expected
+
+
+@pytest.mark.parametrize(
+    ("audio_files", "instrument", "analysis", "expected_data"),
+    [
+        pytest.param(
+            {
+                "duration": 5,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00"),
+            },
+            None,
+            Analysis(
+                analysis_type=AnalysisType.AUDIO,
+                name=None,
+                begin=None,
+                end=None,
+                data_duration=None,
+                sample_rate=None,
+                subtype="DOUBLE",
+            ),
+            [
+                Event(
+                    begin=Timestamp("2024-01-01 12:00:00"),
+                    end=Timestamp("2024-01-01 12:00:05"),
+                ),
+            ],
+            id="only_one_data",
+        ),
+        pytest.param(
+            {
+                "duration": 5,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00"),
+            },
+            Instrument(end_to_end_db=150),
+            Analysis(
+                analysis_type=AnalysisType.AUDIO,
+                name=None,
+                begin=None,
+                end=None,
+                data_duration=None,
+                sample_rate=None,
+                subtype="DOUBLE",
+            ),
+            [
+                Event(
+                    begin=Timestamp("2024-01-01 12:00:00"),
+                    end=Timestamp("2024-01-01 12:00:05"),
+                ),
+            ],
+            id="ads_has_dataset_instrument",
+        ),
+        pytest.param(
+            {
+                "duration": 5,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00"),
+            },
+            None,
+            Analysis(
+                analysis_type=AnalysisType.AUDIO,
+                name=None,
+                begin=None,
+                end=None,
+                data_duration=Timedelta(seconds=1),
+                sample_rate=None,
+                subtype="DOUBLE",
+            ),
+            [
+                Event(
+                    begin=Timestamp("2024-01-01 12:00:00"),
+                    end=Timestamp("2024-01-01 12:00:01"),
+                ),
+                Event(
+                    begin=Timestamp("2024-01-01 12:00:01"),
+                    end=Timestamp("2024-01-01 12:00:02"),
+                ),
+                Event(
+                    begin=Timestamp("2024-01-01 12:00:02"),
+                    end=Timestamp("2024-01-01 12:00:03"),
+                ),
+                Event(
+                    begin=Timestamp("2024-01-01 12:00:03"),
+                    end=Timestamp("2024-01-01 12:00:04"),
+                ),
+                Event(
+                    begin=Timestamp("2024-01-01 12:00:04"),
+                    end=Timestamp("2024-01-01 12:00:05"),
+                ),
+            ],
+            id="reshaped_ads",
+        ),
+        pytest.param(
+            {
+                "duration": 5,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00"),
+            },
+            None,
+            Analysis(
+                analysis_type=AnalysisType.AUDIO,
+                name=None,
+                begin=None,
+                end=None,
+                data_duration=None,
+                sample_rate=24_000,
+                subtype="DOUBLE",
+            ),
+            [
+                Event(
+                    begin=Timestamp("2024-01-01 12:00:00"),
+                    end=Timestamp("2024-01-01 12:00:05"),
+                ),
+            ],
+            id="resampled_ads",
+        ),
+        pytest.param(
+            {
+                "duration": 5,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00"),
+            },
+            None,
+            Analysis(
+                analysis_type=AnalysisType.AUDIO,
+                name="cool",
+                begin=None,
+                end=None,
+                data_duration=None,
+                sample_rate=None,
+                subtype="DOUBLE",
+            ),
+            [
+                Event(
+                    begin=Timestamp("2024-01-01 12:00:00"),
+                    end=Timestamp("2024-01-01 12:00:05"),
+                ),
+            ],
+            id="named_ads",
+        ),
+        pytest.param(
+            {
+                "duration": 5,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00"),
+            },
+            None,
+            Analysis(
+                analysis_type=AnalysisType.AUDIO,
+                name=None,
+                begin=Timestamp("2024-01-01 12:00:02"),
+                end=Timestamp("2024-01-01 12:00:04"),
+                data_duration=Timedelta(seconds=1),
+                sample_rate=None,
+                subtype="DOUBLE",
+            ),
+            [
+                Event(
+                    begin=Timestamp("2024-01-01 12:00:02"),
+                    end=Timestamp("2024-01-01 12:00:03"),
+                ),
+                Event(
+                    begin=Timestamp("2024-01-01 12:00:03"),
+                    end=Timestamp("2024-01-01 12:00:04"),
+                ),
+            ],
+            id="specified_begin_and_end",
+        ),
+        pytest.param(
+            {
+                "duration": 5,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00"),
+            },
+            None,
+            Analysis(
+                analysis_type=AnalysisType.AUDIO,
+                name="cool",
+                begin=Timestamp("2024-01-01 12:00:02"),
+                end=Timestamp("2024-01-01 12:00:04"),
+                data_duration=Timedelta(seconds=1),
+                sample_rate=24_000,
+                subtype="DOUBLE",
+            ),
+            [
+                Event(
+                    begin=Timestamp("2024-01-01 12:00:02"),
+                    end=Timestamp("2024-01-01 12:00:03"),
+                ),
+                Event(
+                    begin=Timestamp("2024-01-01 12:00:03"),
+                    end=Timestamp("2024-01-01 12:00:04"),
+                ),
+            ],
+            id="full_reshape",
+        ),
+    ],
+    indirect=["audio_files"],
+)
+def test_get_analysis_audiodataset(
+    tmp_path: pytest.fixture,
+    audio_files: pytest.fixture,
+    instrument: Instrument | None,
+    analysis: Analysis,
+    expected_data: list[Event],
+) -> None:
+    dataset = Dataset(
+        folder=tmp_path,
+        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+        instrument=instrument,
+    )
+    dataset.build()
+
+    analysis_ds = dataset.get_analysis_audiodataset(analysis=analysis)
+
+    assert all(
+        ad.begin == e.begin and ad.end == e.end
+        for ad, e in zip(
+            sorted(analysis_ds.data, key=lambda e: e.begin),
+            sorted(expected_data, key=lambda e: e.begin),
+            strict=True,
+        )
+    )
+
+    if analysis.name is not None:
+        assert analysis_ds.name == analysis.name + (
+            "_audio" if analysis.is_spectro else ""
+        )
+    assert (
+        analysis_ds.sample_rate == dataset.origin_dataset.sample_rate
+        if analysis.sample_rate is None
+        else analysis.sample_rate
+    )
+
+    assert analysis_ds.instrument is dataset.instrument

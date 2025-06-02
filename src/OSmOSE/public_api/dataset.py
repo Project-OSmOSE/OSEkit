@@ -188,23 +188,22 @@ class Dataset:
             for ad in ads
         ]
 
-    def run_analysis(
-        self,
-        analysis: Analysis,
-    ) -> None:
-        """Create a new analysis dataset from the original audio files.
-
-        The analysis parameter sets which type(s) of core_api dataset(s) will be
-        created and added to the Dataset.datasets property, plus which output
-        files will be written to disk (reshaped audio files, npz spectra matrices,
-        png spectrograms...).
+    def get_analysis_audiodataset(self, analysis: Analysis) -> AudioDataset:
+        """Return an AudioDataset created from the analysis parameters.
 
         Parameters
         ----------
         analysis: Analysis
-            Analysis to run.
-            Contains the analysis type and required info.
-            See the public_api.Analysis.Analysis docstring for more info.
+            Analysis for which to generate an AudioDataset object.
+
+        Returns
+        -------
+        AudioDataset:
+            The AudioDataset that match the analysis parameters.
+            This AudioDataset can be used either to have a peek at the
+            analysis output, or to edit the analysis (adding/removing data)
+            by editing it and passing it as a parameter to the
+            Dataset.run_analysis() method.
 
         """
         ads = AudioDataset.from_files(
@@ -219,9 +218,43 @@ class Dataset:
         if analysis.sample_rate is not None:
             ads.sample_rate = analysis.sample_rate
 
+        if analysis.is_spectro:
+            ads.suffix = "audio"
+
+        return ads
+
+    def run_analysis(
+        self,
+        analysis: Analysis,
+        audio_dataset: AudioDataset | None = None,
+    ) -> None:
+        """Create a new analysis dataset from the original audio files.
+
+        The analysis parameter sets which type(s) of core_api dataset(s) will be
+        created and added to the Dataset.datasets property, plus which output
+        files will be written to disk (reshaped audio files, npz spectra matrices,
+        png spectrograms...).
+
+        Parameters
+        ----------
+        analysis: Analysis
+            Analysis to run.
+            Contains the analysis type and required info.
+            See the public_api.Analysis.Analysis docstring for more info.
+        audio_dataset: AudioDataset
+            If provided, the analysis will be run on this AudioDataset.
+            Else, an AudioDataset will be created from the analysis parameters.
+            This can be used to edit the analysis AudioDataset (adding/removing
+            AudioData etc.)
+
+        """
+        ads = (
+            self.get_analysis_audiodataset(analysis=analysis)
+            if audio_dataset is None
+            else audio_dataset
+        )
+
         if AnalysisType.AUDIO in analysis.analysis_type:
-            if analysis.is_spectro:
-                ads.suffix = "audio"
             self._add_audio_dataset(ads=ads)
 
         sds = None
