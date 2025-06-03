@@ -8,7 +8,6 @@ It has additionnal metadata that can be exported, e.g. to APLOSE.
 
 from __future__ import annotations
 
-import random
 import shutil
 import sys
 from pathlib import Path
@@ -19,7 +18,6 @@ from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.base_dataset import BaseDataset
 from OSmOSE.core_api.instrument import Instrument
 from OSmOSE.core_api.json_serializer import deserialize_json, serialize_json
-from OSmOSE.core_api.spectro_data import SpectroData
 from OSmOSE.core_api.spectro_dataset import SpectroDataset
 from OSmOSE.public_api.analysis import Analysis, AnalysisType
 from OSmOSE.utils.core_utils import (
@@ -150,44 +148,6 @@ class Dataset:
 
         self.datasets = {}
 
-    def sample_spectra(
-        self,
-        analysis: Analysis,
-        nb_spectra: int = 1,
-    ) -> list[SpectroData]:
-        """Return a list of sample SpectroData.
-
-        These SpectroData can be plotted to check the validity of the
-        parameters before running a full analysis.
-
-        Parameters
-        ----------
-        analysis: Analysis
-            Analysis for which to generate sample SpectroData objects.
-            See the public_api.Analysis.Analysis docstring for more info.
-        nb_spectra: int
-            The number of sample SpectroData to return.
-
-        Returns
-        -------
-        list[SpectroData]:
-            List of nb_spectra sample SpectroData objects.
-
-        """
-        ads = AudioDataset.from_files(
-            files=list(self.origin_files),
-            begin=analysis.begin,
-            end=analysis.end,
-            data_duration=analysis.data_duration,
-            instrument=self.instrument,
-        )
-        ads.sample_rate = analysis.sample_rate
-        ads = random.sample(ads.data, nb_spectra)
-        return [
-            SpectroData.from_audio_data(data=ad, fft=analysis.fft, v_lim=analysis.v_lim)
-            for ad in ads
-        ]
-
     def get_analysis_audiodataset(self, analysis: Analysis) -> AudioDataset:
         """Return an AudioDataset created from the analysis parameters.
 
@@ -224,7 +184,9 @@ class Dataset:
         return ads
 
     def get_analysis_spectrodataset(
-        self, analysis: Analysis, audio_dataset: AudioDataset | None = None
+        self,
+        analysis: Analysis,
+        audio_dataset: AudioDataset | None = None,
     ) -> SpectroDataset:
         """Return a SpectroDataset created from the analysis parameters.
 
@@ -295,7 +257,8 @@ class Dataset:
         sds = None
         if analysis.is_spectro:
             sds = self.get_analysis_spectrodataset(
-                analysis=analysis, audio_dataset=audio_dataset
+                analysis=analysis,
+                audio_dataset=audio_dataset,
             )
             self._add_spectro_dataset(sds=sds)
 
