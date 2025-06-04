@@ -123,6 +123,36 @@ The remaining parameters of the analysis (begin and end **Timestamps**, duration
    If the ``Analysis`` contains spectral computations (either ``AnalysisType.MATRIX`` or ``AnalysisType.SPECTROGRAM`` is in ``analysis_type``), a `scipy ShortTimeFFT instance <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.ShortTimeFFT.html#scipy.signal.ShortTimeFFT>`_ should be passed to the ``Analysis`` initializer.
 
 
+Checking/Editing the analysis
+"""""""""""""""""""""""""""""
+
+.. _editing_analysis:
+
+If you want to take a peek at what the analysis output will be before actually running it, the :meth:`OSmOSE.public_api.dataset.Dataset.get_analysis_audiodataset` and :meth:`OSmOSE.public_api.dataset.Dataset.get_analysis_spectrodataset` methods
+return a :class:`OSmOSE.core_api.audio_dataset.AudioDataset` and a :class:`OSmOSE.core_api.spectro_dataset.SpectroDataset` instance, respectively.
+
+The returned ``AudioDataset`` can be edited at will and passed as a parameter later on when the analysis is run:
+
+.. code-block:: python
+
+    ads = dataset.get_analysis_audiodataset(analysis=analysis)
+
+    # Filtering out the AudioData that are not linked to any audio file:
+    ads.data = [ad for ad in ads.data if not ad.is_empty]
+
+The returned ``SpectroDataset`` can be used e.g. to plot sample spectrograms prior to the analysis:
+
+.. code-block:: python
+
+    import matplotlib.pyplot as plt
+
+    sds = dataset.get_analysis_spectrodataset(analysis=analysis, audio_dataset=ads) # audio_dataset is optional: here, the sds will match the edited ads (with no empty data)
+
+    # Computing/plotting the 100th SpectroData from the analysis
+    sds.data[100].plot()
+    plt.show()
+
+
 Running the analysis
 """"""""""""""""""""
 
@@ -132,6 +162,11 @@ To run the ``Analysis``, simply execute the :meth:`OSmOSE.public_api.dataset.Dat
 
     dataset.run_analysis(analysis=analysis) # And that's it!
 
+If you edited the ``Analysis`` ``AudioDataset`` as explained in the :ref:`Checking/Editing the analysis <editing_analysis>` section, you can specify the edited ``AudioDataset`` on which the analysis will be run:
+
+.. code-block:: python
+
+    dataset.run_analysis(analysis=analysis, audio_dataset=ads)
 
 Simple Example: Reshaping audio
 """""""""""""""""""""""""""""""
