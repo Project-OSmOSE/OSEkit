@@ -60,14 +60,18 @@ class BaseDataset(Generic[TData, TFile], Event):
         )
 
     @property
-    def name(self) -> str:
-        """Name of the dataset."""
-        base_name = (
+    def base_name(self) -> str:
+        """Name of the dataset without suffix."""
+        return (
             self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)
             if self._name is None
             else self._name
         )
-        return base_name if not self.suffix else f"{base_name}_{self.suffix}"
+
+    @property
+    def name(self) -> str:
+        """Name of the dataset with suffix."""
+        return self.base_name if not self.suffix else f"{self.base_name}_{self.suffix}"
 
     @name.setter
     def name(self, name: str | None) -> None:

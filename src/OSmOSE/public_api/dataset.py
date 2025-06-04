@@ -216,7 +216,7 @@ class Dataset:
         return SpectroDataset.from_audio_dataset(
             audio_dataset=ads,
             fft=analysis.fft,
-            name=analysis.name,
+            name=ads.base_name,
             v_lim=analysis.v_lim,
         )
 
