@@ -1034,3 +1034,63 @@ def test_get_analysis_spectrodataset(
     assert analysis_sds.data[0].audio_data.instrument is dataset.instrument
 
     assert analysis_sds.fft is analysis.fft
+
+
+def test_edit_analysis_before_run(
+    tmp_path: pytest.fixture, audio_files: pytest.fixture
+) -> None:
+    dataset = Dataset(
+        folder=tmp_path,
+        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+        instrument=Instrument(end_to_end_db=150),
+    )
+
+    dataset.build()
+
+    analysis = Analysis(
+        analysis_type=AnalysisType.AUDIO | AnalysisType.SPECTROGRAM,
+        data_duration=dataset.origin_dataset.duration / 10,
+        name="original_analysis",
+        sample_rate=24_000,
+        fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
+    )
+
+    ads = dataset.get_analysis_audiodataset(analysis=analysis)
+
+    new_sr = 12_000
+    new_name = "new_analysis"
+    new_instrument = Instrument(end_to_end_db=100)
+    new_data = ads.data[::2]
+
+    ads.sample_rate = new_sr
+    analysis.sample_rate = new_sr
+    analysis.fft.fs = new_sr
+    ads.name = new_name
+    ads.instrument = new_instrument
+    ads.data = new_data
+
+    dataset.run_analysis(analysis, audio_dataset=ads)
+
+    # New ads name
+    assert (dataset.folder / "data" / "audio" / ads.name).exists()
+
+    # New sds name
+    assert (dataset.folder / "processed" / ads.base_name).exists()
+
+    analysis_ads = AudioDataset.from_json(
+        dataset.get_dataset(f"{new_name}_audio").folder / f"{new_name}_audio.json"
+    )
+    analysis_sds = SpectroDataset.from_json(
+        dataset.get_dataset(new_name).folder / f"{new_name}.json"
+    )
+
+    # Only filtered data have been written
+    assert len(analysis_ads.data) == len(new_data)
+    assert len(analysis_sds.data) == len(new_data)
+
+    # Analyses have the edited sr
+    assert analysis_ads.sample_rate == new_sr
+    assert analysis_sds.fft.fs == new_sr
+
+    # Instrument has been edited
+    assert analysis_ads.instrument.end_to_end_db == new_instrument.end_to_end_db
