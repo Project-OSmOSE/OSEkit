@@ -131,6 +131,8 @@ class BaseFile(Event):
 
     def __eq__(self, other: BaseFile):
         """Override __eq__."""
+        if not isinstance(other, BaseFile):
+            return False
         return self.path == other.path and super().__eq__(other)
 
     def move(self, folder: Path) -> None:
