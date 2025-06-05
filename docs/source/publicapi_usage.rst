@@ -162,7 +162,7 @@ To run the ``Analysis``, simply execute the :meth:`OSmOSE.public_api.dataset.Dat
 
     dataset.run_analysis(analysis=analysis) # And that's it!
 
-If you edited the ``Analysis`` ``AudioDataset`` as explained in the :ref:`Checking/Editing the analysis <editing_analysis>` section, you can specify the edited ``AudioDataset`` on which the analysis will be run:
+If you edited the analysis ``AudioDataset`` as explained in the :ref:`Checking/Editing the analysis <editing_analysis>` section, you can specify the edited ``AudioDataset`` on which the analysis will be run:
 
 .. code-block:: python
 
@@ -226,7 +226,7 @@ The ``cool_reshape`` folder has been created, containing the freshly created ``1
 
 .. note::
 
-    The ``cool_reshape`` folder also contains a ``cool_reshape.json`` serialized version of the cool_reshape ``AudioDataset``, which will be used for deserializing the ``dataset.json`` file in the dataset folder root.
+    The ``cool_reshape`` folder also contains a ``cool_reshape.json`` serialized version of the ``cool_reshape`` ``AudioDataset``, which will be used for deserializing the ``dataset.json`` file in the dataset folder root.
 
 Example: full analysis
 """"""""""""""""""""""
@@ -240,9 +240,9 @@ Let's now say we want to export audio, spectrum matrices and spectrograms with t
    * - Parameter
      - Value
    * - Begin
-     - 00:30 after the begin of the original audio files
+     - 00:30:00 after the begin of the original audio files
    * - End
-     - 01:30 after the begin of the original audio files
+     - 01:30:00 after the begin of the original audio files
    * - Data duration
      - ``10 s``
    * - Sample rate
@@ -264,7 +264,7 @@ Let's first instantiate the ``ShortTimeFFT`` since we want to run a spectral ana
         scale_to="magnitude"
     )
 
-Then we are good for running the analysis:
+Then we are all set for running the analysis:
 
 .. code-block:: python
 
@@ -272,9 +272,9 @@ Then we are good for running the analysis:
     from pandas import Timedelta
 
     analysis = Analysis(
-        analysis_type = AnalysisType.AUDIO | AnalysisType.MATRIX | AnalysisType.SPECTROGRAM, # Full analysis
-        begin=dataset.get_dataset("original").begin + Timedelta(minutes=30), # 30m after the begin of the original dataset
-        end=dataset.get_dataset("original").begin + Timedelta(hours=1.5), # 1h30 after the begin of the original dataset
+        analysis_type = AnalysisType.AUDIO | AnalysisType.MATRIX | AnalysisType.SPECTROGRAM, # Full analysis : audio files, spectrum matrices and spectrograms will be exported.
+        begin=dataset.origin_dataset.begin + Timedelta(minutes=30), # 30m after the begin of the original dataset
+        end=dataset.origin_dataset.begin + Timedelta(hours=1.5), # 1h30 after the begin of the original dataset
         data_duration=Timedelta("10s"), # Duration of the output data
         sample_rate=48_000, # Sample rate of the output data
         name="full_analysis", # You can name the analysis, or keep the default name.
