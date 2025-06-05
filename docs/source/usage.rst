@@ -23,4 +23,4 @@ The package combines two APIs:
    :maxdepth: 2
 
    publicapi_usage
-   coreapi_usage
+   coreapi_home
