@@ -360,7 +360,7 @@ class Dataset:
             self.job_builder.build_job_file(
                 script_path=export_analysis.__file__,
                 script_args=f"--dataset-json-path {self.folder / 'dataset.json'} "
-                f"--analysis {sum(v.value for v in list(analysis_type))} "
+                f"--analysis {analysis_type.value} "
                 f"--ads-name {ads.name if ads is not None else ''} "
                 f"--sds-name {sds.name if sds is not None else ''} "
                 f"--subtype {subtype} "
