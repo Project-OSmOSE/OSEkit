@@ -207,6 +207,11 @@ class Dataset:
             analysis output before running it.
 
         """
+        if analysis.fft is None:
+            raise ValueError(
+                "FFT parameter should be given if spectra outputs are selected.",
+            )
+
         ads = (
             self.get_analysis_audiodataset(analysis=analysis)
             if audio_dataset is None
