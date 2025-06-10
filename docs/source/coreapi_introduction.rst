@@ -9,9 +9,6 @@ The audio data is decoupled from audio files: audio data can be fetched across m
 The ``Core API`` provides ways of computing and plotting spectrograms, which are also treated as time-bound data that can be joined with
 audio (or any other type of) data.
 
-To learn more about the ideas behind the ``Core API``, please visit the :ref:`Introduction to the Core API <coreapi_introduction>` section.
-
-
 Event
 """""
 
@@ -32,7 +29,7 @@ nor if it contains empty time periods between files.
 
 To do so, **OSEkit** uses an intermediary object between the ``Data`` and the ``File``: an ``Item``, which is a **part** of ``Data`` that is found in a **single** ``File``.
 
-As an example, let's consider 3 files that differ in duration (along the x-axis in the figure here below).
+As an example, let's consider 3 files that differ in duration (along the x-axis in the figures here below).
 The first two files are consecutive, and the third one is separated from the end of the second by a duration for which there is no data.
 
 From these 3 files, the user want to manipulate 2 data objects (for example to plot spectrograms from audio files at these 2 time periods):
@@ -51,8 +48,8 @@ Since **OSEkit** provides ways to manipulate different types of data (audio, spe
 are managed in bases classes:
 
 - :class:`OSmOSE.core_api.base_file.BaseFile` represent any **file**
-- :class:`OSmOSE.core_api.base_file.BaseItem` represent any **item**
-- :class:`OSmOSE.core_api.base_file.BaseData` represent any **data**
+- :class:`OSmOSE.core_api.base_item.BaseItem` represent any **item**
+- :class:`OSmOSE.core_api.base_data.BaseData` represent any **data**
 
-These base classes are then derived through inheritance to specialized class for any data type. For example, **audio data** is manipulated through the
+These base classes are then derived through inheritance to specialized classes for any data type. For example, **audio data** is manipulated through the
 :class:`OSmOSE.core_api.audio_data.AudioData` class.

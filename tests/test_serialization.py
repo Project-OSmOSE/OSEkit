@@ -201,7 +201,9 @@ def test_audio_dataset_serialization(
     assert all(
         np.array_equal(ad.get_value(), ad2.get_value())
         for ad, ad2 in zip(
-            ads.data, AudioDataset.from_dict(ads.to_dict()).data, strict=False
+            ads.data,
+            AudioDataset.from_dict(ads.to_dict()).data,
+            strict=False,
         )
     )
 
@@ -221,7 +223,16 @@ def test_audio_dataset_serialization(
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "begin", "end", "sft", "sample_rate", "instrument", "v_lim"),
+    (
+        "audio_files",
+        "begin",
+        "end",
+        "sft",
+        "sample_rate",
+        "instrument",
+        "v_lim",
+        "colormap",
+    ),
     [
         pytest.param(
             {
@@ -234,6 +245,7 @@ def test_audio_dataset_serialization(
             None,
             ShortTimeFFT(win=hamming(1024), hop=1024, fs=48_000, mfft=1024),
             48_000,
+            None,
             None,
             None,
             id="full_file_no_resample",
@@ -251,6 +263,7 @@ def test_audio_dataset_serialization(
             24_000,
             None,
             None,
+            None,
             id="non_symetric_hamming_window",
         ),
         pytest.param(
@@ -264,6 +277,7 @@ def test_audio_dataset_serialization(
             None,
             ShortTimeFFT(win=hann(1024), hop=1024, fs=24_000, mfft=1024),
             24_000,
+            None,
             None,
             None,
             id="hann_window",
@@ -281,6 +295,7 @@ def test_audio_dataset_serialization(
             24_000,
             None,
             None,
+            None,
             id="full_file_downsample_and_overlap",
         ),
         pytest.param(
@@ -294,6 +309,7 @@ def test_audio_dataset_serialization(
             None,
             ShortTimeFFT(win=hamming(1024), hop=1024, fs=96_000, mfft=2048),
             96_000,
+            None,
             None,
             None,
             id="full_file_upsample_and_mfft_padding",
@@ -311,6 +327,7 @@ def test_audio_dataset_serialization(
             48_000,
             None,
             None,
+            None,
             id="file_part_and_overlap_and_padding",
         ),
         pytest.param(
@@ -324,6 +341,7 @@ def test_audio_dataset_serialization(
             Timestamp("2024-01-01 12:00:02"),
             ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000, mfft=1024),
             24_000,
+            None,
             None,
             None,
             id="two_files_with_resample",
@@ -340,6 +358,7 @@ def test_audio_dataset_serialization(
             Timestamp("2024-01-01 12:00:04"),
             ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000, mfft=1024),
             48_000,
+            None,
             None,
             None,
             id="two_files_with_gap",
@@ -363,6 +382,7 @@ def test_audio_dataset_serialization(
             48_000,
             None,
             None,
+            None,
             id="magnitude_spectrum",
         ),
         pytest.param(
@@ -383,6 +403,7 @@ def test_audio_dataset_serialization(
             ),
             48_000,
             Instrument(end_to_end_db=150.0),
+            None,
             None,
             id="specified_instrument",
         ),
@@ -405,6 +426,7 @@ def test_audio_dataset_serialization(
             48_000,
             None,
             (-50.0, 0.0),
+            None,
             id="specified_v_lim",
         ),
         pytest.param(
@@ -426,6 +448,7 @@ def test_audio_dataset_serialization(
             48_000,
             Instrument(end_to_end_db=150.0),
             (0.0, 150.0),
+            None,
             id="specified_v_lim_and_instrument",
         ),
         pytest.param(
@@ -447,7 +470,24 @@ def test_audio_dataset_serialization(
             48_000,
             None,
             None,
+            None,
             id="psd_spectrum",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00"),
+            },
+            None,
+            None,
+            ShortTimeFFT(win=hamming(1024), hop=1024, fs=48_000, mfft=1024),
+            48_000,
+            None,
+            None,
+            "inferno",
+            id="different_colormap",
         ),
     ],
     indirect=["audio_files"],
@@ -461,6 +501,7 @@ def test_spectro_data_serialization(
     sample_rate: float,
     instrument: Instrument | None,
     v_lim: tuple[float, float] | None,
+    colormap: str | None,
 ) -> None:
     af = [
         AudioFile(f, strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
@@ -477,7 +518,7 @@ def test_spectro_data_serialization(
 
     # SpectroData linked to AudioData
 
-    sd = SpectroData.from_audio_data(ad, sft)
+    sd = SpectroData.from_audio_data(ad, sft, colormap=colormap)
     sd2 = SpectroData.from_dict(sd.to_dict(embed_sft=True))
 
     assert np.allclose(
@@ -492,6 +533,8 @@ def test_spectro_data_serialization(
 
     assert sd.db_ref == sd2.db_ref
     assert sd.v_lim == sd2.v_lim
+
+    assert sd.colormap == sd2.colormap
 
     # SpectroData linked to SpectroFiles
 
@@ -527,6 +570,7 @@ def test_spectro_data_serialization(
         "sfts",
         "instrument",
         "v_lim",
+        "colormap",
         "name",
     ),
     [
@@ -539,6 +583,7 @@ def test_spectro_data_serialization(
             Timedelta(seconds=1),
             48_000,
             [ShortTimeFFT(win=hamming(1024), hop=1024, fs=48_000, mfft=1024)],
+            None,
             None,
             None,
             None,
@@ -556,6 +601,7 @@ def test_spectro_data_serialization(
             None,
             None,
             None,
+            None,
             id="ten_spectro_data_one_sft",
         ),
         pytest.param(
@@ -568,6 +614,7 @@ def test_spectro_data_serialization(
             48_000,
             [ShortTimeFFT(win=hamming(1024), hop=1024, fs=48_000, mfft=1024)],
             Instrument(end_to_end_db=150.0),
+            None,
             None,
             None,
             id="specified_instrument",
@@ -584,6 +631,7 @@ def test_spectro_data_serialization(
             None,
             (-100.0, 0.0),
             None,
+            None,
             id="specified_v_lim",
         ),
         pytest.param(
@@ -597,6 +645,7 @@ def test_spectro_data_serialization(
             [ShortTimeFFT(win=hamming(1024), hop=1024, fs=48_000, mfft=1024)],
             Instrument(end_to_end_db=150.0),
             (0.0, 150.0),
+            None,
             None,
             id="specified_instrument_and_v_lim",
         ),
@@ -615,7 +664,23 @@ def test_spectro_data_serialization(
             None,
             None,
             None,
+            None,
             id="ten_spectro_data_two_sfts",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+            },
+            Timedelta(seconds=1),
+            48_000,
+            [ShortTimeFFT(win=hamming(1024), hop=1024, fs=48_000, mfft=1024)],
+            None,
+            None,
+            "inferno",
+            None,
+            id="specified_colormap",
         ),
     ],
     indirect=["audio_files"],
@@ -628,6 +693,7 @@ def test_spectro_dataset_serialization(
     sfts: list[ShortTimeFFT],
     instrument: Instrument | None,
     v_lim: tuple[float, float] | None,
+    colormap: str | None,
     name: str | None,
 ) -> None:
     ads = AudioDataset.from_folder(
@@ -643,6 +709,7 @@ def test_spectro_dataset_serialization(
         audio_dataset=ads,
         fft=sfts[0],
         name=name,
+        colormap=colormap,
         v_lim=v_lim,
     )
     for idx, sd in enumerate(sds.data):  # Apply different SFTs to the sds data
@@ -654,6 +721,7 @@ def test_spectro_dataset_serialization(
 
     assert str(sds) == str(sds2)
     assert sds.name == sds2.name
+    assert sds.colormap == sds2.colormap
     assert sds.has_default_name == sds2.has_default_name
     assert all(
         np.array_equal(sd.get_value(), sd2.get_value())

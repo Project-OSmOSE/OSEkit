@@ -206,7 +206,7 @@ if __name__ == "__main__":
     dataset = Dataset.from_json(file=Path(args.dataset_json_path))
 
     ads, sds = (
-        dataset.get_dataset(ds_name) if ds_name else None
+        dataset.get_dataset(ds_name) if ds_name.lower() != "none" else None
         for ds_name in (args.ads_name, args.sds_name)
     )
     subtype = None if args.subtype.lower() == "none" else args.subtype

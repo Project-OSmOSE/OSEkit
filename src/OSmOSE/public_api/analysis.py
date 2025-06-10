@@ -66,6 +66,7 @@ class Analysis:
         subtype: str | None = None,
         fft: ShortTimeFFT | None = None,
         v_lim: tuple[float, float] | None = None,
+        colormap: str | None = None,
     ) -> None:
         """Initialize an Analysis object.
 
@@ -106,6 +107,9 @@ class Analysis:
         v_lim: tuple[float, float] | None
             Limits (in dB) of the colormap used for plotting the spectrogram.
             Has no effect if Analysis.SPECTROGRAM is not in analysis.
+        colormap: str | None
+            Colormap to use for plotting the spectrogram.
+            Has no effect if Analysis.SPECTROGRAM is not in analysis.
 
         """
         self.analysis_type = analysis_type
@@ -117,6 +121,7 @@ class Analysis:
         self.subtype = subtype
         self.fft = fft
         self.v_lim = v_lim
+        self.colormap = colormap
 
         if self.is_spectro and fft is None:
             raise ValueError(

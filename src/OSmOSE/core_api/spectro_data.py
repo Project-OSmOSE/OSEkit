@@ -43,6 +43,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         fft: ShortTimeFFT | None = None,
         db_ref: float | None = None,
         v_lim: tuple[float, float] | None = None,
+        colormap: str | None = None,
     ) -> None:
         """Initialize a SpectroData from a list of SpectroItems.
 
@@ -65,6 +66,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         v_lim: tuple[float,float]
             Lower and upper limits (in dB) of the colormap used
             for plotting the spectrogram.
+        colormap: str
+            Colormap to use for plotting the spectrogram.
 
         """
         super().__init__(items=items, begin=begin, end=end)
@@ -79,6 +82,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             if db_ref is None
             else (0.0, 170.0)
         )
+        self.colormap = "viridis" if colormap is None else colormap
 
     @staticmethod
     def get_default_ax() -> plt.Axes:
@@ -221,7 +225,9 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         time = np.arange(sx.shape[1]) * self.duration.total_seconds() / sx.shape[1]
         freq = self.fft.f
 
-        ax.pcolormesh(time, freq, sx, vmin=self._v_lim[0], vmax=self._v_lim[1])
+        ax.pcolormesh(
+            time, freq, sx, vmin=self._v_lim[0], vmax=self._v_lim[1], cmap=self.colormap
+        )
 
     def to_db(self, sx: np.ndarray) -> np.ndarray:
         """Convert the sx values to dB.
@@ -456,6 +462,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         cls,
         data: BaseData,
         fft: ShortTimeFFT,
+        colormap: str | None = None,
     ) -> SpectroData:
         """Return an SpectroData object from a BaseData object.
 
@@ -465,6 +472,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             BaseData object to convert to SpectroData.
         fft: ShortTimeFFT
             The ShortTimeFFT used to compute the spectrogram.
+        colormap: str
+            The colormap used to plot the spectrogram.
 
         Returns
         -------
@@ -480,6 +489,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             fft=fft,
             db_ref=db_ref,
             v_lim=v_lim,
+            colormap=colormap,
         )
 
     @classmethod
@@ -488,6 +498,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         data: AudioData,
         fft: ShortTimeFFT,
         v_lim: tuple[float, float] | None = None,
+        colormap: str | None = None,
     ) -> SpectroData:
         """Instantiate a SpectroData object from a AudioData object.
 
@@ -500,6 +511,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         v_lim: tuple[float,float]
             Lower and upper limits (in dB) of the colormap used
             for plotting the spectrogram.
+        colormap: str
+            Colormap to use for plotting the spectrogram.
 
         Returns
         -------
@@ -513,6 +526,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             begin=data.begin,
             end=data.end,
             v_lim=v_lim,
+            colormap=colormap,
         )
 
     def to_dict(self, embed_sft: bool = True) -> dict:
@@ -555,7 +569,12 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
                 else None
             ),
         }
-        return base_dict | audio_dict | sft_dict | {"v_lim": self.v_lim}
+        return (
+            base_dict
+            | audio_dict
+            | sft_dict
+            | {"v_lim": self.v_lim, "colormap": self.colormap}
+        )
 
     @classmethod
     def from_dict(
@@ -587,7 +606,11 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         if dictionary["audio_data"] is None:
             base_data = BaseData.from_dict(dictionary)
-            return cls.from_base_data(data=base_data, fft=sft)
+            return cls.from_base_data(
+                data=base_data, fft=sft, colormap=dictionary["colormap"]
+            )
 
         audio_data = AudioData.from_dict(dictionary["audio_data"])
-        return cls.from_audio_data(audio_data, sft, v_lim=dictionary["v_lim"])
+        return cls.from_audio_data(
+            audio_data, sft, v_lim=dictionary["v_lim"], colormap=dictionary["colormap"]
+        )

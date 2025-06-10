@@ -54,6 +54,19 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             data.fft = fft
 
     @property
+    def colormap(self) -> str:
+        """Return the most frequent colormap of the spectro dataset."""
+        return max(
+            {d.colormap for d in self.data},
+            key=[d.colormap for d in self.data].count,
+        )
+
+    @colormap.setter
+    def colormap(self, colormap: str) -> None:
+        for d in self.data:
+            d.colormap = colormap
+
+    @property
     def folder(self) -> Path:
         """Folder in which the dataset files are located."""
         return self._folder if self._folder is not None else super().folder
@@ -343,10 +356,14 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         base_dataset: BaseDataset,
         fft: ShortTimeFFT,
         name: str | None = None,
+        colormap: str | None = None,
     ) -> SpectroDataset:
         """Return a SpectroDataset object from a BaseDataset object."""
         return cls(
-            [SpectroData.from_base_data(data, fft) for data in base_dataset.data],
+            [
+                SpectroData.from_base_data(data=data, fft=fft, colormap=colormap)
+                for data in base_dataset.data
+            ],
             name=name,
         )
 
@@ -356,6 +373,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         audio_dataset: AudioDataset,
         fft: ShortTimeFFT,
         name: str | None = None,
+        colormap: str | None = None,
         v_lim: tuple[float, float] | None = None,
     ) -> SpectroDataset:
         """Return a SpectroDataset object from an AudioDataset object.
@@ -364,7 +382,12 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         """
         return cls(
             data=[
-                SpectroData.from_audio_data(data=d, fft=fft, v_lim=v_lim)
+                SpectroData.from_audio_data(
+                    data=d,
+                    fft=fft,
+                    v_lim=v_lim,
+                    colormap=colormap,
+                )
                 for d in audio_dataset.data
             ],
             name=name,

@@ -27,7 +27,7 @@ autoclass_content = "both"
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
 html_sidebars = {
-    "**": ["globaltoc.html", "localtoc.html", "relations.html", "searchbox.html"]
+    "**": ["globaltoc.html", "relations.html", "searchbox.html"],
 }  # Displays the global TOC in the sidebar
 html_theme_options = {
     "collapse_navigation": False,
