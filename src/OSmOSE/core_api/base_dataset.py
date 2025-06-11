@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Generic, Literal, TypeVar
 from pandas import Timedelta, Timestamp, date_range
 from soundfile import LibsndfileError
 
-from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES
+from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
 from OSmOSE.config import global_logging_context as glc
 from OSmOSE.core_api.base_data import BaseData
 from OSmOSE.core_api.base_file import BaseFile
@@ -63,7 +63,7 @@ class BaseDataset(Generic[TData, TFile], Event):
     def base_name(self) -> str:
         """Name of the dataset without suffix."""
         return (
-            self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES)
+            self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED)
             if self._name is None
             else self._name
         )

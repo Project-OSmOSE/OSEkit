@@ -10,7 +10,10 @@ from pandas import Timedelta
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming
 
-from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES, TIMESTAMP_FORMAT_TEST_FILES
+from OSmOSE.config import (
+    TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+    TIMESTAMP_FORMATS_EXPORTED_FILES,
+)
 from OSmOSE.core_api.audio_data import AudioData
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.audio_file import AudioFile
@@ -61,7 +64,7 @@ def test_spectrogram_shape(
 ) -> None:
     dataset = AudioDataset.from_folder(
         tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
     )
     spectro_dataset = SpectroDataset.from_audio_dataset(dataset, sft)
     for audio, spectro in zip(dataset.data, spectro_dataset.data, strict=False):
@@ -122,22 +125,33 @@ def test_spectrogram_shape(
             ShortTimeFFT(hamming(1_024), 1_024, 48_000),
             id="nanosecond_precision_end",
         ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 1_024,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00+0200"),
+            },
+            pd.Timestamp("2024-01-01 12:00:00.123+0200"),
+            ShortTimeFFT(hamming(512), 512, 1_024),
+            id="localized_spectro",
+        ),
     ],
     indirect=["audio_files"],
 )
 def test_spectro_parameters_in_npz_files(
     tmp_path: Path,
-    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    audio_files: tuple[list[AudioFile], pytest.fixtures.Subrequest],
     date_begin: pd.Timestamp,
     sft: ShortTimeFFT,
 ) -> None:
-    af = next(AudioFile(f, begin=date_begin) for f in tmp_path.glob("*.wav"))
+    afs, _ = audio_files
 
-    ad = AudioData.from_files([af])
+    ad = AudioData.from_files(afs)
     sd = SpectroData.from_audio_data(ad, sft)
     sd.write(tmp_path / "npz")
     file = tmp_path / "npz" / f"{sd}.npz"
-    sf = SpectroFile(file, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES)
+    sf = SpectroFile(file, strptime_format=TIMESTAMP_FORMATS_EXPORTED_FILES)
 
     assert sf.begin == ad.begin
     assert sf.end == ad.end
@@ -253,7 +267,7 @@ def test_spectrogram_from_npz_files(
     sft: ShortTimeFFT,
 ) -> None:
     afs = [
-        AudioFile(f, strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
+        AudioFile(f, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED)
         for f in tmp_path.glob("*.wav")
     ]
 
@@ -282,7 +296,7 @@ def test_spectrogram_from_npz_files(
     # DC-free parts.
 
     afs = [
-        AudioFile(f, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES)
+        AudioFile(f, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED)
         for f in (tmp_path / "audio").glob("*.wav")
     ]
     ad = AudioData.from_files(afs)
@@ -290,7 +304,7 @@ def test_spectrogram_from_npz_files(
 
     sds = SpectroDataset.from_folder(
         tmp_path / "output",
-        TIMESTAMP_FORMAT_EXPORTED_FILES,
+        TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
     )
 
     assert sds.begin == ad.begin
@@ -371,14 +385,13 @@ def test_spectrogram_from_npz_files(
 )
 def test_spectrogram_sx_dtype(
     tmp_path: Path,
-    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    audio_files: tuple[list[AudioFile], pytest.fixtures.Subrequest],
     origin_dtype: type[complex],
     target_dtype: type[complex],
     expected_value_dtype: type[complex],
 ) -> None:
-    audio_file, request = audio_files
-    af = AudioFile(audio_file[0], strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
-    ad = AudioData.from_files([af])
+    audio_files, request = audio_files
+    ad = AudioData.from_files(audio_files)
     sft = ShortTimeFFT(hamming(128), 128, 1_024)
     sd = SpectroData.from_audio_data(ad, sft)
 
@@ -392,7 +405,7 @@ def test_spectrogram_sx_dtype(
 
     sf = SpectroFile(
         tmp_path / "npz" / f"{sd}.npz",
-        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
     )
 
     assert sf.sx_dtype is origin_dtype
@@ -438,6 +451,49 @@ def test_spectrogram_sx_dtype(
             1_024,
             nullcontext(),
             id="equal_audio_data",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 1_024,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00+0200"),
+            },
+            Event(
+                begin=pd.Timestamp("2024-01-01 12:00:00+0200"),
+                end=pd.Timestamp("2024-01-01 12:00:01+0200"),
+            ),
+            1_024,
+            Event(
+                begin=pd.Timestamp("2024-01-01 12:00:00+0200"),
+                end=pd.Timestamp("2024-01-01 12:00:01+0200"),
+            ),
+            1_024,
+            nullcontext(),
+            id="equal_localized_audio_data",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 1_024,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00+0200"),
+            },
+            Event(
+                begin=pd.Timestamp("2024-01-01 12:00:00+0200"),
+                end=pd.Timestamp("2024-01-01 12:00:01+0200"),
+            ),
+            1_024,
+            Event(
+                begin=pd.Timestamp("2024-01-01 12:00:00+0000"),
+                end=pd.Timestamp("2024-01-01 12:00:01+0000"),
+            ),
+            1_024,
+            pytest.raises(
+                ValueError,
+                match="The begin of the audio data doesn't match.",
+            ),
+            id="different_timezones",
         ),
         pytest.param(
             {
@@ -540,13 +596,12 @@ def test_link_audio_data(
     ad2_sr: float,
     expected_exception: type[Exception],
 ) -> None:
-    audio_file, request = audio_files
-    af = AudioFile(audio_file[0], strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
+    audio_files, request = audio_files
 
-    ad1 = AudioData.from_files([af], begin=ad1.begin, end=ad1.end)
+    ad1 = AudioData.from_files(audio_files, begin=ad1.begin, end=ad1.end)
     ad1.sample_rate = ad1_sr
 
-    ad2 = AudioData.from_files([af], begin=ad2.begin, end=ad2.end)
+    ad2 = AudioData.from_files(audio_files, begin=ad2.begin, end=ad2.end)
     ad2.sample_rate = ad2_sr
 
     sd = SpectroData.from_audio_data(
@@ -675,12 +730,12 @@ def test_link_audio_dataset(
 ) -> None:
     ads1 = AudioDataset.from_folder(
         tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
         data_duration=ads1_data_duration,
     )
     ads2 = AudioDataset.from_folder(
         tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
         data_duration=ads2_data_duration,
     )
     ads2.sample_rate = ads2_sample_rate

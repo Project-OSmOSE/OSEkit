@@ -10,8 +10,12 @@ import pandas as pd
 import pytest
 import soundfile as sf
 
-from OSmOSE.config import TIMESTAMP_FORMAT_TEST_FILES
+from OSmOSE.config import (
+    TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
+    TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+)
 from OSmOSE.core_api import AudioFileManager
+from OSmOSE.core_api.audio_file import AudioFile
 from OSmOSE.core_api.base_dataset import BaseDataset
 from OSmOSE.core_api.base_file import BaseFile
 from OSmOSE.utils.audio_utils import generate_sample_audio
@@ -21,7 +25,7 @@ from OSmOSE.utils.audio_utils import generate_sample_audio
 def audio_files(
     tmp_path: Path,
     request: pytest.fixtures.Subrequest,
-) -> tuple[list[Path], pytest.fixtures.Subrequest]:
+) -> tuple[list[AudioFile], pytest.fixtures.Subrequest]:
     nb_files = request.param.get("nb_files", 1) if hasattr(request, "param") else 1
 
     if nb_files == 0:
@@ -39,10 +43,6 @@ def audio_files(
         sine_frequency = request.param.get("sine_frequency", 1000.0)
         magnitude = request.param.get("magnitude", 1.0)
         format = request.param.get("format", "wav")
-        datetime_format = request.param.get(
-            "datetime_format",
-            TIMESTAMP_FORMAT_TEST_FILES,
-        )
     else:
         sample_rate = 48_000
         duration = 1.0
@@ -52,7 +52,6 @@ def audio_files(
         sine_frequency = 1000.0
         magnitude = 1.0
         format = "wav"
-        datetime_format = TIMESTAMP_FORMAT_TEST_FILES
 
     nb_samples = int(round(duration * sample_rate))
     data = generate_sample_audio(
@@ -63,6 +62,7 @@ def audio_files(
         max_value=magnitude,
         duration=duration,
     )
+
     files = []
     file_begin_timestamps = (
         list(
@@ -75,6 +75,13 @@ def audio_files(
         if duration + inter_file_duration != 0
         else [date_begin] * nb_files
     )
+
+    datetime_format = (
+        TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
+        if date_begin.tzinfo is None
+        else TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED
+    )
+
     for index, begin_time in enumerate(file_begin_timestamps):
         time_str = begin_time.strftime(format=datetime_format)
         idx = 0
@@ -88,7 +95,8 @@ def audio_files(
             "subtype": "DOUBLE" if format.lower() == "wav" else "PCM_24",
         }
         sf.write(**kwargs)
-    return files, request
+    output = [AudioFile(path=f, strptime_format=datetime_format) for f in files]
+    return output, request
 
 
 @pytest.fixture(autouse=True)

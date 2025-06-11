@@ -8,8 +8,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from OSmOSE.config import (
-    TIMESTAMP_FORMAT_EXPORTED_FILES,
-    TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
+    TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
+    TIMESTAMP_FORMATS_EXPORTED_FILES,
 )
 from OSmOSE.utils.timestamp_utils import localize_timestamp
 
@@ -118,8 +118,8 @@ class BaseFile(Event):
         """
         return {
             "path": str(self.path),
-            "begin": self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ),
-            "end": self.end.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ),
+            "begin": self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED),
+            "end": self.end.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED),
         }
 
     @classmethod
@@ -140,10 +140,7 @@ class BaseFile(Event):
         path = serialized["path"]
         return cls(
             path=path,
-            strptime_format=[
-                TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
-                TIMESTAMP_FORMAT_EXPORTED_FILES,
-            ],
+            strptime_format=TIMESTAMP_FORMATS_EXPORTED_FILES,
         )
 
     def __hash__(self) -> int:
@@ -152,7 +149,7 @@ class BaseFile(Event):
 
     def __str__(self) -> str:
         """Overwrite __str__."""
-        return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ)
+        return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED)
 
     def __eq__(self, other: BaseFile):
         """Override __eq__."""

@@ -8,7 +8,11 @@ from pandas import Timedelta, Timestamp
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming, hann
 
-from OSmOSE.config import TIMESTAMP_FORMAT_EXPORTED_FILES, TIMESTAMP_FORMAT_TEST_FILES
+from OSmOSE.config import (
+    TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
+    TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+    TIMESTAMP_FORMATS_EXPORTED_FILES,
+)
 from OSmOSE.core_api.audio_data import AudioData
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.audio_file import AudioFile
@@ -97,22 +101,34 @@ if TYPE_CHECKING:
             48_000,
             id="two_files_with_gap",
         ),
+        pytest.param(
+            {
+                "duration": 2,
+                "sample_rate": 48_000,
+                "nb_files": 2,
+                "inter_file_duration": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00+0200"),
+            },
+            Timestamp("2024-01-01 12:00:01+0200"),
+            Timestamp("2024-01-01 12:00:04+0200"),
+            48_000,
+            id="localized_files",
+        ),
     ],
     indirect=["audio_files"],
 )
 def test_audio_data_serialization(
     tmp_path: Path,
-    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    audio_files: tuple[list[AudioFile], pytest.fixtures.Subrequest],
     begin: Timestamp | None,
     end: Timestamp | None,
     sample_rate: float,
 ) -> None:
-    af = [
-        AudioFile(f, strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
-        for f in tmp_path.glob("*.wav")
-    ]
+    audio_files, _ = audio_files
 
-    ad = AudioData.from_files(af, begin=begin, end=end, sample_rate=sample_rate)
+    ad = AudioData.from_files(
+        audio_files, begin=begin, end=end, sample_rate=sample_rate
+    )
 
     assert np.array_equal(ad.get_value(), AudioData.from_dict(ad.to_dict()).get_value())
 
@@ -175,22 +191,45 @@ def test_audio_data_serialization(
             "merriweather post pavilion",
             id="named_ads",
         ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00+0200"),
+            },
+            Timedelta(seconds=1),
+            48_000,
+            "merriweather post pavilion",
+            id="localized_ads",
+        ),
     ],
     indirect=["audio_files"],
 )
 def test_audio_dataset_serialization(
     tmp_path: Path,
-    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    audio_files: tuple[list[AudioFile], pytest.fixtures.Subrequest],
     data_duration: Timestamp | None,
     sample_rate: float | list[float],
     name: str | None,
 ) -> None:
+    audio_files, request = audio_files
+    begin = min(af.begin for af in audio_files)
+
+    strptime_format = (
+        TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
+        if begin.tzinfo is None
+        else TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED
+    )
+
     ads = AudioDataset.from_folder(
         tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+        strptime_format=strptime_format,
         data_duration=data_duration,
         name=name,
     )
+
+    assert ads.begin == begin
 
     if type(sample_rate) is list:
         for data, sr in zip(ads.data, sample_rate, strict=False):
@@ -215,6 +254,7 @@ def test_audio_dataset_serialization(
     assert ads.name == ads2.name
     assert ads.has_default_name == ads2.has_default_name
     assert ads.sample_rate == ads2.sample_rate
+    assert ads.begin == ads2.begin
 
     assert all(
         np.array_equal(ad.get_value(), ad2.get_value())
@@ -510,7 +550,7 @@ def test_audio_dataset_serialization(
 )
 def test_spectro_data_serialization(
     tmp_path: Path,
-    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    audio_files: tuple[list[AudioFile], pytest.fixtures.Subrequest],
     begin: Timestamp | None,
     end: Timestamp | None,
     sft: ShortTimeFFT,
@@ -519,10 +559,7 @@ def test_spectro_data_serialization(
     v_lim: tuple[float, float] | None,
     colormap: str | None,
 ) -> None:
-    af = [
-        AudioFile(f, strptime_format=TIMESTAMP_FORMAT_TEST_FILES)
-        for f in tmp_path.glob("*.wav")
-    ]
+    af, _ = audio_files
 
     ad = AudioData.from_files(
         af,
@@ -557,7 +594,7 @@ def test_spectro_data_serialization(
     sd.write(tmp_path, link=True)
 
     sfs = [
-        SpectroFile(file, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES)
+        SpectroFile(file, strptime_format=TIMESTAMP_FORMATS_EXPORTED_FILES)
         for file in tmp_path.glob("*.npz")
     ]
 
@@ -707,7 +744,7 @@ def test_spectro_data_serialization(
 )
 def test_spectro_dataset_serialization(
     tmp_path: Path,
-    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    audio_files: tuple[list[AudioFile], pytest.fixtures.Subrequest],
     data_duration: Timestamp | None,
     sample_rate: float | list[float],
     sfts: list[ShortTimeFFT],
@@ -716,9 +753,18 @@ def test_spectro_dataset_serialization(
     colormap: str | None,
     name: str | None,
 ) -> None:
+    audio_files, request = audio_files
+    begin = min(af.begin for af in audio_files)
+
+    strptime_format = (
+        TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
+        if begin.tzinfo is None
+        else TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED
+    )
+
     ads = AudioDataset.from_folder(
         tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_TEST_FILES,
+        strptime_format=strptime_format,
         data_duration=data_duration,
         instrument=instrument,
     )
@@ -743,6 +789,7 @@ def test_spectro_dataset_serialization(
     assert sds.name == sds2.name
     assert sds.colormap == sds2.colormap
     assert sds.has_default_name == sds2.has_default_name
+    assert sds.begin == sds2.begin
     assert all(
         np.array_equal(sd.get_value(), sd2.get_value())
         for sd, sd2 in zip(sds.data, sds2.data, strict=False)
@@ -766,7 +813,7 @@ def test_spectro_dataset_serialization(
 
     sds3 = SpectroDataset.from_folder(
         tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES,
+        strptime_format=strptime_format,
         data_duration=data_duration,
     )
 
@@ -781,6 +828,7 @@ def test_spectro_dataset_serialization(
         np.array_equal(sd.to_db(sd.get_value()), sd3.to_db(sd3.get_value()))
         for sd, sd3 in zip(sds.data, sds3.data, strict=False)
     )
+    assert sds.begin == sds3.begin
 
     # Linked SpectroDataset JSON serialization
 
@@ -794,3 +842,4 @@ def test_spectro_dataset_serialization(
     assert all(
         sd1.files == sd2.files for sd1, sd2 in zip(sds.data, sds4.data, strict=True)
     )
+    assert sds.begin == sds4.begin

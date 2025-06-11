@@ -15,8 +15,7 @@ from pandas import Timestamp, date_range
 from OSmOSE.config import (
     DPDEFAULT,
     TIMESTAMP_FORMAT_AUDIO_FILE,
-    TIMESTAMP_FORMAT_EXPORTED_FILES,
-    TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
+    TIMESTAMP_FORMATS_EXPORTED_FILES,
 )
 from OSmOSE.core_api.base_file import BaseFile
 from OSmOSE.core_api.base_item import BaseItem
@@ -165,17 +164,11 @@ class BaseData(Generic[TItem, TFile], Event):
                 Path(file["path"]),
                 begin=strptime_from_text(
                     file["begin"],
-                    datetime_template=[
-                        TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
-                        TIMESTAMP_FORMAT_EXPORTED_FILES,
-                    ],
+                    datetime_template=TIMESTAMP_FORMATS_EXPORTED_FILES,
                 ),
                 end=strptime_from_text(
                     file["end"],
-                    datetime_template=[
-                        TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
-                        TIMESTAMP_FORMAT_EXPORTED_FILES,
-                    ],
+                    datetime_template=TIMESTAMP_FORMATS_EXPORTED_FILES,
                 ),
             )
             for file in dictionary["files"].values()
