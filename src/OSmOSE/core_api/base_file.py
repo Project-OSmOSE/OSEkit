@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from OSmOSE.config import (
+    TIMESTAMP_FORMAT_EXPORTED_FILES,
     TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
 )
 from OSmOSE.utils.timestamp_utils import localize_timestamp
@@ -120,6 +121,30 @@ class BaseFile(Event):
             "begin": self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ),
             "end": self.end.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ),
         }
+
+    @classmethod
+    def from_dict(cls, serialized: dict) -> BaseFile:
+        """Return a BaseFile object from a dictionary.
+
+        Parameters
+        ----------
+        serialized: dict
+            The serialized dictionary representing the BaseFile.
+
+        Returns
+        -------
+        BaseFile:
+            The deserialized BaseFile object.
+
+        """
+        path = serialized["path"]
+        return cls(
+            path=path,
+            strptime_format=[
+                TIMESTAMP_FORMAT_EXPORTED_FILES_WITH_TZ,
+                TIMESTAMP_FORMAT_EXPORTED_FILES,
+            ],
+        )
 
     def __hash__(self) -> int:
         """Overwrite hash magic method."""

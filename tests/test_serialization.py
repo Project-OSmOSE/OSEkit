@@ -489,6 +489,22 @@ def test_audio_dataset_serialization(
             "inferno",
             id="different_colormap",
         ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00+0200"),
+            },
+            None,
+            None,
+            ShortTimeFFT(win=hamming(1024), hop=1024, fs=48_000, mfft=1024),
+            48_000,
+            None,
+            None,
+            None,
+            id="timezone_aware",
+        ),
     ],
     indirect=["audio_files"],
 )
@@ -538,7 +554,7 @@ def test_spectro_data_serialization(
 
     # SpectroData linked to SpectroFiles
 
-    sd.write(tmp_path)
+    sd.write(tmp_path, link=True)
 
     sfs = [
         SpectroFile(file, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES)
@@ -560,6 +576,10 @@ def test_spectro_data_serialization(
 
     assert sd.db_ref == sd2.db_ref
     assert sd.v_lim == sd2.v_lim
+
+    # Linked file from dict
+
+    assert SpectroData.from_dict(sd.to_dict(embed_sft=True)).files == sd.files
 
 
 @pytest.mark.parametrize(
@@ -760,4 +780,17 @@ def test_spectro_dataset_serialization(
     assert all(
         np.array_equal(sd.to_db(sd.get_value()), sd3.to_db(sd3.get_value()))
         for sd, sd3 in zip(sds.data, sds3.data, strict=False)
+    )
+
+    # Linked SpectroDataset JSON serialization
+
+    sds.write(tmp_path / "linked", link=True)
+
+    assert not any(sd.is_empty for sd in sds.data)
+
+    sds.write_json(tmp_path / "linked")
+    sds4 = SpectroDataset.from_json(tmp_path / "linked" / f"{sds}.json")
+
+    assert all(
+        sd1.files == sd2.files for sd1, sd2 in zip(sds.data, sds4.data, strict=True)
     )

@@ -226,7 +226,12 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         freq = self.fft.f
 
         ax.pcolormesh(
-            time, freq, sx, vmin=self._v_lim[0], vmax=self._v_lim[1], cmap=self.colormap
+            time,
+            freq,
+            sx,
+            vmin=self._v_lim[0],
+            vmax=self._v_lim[1],
+            cmap=self.colormap,
         )
 
     def to_db(self, sx: np.ndarray) -> np.ndarray:
@@ -607,10 +612,23 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         if dictionary["audio_data"] is None:
             base_data = BaseData.from_dict(dictionary)
             return cls.from_base_data(
-                data=base_data, fft=sft, colormap=dictionary["colormap"]
+                data=base_data,
+                fft=sft,
+                colormap=dictionary["colormap"],
             )
 
         audio_data = AudioData.from_dict(dictionary["audio_data"])
-        return cls.from_audio_data(
-            audio_data, sft, v_lim=dictionary["v_lim"], colormap=dictionary["colormap"]
+        spectro_data = cls.from_audio_data(
+            audio_data,
+            sft,
+            v_lim=dictionary["v_lim"],
+            colormap=dictionary["colormap"],
         )
+
+        if dictionary["files"]:
+            spectro_files = [
+                SpectroFile.from_dict(sf) for sf in dictionary["files"].values()
+            ]
+            spectro_data.items = SpectroData.from_files(spectro_files).items
+
+        return spectro_data
