@@ -14,6 +14,7 @@ from OSmOSE.config import (
 )
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.event import Event
+from OSmOSE.core_api.frequency_scale import Scale, ScalePart
 from OSmOSE.core_api.instrument import Instrument
 from OSmOSE.core_api.spectro_dataset import SpectroDataset
 from OSmOSE.public_api.analysis import Analysis, AnalysisType
@@ -970,6 +971,12 @@ def test_get_analysis_audiodataset(
                 sample_rate=24_000,
                 subtype="DOUBLE",
                 fft=ShortTimeFFT(hamming(1024), 512, 24_000),
+                scale=Scale(
+                    [
+                        ScalePart(0.0, 0.5, 0.0, 24_000, "lin"),
+                        ScalePart(0.0, 0.5, 1000.0, 24_000, "log"),
+                    ]
+                ),
             ),
             [
                 Event(
@@ -1024,6 +1031,7 @@ def test_get_analysis_spectrodataset(
     assert analysis_sds.data[0].audio_data.instrument is dataset.instrument
 
     assert analysis_sds.fft is analysis.fft
+    assert analysis_sds.scale is analysis.scale
 
 
 def test_edit_analysis_before_run(

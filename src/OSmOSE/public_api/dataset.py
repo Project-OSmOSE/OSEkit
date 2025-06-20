@@ -224,6 +224,7 @@ class Dataset:
             name=ads.base_name,
             v_lim=analysis.v_lim,
             colormap=analysis.colormap,
+            scale=analysis.scale,
         )
 
     def run_analysis(

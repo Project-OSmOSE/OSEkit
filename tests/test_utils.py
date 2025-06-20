@@ -8,6 +8,7 @@ import pytest
 
 from OSmOSE.utils.core_utils import (
     file_indexes_per_batch,
+    get_closest_value_index,
     locked,
     nb_files_per_batch,
 )
@@ -315,3 +316,44 @@ def test_locked(tmp_path: pytest.fixture, monkeypatch: pytest.MonkeyPatch) -> No
     lock_file.touch()
     with pytest.raises(PermissionError, match="Lock file present.") as e:
         assert edit_file("") == e
+
+
+@pytest.mark.parametrize(
+    ("values", "target", "expected"),
+    [
+        pytest.param(
+            list(range(10)),
+            5,
+            5,
+            id="target_is_in_values",
+        ),
+        pytest.param(
+            list(range(10)),
+            5.2,
+            5,
+            id="target_is_closer_to_floor",
+        ),
+        pytest.param(
+            list(range(10)),
+            5.6,
+            6,
+            id="target_is_closer_to_ceiling",
+        ),
+        pytest.param(
+            list(range(10, 20)),
+            5,
+            0,
+            id="target_is_smaller_than_first_item",
+        ),
+        pytest.param(
+            list(range(10, 20)),
+            30,
+            9,
+            id="target_is_greater_than_last_item",
+        ),
+    ],
+)
+def test_get_closest_value_index(
+    values: list[float], target: float, expected: int
+) -> None:
+    assert get_closest_value_index(values=values, target=target) == expected

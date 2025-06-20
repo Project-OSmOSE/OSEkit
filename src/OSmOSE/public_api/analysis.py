@@ -3,6 +3,8 @@ from __future__ import annotations
 from enum import Flag, auto
 from typing import TYPE_CHECKING
 
+from OSmOSE.core_api.frequency_scale import Scale
+
 if TYPE_CHECKING:
     from pandas import Timedelta, Timestamp
     from scipy.signal import ShortTimeFFT
@@ -67,6 +69,7 @@ class Analysis:
         fft: ShortTimeFFT | None = None,
         v_lim: tuple[float, float] | None = None,
         colormap: str | None = None,
+        scale: Scale | None = None,
     ) -> None:
         """Initialize an Analysis object.
 
@@ -110,6 +113,9 @@ class Analysis:
         colormap: str | None
             Colormap to use for plotting the spectrogram.
             Has no effect if Analysis.SPECTROGRAM is not in analysis.
+        scale: OSmOSE.core_api.frequecy_scale.Scale
+            Custom frequency scale to use for plotting the spectrogram.
+            Has no effect if Analysis.SPECTROGRAM is not in analysis.
 
         """
         self.analysis_type = analysis_type
@@ -122,6 +128,7 @@ class Analysis:
         self.fft = fft
         self.v_lim = v_lim
         self.colormap = colormap
+        self.scale = scale
 
         if self.is_spectro and fft is None:
             raise ValueError(

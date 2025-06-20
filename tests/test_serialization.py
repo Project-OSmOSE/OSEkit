@@ -16,6 +16,7 @@ from OSmOSE.config import (
 from OSmOSE.core_api.audio_data import AudioData
 from OSmOSE.core_api.audio_dataset import AudioDataset
 from OSmOSE.core_api.audio_file import AudioFile
+from OSmOSE.core_api.frequency_scale import Scale, ScalePart
 from OSmOSE.core_api.instrument import Instrument
 from OSmOSE.core_api.spectro_data import SpectroData
 from OSmOSE.core_api.spectro_dataset import SpectroDataset
@@ -127,7 +128,10 @@ def test_audio_data_serialization(
     audio_files, _ = audio_files
 
     ad = AudioData.from_files(
-        audio_files, begin=begin, end=end, sample_rate=sample_rate
+        audio_files,
+        begin=begin,
+        end=end,
+        sample_rate=sample_rate,
     )
 
     assert np.array_equal(ad.get_value(), AudioData.from_dict(ad.to_dict()).get_value())
@@ -628,6 +632,7 @@ def test_spectro_data_serialization(
         "instrument",
         "v_lim",
         "colormap",
+        "frequency_scale",
         "name",
     ),
     [
@@ -640,6 +645,7 @@ def test_spectro_data_serialization(
             Timedelta(seconds=1),
             48_000,
             [ShortTimeFFT(win=hamming(1024), hop=1024, fs=48_000, mfft=1024)],
+            None,
             None,
             None,
             None,
@@ -659,6 +665,7 @@ def test_spectro_data_serialization(
             None,
             None,
             None,
+            None,
             id="ten_spectro_data_one_sft",
         ),
         pytest.param(
@@ -671,6 +678,7 @@ def test_spectro_data_serialization(
             48_000,
             [ShortTimeFFT(win=hamming(1024), hop=1024, fs=48_000, mfft=1024)],
             Instrument(end_to_end_db=150.0),
+            None,
             None,
             None,
             None,
@@ -689,6 +697,7 @@ def test_spectro_data_serialization(
             (-100.0, 0.0),
             None,
             None,
+            None,
             id="specified_v_lim",
         ),
         pytest.param(
@@ -702,6 +711,7 @@ def test_spectro_data_serialization(
             [ShortTimeFFT(win=hamming(1024), hop=1024, fs=48_000, mfft=1024)],
             Instrument(end_to_end_db=150.0),
             (0.0, 150.0),
+            None,
             None,
             None,
             id="specified_instrument_and_v_lim",
@@ -722,6 +732,7 @@ def test_spectro_data_serialization(
             None,
             None,
             None,
+            None,
             id="ten_spectro_data_two_sfts",
         ),
         pytest.param(
@@ -737,7 +748,29 @@ def test_spectro_data_serialization(
             None,
             "inferno",
             None,
+            None,
             id="specified_colormap",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+            },
+            Timedelta(seconds=1),
+            48_000,
+            [ShortTimeFFT(win=hamming(1024), hop=1024, fs=48_000, mfft=1024)],
+            None,
+            None,
+            None,
+            Scale(
+                [
+                    ScalePart(0.0, 0.5, 100, 48_000, "log"),
+                    ScalePart(0.0, 0.5, 0, 24_000, "lin"),
+                ]
+            ),
+            None,
+            id="specified_scale",
         ),
     ],
     indirect=["audio_files"],
@@ -751,6 +784,7 @@ def test_spectro_dataset_serialization(
     instrument: Instrument | None,
     v_lim: tuple[float, float] | None,
     colormap: str | None,
+    frequency_scale: Scale | None,
     name: str | None,
 ) -> None:
     audio_files, request = audio_files
@@ -777,6 +811,7 @@ def test_spectro_dataset_serialization(
         name=name,
         colormap=colormap,
         v_lim=v_lim,
+        scale=frequency_scale,
     )
     for idx, sd in enumerate(sds.data):  # Apply different SFTs to the sds data
         sd.fft = sfts[idx // (len(sds.data) // len(sfts))]
@@ -788,6 +823,7 @@ def test_spectro_dataset_serialization(
     assert str(sds) == str(sds2)
     assert sds.name == sds2.name
     assert sds.colormap == sds2.colormap
+    assert sds.scale == sds2.scale
     assert sds.has_default_name == sds2.has_default_name
     assert sds.begin == sds2.begin
     assert all(
@@ -842,4 +878,9 @@ def test_spectro_dataset_serialization(
     assert all(
         sd1.files == sd2.files for sd1, sd2 in zip(sds.data, sds4.data, strict=True)
     )
+    assert str(sds) == str(sds4)
+    assert sds.name == sds4.name
+    assert sds.colormap == sds4.colormap
+    assert sds.scale == sds4.scale
+    assert sds.has_default_name == sds4.has_default_name
     assert sds.begin == sds4.begin

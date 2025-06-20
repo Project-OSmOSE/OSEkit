@@ -4,6 +4,7 @@ import json
 import os
 import shutil
 import time
+from bisect import bisect
 from importlib.resources import as_file
 from importlib.util import find_spec
 from pathlib import Path
@@ -282,3 +283,28 @@ def locked(lock_file: Path) -> callable:
         return wrapper
 
     return inner
+
+
+def get_closest_value_index(target: float, values: list[float]) -> int:
+    """Get the index of the closest value in a list from a target value.
+
+    Parameters
+    ----------
+    target: float
+        Target value from which the closest value is to be found.
+    values: float
+        List of values in which the closest value from target is
+        to be found.
+
+    Returns
+    -------
+    int
+        Index of the closest value from target in values.
+
+    """
+    closest_upper_index = min(bisect(values, target), len(values) - 1)
+    closest_lower_index = max(0, closest_upper_index - 1)
+    return min(
+        (closest_lower_index, closest_upper_index),
+        key=lambda i: abs(values[i] - target),
+    )
