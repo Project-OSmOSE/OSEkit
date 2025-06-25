@@ -20,3 +20,4 @@ Core API
    spectroitem
    spectrodata
    spectrodataset
+   audiofilemanager

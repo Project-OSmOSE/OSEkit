@@ -23,6 +23,9 @@ Such begin timestamp can either be specified (as a :class:`pandas.Timestamp` ins
 Audio Data
 ^^^^^^^^^^
 
+Design
+""""""
+
 The :class:`OSmOSE.core_api.audio_data.AudioData` class represent a chunk of audio taken between two specific timestamps from one or more `AudioFile` instances.
 
 This class offers means of easily resample the data and access it on-demand (with an optimized I/O workflow to minimize the file openings/closings).
@@ -97,4 +100,35 @@ Item 4
 	End             2023-04-05 15:49:56
 	Is gap                           NO
 """
+
+Accessing the audio data
+""""""""""""""""""""""""
+
+The :meth:`OSmOSE.core_api.audio_data.AudioData.get_value` method returns a `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ that contains the wav values of the audio data.
+
+The data is fetched seamlessly on-demand from the audio file(s). The opening/closing of the audio files is optimized thanks to a :class:`OSmOSE.core_api.audio_file_manager.AudioFileManager` instance.
+
+Eventual time gap between audio items are filled with ``0.`` values.
+
+
+Calibration: going back to pressure levels
+""""""""""""""""""""""""""""""""""""""""""
+
+The :class:`OSmOSE.core_api.instrument.Instrument` class can be used to provide calibration info to your audio data.
+This can be used to convert raw WAV data to the recorded acoustic pressure.
+
+An ``Instrument`` instance can be attached to an ``AudioData``. Then, the :meth:`OSmOSE.core_api.audio_data.AudioData.get_value_calibrated` method
+allows for retrieving the data in the shape of the recorded acoustic pressure.
+
+.. code-block:: python
+
+    from OSmOSE.core_api.instrument import Instrument
+    from OSmOSE.core_api.audio_data import AudioData
+    import numpy as np
+
+    instrument = Instrument(end_to_end_db = 150) # The raw 1. WAV value equals 150 dB SPL re 1 uPa
+    ad = AudioData(..., instrument=Instrument)
+
+    p = ad.get_value_calibrated()
+    spl = 20*np.log10(p/instrument.P_REF) # P_REF is 1 uPa by default
 
