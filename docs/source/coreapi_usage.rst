@@ -147,3 +147,63 @@ Modifying the property will not access the data, but the data will be resampled 
     ad = AudioData(...)
     ad.sample_rate = 48_000 # Resample the signal at 48 kHz. Nothing happens yet
     resampled_signal = ad.get_value() # The original audio data will be resampled while being fetched here.
+
+
+Audio Dataset
+^^^^^^^^^^^^^
+
+The :class:`OSmOSE.core_api.audio_dataset.AudioDataset` class enables the instantiation and manipulation of large amounts of
+``AudioData`` objects with simple operations.
+
+Instantiating an Audio Dataset
+""""""""""""""""""""""""""""""
+
+The constructor of the ``AudioDataset`` class accepts a list of ``AudioData`` as parameter.
+
+But this is not the only way to create an audio dataset.
+The :meth:`OSmOSE.core_api.audio_dataset.AudioDataset.from_folder` class method allows to easily instantiate
+an ``AudioDataset`` from a given folder containing audio files:
+
+.. code-block:: python
+
+    from pathlib import Path
+    from OSmOSE.core_api.audio_dataset import AudioDataset
+    from pandas import Timestamp, Timedelta
+
+    folder = Path(r"...")
+    ads = AudioDataset.from_folder
+    (
+        folder=folder,
+        strptime_format="%y_%m_%d_%H_%M_%S", # To parse the files begin Timestamp
+        begin=Timestamp("2009-01-06 12:00:00"),
+        end=Timestamp("2009-01-06 14:00:00"),
+        data_duration=Timedelta("10s")
+    )
+
+The resulting ``AudioDataset`` will contain 10s-long ``AudioData`` ranging from ``2009-01-06 12:00:00`` to ``2009-01-06 14:00:00``.
+
+You don't have to worry about the shape of the original audio files: audio data will be fetched seamlessly in the corresponding
+file(s) whenever you need it.
+
+Manipulating the Audio Dataset
+""""""""""""""""""""""""""""""
+
+If one wanted to resample these 10s-long audio data and export them as wav files, the ``AudioDataset`` makes it easy:
+
+.. code-block:: python
+
+    ads.sample_rate = 48_000 # The sample rate of all AudioData will be edited
+    ads.write(folder / "output") # All audio data will be exported to wav files in that folder
+
+All the ``AudioData`` constituting the ``AudioDataset`` are accessible through the :attr:`OSmOSE.core_api.audio_dataset.AudioDataset.data`
+field:
+
+.. code-block:: python
+
+    # Filtering the ads data to remove data without audio (e.g. between files)
+    ads.data = [ad for ad in ads.data if not ad.is_empty]
+
+    # Resampling/Exporting only the first audio data
+    ad = ads.data[0]
+    ad.sample_rate = 128_000
+    ad.write(folder / "alone_data")
