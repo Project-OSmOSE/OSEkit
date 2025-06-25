@@ -132,3 +132,18 @@ allows for retrieving the data in the shape of the recorded acoustic pressure.
     p = ad.get_value_calibrated()
     spl = 20*np.log10(p/instrument.P_REF) # P_REF is 1 uPa by default
 
+
+Resampling the audio
+""""""""""""""""""""
+
+``AudioData`` can be resampled just by modifying the :attr:`OSmOSE.core_api.audio_data.AudioData.sample_rate` property.
+
+Modifying the property will not access the data, but the data will be resampled on the fly when it is requested:
+
+.. code-block:: python
+
+    from OSmOSE.core_api.audio_data import AudioData
+
+    ad = AudioData(...)
+    ad.sample_rate = 48_000 # Resample the signal at 48 kHz. Nothing happens yet
+    resampled_signal = ad.get_value() # The original audio data will be resampled while being fetched here.
