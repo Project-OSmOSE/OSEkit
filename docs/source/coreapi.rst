@@ -21,3 +21,4 @@ Core API
    spectrodata
    spectrodataset
    audiofilemanager
+   frequencyscale

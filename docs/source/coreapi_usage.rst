@@ -1,5 +1,5 @@
-Core API Usage
---------------
+Usage
+-----
 
 .. _coreapi_usage:
 
@@ -114,6 +114,8 @@ Eventual time gap between audio items are filled with ``0.`` values.
 Calibration: going back to pressure levels
 """"""""""""""""""""""""""""""""""""""""""
 
+.. _instrument_calibration:
+
 The :class:`OSmOSE.core_api.instrument.Instrument` class can be used to provide calibration info to your audio data.
 This can be used to convert raw WAV data to the recorded acoustic pressure.
 
@@ -136,9 +138,9 @@ allows for retrieving the data in the shape of the recorded acoustic pressure.
 Resampling the audio
 """"""""""""""""""""
 
-``AudioData`` can be resampled just by modifying the :attr:`OSmOSE.core_api.audio_data.AudioData.sample_rate` property.
+``AudioData`` can be resampled just by modifying the :attr:`OSmOSE.core_api.audio_data.AudioData.sample_rate` field.
 
-Modifying the property will not access the data, but the data will be resampled on the fly when it is requested:
+Modifying the sample rate will not access the data, but the data will be resampled on the fly when it is requested:
 
 .. code-block:: python
 
@@ -207,3 +209,120 @@ field:
     ad = ads.data[0]
     ad.sample_rate = 128_000
     ad.write(folder / "alone_data")
+
+
+Spectro Data
+^^^^^^^^^^^^
+
+The :class:`OSmOSE.core_api.spectro_data.SpectroData` class allows to perform spectral computations and to plot spectrograms from ``AudioData`` objects.
+
+The most straightforward way to instantiate a ``SpectroData`` is from an ``AudioData`` and a `scipy.signal.ShortTimeFFT <https://docs.scipy.org/doc//scipy/reference/generated/scipy.signal.ShortTimeFFT.html>`_ instance:
+
+.. code-block:: python
+
+    from OSmOSE.core_api.audio_data import AudioData
+    from OSmOSE.core_api.spectro_data import SpectroData
+    from scipy.signal import ShortTimeFFT
+    from scipy.signal.windows import hamming
+
+    ad = AudioData(...) # See AudioData documentation
+
+    sft = ShortTimeFFT(
+        win=hamming(1024),
+        hop=512,
+        fs=ad.sample_rate,
+    )
+
+    sd = SpectroData.from_audio_data(data=ad, fft=sft)
+
+Once again, no audio has yet been fetched: everything happens only on-demand.
+
+Computing NPZ matrices
+""""""""""""""""""""""
+
+The ``SpectroData`` object can be used to compute the spectrum matrices of the ``AudioData`` with the :meth:`OSmOSE.core_api.spectro_data.SpectroData.get_value` method.
+
+The :attr:`OSmOSE.core_api.spectro_data.SpectroData.sx_dtype` property can be set to either ``complex`` (default) or ``float`` to return either the spectrum matrices as complex numbers or absolute values, respectively.
+
+The spectrum matrices can be converted to decibels thanks to the :meth:`OSmOSE.core_api.spectro_data.SpectroData.to_db` method.
+This method will convert the matrix values either to dB SPL (re ``Instrument.P_REF``) if an :ref:`Instrument <instrument_calibration>` was provided to the ``AudioData`` or to dB FS otherwise.
+
+The spectrum matrices can then be exported to npz files thanks to the :meth:`OSmOSE.core_api.spectro_data.SpectroData.write` method.
+
+.. code-block:: python
+
+    sd = SpectroData.from_audio_data(data=ad, fft=sft)
+
+    sx = sd.get_value()
+    sx_db = sd.to_db(sx)
+
+    # If sx has already been computed, you can pass it as a parameter to avoid re-computing it.
+    # Otherwise, it will just be computed from scratch.
+    sd.write(Path(r"output_folder"), sx=sx)
+
+
+Plotting and exporting spectrograms
+"""""""""""""""""""""""""""""""""""
+
+Spectrograms can be plotted from the ``SpectroData`` objects thanks to the :meth:`OSmOSE.core_api.spectro_data.SpectroData.plot` method.
+
+OSEkit uses `pyplot <https://matplotlib.org/stable/tutorials/pyplot.html>`_ for plotting spectrograms. A pyplot `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes>`_
+can be provided to the ``SpectroData.plot()`` method to specify an Axes in which to plot the spectrogram:
+
+.. code-block:: python
+
+    from OSmOSE.core_api.spectro_data import SpectroData
+    import matplotlib.pyplot as plt
+
+    sd = SpectroData(...) # See SpectroData documentation
+
+    sd.plot() # This will plot on a default figure
+    plt.show()
+
+    _, axs = plt.subplots(2,1)
+    sd.plot(ax=axs[0])
+    plt.show() # The spectrogram will be plotted on the top Axes of the figure
+
+Custom frequency scale
+""""""""""""""""""""""
+
+The y-axis of the spectrograms can be parametrized thanks to the :class:`OSmOSE.core_api.frequency_scale.Scale` class.
+
+The custom ``Scale`` is made of ``ScalePart`` (:class:`OSmOSE.core_api.frequency_scale.ScalePart`). Each ``ScalePart``
+correspond to a given frequency range on a given area of the y-axis:
+
+.. code-block:: python
+
+    from OSmOSE.core_api.frequency_scale import Scale, ScalePart
+
+    scale = Scale(
+        [
+            ScalePart(
+                p_min=0., # From 0% of the axis
+                p_max=.5, # To 50% of the axis
+                f_min=5_000., # From 5 kHz
+                f_max=20_000, # To 20 kHz
+            ),
+            ScalePart(
+                p_min=.5, # From 50% of the axis
+                p_max=.7, # To 70% of the axis
+                f_min=0., # From 5 kHz
+                f_max=3_000., # To 20 kHz
+            ),
+            ScalePart(
+                p_min=.7, # From 70% of the axis
+                p_max=1., # To 100% of the axis
+                f_min=0., # From 0 Hz
+                f_max=72_000, # To 72 kHz
+            ),
+        ],
+    )
+    fig, axs = plt.subplots(2,1)
+    sd.plot(ax=axs[0]) # We plot the full spectrogram at the top
+    sd.plot(ax=axs[1],scale=scale) # And the custom scale one at the bottom
+    plt.subplots_adjust(left=0, right=1, top=1, bottom=0, hspace=0, wspace=0)
+    plt.show()
+
+The resulting figure presents the full-scale spectrogram at the top (from 0 to 72 kHz), and the custom-scale one at the bottom:
+
+.. image:: _static/spectrograms/frequency_scale2.png
