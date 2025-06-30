@@ -1,8 +1,13 @@
 <br>
 <br>
-<div align='center'>
+<div align="center">
+
 <a href="https://github.com/Project-OSmOSE/OSEkit">
-    <img src="https://github.com/Project-OSmOSE/OSEkit/blob/main/docs/logo/osmose_logo.png" alt="osmose logo" title="OSmOSE" height="120" style="padding-bottom:1em !important;" />
+    <img src="docs/logo/osekit.png" alt="OSEkit logo" title="OSEkit" height="120" />
+</a>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="https://osmose.ifremer.fr/">
+    <img src="docs/logo/osmose_texte_sombre.png" alt="OSmOSE logo" title="OSmOSE" height="120" />
 </a>
 
 <br>
@@ -12,7 +17,7 @@
 ![PyPI status](https://img.shields.io/pypi/status/ansicolortags.svg)
 ![license](https://img.shields.io/github/license/mashape/apistatus.svg)
 ![Open Source Love](https://img.shields.io/badge/open%20source-♡-lightgrey)
-![Python 3.10](https://img.shields.io/badge/python-3.12-blue.svg)
+![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)
 
 **OSEkit** is an open source suite of tools written in python and dedicated to the management and analysis of data in underwater passive acoustics.
 
@@ -41,5 +46,4 @@ All details to start using our toolkit and make the most out of it are given in 
  
 # ㅤ
 <sub>© OSmOSE team, 2023-present</sub>
-
 
