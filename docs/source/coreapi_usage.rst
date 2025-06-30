@@ -101,8 +101,8 @@ Item 4
 	Is gap                           NO
 """
 
-Accessing the audio data
-""""""""""""""""""""""""
+Reading data
+""""""""""""
 
 The :meth:`OSmOSE.core_api.audio_data.AudioData.get_value` method returns a `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ that contains the wav values of the audio data.
 
@@ -111,8 +111,8 @@ The data is fetched seamlessly on-demand from the audio file(s). The opening/clo
 Eventual time gap between audio items are filled with ``0.`` values.
 
 
-Calibration: going back to pressure levels
-""""""""""""""""""""""""""""""""""""""""""
+Calibration
+"""""""""""
 
 .. _instrument_calibration:
 
@@ -135,8 +135,8 @@ allows for retrieving the data in the shape of the recorded acoustic pressure.
     spl = 20*np.log10(p/instrument.P_REF) # P_REF is 1 uPa by default
 
 
-Resampling the audio
-""""""""""""""""""""
+Resampling
+""""""""""
 
 ``AudioData`` can be resampled just by modifying the :attr:`OSmOSE.core_api.audio_data.AudioData.sample_rate` field.
 
@@ -157,8 +157,8 @@ Audio Dataset
 The :class:`OSmOSE.core_api.audio_dataset.AudioDataset` class enables the instantiation and manipulation of large amounts of
 ``AudioData`` objects with simple operations.
 
-Instantiating an Audio Dataset
-""""""""""""""""""""""""""""""
+Instantiation
+"""""""""""""
 
 The constructor of the ``AudioDataset`` class accepts a list of ``AudioData`` as parameter.
 
@@ -187,8 +187,8 @@ The resulting ``AudioDataset`` will contain 10s-long ``AudioData`` ranging from 
 You don't have to worry about the shape of the original audio files: audio data will be fetched seamlessly in the corresponding
 file(s) whenever you need it.
 
-Manipulating the Audio Dataset
-""""""""""""""""""""""""""""""
+Manipulation
+""""""""""""
 
 If one wanted to resample these 10s-long audio data and export them as wav files, the ``AudioDataset`` makes it easy:
 
@@ -237,8 +237,8 @@ The most straightforward way to instantiate a ``SpectroData`` is from an ``Audio
 
 Once again, no audio has yet been fetched: everything happens only on-demand.
 
-Computing NPZ matrices
-""""""""""""""""""""""
+NPZ matrices
+""""""""""""
 
 The ``SpectroData`` object can be used to compute the spectrum matrices of the ``AudioData`` with the :meth:`OSmOSE.core_api.spectro_data.SpectroData.get_value` method.
 
@@ -261,8 +261,8 @@ The spectrum matrices can then be exported to npz files thanks to the :meth:`OSm
     sd.write(Path(r"output_folder"), sx=sx)
 
 
-Plotting and exporting spectrograms
-"""""""""""""""""""""""""""""""""""
+Plot and export
+"""""""""""""""
 
 Spectrograms can be plotted from the ``SpectroData`` objects thanks to the :meth:`OSmOSE.core_api.spectro_data.SpectroData.plot` method.
 
@@ -283,8 +283,8 @@ can be provided to the ``SpectroData.plot()`` method to specify an Axes in which
     sd.plot(ax=axs[0])
     plt.show() # The spectrogram will be plotted on the top Axes of the figure
 
-Custom frequency scale
-""""""""""""""""""""""
+Custom frequency scales
+"""""""""""""""""""""""
 
 The y-axis of the spectrograms can be parametrized thanks to the :class:`OSmOSE.core_api.frequency_scale.Scale` class.
 
