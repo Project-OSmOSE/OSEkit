@@ -1,6 +1,6 @@
 <br>
 <br>
-<div style='text-align: center;'>
+<div align="center">
 
 <a href="https://github.com/Project-OSmOSE/OSEkit">
     <img src="docs/logo/osekit.png" alt="OSEkit logo" title="OSEkit" height="120" style="padding-bottom:1em; padding-right:3em;" />
