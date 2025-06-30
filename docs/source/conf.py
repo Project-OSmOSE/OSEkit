@@ -34,6 +34,7 @@ html_theme_options = {
     "sticky_navigation": True,
     "logo_only": True,
     "style_nav_header_background": "#252529",
+    "navigation_depth": 6,
 }
 html_favicon = "_static/favicon.ico"
 html_logo = "../logo/osekit_small.png"
