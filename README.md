@@ -1,8 +1,12 @@
 <br>
 <br>
-<div align='center'>
+<div style='text-align: center;'>
+
 <a href="https://github.com/Project-OSmOSE/OSEkit">
-    <img src="https://github.com/Project-OSmOSE/OSEkit/blob/main/docs/logo/osmose_logo.png" alt="osmose logo" title="OSmOSE" height="120" style="padding-bottom:1em !important;" />
+    <img src="docs/logo/osekit.png" alt="OSEkit logo" title="OSEkit" height="120" style="padding-bottom:1em; padding-right:3em;" />
+</a>
+<a href="https://osmose.ifremer.fr/">
+    <img src="docs/logo/osmose_texte_sombre.png" alt="OSmOSE logo" title="OSmOSE" height="120" style="padding-bottom:1em;" />
 </a>
 
 <br>
