@@ -3,10 +3,11 @@
 <div align="center">
 
 <a href="https://github.com/Project-OSmOSE/OSEkit">
-    <img src="docs/logo/osekit.png" alt="OSEkit logo" title="OSEkit" height="120" style="padding-bottom:1em; padding-right:3em;" />
+    <img src="docs/logo/osekit.png" alt="OSEkit logo" title="OSEkit" height="120" />
 </a>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <a href="https://osmose.ifremer.fr/">
-    <img src="docs/logo/osmose_texte_sombre.png" alt="OSmOSE logo" title="OSmOSE" height="120" style="padding-bottom:1em;" />
+    <img src="docs/logo/osmose_texte_sombre.png" alt="OSmOSE logo" title="OSmOSE" height="120" />
 </a>
 
 <br>
@@ -45,5 +46,4 @@ All details to start using our toolkit and make the most out of it are given in 
  
 # ㅤ
 <sub>© OSmOSE team, 2023-present</sub>
-
 
