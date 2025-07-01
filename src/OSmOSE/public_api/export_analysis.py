@@ -21,6 +21,7 @@ def write_analysis(
     subtype: str,
     matrix_folder_name: str,
     spectrogram_folder_name: str,
+    welch_folder_name: str,
     link: bool = True,
     first: int = 0,
     last: int | None = None,
@@ -44,6 +45,8 @@ def write_analysis(
         The folder in which the matrix npz files should be written.
     spectrogram_folder_name: Path
         The folder in which the spectrogram png files should be written.
+    welch_folder_name: Path
+        The folder in which the welch npz files should be written.
     link: bool
         If set to True, the ads data will be linked to the exported files.
     first: int
@@ -65,6 +68,7 @@ def write_analysis(
     if (
         AnalysisType.MATRIX not in analysis_type
         and AnalysisType.SPECTROGRAM not in analysis_type
+        and AnalysisType.WELCH not in analysis_type
     ):
         return
 
@@ -93,6 +97,12 @@ def write_analysis(
         sds.write(
             folder=sds.folder / matrix_folder_name,
             link=link,
+            first=first,
+            last=last,
+        )
+    if AnalysisType.WELCH in analysis_type:
+        sds.write_welch(
+            folder=sds.folder / welch_folder_name,
             first=first,
             last=last,
         )
@@ -153,6 +163,13 @@ if __name__ == "__main__":
         "-sfn",
         required=True,
         help="The name of the folder in which the png spectrogram files are written.",
+        type=str,
+    )
+    required.add_argument(
+        "--welch-folder-name",
+        "-wfn",
+        required=True,
+        help="The name of the folder in which the npz welch files are written.",
         type=str,
     )
     required.add_argument(
@@ -220,6 +237,7 @@ if __name__ == "__main__":
         subtype=subtype,
         matrix_folder_name=args.matrix_folder_name,
         spectrogram_folder_name=args.spectrogram_folder_name,
+        welch_folder_name=args.welch_folder_name,
         first=args.first,
         last=args.last,
         link=True,

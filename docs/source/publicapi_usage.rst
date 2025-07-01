@@ -99,7 +99,9 @@ The ``analysis_type`` parameter passed to the initializer is a :class:`OSmOSE.pu
    * - ``AnalysisType.AUDIO``
      - Reshaped audio files
    * - ``AnalysisType.MATRIX``
-     - Spectrum NPZ matrix files
+     - `STFT <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.ShortTimeFFT.stft.html#scipy.signal.ShortTimeFFT.stft>`_ NPZ matrix files
+   * - ``AnalysisType.WELCH``
+     - `Welch <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.welch.html>`_ NPZ files
    * - ``AnalysisType.SPECTROGRAM``
      - PNG spectrogram images
 
@@ -120,7 +122,7 @@ The remaining parameters of the analysis (begin and end **Timestamps**, duration
 
 .. note::
 
-   If the ``Analysis`` contains spectral computations (either ``AnalysisType.MATRIX`` or ``AnalysisType.SPECTROGRAM`` is in ``analysis_type``), a `scipy ShortTimeFFT instance <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.ShortTimeFFT.html#scipy.signal.ShortTimeFFT>`_ should be passed to the ``Analysis`` initializer.
+   If the ``Analysis`` contains spectral computations (either ``AnalysisType.MATRIX``, ``AnalysisType.SPECTROGRAM`` or ``AnalysisType.WELCH`` is in ``analysis_type``), a `scipy ShortTimeFFT instance <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.ShortTimeFFT.html#scipy.signal.ShortTimeFFT>`_ should be passed to the ``Analysis`` initializer.
 
 
 Checking/Editing the analysis
@@ -272,7 +274,7 @@ Then we are all set for running the analysis:
     from pandas import Timedelta
 
     analysis = Analysis(
-        analysis_type = AnalysisType.AUDIO | AnalysisType.MATRIX | AnalysisType.SPECTROGRAM, # Full analysis : audio files, spectrum matrices and spectrograms will be exported.
+        analysis_type = AnalysisType.AUDIO | AnalysisType.MATRIX | AnalysisType.WELCH | AnalysisType.SPECTROGRAM, # Full analysis : audio files, spectrum matrices and spectrograms will be exported.
         begin=dataset.origin_dataset.begin + Timedelta(minutes=30), # 30m after the begin of the original dataset
         end=dataset.origin_dataset.begin + Timedelta(hours=1.5), # 1h30 after the begin of the original dataset
         data_duration=Timedelta("10s"), # Duration of the output data
@@ -320,13 +322,15 @@ The dataset folder now looks like this (the output from the first example was re
         │   ├── ...
         │   ├── 2023_04_05_17_18_46_000000.png
         │   └── 2023_04_05_17_18_56_000000.png
-        ├── welches
+        ├── matrix
         │   ├── 2023_04_05_16_19_06_000000.npz
         │   ├── 2023_04_05_16_19_16_000000.npz
         │   ├── 2023_04_05_16_19_26_000000.npz
         │   ├── ...
         │   ├── 2023_04_05_17_18_46_000000.npz
         │   └── 2023_04_05_17_18_56_000000.npz
+        ├── welch
+        │   └── 2023_04_05_16_19_06_000000.npz
         └── full_analysis.json
     other
     ├── foo

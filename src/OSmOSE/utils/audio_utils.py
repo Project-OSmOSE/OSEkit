@@ -14,7 +14,7 @@ from OSmOSE.config import (
 def generate_sample_audio(
     nb_files: int,
     nb_samples: int,
-    series_type: Literal["repeat", "increase", "sine"] = "repeat",
+    series_type: Literal["repeat", "increase", "sine", "noise"] = "repeat",
     sine_frequency: float = 1000.0,
     min_value: float = 0.0,
     max_value: float = 1.0,
@@ -33,6 +33,7 @@ def generate_sample_audio(
         "repeat": audio data contain the same linear values from min to max.
         "increase": audio data contain increasing values from min to max.
         "sine": audio data contain sine waves with a peak value of max_value.
+        "noise": audio data contains white gaussian noise (mean=0., std=1.)
         Defaults to "repeat".
     sine_frequency: float (Optional)
         Frequency of the sine waves.
@@ -75,6 +76,13 @@ def generate_sample_audio(
                 np.sin(2 * np.pi * sine_frequency * t, dtype=dtype) * max_value,
                 nb_files,
             ),
+            nb_files,
+        )
+    if series_type == "noise":
+        generator = np.random.default_rng(seed=1)
+        sig = generator.normal(0.0, 1.0, size=nb_samples)
+        return np.split(
+            sig,
             nb_files,
         )
     return np.split(np.empty(nb_samples * nb_files, dtype=dtype), nb_files)

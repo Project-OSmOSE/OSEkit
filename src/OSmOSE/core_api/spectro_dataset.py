@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Literal
 import numpy as np
 from scipy.signal import ShortTimeFFT
 
+from OSmOSE.config import DPDEFAULT
 from OSmOSE.core_api.base_dataset import BaseDataset
 from OSmOSE.core_api.frequency_scale import Scale
 from OSmOSE.core_api.json_serializer import deserialize_json
@@ -111,6 +112,38 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         last = len(self.data) if last is None else last
         for data in self.data[first:last]:
             data.save_spectrogram(folder, scale=self.scale)
+
+    def write_welch(
+        self,
+        folder: Path,
+        first: int = 0,
+        last: int | None = None,
+        nperseg: int | None = None,
+        detrend: str | callable | False = "constant",
+        return_onesided: bool = True,
+        scaling: Literal["density", "spectrum"] = "density",
+        average: Literal["mean", "median"] = "mean",
+    ) -> None:
+        folder.mkdir(parents=True, exist_ok=True, mode=DPDEFAULT)
+        timestamps = []
+        pxs = []
+        for data in self.data[first:last]:
+            timestamps.append(f"{data.begin!s}_{data.end!s}")
+            pxs.append(
+                data.get_welch(
+                    nperseg=nperseg,
+                    detrend=detrend,
+                    return_onesided=return_onesided,
+                    scaling=scaling,
+                    average=average,
+                ),
+            )
+        np.savez(
+            file=folder / f"{self.data[first]}.npz",
+            timestamps=timestamps,
+            pxs=pxs,
+            freq=self.fft.f,
+        )
 
     def save_all(
         self,

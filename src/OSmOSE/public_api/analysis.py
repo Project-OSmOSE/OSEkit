@@ -23,6 +23,8 @@ class AnalysisType(Flag):
         these files.
     SPECTROGRAM:
         Will export the spectrogram png images.
+    WELCH:
+        Will write the npz welches to disk.
 
     Multiple flags can be enabled thanks to the logical or | operator:
     AnalysisType.AUDIO | AnalysisType.SPECTROGRAM will export both audio files and
@@ -43,6 +45,7 @@ class AnalysisType(Flag):
     AUDIO = auto()
     MATRIX = auto()
     SPECTROGRAM = auto()
+    WELCH = auto()
 
 
 class Analysis:
@@ -140,5 +143,9 @@ class Analysis:
         """Return True if the analysis contains spectral computations, False otherwise."""
         return any(
             flag in self.analysis_type
-            for flag in (AnalysisType.MATRIX, AnalysisType.SPECTROGRAM)
+            for flag in (
+                AnalysisType.MATRIX,
+                AnalysisType.SPECTROGRAM,
+                AnalysisType.WELCH,
+            )
         )

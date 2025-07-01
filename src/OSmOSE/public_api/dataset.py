@@ -309,8 +309,9 @@ class Dataset:
         sds: SpectroDataset | None = None,
         link: bool = False,
         subtype: str | None = None,
-        matrix_folder_name: str = "welches",
+        matrix_folder_name: str = "matrix",
         spectrogram_folder_name: str = "spectrogram",
+        welch_folder_name: str = "welch",
     ) -> None:
         """Perform an analysis and write the results on disk.
 
@@ -327,6 +328,9 @@ class Dataset:
             exported (relative to sds.folder)
         matrix_folder_name:
             The name of the folder in which the npz matrices will be
+            exported (relative to sds.folder)
+        welch_folder_name:
+            The name of the folder in which the npz welch files will be
             exported (relative to sds.folder)
         sds: SpectroDataset
             The SpectroDataset on which the data should be written.
@@ -355,6 +359,7 @@ class Dataset:
                 subtype=subtype,
                 matrix_folder_name=matrix_folder_name,
                 spectrogram_folder_name=spectrogram_folder_name,
+                welch_folder_name=welch_folder_name,
             )
             return
 
@@ -373,6 +378,7 @@ class Dataset:
                 f"--subtype {subtype} "
                 f"--matrix-folder-name {matrix_folder_name} "
                 f"--spectrogram-folder-name {spectrogram_folder_name} "
+                f"--welch-folder-name {welch_folder_name} "
                 f"--first {start} "
                 f"--last {stop} "
                 f"--downsampling-quality {resample_quality_settings['downsample']} "
