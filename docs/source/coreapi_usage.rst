@@ -326,3 +326,39 @@ correspond to a given frequency range on a given area of the y-axis:
 The resulting figure presents the full-scale spectrogram at the top (from 0 to 72 kHz), and the custom-scale one at the bottom:
 
 .. image:: _static/spectrograms/frequency_scale.png
+
+
+LTAS Data
+^^^^^^^^^
+
+OSEkit provides the :class:`OSmOSE.core_api.ltas_data.LTASData` class for computing and plotting LTAS (**L**\ ong-\ **T**\ erm **A**\ verage **S**\ pectrum).
+
+LTAS are suitable when a spectrum is computed over a very long time and that the spectrum matrix time dimension reach a really high value.
+In that case, time bins can be averaged to form a LTAS, which time resolution is lower than that of the original spectrum.
+
+In OSEkit, LTAS are computed recursively: the user specifies a target number of time bins in the spectrum matrix, noted ``n_bins``.
+
+The visualization below depicts the process: the LTAS is computed with a target ``n_bins = 3000``.
+Yellow rectangles depict the audio data (the x-axis being the time axis), and the number in the lower right
+corner depicts the number of time bins in the spectrum matrix for this audio data.
+The audio is recursively split in ``n_bins`` parts (it is split in 3 in the
+representation instead of 3000 for clarity purposes) until the number of time bins in the matrix gets below ``n_bins``.
+Then, these spectrum parts are computed (hatched rectangles) and averaged across the time axis (filled rectangles).
+
+.. image:: _static/ltas/ltas.gif
+   :width: 300px
+   :align: center
+
+``LTASData`` objects inherit from ``SpectroData``. It uses the same methods, only the additionnal ``nb_time_bins`` parameter
+should be provided:
+
+.. code-block:: python
+
+    ad = AudioData(...) # See AudioData documentation
+    sft = ShortTimeFFT(win = 1024, hop = 512, fs = ad.sample_rate)
+    ltas = LTASData.from_audio_data(data=ad, fft=sft, nb_time_bins=3000)
+
+    ltas.plot()
+    plt.show()
+
+A ``SpectroData`` object can be turned into a ``LTASData`` thanks to the :meth:`OSmOSE.core_api.ltas_data.LTASData.from_spectro_data` method.
