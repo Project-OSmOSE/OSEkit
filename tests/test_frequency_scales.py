@@ -174,7 +174,7 @@ def test_frequency_scale_part_get_values(
     nb_points: int,
     expected: list[int],
 ) -> None:
-    assert scale_part.get_values(nb_points) == expected
+    assert np.allclose(scale_part.get_values(nb_points), expected, atol=0.5)
 
 
 @pytest.mark.parametrize(
@@ -338,7 +338,7 @@ def test_frequency_scale_map(
     scale_length: int,
     expected: list[float],
 ) -> None:
-    assert scale.map(scale_length) == expected
+    assert np.allclose(scale.map(scale_length), expected, atol=0.5)
 
 
 @pytest.mark.parametrize(

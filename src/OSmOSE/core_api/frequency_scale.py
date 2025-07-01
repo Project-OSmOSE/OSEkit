@@ -69,7 +69,7 @@ class ScalePart:
     def get_values(self, scale_length: int) -> list[int]:
         """Return the values of the present scale part."""
         start, stop = self.get_indexes(scale_length)
-        return list(map(round, self.scale_lambda(self.f_min, self.f_max, stop - start)))
+        return list(self.scale_lambda(self.f_min, self.f_max, stop - start))
 
     def to_dict_value(self) -> tuple[float, float, float, float, str]:
         """Serialize a ScalePart to a dictionary entry."""
