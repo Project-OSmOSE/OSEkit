@@ -231,6 +231,7 @@ class BaseData(Generic[TItem, TFile], Event):
         files: list[TFile],
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
+        name: str | None = None,
     ) -> BaseData[TItem, TFile]:
         """Return a base DataBase object from a list of Files.
 
@@ -244,6 +245,8 @@ class BaseData(Generic[TItem, TFile], Event):
         end: Timestamp | None
             End of the data object.
             Defaulted to the end of the last file.
+        name: str | None
+            Name of the exported files.
 
         Returns
         -------
@@ -251,8 +254,8 @@ class BaseData(Generic[TItem, TFile], Event):
         The BaseData object.
 
         """
-        items = cls.items_from_files(files, begin, end)
-        return cls(items)
+        items = cls.items_from_files(files=files, begin=begin, end=end)
+        return cls(items=items, name=name)
 
     @classmethod
     def items_from_files(
