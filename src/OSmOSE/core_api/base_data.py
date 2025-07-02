@@ -15,6 +15,7 @@ from pandas import Timestamp, date_range
 from OSmOSE.config import (
     DPDEFAULT,
     TIMESTAMP_FORMAT_AUDIO_FILE,
+    TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMATS_EXPORTED_FILES,
 )
 from OSmOSE.core_api.base_file import BaseFile
@@ -38,6 +39,7 @@ class BaseData(Generic[TItem, TFile], Event):
         items: list[TItem] | None = None,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
+        name: str | None = None,
     ) -> None:
         """Initialize a BaseData from a list of Items.
 
@@ -52,6 +54,8 @@ class BaseData(Generic[TItem, TFile], Event):
         end: Timestamp | None
             Only effective if items is None.
             Set the end of the empty data.
+        name: str | None
+            Name of the exported files.
 
         """
         if not items:
@@ -59,10 +63,28 @@ class BaseData(Generic[TItem, TFile], Event):
         self.items = items
         self._begin = min(item.begin for item in self.items)
         self._end = max(item.end for item in self.items)
+        self._name = name
 
     def __eq__(self, other: BaseData) -> bool:
         """Override __eq__."""
         return self.items == other.items
+
+    def __str__(self) -> str:
+        """Overwrite __str__."""
+        return self.name
+
+    @property
+    def name(self) -> str:
+        """Name of the exported files."""
+        return (
+            self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED)
+            if self._name is None
+            else self._name
+        )
+
+    @name.setter
+    def name(self, name: str | None) -> None:
+        self._name = name
 
     @property
     def is_empty(self) -> bool:

@@ -13,7 +13,6 @@ import numpy as np
 from scipy.signal import ShortTimeFFT, welch
 
 from OSmOSE.config import (
-    TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMATS_EXPORTED_FILES,
 )
 from OSmOSE.core_api.audio_data import AudioData
@@ -181,10 +180,6 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
     @v_lim.setter
     def v_lim(self, v_lim: tuple[float, float]) -> None:
         self._v_lim = v_lim
-
-    def __str__(self) -> str:
-        """Overwrite __str__."""
-        return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED)
 
     def get_value(self) -> np.ndarray:
         """Return the Sx matrix of the spectrogram.

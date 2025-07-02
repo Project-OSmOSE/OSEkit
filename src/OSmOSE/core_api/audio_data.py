@@ -14,7 +14,6 @@ import soundfile as sf
 from pandas import Timedelta, Timestamp
 
 from OSmOSE.config import (
-    TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMATS_EXPORTED_FILES,
 )
 from OSmOSE.core_api.audio_file import AudioFile
@@ -77,10 +76,6 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         """Shape of the audio data."""
         data_length = round(self.sample_rate * self.duration.total_seconds())
         return data_length if self.nb_channels <= 1 else (data_length, self.nb_channels)
-
-    def __str__(self) -> str:
-        """Overwrite __str__."""
-        return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED)
 
     def __eq__(self, other: AudioData) -> bool:
         """Override __eq__."""
