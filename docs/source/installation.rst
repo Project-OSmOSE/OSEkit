@@ -21,7 +21,7 @@ From Git
 
 You can install **OSEkit** from `git <https://git-scm.com/>`_ if you want to have an editable version of it. This can be usefull for contributing to **OSEkit**, or to be able to easily update to the latest version.
 
-The package will be installed with `uv <https://docs.astral.sh/uv/>`_, which is a Python package and project manager. Please refer to the `uv documentation <https://docs.astral.sh/uv/#installation/>`_ for installing uv.
+The package will be installed with `uv <https://docs.astral.sh/uv/>`_, which is a Python package and project manager. Please refer to the `uv documentation <https://docs.astral.sh/uv/getting-started/installation/>`_ for installing uv.
 
 To download the repository, simply clone it from git: ::
 
