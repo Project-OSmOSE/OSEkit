@@ -6,6 +6,7 @@ from typing import Literal
 import pytest
 from pandas import Timedelta, Timestamp
 
+from OSmOSE.config import TIMESTAMP_FORMATS_EXPORTED_FILES
 from OSmOSE.core_api.base_data import BaseData
 from OSmOSE.core_api.base_dataset import BaseDataset
 from OSmOSE.core_api.base_file import BaseFile
@@ -978,3 +979,99 @@ def test_base_data_boundaries(
 )
 def test_base_data_equality(data1: BaseData, data2: BaseData, expected: bool) -> None:
     assert (data1 == data2) == expected
+
+
+@pytest.mark.parametrize(
+    ("data", "name", "expected"),
+    [
+        pytest.param(
+            BaseData.from_files(
+                [
+                    BaseFile(
+                        "cherry",
+                        begin=Timestamp("2015-08-28 12:12:12"),
+                        end=Timestamp("2015-08-28 12:13:12"),
+                    ),
+                ],
+            ),
+            None,
+            Timestamp("2015-08-28 12:12:12").strftime(
+                TIMESTAMP_FORMATS_EXPORTED_FILES[0]
+            ),
+            id="default_to_data_begin",
+        ),
+        pytest.param(
+            BaseData.from_files(
+                [
+                    BaseFile(
+                        "beach",
+                        begin=Timestamp("2015-08-28 12:13:12"),
+                        end=Timestamp("2015-08-28 12:14:12"),
+                    ),
+                    BaseFile(
+                        "cherry",
+                        begin=Timestamp("2015-08-28 12:12:12"),
+                        end=Timestamp("2015-08-28 12:13:12"),
+                    ),
+                ],
+                begin=Timestamp("2015-08-28 12:12:30"),
+                end=Timestamp("2015-08-28 12:13:30"),
+            ),
+            None,
+            Timestamp("2015-08-28 12:12:30").strftime(
+                TIMESTAMP_FORMATS_EXPORTED_FILES[0]
+            ),
+            id="default_to_data_begin_with_unordered_files",
+        ),
+        pytest.param(
+            BaseData.from_files(
+                [
+                    BaseFile(
+                        "cherry",
+                        begin=Timestamp("2015-08-28 12:12:12"),
+                        end=Timestamp("2015-08-28 12:13:12"),
+                    ),
+                ],
+            ),
+            "cool_raoul",
+            "cool_raoul",
+            id="given_name",
+        ),
+        pytest.param(
+            BaseData.from_files(
+                [
+                    BaseFile(
+                        "cherry",
+                        begin=Timestamp("2015-08-28 12:12:12"),
+                        end=Timestamp("2015-08-28 12:13:12"),
+                    ),
+                ],
+                name="uncool_raoul",
+            ),
+            "cool_raoul",
+            "cool_raoul",
+            id="given_name_over_existing_name",
+        ),
+        pytest.param(
+            BaseData.from_files(
+                [
+                    BaseFile(
+                        "cherry",
+                        begin=Timestamp("2015-08-28 12:12:12"),
+                        end=Timestamp("2015-08-28 12:13:12"),
+                    ),
+                ],
+                name="uncool_raoul",
+            ),
+            None,
+            Timestamp("2015-08-28 12:12:12").strftime(
+                TIMESTAMP_FORMATS_EXPORTED_FILES[0]
+            ),
+            id="none_resets_to_default",
+        ),
+    ],
+)
+def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
+    data.name = name
+    assert data.name == expected
+    assert str(data) == expected
