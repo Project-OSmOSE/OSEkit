@@ -35,6 +35,8 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
     """
 
+    __sentinel_value = object()
+
     def __init__(
         self,
         data: list[SpectroData],
@@ -42,10 +44,17 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         suffix: str = "",
         folder: Path | None = None,
         scale: Scale | None = None,
+        v_lim: tuple[float, float] | None | object = __sentinel_value,
     ) -> None:
         """Initialize a SpectroDataset."""
         super().__init__(data=data, name=name, suffix=suffix, folder=folder)
         self.scale = scale
+
+        if v_lim is not self.__sentinel_value:
+            # the sentinel value allows to differentiate between
+            # a specified None value (resets the v_lim to the default values)
+            # from an unspecified v_lim (in that case, the data v_lim are unchanged)
+            self.v_lim = v_lim
 
     @property
     def fft(self) -> ShortTimeFFT:
@@ -69,6 +78,27 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
     def colormap(self, colormap: str) -> None:
         for d in self.data:
             d.colormap = colormap
+
+    @property
+    def v_lim(self) -> tuple[float, float] | None:
+        """Return the most frequent v_lim of the spectro dataset."""
+        return max(
+            {d.v_lim for d in self.data},
+            key=[d.v_lim for d in self.data].count,
+        )
+
+    @v_lim.setter
+    def v_lim(self, v_lim: tuple[float, float] | None) -> None:
+        """Set the spectrogram color scale limits (in dB).
+
+        Parameters
+        ----------
+        v_lim: tuple[float, float] | None
+            Limits (in dB) of the colormap used for plotting the spectrogram.
+
+        """
+        for d in self.data:
+            d.v_lim = v_lim
 
     @property
     def folder(self) -> Path:
@@ -332,6 +362,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         bound: Literal["files", "timedelta"] = "timedelta",
         data_duration: Timedelta | None = None,
         name: str | None = None,
+        v_lim: tuple[float, float] | None | object = __sentinel_value,
         **kwargs: any,
     ) -> SpectroDataset:
         """Return a SpectroDataset from a folder containing the spectro files.
@@ -366,6 +397,8 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             Else, one data object will cover the whole time period.
         name: str|None
             Name of the dataset.
+        v_lim: tuple[float, float] | None
+            Limits (in dB) of the colormap used for plotting the spectrogram.
         kwargs: any
             Keyword arguments passed to the BaseDataset.from_folder classmethod.
 
@@ -389,7 +422,12 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             **kwargs,
         )
         sft = next(iter(base_dataset.files)).get_fft()
-        return cls.from_base_dataset(base_dataset=base_dataset, fft=sft, name=name)
+        return cls.from_base_dataset(
+            base_dataset=base_dataset,
+            fft=sft,
+            name=name,
+            v_lim=v_lim,
+        )
 
     @classmethod
     def from_base_dataset(
@@ -399,6 +437,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         name: str | None = None,
         colormap: str | None = None,
         scale: Scale | None = None,
+        v_lim: tuple[float, float] | None | object = __sentinel_value,
     ) -> SpectroDataset:
         """Return a SpectroDataset object from a BaseDataset object."""
         return cls(
@@ -408,6 +447,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             ],
             name=name,
             scale=scale,
+            v_lim=v_lim,
         )
 
     @classmethod
@@ -417,7 +457,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         fft: ShortTimeFFT,
         name: str | None = None,
         colormap: str | None = None,
-        v_lim: tuple[float, float] | None = None,
+        v_lim: tuple[float, float] | None = __sentinel_value,
         scale: Scale | None = None,
     ) -> SpectroDataset:
         """Return a SpectroDataset object from an AudioDataset object.
@@ -429,13 +469,13 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
                 SpectroData.from_audio_data(
                     data=d,
                     fft=fft,
-                    v_lim=v_lim,
                     colormap=colormap,
                 )
                 for d in audio_dataset.data
             ],
             name=name,
             scale=scale,
+            v_lim=v_lim,
         )
 
     @classmethod

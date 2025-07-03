@@ -75,13 +75,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         self.fft = fft
         self._sx_dtype = complex
         self._db_ref = db_ref
-        self._v_lim = (
-            v_lim
-            if v_lim is not None
-            else (-120.0, 0.0)
-            if db_ref is None
-            else (0.0, 170.0)
-        )
+        self.v_lim = v_lim
         self.colormap = "viridis" if colormap is None else colormap
 
     @staticmethod
@@ -178,7 +172,14 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         return self._v_lim
 
     @v_lim.setter
-    def v_lim(self, v_lim: tuple[float, float]) -> None:
+    def v_lim(self, v_lim: tuple[float, float] | None) -> None:
+        v_lim = (
+            v_lim
+            if v_lim is not None
+            else (-120.0, 0.0)
+            if self.db_ref is None
+            else (0.0, 170.0)
+        )
         self._v_lim = v_lim
 
     def get_value(self) -> np.ndarray:
@@ -729,7 +730,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         spectro_data = cls.from_audio_data(
             audio_data,
             sft,
-            v_lim=dictionary["v_lim"],
+            v_lim=tuple(dictionary["v_lim"]),
             colormap=dictionary["colormap"],
         )
 

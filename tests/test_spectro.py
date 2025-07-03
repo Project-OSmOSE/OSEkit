@@ -781,3 +781,73 @@ def test_link_audio_dataset(
         match="The sample rate of the audio data doesn't match.",
     ):
         assert sds.link_audio_dataset(ads_err) == exc_info
+
+
+@pytest.mark.parametrize(
+    ("v_lim1", "v_lim2"),
+    [
+        pytest.param(
+            None,
+            (0.0, 150.0),
+            id="none_to_tuple",
+        ),
+        pytest.param(
+            (0.0, 150.0),
+            (-120.0, 0.0),
+            id="tuple_to_tuple",
+        ),
+    ],
+)
+def test_spectrodataset_vlim(
+    audio_files: pytest.fixture,
+    tmp_path: pytest.fixture,
+    v_lim1: tuple[float, float] | None,
+    v_lim2: tuple[float, float] | None,
+) -> None:
+    afs, _ = audio_files
+    sft = ShortTimeFFT(hamming(128), 128, afs[0].sample_rate)
+    ads = AudioDataset.from_files(afs, data_duration=afs[0].duration / 10)
+
+    if v_lim1 is None:
+        sds = SpectroDataset.from_audio_dataset(
+            ads,
+            sft,
+        )
+    else:
+        sds = SpectroDataset.from_audio_dataset(
+            ads,
+            sft,
+            v_lim=v_lim1,
+        )
+
+    default_v_lim = SpectroData.from_audio_data(ads.data[0], sft).v_lim
+    if v_lim1 is None:
+        v_lim1 = default_v_lim
+
+    assert all(sd.v_lim == v_lim1 for sd in sds.data)
+
+    sds.v_lim = v_lim2
+
+    assert all(sd.v_lim == v_lim2 for sd in sds.data)
+
+    sds.write_json(tmp_path / "json")
+
+    sds2 = SpectroDataset.from_json(next((tmp_path / "json").iterdir()))
+
+    assert all(sd.v_lim == v_lim2 for sd in sds2.data)
+
+    # Different v_lim in the SpectroDataset
+    sd1, sd2 = sds.data[:2]
+
+    sd1.v_lim = v_lim1
+    sd2.v_lim = v_lim2
+
+    sds3 = SpectroDataset([sd1, sd2])
+
+    assert sds3.data[0].v_lim == v_lim1
+    assert sds3.data[1].v_lim == v_lim2
+
+    sds3.v_lim = None
+
+    assert sds3.data[0].v_lim == default_v_lim
+    assert sds3.data[1].v_lim == default_v_lim
