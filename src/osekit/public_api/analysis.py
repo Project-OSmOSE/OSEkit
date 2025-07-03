@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Flag, auto
 from typing import TYPE_CHECKING
 
-from OSmOSE.core_api.frequency_scale import Scale
+from osekit.core_api.frequency_scale import Scale
 
 if TYPE_CHECKING:
     from pandas import Timedelta, Timestamp
@@ -116,7 +116,7 @@ class Analysis:
         colormap: str | None
             Colormap to use for plotting the spectrogram.
             Has no effect if Analysis.SPECTROGRAM is not in analysis.
-        scale: OSmOSE.core_api.frequecy_scale.Scale
+        scale: osekit.core_api.frequecy_scale.Scale
             Custom frequency scale to use for plotting the spectrogram.
             Has no effect if Analysis.SPECTROGRAM is not in analysis.
 

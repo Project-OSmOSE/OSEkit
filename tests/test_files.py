@@ -6,8 +6,8 @@ import pytest
 import pytz
 from pandas import Timestamp
 
-from OSmOSE.core_api.base_dataset import BaseDataset
-from OSmOSE.core_api.base_file import BaseFile
+from osekit.core_api.base_dataset import BaseDataset
+from osekit.core_api.base_file import BaseFile
 
 
 @pytest.mark.parametrize(

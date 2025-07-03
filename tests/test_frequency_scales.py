@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from OSmOSE.core_api.frequency_scale import Scale, ScalePart
+from osekit.core_api.frequency_scale import Scale, ScalePart
 
 
 @pytest.mark.parametrize(

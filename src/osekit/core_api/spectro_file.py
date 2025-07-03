@@ -12,7 +12,7 @@ import numpy as np
 from pandas import Timedelta, Timestamp
 from scipy.signal import ShortTimeFFT
 
-from OSmOSE.core_api.base_file import BaseFile
+from osekit.core_api.base_file import BaseFile
 
 if TYPE_CHECKING:
     from os import PathLike

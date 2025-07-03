@@ -12,16 +12,16 @@ from typing import Generic, TypeVar
 import numpy as np
 from pandas import Timestamp, date_range
 
-from OSmOSE.config import (
+from osekit.config import (
     DPDEFAULT,
     TIMESTAMP_FORMAT_AUDIO_FILE,
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMATS_EXPORTED_FILES,
 )
-from OSmOSE.core_api.base_file import BaseFile
-from OSmOSE.core_api.base_item import BaseItem
-from OSmOSE.core_api.event import Event
-from OSmOSE.utils.timestamp_utils import strptime_from_text
+from osekit.core_api.base_file import BaseFile
+from osekit.core_api.base_item import BaseItem
+from osekit.core_api.event import Event
+from osekit.utils.timestamp_utils import strptime_from_text
 
 TItem = TypeVar("TItem", bound=BaseItem)
 TFile = TypeVar("TFile", bound=BaseFile)

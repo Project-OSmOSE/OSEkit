@@ -1,6 +1,6 @@
 import pytest
 
-from OSmOSE import Job_builder
+from osekit import Job_builder
 
 custom_config = {
     "job_scheduler": "Torque",

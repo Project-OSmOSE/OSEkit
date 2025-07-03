@@ -4,7 +4,7 @@ The OSmOSE package instantiates a LoggingContext on initialize in the config mod
 Utils functions log records to this LoggingContext.logger logger.
 The global logger can be replaced with a context manager:
 
->>> from OSmOSE.config import global_logging_context as glc
+>>> from osekit.config import global_logging_context as glc
 >>> import logging
 >>>
 >>> @glc.set_logger(logging.getLogger("logger_to_use"))

@@ -13,22 +13,22 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar
 
-from OSmOSE.config import resample_quality_settings
-from OSmOSE.core_api.audio_dataset import AudioDataset
-from OSmOSE.core_api.base_dataset import BaseDataset
-from OSmOSE.core_api.instrument import Instrument
-from OSmOSE.core_api.json_serializer import deserialize_json, serialize_json
-from OSmOSE.core_api.spectro_dataset import SpectroDataset
-from OSmOSE.public_api.analysis import Analysis, AnalysisType
-from OSmOSE.utils.core_utils import (
+from osekit.config import resample_quality_settings
+from osekit.core_api.audio_dataset import AudioDataset
+from osekit.core_api.base_dataset import BaseDataset
+from osekit.core_api.instrument import Instrument
+from osekit.core_api.json_serializer import deserialize_json, serialize_json
+from osekit.core_api.spectro_dataset import SpectroDataset
+from osekit.public_api.analysis import Analysis, AnalysisType
+from osekit.utils.core_utils import (
     file_indexes_per_batch,
     get_umask,
 )
-from OSmOSE.utils.path_utils import move_tree
+from osekit.utils.path_utils import move_tree
 
 if TYPE_CHECKING:
-    from OSmOSE.core_api.audio_file import AudioFile
-    from OSmOSE.job import Job_builder
+    from osekit.core_api.audio_file import AudioFile
+    from osekit.job import Job_builder
 
 
 class Dataset:
@@ -76,11 +76,11 @@ class Dataset:
             If None, analyses from this Dataset will be run locally.
             Otherwise, PBS job files will be created and submitted when
             analyses are run.
-            See the OSmOSE.job module for more info.
+            See the osekit.job module for more info.
         instrument: Instrument | None
             Instrument that might be used to obtain acoustic pressure from
             the wav audio data.
-            See the OSmOSE.core_api.instrument module for more info.
+            See the osekit.core_api.instrument module for more info.
 
         """
         self.folder = folder
@@ -338,7 +338,7 @@ class Dataset:
             Type of the analysis to be performed.
             AudioDataset and SpectroDataset instances will be
             created depending on the flags.
-            See OSmOSE.public_api.analysis.AnalysisType docstring for more information.
+            See osekit.public_api.analysis.AnalysisType docstring for more information.
         ads: AudioDataset
             The AudioDataset on which the data should be written.
         link: bool
@@ -348,7 +348,7 @@ class Dataset:
 
         """
         # Import here to avoid circular imports since the script needs to import Dataset
-        from OSmOSE.public_api import export_analysis
+        from osekit.public_api import export_analysis
 
         if self.job_builder is None:
             export_analysis.write_analysis(

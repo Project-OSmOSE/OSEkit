@@ -6,7 +6,7 @@ import numpy as np
 import soxr
 from pandas import Timedelta
 
-from OSmOSE.config import (
+from osekit.config import (
     resample_quality_settings,
 )
 

@@ -7,11 +7,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from OSmOSE.config import (
+from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMATS_EXPORTED_FILES,
 )
-from OSmOSE.utils.timestamp_utils import localize_timestamp
+from osekit.utils.timestamp_utils import localize_timestamp
 
 if TYPE_CHECKING:
     from os import PathLike
@@ -24,8 +24,8 @@ from pathlib import Path
 
 from pandas import Timedelta
 
-from OSmOSE.core_api.event import Event
-from OSmOSE.utils.timestamp_utils import strptime_from_text
+from osekit.core_api.event import Event
+from osekit.utils.timestamp_utils import strptime_from_text
 
 
 class BaseFile(Event):

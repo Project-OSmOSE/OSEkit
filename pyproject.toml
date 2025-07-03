@@ -1,7 +1,7 @@
 [project]
-name = "OSmOSE"
+name = "osekit"
 version = "0.2.5"
-description = "OSmOSE toolkit"
+description = "OSEkit"
 readme = "README.md"
 authors = [
     { name = "OSmOSE team", email = "osmose@ensta-bretagne.fr" }

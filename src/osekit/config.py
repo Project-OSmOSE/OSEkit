@@ -1,7 +1,7 @@
 import logging
 import stat
 
-from OSmOSE.logging_context import LoggingContext
+from osekit.logging_context import LoggingContext
 
 TIMESTAMP_FORMAT_AUDIO_FILE = "%Y-%m-%dT%H:%M:%S.%f%z"
 TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED = "%Y_%m_%d_%H_%M_%S_%f"

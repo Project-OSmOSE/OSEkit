@@ -8,19 +8,19 @@ from pandas import Timedelta, Timestamp
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming, hann
 
-from OSmOSE.config import (
+from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
     TIMESTAMP_FORMATS_EXPORTED_FILES,
 )
-from OSmOSE.core_api.audio_data import AudioData
-from OSmOSE.core_api.audio_dataset import AudioDataset
-from OSmOSE.core_api.audio_file import AudioFile
-from OSmOSE.core_api.frequency_scale import Scale, ScalePart
-from OSmOSE.core_api.instrument import Instrument
-from OSmOSE.core_api.spectro_data import SpectroData
-from OSmOSE.core_api.spectro_dataset import SpectroDataset
-from OSmOSE.core_api.spectro_file import SpectroFile
+from osekit.core_api.audio_data import AudioData
+from osekit.core_api.audio_dataset import AudioDataset
+from osekit.core_api.audio_file import AudioFile
+from osekit.core_api.frequency_scale import Scale, ScalePart
+from osekit.core_api.instrument import Instrument
+from osekit.core_api.spectro_data import SpectroData
+from osekit.core_api.spectro_dataset import SpectroDataset
+from osekit.core_api.spectro_file import SpectroFile
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -767,7 +767,7 @@ def test_spectro_data_serialization(
                 [
                     ScalePart(0.0, 0.5, 100, 48_000, "log"),
                     ScalePart(0.0, 0.5, 0, 24_000, "lin"),
-                ]
+                ],
             ),
             None,
             id="specified_scale",

@@ -10,19 +10,19 @@ from pandas import Timedelta
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming
 
-from OSmOSE.config import (
+from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
     TIMESTAMP_FORMATS_EXPORTED_FILES,
 )
-from OSmOSE.core_api.audio_data import AudioData
-from OSmOSE.core_api.audio_dataset import AudioDataset
-from OSmOSE.core_api.audio_file import AudioFile
-from OSmOSE.core_api.event import Event
-from OSmOSE.core_api.ltas_data import LTASData
-from OSmOSE.core_api.spectro_data import SpectroData
-from OSmOSE.core_api.spectro_dataset import SpectroDataset
-from OSmOSE.core_api.spectro_file import SpectroFile
-from OSmOSE.utils.audio_utils import generate_sample_audio
+from osekit.core_api.audio_data import AudioData
+from osekit.core_api.audio_dataset import AudioDataset
+from osekit.core_api.audio_file import AudioFile
+from osekit.core_api.event import Event
+from osekit.core_api.ltas_data import LTASData
+from osekit.core_api.spectro_data import SpectroData
+from osekit.core_api.spectro_dataset import SpectroDataset
+from osekit.core_api.spectro_file import SpectroFile
+from osekit.utils.audio_utils import generate_sample_audio
 
 if TYPE_CHECKING:
     from pathlib import Path

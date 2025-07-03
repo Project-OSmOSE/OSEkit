@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from OSmOSE.core_api.audio_file import AudioFile
-from OSmOSE.core_api.base_file import BaseFile
-from OSmOSE.core_api.base_item import BaseItem
+from osekit.core_api.audio_file import AudioFile
+from osekit.core_api.base_file import BaseFile
+from osekit.core_api.base_item import BaseItem
 
 if TYPE_CHECKING:
     import numpy as np
@@ -26,7 +26,7 @@ class AudioItem(BaseItem[AudioFile]):
 
         Parameters
         ----------
-        file: OSmOSE.data.audio_file.AudioFile
+        file: osekit.data.audio_file.AudioFile
             The AudioFile in which this Item belongs.
         begin: pandas.Timestamp (optional)
             The timestamp at which this item begins.

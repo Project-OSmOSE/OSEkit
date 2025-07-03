@@ -5,9 +5,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from OSmOSE.core_api.audio_file import AudioFile
-from OSmOSE.core_api.audio_file_manager import AudioFileManager
-from OSmOSE.utils.audio_utils import generate_sample_audio
+from osekit.core_api.audio_file import AudioFile
+from osekit.core_api.audio_file_manager import AudioFileManager
+from osekit.utils.audio_utils import generate_sample_audio
 
 
 @pytest.mark.parametrize(

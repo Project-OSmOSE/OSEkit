@@ -25,13 +25,13 @@ import numpy as np
 from scipy.signal import ShortTimeFFT
 from tqdm import tqdm
 
-from OSmOSE.core_api.spectro_data import SpectroData
+from osekit.core_api.spectro_data import SpectroData
 
 if TYPE_CHECKING:
     from pandas import Timestamp
 
-    from OSmOSE.core_api.audio_data import AudioData
-    from OSmOSE.core_api.spectro_item import SpectroItem
+    from osekit.core_api.audio_data import AudioData
+    from osekit.core_api.spectro_item import SpectroItem
 
 
 class LTASData(SpectroData):

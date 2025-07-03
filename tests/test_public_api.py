@@ -8,17 +8,17 @@ from pandas import Timedelta, Timestamp
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming
 
-from OSmOSE.config import (
+from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
 )
-from OSmOSE.core_api.audio_dataset import AudioDataset
-from OSmOSE.core_api.event import Event
-from OSmOSE.core_api.frequency_scale import Scale, ScalePart
-from OSmOSE.core_api.instrument import Instrument
-from OSmOSE.core_api.spectro_dataset import SpectroDataset
-from OSmOSE.public_api.analysis import Analysis, AnalysisType
-from OSmOSE.public_api.dataset import Dataset
+from osekit.core_api.audio_dataset import AudioDataset
+from osekit.core_api.event import Event
+from osekit.core_api.frequency_scale import Scale, ScalePart
+from osekit.core_api.instrument import Instrument
+from osekit.core_api.spectro_dataset import SpectroDataset
+from osekit.public_api.analysis import Analysis, AnalysisType
+from osekit.public_api.dataset import Dataset
 
 
 @pytest.mark.parametrize(
@@ -975,7 +975,7 @@ def test_get_analysis_audiodataset(
                     [
                         ScalePart(0.0, 0.5, 0.0, 24_000, "lin"),
                         ScalePart(0.0, 0.5, 1000.0, 24_000, "log"),
-                    ]
+                    ],
                 ),
             ),
             [

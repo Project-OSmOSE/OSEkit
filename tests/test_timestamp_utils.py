@@ -5,7 +5,7 @@ import logging
 import pytest
 from pandas import Timestamp
 
-from OSmOSE.utils.timestamp_utils import (
+from osekit.utils.timestamp_utils import (
     build_regex_from_datetime_template,
     is_datetime_template_valid,
     localize_timestamp,

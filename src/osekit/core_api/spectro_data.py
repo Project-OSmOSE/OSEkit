@@ -12,14 +12,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import ShortTimeFFT, welch
 
-from OSmOSE.config import (
+from osekit.config import (
     TIMESTAMP_FORMATS_EXPORTED_FILES,
 )
-from OSmOSE.core_api.audio_data import AudioData
-from OSmOSE.core_api.base_data import BaseData
-from OSmOSE.core_api.frequency_scale import Scale
-from OSmOSE.core_api.spectro_file import SpectroFile
-from OSmOSE.core_api.spectro_item import SpectroItem
+from osekit.core_api.audio_data import AudioData
+from osekit.core_api.base_data import BaseData
+from osekit.core_api.frequency_scale import Scale
+from osekit.core_api.spectro_file import SpectroFile
+from osekit.core_api.spectro_item import SpectroItem
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -82,7 +82,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
     def get_default_ax() -> plt.Axes:
         """Return a default-formatted Axes on a new figure.
 
-        The default OSmOSE spectrograms are plotted on wide, borderless spectrograms.
+        The default osekit spectrograms are plotted on wide, borderless spectrograms.
         This method set the default figure and axes parameters.
 
         Returns
@@ -320,7 +320,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             Defaulted as the SpectroData.get_default_ax Axes.
         sx: np.ndarray | None
             Spectrogram sx values. Will be computed if not provided.
-        scale: OSmOSE.core_api.frequecy_scale.Scale
+        scale: osekit.core_api.frequecy_scale.Scale
             Custom frequency scale to use for plotting the spectrogram.
 
         """
@@ -385,7 +385,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             Defaulted as the SpectroData.get_default_ax Axes.
         sx: np.ndarray | None
             Spectrogram sx values. Will be computed if not provided.
-        scale: OSmOSE.core_api.frequecy_scale.Scale
+        scale: osekit.core_api.frequecy_scale.Scale
             Custom frequency scale to use for plotting the spectrogram.
 
         """

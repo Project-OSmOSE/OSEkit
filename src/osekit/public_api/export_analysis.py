@@ -5,13 +5,13 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from OSmOSE.config import resample_quality_settings
-from OSmOSE.public_api.analysis import AnalysisType
-from OSmOSE.public_api.dataset import Dataset
+from osekit.config import resample_quality_settings
+from osekit.public_api.analysis import AnalysisType
+from osekit.public_api.dataset import Dataset
 
 if TYPE_CHECKING:
-    from OSmOSE.core_api.audio_dataset import AudioDataset
-    from OSmOSE.core_api.spectro_dataset import SpectroDataset
+    from osekit.core_api.audio_dataset import AudioDataset
+    from osekit.core_api.spectro_dataset import SpectroDataset
 
 
 def write_analysis(

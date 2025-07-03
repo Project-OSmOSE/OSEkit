@@ -8,8 +8,8 @@ import pandas as pd
 import pytz
 from pandas import Timestamp
 
-from OSmOSE.config import TIMESTAMP_FORMAT_AUDIO_FILE
-from OSmOSE.config import global_logging_context as glc
+from osekit.config import TIMESTAMP_FORMAT_AUDIO_FILE
+from osekit.config import global_logging_context as glc
 
 _REGEX_BUILDER = {
     "%Y": r"([12]\d{3})",
@@ -63,7 +63,7 @@ def reformat_timestamp(
     old_timestamp_str: str,
     old_datetime_template: str,
 ) -> str:
-    """Format a timestamp string from a given template to the OSmOSE template.
+    """Format a timestamp string from a given template to the osekit template.
 
     Parameters
     ----------
@@ -75,7 +75,7 @@ def reformat_timestamp(
     Returns
     -------
     str:
-        The formatted timestamp string in the OSmOSE %Y-%m-%dT%H:%M:%S.%f%z format.
+        The formatted timestamp string in the osekit %Y-%m-%dT%H:%M:%S.%f%z format.
 
     """
     timestamp = strptime_from_text(
@@ -86,7 +86,7 @@ def reformat_timestamp(
 
 
 def strftime_osmose_format(date: pd.Timestamp) -> str:
-    """Format a Timestamp to the OSmOSE format.
+    """Format a Timestamp to the osekit format.
 
     Parameters
     ----------
@@ -97,7 +97,7 @@ def strftime_osmose_format(date: pd.Timestamp) -> str:
     Returns
     -------
     str:
-        The Timestamp in OSmOSE's %Y-%m-%dT%H:%M:%S.%f%z format.
+        The Timestamp in osekit's %Y-%m-%dT%H:%M:%S.%f%z format.
         %f is limited to a millisecond precision.
 
     Examples

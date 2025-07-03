@@ -10,15 +10,15 @@ import pandas as pd
 import pytest
 import soundfile as sf
 
-from OSmOSE.config import (
+from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
 )
-from OSmOSE.core_api import AudioFileManager
-from OSmOSE.core_api.audio_file import AudioFile
-from OSmOSE.core_api.base_dataset import BaseDataset
-from OSmOSE.core_api.base_file import BaseFile
-from OSmOSE.utils.audio_utils import generate_sample_audio
+from osekit.core_api import AudioFileManager
+from osekit.core_api.audio_file import AudioFile
+from osekit.core_api.base_dataset import BaseDataset
+from osekit.core_api.base_file import BaseFile
+from osekit.utils.audio_utils import generate_sample_audio
 
 
 @pytest.fixture

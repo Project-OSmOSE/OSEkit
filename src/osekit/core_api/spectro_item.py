@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from OSmOSE.core_api.base_file import BaseFile
-from OSmOSE.core_api.base_item import BaseItem
-from OSmOSE.core_api.spectro_file import SpectroFile
+from osekit.core_api.base_file import BaseFile
+from osekit.core_api.base_item import BaseItem
+from osekit.core_api.spectro_file import SpectroFile
 
 if TYPE_CHECKING:
     from pandas import Timedelta, Timestamp
@@ -28,7 +28,7 @@ class SpectroItem(BaseItem[SpectroFile]):
 
         Parameters
         ----------
-        file: OSmOSE.data.spectro_file.SpectroFile
+        file: osekit.data.spectro_file.SpectroFile
             The SpectroFile in which this Item belongs.
         begin: pandas.Timestamp (optional)
             The timestamp at which this item begins.

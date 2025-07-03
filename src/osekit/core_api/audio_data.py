@@ -13,14 +13,14 @@ import numpy as np
 import soundfile as sf
 from pandas import Timedelta, Timestamp
 
-from OSmOSE.config import (
+from osekit.config import (
     TIMESTAMP_FORMATS_EXPORTED_FILES,
 )
-from OSmOSE.core_api.audio_file import AudioFile
-from OSmOSE.core_api.audio_item import AudioItem
-from OSmOSE.core_api.base_data import BaseData
-from OSmOSE.core_api.instrument import Instrument
-from OSmOSE.utils.audio_utils import resample
+from osekit.core_api.audio_file import AudioFile
+from osekit.core_api.audio_item import AudioItem
+from osekit.core_api.base_data import BaseData
+from osekit.core_api.instrument import Instrument
+from osekit.utils.audio_utils import resample
 
 if TYPE_CHECKING:
     from pathlib import Path

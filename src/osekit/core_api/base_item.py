@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
 
-from OSmOSE.core_api.base_file import BaseFile
-from OSmOSE.core_api.event import Event
+from osekit.core_api.base_file import BaseFile
+from osekit.core_api.event import Event
 
 if TYPE_CHECKING:
     from pandas import Timestamp

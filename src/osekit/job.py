@@ -9,13 +9,13 @@ from datetime import datetime
 from importlib import resources
 from pathlib import Path
 from string import Template
-from typing import List, Literal, NamedTuple
+from typing import Literal, NamedTuple
 from warnings import warn
 
 import tomlkit
 
-from OSmOSE.config import DPDEFAULT, FPDEFAULT
-from OSmOSE.utils.core_utils import chmod_if_needed, read_config
+from osekit.config import DPDEFAULT, FPDEFAULT
+from osekit.utils.core_utils import chmod_if_needed, read_config
 
 JOB_CONFIG_TEMPLATE = namedtuple(
     "job_config",
@@ -39,7 +39,7 @@ class Job_builder:
         if config_file is None:
             self.__configfile = "config.toml"
             self.__full_config: NamedTuple = read_config(
-                resources.files("OSmOSE").joinpath(self.__configfile),
+                resources.files("osekit").joinpath(self.__configfile),
             )
 
         else:
@@ -428,8 +428,8 @@ class Job_builder:
     def submit_job(
         self,
         jobfile: str = None,
-        dependency: str | List[str] = None,
-    ) -> List[str]:
+        dependency: str | list[str] = None,
+    ) -> list[str]:
         """Submits the job file to the cluster using the job scheduler written in the file name or in the configuration file.
 
         Parameters

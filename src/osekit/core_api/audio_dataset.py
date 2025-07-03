@@ -10,16 +10,16 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
-from OSmOSE.core_api.audio_data import AudioData
-from OSmOSE.core_api.audio_file import AudioFile
-from OSmOSE.core_api.base_dataset import BaseDataset
-from OSmOSE.core_api.json_serializer import deserialize_json
+from osekit.core_api.audio_data import AudioData
+from osekit.core_api.audio_file import AudioFile
+from osekit.core_api.base_dataset import BaseDataset
+from osekit.core_api.json_serializer import deserialize_json
 
 if TYPE_CHECKING:
     import pytz
     from pandas import Timedelta, Timestamp
 
-    from OSmOSE.core_api.instrument import Instrument
+    from osekit.core_api.instrument import Instrument
 
 
 class AudioDataset(BaseDataset[AudioData, AudioFile]):

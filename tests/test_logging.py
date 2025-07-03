@@ -5,7 +5,7 @@ import os
 import pytest
 import yaml
 
-from OSmOSE.logging_context import LoggingContext
+from osekit.logging_context import LoggingContext
 
 
 @pytest.fixture
@@ -60,8 +60,8 @@ def temp_user_logging_config(tmp_path):
 @pytest.fixture
 def set_user_config_env(temp_user_logging_config):
     """Set the OSMOSE_USER_CONFIG environment variable to the pytest tmp_file directory.
-    This will be read by OSmOSE during import to find the simulated user logging_config.yaml
-    During setup, the logging module is reloaded to clear all configs, then the OSmOSE module is reloaded with a OSMOSE_USER_CONFIG environment key locating the mocked user config file.
+    This will be read by osekit during import to find the simulated user logging_config.yaml
+    During setup, the logging module is reloaded to clear all configs, then the osekit module is reloaded with a OSMOSE_USER_CONFIG environment key locating the mocked user config file.
     During teardown, both modules are reloaded again with the OSMOSE_USER_CONFIG key being reset, to clear the moked user config.
 
     Parameters
@@ -71,18 +71,18 @@ def set_user_config_env(temp_user_logging_config):
 
     """
     importlib.reload(logging)
-    import OSmOSE
+    import osekit
 
     original_config_env = os.getenv("OSMOSE_USER_CONFIG", None)
     os.environ["OSMOSE_USER_CONFIG"] = str(temp_user_logging_config.parent)
-    importlib.reload(OSmOSE)
+    importlib.reload(osekit)
     yield
     if original_config_env:
         os.environ["OSMOSE_USER_CONFIG"] = original_config_env
     else:
         del os.environ["OSMOSE_USER_CONFIG"]
     importlib.reload(logging)
-    importlib.reload(OSmOSE)
+    importlib.reload(osekit)
 
 
 @pytest.mark.allow_log_write_to_file

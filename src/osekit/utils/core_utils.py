@@ -16,8 +16,8 @@ except ModuleNotFoundError:
     import tomli as tomllib
 
 
-from OSmOSE.config import global_logging_context as glc
-from OSmOSE.config import print_logger
+from osekit.config import global_logging_context as glc
+from osekit.config import print_logger
 
 _is_grp_supported = bool(find_spec("grp"))
 
@@ -143,7 +143,7 @@ def change_owner_group(path: Path, owner_group: str) -> None:
         return
     if path.group() == owner_group:
         return
-    glc.logger.debug("Setting OSmOSE permission to the dataset..")
+    glc.logger.debug("Setting osekit permission to the dataset..")
 
     try:
         import grp

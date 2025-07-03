@@ -4,8 +4,8 @@ from pathlib import Path
 
 import yaml
 
-from OSmOSE import utils
-from OSmOSE.job import Job_builder
+from osekit import utils
+from osekit.job import Job_builder
 
 __all__ = [
     "Job_builder",

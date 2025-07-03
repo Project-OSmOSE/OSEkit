@@ -7,8 +7,8 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "OSEkit"
-copyright = "2025, OSmOSE"
-author = "OSmOSE"
+copyright = "2025, osekit"
+author = "osekit"
 release = "0.2.5"
 
 # -- General configuration ---------------------------------------------------

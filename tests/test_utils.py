@@ -6,14 +6,14 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from OSmOSE.utils.core_utils import (
+from osekit.utils.core_utils import (
     file_indexes_per_batch,
     get_closest_value_index,
     locked,
     nb_files_per_batch,
 )
-from OSmOSE.utils.formatting_utils import aplose2raven
-from OSmOSE.utils.path_utils import move_tree
+from osekit.utils.formatting_utils import aplose2raven
+from osekit.utils.path_utils import move_tree
 
 
 @pytest.fixture
@@ -354,6 +354,8 @@ def test_locked(tmp_path: pytest.fixture, monkeypatch: pytest.MonkeyPatch) -> No
     ],
 )
 def test_get_closest_value_index(
-    values: list[float], target: float, expected: int
+    values: list[float],
+    target: float,
+    expected: int,
 ) -> None:
     assert get_closest_value_index(values=values, target=target) == expected

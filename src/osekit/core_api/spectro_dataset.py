@@ -12,19 +12,19 @@ from typing import TYPE_CHECKING, Literal
 import numpy as np
 from scipy.signal import ShortTimeFFT
 
-from OSmOSE.config import DPDEFAULT
-from OSmOSE.core_api.base_dataset import BaseDataset
-from OSmOSE.core_api.frequency_scale import Scale
-from OSmOSE.core_api.json_serializer import deserialize_json
-from OSmOSE.core_api.spectro_data import SpectroData
-from OSmOSE.core_api.spectro_file import SpectroFile
-from OSmOSE.utils.core_utils import locked
+from osekit.config import DPDEFAULT
+from osekit.core_api.base_dataset import BaseDataset
+from osekit.core_api.frequency_scale import Scale
+from osekit.core_api.json_serializer import deserialize_json
+from osekit.core_api.spectro_data import SpectroData
+from osekit.core_api.spectro_file import SpectroFile
+from osekit.utils.core_utils import locked
 
 if TYPE_CHECKING:
     import pytz
     from pandas import Timedelta, Timestamp
 
-    from OSmOSE.core_api.audio_dataset import AudioDataset
+    from osekit.core_api.audio_dataset import AudioDataset
 
 
 class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):

@@ -6,11 +6,11 @@ from typing import Literal
 import pytest
 from pandas import Timedelta, Timestamp
 
-from OSmOSE.config import TIMESTAMP_FORMATS_EXPORTED_FILES
-from OSmOSE.core_api.base_data import BaseData
-from OSmOSE.core_api.base_dataset import BaseDataset
-from OSmOSE.core_api.base_file import BaseFile
-from OSmOSE.core_api.event import Event
+from osekit.config import TIMESTAMP_FORMATS_EXPORTED_FILES
+from osekit.core_api.base_data import BaseData
+from osekit.core_api.base_dataset import BaseDataset
+from osekit.core_api.base_file import BaseFile
+from osekit.core_api.event import Event
 
 
 @pytest.mark.parametrize(
@@ -996,7 +996,7 @@ def test_base_data_equality(data1: BaseData, data2: BaseData, expected: bool) ->
             ),
             None,
             Timestamp("2015-08-28 12:12:12").strftime(
-                TIMESTAMP_FORMATS_EXPORTED_FILES[0]
+                TIMESTAMP_FORMATS_EXPORTED_FILES[0],
             ),
             id="default_to_data_begin",
         ),
@@ -1019,7 +1019,7 @@ def test_base_data_equality(data1: BaseData, data2: BaseData, expected: bool) ->
             ),
             None,
             Timestamp("2015-08-28 12:12:30").strftime(
-                TIMESTAMP_FORMATS_EXPORTED_FILES[0]
+                TIMESTAMP_FORMATS_EXPORTED_FILES[0],
             ),
             id="default_to_data_begin_with_unordered_files",
         ),
@@ -1065,7 +1065,7 @@ def test_base_data_equality(data1: BaseData, data2: BaseData, expected: bool) ->
             ),
             None,
             Timestamp("2015-08-28 12:12:12").strftime(
-                TIMESTAMP_FORMATS_EXPORTED_FILES[0]
+                TIMESTAMP_FORMATS_EXPORTED_FILES[0],
             ),
             id="none_resets_to_default",
         ),

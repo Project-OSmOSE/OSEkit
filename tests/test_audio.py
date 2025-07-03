@@ -11,19 +11,19 @@ import pytest
 import soundfile as sf
 from pandas import Timestamp
 
-import OSmOSE
-from OSmOSE.config import (
+import osekit
+from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
     resample_quality_settings,
 )
-from OSmOSE.core_api import audio_file_manager as afm
-from OSmOSE.core_api.audio_data import AudioData
-from OSmOSE.core_api.audio_dataset import AudioDataset
-from OSmOSE.core_api.audio_file import AudioFile
-from OSmOSE.core_api.audio_item import AudioItem
-from OSmOSE.utils import audio_utils
-from OSmOSE.utils.audio_utils import generate_sample_audio
+from osekit.core_api import audio_file_manager as afm
+from osekit.core_api.audio_data import AudioData
+from osekit.core_api.audio_dataset import AudioDataset
+from osekit.core_api.audio_file import AudioFile
+from osekit.core_api.audio_item import AudioItem
+from osekit.utils import audio_utils
+from osekit.utils.audio_utils import generate_sample_audio
 
 
 @pytest.mark.parametrize(
@@ -708,7 +708,7 @@ def test_audio_resample_quality(
     downsampling_quality: str | None,
     upsampling_quality: str | None,
 ) -> None:
-    importlib.reload(OSmOSE.config)
+    importlib.reload(osekit.config)
 
     files, _ = audio_files
     af = files[0]
@@ -717,9 +717,9 @@ def test_audio_resample_quality(
     upsampling_default = resample_quality_settings["upsample"]
 
     if downsampling_quality is not None:
-        OSmOSE.config.resample_quality_settings["downsample"] = downsampling_quality
+        osekit.config.resample_quality_settings["downsample"] = downsampling_quality
     if upsampling_quality is not None:
-        OSmOSE.config.resample_quality_settings["upsample"] = upsampling_quality
+        osekit.config.resample_quality_settings["upsample"] = upsampling_quality
 
     def resample_mkptch(
         data: np.ndarray,
@@ -727,9 +727,9 @@ def test_audio_resample_quality(
         target_sr: float,
     ) -> np.ndarray:
         return (
-            OSmOSE.config.resample_quality_settings["upsample"]
+            osekit.config.resample_quality_settings["upsample"]
             if target_sr > origin_sr
-            else OSmOSE.config.resample_quality_settings["downsample"]
+            else osekit.config.resample_quality_settings["downsample"]
         )
 
     monkeypatch.setattr(audio_utils, "resample", resample_mkptch)

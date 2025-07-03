@@ -15,7 +15,7 @@ from typing import Literal
 
 import numpy as np
 
-from OSmOSE.utils.core_utils import get_closest_value_index
+from osekit.utils.core_utils import get_closest_value_index
 
 
 class ScalePart:
