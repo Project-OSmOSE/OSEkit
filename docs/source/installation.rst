@@ -5,15 +5,19 @@
 
 To use **OSEkit**, you first need to install it using one of the following:
 
-From the wheel
---------------
+With pip
+--------
 
-If you just want to use **OSEkit** in your project without editing it, the most straightforward way to do so is to:
+To install **OSEkit** using pip, simply run ::
 
-* Get the ``.whl`` wheel file from our `latest release <https://github.com/Project-OSmOSE/OSEkit/releases/>`_.
+    pip install osekit
+
+Alternatively, you can install it with a wheel file for any of our releases:
+
+* Get the ``.whl`` wheel file from `our github repository <https://github.com/Project-OSmOSE/OSEkit/releases/>`_.
 * Install it in a virtual environment using pip: ::
 
-    pip install osmose-0.2.5-py3-none-any.whl
+    pip install osmose-x.x.x.-py3-none-any.whl
 
 
 From Git
