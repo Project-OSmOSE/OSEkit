@@ -5,11 +5,14 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from osekit.config import global_logging_context as glc
 from osekit.config import resample_quality_settings
 from osekit.public_api.analysis import AnalysisType
 from osekit.public_api.dataset import Dataset
 
 if TYPE_CHECKING:
+    import logging
+
     from osekit.core_api.audio_dataset import AudioDataset
     from osekit.core_api.spectro_dataset import SpectroDataset
 
@@ -25,6 +28,7 @@ def write_analysis(
     link: bool = True,
     first: int = 0,
     last: int | None = None,
+    logger: logging.Logger | None = None,
 ) -> None:
     """Write SpectroDataset output files to disk.
 
@@ -53,9 +57,16 @@ def write_analysis(
         Index of the first data object to write.
     last: int|None
         Index after the last data object to write.
+    logger: logging.Logger | None
+        Logger to use to log the analysis steps.
 
     """
+    logger = glc.logger if logger is None else logger
+
+    logger.info("Running analysis...")
+
     if AnalysisType.AUDIO in analysis_type:
+        logger.info("Writing audio files...")
         ads.write(
             folder=ads.folder,
             subtype=subtype,
@@ -80,6 +91,7 @@ def write_analysis(
         AnalysisType.MATRIX in analysis_type
         and AnalysisType.SPECTROGRAM in analysis_type
     ):
+        logger.info("Computing and writing spectrum matrices and spectrograms...")
         sds.save_all(
             matrix_folder=sds.folder / matrix_folder_name,
             spectrogram_folder=sds.folder / spectrogram_folder_name,
@@ -88,12 +100,14 @@ def write_analysis(
             last=last,
         )
     elif AnalysisType.SPECTROGRAM in analysis_type:
+        logger.info("Computing and writing spectrograms...")
         sds.save_spectrogram(
             folder=sds.folder / spectrogram_folder_name,
             first=first,
             last=last,
         )
     elif AnalysisType.MATRIX in analysis_type:
+        logger.info("Computing and writing spectrum matrices...")
         sds.write(
             folder=sds.folder / matrix_folder_name,
             link=link,
@@ -101,6 +115,7 @@ def write_analysis(
             last=last,
         )
     if AnalysisType.WELCH in analysis_type:
+        logger.info("Computing and writing welches...")
         sds.write_welch(
             folder=sds.folder / welch_folder_name,
             first=first,
@@ -109,6 +124,7 @@ def write_analysis(
 
     # Update the sds from the JSON in case it has already been modified in another job
     sds.update_json_audio_data(first=first, last=last)
+    logger.info("Analysis done!")
 
 
 if __name__ == "__main__":
@@ -210,8 +226,16 @@ if __name__ == "__main__":
         default=0o002,
         help="The umask to apply on the created file permissions.",
     )
+    parser.add_argument(
+        "--tqdm_disable",
+        type=int,
+        default=1,
+        help="Disable TQDM progress bars.",
+    )
 
     args = parser.parse_args()
+
+    os.environ["DISABLE_TQDM"] = "" if not args.tqdm_disable else str(args.tqdm_disable)
 
     os.umask(args.umask)
 
@@ -241,4 +265,5 @@ if __name__ == "__main__":
         first=args.first,
         last=args.last,
         link=True,
+        logger=dataset.logger,
     )

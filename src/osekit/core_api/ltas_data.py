@@ -19,6 +19,7 @@ and each part is replaced with an average of the stft performed within it.
 
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -119,7 +120,11 @@ class LTASData(SpectroData):
         return np.vstack(
             [
                 np.mean(sub_spectro.get_value(depth + 1), axis=1)
-                for sub_spectro in (sub_spectros if depth != 0 else tqdm(sub_spectros))
+                for sub_spectro in (
+                    sub_spectros
+                    if depth != 0
+                    else tqdm(sub_spectros, disable=os.environ.get("DISABLE_TQDM", ""))
+                )
             ],
         ).T
 

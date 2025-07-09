@@ -6,10 +6,13 @@ that simplify repeated operations on the data.
 
 from __future__ import annotations
 
+import os
+from pathlib import Path
 from typing import TYPE_CHECKING, Generic, Literal, TypeVar
 
 from pandas import Timedelta, Timestamp, date_range
 from soundfile import LibsndfileError
+from tqdm import tqdm
 
 from osekit.config import TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
 from osekit.config import global_logging_context as glc
@@ -19,8 +22,6 @@ from osekit.core_api.event import Event
 from osekit.core_api.json_serializer import deserialize_json, serialize_json
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     import pytz
 
 TData = TypeVar("TData", bound=BaseData)
@@ -141,7 +142,7 @@ class BaseDataset(Generic[TData, TFile], Event):
             Destination folder in which the dataset files will be moved.
 
         """
-        for file in self.files:
+        for file in tqdm(self.files, disable=os.environ.get("DISABLE_TQDM", "")):
             file.move(folder)
         self._folder = folder
 
@@ -177,7 +178,9 @@ class BaseDataset(Generic[TData, TFile], Event):
 
         """
         last = len(self.data) if last is None else last
-        for data in self.data[first:last]:
+        for data in tqdm(
+            self.data[first:last], disable=os.environ.get("DISABLE_TQDM", "")
+        ):
             data.write(folder=folder, link=link)
 
     def to_dict(self) -> dict:
@@ -292,7 +295,10 @@ class BaseDataset(Generic[TData, TFile], Event):
         if data_duration:
             data_base = [
                 BaseData.from_files(files, begin=b, end=b + data_duration)
-                for b in date_range(begin, end, freq=data_duration, inclusive="left")
+                for b in tqdm(
+                    date_range(begin, end, freq=data_duration, inclusive="left"),
+                    disable=os.environ.get("DISABLE_TQDM", ""),
+                )
             ]
         else:
             data_base = [BaseData.from_files(files, begin=begin, end=end)]
@@ -359,7 +365,7 @@ class BaseDataset(Generic[TData, TFile], Event):
             supported_file_extensions = []
         valid_files = []
         rejected_files = []
-        for file in folder.iterdir():
+        for file in tqdm(folder.iterdir(), disable=os.environ.get("DISABLE_TQDM", "")):
             if file.suffix.lower() not in supported_file_extensions:
                 continue
             try:

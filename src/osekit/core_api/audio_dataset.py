@@ -7,8 +7,11 @@ that simplify repeated operations on the audio data.
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
+
+from tqdm import tqdm
 
 from osekit.core_api.audio_data import AudioData
 from osekit.core_api.audio_file import AudioFile
@@ -112,7 +115,9 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
 
         """
         last = len(self.data) if last is None else last
-        for data in self.data[first:last]:
+        for data in tqdm(
+            self.data[first:last], disable=os.environ.get("DISABLE_TQDM", "")
+        ):
             data.write(folder=folder, subtype=subtype, link=link)
 
     @classmethod
