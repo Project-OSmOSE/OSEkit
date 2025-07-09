@@ -113,6 +113,11 @@ def patch_filehandlers(
     monkeypatch.setattr(logging.FileHandler, "emit", disabled_filewrite)
 
 
+@pytest.fixture(autouse=True)
+def disable_tqdm() -> None:
+    os.environ["DISABLE_TQDM"] = "1"
+
+
 @pytest.fixture
 def patch_grp_module(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
     """Mock the grp module.
