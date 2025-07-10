@@ -3,5 +3,5 @@ Instrument
 
 .. _instrument:
 
-.. autoclass:: OSmOSE.core_api.instrument.Instrument
+.. autoclass:: osekit.core_api.instrument.Instrument
    :members:

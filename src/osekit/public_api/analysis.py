@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Flag, auto
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from osekit.core_api.frequency_scale import Scale
 
@@ -66,6 +66,7 @@ class Analysis:
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         data_duration: Timedelta | None = None,
+        mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
         sample_rate: float | None = None,
         name: str | None = None,
         subtype: str | None = None,
@@ -91,6 +92,15 @@ class Analysis:
             Duration of the data within the analysis dataset.
             If provided, audio data will be evenly distributed between begin and end.
             Else, one data object will cover the whole time period.
+        mode: Literal["files", "timedelta_total", "timedelta_file"]
+            Mode of creation of the dataset data from the original files.
+            "files": one data will be created for each file.
+            "timedelta_total": data objects of duration equal to data_duration will
+            be created from the begin timestamp to the end timestamp.
+            "timedelta_file": data objects of duration equal to data_duration will
+            be created from the beginning of the first file that the begin timestamp is into, until it would resume
+            in a data beginning between two files. Then, the next data object will be created from the
+            beginning of the next original file and so on.
         sample_rate: float | None
             Sample rate of the new analysis data.
             Audio data will be resampled if provided, else the sample rate
@@ -125,6 +135,7 @@ class Analysis:
         self.begin = begin
         self.end = end
         self.data_duration = data_duration
+        self.mode = mode
         self.sample_rate = sample_rate
         self.name = name
         self.subtype = subtype

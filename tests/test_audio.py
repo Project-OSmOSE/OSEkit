@@ -757,7 +757,7 @@ def test_audio_resample_quality(
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "begin", "end", "bound", "duration", "expected_audio_data"),
+    ("audio_files", "begin", "end", "mode", "duration", "expected_audio_data"),
     [
         pytest.param(
             {
@@ -769,7 +769,7 @@ def test_audio_resample_quality(
             },
             None,
             None,
-            "data_duration",
+            "timedelta_total",
             None,
             generate_sample_audio(1, 48_000),
             id="one_entire_file",
@@ -784,7 +784,7 @@ def test_audio_resample_quality(
             },
             None,
             None,
-            "data_duration",
+            "timedelta_total",
             pd.Timedelta(seconds=1),
             generate_sample_audio(
                 nb_files=3,
@@ -804,7 +804,7 @@ def test_audio_resample_quality(
             },
             None,
             None,
-            "data_duration",
+            "timedelta_total",
             pd.Timedelta(seconds=1),
             [
                 generate_sample_audio(nb_files=1, nb_samples=96_000)[0][0:48_000],
@@ -829,7 +829,7 @@ def test_audio_resample_quality(
             },
             None,
             None,
-            "data_duration",
+            "timedelta_total",
             pd.Timedelta(seconds=1),
             generate_sample_audio(nb_files=2, nb_samples=48_000),
             id="overlapping_files",
@@ -852,7 +852,7 @@ def test_audio_resample_quality(
                 nb_samples=48_000,
                 series_type="increase",
             ),
-            id="files_bound_without_overlap",
+            id="files_mode_without_overlap",
         ),
         pytest.param(
             {
@@ -871,7 +871,7 @@ def test_audio_resample_quality(
                 generate_sample_audio(nb_files=1, nb_samples=96_000)[0][0:48_000],
                 generate_sample_audio(nb_files=1, nb_samples=96_000)[0][48_000:],
             ],
-            id="files_bound_with_gap",
+            id="files_mode_with_gap",
         ),
         pytest.param(
             {
@@ -891,7 +891,7 @@ def test_audio_resample_quality(
                 generate_sample_audio(nb_files=1, nb_samples=48_000)[0][0:24_000],
                 generate_sample_audio(nb_files=1, nb_samples=48_000)[0],
             ],
-            id="files_bound_with_overlap",
+            id="files_mode_with_overlap",
         ),
     ],
     indirect=["audio_files"],
@@ -901,7 +901,7 @@ def test_audio_dataset_from_folder(
     audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
     begin: pd.Timestamp | None,
     end: pd.Timestamp | None,
-    bound: Literal["files", "timedelta"],
+    mode: Literal["files", "timedelta_total", "timedelta_file"],
     duration: pd.Timedelta | None,
     expected_audio_data: list[np.ndarray],
 ) -> None:
@@ -910,7 +910,7 @@ def test_audio_dataset_from_folder(
         strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
         begin=begin,
         end=end,
-        bound=bound,
+        mode=mode,
         data_duration=duration,
     )
     for idx, data in enumerate(dataset.data):

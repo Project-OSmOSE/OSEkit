@@ -3,5 +3,5 @@ BaseFile
 
 .. _basefile:
 
-.. autoclass:: OSmOSE.core_api.base_file.BaseFile
+.. autoclass:: osekit.core_api.base_file.BaseFile
    :members:

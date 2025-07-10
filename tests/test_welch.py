@@ -114,7 +114,7 @@ def test_welch_spectrodataset(
     instrument: Instrument | None,
 ) -> None:
     afs, _ = audio_files
-    ads = AudioDataset.from_files(files=afs, instrument=instrument, bound="files")
+    ads = AudioDataset.from_files(files=afs, instrument=instrument, mode="files")
     sds = SpectroDataset.from_audio_dataset(ads, fft=sft)
 
     folder = afs[0].path.parent / "output"

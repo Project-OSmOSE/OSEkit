@@ -3,5 +3,5 @@ Event
 
 .. _event:
 
-.. autoclass:: OSmOSE.core_api.event.Event
+.. autoclass:: osekit.core_api.event.Event
    :members:

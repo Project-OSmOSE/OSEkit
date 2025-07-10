@@ -6,7 +6,9 @@ that simplify repeated operations on the data.
 
 from __future__ import annotations
 
+import math
 import os
+from bisect import bisect
 from pathlib import Path
 from typing import TYPE_CHECKING, Generic, Literal, TypeVar
 
@@ -249,7 +251,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         files: list[TFile],
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
-        bound: Literal["files", "timedelta"] = "timedelta",
+        mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
         data_duration: Timedelta | None = None,
         name: str | None = None,
     ) -> BaseDataset:
@@ -265,14 +267,18 @@ class BaseDataset(Generic[TData, TFile], Event):
         end: Timestamp | None
             End of the last data object.
             Defaulted to the end of the last file.
-        bound: Literal["files", "timedelta"]
-            Bound between the original files and the dataset data.
+        mode: Literal["files", "timedelta_total", "timedelta_file"]
+            Mode of creation of the dataset data from the original files.
             "files": one data will be created for each file.
-            "timedelta": data objects of duration equal to data_duration will
-            be created.
+            "timedelta_total": data objects of duration equal to data_duration will
+            be created from the begin timestamp to the end timestamp.
+            "timedelta_file": data objects of duration equal to data_duration will
+            be created from the beginning of the first file that the begin timestamp is into, until it would resume
+            in a data beginning between two files. Then, the next data object will be created from the
+            beginning of the next original file and so on.
         data_duration: Timedelta | None
             Duration of the data objects.
-            If bound is set to "files", this parameter has no effect.
+            If mode is set to "files", this parameter has no effect.
             If provided, data will be evenly distributed between begin and end.
             Else, one data object will cover the whole time period.
         name: str|None
@@ -284,7 +290,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         The DataBase object.
 
         """
-        if bound == "files":
+        if mode == "files":
             data_base = [BaseData.from_files([f]) for f in files]
             data_base = BaseData.remove_overlaps(data_base)
             return cls(data=data_base, name=name)
@@ -294,13 +300,27 @@ class BaseDataset(Generic[TData, TFile], Event):
         if not end:
             end = max(file.end for file in files)
         if data_duration:
-            data_base = cls._get_base_data_from_files(begin, end, data_duration, files)
+            data_base = (
+                cls._get_base_data_from_files_timedelta_total(
+                    begin,
+                    end,
+                    data_duration,
+                    files,
+                )
+                if mode == "timedelta_total"
+                else cls._get_base_data_from_files_timedelta_file(
+                    begin,
+                    end,
+                    data_duration,
+                    files,
+                )
+            )
         else:
             data_base = [BaseData.from_files(files, begin=begin, end=end)]
         return cls(data_base, name=name)
 
     @classmethod
-    def _get_base_data_from_files(
+    def _get_base_data_from_files_timedelta_total(
         cls,
         begin: Timestamp,
         end: Timestamp,
@@ -337,6 +357,49 @@ class BaseDataset(Generic[TData, TFile], Event):
         return output
 
     @classmethod
+    def _get_base_data_from_files_timedelta_file(
+        cls,
+        begin: Timestamp,
+        end: Timestamp,
+        data_duration: Timedelta,
+        files: list[TFile],
+    ) -> list[BaseData]:
+        files = sorted(files, key=lambda file: file.begin)
+        first = max(0, bisect(files, begin, key=lambda f: f.begin) - 1)
+        last = bisect(files, end, key=lambda f: f.begin)
+
+        output = []
+        files_chunk = []
+        for idx, file in tqdm(
+            enumerate(files[first:last]),
+            disable=os.environ.get("DISABLE_TQDM", ""),
+        ):
+            if file in files_chunk:
+                continue
+            files_chunk = [file]
+
+            for next_file in files[idx + 1 :]:
+                upper_data_limit = file.begin + data_duration * math.ceil(
+                    (files_chunk[-1].end - file.begin).total_seconds()
+                    / data_duration.total_seconds(),
+                )
+                if upper_data_limit < next_file.begin:
+                    break
+                files_chunk.append(next_file)
+
+            output.extend(
+                BaseData.from_files(files, data_begin, data_begin + data_duration)
+                for data_begin in date_range(
+                    file.begin,
+                    files_chunk[-1].end,
+                    freq=data_duration,
+                    inclusive="left",
+                )
+            )
+
+        return output
+
+    @classmethod
     def from_folder(  # noqa: PLR0913
         cls,
         folder: Path,
@@ -346,7 +409,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         timezone: str | pytz.timezone | None = None,
-        bound: Literal["files", "timedelta"] = "timedelta",
+        mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
         data_duration: Timedelta | None = None,
         name: str | None = None,
     ) -> BaseDataset:
@@ -374,14 +437,18 @@ class BaseDataset(Generic[TData, TFile], Event):
             If different from a timezone parsed from the filename, the timestamps'
             timezone will be converted from the parsed timezone
             to the specified timezone.
-        bound: Literal["files", "timedelta"]
-            Bound between the original files and the dataset data.
+        mode: Literal["files", "timedelta_total", "timedelta_file"]
+            Mode of creation of the dataset data from the original files.
             "files": one data will be created for each file.
-            "timedelta": data objects of duration equal to data_duration will
-            be created.
+            "timedelta_total": data objects of duration equal to data_duration will
+            be created from the begin timestamp to the end timestamp.
+            "timedelta_file": data objects of duration equal to data_duration will
+            be created from the beginning of the first file that the begin timestamp is into, until it would resume
+            in a data beginning between two files. Then, the next data object will be created from the
+            beginning of the next original file and so on.
         data_duration: Timedelta | None
             Duration of the data objects.
-            If bound is set to "files", this parameter has no effect.
+            If mode is set to "files", this parameter has no effect.
             If provided, data will be evenly distributed between begin and end.
             Else, one object will cover the whole time period.
         name: str|None
@@ -419,7 +486,7 @@ class BaseDataset(Generic[TData, TFile], Event):
             files=valid_files,
             begin=begin,
             end=end,
-            bound=bound,
+            mode=mode,
             data_duration=data_duration,
             name=name,
         )

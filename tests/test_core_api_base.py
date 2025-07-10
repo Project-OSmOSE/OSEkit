@@ -361,7 +361,7 @@ def test_dataset_move(
 
 
 @pytest.mark.parametrize(
-    ("files", "bound", "data_duration", "expected_data"),
+    ("files", "mode", "data_duration", "expected_data"),
     [
         pytest.param(
             [
@@ -371,7 +371,7 @@ def test_dataset_move(
                     end=Timestamp("2022-04-22 12:12:13"),
                 ),
             ],
-            "timedelta",
+            "timedelta_total",
             None,
             [
                 (
@@ -382,7 +382,7 @@ def test_dataset_move(
                     ["cool"],
                 ),
             ],
-            id="timedelta_bound_with_no_duration",
+            id="timedelta_mode_with_no_duration",
         ),
         pytest.param(
             [
@@ -392,7 +392,7 @@ def test_dataset_move(
                     end=Timestamp("2022-04-22 12:12:13"),
                 ),
             ],
-            "timedelta",
+            "timedelta_total",
             Timedelta(seconds=0.5),
             [
                 (
@@ -410,7 +410,7 @@ def test_dataset_move(
                     ["cool"],
                 ),
             ],
-            id="timedelta_bound_with_duration",
+            id="timedelta_mode_with_duration",
         ),
         pytest.param(
             [
@@ -425,7 +425,7 @@ def test_dataset_move(
                     end=Timestamp("2022-04-22 12:12:14"),
                 ),
             ],
-            "timedelta",
+            "timedelta_total",
             Timedelta(seconds=0.5),
             [
                 (
@@ -457,7 +457,7 @@ def test_dataset_move(
                     ["fun"],
                 ),
             ],
-            id="timedelta_bound_with_duration_multiple_files",
+            id="timedelta_mode_with_duration_multiple_files",
         ),
         pytest.param(
             [
@@ -478,7 +478,7 @@ def test_dataset_move(
                     ["cool"],
                 ),
             ],
-            id="files_bound_with_one_file",
+            id="files_mode_with_one_file",
         ),
         pytest.param(
             [
@@ -511,7 +511,7 @@ def test_dataset_move(
                     ["fun"],
                 ),
             ],
-            id="files_bound_with_multiple_files",
+            id="files_mode_with_multiple_files",
         ),
         pytest.param(
             [
@@ -544,20 +544,20 @@ def test_dataset_move(
                     ["fun"],
                 ),
             ],
-            id="files_bound_ignores_data_duration",
+            id="files_mode_ignores_data_duration",
         ),
     ],
 )
-def test_base_dataset_file_bound(
+def test_base_dataset_file_mode(
     tmp_path: pytest.fixture,
     files: list[BaseFile],
-    bound: Literal["files", "timedelta"],
+    mode: Literal["files", "timedelta_total"],
     data_duration: Timedelta | None,
     expected_data: list[tuple[Event, str]],
 ) -> None:
     ds = BaseDataset.from_files(
         files=files,
-        bound=bound,
+        mode=mode,
         data_duration=data_duration,
     )
 
@@ -1075,3 +1075,634 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
     data.name = name
     assert data.name == expected
     assert str(data) == expected
+
+
+@pytest.mark.parametrize(
+    ("files", "begin", "end", "data_duration", "mode", "expected"),
+    [
+        pytest.param(
+            [
+                BaseFile(
+                    "cherry",
+                    begin=Timestamp("2015-08-28 12:12:12"),
+                    end=Timestamp("2015-08-28 12:13:12"),
+                ),
+            ],
+            Timestamp("2015-08-28 12:12:12"),
+            Timestamp("2015-08-28 12:13:12"),
+            Timedelta(seconds=30),
+            "timedelta_total",
+            [
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:12:12"),
+                            end=Timestamp("2015-08-28 12:12:42"),
+                        ),
+                        "cherry",
+                    ),
+                ],
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:12:42"),
+                            end=Timestamp("2015-08-28 12:13:12"),
+                        ),
+                        "cherry",
+                    ),
+                ],
+            ],
+            id="total_only_one_file",
+        ),
+        pytest.param(
+            [
+                BaseFile(
+                    "depression",
+                    begin=Timestamp("2015-08-28 12:12:12"),
+                    end=Timestamp("2015-08-28 12:13:12"),
+                ),
+                BaseFile(
+                    "cherry",
+                    begin=Timestamp("2015-08-28 12:13:12"),
+                    end=Timestamp("2015-08-28 12:14:12"),
+                ),
+            ],
+            Timestamp("2015-08-28 12:12:12"),
+            Timestamp("2015-08-28 12:14:12"),
+            Timedelta(minutes=1),
+            "timedelta_total",
+            [
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:12:12"),
+                            end=Timestamp("2015-08-28 12:13:12"),
+                        ),
+                        "depression",
+                    ),
+                ],
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:12"),
+                            end=Timestamp("2015-08-28 12:14:12"),
+                        ),
+                        "cherry",
+                    ),
+                ],
+            ],
+            id="total_two_continuous_files_without_overlap",
+        ),
+        pytest.param(
+            [
+                BaseFile(
+                    "depression",
+                    begin=Timestamp("2015-08-28 12:12:12"),
+                    end=Timestamp("2015-08-28 12:13:12"),
+                ),
+                BaseFile(
+                    "cherry",
+                    begin=Timestamp("2015-08-28 12:13:12"),
+                    end=Timestamp("2015-08-28 12:14:12"),
+                ),
+            ],
+            Timestamp("2015-08-28 12:12:12"),
+            Timestamp("2015-08-28 12:14:12"),
+            Timedelta(seconds=45),
+            "timedelta_total",
+            [
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:12:12"),
+                            end=Timestamp("2015-08-28 12:12:57"),
+                        ),
+                        "depression",
+                    ),
+                ],
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:12:57"),
+                            end=Timestamp("2015-08-28 12:13:12"),
+                        ),
+                        "depression",
+                    ),
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:12"),
+                            end=Timestamp("2015-08-28 12:13:42"),
+                        ),
+                        "cherry",
+                    ),
+                ],
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:42"),
+                            end=Timestamp("2015-08-28 12:14:12"),
+                        ),
+                        "cherry",
+                    ),
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:14:12"),
+                            end=Timestamp("2015-08-28 12:14:27"),
+                        ),
+                        None,
+                    ),
+                ],
+            ],
+            id="total_two_continuous_files_with_overlap",
+        ),
+        pytest.param(
+            [
+                BaseFile(
+                    "cherry",
+                    begin=Timestamp("2015-08-28 12:12:12"),
+                    end=Timestamp("2015-08-28 12:13:12"),
+                ),
+            ],
+            Timestamp("2015-08-28 12:12:12"),
+            Timestamp("2015-08-28 12:13:12"),
+            Timedelta(seconds=30),
+            "timedelta_file",
+            [
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:12:12"),
+                            end=Timestamp("2015-08-28 12:12:42"),
+                        ),
+                        "cherry",
+                    ),
+                ],
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:12:42"),
+                            end=Timestamp("2015-08-28 12:13:12"),
+                        ),
+                        "cherry",
+                    ),
+                ],
+            ],
+            id="file_only_one_file",
+        ),
+        pytest.param(
+            [
+                BaseFile(
+                    "depression",
+                    begin=Timestamp("2015-08-28 12:12:12"),
+                    end=Timestamp("2015-08-28 12:13:12"),
+                ),
+                BaseFile(
+                    "cherry",
+                    begin=Timestamp("2015-08-28 12:13:12"),
+                    end=Timestamp("2015-08-28 12:14:12"),
+                ),
+            ],
+            Timestamp("2015-08-28 12:12:12"),
+            Timestamp("2015-08-28 12:14:12"),
+            Timedelta(minutes=1),
+            "timedelta_file",
+            [
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:12:12"),
+                            end=Timestamp("2015-08-28 12:13:12"),
+                        ),
+                        "depression",
+                    ),
+                ],
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:12"),
+                            end=Timestamp("2015-08-28 12:14:12"),
+                        ),
+                        "cherry",
+                    ),
+                ],
+            ],
+            id="file_two_continuous_files_without_overlap",
+        ),
+        pytest.param(
+            [
+                BaseFile(
+                    "depression",
+                    begin=Timestamp("2015-08-28 12:12:12"),
+                    end=Timestamp("2015-08-28 12:13:12"),
+                ),
+                BaseFile(
+                    "cherry",
+                    begin=Timestamp("2015-08-28 12:13:12"),
+                    end=Timestamp("2015-08-28 12:14:12"),
+                ),
+            ],
+            Timestamp("2015-08-28 12:12:12"),
+            Timestamp("2015-08-28 12:14:12"),
+            Timedelta(seconds=45),
+            "timedelta_file",
+            [
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:12:12"),
+                            end=Timestamp("2015-08-28 12:12:57"),
+                        ),
+                        "depression",
+                    ),
+                ],
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:12:57"),
+                            end=Timestamp("2015-08-28 12:13:12"),
+                        ),
+                        "depression",
+                    ),
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:12"),
+                            end=Timestamp("2015-08-28 12:13:42"),
+                        ),
+                        "cherry",
+                    ),
+                ],
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:42"),
+                            end=Timestamp("2015-08-28 12:14:12"),
+                        ),
+                        "cherry",
+                    ),
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:14:12"),
+                            end=Timestamp("2015-08-28 12:14:27"),
+                        ),
+                        None,
+                    ),
+                ],
+            ],
+            id="file_two_continuous_files_with_overlap",
+        ),
+        pytest.param(
+            [
+                BaseFile(
+                    "depression",
+                    begin=Timestamp("2015-08-28 12:12:12"),
+                    end=Timestamp("2015-08-28 12:13:22"),
+                ),
+                BaseFile(
+                    "cherry",
+                    begin=Timestamp("2015-08-28 12:13:32"),
+                    end=Timestamp("2015-08-28 12:14:12"),
+                ),
+            ],
+            Timestamp("2015-08-28 12:12:12"),
+            Timestamp("2015-08-28 12:14:12"),
+            Timedelta(minutes=1),
+            "timedelta_total",
+            [
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:12:12"),
+                            end=Timestamp("2015-08-28 12:13:12"),
+                        ),
+                        "depression",
+                    ),
+                ],
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:12"),
+                            end=Timestamp("2015-08-28 12:13:22"),
+                        ),
+                        "depression",
+                    ),
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:22"),
+                            end=Timestamp("2015-08-28 12:13:32"),
+                        ),
+                        None,
+                    ),
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:32"),
+                            end=Timestamp("2015-08-28 12:14:12"),
+                        ),
+                        "cherry",
+                    ),
+                ],
+            ],
+            id="total_two_separate_files_without_empty_start",
+        ),
+        pytest.param(
+            [
+                BaseFile(
+                    "depression",
+                    begin=Timestamp("2015-08-28 12:12:12"),
+                    end=Timestamp("2015-08-28 12:13:22"),
+                ),
+                BaseFile(
+                    "cherry",
+                    begin=Timestamp("2015-08-28 12:13:32"),
+                    end=Timestamp("2015-08-28 12:14:12"),
+                ),
+            ],
+            Timestamp("2015-08-28 12:12:12"),
+            Timestamp("2015-08-28 12:14:12"),
+            Timedelta(minutes=1),
+            "timedelta_file",
+            [
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:12:12"),
+                            end=Timestamp("2015-08-28 12:13:12"),
+                        ),
+                        "depression",
+                    ),
+                ],
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:12"),
+                            end=Timestamp("2015-08-28 12:13:22"),
+                        ),
+                        "depression",
+                    ),
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:22"),
+                            end=Timestamp("2015-08-28 12:13:32"),
+                        ),
+                        None,
+                    ),
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:32"),
+                            end=Timestamp("2015-08-28 12:14:12"),
+                        ),
+                        "cherry",
+                    ),
+                ],
+            ],
+            id="file_two_separate_files_without_empty_start",
+        ),
+        pytest.param(
+            [
+                BaseFile(
+                    "depression",
+                    begin=Timestamp("2015-08-28 12:12:12"),
+                    end=Timestamp("2015-08-28 12:13:02"),
+                ),
+                BaseFile(
+                    "cherry",
+                    begin=Timestamp("2015-08-28 12:13:22"),
+                    end=Timestamp("2015-08-28 12:14:12"),
+                ),
+            ],
+            Timestamp("2015-08-28 12:12:12"),
+            Timestamp("2015-08-28 12:14:12"),
+            Timedelta(minutes=1),
+            "timedelta_total",
+            [
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:12:12"),
+                            end=Timestamp("2015-08-28 12:13:02"),
+                        ),
+                        "depression",
+                    ),
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:02"),
+                            end=Timestamp("2015-08-28 12:13:12"),
+                        ),
+                        None,
+                    ),
+                ],
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:12"),
+                            end=Timestamp("2015-08-28 12:13:22"),
+                        ),
+                        None,
+                    ),
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:22"),
+                            end=Timestamp("2015-08-28 12:14:12"),
+                        ),
+                        "cherry",
+                    ),
+                ],
+            ],
+            id="total_two_separate_files_with_empty_start",
+        ),
+        pytest.param(
+            [
+                BaseFile(
+                    "depression",
+                    begin=Timestamp("2015-08-28 12:12:12"),
+                    end=Timestamp("2015-08-28 12:13:02"),
+                ),
+                BaseFile(
+                    "cherry",
+                    begin=Timestamp("2015-08-28 12:13:22"),
+                    end=Timestamp("2015-08-28 12:14:12"),
+                ),
+            ],
+            Timestamp("2015-08-28 12:12:12"),
+            Timestamp("2015-08-28 12:14:12"),
+            Timedelta(minutes=1),
+            "timedelta_file",
+            [
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:12:12"),
+                            end=Timestamp("2015-08-28 12:13:02"),
+                        ),
+                        "depression",
+                    ),
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:02"),
+                            end=Timestamp("2015-08-28 12:13:12"),
+                        ),
+                        None,
+                    ),
+                ],
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:22"),
+                            end=Timestamp("2015-08-28 12:14:12"),
+                        ),
+                        "cherry",
+                    ),
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:14:12"),
+                            end=Timestamp("2015-08-28 12:14:22"),
+                        ),
+                        None,
+                    ),
+                ],
+            ],
+            id="file_two_separate_files_with_empty_start",
+        ),
+        pytest.param(
+            [
+                BaseFile(
+                    "depression",
+                    begin=Timestamp("2015-08-28 12:12:00"),
+                    end=Timestamp("2015-08-28 12:13:02"),
+                ),
+                BaseFile(
+                    "cherry",
+                    begin=Timestamp("2015-08-28 12:13:22"),
+                    end=Timestamp("2015-08-28 12:14:12"),
+                ),
+            ],
+            Timestamp("2015-08-28 12:12:12"),
+            Timestamp("2015-08-28 12:14:12"),
+            Timedelta(minutes=1),
+            "timedelta_total",
+            [
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:12:12"),
+                            end=Timestamp("2015-08-28 12:13:02"),
+                        ),
+                        "depression",
+                    ),
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:02"),
+                            end=Timestamp("2015-08-28 12:13:12"),
+                        ),
+                        None,
+                    ),
+                ],
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:12"),
+                            end=Timestamp("2015-08-28 12:13:22"),
+                        ),
+                        None,
+                    ),
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:22"),
+                            end=Timestamp("2015-08-28 12:14:12"),
+                        ),
+                        "cherry",
+                    ),
+                ],
+            ],
+            id="total_two_separate_files_begin_mid_file",
+        ),
+        pytest.param(
+            [
+                BaseFile(
+                    "depression",
+                    begin=Timestamp("2015-08-28 12:12:00"),
+                    end=Timestamp("2015-08-28 12:13:02"),
+                ),
+                BaseFile(
+                    "cherry",
+                    begin=Timestamp("2015-08-28 12:13:22"),
+                    end=Timestamp("2015-08-28 12:14:12"),
+                ),
+            ],
+            Timestamp("2015-08-28 12:12:12"),
+            Timestamp("2015-08-28 12:14:12"),
+            Timedelta(minutes=1),
+            "timedelta_file",
+            [
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:12:00"),
+                            end=Timestamp("2015-08-28 12:13:00"),
+                        ),
+                        "depression",
+                    ),
+                ],
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:00"),
+                            end=Timestamp("2015-08-28 12:13:02"),
+                        ),
+                        "depression",
+                    ),
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:02"),
+                            end=Timestamp("2015-08-28 12:13:22"),
+                        ),
+                        None,
+                    ),
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:22"),
+                            end=Timestamp("2015-08-28 12:14:00"),
+                        ),
+                        "cherry",
+                    ),
+                ],
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:14:00"),
+                            end=Timestamp("2015-08-28 12:14:12"),
+                        ),
+                        "cherry",
+                    ),
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:14:12"),
+                            end=Timestamp("2015-08-28 12:15:00"),
+                        ),
+                        None,
+                    ),
+                ],
+            ],
+            id="file_two_separate_files_begin_mid_file",
+        ),
+    ],
+)
+def test_get_base_data_from_files(
+    files: list[BaseFile],
+    begin: Timestamp,
+    end: Timestamp,
+    data_duration: Timedelta,
+    mode: Literal["timedelta_total", "timedelta_file"],
+    expected: list[list[tuple[Event, str | None]]],
+) -> None:
+    data = BaseDataset.from_files(files, begin, end, mode, data_duration).data
+
+    for d, e in zip(data, expected, strict=True):
+        for item, expected_tuple in zip(d.items, e, strict=True):
+            expected_item, expected_filename = expected_tuple
+            assert item.begin == expected_item.begin
+            assert item.end == expected_item.end
+            assert (
+                expected_filename is None
+                if item.is_empty
+                else item.file.path.name == expected_filename
+            )

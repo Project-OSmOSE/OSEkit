@@ -242,7 +242,7 @@ def test_dataset_build(
     original_dataset = AudioDataset.from_folder(
         tmp_path,
         strptime_format=files_timestamp_format,
-        bound="files",
+        mode="files",
         timezone=dataset_timezone,
         name="original",
     )
@@ -266,7 +266,7 @@ def test_dataset_build(
     assert moved_original_dataset == AudioDataset.from_folder(
         folder=tmp_path / "data" / "audio" / "original",
         strptime_format=files_timestamp_format,
-        bound="files",
+        mode="files",
         timezone=dataset_timezone,
     )
 

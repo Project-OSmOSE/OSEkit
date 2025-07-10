@@ -179,4 +179,4 @@ def base_dataset(tmp_path: Path) -> BaseDataset:
         BaseFile(path=file, begin=timestamp, end=timestamp + pd.Timedelta(seconds=1))
         for file, timestamp in zip(files, timestamps, strict=False)
     ]
-    return BaseDataset.from_files(files=bfs, bound="files")
+    return BaseDataset.from_files(files=bfs, mode="files")

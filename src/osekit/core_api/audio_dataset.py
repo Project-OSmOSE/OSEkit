@@ -116,7 +116,8 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         """
         last = len(self.data) if last is None else last
         for data in tqdm(
-            self.data[first:last], disable=os.environ.get("DISABLE_TQDM", "")
+            self.data[first:last],
+            disable=os.environ.get("DISABLE_TQDM", ""),
         ):
             data.write(folder=folder, subtype=subtype, link=link)
 
@@ -150,7 +151,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         timezone: str | pytz.timezone | None = None,
-        bound: Literal["files", "timedelta"] = "timedelta",
+        mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
         data_duration: Timedelta | None = None,
         name: str | None = None,
         instrument: Instrument | None = None,
@@ -176,14 +177,18 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             If different from a timezone parsed from the filename, the timestamps'
             timezone will be converted from the parsed timezone
             to the specified timezone.
-        bound: Literal["files", "timedelta"]
-            Bound between the original files and the dataset data.
+        mode: Literal["files", "timedelta_total", "timedelta_file"]
+            Mode of creation of the dataset data from the original files.
             "files": one data will be created for each file.
-            "timedelta": data objects of duration equal to data_duration will
-            be created.
+            "timedelta_total": data objects of duration equal to data_duration will
+            be created from the begin timestamp to the end timestamp.
+            "timedelta_file": data objects of duration equal to data_duration will
+            be created from the beginning of the first file that the begin timestamp is into, until it would resume
+            in a data beginning between two files. Then, the next data object will be created from the
+            beginning of the next original file and so on.
         data_duration: Timedelta | None
             Duration of the audio data objects.
-            If bound is set to "files", this parameter has no effect.
+            If mode is set to "files", this parameter has no effect.
             If provided, audio data will be evenly distributed between begin and end.
             Else, one data object will cover the whole time period.
         name: str|None
@@ -209,7 +214,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             begin=begin,
             end=end,
             timezone=timezone,
-            bound=bound,
+            mode=mode,
             data_duration=data_duration,
             **kwargs,
         )
@@ -225,7 +230,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         files: list[AudioFile],
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
-        bound: Literal["files", "timedelta"] = "timedelta",
+        mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
         data_duration: Timedelta | None = None,
         name: str | None = None,
         instrument: Instrument | None = None,
@@ -242,14 +247,18 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         end: Timestamp | None
             End of the last data object.
             Defaulted to the end of the last file.
-        bound: Literal["files", "timedelta"]
-            Bound between the original files and the dataset data.
+        mode: Literal["files", "timedelta_total", "timedelta_file"]
+            Mode of creation of the dataset data from the original files.
             "files": one data will be created for each file.
-            "timedelta": data objects of duration equal to data_duration will
-            be created.
+            "timedelta_total": data objects of duration equal to data_duration will
+            be created from the begin timestamp to the end timestamp.
+            "timedelta_file": data objects of duration equal to data_duration will
+            be created from the beginning of the first file that the begin timestamp is into, until it would resume
+            in a data beginning between two files. Then, the next data object will be created from the
+            beginning of the next original file and so on.
         data_duration: Timedelta | None
             Duration of the data objects.
-            If bound is set to "files", this parameter has no effect.
+            If mode is set to "files", this parameter has no effect.
             If provided, data will be evenly distributed between begin and end.
             Else, one data object will cover the whole time period.
         name: str|None
@@ -268,7 +277,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             files=files,
             begin=begin,
             end=end,
-            bound=bound,
+            mode=mode,
             data_duration=data_duration,
         )
         return cls.from_base_dataset(base, name=name, instrument=instrument)
