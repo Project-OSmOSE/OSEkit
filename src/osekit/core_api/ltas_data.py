@@ -62,6 +62,9 @@ class LTASData(SpectroData):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         fft: ShortTimeFFT | None = None,
+        db_ref: float | None = None,
+        v_lim: tuple[float, float] | None = None,
+        colormap: str | None = None,
         nb_time_bins: int = 1920,
     ) -> None:
         """Initialize a SpectroData from a list of SpectroItems.
@@ -80,6 +83,13 @@ class LTASData(SpectroData):
             Set the end of the empty data.
         fft: ShortTimeFFT
             The short time FFT used for computing the spectrogram.
+        db_ref: float | None
+            Reference value for computing sx values in decibel.
+        v_lim: tuple[float,float]
+            Lower and upper limits (in dB) of the colormap used
+            for plotting the spectrogram.
+        colormap: str
+            Colormap to use for plotting the spectrogram.
         nb_time_bins: int
             The maximum number of time bins of the LTAS.
             Given the audio data and the fft parameters,
@@ -98,6 +108,9 @@ class LTASData(SpectroData):
             begin=begin,
             end=end,
             fft=ltas_fft,
+            db_ref=db_ref,
+            v_lim=v_lim,
+            colormap=colormap,
         )
         self.nb_time_bins = nb_time_bins
         self.sx_dtype = float
@@ -155,6 +168,9 @@ class LTASData(SpectroData):
         begin = spectro_data.begin
         end = spectro_data.end
         fft = spectro_data.fft
+        db_ref = spectro_data.db_ref
+        v_lim = spectro_data.v_lim
+        colormap = spectro_data.colormap
         return cls(
             items=items,
             audio_data=audio_data,
@@ -162,6 +178,9 @@ class LTASData(SpectroData):
             end=end,
             fft=fft,
             nb_time_bins=nb_time_bins,
+            db_ref=db_ref,
+            v_lim=v_lim,
+            colormap=colormap,
         )
 
     @classmethod
@@ -169,6 +188,8 @@ class LTASData(SpectroData):
         cls,
         data: AudioData,
         fft: ShortTimeFFT,
+        v_lim: tuple[float, float] | None = None,
+        colormap: str | None = None,
         nb_time_bins: int = 1920,
     ) -> SpectroData:
         """Instantiate a SpectroData object from a AudioData object.
@@ -179,6 +200,11 @@ class LTASData(SpectroData):
             Audio data from which the SpectroData should be computed.
         fft: ShortTimeFFT
             The ShortTimeFFT used to compute the spectrogram.
+        v_lim: tuple[float,float]
+            Lower and upper limits (in dB) of the colormap used
+            for plotting the spectrogram.
+        colormap: str
+            Colormap to use for plotting the spectrogram.
         nb_time_bins: int
             The maximum number of windows over which the audio will be split to perform
             Defaulted to 1920.
@@ -194,6 +220,8 @@ class LTASData(SpectroData):
             fft=fft,
             begin=data.begin,
             end=data.end,
+            v_lim=v_lim,
+            colormap=colormap,
             nb_time_bins=nb_time_bins,
         )
 
