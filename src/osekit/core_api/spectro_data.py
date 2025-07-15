@@ -506,7 +506,12 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             self.audio_data.split_frames(start_frame=a, stop_frame=b)
             for a, b in zip(split_frames, split_frames[1:], strict=False)
         ]
-        return [SpectroData.from_audio_data(ad, self.fft) for ad in ad_split]
+        return [
+            SpectroData.from_audio_data(
+                data=ad, fft=self.fft, v_lim=self.v_lim, colormap=self.colormap
+            )
+            for ad in ad_split
+        ]
 
     def _get_value_from_items(self, items: list[SpectroItem]) -> np.ndarray:
         if not all(
