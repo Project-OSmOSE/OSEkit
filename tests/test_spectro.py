@@ -851,3 +851,93 @@ def test_spectrodataset_vlim(
 
     assert sds3.data[0].v_lim == default_v_lim
     assert sds3.data[1].v_lim == default_v_lim
+
+
+@pytest.mark.parametrize(
+    ("audio_files", "sft", "parts", "v_lim", "colormap"),
+    [
+        pytest.param(
+            {},
+            ShortTimeFFT(
+                hamming(1024),
+                1024,
+                48_000,
+            ),
+            1,
+            None,
+            None,
+            id="default_parameters_one_subdata",
+        ),
+        pytest.param(
+            {},
+            ShortTimeFFT(
+                hamming(1024),
+                1024,
+                48_000,
+            ),
+            5,
+            None,
+            None,
+            id="default_parameters_5_subdata",
+        ),
+        pytest.param(
+            {},
+            ShortTimeFFT(
+                hamming(1024),
+                1024,
+                48_000,
+            ),
+            5,
+            (0.0, 150.0),
+            None,
+            id="specified_v_lim",
+        ),
+        pytest.param(
+            {},
+            ShortTimeFFT(
+                hamming(1024),
+                1024,
+                48_000,
+            ),
+            5,
+            None,
+            "inferno",
+            id="specified_colormap",
+        ),
+        pytest.param(
+            {},
+            ShortTimeFFT(
+                hamming(1024),
+                1024,
+                48_000,
+            ),
+            5,
+            (0.0, 150.0),
+            "inferno",
+            id="specified_all",
+        ),
+    ],
+    indirect=["audio_files"],
+)
+def test_spectrodata_split(
+    audio_files: pytest.fixture,
+    sft: ShortTimeFFT,
+    parts: int,
+    v_lim: tuple[float, float],
+    colormap: str,
+) -> None:
+    files, _ = audio_files
+    ad = AudioData.from_files(files)
+    sd = SpectroData.from_audio_data(
+        data=ad,
+        fft=sft,
+        v_lim=v_lim,
+        colormap=colormap,
+    )
+    sd_parts = sd.split(parts)
+    for sd_part in sd_parts:
+        assert sd_part.fft is sd.fft
+        assert sd_part.v_lim == sd.v_lim
+        assert sd_part.colormap == sd.colormap
+    assert sd_parts[0].begin == sd.begin
+    assert sd_parts[-1].end == sd.end
