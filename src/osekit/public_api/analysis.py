@@ -45,7 +45,6 @@ class AnalysisType(Flag):
     AUDIO = auto()
     MATRIX = auto()
     SPECTROGRAM = auto()
-    LTAS = auto()
     WELCH = auto()
 
 
@@ -75,6 +74,7 @@ class Analysis:
         v_lim: tuple[float, float] | None = None,
         colormap: str | None = None,
         scale: Scale | None = None,
+        is_ltas: bool = False,
         nb_ltas_time_bins: int | None = None,
     ) -> None:
         """Initialize an Analysis object.
@@ -131,6 +131,8 @@ class Analysis:
         scale: osekit.core_api.frequecy_scale.Scale
             Custom frequency scale to use for plotting the spectrogram.
             Has no effect if Analysis.SPECTROGRAM is not in analysis.
+        is_ltas: bool
+            If True, spectra will be computed as LTAS.
         nb_ltas_time_bins: int | None
             The maximum number of time bins of the LTAS.
 
@@ -147,6 +149,7 @@ class Analysis:
         self.v_lim = v_lim
         self.colormap = colormap
         self.scale = scale
+        self.is_ltas = is_ltas
         self.nb_ltas_time_bins = nb_ltas_time_bins
 
         if self.is_spectro and fft is None:
@@ -162,7 +165,6 @@ class Analysis:
             for flag in (
                 AnalysisType.MATRIX,
                 AnalysisType.SPECTROGRAM,
-                AnalysisType.LTAS,
                 AnalysisType.WELCH,
             )
         )

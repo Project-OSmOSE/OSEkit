@@ -20,6 +20,7 @@ from osekit.core_api.audio_dataset import AudioDataset
 from osekit.core_api.base_dataset import BaseDataset
 from osekit.core_api.instrument import Instrument
 from osekit.core_api.json_serializer import deserialize_json, serialize_json
+from osekit.core_api.ltas_dataset import LTASDataset
 from osekit.core_api.spectro_dataset import SpectroDataset
 from osekit.public_api.analysis import Analysis, AnalysisType
 from osekit.utils.core_utils import (
@@ -298,6 +299,10 @@ class Dataset:
                 analysis=analysis,
                 audio_dataset=ads,
             )
+            if analysis.is_ltas:
+                sds = LTASDataset.from_spectro_dataset(
+                    sds=sds, nb_time_bins=analysis.nb_ltas_time_bins
+                )
             self._add_spectro_dataset(sds=sds)
 
         self.export_analysis(
@@ -306,7 +311,6 @@ class Dataset:
             sds=sds,
             link=True,
             subtype=analysis.subtype,
-            nb_time_bins=analysis.nb_ltas_time_bins,
         )
 
         self.write_json()
@@ -338,13 +342,11 @@ class Dataset:
         self,
         analysis_type: AnalysisType,
         ads: AudioDataset | None = None,
-        sds: SpectroDataset | None = None,
+        sds: SpectroDataset | LTASDataset | None = None,
         link: bool = False,
         subtype: str | None = None,
         matrix_folder_name: str = "matrix",
         spectrogram_folder_name: str = "spectrogram",
-        ltas_folder_name: str = "ltas",
-        nb_time_bins: int | None = None,
         welch_folder_name: str = "welch",
     ) -> None:
         """Perform an analysis and write the results on disk.
@@ -363,15 +365,13 @@ class Dataset:
         ltas_folder_name:
             The name of the folder in which the png LTAS will be
             exported (relative to sds.folder)
-        nb_time_bins:
-            The maximum number of time-bins to use for the LTAS.
         matrix_folder_name:
             The name of the folder in which the npz matrices will be
             exported (relative to sds.folder)
         welch_folder_name:
             The name of the folder in which the npz welch files will be
             exported (relative to sds.folder)
-        sds: SpectroDataset
+        sds: SpectroDataset | LTASDataset
             The SpectroDataset on which the data should be written.
         analysis_type : AnalysisType
             Type of the analysis to be performed.
@@ -398,8 +398,6 @@ class Dataset:
                 subtype=subtype,
                 matrix_folder_name=matrix_folder_name,
                 spectrogram_folder_name=spectrogram_folder_name,
-                ltas_folder_name=ltas_folder_name,
-                nb_time_bins=nb_time_bins,
                 welch_folder_name=welch_folder_name,
                 logger=self.logger,
             )
@@ -420,9 +418,6 @@ class Dataset:
                 f"--subtype {subtype} "
                 f"--matrix-folder-name {matrix_folder_name} "
                 f"--spectrogram-folder-name {spectrogram_folder_name} "
-                f"--ltas-folder-name {ltas_folder_name} "
-                f"--nb-time-bins {nb_time_bins} "
-                f"--spectrogram-folder-name {spectrogram_folder_name} "
                 f"--welch-folder-name {welch_folder_name} "
                 f"--first {start} "
                 f"--last {stop} "
@@ -442,7 +437,7 @@ class Dataset:
 
     def _add_spectro_dataset(
         self,
-        sds: SpectroDataset,
+        sds: SpectroDataset | LTASDataset,
     ) -> None:
         sds.folder = self._get_spectro_dataset_subpath(sds=sds)
         self.datasets[sds.name] = {"class": type(sds).__name__, "dataset": sds}
@@ -450,7 +445,7 @@ class Dataset:
 
     def _get_spectro_dataset_subpath(
         self,
-        sds: SpectroDataset,
+        sds: SpectroDataset | LTASDataset,
     ) -> Path:
         ads_folder = Path(
             f"{round(sds.data_duration.total_seconds())}_{round(sds.fft.fs)}",
@@ -466,14 +461,14 @@ class Dataset:
         if type(dataset) is AudioDataset:
             self._sort_audio_dataset(dataset)
             return
-        if type(dataset) is SpectroDataset:
+        if type(dataset) is SpectroDataset | LTASDataset:
             self._sort_spectro_dataset(dataset)
             return
 
     def _sort_audio_dataset(self, dataset: AudioDataset) -> None:
         dataset.move_files(self._get_audio_dataset_subpath(dataset))
 
-    def _sort_spectro_dataset(self, dataset: SpectroDataset) -> None:
+    def _sort_spectro_dataset(self, dataset: SpectroDataset | LTASDataset) -> None:
         raise NotImplementedError
 
     def get_dataset(self, dataset_name: str) -> type[DatasetChild] | None:
@@ -543,7 +538,7 @@ class Dataset:
                 if dataset["class"] == "AudioDataset"
                 else (
                     SpectroDataset
-                    if dataset["class"] == "SpectroDataset"
+                    if dataset["class"] in ("SpectroDataset", "LTASDataset")
                     else BaseDataset
                 )
             )
