@@ -219,8 +219,8 @@ class Dataset:
         self,
         analysis: Analysis,
         audio_dataset: AudioDataset | None = None,
-    ) -> SpectroDataset:
-        """Return a SpectroDataset created from the analysis parameters.
+    ) -> SpectroDataset | LTASDataset:
+        """Return a SpectroDataset (or LTASDataset) created from the analysis parameters.
 
         Parameters
         ----------
@@ -233,10 +233,11 @@ class Dataset:
 
         Returns
         -------
-        SpectroDataset:
+        SpectroDataset | LTASDataset:
             The SpectroDataset that match the analysis parameters.
             This SpectroDataset can be used, for example, to have a peek at the
             analysis output before running it.
+            If Analysis.is_ltas is True, a LTASDataset is returned.
 
         """
         if analysis.fft is None:
@@ -250,7 +251,7 @@ class Dataset:
             else audio_dataset
         )
 
-        return SpectroDataset.from_audio_dataset(
+        sds = SpectroDataset.from_audio_dataset(
             audio_dataset=ads,
             fft=analysis.fft,
             name=ads.base_name,
@@ -258,6 +259,14 @@ class Dataset:
             colormap=analysis.colormap,
             scale=analysis.scale,
         )
+
+        if analysis.is_ltas:
+            sds = LTASDataset.from_spectro_dataset(
+                sds=sds,
+                nb_time_bins=analysis.nb_ltas_time_bins,
+            )
+
+        return sds
 
     def run_analysis(
         self,
@@ -299,10 +308,6 @@ class Dataset:
                 analysis=analysis,
                 audio_dataset=ads,
             )
-            if analysis.is_ltas:
-                sds = LTASDataset.from_spectro_dataset(
-                    sds=sds, nb_time_bins=analysis.nb_ltas_time_bins
-                )
             self._add_spectro_dataset(sds=sds)
 
         self.export_analysis(
@@ -536,11 +541,11 @@ class Dataset:
             dataset_class = (
                 AudioDataset
                 if dataset["class"] == "AudioDataset"
-                else (
-                    SpectroDataset
-                    if dataset["class"] in ("SpectroDataset", "LTASDataset")
-                    else BaseDataset
-                )
+                else SpectroDataset
+                if dataset["class"] == "SpectroDataset"
+                else LTASDataset
+                if dataset["class"] == "LTASDataset"
+                else BaseDataset
             )
             datasets[name] = {
                 "class": dataset["class"],

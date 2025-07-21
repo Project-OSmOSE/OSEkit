@@ -294,7 +294,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
         @locked(lock_file=self.folder / "lock.lock")
         def update(first: int, last: int) -> None:
-            sds_to_update = SpectroDataset.from_json(file=json_file)
+            sds_to_update = type(self).from_json(file=json_file)
             sds_to_update.data[first:last] = self.data[first:last]
             sds_to_update.write_json(folder=self.folder)
 
