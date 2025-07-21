@@ -237,6 +237,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         """
         window = self.fft.win
         noverlap = self.fft.hop
+        if noverlap == window.shape[0]:
+            noverlap //= 2
         nfft = self.fft.mfft
 
         _, sx = welch(
@@ -508,7 +510,10 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         ]
         return [
             SpectroData.from_audio_data(
-                data=ad, fft=self.fft, v_lim=self.v_lim, colormap=self.colormap
+                data=ad,
+                fft=self.fft,
+                v_lim=self.v_lim,
+                colormap=self.colormap,
             )
             for ad in ad_split
         ]
