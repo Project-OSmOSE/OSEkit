@@ -19,14 +19,13 @@ and each part is replaced with an average of the stft performed within it.
 
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING
 
 import numpy as np
 from scipy.signal import ShortTimeFFT
-from tqdm import tqdm
 
 from osekit.core_api.spectro_data import SpectroData
+from osekit.utils.multiprocess_utils import multiprocess
 
 if TYPE_CHECKING:
     from pandas import Timestamp
@@ -115,6 +114,12 @@ class LTASData(SpectroData):
         self.nb_time_bins = nb_time_bins
         self.sx_dtype = float
 
+    def mean_value_part(self, sub_spectro: LTASData) -> np.ndarray:
+        return np.mean(
+            sub_spectro.get_value(depth=1),
+            axis=1,
+        )
+
     def get_value(self, depth: int = 0) -> np.ndarray:
         """Return the Sx matrix of the LTAS.
 
@@ -130,15 +135,13 @@ class LTASData(SpectroData):
             for ad in self.audio_data.split(self.nb_time_bins)
         ]
 
+        if depth != 0:
+            return np.vstack(
+                [self.mean_value_part(sub_spectro) for sub_spectro in sub_spectros],
+            ).T
+
         return np.vstack(
-            [
-                np.mean(sub_spectro.get_value(depth + 1), axis=1)
-                for sub_spectro in (
-                    sub_spectros
-                    if depth != 0
-                    else tqdm(sub_spectros, disable=os.environ.get("DISABLE_TQDM", ""))
-                )
-            ],
+            list(multiprocess(self.mean_value_part, sub_spectros)),
         ).T
 
     @classmethod

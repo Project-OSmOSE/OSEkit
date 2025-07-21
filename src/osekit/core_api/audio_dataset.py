@@ -7,16 +7,14 @@ that simplify repeated operations on the audio data.
 from __future__ import annotations
 
 import logging
-import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
-
-from tqdm import tqdm
 
 from osekit.core_api.audio_data import AudioData
 from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.base_dataset import BaseDataset
 from osekit.core_api.json_serializer import deserialize_json
+from osekit.utils.multiprocess_utils import multiprocess
 
 if TYPE_CHECKING:
     import pytz
@@ -86,6 +84,17 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         for data in self.data:
             data.instrument = instrument
 
+    def _write_audio(
+        self,
+        data: AudioData,
+        folder: Path,
+        subtype: str | None = None,
+        link: bool = False,  # noqa: FBT001, FBT002,
+    ) -> AudioData:
+        """Write audio data to disk."""
+        data.write(folder=folder, subtype=subtype, link=link)
+        return data
+
     def write(
         self,
         folder: Path,
@@ -115,11 +124,13 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
 
         """
         last = len(self.data) if last is None else last
-        for data in tqdm(
-            self.data[first:last],
-            disable=os.environ.get("DISABLE_TQDM", ""),
-        ):
-            data.write(folder=folder, subtype=subtype, link=link)
+        self.data[first:last] = multiprocess(
+            func=self._write_audio,
+            enumerable=self.data[first:last],
+            folder=folder,
+            subtype=subtype,
+            link=link,
+        )
 
     @classmethod
     def from_dict(cls, dictionary: dict) -> AudioDataset:

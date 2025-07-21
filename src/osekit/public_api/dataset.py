@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar
 
+from osekit import config
 from osekit.config import DPDEFAULT, resample_quality_settings
 from osekit.core_api.audio_dataset import AudioDataset
 from osekit.core_api.base_dataset import BaseDataset
@@ -414,7 +415,9 @@ class Dataset:
                 f"--last {stop} "
                 f"--downsampling-quality {resample_quality_settings['downsample']} "
                 f"--upsampling-quality {resample_quality_settings['upsample']} "
-                f"--umask {get_umask()} ",
+                f"--umask {get_umask()} "
+                f"--multiprocessing {config.multiprocessing['is_active']} "
+                f"--nb-processes {config.multiprocessing['nb_processes']} ",
                 jobname="OSmOSE_Analysis",
                 preset="low",
                 env_name=sys.executable.replace("/bin/python", ""),

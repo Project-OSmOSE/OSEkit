@@ -24,3 +24,4 @@ The package combines two APIs:
 
    publicapi_usage
    coreapi_home
+   multiprocessing
