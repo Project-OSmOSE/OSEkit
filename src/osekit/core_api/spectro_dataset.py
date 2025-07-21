@@ -355,7 +355,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
         Returns
         -------
-        AudioData
+        SpectroDataset
             The deserialized SpectroDataset.
 
         """
