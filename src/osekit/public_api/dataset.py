@@ -306,6 +306,7 @@ class Dataset:
             sds=sds,
             link=True,
             subtype=analysis.subtype,
+            nb_time_bins=analysis.nb_ltas_time_bins,
         )
 
         self.write_json()
@@ -342,6 +343,8 @@ class Dataset:
         subtype: str | None = None,
         matrix_folder_name: str = "matrix",
         spectrogram_folder_name: str = "spectrogram",
+        ltas_folder_name: str = "ltas",
+        nb_time_bins: int | None = None,
         welch_folder_name: str = "welch",
     ) -> None:
         """Perform an analysis and write the results on disk.
@@ -354,9 +357,14 @@ class Dataset:
 
         Parameters
         ----------
-        spectrogram_folder_name
+        spectrogram_folder_name:
             The name of the folder in which the png spectrograms will be
             exported (relative to sds.folder)
+        ltas_folder_name:
+            The name of the folder in which the png LTAS will be
+            exported (relative to sds.folder)
+        nb_time_bins:
+            The maximum number of time-bins to use for the LTAS.
         matrix_folder_name:
             The name of the folder in which the npz matrices will be
             exported (relative to sds.folder)
@@ -390,6 +398,8 @@ class Dataset:
                 subtype=subtype,
                 matrix_folder_name=matrix_folder_name,
                 spectrogram_folder_name=spectrogram_folder_name,
+                ltas_folder_name=ltas_folder_name,
+                nb_time_bins=nb_time_bins,
                 welch_folder_name=welch_folder_name,
                 logger=self.logger,
             )
@@ -409,6 +419,9 @@ class Dataset:
                 f"--sds-name {sds.name if sds is not None else 'None'} "
                 f"--subtype {subtype} "
                 f"--matrix-folder-name {matrix_folder_name} "
+                f"--spectrogram-folder-name {spectrogram_folder_name} "
+                f"--ltas-folder-name {ltas_folder_name} "
+                f"--nb-time-bins {nb_time_bins} "
                 f"--spectrogram-folder-name {spectrogram_folder_name} "
                 f"--welch-folder-name {welch_folder_name} "
                 f"--first {start} "

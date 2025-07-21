@@ -5,9 +5,12 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from tqdm import tqdm
+
 from osekit import config
 from osekit.config import global_logging_context as glc
 from osekit.config import resample_quality_settings
+from osekit.core_api.ltas_data import LTASData
 from osekit.public_api.analysis import AnalysisType
 from osekit.public_api.dataset import Dataset
 
@@ -25,6 +28,8 @@ def write_analysis(
     subtype: str,
     matrix_folder_name: str,
     spectrogram_folder_name: str,
+    ltas_folder_name: str,
+    nb_time_bins: int,
     welch_folder_name: str,
     link: bool = True,
     first: int = 0,
@@ -50,6 +55,10 @@ def write_analysis(
         The folder in which the matrix npz files should be written.
     spectrogram_folder_name: Path
         The folder in which the spectrogram png files should be written.
+    ltas_folder_name: Path
+        The folder in which the LTAS png files should be written.
+    nb_time_bins: int
+        The maximum number of time bins of the LTAS.
     welch_folder_name: Path
         The folder in which the welch npz files should be written.
     link: bool
@@ -80,6 +89,7 @@ def write_analysis(
     if (
         AnalysisType.MATRIX not in analysis_type
         and AnalysisType.SPECTROGRAM not in analysis_type
+        and AnalysisType.LTAS not in analysis_type
         and AnalysisType.WELCH not in analysis_type
     ):
         return
@@ -122,6 +132,17 @@ def write_analysis(
             first=first,
             last=last,
         )
+    if AnalysisType.LTAS in analysis_type:
+        logger.info("Computing and exporting ltas...")
+        for sd in tqdm(
+            sds.data[first:last], disable=os.environ.get("DISABLE_TQDM", "")
+        ):
+            ltas = LTASData.from_spectro_data(
+                spectro_data=sd, nb_time_bins=nb_time_bins
+            )
+            ltas.save_spectrogram(
+                folder=sds.folder / ltas_folder_name,
+            )
 
     # Update the sds from the JSON in case it has already been modified in another job
     sds.update_json_audio_data(first=first, last=last)
@@ -181,6 +202,20 @@ if __name__ == "__main__":
         required=True,
         help="The name of the folder in which the png spectrogram files are written.",
         type=str,
+    )
+    required.add_argument(
+        "--ltas-folder-name",
+        "-lfn",
+        required=True,
+        help="The name of the folder in which the png LTAS files are written.",
+        type=str,
+    )
+    required.add_argument(
+        "--nb-time-bins",
+        "-ntb",
+        required=True,
+        help="The maximum number of time bins of the LTAS data.",
+        type=int,
     )
     required.add_argument(
         "--welch-folder-name",
@@ -279,6 +314,8 @@ if __name__ == "__main__":
         subtype=subtype,
         matrix_folder_name=args.matrix_folder_name,
         spectrogram_folder_name=args.spectrogram_folder_name,
+        ltas_folder_name=args.ltas_folder_name,
+        nb_time_bins=args.nb_time_bins,
         welch_folder_name=args.welch_folder_name,
         first=args.first,
         last=args.last,
