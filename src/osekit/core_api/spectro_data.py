@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from scipy.signal import ShortTimeFFT, welch
 
 from osekit.config import (
@@ -331,7 +332,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         sx = self.to_db(sx)
 
-        time = np.arange(sx.shape[1]) * self.duration.total_seconds() / sx.shape[1]
+        time = pd.date_range(start=self.begin, end=self.end, periods=sx.shape[1])
         freq = self.fft.f
 
         sx = sx if scale is None else scale.rescale(sx, freq)
