@@ -19,6 +19,7 @@ from osekit.core_api.audio_dataset import AudioDataset
 from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.event import Event
 from osekit.core_api.ltas_data import LTASData
+from osekit.core_api.ltas_dataset import LTASDataset
 from osekit.core_api.spectro_data import SpectroData
 from osekit.core_api.spectro_dataset import SpectroDataset
 from osekit.core_api.spectro_file import SpectroFile
@@ -961,3 +962,10 @@ def test_ltas(audio_files: pytest.fixture) -> None:
 
     ltas2 = LTASData.from_dict(dictionary=ltas.to_dict())
     assert np.array_equal(sx, ltas2.get_value())
+
+    ltas_ds = LTASDataset([ltas])
+    ltas_ds2 = LTASDataset.from_dict(ltas_ds.to_dict())
+
+    assert type(ltas_ds2) is LTASDataset
+    assert type(ltas_ds2.data[0]) is LTASData
+    assert np.array_equal(ltas_ds.data[0].get_value(), ltas_ds2.data[0].get_value())

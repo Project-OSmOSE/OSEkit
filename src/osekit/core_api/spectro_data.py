@@ -738,10 +738,13 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             )
 
         audio_data = AudioData.from_dict(dictionary["audio_data"])
+        v_lim = (
+            None if type(dictionary["v_lim"]) is object else tuple(dictionary["v_lim"])
+        )
         spectro_data = cls.from_audio_data(
             audio_data,
             sft,
-            v_lim=tuple(dictionary["v_lim"]),
+            v_lim=v_lim,
             colormap=dictionary["colormap"],
         )
 

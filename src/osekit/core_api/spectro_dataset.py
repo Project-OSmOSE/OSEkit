@@ -38,6 +38,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
     __sentinel_value = object()
     _use_multiprocessing_on_data = False
+    data_cls = SpectroData
 
     def __init__(
         self,
@@ -380,7 +381,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             for name, sft in dictionary["sft"].items()
         ]
         sd = [
-            SpectroData.from_dict(
+            cls.data_cls.from_dict(
                 params,
                 sft=next(sft for sft, linked_data in sfts if name in linked_data),
             )

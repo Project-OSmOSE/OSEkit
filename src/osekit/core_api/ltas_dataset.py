@@ -29,6 +29,7 @@ class LTASDataset(SpectroDataset):
 
     __sentinel_value = object()
     _use_multiprocessing_on_data = True
+    data_cls = LTASData
 
     def __init__(
         self,
