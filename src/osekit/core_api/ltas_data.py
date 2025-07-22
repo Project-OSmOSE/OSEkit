@@ -235,6 +235,51 @@ class LTASData(SpectroData):
             nb_time_bins=nb_time_bins,
         )
 
+    def to_dict(self, embed_sft: bool = True) -> dict:
+        """Serialize a LTASData to a dictionary.
+
+        Parameters
+        ----------
+        embed_sft: bool
+            If True, the SFT parameters will be included in the dictionary.
+            In a case where multiple SpectroData that share a same SFT are serialized,
+            SFT parameters shouldn't be included in the dictionary, as the window
+            values might lead to large redundant data.
+            Rather, the SFT parameters should be serialized in
+            a SpectroDataset dictionary so that it can be only stored once
+            for all SpectroData instances.
+
+        Returns
+        -------
+        dict:
+            The serialized dictionary representing the LTASData.
+
+        """
+        return super().to_dict() | {"nb_time_bins": self.nb_time_bins}
+
+    @classmethod
+    def from_dict(cls, dictionary: dict, sft: ShortTimeFFT | None = None) -> LTASData:
+        """Deserialize a LTASDataset from a dictionary.
+
+        Parameters
+        ----------
+        dictionary: dict
+            The serialized dictionary representing the AudioData.
+        sft: ShortTimeFFT | None
+            The ShortTimeFFT used to compute the spectrogram.
+            If not provided, the SFT parameters must be included in the dictionary.
+
+        Returns
+        -------
+        LTASDataset
+            The deserialized LTASDataset.
+
+        """
+        return cls.from_spectro_data(
+            SpectroData.from_dict(dictionary),
+            nb_time_bins=dictionary["nb_time_bins"],
+        )
+
     @staticmethod
     def get_ltas_fft(fft: ShortTimeFFT) -> ShortTimeFFT:
         """Return a ShortTimeFFT object optimized for computing LTAS.

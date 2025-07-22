@@ -57,37 +57,6 @@ class LTASDataset(SpectroDataset):
             key=[d.nb_time_bins for d in self.data].count,
         )
 
-    def to_dict(self) -> dict:
-        """Serialize a LTASDataset to a dictionary.
-
-        Returns
-        -------
-        dict:
-            The serialized dictionary representing the LTASDataset.
-
-        """
-        return super().to_dict() | {"nb_time_bins": self.nb_time_bins}
-
-    @classmethod
-    def from_dict(cls, dictionary: dict) -> SpectroDataset:
-        """Deserialize a LTASDataset from a dictionary.
-
-        Parameters
-        ----------
-        dictionary: dict
-            The serialized dictionary representing the LTASDataset.
-
-        Returns
-        -------
-        LTASDataset
-            The deserialized LTASDataset.
-
-        """
-        return cls.from_spectro_dataset(
-            SpectroDataset.from_dict(dictionary),
-            nb_time_bins=dictionary["nb_time_bins"],
-        )
-
     @classmethod
     def from_spectro_dataset(
         cls,

@@ -956,4 +956,8 @@ def test_ltas(audio_files: pytest.fixture) -> None:
 
     assert ltas.fft.hop == ltas.fft.win.shape[0]
     assert ltas.shape == (sd.shape[0], nb_time_bins)
-    assert ltas.get_value().shape == ltas.shape
+    sx = ltas.get_value()
+    assert sx.shape == ltas.shape
+
+    ltas2 = LTASData.from_dict(dictionary=ltas.to_dict())
+    assert np.array_equal(sx, ltas2.get_value())
