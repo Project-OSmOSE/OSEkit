@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextlib import nullcontext
 from typing import TYPE_CHECKING
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
@@ -969,3 +970,34 @@ def test_ltas(audio_files: pytest.fixture) -> None:
     assert type(ltas_ds2) is LTASDataset
     assert type(ltas_ds2.data[0]) is LTASData
     assert np.array_equal(ltas_ds.data[0].get_value(), ltas_ds2.data[0].get_value())
+
+
+def test_spectro_axis(
+    audio_files: pytest.fixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    audio_files, _ = audio_files
+    ad = AudioData.from_files(audio_files)
+    sd = SpectroData.from_audio_data(
+        data=ad,
+        fft=ShortTimeFFT(hamming(1024), 512, ad.sample_rate),
+    )
+
+    plot_kwargs = {}
+
+    def mock_pcolormesh(self, time, freq, sx, **kwargs):
+        plot_kwargs["time"] = time
+        plot_kwargs["freq"] = freq
+        plot_kwargs["sx"] = sx
+        for kwarg in kwargs:
+            plot_kwargs[kwarg] = kwargs[kwarg]
+
+    monkeypatch.setattr(plt.Axes, "pcolormesh", mock_pcolormesh)
+
+    sd.plot()
+
+    assert np.array_equal(
+        plot_kwargs["time"], pd.date_range(sd.begin, sd.end, periods=sd.shape[1])
+    )
+    assert np.array_equal(plot_kwargs["freq"], sd.fft.f)
+    assert (plot_kwargs["vmin"], plot_kwargs["vmax"]) == sd.v_lim
+    assert plot_kwargs["cmap"] == sd.colormap
