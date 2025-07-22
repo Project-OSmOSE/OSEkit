@@ -125,6 +125,8 @@ class LTASData(SpectroData):
 
         The Sx matrix contains the absolute square of the STFT.
         """
+        if not self.is_empty:
+            return self._get_value_from_items(self.items)
         if self.shape[1] <= self.nb_time_bins:
             return super().get_value()
         sub_spectros = [
