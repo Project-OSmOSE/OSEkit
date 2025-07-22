@@ -28,6 +28,7 @@ class LTASDataset(SpectroDataset):
     """
 
     __sentinel_value = object()
+    _use_multiprocessing_on_data = True
 
     def __init__(
         self,
@@ -38,9 +39,14 @@ class LTASDataset(SpectroDataset):
         scale: Scale | None = None,
         v_lim: tuple[float, float] | None | object = __sentinel_value,
     ) -> None:
-        """Initialize a SpectroDataset."""
+        """Initialize a LTASDataset."""
         super().__init__(
-            data=data, name=name, suffix=suffix, folder=folder, scale=scale, v_lim=v_lim
+            data=data,
+            name=name,
+            suffix=suffix,
+            folder=folder,
+            scale=scale,
+            v_lim=v_lim,
         )
 
     @property
@@ -84,7 +90,9 @@ class LTASDataset(SpectroDataset):
 
     @classmethod
     def from_spectro_dataset(
-        cls, sds: SpectroDataset, nb_time_bins: int | None = None
+        cls,
+        sds: SpectroDataset,
+        nb_time_bins: int | None = None,
     ) -> SpectroDataset:
         """Instantiate a LTAS Dataset from a SpectroDataset."""
         return cls(

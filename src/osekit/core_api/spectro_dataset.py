@@ -37,6 +37,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
     """
 
     __sentinel_value = object()
+    _use_multiprocessing_on_data = False
 
     def __init__(
         self,
@@ -145,7 +146,12 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
         """
         last = len(self.data) if last is None else last
-        multiprocess(self._save_spectrogram, self.data[first:last], folder=folder)
+        multiprocess(
+            self._save_spectrogram,
+            self.data[first:last],
+            bypass_multiprocessing=type(self)._use_multiprocessing_on_data,
+            folder=folder,
+        )
 
     def _get_welch(
         self,
@@ -182,6 +188,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         for data, welch in multiprocess(
             self._get_welch,
             self.data[first:last],
+            bypass_multiprocessing=type(self)._use_multiprocessing_on_data,
             nperseg=nperseg,
             detrend=detrend,
             return_onesided=return_onesided,
@@ -240,6 +247,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         self.data[first:last] = multiprocess(
             func=self._save_all_,
             enumerable=self.data[first:last],
+            bypass_multiprocessing=type(self)._use_multiprocessing_on_data,
             matrix_folder=matrix_folder,
             spectrogram_folder=spectrogram_folder,
             link=link,
