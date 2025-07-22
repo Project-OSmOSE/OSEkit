@@ -114,6 +114,11 @@ class LTASData(SpectroData):
         self.nb_time_bins = nb_time_bins
         self.sx_dtype = float
 
+    @property
+    def shape(self) -> tuple[int, int]:
+        """Shape of the LTAS data."""
+        return self.fft.f_pts, self.nb_time_bins
+
     def mean_value_part(self, sub_spectro: LTASData) -> np.ndarray:
         return np.mean(
             sub_spectro.get_value(depth=1),
