@@ -50,10 +50,6 @@ def write_analysis(
         The folder in which the matrix npz files should be written.
     spectrogram_folder_name: Path
         The folder in which the spectrogram png files should be written.
-    is_ltas: bool
-        If True, spectra will be computed as LTAS.
-    nb_time_bins: int
-        The maximum number of time bins of the LTAS.
     welch_folder_name: Path
         The folder in which the welch npz files should be written.
     link: bool

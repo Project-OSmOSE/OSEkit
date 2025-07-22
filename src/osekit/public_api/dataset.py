@@ -260,7 +260,7 @@ class Dataset:
             scale=analysis.scale,
         )
 
-        if analysis.is_ltas:
+        if analysis.nb_ltas_time_bins is not None:
             sds = LTASDataset.from_spectro_dataset(
                 sds=sds,
                 nb_time_bins=analysis.nb_ltas_time_bins,
@@ -366,9 +366,6 @@ class Dataset:
         ----------
         spectrogram_folder_name:
             The name of the folder in which the png spectrograms will be
-            exported (relative to sds.folder)
-        ltas_folder_name:
-            The name of the folder in which the png LTAS will be
             exported (relative to sds.folder)
         matrix_folder_name:
             The name of the folder in which the npz matrices will be
