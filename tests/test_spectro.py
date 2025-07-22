@@ -941,3 +941,19 @@ def test_spectrodata_split(
         assert sd_part.colormap == sd.colormap
     assert sd_parts[0].begin == sd.begin
     assert sd_parts[-1].end == sd.end
+
+
+def test_ltas(audio_files: pytest.fixture) -> None:
+    audio_files, _ = audio_files
+    ad = AudioData.from_files(audio_files)
+    sd = SpectroData.from_audio_data(
+        data=ad,
+        fft=ShortTimeFFT(hamming(1024), 512, ad.sample_rate),
+    )
+
+    nb_time_bins = 4
+    ltas = LTASData.from_spectro_data(spectro_data=sd, nb_time_bins=nb_time_bins)
+
+    assert ltas.fft.hop == ltas.fft.win.shape[0]
+    assert ltas.shape == (sd.shape[0], nb_time_bins)
+    assert ltas.get_value().shape == ltas.shape

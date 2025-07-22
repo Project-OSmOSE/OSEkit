@@ -132,7 +132,7 @@ class LTASData(SpectroData):
         """
         if not self.is_empty:
             return self._get_value_from_items(self.items)
-        if self.shape[1] <= self.nb_time_bins:
+        if super().shape[1] <= self.nb_time_bins:
             return super().get_value()
         sub_spectros = [
             LTASData.from_spectro_data(
