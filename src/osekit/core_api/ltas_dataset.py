@@ -27,7 +27,7 @@ class LTASDataset(SpectroDataset):
 
     """
 
-    __sentinel_value = object()
+    sentinel_value = object()
     _use_multiprocessing_on_data = True
     data_cls = LTASData
 
@@ -38,7 +38,7 @@ class LTASDataset(SpectroDataset):
         suffix: str = "",
         folder: Path | None = None,
         scale: Scale | None = None,
-        v_lim: tuple[float, float] | None | object = __sentinel_value,
+        v_lim: tuple[float, float] | None | object = sentinel_value,
     ) -> None:
         """Initialize a LTASDataset."""
         super().__init__(
@@ -84,7 +84,7 @@ class LTASDataset(SpectroDataset):
         fft: ShortTimeFFT,
         name: str | None = None,
         colormap: str | None = None,
-        v_lim: tuple[float, float] | None = __sentinel_value,
+        v_lim: tuple[float, float] | None = sentinel_value,
         scale: Scale | None = None,
     ) -> SpectroDataset:
         """Return a SpectroDataset object from an AudioDataset object.

@@ -426,7 +426,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         fs = [self.fft.fs]
         mfft = [self.fft.mfft]
         db_ref = [self.db_ref]
-        v_lim = self._v_lim
+        v_lim = self.v_lim
         timestamps = (str(t) for t in (self.begin, self.end))
         np.savez(
             file=folder / f"{self}.npz",
