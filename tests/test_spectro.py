@@ -945,7 +945,7 @@ def test_spectrodata_split(
     assert sd_parts[-1].end == sd.end
 
 
-def test_ltas(audio_files: pytest.fixture) -> None:
+def test_ltas(audio_files: pytest.fixture, tmp_path: pytest.fixture) -> None:
     audio_files, _ = audio_files
     ad = AudioData.from_files(audio_files)
     sd = SpectroData.from_audio_data(
@@ -965,7 +965,8 @@ def test_ltas(audio_files: pytest.fixture) -> None:
     assert np.array_equal(sx, ltas2.get_value())
 
     ltas_ds = LTASDataset([ltas])
-    ltas_ds2 = LTASDataset.from_dict(ltas_ds.to_dict())
+    ltas_ds.write_json(tmp_path)
+    ltas_ds2 = LTASDataset.from_json(tmp_path / f"{ltas_ds.name}.json")
 
     assert type(ltas_ds2) is LTASDataset
     assert type(ltas_ds2.data[0]) is LTASData
@@ -973,7 +974,8 @@ def test_ltas(audio_files: pytest.fixture) -> None:
 
 
 def test_spectro_axis(
-    audio_files: pytest.fixture, monkeypatch: pytest.MonkeyPatch
+    audio_files: pytest.fixture,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     audio_files, _ = audio_files
     ad = AudioData.from_files(audio_files)
@@ -996,7 +998,8 @@ def test_spectro_axis(
     sd.plot()
 
     assert np.array_equal(
-        plot_kwargs["time"], pd.date_range(sd.begin, sd.end, periods=sd.shape[1])
+        plot_kwargs["time"],
+        pd.date_range(sd.begin, sd.end, periods=sd.shape[1]),
     )
     assert np.array_equal(plot_kwargs["freq"], sd.fft.f)
     assert (plot_kwargs["vmin"], plot_kwargs["vmax"]) == sd.v_lim
