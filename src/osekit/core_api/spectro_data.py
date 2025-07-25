@@ -177,7 +177,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             v_lim
             if v_lim is not None
             else (-120.0, 0.0)
-            if self.db_ref is None
+            if self._db_ref is None
             else (0.0, 170.0)
         )
         self._v_lim = v_lim
