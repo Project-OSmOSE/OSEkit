@@ -1006,7 +1006,6 @@ def test_spectro_axis(
     assert (plot_kwargs["vmin"], plot_kwargs["vmax"]) == sd.v_lim
     assert plot_kwargs["cmap"] == sd.colormap
 
-
 def test_spectro_default_v_lim(audio_files: pytest.fixture) -> None:
     files, _ = audio_files
     ad = AudioData.from_files(files)
