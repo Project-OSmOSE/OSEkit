@@ -19,6 +19,7 @@ from osekit.core_api.audio_data import AudioData
 from osekit.core_api.audio_dataset import AudioDataset
 from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.event import Event
+from osekit.core_api.instrument import Instrument
 from osekit.core_api.ltas_data import LTASData
 from osekit.core_api.ltas_dataset import LTASDataset
 from osekit.core_api.spectro_data import SpectroData
@@ -1004,3 +1005,17 @@ def test_spectro_axis(
     assert np.array_equal(plot_kwargs["freq"], sd.fft.f)
     assert (plot_kwargs["vmin"], plot_kwargs["vmax"]) == sd.v_lim
     assert plot_kwargs["cmap"] == sd.colormap
+
+
+def test_spectro_default_v_lim(audio_files: pytest.fixture) -> None:
+    files, _ = audio_files
+    ad = AudioData.from_files(files)
+    ad_inst = AudioData.from_files(files, instrument=Instrument(end_to_end_db=150.0))
+
+    sft = ShortTimeFFT(win=hamming(1024), hop=128, fs=ad.sample_rate)
+
+    sd = SpectroData.from_audio_data(ad, sft)
+    sd_inst = SpectroData.from_audio_data(ad_inst, sft)
+
+    assert sd.v_lim == (-120.0, 0.0)
+    assert sd_inst.v_lim == (0.0, 170.0)

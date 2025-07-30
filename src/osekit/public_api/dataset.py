@@ -96,9 +96,13 @@ class Dataset:
         self.instrument = instrument
 
     @property
-    def origin_files(self) -> set[AudioFile]:
+    def origin_files(self) -> list[AudioFile] | None:
         """Return the original audio files from which this Dataset has been built."""
-        return None if self.origin_dataset is None else self.origin_dataset.files
+        return (
+            None
+            if self.origin_dataset is None
+            else sorted(self.origin_dataset.files, key=lambda f: f.begin)
+        )
 
     @property
     def origin_dataset(self) -> AudioDataset:
