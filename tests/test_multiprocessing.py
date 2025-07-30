@@ -45,7 +45,9 @@ class MockedPool:
     ],
 )
 def test_multiprocessing(
-    monkeypatch: pytest.MonkeyPatch, multiprocessing: bool, nb_processes: int
+    monkeypatch: pytest.MonkeyPatch,
+    multiprocessing: bool,
+    nb_processes: int,
 ) -> None:
     monkeypatch.setitem(config.multiprocessing, "is_active", multiprocessing)
     monkeypatch.setitem(config.multiprocessing, "nb_processes", nb_processes)
