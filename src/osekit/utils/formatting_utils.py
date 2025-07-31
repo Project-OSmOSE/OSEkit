@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import numpy as np
-import pandas as pd
-from osekit.core_api.audio_dataset import AudioFile
 import pytz
+from pandas import DataFrame, Timedelta
+
+from osekit.core_api.audio_dataset import AudioFile
 
 
 def aplose2raven(
@@ -55,53 +56,53 @@ def aplose2raven(
         - 1
     )
 
-    # Adding beg datetime of the wavfile
-    aplose_result['wav_timestamp'] = [audio_datetimes[i] for i in index_detection]
-    # Keeping the theoretical start datetime
-    aplose_result['start_datetime_backup'] = aplose_result['start_datetime']
+    # Add beg datetime of the wavfile
+    aplose_result["wav_timestamp"] = [audio_datetimes[i] for i in index_detection]
+    # Add theoretical start datetime so that the information stays written in the Raven .txt
+    aplose_result["start_datetime_backup"] = aplose_result["start_datetime"]
 
     # time differences between consecutive datetimes and add wav_duration
     filename_diff = [td.total_seconds() for td in np.diff(audio_datetimes).tolist()]
     adjust = [0]
-    adjust.extend([t1 - t2 for (t1, t2) in zip(audio_durations[:-1], filename_diff)])
+    adjust.extend([t1 - t2 for (t1, t2) in zip(audio_durations[:-1], filename_diff, strict=False)])
     cumsum_adjust = list(np.cumsum(adjust))
 
     # adjusted datetimes to match Raven annoying functioning
-
-    # The start of the detection is reported to the following wav, when it theoratically should be in the 'OFF' duty cycle part
-    # The end of the detection should stay the same (resulting in shorter Raven boxes)
     begin_datetime_adjusted = []
     end_datetime_adjusted = []
-    for a, (beg_det, end_det, beg_wav, ind) in enumerate(zip(aplose_result["start_datetime"], aplose_result["end_datetime"],aplose_result["wav_timestamp"],index_detection)):
-        if (beg_wav + pd.Timedelta(seconds=audio_durations[ind]) < beg_det) and (beg_det < beg_wav + pd.Timedelta(seconds = filename_diff[ind])):
-            begin_datetime_adjusted.append(beg_det + pd.Timedelta(seconds=cumsum_adjust[ind + 1]))
-            end_datetime_adjusted.append(end_det + pd.Timedelta(seconds=cumsum_adjust[ind + 1]))
-            print('hello')
+    for (beg_det, end_det, beg_wav, ind) in (zip(aplose_result["start_datetime"], aplose_result["end_datetime"],
+                          aplose_result["wav_timestamp"], index_detection, strict=False)):
+        """
+        For duty cycled data, if the aplose_result detections were reshaped (eg : to 60-second duration),
+        the start of the detection might virtually be located in a OFF duty cycle phase.
+        This would cause issue in Raven, because the OFF part are not represented,
+        and the detection start will be located on the previous wav file.
+        The following if condition apply the appropriate correction to make the Raven box start
+         at the begining of the wav file
+        """
+
+        if (beg_wav + Timedelta(seconds=audio_durations[ind])) < beg_det < (beg_wav + Timedelta(seconds = filename_diff[ind])):
+            corr_dur = (audio_datetimes[ind + 1] - beg_det).total_seconds()
+            begin_datetime_adjusted.append(beg_det + Timedelta(seconds=cumsum_adjust[ind + 1]) + Timedelta(seconds=corr_dur))
+            end_datetime_adjusted.append(end_det + Timedelta(seconds=cumsum_adjust[ind + 1]))
         else:
-            begin_datetime_adjusted.append(beg_det + pd.Timedelta(seconds=cumsum_adjust[ind]))
-            end_datetime_adjusted.append(end_det + pd.Timedelta(seconds=cumsum_adjust[ind]))
-            print('yo')
+            # Else, apply normal raven time correction
+            begin_datetime_adjusted.append(
+                beg_det + Timedelta(seconds=cumsum_adjust[ind])
+            )
+            end_datetime_adjusted.append(
+                end_det + Timedelta(seconds=cumsum_adjust[ind])
+            )
 
-            #aplose_result.loc[a, "start_datetime"] = aplose_result.loc[a+1, "wav_timestamp"][a+1]
-            #aplose_result.loc[a, "filename"] = aplose_result.loc[a+1, "filename"]
-            # aplose_result.loc[a, "end_datetime"] = aplose_result.loc[a, "start_datetime"] + (pd.Timedelta(seconds=aplose_result.loc[a, "end_datetime"])-pd.Timedelta(seconds=aplose_result.loc[a, "end_datetime"]))
-
-    begin_datetime_adjusted = [
-        det + pd.Timedelta(seconds=cumsum_adjust[ind])
-        for (det, ind) in zip(aplose_result["start_datetime"], index_detection)
-    ]
-    end_datetime_adjusted = [
-        det + pd.Timedelta(seconds=cumsum_adjust[ind])
-        for (det, ind) in zip(aplose_result["end_datetime"], index_detection)
-    ]
+    # Convert the datetimes to seconds from the start of first wav (raven format)
     begin_time_adjusted = [
         (d - audio_datetimes[0]).total_seconds() for d in begin_datetime_adjusted
     ]
     end_time_adjusted = [
         (d - audio_datetimes[0]).total_seconds() for d in end_datetime_adjusted
     ]
-
-    raven_result = pd.DataFrame()
+    # Build corrected Raven selection table
+    raven_result = DataFrame()
     raven_result["Selection"] = list(range(1, len(aplose_result) + 1))
     raven_result["View"] = [1] * len(aplose_result)
     raven_result["Channel"] = [1] * len(aplose_result)
@@ -110,9 +111,5 @@ def aplose2raven(
     raven_result["Low Freq (Hz)"] = aplose_result["start_frequency"]
     raven_result["High Freq (Hz)"] = aplose_result["end_frequency"]
     raven_result["Begin Date Time Real"] = aplose_result["start_datetime_backup"]
-
-    raven_result.to_csv(
-        r"L:\acoustock\Bioacoustique\DATASETS\CETIROISE\ANALYSE\PAMGUARD_threshold_7\PHASE_8_POINT_F\PG_rawdata_240425_241023_clean_60sec_bins_test.txt",
-        sep='\t', index=False)
 
     return raven_result
