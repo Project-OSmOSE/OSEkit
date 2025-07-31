@@ -68,17 +68,24 @@ def aplose2raven(
                           aplose_result["wav_timestamp"], index_detection, strict=False)):
         """
         For duty cycled data, if the aplose_result detections were reshaped (eg : to 60-second duration),
-        the start of the detection might virtually be located in a OFF duty cycle phase.
+        the start or end of the detection might virtually be located in a OFF duty cycle phase.
         This would cause issue in Raven, because the OFF part are not represented,
         and the detection start will be located on the previous wav file.
-        The following if condition apply the appropriate correction to make the Raven box start
-         at the begining of the wav file
+        The following 'if' conditions apply the appropriate correction to make the Raven box (1)starts or (2) ends
+         at the appropriate timing in Raven (ie at the begining or end of a wav file).
         """
 
         if (beg_wav + Timedelta(seconds=audio_durations[ind])) < beg_det < (beg_wav + Timedelta(seconds = filename_diff[ind])):
             corr_dur = (audio_datetimes[ind + 1] - beg_det).total_seconds()
             begin_datetime_adjusted.append(beg_det + Timedelta(seconds=cumsum_adjust[ind + 1]) + Timedelta(seconds=corr_dur))
             end_datetime_adjusted.append(end_det + Timedelta(seconds=cumsum_adjust[ind + 1]))
+        elif (beg_wav + Timedelta(seconds=audio_durations[ind])) < end_det < (beg_wav + Timedelta(seconds = filename_diff[ind])):
+            begin_datetime_adjusted.append(
+                beg_det + Timedelta(seconds=cumsum_adjust[ind])
+            )
+            corr_dur = (end_det-beg_det).total_seconds() - ((beg_wav + Timedelta(seconds=audio_durations[ind])) -beg_det).total_seconds()
+            end_datetime_adjusted.append(end_det + Timedelta(seconds=cumsum_adjust[ind]) - Timedelta(seconds=corr_dur))
+
         else:
             # Else, apply normal raven time correction
             begin_datetime_adjusted.append(
