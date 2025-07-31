@@ -46,7 +46,7 @@ def aplose_dataframe() -> pd.DataFrame:
 
 
 @pytest.fixture
-def raven_timestamps() -> list:
+def audio_timestamps() -> list:
     return list(
         pd.date_range(
             start="2020-05-29T11:30:00.000+00:00",
@@ -57,20 +57,20 @@ def raven_timestamps() -> list:
 
 
 @pytest.fixture
-def raven_durations(raven_timestamps: pytest.fixture) -> list:
-    return [60] * len(raven_timestamps)
+def audio_durations(audio_timestamps: pytest.fixture) -> list:
+    return [60] * len(audio_timestamps)
 
 
 @pytest.mark.unit
 def test_aplose2raven(
     aplose_dataframe: pytest.fixture,
-    raven_timestamps: pytest.fixture,
-    raven_durations: pytest.fixture,
+    audio_timestamps: pytest.fixture,
+    audio_durations: pytest.fixture,
 ) -> None:
     raven_dataframe = aplose2raven(
         aplose_result=aplose_dataframe,
-        audio_datetimes=raven_timestamps,
-        audio_durations=raven_durations,
+        audio_datetimes=audio_timestamps,
+        audio_durations=audio_durations,
     )
 
     expected_raven_dataframe = pd.DataFrame(
@@ -82,6 +82,7 @@ def test_aplose2raven(
             "End Time (s)": [60.0, 120.0, 128.1],
             "Low Freq (Hz)": [0.0, 0.0, 18500.0],
             "High Freq (Hz)": [96000.0, 96000.0, 53000.0],
+            "Begin Date Time Real": aplose_dataframe["start_datetime"],
         },
     )
 
