@@ -58,8 +58,6 @@ def aplose2raven(
 
     # Add beg datetime of the wavfile
     aplose_result["wav_timestamp"] = [audio_datetimes[i] for i in index_detection]
-    # Add theoretical start datetime so that the information stays written in the Raven .txt
-    aplose_result["start_datetime_backup"] = aplose_result["start_datetime"]
 
     # time differences between consecutive datetimes and add wav_duration
     filename_diff = [td.total_seconds() for td in np.diff(audio_datetimes).tolist()]
@@ -110,6 +108,6 @@ def aplose2raven(
     raven_result["End Time (s)"] = end_time_adjusted
     raven_result["Low Freq (Hz)"] = aplose_result["start_frequency"]
     raven_result["High Freq (Hz)"] = aplose_result["end_frequency"]
-    raven_result["Begin Date Time Real"] = aplose_result["start_datetime_backup"]
+    raven_result["Begin Date Time Real"] = aplose_result["start_datetime"]
 
     return raven_result
