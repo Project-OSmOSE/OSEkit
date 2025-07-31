@@ -1,17 +1,13 @@
 from __future__ import annotations
 
 import numpy as np
-import pytz
-from pandas import DataFrame, Timedelta
-
-from osekit.core_api.audio_dataset import AudioFile
-
+from pandas import DataFrame, Timedelta, Timestamp
 
 def aplose2raven(
-    aplose_result: pd.DataFrame,
-    audio_datetimes: list[pd.Timestamp],
+    aplose_result: DataFrame,
+    audio_datetimes: list[Timestamp],
     audio_durations: list[float],
-) -> pd.DataFrame:
+) -> DataFrame:
     r"""Format an APLOSE result DataFrame to a Raven result DataFrame.
 
     The list of audio files and durations considered for the Raven campaign should be
