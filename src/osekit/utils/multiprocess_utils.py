@@ -13,6 +13,7 @@ from osekit import config
 def multiprocess(
     func: callable,
     enumerable: list,
+    bypass_multiprocessing: bool = False,
     *args: Any,
     **kwargs: Any,
 ) -> list[Any]:
@@ -26,6 +27,8 @@ def multiprocess(
         The function to run.
     enumerable: list
         The list of input to the function.
+    bypass_multiprocessing: bool
+        If True, multiprocessing will be bypassed whatever the config value.
     args:
         Additional positional arguments to pass to the function.
     kwargs:
@@ -37,7 +40,7 @@ def multiprocess(
         Returned values of the function.
 
     """
-    if not config.multiprocessing["is_active"]:
+    if bypass_multiprocessing or not config.multiprocessing["is_active"]:
         return list(
             func(element, *args, **kwargs)
             for element in tqdm(enumerable, disable=os.environ.get("DISABLE_TQDM", ""))

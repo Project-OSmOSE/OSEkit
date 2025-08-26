@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from scipy.signal import ShortTimeFFT, welch
 
 from osekit.config import (
@@ -255,6 +256,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         """
         window = self.fft.win
         noverlap = self.fft.hop
+        if noverlap == window.shape[0]:
+            noverlap //= 2
         nfft = self.fft.mfft
 
         _, sx = welch(
@@ -347,7 +350,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         sx = self.to_db(sx)
 
-        time = np.arange(sx.shape[1]) * self.duration.total_seconds() / sx.shape[1]
+        time = pd.date_range(start=self.begin, end=self.end, periods=sx.shape[1])
         freq = self.fft.f
 
         sx = sx if scale is None else scale.rescale(sx, freq)
@@ -441,7 +444,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         fs = [self.fft.fs]
         mfft = [self.fft.mfft]
         db_ref = [self.db_ref]
-        v_lim = self._v_lim
+        v_lim = self.v_lim
         timestamps = (str(t) for t in (self.begin, self.end))
         np.savez(
             file=folder / f"{self}.npz",
@@ -753,10 +756,13 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             )
 
         audio_data = AudioData.from_dict(dictionary["audio_data"])
+        v_lim = (
+            None if type(dictionary["v_lim"]) is object else tuple(dictionary["v_lim"])
+        )
         spectro_data = cls.from_audio_data(
             audio_data,
             sft,
-            v_lim=tuple(dictionary["v_lim"]),
+            v_lim=v_lim,
             colormap=dictionary["colormap"],
         )
 

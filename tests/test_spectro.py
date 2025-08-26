@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextlib import nullcontext
 from typing import TYPE_CHECKING
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
@@ -20,6 +21,7 @@ from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.event import Event
 from osekit.core_api.instrument import Instrument
 from osekit.core_api.ltas_data import LTASData
+from osekit.core_api.ltas_dataset import LTASDataset
 from osekit.core_api.spectro_data import SpectroData
 from osekit.core_api.spectro_dataset import SpectroDataset
 from osekit.core_api.spectro_file import SpectroFile
@@ -943,6 +945,66 @@ def test_spectrodata_split(
     assert sd_parts[0].begin == sd.begin
     assert sd_parts[-1].end == sd.end
 
+
+def test_ltas(audio_files: pytest.fixture, tmp_path: pytest.fixture) -> None:
+    audio_files, _ = audio_files
+    ad = AudioData.from_files(audio_files)
+    sd = SpectroData.from_audio_data(
+        data=ad,
+        fft=ShortTimeFFT(hamming(1024), 512, ad.sample_rate),
+    )
+
+    nb_time_bins = 4
+    ltas = LTASData.from_spectro_data(spectro_data=sd, nb_time_bins=nb_time_bins)
+
+    assert ltas.fft.hop == ltas.fft.win.shape[0]
+    assert ltas.shape == (sd.shape[0], nb_time_bins)
+    sx = ltas.get_value()
+    assert sx.shape == ltas.shape
+
+    ltas2 = LTASData.from_dict(dictionary=ltas.to_dict())
+    assert np.array_equal(sx, ltas2.get_value())
+
+    ltas_ds = LTASDataset([ltas])
+    ltas_ds.write_json(tmp_path)
+    ltas_ds2 = LTASDataset.from_json(tmp_path / f"{ltas_ds.name}.json")
+
+    assert type(ltas_ds2) is LTASDataset
+    assert type(ltas_ds2.data[0]) is LTASData
+    assert np.array_equal(ltas_ds.data[0].get_value(), ltas_ds2.data[0].get_value())
+
+
+def test_spectro_axis(
+    audio_files: pytest.fixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    audio_files, _ = audio_files
+    ad = AudioData.from_files(audio_files)
+    sd = SpectroData.from_audio_data(
+        data=ad,
+        fft=ShortTimeFFT(hamming(1024), 512, ad.sample_rate),
+    )
+
+    plot_kwargs = {}
+
+    def mock_pcolormesh(self, time, freq, sx, **kwargs):
+        plot_kwargs["time"] = time
+        plot_kwargs["freq"] = freq
+        plot_kwargs["sx"] = sx
+        for kwarg in kwargs:
+            plot_kwargs[kwarg] = kwargs[kwarg]
+
+    monkeypatch.setattr(plt.Axes, "pcolormesh", mock_pcolormesh)
+
+    sd.plot()
+
+    assert np.array_equal(
+        plot_kwargs["time"],
+        pd.date_range(sd.begin, sd.end, periods=sd.shape[1]),
+    )
+    assert np.array_equal(plot_kwargs["freq"], sd.fft.f)
+    assert (plot_kwargs["vmin"], plot_kwargs["vmax"]) == sd.v_lim
+    assert plot_kwargs["cmap"] == sd.colormap
 
 def test_spectro_default_v_lim(audio_files: pytest.fixture) -> None:
     files, _ = audio_files

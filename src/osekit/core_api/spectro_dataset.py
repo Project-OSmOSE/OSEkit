@@ -36,7 +36,9 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
     """
 
-    __sentinel_value = object()
+    sentinel_value = object()
+    _use_multiprocessing_on_data = False
+    data_cls = SpectroData
 
     def __init__(
         self,
@@ -45,13 +47,13 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         suffix: str = "",
         folder: Path | None = None,
         scale: Scale | None = None,
-        v_lim: tuple[float, float] | None | object = __sentinel_value,
+        v_lim: tuple[float, float] | None | object = sentinel_value,
     ) -> None:
         """Initialize a SpectroDataset."""
         super().__init__(data=data, name=name, suffix=suffix, folder=folder)
         self.scale = scale
 
-        if v_lim is not self.__sentinel_value:
+        if v_lim is not self.sentinel_value:
             # the sentinel value allows to differentiate between
             # a specified None value (resets the v_lim to the default values)
             # from an unspecified v_lim (in that case, the data v_lim are unchanged)
@@ -145,7 +147,12 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
         """
         last = len(self.data) if last is None else last
-        multiprocess(self._save_spectrogram, self.data[first:last], folder=folder)
+        multiprocess(
+            self._save_spectrogram,
+            self.data[first:last],
+            bypass_multiprocessing=type(self)._use_multiprocessing_on_data,
+            folder=folder,
+        )
 
     def _get_welch(
         self,
@@ -182,6 +189,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         for data, welch in multiprocess(
             self._get_welch,
             self.data[first:last],
+            bypass_multiprocessing=type(self)._use_multiprocessing_on_data,
             nperseg=nperseg,
             detrend=detrend,
             return_onesided=return_onesided,
@@ -240,6 +248,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         self.data[first:last] = multiprocess(
             func=self._save_all_,
             enumerable=self.data[first:last],
+            bypass_multiprocessing=type(self)._use_multiprocessing_on_data,
             matrix_folder=matrix_folder,
             spectrogram_folder=spectrogram_folder,
             link=link,
@@ -294,7 +303,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
         @locked(lock_file=self.folder / "lock.lock")
         def update(first: int, last: int) -> None:
-            sds_to_update = SpectroDataset.from_json(file=json_file)
+            sds_to_update = type(self).from_json(file=json_file)
             sds_to_update.data[first:last] = self.data[first:last]
             sds_to_update.write_json(folder=self.folder)
 
@@ -355,7 +364,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
         Returns
         -------
-        AudioData
+        SpectroDataset
             The deserialized SpectroDataset.
 
         """
@@ -372,7 +381,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             for name, sft in dictionary["sft"].items()
         ]
         sd = [
-            SpectroData.from_dict(
+            cls.data_cls.from_dict(
                 params,
                 sft=next(sft for sft, linked_data in sfts if name in linked_data),
             )
@@ -400,7 +409,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
         data_duration: Timedelta | None = None,
         name: str | None = None,
-        v_lim: tuple[float, float] | None | object = __sentinel_value,
+        v_lim: tuple[float, float] | None | object = sentinel_value,
         **kwargs: any,
     ) -> SpectroDataset:
         """Return a SpectroDataset from a folder containing the spectro files.
@@ -479,7 +488,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         name: str | None = None,
         colormap: str | None = None,
         scale: Scale | None = None,
-        v_lim: tuple[float, float] | None | object = __sentinel_value,
+        v_lim: tuple[float, float] | None | object = sentinel_value,
     ) -> SpectroDataset:
         """Return a SpectroDataset object from a BaseDataset object."""
         return cls(
@@ -499,7 +508,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         fft: ShortTimeFFT,
         name: str | None = None,
         colormap: str | None = None,
-        v_lim: tuple[float, float] | None = __sentinel_value,
+        v_lim: tuple[float, float] | None = sentinel_value,
         scale: Scale | None = None,
     ) -> SpectroDataset:
         """Return a SpectroDataset object from an AudioDataset object.

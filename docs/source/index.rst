@@ -29,8 +29,9 @@ Instructions on how to use **OSEkit**.
 
 .. toctree::
    :maxdepth: 2
+   :includehidden:
 
    installation
    usage
+   examples
    api
-
