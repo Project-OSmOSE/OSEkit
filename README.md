@@ -19,7 +19,7 @@
 ![Open Source Love](https://img.shields.io/badge/open%20source-♡-lightgrey)
 ![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)
 
-**OSEkit** is an open source suite of tools written in python and dedicated to the management and analysis of data in underwater passive acoustics.
+**OSEkit** is an open source python package dedicated to the management and analysis of data in underwater passive acoustics.
 
 [Presentation](#presentation) •
 [Getting into it](#getting-into-it) •
@@ -30,20 +30,26 @@
 
 ### Presentation
 
-OSEkit is an open source suite of tools written in python and dedicated to the management and analysis of data in underwater passive acoustics. Among other key features, our toolkit has been adapted to be deployed on a cluster infrastructure; in OSmOSE, our production version runs on [DATARMOR](https://www.ifremer.fr/fr/infrastructures-de-recherche/le-supercalculateur-datarmor). Here are a few indications to help you going through our documentation. 
+**OSEkit** is a Python open source package designed for effortless manipulation of audio data.
+
+It is primarily designed for working on underwater passive acoustics data, but can be used on any audio data.
+
+**OSEkit** provides:
+
+- Seamless, timestamp-based access across multiple files (e.g., pick a 3-minutes long segment spannign over two 1.5-minutes long files without manual file picking)
+- Preprocessing utilities: resampling, normalization...
+- Spectral analysis routines: compute power spectra, spectrograms, LTAS...
+
+**OSEkit** treats your audio dataset as a continuous timeline, whatever the raw files configuration.
+You request audio by time intervals and the package fetches from the raw files behind the scenes: no manual I/O juggling required.
 
 <br>
 
 ### Getting into it
 
-All details to start using our toolkit and make the most out of it are given in our [documentation](https://project-osmose.github.io/OSEkit/); you will then be redirected to more specific parts of it depending on your profile and intentions:)
+All details to start using our toolkit and make the most out of it are given in our [documentation](https://project-osmose.github.io/OSEkit/).
 
 <br>
 
-### Acknowledgements
 
-- A great part of our processing codes are based on well-established python packages for data analysis including scipy ,pandas, numpy...
- 
-# ㅤ
 <sub>© OSmOSE team, 2023-present</sub>
-
