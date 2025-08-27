@@ -13,7 +13,7 @@
 <br>
 <br>
 
-![version](https://img.shields.io/badge/package_version-0.2.5-orange)
+![version](https://img.shields.io/badge/package_version-0.3.0-orange)
 ![PyPI status](https://img.shields.io/pypi/status/ansicolortags.svg)
 ![license](https://img.shields.io/github/license/mashape/apistatus.svg)
 ![Open Source Love](https://img.shields.io/badge/open%20source-♡-lightgrey)
@@ -30,7 +30,7 @@
 
 ### Presentation
 
-OSEkit is an open source suite of tools written in python and dedicated to the management and analysis of data in underwater passive acoustics. Among other key features, our toolkit has been adapted to be deployed on a cluster infrastructure; in OSmOSE, our production version runs on [DATARMOR](https://www.ifremer.fr/fr/infrastructures-de-recherche/le-supercalculateur-datarmor). Here are a few indications to help you going through our documentation. 
+OSEkit is an open source suite of tools written in python and dedicated to the management and analysis of data in underwater passive acoustics. Among other key features, our toolkit has been adapted to be deployed on a cluster infrastructure; in OSmOSE, our production version runs on [DATARMOR](https://www.ifremer.fr/fr/infrastructures-de-recherche/le-supercalculateur-datarmor). Here are a few indications to help you going through our documentation.
 
 <br>
 
@@ -43,7 +43,6 @@ All details to start using our toolkit and make the most out of it are given in 
 ### Acknowledgements
 
 - A great part of our processing codes are based on well-established python packages for data analysis including scipy ,pandas, numpy...
- 
+
 # ㅤ
 <sub>© OSmOSE team, 2023-present</sub>
-
