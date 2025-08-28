@@ -290,6 +290,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             | instrument_dict
             | {
                 "sample_rate": self.sample_rate,
+                "normalization": self.normalization,
             }
         )
 
@@ -317,6 +318,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         return cls.from_base_data(
             data=base_data,
             sample_rate=dictionary["sample_rate"],
+            normalization=dictionary["normalization"],
             instrument=instrument,
         )
 
@@ -328,6 +330,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         end: Timestamp | None = None,
         sample_rate: float | None = None,
         instrument: Instrument | None = None,
+        normalization: Literal["raw", "reject_dc", "zscore"] = "raw",
     ) -> AudioData:
         """Return an AudioData object from a list of AudioFiles.
 
@@ -346,6 +349,8 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         instrument: Instrument | None
             Instrument that might be used to obtain acoustic pressure from
             the wav audio data.
+        normalization: Literal["raw","reject_dc","zscore"]
+            The type of normalization to apply to the audio data.
 
         Returns
         -------
@@ -357,6 +362,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             data=BaseData.from_files(files, begin, end),
             sample_rate=sample_rate,
             instrument=instrument,
+            normalization=normalization,
         )
 
     @classmethod
@@ -365,6 +371,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         data: BaseData,
         sample_rate: float | None = None,
         instrument: Instrument | None = None,
+        normalization: Literal["raw", "reject_dc", "zscore"] = "raw",
     ) -> AudioData:
         """Return an AudioData object from a BaseData object.
 
@@ -377,6 +384,8 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         instrument: Instrument | None
             Instrument that might be used to obtain acoustic pressure from
             the wav audio data.
+        normalization: Literal["raw","reject_dc","zscore"]
+            The type of normalization to apply to the audio data.
 
         Returns
         -------
@@ -388,4 +397,5 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             items=[AudioItem.from_base_item(item) for item in data.items],
             sample_rate=sample_rate,
             instrument=instrument,
+            normalization=normalization,
         )
