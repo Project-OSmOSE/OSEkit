@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 import pytest
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "begin", "end", "sample_rate"),
+    ("audio_files", "begin", "end", "sample_rate", "normalization"),
     [
         pytest.param(
             {
@@ -39,6 +39,7 @@ if TYPE_CHECKING:
             None,
             None,
             48_000,
+            "raw",
             id="full_file_no_resample",
         ),
         pytest.param(
@@ -50,7 +51,21 @@ if TYPE_CHECKING:
             },
             None,
             None,
+            48_000,
+            "zscore",
+            id="normalized_audio",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00"),
+            },
+            None,
+            None,
             24_000,
+            "raw",
             id="full_file_downsample",
         ),
         pytest.param(
@@ -63,6 +78,7 @@ if TYPE_CHECKING:
             None,
             None,
             96_000,
+            "raw",
             id="full_file_upsample",
         ),
         pytest.param(
@@ -75,6 +91,7 @@ if TYPE_CHECKING:
             Timestamp("2024-01-01 12:00:01"),
             Timestamp("2024-01-01 12:00:02"),
             48_000,
+            "raw",
             id="file_part",
         ),
         pytest.param(
@@ -87,6 +104,7 @@ if TYPE_CHECKING:
             Timestamp("2024-01-01 12:00:01"),
             Timestamp("2024-01-01 12:00:02"),
             24_000,
+            "raw",
             id="two_files_with_resample",
         ),
         pytest.param(
@@ -100,6 +118,7 @@ if TYPE_CHECKING:
             Timestamp("2024-01-01 12:00:01"),
             Timestamp("2024-01-01 12:00:04"),
             48_000,
+            "raw",
             id="two_files_with_gap",
         ),
         pytest.param(
@@ -113,7 +132,22 @@ if TYPE_CHECKING:
             Timestamp("2024-01-01 12:00:01+0200"),
             Timestamp("2024-01-01 12:00:04+0200"),
             48_000,
+            "raw",
             id="localized_files",
+        ),
+        pytest.param(
+            {
+                "duration": 2,
+                "sample_rate": 48_000,
+                "nb_files": 2,
+                "inter_file_duration": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00+0200"),
+            },
+            Timestamp("2024-01-01 12:00:01+0200"),
+            Timestamp("2024-01-01 12:00:04+0200"),
+            48_000,
+            "dc_reject",
+            id="localized_normalized_files",
         ),
     ],
     indirect=["audio_files"],
@@ -124,6 +158,7 @@ def test_audio_data_serialization(
     begin: Timestamp | None,
     end: Timestamp | None,
     sample_rate: float,
+    normalization: Literal["raw", "dc_reject", "zscore"],
 ) -> None:
     audio_files, _ = audio_files
 
@@ -132,6 +167,7 @@ def test_audio_data_serialization(
         begin=begin,
         end=end,
         sample_rate=sample_rate,
+        normalization=normalization,
     )
 
     assert np.array_equal(ad.get_value(), AudioData.from_dict(ad.to_dict()).get_value())

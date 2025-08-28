@@ -40,7 +40,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         end: Timestamp | None = None,
         sample_rate: int | None = None,
         instrument: Instrument | None = None,
-        normalization: Literal["raw", "reject_dc", "zscore"] = "raw",
+        normalization: Literal["raw", "dc_reject", "zscore"] = "raw",
     ) -> None:
         """Initialize an AudioData from a list of AudioItems.
 
@@ -59,7 +59,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         instrument: Instrument | None
             Instrument that might be used to obtain acoustic pressure from
             the wav audio data.
-        normalization: Literal["raw","reject_dc","zscore"]
+        normalization: Literal["raw","dc_reject","zscore"]
             The type of normalization to apply to the audio data.
 
         """
@@ -330,7 +330,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         end: Timestamp | None = None,
         sample_rate: float | None = None,
         instrument: Instrument | None = None,
-        normalization: Literal["raw", "reject_dc", "zscore"] = "raw",
+        normalization: Literal["raw", "dc_reject", "zscore"] = "raw",
     ) -> AudioData:
         """Return an AudioData object from a list of AudioFiles.
 
@@ -349,7 +349,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         instrument: Instrument | None
             Instrument that might be used to obtain acoustic pressure from
             the wav audio data.
-        normalization: Literal["raw","reject_dc","zscore"]
+        normalization: Literal["raw","dc_reject","zscore"]
             The type of normalization to apply to the audio data.
 
         Returns
@@ -371,7 +371,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         data: BaseData,
         sample_rate: float | None = None,
         instrument: Instrument | None = None,
-        normalization: Literal["raw", "reject_dc", "zscore"] = "raw",
+        normalization: Literal["raw", "dc_reject", "zscore"] = "raw",
     ) -> AudioData:
         """Return an AudioData object from a BaseData object.
 
@@ -384,7 +384,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         instrument: Instrument | None
             Instrument that might be used to obtain acoustic pressure from
             the wav audio data.
-        normalization: Literal["raw","reject_dc","zscore"]
+        normalization: Literal["raw","dc_reject","zscore"]
             The type of normalization to apply to the audio data.
 
         Returns
