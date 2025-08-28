@@ -112,3 +112,25 @@ def resample(data: np.ndarray, origin_sr: float, target_sr: float) -> np.ndarray
         else resample_quality_settings["downsample"]
     )
     return soxr.resample(data, origin_sr, target_sr, quality=quality)
+
+
+def normalize_raw(values: np.ndarray) -> np.ndarray:
+    """No normalization of the audio data."""
+    return values
+
+
+def normalize_dc_reject(values: np.ndarray) -> np.ndarray:
+    """Reject the DC component of the audio data."""
+    return values - values.mean()
+
+
+def normalize_zscore(values: np.ndarray) -> np.ndarray:
+    """Return normalized zscore from the audio data."""
+    return (values - values.mean()) / values.std()
+
+
+normalizations = {
+    "raw": normalize_raw,
+    "dc_reject": normalize_dc_reject,
+    "zscore": normalize_zscore,
+}
