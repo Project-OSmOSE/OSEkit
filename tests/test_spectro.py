@@ -283,7 +283,7 @@ def test_spectrogram_from_npz_files(
 
     for spectro in sd_split:
         spectro.write(tmp_path / "output")
-        centered_data = spectro.audio_data.get_value(reject_dc=True)
+        centered_data = spectro.audio_data.get_value()
         (tmp_path / "audio").mkdir(exist_ok=True)
         sf.write(
             file=tmp_path / "audio" / f"{spectro.audio_data}.wav",
@@ -293,10 +293,6 @@ def test_spectrogram_from_npz_files(
         )
 
     assert len(list((tmp_path / "output").glob("*.npz"))) == nb_chunks
-
-    # Since we reject the DC of audio data before computing Sx values of each chunk,
-    # we must compare the concatenated chunks with an AudioData made from the
-    # DC-free parts.
 
     afs = [
         AudioFile(f, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED)

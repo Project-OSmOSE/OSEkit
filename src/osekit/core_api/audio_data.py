@@ -20,7 +20,7 @@ from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.audio_item import AudioItem
 from osekit.core_api.base_data import BaseData
 from osekit.core_api.instrument import Instrument
-from osekit.utils.audio_utils import resample
+from osekit.utils.audio_utils import resample, normalizations
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -113,15 +113,10 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             return
         self.sample_rate = None
 
-    def get_value(self, reject_dc: bool = False) -> np.ndarray:
+    def get_value(self) -> np.ndarray:
         """Return the value of the audio data.
 
         The data from the audio file will be resampled if necessary.
-
-        Parameters
-        ----------
-        reject_dc: bool
-            If True, the values will be centered on 0.
 
         Returns
         -------
@@ -136,20 +131,14 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             item_data = item_data[: min(item_data.shape[0], data.shape[0] - idx)]
             data[idx : idx + len(item_data)] = item_data
             idx += len(item_data)
-        if reject_dc:
-            data -= data.mean()
-        return data
 
-    def get_value_calibrated(self, reject_dc: bool = False) -> np.ndarray:
+        return normalizations[self.normalization](data)
+
+    def get_value_calibrated(self) -> np.ndarray:
         """Return the value of the audio data accounting for the calibration factor.
 
         If the instrument parameter of the audio data is not None, the returned value is
         calibrated in units of Pa.
-
-        Parameters
-        ----------
-        reject_dc: bool
-            If True, the values will be centered on 0.
 
         Returns
         -------
@@ -157,7 +146,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             The calibrated value of the audio data.
 
         """
-        raw_data = self.get_value(reject_dc=reject_dc)
+        raw_data = self.get_value()
         calibration_factor = (
             1.0 if self.instrument is None else self.instrument.end_to_end
         )
