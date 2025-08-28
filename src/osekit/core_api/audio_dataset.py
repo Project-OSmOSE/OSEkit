@@ -74,6 +74,19 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             data.sample_rate = sample_rate
 
     @property
+    def normalization(self) -> Literal["raw", "dc_reject", "zscore"]:
+        """Return the most frequent normalization among those of this dataset data."""
+        normalizations = [data.normalization for data in self.data]
+        return max(set(normalizations), key=normalizations.count)
+
+    @normalization.setter
+    def normalization(
+        self, normalization: Literal["raw", "dc_reject", "zscore"]
+    ) -> None:
+        for data in self.data:
+            data.normalization = normalization
+
+    @property
     def instrument(self) -> Instrument | None:
         """Instrument that can be used to get acoustic pressure from wav audio data."""
         return self._instrument
@@ -166,6 +179,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         data_duration: Timedelta | None = None,
         name: str | None = None,
         instrument: Instrument | None = None,
+        normalization: Literal["raw", "dc_reject", "zscore"] = "raw",
         **kwargs: any,
     ) -> AudioDataset:
         """Return an AudioDataset from a folder containing the audio files.
@@ -207,6 +221,8 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         instrument: Instrument | None
             Instrument that might be used to obtain acoustic pressure from
             the wav audio data.
+        normalization: Literal["raw","dc_reject","zscore"]
+            The type of normalization to apply to the audio data.
         kwargs: any
             Keyword arguments passed to the BaseDataset.from_folder classmethod.
 
@@ -233,6 +249,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             base_dataset=base_dataset,
             name=name,
             instrument=instrument,
+            normalization=normalization,
         )
 
     @classmethod
@@ -245,6 +262,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         data_duration: Timedelta | None = None,
         name: str | None = None,
         instrument: Instrument | None = None,
+        normalization: Literal["raw", "dc_reject", "zscore"] = "raw",
     ) -> AudioDataset:
         """Return an AudioDataset object from a list of AudioFiles.
 
@@ -277,6 +295,8 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         instrument: Instrument | None
             Instrument that might be used to obtain acoustic pressure from
             the wav audio data.
+        normalization: Literal["raw","dc_reject","zscore"]
+            The type of normalization to apply to the audio data.
 
         Returns
         -------
@@ -291,7 +311,9 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             mode=mode,
             data_duration=data_duration,
         )
-        return cls.from_base_dataset(base, name=name, instrument=instrument)
+        return cls.from_base_dataset(
+            base, name=name, instrument=instrument, normalization=normalization
+        )
 
     @classmethod
     def from_base_dataset(
@@ -300,10 +322,16 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         sample_rate: float | None = None,
         name: str | None = None,
         instrument: Instrument | None = None,
+        normalization: Literal["raw", "dc_reject", "zscore"] = "raw",
     ) -> AudioDataset:
         """Return an AudioDataset object from a BaseDataset object."""
         return cls(
-            [AudioData.from_base_data(data, sample_rate) for data in base_dataset.data],
+            [
+                AudioData.from_base_data(
+                    data=data, sample_rate=sample_rate, normalization=normalization
+                )
+                for data in base_dataset.data
+            ],
             name=name,
             instrument=instrument,
         )
