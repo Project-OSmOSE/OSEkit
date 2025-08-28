@@ -3,6 +3,7 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -12,6 +13,7 @@ from osekit.utils.core_utils import (
     locked,
     nb_files_per_batch,
 )
+from osekit.utils.audio_utils import normalizations
 from osekit.utils.formatting_utils import aplose2raven
 from osekit.utils.path_utils import move_tree
 
@@ -359,3 +361,30 @@ def test_get_closest_value_index(
     expected: int,
 ) -> None:
     assert get_closest_value_index(values=values, target=target) == expected
+
+
+@pytest.mark.parametrize(
+    ("values", "normalization", "expected"),
+    [
+        pytest.param(
+            np.array([0.0, 1.0, 2.0]),
+            "raw",
+            np.array([0.0, 1.0, 2.0]),
+        ),
+        pytest.param(
+            np.array([0.0, 1.0, 2.0]),
+            "dc_reject",
+            np.array([-1.0, 0.0, 1.0]),
+        ),
+        pytest.param(
+            np.array([0.0, 1.0, 2.0]),
+            "zscore",
+            np.array([-1.224744871391589, 0.0, 1.224744871391589]),
+        ),
+    ],
+)
+def test_normalization(
+    values: np.ndarray, normalization: str, expected: np.ndarray
+) -> None:
+    normalized = normalizations[normalization](values)
+    assert np.array_equal(normalized, expected)
