@@ -7,7 +7,7 @@ The data is accessed via an AudioItem object per AudioFile.
 from __future__ import annotations
 
 from math import ceil
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 import soundfile as sf
@@ -40,6 +40,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         end: Timestamp | None = None,
         sample_rate: int | None = None,
         instrument: Instrument | None = None,
+        normalization: Literal["raw", "reject_dc", "zscore"] = "raw",
     ) -> None:
         """Initialize an AudioData from a list of AudioItems.
 
@@ -58,11 +59,14 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         instrument: Instrument | None
             Instrument that might be used to obtain acoustic pressure from
             the wav audio data.
+        normalization: Literal["raw","reject_dc","zscore"]
+            The type of normalization to apply to the audio data.
 
         """
         super().__init__(items=items, begin=begin, end=end)
         self._set_sample_rate(sample_rate=sample_rate)
         self.instrument = instrument
+        self.normalization = normalization
 
     @property
     def nb_channels(self) -> int:
@@ -76,6 +80,15 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         """Shape of the audio data."""
         data_length = round(self.sample_rate * self.duration.total_seconds())
         return data_length if self.nb_channels <= 1 else (data_length, self.nb_channels)
+
+    @property
+    def normalization(self) -> Literal["raw", "dc_reject", "zscore"]:
+        """The type of normalization to apply to the audio data."""
+        return self._normalization
+
+    @normalization.setter
+    def normalization(self, value: Literal["raw", "dc_reject", "zscore"]) -> None:
+        self._normalization = value
 
     def __eq__(self, other: AudioData) -> bool:
         """Override __eq__."""
