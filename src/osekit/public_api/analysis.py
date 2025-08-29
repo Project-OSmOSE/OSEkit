@@ -68,6 +68,7 @@ class Analysis:
         data_duration: Timedelta | None = None,
         mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
         sample_rate: float | None = None,
+        normalization: Literal["raw", "dc_reject", "zscore"] = "raw",
         name: str | None = None,
         subtype: str | None = None,
         fft: ShortTimeFFT | None = None,
@@ -106,6 +107,8 @@ class Analysis:
             Sample rate of the new analysis data.
             Audio data will be resampled if provided, else the sample rate
             will be set to the one of the original dataset.
+        normalization: Literal["raw", "dc_reject", "zscore"]
+            The type of normalization to apply to the audio data.
         name: str | None
             Name of the analysis dataset.
             Defaulted as the begin timestamp of the analysis dataset.
@@ -143,6 +146,7 @@ class Analysis:
         self.mode = mode
         self.sample_rate = sample_rate
         self.name = name
+        self.normalization = normalization
         self.subtype = subtype
         self.fft = fft
         self.v_lim = v_lim

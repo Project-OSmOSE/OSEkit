@@ -207,6 +207,7 @@ class Dataset:
             end=analysis.end,
             data_duration=analysis.data_duration,
             mode=analysis.mode,
+            normalization=analysis.normalization,
             name=analysis.name,
             instrument=self.instrument,
         )

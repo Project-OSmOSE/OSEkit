@@ -910,6 +910,32 @@ def test_analysis_is_spectro(analysis: Analysis, expected: bool) -> None:
             ],
             id="full_reshape",
         ),
+        pytest.param(
+            {
+                "duration": 5,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00"),
+            },
+            None,
+            Analysis(
+                analysis_type=AnalysisType.AUDIO,
+                name=None,
+                begin=None,
+                end=None,
+                data_duration=None,
+                sample_rate=None,
+                normalization="zscore",
+                subtype="DOUBLE",
+            ),
+            [
+                Event(
+                    begin=Timestamp("2024-01-01 12:00:00"),
+                    end=Timestamp("2024-01-01 12:00:05"),
+                ),
+            ],
+            id="normalized_data",
+        ),
     ],
     indirect=["audio_files"],
 )
@@ -949,6 +975,8 @@ def test_get_analysis_audiodataset(
     )
 
     assert analysis_ds.instrument is dataset.instrument
+
+    assert analysis_ds.normalization == analysis.normalization
 
 
 @pytest.mark.parametrize(
@@ -1060,6 +1088,7 @@ def test_edit_analysis_before_run(
     new_name = "new_analysis"
     new_instrument = Instrument(end_to_end_db=100)
     new_data = ads.data[::2]
+    new_normalization = "zscore"
 
     ads.sample_rate = new_sr
     analysis.sample_rate = new_sr
@@ -1067,6 +1096,7 @@ def test_edit_analysis_before_run(
     ads.name = new_name
     ads.instrument = new_instrument
     ads.data = new_data
+    ads.normalization = new_normalization
 
     dataset.run_analysis(analysis, audio_dataset=ads)
 
@@ -1090,6 +1120,9 @@ def test_edit_analysis_before_run(
     # Analyses have the edited sr
     assert analysis_ads.sample_rate == new_sr
     assert analysis_sds.fft.fs == new_sr
+
+    # Analyses have the edited normalization
+    assert analysis_ads.normalization == new_normalization
 
     # Instrument has been edited
     assert analysis_ads.instrument.end_to_end_db == new_instrument.end_to_end_db
