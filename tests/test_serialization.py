@@ -174,7 +174,7 @@ def test_audio_data_serialization(
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "data_duration", "sample_rate", "name"),
+    ("audio_files", "data_duration", "sample_rate", "normalization", "name"),
     [
         pytest.param(
             {
@@ -184,6 +184,7 @@ def test_audio_data_serialization(
             },
             Timedelta(seconds=1),
             48_000,
+            "raw",
             None,
             id="one_audio_data_one_file_no_resample",
         ),
@@ -195,6 +196,7 @@ def test_audio_data_serialization(
             },
             Timedelta(seconds=2),
             48_000,
+            "raw",
             None,
             id="one_audio_data_two_files_no_resample",
         ),
@@ -206,6 +208,7 @@ def test_audio_data_serialization(
             },
             Timedelta(seconds=2),
             24_000,
+            "raw",
             None,
             id="one_audio_data_two_files_downsample",
         ),
@@ -217,6 +220,7 @@ def test_audio_data_serialization(
             },
             Timedelta(seconds=1),
             [12_000, 24_000, 48_000, 96_000],
+            "raw",
             None,
             id="multiple_audio_data_different_sample_rates",
         ),
@@ -228,6 +232,7 @@ def test_audio_data_serialization(
             },
             Timedelta(seconds=1),
             48_000,
+            "raw",
             "merriweather post pavilion",
             id="named_ads",
         ),
@@ -240,6 +245,7 @@ def test_audio_data_serialization(
             },
             Timedelta(seconds=1),
             48_000,
+            "raw",
             "merriweather post pavilion",
             id="localized_ads",
         ),
@@ -251,6 +257,7 @@ def test_audio_dataset_serialization(
     audio_files: tuple[list[AudioFile], pytest.fixtures.Subrequest],
     data_duration: Timestamp | None,
     sample_rate: float | list[float],
+    normalization: Literal["raw", "dc_reject", "zscore"],
     name: str | None,
 ) -> None:
     audio_files, request = audio_files
@@ -266,6 +273,7 @@ def test_audio_dataset_serialization(
         tmp_path,
         strptime_format=strptime_format,
         data_duration=data_duration,
+        normalization=normalization,
         name=name,
     )
 
@@ -295,6 +303,7 @@ def test_audio_dataset_serialization(
     assert ads.has_default_name == ads2.has_default_name
     assert ads.sample_rate == ads2.sample_rate
     assert ads.begin == ads2.begin
+    assert ads.normalization == ads2.normalization
 
     assert all(
         np.array_equal(ad.get_value(), ad2.get_value())
