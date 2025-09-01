@@ -26,10 +26,10 @@ jobs:
         run: uv sync --locked --all-extras --dev
 
       - name: Build distributions
-        run: python -m build
+        run: uv build
 
       - name: Upload distributions
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dist
           path: dist/*
@@ -40,8 +40,11 @@ jobs:
     permissions:
       id-token: write
       contents: read
+    environment:
+      name: pypi
+      url: https://pypi.org/project/osekit/
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist
