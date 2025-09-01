@@ -153,8 +153,8 @@ allows for retrieving the data in the shape of the recorded acoustic pressure.
 
 .. code-block:: python
 
-    from osekit.core_api.instrument import Instrument
     from osekit.core_api.audio_data import AudioData
+    from osekit.core_api.instrument import Instrument
     import numpy as np
 
     instrument = Instrument(end_to_end_db = 150) # The raw 1. WAV value equals 150 dB SPL re 1 uPa
@@ -199,6 +199,7 @@ an ``AudioDataset`` from a given folder containing audio files:
 
     from pathlib import Path
     from osekit.core_api.audio_dataset import AudioDataset
+    from osekit.core_api.instrument import Instrument
     from pandas import Timestamp, Timedelta
 
     folder = Path(r"...")
@@ -208,7 +209,9 @@ an ``AudioDataset`` from a given folder containing audio files:
         strptime_format="%y_%m_%d_%H_%M_%S", # To parse the files begin Timestamp
         begin=Timestamp("2009-01-06 12:00:00"),
         end=Timestamp("2009-01-06 14:00:00"),
-        data_duration=Timedelta("10s")
+        data_duration=Timedelta("10s"),
+        instrument=Instrument(end_to_end_db=150),
+        normalization="dc_reject"
     )
 
 The resulting ``AudioDataset`` will contain 10s-long ``AudioData`` ranging from ``2009-01-06 12:00:00`` to ``2009-01-06 14:00:00``.
