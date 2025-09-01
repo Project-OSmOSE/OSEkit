@@ -177,6 +177,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         timezone: str | pytz.timezone | None = None,
         mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
         data_duration: Timedelta | None = None,
+        sample_rate: float | None = None,
         name: str | None = None,
         instrument: Instrument | None = None,
         normalization: Literal["raw", "dc_reject", "zscore"] = "raw",
@@ -216,6 +217,8 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             If mode is set to "files", this parameter has no effect.
             If provided, audio data will be evenly distributed between begin and end.
             Else, one data object will cover the whole time period.
+        sample_rate: float | None
+            Sample rate of the audio data objects.
         name: str|None
             Name of the dataset.
         instrument: Instrument | None
@@ -249,6 +252,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             base_dataset=base_dataset,
             name=name,
             instrument=instrument,
+            sample_rate=sample_rate,
             normalization=normalization,
         )
 
@@ -260,6 +264,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         end: Timestamp | None = None,
         mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
         data_duration: Timedelta | None = None,
+        sample_rate: float | None = None,
         name: str | None = None,
         instrument: Instrument | None = None,
         normalization: Literal["raw", "dc_reject", "zscore"] = "raw",
@@ -290,6 +295,8 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             If mode is set to "files", this parameter has no effect.
             If provided, data will be evenly distributed between begin and end.
             Else, one data object will cover the whole time period.
+        sample_rate: float | None
+            Sample rate of the audio data objects.
         name: str|None
             Name of the dataset.
         instrument: Instrument | None
@@ -312,7 +319,11 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             data_duration=data_duration,
         )
         return cls.from_base_dataset(
-            base, name=name, instrument=instrument, normalization=normalization
+            base,
+            name=name,
+            sample_rate=sample_rate,
+            instrument=instrument,
+            normalization=normalization,
         )
 
     @classmethod
