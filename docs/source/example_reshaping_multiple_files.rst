@@ -9,6 +9,7 @@ In this example, we want to export reshaped files from the sample audio dataset 
 * Last file ends at ``2022-09-25 22:36:25``
 * Files are ``5 s``-long
 * Files are sampled at ``24 kHz``
+* Files are DC-filtered
 * Files that are in the gap between recordings should be skipped
 
 .. toctree::
