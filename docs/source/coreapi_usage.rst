@@ -110,6 +110,35 @@ The data is fetched seamlessly on-demand from the audio file(s). The opening/clo
 
 Eventual time gap between audio items are filled with ``0.`` values.
 
+Normalization
+"""""""""""""
+
+The fetched audio data can be normalized according to the following presets:
+
+.. list-table:: Normalization presets
+   :widths: 10 10
+   :header-rows: 1
+
+   * - Name
+     - Description
+   * - ``raw``
+     - :math:`x`
+   * - ``dc_reject``
+     - :math:`x-\overline{ x }`
+   * - ``zscore``
+     - :math:`\frac{ x-\overline{x} }{\sigma (x)}`
+
+To normalize the data, simply set the :attr:`osekit.core_api.audio_data.AudioData.normalization` property to the
+requested normalization name:
+
+.. code-block:: python
+
+    from osekit.core_api.audio_data.AudioData import AudioData
+
+    ad = AudioData(...)
+    ad.normalization = "zscore" # Note: normalization also is a parameter of the AudioData initializer
+
+    v = ad.get_value() # The fetched data will then be normalized
 
 Calibration
 """""""""""
