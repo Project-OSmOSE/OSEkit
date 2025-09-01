@@ -6,13 +6,11 @@ that simplify repeated operations on the spectro data.
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 from scipy.signal import ShortTimeFFT
-from tqdm import tqdm
 
 from osekit.config import DPDEFAULT
 from osekit.core_api.base_dataset import BaseDataset
@@ -21,6 +19,7 @@ from osekit.core_api.json_serializer import deserialize_json
 from osekit.core_api.spectro_data import SpectroData
 from osekit.core_api.spectro_file import SpectroFile
 from osekit.utils.core_utils import locked
+from osekit.utils.multiprocess_utils import multiprocess
 
 if TYPE_CHECKING:
     import pytz
@@ -37,7 +36,9 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
     """
 
-    __sentinel_value = object()
+    sentinel_value = object()
+    _bypass_multiprocessing_on_dataset = False
+    data_cls = SpectroData
 
     def __init__(
         self,
@@ -46,13 +47,13 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         suffix: str = "",
         folder: Path | None = None,
         scale: Scale | None = None,
-        v_lim: tuple[float, float] | None | object = __sentinel_value,
+        v_lim: tuple[float, float] | None | object = sentinel_value,
     ) -> None:
         """Initialize a SpectroDataset."""
         super().__init__(data=data, name=name, suffix=suffix, folder=folder)
         self.scale = scale
 
-        if v_lim is not self.__sentinel_value:
+        if v_lim is not self.sentinel_value:
             # the sentinel value allows to differentiate between
             # a specified None value (resets the v_lim to the default values)
             # from an unspecified v_lim (in that case, the data v_lim are unchanged)
@@ -122,6 +123,10 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         for file in self.files:
             file.move(folder)
 
+    def _save_spectrogram(self, sd: SpectroData, folder: Path) -> None:
+        """Save the spectrogram data."""
+        sd.save_spectrogram(folder)
+
     def save_spectrogram(
         self,
         folder: Path,
@@ -142,11 +147,30 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
         """
         last = len(self.data) if last is None else last
-        for data in tqdm(
+        multiprocess(
+            self._save_spectrogram,
             self.data[first:last],
-            disable=os.environ.get("DISABLE_TQDM", ""),
-        ):
-            data.save_spectrogram(folder, scale=self.scale)
+            bypass_multiprocessing=type(self)._bypass_multiprocessing_on_dataset,
+            folder=folder,
+        )
+
+    def _get_welch(
+        self,
+        sd: SpectroData,
+        nperseg,
+        detrend,
+        return_onesided,
+        scaling,
+        average,
+    ) -> tuple[SpectroData, np.ndarray]:
+        """Get the welch value of each SpectroData."""
+        return sd, sd.get_welch(
+            nperseg=nperseg,
+            detrend=detrend,
+            return_onesided=return_onesided,
+            scaling=scaling,
+            average=average,
+        )
 
     def write_welch(
         self,
@@ -162,26 +186,37 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         folder.mkdir(parents=True, exist_ok=True, mode=DPDEFAULT)
         timestamps = []
         pxs = []
-        for data in tqdm(
+        for data, welch in multiprocess(
+            self._get_welch,
             self.data[first:last],
-            disable=os.environ.get("DISABLE_TQDM", ""),
+            bypass_multiprocessing=type(self)._bypass_multiprocessing_on_dataset,
+            nperseg=nperseg,
+            detrend=detrend,
+            return_onesided=return_onesided,
+            scaling=scaling,
+            average=average,
         ):
             timestamps.append(f"{data.begin!s}_{data.end!s}")
-            pxs.append(
-                data.get_welch(
-                    nperseg=nperseg,
-                    detrend=detrend,
-                    return_onesided=return_onesided,
-                    scaling=scaling,
-                    average=average,
-                ),
-            )
+            pxs.append(welch)
         np.savez(
             file=folder / f"{self.data[first]}.npz",
             timestamps=timestamps,
             pxs=pxs,
             freq=self.fft.f,
         )
+
+    def _save_all_(
+        self,
+        data: SpectroData,
+        matrix_folder: Path,
+        spectrogram_folder: Path,
+        link: bool,
+    ) -> SpectroData:
+        """Save the data matrix and spectrogram to disk."""
+        sx = data.get_value()
+        data.write(folder=matrix_folder, sx=sx, link=link)
+        data.save_spectrogram(folder=spectrogram_folder, sx=sx, scale=self.scale)
+        return data
 
     def save_all(
         self,
@@ -210,13 +245,14 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
         """
         last = len(self.data) if last is None else last
-        for data in tqdm(
-            self.data[first:last],
-            disable=os.environ.get("DISABLE_TQDM", ""),
-        ):
-            sx = data.get_value()
-            data.write(folder=matrix_folder, sx=sx, link=link)
-            data.save_spectrogram(folder=spectrogram_folder, sx=sx, scale=self.scale)
+        self.data[first:last] = multiprocess(
+            func=self._save_all_,
+            enumerable=self.data[first:last],
+            bypass_multiprocessing=type(self)._bypass_multiprocessing_on_dataset,
+            matrix_folder=matrix_folder,
+            spectrogram_folder=spectrogram_folder,
+            link=link,
+        )
 
     def link_audio_dataset(
         self,
@@ -267,7 +303,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
         @locked(lock_file=self.folder / "lock.lock")
         def update(first: int, last: int) -> None:
-            sds_to_update = SpectroDataset.from_json(file=json_file)
+            sds_to_update = type(self).from_json(file=json_file)
             sds_to_update.data[first:last] = self.data[first:last]
             sds_to_update.write_json(folder=self.folder)
 
@@ -328,7 +364,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
         Returns
         -------
-        AudioData
+        SpectroDataset
             The deserialized SpectroDataset.
 
         """
@@ -345,7 +381,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             for name, sft in dictionary["sft"].items()
         ]
         sd = [
-            SpectroData.from_dict(
+            cls.data_cls.from_dict(
                 params,
                 sft=next(sft for sft, linked_data in sfts if name in linked_data),
             )
@@ -373,7 +409,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
         data_duration: Timedelta | None = None,
         name: str | None = None,
-        v_lim: tuple[float, float] | None | object = __sentinel_value,
+        v_lim: tuple[float, float] | None | object = sentinel_value,
         **kwargs: any,
     ) -> SpectroDataset:
         """Return a SpectroDataset from a folder containing the spectro files.
@@ -452,7 +488,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         name: str | None = None,
         colormap: str | None = None,
         scale: Scale | None = None,
-        v_lim: tuple[float, float] | None | object = __sentinel_value,
+        v_lim: tuple[float, float] | None | object = sentinel_value,
     ) -> SpectroDataset:
         """Return a SpectroDataset object from a BaseDataset object."""
         return cls(
@@ -472,7 +508,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         fft: ShortTimeFFT,
         name: str | None = None,
         colormap: str | None = None,
-        v_lim: tuple[float, float] | None = __sentinel_value,
+        v_lim: tuple[float, float] | None = sentinel_value,
         scale: Scale | None = None,
     ) -> SpectroDataset:
         """Return a SpectroDataset object from an AudioDataset object.

@@ -334,6 +334,8 @@ The resulting figure presents the full-scale spectrogram at the top (from 0 to 7
 LTAS Data
 ^^^^^^^^^
 
+.. _ltas:
+
 OSEkit provides the :class:`osekit.core_api.ltas_data.LTASData` class for computing and plotting LTAS (**L**\ ong-\ **T**\ erm **A**\ verage **S**\ pectrum).
 
 LTAS are suitable when a spectrum is computed over a very long time and that the spectrum matrix time dimension reach a really high value.

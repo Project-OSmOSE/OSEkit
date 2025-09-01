@@ -14,11 +14,13 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar
 
+from osekit import config
 from osekit.config import DPDEFAULT, resample_quality_settings
 from osekit.core_api.audio_dataset import AudioDataset
 from osekit.core_api.base_dataset import BaseDataset
 from osekit.core_api.instrument import Instrument
 from osekit.core_api.json_serializer import deserialize_json, serialize_json
+from osekit.core_api.ltas_dataset import LTASDataset
 from osekit.core_api.spectro_dataset import SpectroDataset
 from osekit.public_api.analysis import Analysis, AnalysisType
 from osekit.utils.core_utils import (
@@ -94,9 +96,13 @@ class Dataset:
         self.instrument = instrument
 
     @property
-    def origin_files(self) -> set[AudioFile]:
+    def origin_files(self) -> list[AudioFile] | None:
         """Return the original audio files from which this Dataset has been built."""
-        return None if self.origin_dataset is None else self.origin_dataset.files
+        return (
+            None
+            if self.origin_dataset is None
+            else sorted(self.origin_dataset.files, key=lambda f: f.begin)
+        )
 
     @property
     def origin_dataset(self) -> AudioDataset:
@@ -217,8 +223,8 @@ class Dataset:
         self,
         analysis: Analysis,
         audio_dataset: AudioDataset | None = None,
-    ) -> SpectroDataset:
-        """Return a SpectroDataset created from the analysis parameters.
+    ) -> SpectroDataset | LTASDataset:
+        """Return a SpectroDataset (or LTASDataset) created from the analysis parameters.
 
         Parameters
         ----------
@@ -231,10 +237,11 @@ class Dataset:
 
         Returns
         -------
-        SpectroDataset:
+        SpectroDataset | LTASDataset:
             The SpectroDataset that match the analysis parameters.
             This SpectroDataset can be used, for example, to have a peek at the
             analysis output before running it.
+            If Analysis.is_ltas is True, a LTASDataset is returned.
 
         """
         if analysis.fft is None:
@@ -248,7 +255,7 @@ class Dataset:
             else audio_dataset
         )
 
-        return SpectroDataset.from_audio_dataset(
+        sds = SpectroDataset.from_audio_dataset(
             audio_dataset=ads,
             fft=analysis.fft,
             name=ads.base_name,
@@ -256,6 +263,14 @@ class Dataset:
             colormap=analysis.colormap,
             scale=analysis.scale,
         )
+
+        if analysis.nb_ltas_time_bins is not None:
+            sds = LTASDataset.from_spectro_dataset(
+                sds=sds,
+                nb_time_bins=analysis.nb_ltas_time_bins,
+            )
+
+        return sds
 
     def run_analysis(
         self,
@@ -336,7 +351,7 @@ class Dataset:
         self,
         analysis_type: AnalysisType,
         ads: AudioDataset | None = None,
-        sds: SpectroDataset | None = None,
+        sds: SpectroDataset | LTASDataset | None = None,
         link: bool = False,
         subtype: str | None = None,
         matrix_folder_name: str = "matrix",
@@ -353,7 +368,7 @@ class Dataset:
 
         Parameters
         ----------
-        spectrogram_folder_name
+        spectrogram_folder_name:
             The name of the folder in which the png spectrograms will be
             exported (relative to sds.folder)
         matrix_folder_name:
@@ -362,7 +377,7 @@ class Dataset:
         welch_folder_name:
             The name of the folder in which the npz welch files will be
             exported (relative to sds.folder)
-        sds: SpectroDataset
+        sds: SpectroDataset | LTASDataset
             The SpectroDataset on which the data should be written.
         analysis_type : AnalysisType
             Type of the analysis to be performed.
@@ -414,7 +429,9 @@ class Dataset:
                 f"--last {stop} "
                 f"--downsampling-quality {resample_quality_settings['downsample']} "
                 f"--upsampling-quality {resample_quality_settings['upsample']} "
-                f"--umask {get_umask()} ",
+                f"--umask {get_umask()} "
+                f"--multiprocessing {config.multiprocessing['is_active']} "
+                f"--nb-processes {config.multiprocessing['nb_processes']} ",
                 jobname="OSmOSE_Analysis",
                 preset="low",
                 env_name=sys.executable.replace("/bin/python", ""),
@@ -426,7 +443,7 @@ class Dataset:
 
     def _add_spectro_dataset(
         self,
-        sds: SpectroDataset,
+        sds: SpectroDataset | LTASDataset,
     ) -> None:
         sds.folder = self._get_spectro_dataset_subpath(sds=sds)
         self.datasets[sds.name] = {"class": type(sds).__name__, "dataset": sds}
@@ -434,7 +451,7 @@ class Dataset:
 
     def _get_spectro_dataset_subpath(
         self,
-        sds: SpectroDataset,
+        sds: SpectroDataset | LTASDataset,
     ) -> Path:
         ads_folder = Path(
             f"{round(sds.data_duration.total_seconds())}_{round(sds.fft.fs)}",
@@ -450,14 +467,14 @@ class Dataset:
         if type(dataset) is AudioDataset:
             self._sort_audio_dataset(dataset)
             return
-        if type(dataset) is SpectroDataset:
+        if type(dataset) is SpectroDataset | LTASDataset:
             self._sort_spectro_dataset(dataset)
             return
 
     def _sort_audio_dataset(self, dataset: AudioDataset) -> None:
         dataset.move_files(self._get_audio_dataset_subpath(dataset))
 
-    def _sort_spectro_dataset(self, dataset: SpectroDataset) -> None:
+    def _sort_spectro_dataset(self, dataset: SpectroDataset | LTASDataset) -> None:
         raise NotImplementedError
 
     def get_dataset(self, dataset_name: str) -> type[DatasetChild] | None:
@@ -525,11 +542,11 @@ class Dataset:
             dataset_class = (
                 AudioDataset
                 if dataset["class"] == "AudioDataset"
-                else (
-                    SpectroDataset
-                    if dataset["class"] == "SpectroDataset"
-                    else BaseDataset
-                )
+                else SpectroDataset
+                if dataset["class"] == "SpectroDataset"
+                else LTASDataset
+                if dataset["class"] == "LTASDataset"
+                else BaseDataset
             )
             datasets[name] = {
                 "class": dataset["class"],

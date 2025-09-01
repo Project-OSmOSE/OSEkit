@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from scipy.signal import ShortTimeFFT, welch
 
 from osekit.config import (
@@ -153,18 +154,36 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         If no reference is specified (self._db_ref is None), the
         sx db values will be given in dB FS.
         """
-        if self._db_ref is not None:
+        db_type = self.db_type
+        if db_type == "SPL_parameter":
             return self._db_ref
-        if (
-            self.audio_data is not None
-            and (instrument := self.audio_data.instrument) is not None
-        ):
-            return instrument.P_REF
+        if db_type == "SPL_instrument":
+            return self.audio_data.instrument.P_REF
         return 1.0
 
     @db_ref.setter
     def db_ref(self, db_ref: float) -> None:
         self._db_ref = db_ref
+
+    @property
+    def db_type(self) -> Literal["FS", "SPL_instrument", "SPL_parameter"]:
+        """Return whether the spectrogram dB values are in dB FS or dB SPL.
+
+        Returns
+        -------
+        Literal["FS", "SPL_instrument", "SPL_parameter"]:
+            "FS": The values are expressed in dB FS.
+            "SPL_instrument": The values are expressed in dB SPL relative to the
+                linked AudioData instrument P_REF property.
+            "SPL_parameter": The values are expressed in dB SPL relative to the
+                self._db_ref field.
+
+        """
+        if self._db_ref is not None:
+            return "SPL_parameter"
+        if self.audio_data is not None and self.audio_data.instrument is not None:
+            return "SPL_instrument"
+        return "FS"
 
     @property
     def v_lim(self) -> tuple[float, float]:
@@ -177,7 +196,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             v_lim
             if v_lim is not None
             else (-120.0, 0.0)
-            if self.db_ref is None
+            if self.db_type == "FS"
             else (0.0, 170.0)
         )
         self._v_lim = v_lim
@@ -237,6 +256,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         """
         window = self.fft.win
         noverlap = self.fft.hop
+        if noverlap == window.shape[0]:
+            noverlap //= 2
         nfft = self.fft.mfft
 
         _, sx = welch(
@@ -329,7 +350,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         sx = self.to_db(sx)
 
-        time = np.arange(sx.shape[1]) * self.duration.total_seconds() / sx.shape[1]
+        time = pd.date_range(start=self.begin, end=self.end, periods=sx.shape[1])
         freq = self.fft.f
 
         sx = sx if scale is None else scale.rescale(sx, freq)
@@ -423,7 +444,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         fs = [self.fft.fs]
         mfft = [self.fft.mfft]
         db_ref = [self.db_ref]
-        v_lim = self._v_lim
+        v_lim = self.v_lim
         timestamps = (str(t) for t in (self.begin, self.end))
         np.savez(
             file=folder / f"{self}.npz",
@@ -508,7 +529,10 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         ]
         return [
             SpectroData.from_audio_data(
-                data=ad, fft=self.fft, v_lim=self.v_lim, colormap=self.colormap
+                data=ad,
+                fft=self.fft,
+                v_lim=self.v_lim,
+                colormap=self.colormap,
             )
             for ad in ad_split
         ]
@@ -732,10 +756,13 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             )
 
         audio_data = AudioData.from_dict(dictionary["audio_data"])
+        v_lim = (
+            None if type(dictionary["v_lim"]) is object else tuple(dictionary["v_lim"])
+        )
         spectro_data = cls.from_audio_data(
             audio_data,
             sft,
-            v_lim=tuple(dictionary["v_lim"]),
+            v_lim=v_lim,
             colormap=dictionary["colormap"],
         )
 

@@ -21,3 +21,8 @@ resample_quality_settings = {
     "downsample": "QQ",
     "upsample": "MQ",
 }
+
+multiprocessing = {
+    "is_active": False,
+    "nb_processes": None,
+}

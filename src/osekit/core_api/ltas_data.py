@@ -19,14 +19,13 @@ and each part is replaced with an average of the stft performed within it.
 
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING
 
 import numpy as np
 from scipy.signal import ShortTimeFFT
-from tqdm import tqdm
 
 from osekit.core_api.spectro_data import SpectroData
+from osekit.utils.multiprocess_utils import multiprocess
 
 if TYPE_CHECKING:
     from pandas import Timestamp
@@ -115,12 +114,25 @@ class LTASData(SpectroData):
         self.nb_time_bins = nb_time_bins
         self.sx_dtype = float
 
+    @property
+    def shape(self) -> tuple[int, int]:
+        """Shape of the LTAS data."""
+        return self.fft.f_pts, self.nb_time_bins
+
+    def mean_value_part(self, sub_spectro: LTASData) -> np.ndarray:
+        return np.mean(
+            sub_spectro.get_value(depth=1),
+            axis=1,
+        )
+
     def get_value(self, depth: int = 0) -> np.ndarray:
         """Return the Sx matrix of the LTAS.
 
         The Sx matrix contains the absolute square of the STFT.
         """
-        if self.shape[1] <= self.nb_time_bins:
+        if not self.is_empty:
+            return self._get_value_from_items(self.items)
+        if super().shape[1] <= self.nb_time_bins:
             return super().get_value()
         sub_spectros = [
             LTASData.from_spectro_data(
@@ -130,15 +142,13 @@ class LTASData(SpectroData):
             for ad in self.audio_data.split(self.nb_time_bins)
         ]
 
+        if depth != 0:
+            return np.vstack(
+                [self.mean_value_part(sub_spectro) for sub_spectro in sub_spectros],
+            ).T
+
         return np.vstack(
-            [
-                np.mean(sub_spectro.get_value(depth + 1), axis=1)
-                for sub_spectro in (
-                    sub_spectros
-                    if depth != 0
-                    else tqdm(sub_spectros, disable=os.environ.get("DISABLE_TQDM", ""))
-                )
-            ],
+            list(multiprocess(self.mean_value_part, sub_spectros)),
         ).T
 
     @classmethod
@@ -223,6 +233,51 @@ class LTASData(SpectroData):
             v_lim=v_lim,
             colormap=colormap,
             nb_time_bins=nb_time_bins,
+        )
+
+    def to_dict(self, embed_sft: bool = True) -> dict:
+        """Serialize a LTASData to a dictionary.
+
+        Parameters
+        ----------
+        embed_sft: bool
+            If True, the SFT parameters will be included in the dictionary.
+            In a case where multiple SpectroData that share a same SFT are serialized,
+            SFT parameters shouldn't be included in the dictionary, as the window
+            values might lead to large redundant data.
+            Rather, the SFT parameters should be serialized in
+            a SpectroDataset dictionary so that it can be only stored once
+            for all SpectroData instances.
+
+        Returns
+        -------
+        dict:
+            The serialized dictionary representing the LTASData.
+
+        """
+        return super().to_dict() | {"nb_time_bins": self.nb_time_bins}
+
+    @classmethod
+    def from_dict(cls, dictionary: dict, sft: ShortTimeFFT | None = None) -> LTASData:
+        """Deserialize a LTASDataset from a dictionary.
+
+        Parameters
+        ----------
+        dictionary: dict
+            The serialized dictionary representing the AudioData.
+        sft: ShortTimeFFT | None
+            The ShortTimeFFT used to compute the spectrogram.
+            If not provided, the SFT parameters must be included in the dictionary.
+
+        Returns
+        -------
+        LTASDataset
+            The deserialized LTASDataset.
+
+        """
+        return cls.from_spectro_data(
+            SpectroData.from_dict(dictionary),
+            nb_time_bins=dictionary["nb_time_bins"],
         )
 
     @staticmethod

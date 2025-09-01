@@ -170,6 +170,18 @@ If you edited the analysis ``AudioDataset`` as explained in the :ref:`Checking/E
 
     dataset.run_analysis(analysis=analysis, audio_dataset=ads)
 
+
+.. note::
+
+    Any ``AnalysisType.Spectrogram`` can be computed as a :ref:`Long Term Average Spectrum <ltas>` by setting the ``nb_ltas_time_bins`` parameter to an integer value.
+
+    When the field is at the default ``None`` value, spectrograms are computed regularly:
+
+    .. code-block:: python
+
+        # limit spectrograms to 3000 averaged time bins:
+        dataset.run_analysis(analysis=analysis, audio_dataset=ads, nb_ltas_time_bins=3000)
+
 Simple Example: Reshaping audio
 """""""""""""""""""""""""""""""
 

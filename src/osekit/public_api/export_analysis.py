@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from osekit import config
 from osekit.config import global_logging_context as glc
 from osekit.config import resample_quality_settings
 from osekit.public_api.analysis import AnalysisType
@@ -227,15 +228,32 @@ if __name__ == "__main__":
         help="The umask to apply on the created file permissions.",
     )
     parser.add_argument(
-        "--tqdm_disable",
+        "--tqdm-disable",
         type=int,
         default=1,
         help="Disable TQDM progress bars.",
+    )
+    parser.add_argument(
+        "--multiprocessing",
+        type=str,
+        default="false",
+        help="Turn multiprocessing on or off.",
+    )
+    parser.add_argument(
+        "--nb-processes",
+        type=str,
+        default=None,
+        help="Set the number of processes to use.",
     )
 
     args = parser.parse_args()
 
     os.environ["DISABLE_TQDM"] = "" if not args.tqdm_disable else str(args.tqdm_disable)
+
+    config.multiprocessing["is_active"] = args.multiprocessing.lower() == "true"
+    config.nb_processes = (
+        None if args.nb_processes.lower() == "none" else int(args.nb_processes)
+    )
 
     os.umask(args.umask)
 

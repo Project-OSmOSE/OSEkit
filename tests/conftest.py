@@ -114,8 +114,8 @@ def patch_filehandlers(
 
 
 @pytest.fixture(autouse=True)
-def disable_tqdm() -> None:
-    os.environ["DISABLE_TQDM"] = "1"
+def disable_tqdm(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DISABLE_TQDM", "1")
 
 
 @pytest.fixture
