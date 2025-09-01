@@ -20,25 +20,27 @@ from osekit.utils.path_utils import move_tree
 def aplose_dataframe() -> pd.DataFrame:
     data = pd.DataFrame(
         {
-            "dataset": ["dataset_test", "dataset_test", "dataset_test"],
-            "filename": ["file1.wav", "file2.wav", "file3.wav"],
-            "start_time": [0, 0, 5.9],
-            "end_time": [60, 60, 8.1],
-            "start_frequency": [0, 0, 18500.0],
-            "end_frequency": [96000, 96000, 53000.0],
-            "annotation": ["boat", "boat", "boat"],
-            "annotator": ["bbjuni", "bbjuni", "bbjuni"],
+            "dataset": ["dataset_test", "dataset_test", "dataset_test", "dataset_test"],
+            "filename": ["file1.wav", "file2.wav", "file3.wav", "file4.wav"],
+            "start_time": [0, 0, 5.9, 0],
+            "end_time": [30, 30, 8.1, 30],
+            "start_frequency": [0, 0, 18500.0, 0],
+            "end_frequency": [96000, 96000, 53000.0, 96000],
+            "annotation": ["boat", "boat", "boat", "boat"],
+            "annotator": ["bbjuni", "bbjuni", "bbjuni", "bbjuni"],
             "start_datetime": [
                 pd.Timestamp("2020-05-29T11:30:00.000+00:00"),
                 pd.Timestamp("2020-05-29T11:31:00.000+00:00"),
                 pd.Timestamp("2020-05-29T11:31:05.900+00:00"),
+                pd.Timestamp("2020-05-29T11:32:50.000+00:00"),
             ],
             "end_datetime": [
-                pd.Timestamp("2020-05-29T11:31:00.000+00:00"),
-                pd.Timestamp("2020-05-29T11:32:00.000+00:00"),
-                pd.Timestamp("2020-05-29T11:32:08.100+00:00"),
+                pd.Timestamp("2020-05-29T11:30:30.000+00:00"),
+                pd.Timestamp("2020-05-29T11:31:30.000+00:00"),
+                pd.Timestamp("2020-05-29T11:31:08.100+00:00"),
+                pd.Timestamp("2020-05-29T11:33:20.000+00:00"),
             ],
-            "is_box": [0, 0, 1],
+            "is_box": [0, 0, 1, 0],
         },
     )
 
@@ -46,7 +48,7 @@ def aplose_dataframe() -> pd.DataFrame:
 
 
 @pytest.fixture
-def raven_timestamps() -> list:
+def audio_timestamps() -> list:
     return list(
         pd.date_range(
             start="2020-05-29T11:30:00.000+00:00",
@@ -57,31 +59,32 @@ def raven_timestamps() -> list:
 
 
 @pytest.fixture
-def raven_durations(raven_timestamps: pytest.fixture) -> list:
-    return [60] * len(raven_timestamps)
+def audio_durations(audio_timestamps: pytest.fixture) -> list:
+    return [30] * len(audio_timestamps)
 
 
 @pytest.mark.unit
 def test_aplose2raven(
     aplose_dataframe: pytest.fixture,
-    raven_timestamps: pytest.fixture,
-    raven_durations: pytest.fixture,
+    audio_timestamps: pytest.fixture,
+    audio_durations: pytest.fixture,
 ) -> None:
     raven_dataframe = aplose2raven(
         aplose_result=aplose_dataframe,
-        audio_datetimes=raven_timestamps,
-        audio_durations=raven_durations,
+        audio_datetimes=audio_timestamps,
+        audio_durations=audio_durations,
     )
 
     expected_raven_dataframe = pd.DataFrame(
         {
-            "Selection": [1, 2, 3],
-            "View": [1, 1, 1],
-            "Channel": [1, 1, 1],
-            "Begin Time (s)": [0.0, 60.0, 65.9],
-            "End Time (s)": [60.0, 120.0, 128.1],
-            "Low Freq (Hz)": [0.0, 0.0, 18500.0],
-            "High Freq (Hz)": [96000.0, 96000.0, 53000.0],
+            "Selection": [1, 2, 3, 4],
+            "View": [1, 1, 1, 1],
+            "Channel": [1, 1, 1, 1],
+            "Begin Time (s)": [0.0, 30.0, 35.9, 90.0],
+            "End Time (s)": [30.0, 60.0, 38.1, 110.0],
+            "Low Freq (Hz)": [0.0, 0.0, 18500.0, 0.0],
+            "High Freq (Hz)": [96000.0, 96000.0, 53000.0, 96000.0],
+            "Begin Date Time Real": aplose_dataframe["start_datetime"],
         },
     )
 
