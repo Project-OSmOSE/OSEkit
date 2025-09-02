@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import enum
 from typing import Literal
 
 import numpy as np
@@ -124,13 +125,40 @@ def normalize_dc_reject(values: np.ndarray) -> np.ndarray:
     return values - values.mean()
 
 
+def normalize_peak(values: np.ndarray) -> np.ndarray:
+    """Return values normalized so that the peak value is 1.0."""
+    return values / values.max()
+
+
 def normalize_zscore(values: np.ndarray) -> np.ndarray:
     """Return normalized zscore from the audio data."""
     return (values - values.mean()) / values.std()
 
 
-normalizations = {
-    "raw": normalize_raw,
-    "dc_reject": normalize_dc_reject,
-    "zscore": normalize_zscore,
-}
+class Normalization(enum.Flag):
+    RAW = enum.auto()
+    DC_REJECT = enum.auto()
+    PEAK = enum.auto()
+    ZSCORE = enum.auto()
+
+    def __or__(self, other) -> enum.Flag:
+        combined = super().__or__(other)
+
+        # Only REJECT_DC can be combined with other normalizations
+        mask = combined.value & ~Normalization.DC_REJECT.value
+        if mask & (mask - 1):
+            message = "Combined normalizations can only be DC_REJECT combined with exactly one other normalization type."
+            raise ValueError(message)
+
+        return combined
+
+
+def normalize(values: np.ndarray, normalization: Normalization) -> np.ndarray:
+    """Normalize the audio data."""
+    if Normalization.DC_REJECT in normalization:
+        values = normalize_dc_reject(values)
+    if Normalization.PEAK in normalization:
+        values = normalize_peak(values)
+    if Normalization.ZSCORE in normalization:
+        values = normalize_zscore(values)
+    return values
