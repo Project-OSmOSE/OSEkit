@@ -390,6 +390,12 @@ def test_get_closest_value_index(
             np.array([-1.224744871391589, 0.0, 1.224744871391589]),
             id="zscore",
         ),
+        pytest.param(
+            np.array([0.0, 2.0, 4.0]),
+            Normalization.DC_REJECT | Normalization.PEAK,
+            np.array([-1.0, 0.0, 1.0]),
+            id="dc_reject_and_peak",
+        ),
     ],
 )
 def test_normalization(
