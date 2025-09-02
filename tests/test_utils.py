@@ -13,7 +13,7 @@ from osekit.utils.core_utils import (
     locked,
     nb_files_per_batch,
 )
-from osekit.utils.audio_utils import normalizations
+from osekit.utils.audio_utils import Normalization, normalize
 from osekit.utils.formatting_utils import aplose2raven
 from osekit.utils.path_utils import move_tree
 
@@ -368,23 +368,32 @@ def test_get_closest_value_index(
     [
         pytest.param(
             np.array([0.0, 1.0, 2.0]),
-            "raw",
+            Normalization.RAW,
             np.array([0.0, 1.0, 2.0]),
+            id="raw",
         ),
         pytest.param(
             np.array([0.0, 1.0, 2.0]),
-            "dc_reject",
+            Normalization.DC_REJECT,
             np.array([-1.0, 0.0, 1.0]),
+            id="dc_reject",
         ),
         pytest.param(
             np.array([0.0, 1.0, 2.0]),
-            "zscore",
+            Normalization.PEAK,
+            np.array([0.0, 0.5, 1.0]),
+            id="peak",
+        ),
+        pytest.param(
+            np.array([0.0, 1.0, 2.0]),
+            Normalization.ZSCORE,
             np.array([-1.224744871391589, 0.0, 1.224744871391589]),
+            id="zscore",
         ),
     ],
 )
 def test_normalization(
-    values: np.ndarray, normalization: str, expected: np.ndarray
+    values: np.ndarray, normalization: Normalization, expected: np.ndarray
 ) -> None:
-    normalized = normalizations[normalization](values)
+    normalized = normalize(values=values, normalization=normalization)
     assert np.array_equal(normalized, expected)
