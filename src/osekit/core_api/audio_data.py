@@ -7,7 +7,7 @@ The data is accessed via an AudioItem object per AudioFile.
 from __future__ import annotations
 
 from math import ceil
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 import numpy as np
 import soundfile as sf
@@ -20,7 +20,7 @@ from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.audio_item import AudioItem
 from osekit.core_api.base_data import BaseData
 from osekit.core_api.instrument import Instrument
-from osekit.utils.audio_utils import resample, normalizations
+from osekit.utils.audio_utils import resample, Normalization, normalize
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -40,7 +40,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         end: Timestamp | None = None,
         sample_rate: int | None = None,
         instrument: Instrument | None = None,
-        normalization: Literal["raw", "dc_reject", "zscore"] = "raw",
+        normalization: Normalization = Normalization.RAW,
     ) -> None:
         """Initialize an AudioData from a list of AudioItems.
 
@@ -59,7 +59,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         instrument: Instrument | None
             Instrument that might be used to obtain acoustic pressure from
             the wav audio data.
-        normalization: Literal["raw","dc_reject","zscore"]
+        normalization: Normalization
             The type of normalization to apply to the audio data.
 
         """
@@ -82,12 +82,12 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         return data_length if self.nb_channels <= 1 else (data_length, self.nb_channels)
 
     @property
-    def normalization(self) -> Literal["raw", "dc_reject", "zscore"]:
+    def normalization(self) -> Normalization:
         """The type of normalization to apply to the audio data."""
         return self._normalization
 
     @normalization.setter
-    def normalization(self, value: Literal["raw", "dc_reject", "zscore"]) -> None:
+    def normalization(self, value: Normalization) -> None:
         self._normalization = value
 
     def __eq__(self, other: AudioData) -> bool:
@@ -132,7 +132,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             data[idx : idx + len(item_data)] = item_data
             idx += len(item_data)
 
-        return normalizations[self.normalization](data)
+        return normalize(data, self.normalization)
 
     def get_value_calibrated(self) -> np.ndarray:
         """Return the value of the audio data accounting for the calibration factor.
@@ -290,7 +290,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             | instrument_dict
             | {
                 "sample_rate": self.sample_rate,
-                "normalization": self.normalization,
+                "normalization": self.normalization.value,
             }
         )
 
@@ -318,7 +318,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         return cls.from_base_data(
             data=base_data,
             sample_rate=dictionary["sample_rate"],
-            normalization=dictionary["normalization"],
+            normalization=Normalization(dictionary["normalization"]),
             instrument=instrument,
         )
 
@@ -330,7 +330,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         end: Timestamp | None = None,
         sample_rate: float | None = None,
         instrument: Instrument | None = None,
-        normalization: Literal["raw", "dc_reject", "zscore"] = "raw",
+        normalization: Normalization = Normalization.RAW,
     ) -> AudioData:
         """Return an AudioData object from a list of AudioFiles.
 
@@ -349,7 +349,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         instrument: Instrument | None
             Instrument that might be used to obtain acoustic pressure from
             the wav audio data.
-        normalization: Literal["raw","dc_reject","zscore"]
+        normalization: Normalization
             The type of normalization to apply to the audio data.
 
         Returns
@@ -371,7 +371,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         data: BaseData,
         sample_rate: float | None = None,
         instrument: Instrument | None = None,
-        normalization: Literal["raw", "dc_reject", "zscore"] = "raw",
+        normalization: Normalization = Normalization.RAW,
     ) -> AudioData:
         """Return an AudioData object from a BaseData object.
 
