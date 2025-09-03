@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
@@ -21,6 +21,7 @@ from osekit.core_api.instrument import Instrument
 from osekit.core_api.spectro_data import SpectroData
 from osekit.core_api.spectro_dataset import SpectroDataset
 from osekit.core_api.spectro_file import SpectroFile
+from osekit.utils.audio_utils import Normalization
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -39,7 +40,7 @@ if TYPE_CHECKING:
             None,
             None,
             48_000,
-            "raw",
+            Normalization.RAW,
             id="full_file_no_resample",
         ),
         pytest.param(
@@ -52,7 +53,7 @@ if TYPE_CHECKING:
             None,
             None,
             48_000,
-            "zscore",
+            Normalization.ZSCORE,
             id="normalized_audio",
         ),
         pytest.param(
@@ -65,7 +66,7 @@ if TYPE_CHECKING:
             None,
             None,
             24_000,
-            "raw",
+            Normalization.RAW,
             id="full_file_downsample",
         ),
         pytest.param(
@@ -78,7 +79,7 @@ if TYPE_CHECKING:
             None,
             None,
             96_000,
-            "raw",
+            Normalization.RAW,
             id="full_file_upsample",
         ),
         pytest.param(
@@ -91,7 +92,7 @@ if TYPE_CHECKING:
             Timestamp("2024-01-01 12:00:01"),
             Timestamp("2024-01-01 12:00:02"),
             48_000,
-            "raw",
+            Normalization.RAW,
             id="file_part",
         ),
         pytest.param(
@@ -104,7 +105,7 @@ if TYPE_CHECKING:
             Timestamp("2024-01-01 12:00:01"),
             Timestamp("2024-01-01 12:00:02"),
             24_000,
-            "raw",
+            Normalization.RAW,
             id="two_files_with_resample",
         ),
         pytest.param(
@@ -118,7 +119,7 @@ if TYPE_CHECKING:
             Timestamp("2024-01-01 12:00:01"),
             Timestamp("2024-01-01 12:00:04"),
             48_000,
-            "raw",
+            Normalization.RAW,
             id="two_files_with_gap",
         ),
         pytest.param(
@@ -132,7 +133,7 @@ if TYPE_CHECKING:
             Timestamp("2024-01-01 12:00:01+0200"),
             Timestamp("2024-01-01 12:00:04+0200"),
             48_000,
-            "raw",
+            Normalization.RAW,
             id="localized_files",
         ),
         pytest.param(
@@ -146,7 +147,7 @@ if TYPE_CHECKING:
             Timestamp("2024-01-01 12:00:01+0200"),
             Timestamp("2024-01-01 12:00:04+0200"),
             48_000,
-            "dc_reject",
+            Normalization.DC_REJECT,
             id="localized_normalized_files",
         ),
     ],
@@ -158,7 +159,7 @@ def test_audio_data_serialization(
     begin: Timestamp | None,
     end: Timestamp | None,
     sample_rate: float,
-    normalization: Literal["raw", "dc_reject", "zscore"],
+    normalization: Normalization,
 ) -> None:
     audio_files, _ = audio_files
 
@@ -184,7 +185,7 @@ def test_audio_data_serialization(
             },
             Timedelta(seconds=1),
             48_000,
-            "raw",
+            Normalization.RAW,
             None,
             id="one_audio_data_one_file_no_resample",
         ),
@@ -196,7 +197,7 @@ def test_audio_data_serialization(
             },
             Timedelta(seconds=2),
             48_000,
-            "raw",
+            Normalization.RAW,
             None,
             id="one_audio_data_two_files_no_resample",
         ),
@@ -208,7 +209,7 @@ def test_audio_data_serialization(
             },
             Timedelta(seconds=2),
             24_000,
-            "raw",
+            Normalization.RAW,
             None,
             id="one_audio_data_two_files_downsample",
         ),
@@ -220,7 +221,7 @@ def test_audio_data_serialization(
             },
             Timedelta(seconds=1),
             [12_000, 24_000, 48_000, 96_000],
-            "raw",
+            Normalization.RAW,
             None,
             id="multiple_audio_data_different_sample_rates",
         ),
@@ -232,7 +233,7 @@ def test_audio_data_serialization(
             },
             Timedelta(seconds=1),
             48_000,
-            "raw",
+            Normalization.RAW,
             "merriweather post pavilion",
             id="named_ads",
         ),
@@ -245,7 +246,7 @@ def test_audio_data_serialization(
             },
             Timedelta(seconds=1),
             48_000,
-            "raw",
+            Normalization.RAW,
             "merriweather post pavilion",
             id="localized_ads",
         ),
@@ -257,7 +258,7 @@ def test_audio_dataset_serialization(
     audio_files: tuple[list[AudioFile], pytest.fixtures.Subrequest],
     data_duration: Timestamp | None,
     sample_rate: float | list[float],
-    normalization: Literal["raw", "dc_reject", "zscore"],
+    normalization: Normalization,
     name: str | None,
 ) -> None:
     audio_files, request = audio_files

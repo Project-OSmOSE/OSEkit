@@ -19,6 +19,7 @@ from osekit.core_api.instrument import Instrument
 from osekit.core_api.spectro_dataset import SpectroDataset
 from osekit.public_api.analysis import Analysis, AnalysisType
 from osekit.public_api.dataset import Dataset
+from osekit.utils.audio_utils import Normalization
 
 
 @pytest.mark.parametrize(
@@ -1088,7 +1089,7 @@ def test_edit_analysis_before_run(
     new_name = "new_analysis"
     new_instrument = Instrument(end_to_end_db=100)
     new_data = ads.data[::2]
-    new_normalization = "zscore"
+    new_normalization = Normalization.ZSCORE
 
     ads.sample_rate = new_sr
     analysis.sample_rate = new_sr

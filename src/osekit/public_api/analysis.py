@@ -4,6 +4,7 @@ from enum import Flag, auto
 from typing import TYPE_CHECKING, Literal
 
 from osekit.core_api.frequency_scale import Scale
+from osekit.utils.audio_utils import Normalization
 
 if TYPE_CHECKING:
     from pandas import Timedelta, Timestamp
@@ -68,7 +69,7 @@ class Analysis:
         data_duration: Timedelta | None = None,
         mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
         sample_rate: float | None = None,
-        normalization: Literal["raw", "dc_reject", "zscore"] = "raw",
+        normalization: Normalization = Normalization.RAW,
         name: str | None = None,
         subtype: str | None = None,
         fft: ShortTimeFFT | None = None,
@@ -107,7 +108,7 @@ class Analysis:
             Sample rate of the new analysis data.
             Audio data will be resampled if provided, else the sample rate
             will be set to the one of the original dataset.
-        normalization: Literal["raw", "dc_reject", "zscore"]
+        normalization: Normalization
             The type of normalization to apply to the audio data.
         name: str | None
             Name of the analysis dataset.

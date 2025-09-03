@@ -23,7 +23,7 @@ from osekit.core_api.audio_dataset import AudioDataset
 from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.audio_item import AudioItem
 from osekit.utils import audio_utils
-from osekit.utils.audio_utils import generate_sample_audio, normalizations
+from osekit.utils.audio_utils import generate_sample_audio, Normalization, normalize
 
 
 @pytest.mark.parametrize(
@@ -767,7 +767,7 @@ def test_audio_resample_quality(
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
                 "series_type": "increase",
             },
-            "raw",
+            Normalization.RAW,
             id="no_normalization",
         ),
         pytest.param(
@@ -778,7 +778,7 @@ def test_audio_resample_quality(
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
                 "series_type": "increase",
             },
-            "dc_reject",
+            Normalization.DC_REJECT,
             id="dc_reject",
         ),
         pytest.param(
@@ -789,7 +789,7 @@ def test_audio_resample_quality(
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
                 "series_type": "increase",
             },
-            "zscore",
+            Normalization.ZSCORE,
             id="z_score",
         ),
     ],
@@ -797,14 +797,14 @@ def test_audio_resample_quality(
 )
 def test_normalize_audio_data(
     audio_files: tuple[list[AudioFile], pytest.fixtures.Subrequest],
-    normalization: Literal["raw", "dc_reject", "zscore"],
+    normalization: Normalization,
 ) -> None:
     afs, _ = audio_files
 
     raw_data = np.linspace(0.0, 1.0, 10)
-    normalized_data = normalizations[normalization](raw_data)
+    normalized_data = normalize(values=raw_data, normalization=normalization)
 
-    if normalization == "raw":
+    if normalization == Normalization.RAW:
         assert np.array_equal(raw_data, normalized_data)
     else:
         assert not np.array_equal(raw_data, normalized_data)
