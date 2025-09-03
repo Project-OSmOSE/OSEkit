@@ -3,6 +3,8 @@ from __future__ import annotations
 import numpy as np
 from pandas import DataFrame, Timedelta, Timestamp
 
+
+
 def aplose2raven(
     aplose_result: DataFrame,
     audio_datetimes: list[Timestamp],
@@ -62,9 +64,9 @@ def aplose2raven(
     cumsum_adjust = list(np.cumsum(adjust))
 
     # adjusted datetimes to match Raven annoying functioning
-    begin_datetime_adjusted = []
-    end_datetime_adjusted = []
-    for (beg_det, end_det, beg_wav, ind) in (zip(aplose_result["start_datetime"], aplose_result["end_datetime"],
+    detection_begin_datetime_adjusted = []
+    detection_end_datetime_adjusted = []
+    for (detection_begin_time, detection_end_time, wav_begin_time, ind) in (zip(aplose_result["start_datetime"], aplose_result["end_datetime"],
                           aplose_result["wav_timestamp"], index_detection, strict=False)):
         """
         For duty cycled data, if the aplose_result detections were reshaped (eg : to 60-second duration),
@@ -75,32 +77,41 @@ def aplose2raven(
          at the appropriate timing in Raven (ie at the begining or end of a wav file).
         """
 
-        if (beg_wav + Timedelta(seconds=audio_durations[ind])) < beg_det < (beg_wav + Timedelta(seconds = filename_diff[ind])):
-            corr_dur = (audio_datetimes[ind + 1] - beg_det).total_seconds()
-            begin_datetime_adjusted.append(beg_det + Timedelta(seconds=cumsum_adjust[ind + 1]) + Timedelta(seconds=corr_dur))
-            end_datetime_adjusted.append(end_det + Timedelta(seconds=cumsum_adjust[ind + 1]))
-        elif (beg_wav + Timedelta(seconds=audio_durations[ind])) < end_det < (beg_wav + Timedelta(seconds = filename_diff[ind])):
-            begin_datetime_adjusted.append(
-                beg_det + Timedelta(seconds=cumsum_adjust[ind])
+        wav_begin_time_adjusted = wav_begin_time + Timedelta(seconds=audio_durations[ind])
+        next_wav_begin_time_adjusted = wav_begin_time + Timedelta(seconds = filename_diff[ind])
+        if wav_begin_time_adjusted < detection_begin_time < next_wav_begin_time_adjusted:
+            correction_duration = (audio_datetimes[ind + 1] - detection_begin_time).total_seconds()
+            detection_begin_datetime_adjusted.append(detection_begin_time +
+                                                     Timedelta(seconds=cumsum_adjust[ind + 1]) +
+                                                     Timedelta(seconds=correction_duration))
+            detection_end_datetime_adjusted.append(detection_end_time +
+                                                   Timedelta(seconds=cumsum_adjust[ind + 1]))
+        elif wav_begin_time_adjusted < detection_end_time < next_wav_begin_time_adjusted:
+            detection_begin_datetime_adjusted.append(
+                detection_begin_time + Timedelta(seconds=cumsum_adjust[ind])
             )
-            corr_dur = (end_det-beg_det).total_seconds() - ((beg_wav + Timedelta(seconds=audio_durations[ind])) -beg_det).total_seconds()
-            end_datetime_adjusted.append(end_det + Timedelta(seconds=cumsum_adjust[ind]) - Timedelta(seconds=corr_dur))
+            correction_duration = ((detection_end_time-detection_begin_time).total_seconds() -
+                                   ((wav_begin_time + Timedelta(seconds=audio_durations[ind]))
+                                    -detection_begin_time).total_seconds())
+            detection_end_datetime_adjusted.append(detection_end_time +
+                                                   Timedelta(seconds=cumsum_adjust[ind]) -
+                                                   Timedelta(seconds=correction_duration))
 
         else:
             # Else, apply normal raven time correction
-            begin_datetime_adjusted.append(
-                beg_det + Timedelta(seconds=cumsum_adjust[ind])
+            detection_begin_datetime_adjusted.append(
+                detection_begin_time + Timedelta(seconds=cumsum_adjust[ind])
             )
-            end_datetime_adjusted.append(
-                end_det + Timedelta(seconds=cumsum_adjust[ind])
+            detection_end_datetime_adjusted.append(
+                detection_end_time + Timedelta(seconds=cumsum_adjust[ind])
             )
 
     # Convert the datetimes to seconds from the start of first wav (raven format)
     begin_time_adjusted = [
-        (d - audio_datetimes[0]).total_seconds() for d in begin_datetime_adjusted
+        (d - audio_datetimes[0]).total_seconds() for d in detection_begin_datetime_adjusted
     ]
     end_time_adjusted = [
-        (d - audio_datetimes[0]).total_seconds() for d in end_datetime_adjusted
+        (d - audio_datetimes[0]).total_seconds() for d in detection_end_datetime_adjusted
     ]
     # Build corrected Raven selection table
     raven_result = DataFrame()
