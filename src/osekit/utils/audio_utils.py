@@ -135,22 +135,28 @@ def normalize_zscore(values: np.ndarray) -> np.ndarray:
     return (values - values.mean()) / values.std()
 
 
-class Normalization(enum.Flag):
-    RAW = enum.auto()
-    DC_REJECT = enum.auto()
-    PEAK = enum.auto()
-    ZSCORE = enum.auto()
+class NormalizationValider(enum.EnumMeta):
+    """
+    Metaclass used for validating the normalization flag,
+    as only REJECT_DC can be combined with (exactly) one other normalization.
+    """
 
-    def __or__(self, other) -> enum.Flag:
-        combined = super().__or__(other)
+    def __call__(cls, *args, **kwargs):
+        instance = super().__call__(*args, **kwargs)
 
-        # Only REJECT_DC can be combined with other normalizations
-        mask = combined.value & ~Normalization.DC_REJECT.value
+        mask = instance.value & ~Normalization.DC_REJECT.value
         if mask & (mask - 1):
             message = "Combined normalizations can only be DC_REJECT combined with exactly one other normalization type."
             raise ValueError(message)
 
-        return combined
+        return instance
+
+
+class Normalization(enum.Flag, metaclass=NormalizationValider):
+    RAW = enum.auto()
+    DC_REJECT = enum.auto()
+    PEAK = enum.auto()
+    ZSCORE = enum.auto()
 
 
 def normalize(values: np.ndarray, normalization: Normalization) -> np.ndarray:
