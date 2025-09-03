@@ -6,3 +6,4 @@
 
    publicapi
    coreapi
+   utils

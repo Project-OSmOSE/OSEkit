@@ -113,7 +113,7 @@ Eventual time gap between audio items are filled with ``0.`` values.
 Normalization
 """""""""""""
 
-The fetched audio data can be normalized according to the presets given by the :class:`osekit.utils.audio_utils.normalization` flag:
+The fetched audio data can be normalized according to the presets given by the :class:`osekit.utils.audio_utils.Normalization` flag:
 
 .. list-table:: Normalization presets
    :widths: 10 10
