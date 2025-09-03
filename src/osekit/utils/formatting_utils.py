@@ -54,14 +54,14 @@ def aplose2raven(
         - 1
     )
 
-"""
-The following time adjustment is necessary because Raven does not account for
-the duty cycle, nor for any potential offset between the end of one file and the start
-of the next. To ensure that detection timestamps in the Aplose format align perfectly
-with the spectrograms displayed by Raven, we need to correct the number of
-seconds, since the software only uses the elapsed time from the beginning of the
-first file to generate the bounding boxes.
-"""
+    """
+    The following time adjustment is necessary because Raven does not account for
+    the duty cycle, nor for any potential offset between the end of one file and the start
+    of the next. To ensure that detection timestamps in the Aplose format align perfectly
+    with the spectrograms displayed by Raven, we need to correct the number of
+    seconds, since the software only uses the elapsed time from the beginning of the
+    first file to generate the bounding boxes.
+    """
 
     # Add the begin time of the audio file corresponding to each detection
     aplose_result["wav_timestamp"] = [list_audio_begin_time[i] for i in index_detection]
