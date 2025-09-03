@@ -3,11 +3,11 @@
 <div align="center">
 
 <a href="https://github.com/Project-OSmOSE/OSEkit">
-    <img src="docs/logo/osekit.png" alt="OSEkit logo" title="OSEkit" height="120" />
+    <img src="https://raw.githubusercontent.com/Project-OSmOSE/OSEkit/refs/heads/main/docs/logo/osekit.png" alt="OSEkit logo" title="OSEkit" height="120" />
 </a>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <a href="https://osmose.ifremer.fr/">
-    <img src="docs/logo/osmose_texte_sombre.png" alt="OSmOSE logo" title="OSmOSE" height="120" />
+    <img src="https://raw.githubusercontent.com/Project-OSmOSE/OSEkit/refs/heads/main/docs/logo/osmose_texte_sombre.png" alt="OSmOSE logo" title="OSmOSE" height="120" />
 </a>
 
 <br>
