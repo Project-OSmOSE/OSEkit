@@ -14,6 +14,7 @@ from osekit.core_api.audio_data import AudioData
 from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.base_dataset import BaseDataset
 from osekit.core_api.json_serializer import deserialize_json
+from osekit.utils.audio_utils import Normalization
 from osekit.utils.multiprocess_utils import multiprocess
 
 if TYPE_CHECKING:
@@ -74,15 +75,13 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             data.sample_rate = sample_rate
 
     @property
-    def normalization(self) -> Literal["raw", "dc_reject", "zscore"]:
+    def normalization(self) -> Normalization:
         """Return the most frequent normalization among those of this dataset data."""
         normalizations = [data.normalization for data in self.data]
         return max(set(normalizations), key=normalizations.count)
 
     @normalization.setter
-    def normalization(
-        self, normalization: Literal["raw", "dc_reject", "zscore"]
-    ) -> None:
+    def normalization(self, normalization: Normalization) -> None:
         for data in self.data:
             data.normalization = normalization
 
@@ -180,7 +179,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         sample_rate: float | None = None,
         name: str | None = None,
         instrument: Instrument | None = None,
-        normalization: Literal["raw", "dc_reject", "zscore"] = "raw",
+        normalization: Normalization = Normalization.RAW,
         **kwargs: any,
     ) -> AudioDataset:
         """Return an AudioDataset from a folder containing the audio files.
@@ -224,7 +223,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         instrument: Instrument | None
             Instrument that might be used to obtain acoustic pressure from
             the wav audio data.
-        normalization: Literal["raw","dc_reject","zscore"]
+        normalization: Normalization
             The type of normalization to apply to the audio data.
         kwargs: any
             Keyword arguments passed to the BaseDataset.from_folder classmethod.
@@ -267,7 +266,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         sample_rate: float | None = None,
         name: str | None = None,
         instrument: Instrument | None = None,
-        normalization: Literal["raw", "dc_reject", "zscore"] = "raw",
+        normalization: Normalization = Normalization.RAW,
     ) -> AudioDataset:
         """Return an AudioDataset object from a list of AudioFiles.
 
@@ -302,7 +301,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         instrument: Instrument | None
             Instrument that might be used to obtain acoustic pressure from
             the wav audio data.
-        normalization: Literal["raw","dc_reject","zscore"]
+        normalization: Normalization
             The type of normalization to apply to the audio data.
 
         Returns
@@ -333,7 +332,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         sample_rate: float | None = None,
         name: str | None = None,
         instrument: Instrument | None = None,
-        normalization: Literal["raw", "dc_reject", "zscore"] = "raw",
+        normalization: Normalization = Normalization.RAW,
     ) -> AudioDataset:
         """Return an AudioDataset object from a BaseDataset object."""
         return cls(
