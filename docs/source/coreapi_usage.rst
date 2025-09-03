@@ -113,7 +113,7 @@ Eventual time gap between audio items are filled with ``0.`` values.
 Normalization
 """""""""""""
 
-The fetched audio data can be normalized according to the following presets:
+The fetched audio data can be normalized according to the presets given by the :class:`osekit.utils.audio_utils.normalization` flag:
 
 .. list-table:: Normalization presets
    :widths: 10 10
@@ -121,24 +121,48 @@ The fetched audio data can be normalized according to the following presets:
 
    * - Name
      - Description
-   * - ``raw``
+   * - ``Normalization.RAW``
      - :math:`x`
-   * - ``dc_reject``
+   * - ``Normalization.DC_REJECT``
      - :math:`x-\overline{ x }`
-   * - ``zscore``
+   * - ``Normalization.PEAK``
+     - :math:`\frac{x}{x_\text{max}}`
+   * - ``Normalization.ZSCORE``
      - :math:`\frac{ x-\overline{x} }{\sigma (x)}`
 
 To normalize the data, simply set the :attr:`osekit.core_api.audio_data.AudioData.normalization` property to the
-requested normalization name:
+requested normalization flag:
 
 .. code-block:: python
 
     from osekit.core_api.audio_data.AudioData import AudioData
+    from osekit.utils.audio_utils.normalization import Normalization
 
     ad = AudioData(...)
-    ad.normalization = "zscore" # Note: normalization also is a parameter of the AudioData initializer
+    ad.normalization = Normalization.ZSCORE # Note: normalization also is a parameter of the AudioData initializer
 
     v = ad.get_value() # The fetched data will then be normalized
+
+.. note::
+
+    The ``Normalization.DC_REJECT`` normalization can be combined with any single other normalization:
+
+    .. code-block:: python
+
+        from osekit.utils.audio_utils.normalization import Normalization
+
+        dc_peak = Normalization.DC_REJECT | Normalization.PEAK
+
+.. warning::
+
+    Instantiating another combination of normalizations will raise an error:
+
+    .. code-block:: python
+
+        from osekit.utils.audio_utils.normalization import Normalization
+
+        incorrect_normalization = Normalization.RAW | Normalization.PEAK
+        incorrect_normalization = Normalization.DC_REJECT | Normalization.RAW | Normalization.PEAK
 
 Calibration
 """""""""""
