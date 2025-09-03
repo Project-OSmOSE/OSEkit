@@ -71,7 +71,7 @@ def test_aplose2raven(
 ) -> None:
     raven_dataframe = aplose2raven(
         aplose_result=aplose_dataframe,
-        audio_datetimes=audio_timestamps,
+        list_audio_begin_time=audio_timestamps,
         audio_durations=audio_durations,
     )
 
