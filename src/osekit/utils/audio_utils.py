@@ -127,7 +127,7 @@ def normalize_dc_reject(values: np.ndarray) -> np.ndarray:
 
 def normalize_peak(values: np.ndarray) -> np.ndarray:
     """Return values normalized so that the peak value is 1.0."""
-    return values / values.max()
+    return values / max(abs(values))
 
 
 def normalize_zscore(values: np.ndarray) -> np.ndarray:
