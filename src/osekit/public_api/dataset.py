@@ -477,6 +477,25 @@ class Dataset:
     def _sort_spectro_dataset(self, dataset: SpectroDataset | LTASDataset) -> None:
         raise NotImplementedError
 
+    def remove_dataset(self, dataset_name: str) -> None:
+        """Remove an analysis dataset.
+
+        WARNING: all the analysis output files will be deleted.
+
+        Parameters
+        ----------
+        dataset_name: str
+            Name of the dataset to remove.
+        """
+        dataset_to_remove = self.get_dataset(dataset_name)
+        if dataset_to_remove is None:
+            return
+        self.datasets = [
+            dataset for dataset in self.datasets if dataset != dataset_to_remove
+        ]
+        shutil.rmtree(str(dataset_to_remove.folder))
+        self.write_json()
+
     def get_dataset(self, dataset_name: str) -> type[DatasetChild] | None:
         """Get an analysis dataset from its name.
 
@@ -492,6 +511,8 @@ class Dataset:
 
         """
         if dataset_name not in self.datasets:
+            message = f"Dataset '{dataset_name}' not found."
+            self.logger.warning(message)
             return None
         return self.datasets[dataset_name]["dataset"]
 
