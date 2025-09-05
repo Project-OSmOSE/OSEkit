@@ -458,6 +458,18 @@ def test_combined_normalization(
             id="peak",
         ),
         pytest.param(
+            np.array([-0.25, 0.5, 0.0]),
+            Normalization.PEAK,
+            np.array([-0.5, 1.0, 0.0]),
+            id="peak_with_negative_values",
+        ),
+        pytest.param(
+            np.array([-0.5, 0.25, 0.0]),
+            Normalization.PEAK,
+            np.array([-1.0, 0.5, 0.0]),
+            id="peak_with_negative_max",
+        ),
+        pytest.param(
             np.array([0.0, 1.0, 2.0]),
             Normalization.ZSCORE,
             np.array([-1.224744871391589, 0.0, 1.224744871391589]),
