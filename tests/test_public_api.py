@@ -1093,3 +1093,53 @@ def test_edit_analysis_before_run(
 
     # Instrument has been edited
     assert analysis_ads.instrument.end_to_end_db == new_instrument.end_to_end_db
+
+
+def test_remove_analysis_dataset(
+    tmp_path: pytest.fixture, audio_files: pytest.fixture
+) -> None:
+    dataset = Dataset(
+        folder=tmp_path,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+    )
+
+    dataset.build()
+
+    analysis_1 = Analysis(
+        analysis_type=AnalysisType.AUDIO | AnalysisType.SPECTROGRAM,
+        data_duration=dataset.origin_dataset.duration / 10,
+        name="analysis_1",
+        sample_rate=24_000,
+        fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
+    )
+
+    analysis_2 = Analysis(
+        analysis_type=AnalysisType.AUDIO | AnalysisType.SPECTROGRAM,
+        data_duration=dataset.origin_dataset.duration / 10,
+        name="analysis_2",
+        sample_rate=20_000,
+        fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=20_000),
+    )
+
+    dataset.run_analysis(analysis_1)
+    dataset.run_analysis(analysis_2)
+
+    ds1 = dataset.get_dataset(analysis_1.name)
+    ds2 = dataset.get_dataset(analysis_2.name)
+    ds3 = dataset.get_dataset(f"{analysis_1.name}_audio")
+    ds4 = dataset.get_dataset(f"{analysis_2.name}_audio")
+
+    datasets = [ds1, ds2, ds3, ds4]
+
+    for i, ds in enumerate(datasets):
+        assert ds.name in dataset.datasets.keys()
+        assert ds.folder.exists()
+
+        dataset._delete_dataset(str(ds.name))
+
+        assert ds.name not in dataset.datasets.keys()
+        assert not ds.folder.exists()
+
+        # The JSON should be updated
+        new_dataset = Dataset.from_json(dataset.folder / "dataset.json")
+        assert ds.name not in new_dataset.datasets.keys()

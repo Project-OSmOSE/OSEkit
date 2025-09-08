@@ -304,7 +304,7 @@ class Dataset:
         )
 
         if AnalysisType.AUDIO in analysis.analysis_type:
-            self._add_audio_dataset(ads=ads)
+            self._add_audio_dataset(ads=ads, analysis_name=analysis.name)
 
         sds = None
         if analysis.is_spectro:
@@ -312,7 +312,7 @@ class Dataset:
                 analysis=analysis,
                 audio_dataset=ads,
             )
-            self._add_spectro_dataset(sds=sds)
+            self._add_spectro_dataset(sds=sds, analysis_name=analysis.name)
 
         self.export_analysis(
             analysis_type=analysis.analysis_type,
@@ -327,9 +327,14 @@ class Dataset:
     def _add_audio_dataset(
         self,
         ads: AudioDataset,
+        analysis_name: str,
     ) -> None:
         ads.folder = self._get_audio_dataset_subpath(ads=ads)
-        self.datasets[ads.name] = {"class": type(ads).__name__, "dataset": ads}
+        self.datasets[ads.name] = {
+            "class": type(ads).__name__,
+            "analysis": analysis_name,
+            "dataset": ads,
+        }
         ads.write_json(ads.folder)
 
     def _get_audio_dataset_subpath(
@@ -444,9 +449,14 @@ class Dataset:
     def _add_spectro_dataset(
         self,
         sds: SpectroDataset | LTASDataset,
+        analysis_name: str,
     ) -> None:
         sds.folder = self._get_spectro_dataset_subpath(sds=sds)
-        self.datasets[sds.name] = {"class": type(sds).__name__, "dataset": sds}
+        self.datasets[sds.name] = {
+            "class": type(sds).__name__,
+            "dataset": sds,
+            "analysis": analysis_name,
+        }
         sds.write_json(sds.folder)
 
     def _get_spectro_dataset_subpath(
@@ -477,10 +487,12 @@ class Dataset:
     def _sort_spectro_dataset(self, dataset: SpectroDataset | LTASDataset) -> None:
         raise NotImplementedError
 
-    def remove_dataset(self, dataset_name: str) -> None:
-        """Remove an analysis dataset.
+    def _delete_dataset(self, dataset_name: str) -> None:
+        """Delete an analysis dataset.
 
         WARNING: all the analysis output files will be deleted.
+        WARNING: removing linked datasets (e.g. an AudioDataset to which a SpectroDataset is
+        linked) might lead to errors.
 
         Parameters
         ----------
@@ -490,9 +502,7 @@ class Dataset:
         dataset_to_remove = self.get_dataset(dataset_name)
         if dataset_to_remove is None:
             return
-        self.datasets = [
-            dataset for dataset in self.datasets if dataset != dataset_to_remove
-        ]
+        self.datasets.pop(dataset_to_remove.name)
         shutil.rmtree(str(dataset_to_remove.folder))
         self.write_json()
 
