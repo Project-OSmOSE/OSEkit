@@ -919,6 +919,40 @@ def test_audio_dataset_from_folder(
 
 
 @pytest.mark.parametrize(
+    ("audio_files", "begin", "end"),
+    [
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2025-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            pd.Timestamp("2025-01-01 12:00:00"),
+            pd.Timestamp("2025-01-01 12:01:00"),
+            id="one_file",
+        ),
+    ],
+    indirect=["audio_files"],
+)
+def test_audio_dataset_from_folder_date_mismatch(
+    tmp_path: Path,
+    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    begin: pd.Timestamp,
+    end: pd.Timestamp,
+) -> None:
+    with pytest.raises(ValueError, match=r"`begin` .* must be smaller than `end`"):
+        AudioDataset.from_folder(
+            tmp_path,
+            strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+            begin=end,
+            end=begin,
+        )
+
+
+
+@pytest.mark.parametrize(
     ("audio_files", "begin", "end", "duration", "expected_audio_data"),
     [
         pytest.param(

@@ -299,6 +299,9 @@ class BaseDataset(Generic[TData, TFile], Event):
             begin = min(file.begin for file in files)
         if not end:
             end = max(file.end for file in files)
+        if begin > end:
+            msg = (f"`begin` ({begin}) must be smaller than `end`({end})")
+            raise ValueError(msg)
         if data_duration:
             data_base = (
                 cls._get_base_data_from_files_timedelta_total(
