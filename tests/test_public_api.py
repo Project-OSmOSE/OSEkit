@@ -1205,12 +1205,20 @@ def test_delete_analysis(
     dataset.run_analysis(analysis_to_keep)
     dataset.run_analysis(analysis_to_delete)
 
+    assert all(
+        analysis in dataset.analyses
+        for analysis in (analysis_to_keep.name, analysis_to_delete.name)
+    )
+
     datasets_to_keep = dataset.get_datasets_by_analysis(analysis_to_keep.name)
     datasets_to_delete = dataset.get_datasets_by_analysis(analysis_to_delete.name)
 
     assert all(ds.folder.exists() for ds in (datasets_to_keep + datasets_to_delete))
 
     dataset.delete_analysis(analysis_to_delete.name)
+
+    assert analysis_to_keep.name in dataset.analyses
+    assert analysis_to_delete.name not in dataset.analyses
 
     deserialized_dataset = Dataset.from_json(dataset.folder / "dataset.json")
 
