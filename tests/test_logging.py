@@ -78,11 +78,9 @@ def set_user_config_env(temp_user_logging_config: Path) -> None:
 
     """
     importlib.reload(logging)
-    import osekit
 
     original_config_env = os.getenv("OSMOSE_USER_CONFIG", None)
     os.environ["OSMOSE_USER_CONFIG"] = str(temp_user_logging_config.parent)
-    importlib.reload(osekit)
     setup_logging()
     yield
     if original_config_env:
@@ -90,7 +88,6 @@ def set_user_config_env(temp_user_logging_config: Path) -> None:
     else:
         del os.environ["OSMOSE_USER_CONFIG"]
     importlib.reload(logging)
-    importlib.reload(osekit)
     setup_logging()
 
 
