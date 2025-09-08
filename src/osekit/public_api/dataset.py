@@ -110,6 +110,11 @@ class Dataset:
         """Return the AudioDataset from which this Dataset has been built."""
         return self.get_dataset("original")
 
+    @property
+    def analyses(self) -> list[str]:
+        """Return the list of the names of the analyses ran with this Dataset."""
+        return list(set(dataset["analysis"] for dataset in self.datasets.values()))
+
     def build(self) -> None:
         """Build the Dataset.
 
@@ -304,6 +309,14 @@ class Dataset:
             AudioData etc.)
 
         """
+        if analysis.name in self.analyses:
+            message = (
+                f"Analysis {analysis.name} already exists."
+                f"Please choose a different name,"
+                f"or delete it with the Dataset.delete_analysis() method."
+            )
+            raise ValueError(message)
+
         ads = (
             self.get_analysis_audiodataset(analysis=analysis)
             if audio_dataset is None

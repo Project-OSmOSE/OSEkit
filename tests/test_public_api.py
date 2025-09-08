@@ -1229,3 +1229,48 @@ def test_delete_analysis(
         assert not any(
             ds.name in public_dataset.datasets.keys() for ds in datasets_to_delete
         )
+
+
+def test_existing_analysis_warning(
+    tmp_path: pytest.fixture, audio_files: pytest.fixture
+) -> None:
+    dataset = Dataset(
+        folder=tmp_path,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+    )
+
+    dataset.build()
+
+    dataset.run_analysis(
+        Analysis(
+            analysis_type=AnalysisType.AUDIO,
+            data_duration=dataset.origin_dataset.duration / 10,
+            name="my_analysis",
+            sample_rate=24_000,
+        )
+    )
+
+    with pytest.raises(ValueError) as excinfo:
+        dataset.run_analysis(
+            Analysis(
+                analysis_type=AnalysisType.SPECTROGRAM,
+                data_duration=dataset.origin_dataset.duration / 10,
+                name="my_analysis",
+                sample_rate=24_000,
+                fft=ShortTimeFFT(hamming(1024), hop=1024, fs=24_000),
+            )
+        )
+
+        assert "my_analysis already exists" in str(excinfo.value)
+
+    dataset.delete_analysis("my_analysis")
+
+    dataset.run_analysis(
+        Analysis(
+            analysis_type=AnalysisType.SPECTROGRAM,
+            data_duration=dataset.origin_dataset.duration / 10,
+            name="my_analysis",
+            sample_rate=24_000,
+            fft=ShortTimeFFT(hamming(1024), hop=1024, fs=24_000),
+        )
+    )
