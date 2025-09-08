@@ -1157,7 +1157,27 @@ def test_delete_analysis_dataset(
                 fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
             ),
             id="audio_only",
-        )
+        ),
+        pytest.param(
+            Analysis(
+                analysis_type=AnalysisType.SPECTROGRAM,
+                data_duration=Timedelta(seconds=1),
+                name="analysis_to_delete",
+                sample_rate=24_000,
+                fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
+            ),
+            id="spectro_only",
+        ),
+        pytest.param(
+            Analysis(
+                analysis_type=AnalysisType.AUDIO | AnalysisType.SPECTROGRAM,
+                data_duration=Timedelta(seconds=1),
+                name="analysis_to_delete",
+                sample_rate=24_000,
+                fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
+            ),
+            id="audio_and_spectro",
+        ),
     ],
 )
 def test_delete_analysis(
