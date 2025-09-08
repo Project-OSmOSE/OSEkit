@@ -919,40 +919,6 @@ def test_audio_dataset_from_folder(
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "begin", "end"),
-    [
-        pytest.param(
-            {
-                "duration": 1,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": pd.Timestamp("2025-01-01 12:00:00"),
-                "series_type": "increase",
-            },
-            pd.Timestamp("2025-01-01 12:00:00"),
-            pd.Timestamp("2025-01-01 12:01:00"),
-            id="one_file",
-        ),
-    ],
-    indirect=["audio_files"],
-)
-def test_audio_dataset_from_folder_date_mismatch(
-    tmp_path: Path,
-    audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
-    begin: pd.Timestamp,
-    end: pd.Timestamp,
-) -> None:
-    with pytest.raises(ValueError, match=r"`begin` .* must be smaller than `end`"):
-        AudioDataset.from_folder(
-            tmp_path,
-            strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
-            begin=end,
-            end=begin,
-        )
-
-
-
-@pytest.mark.parametrize(
     ("audio_files", "begin", "end", "duration", "expected_audio_data"),
     [
         pytest.param(
@@ -1079,6 +1045,8 @@ def test_audio_dataset_from_files(
         "corrupted_audio_files",
         "non_audio_files",
         "error",
+        "begin",
+        "end",
     ),
     [
         pytest.param(
@@ -1090,6 +1058,8 @@ def test_audio_dataset_from_files(
                 FileNotFoundError,
                 match="No valid file found in ",
             ),
+            None,
+            None,
             id="no_file",
         ),
         pytest.param(
@@ -1110,6 +1080,8 @@ def test_audio_dataset_from_files(
                 FileNotFoundError,
                 match="No valid file found in ",
             ),
+            None,
+            None,
             id="corrupted_audio_files",
         ),
         pytest.param(
@@ -1137,6 +1109,8 @@ def test_audio_dataset_from_files(
             ],
             [],
             None,
+            None,
+            None,
             id="mixed_audio_files",
         ),
         pytest.param(
@@ -1159,6 +1133,8 @@ def test_audio_dataset_from_files(
                 )
                 + ".csv",
             ],
+            None,
+            None,
             None,
             id="non_audio_files_are_not_logged",
         ),
@@ -1185,6 +1161,8 @@ def test_audio_dataset_from_files(
                 FileNotFoundError,
                 match="No valid file found in ",
             ),
+            None,
+            None,
             id="all_but_ok_audio",
         ),
         pytest.param(
@@ -1217,7 +1195,32 @@ def test_audio_dataset_from_files(
                 + ".csv",
             ],
             None,
+            None,
+            None,
             id="full_mix",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 3,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            generate_sample_audio(
+                nb_files=1,
+                nb_samples=144_000,
+                series_type="increase",
+            ),
+            [],
+            [],
+            pytest.raises(
+                ValueError,
+                match=r"`begin` .* must be smaller than `end`",
+            ),
+            pd.Timestamp("2024-01-01 12:01:00"),
+            pd.Timestamp("2024-01-01 12:00:00"),
+            id="datetime_mismatch",
         ),
     ],
     indirect=["audio_files"],
@@ -1226,6 +1229,8 @@ def test_audio_dataset_from_folder_errors_warnings(
     tmp_path: Path,
     caplog: pytest.LogCaptureFixture,
     audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    begin: pd.Timestamp | None,
+    end: pd.Timestamp | None,
     expected_audio_data: list[np.ndarray],
     corrupted_audio_files: list[str],
     non_audio_files: list[str],
@@ -1241,6 +1246,8 @@ def test_audio_dataset_from_folder_errors_warnings(
                     AudioDataset.from_folder(
                         tmp_path,
                         strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+                        begin=begin,
+                        end=end,
                     )
                     == e
                 )
