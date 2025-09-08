@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, TypeVar
 
 from osekit import config
 from osekit.config import DPDEFAULT, resample_quality_settings
+from osekit.core_api import audio_file_manager as afm
 from osekit.core_api.audio_dataset import AudioDataset
 from osekit.core_api.base_dataset import BaseDataset
 from osekit.core_api.instrument import Instrument
@@ -129,7 +130,11 @@ class Dataset:
             name="original",
             instrument=self.instrument,
         )
-        self.datasets[ads.name] = {"class": type(ads).__name__, "dataset": ads}
+        self.datasets[ads.name] = {
+            "class": type(ads).__name__,
+            "analysis": "original",
+            "dataset": ads,
+        }
 
         self.logger.info("Organizing dataset folder...")
         move_tree(
@@ -165,6 +170,8 @@ class Dataset:
         the "other" folder to the root folder.
         WARNING: all other files and folders will be deleted.
         """
+        afm.close()
+
         files_to_remove = list(self.folder.iterdir())
         self.get_dataset("original").move_files(self.folder)
 
@@ -503,8 +510,38 @@ class Dataset:
         if dataset_to_remove is None:
             return
         self.datasets.pop(dataset_to_remove.name)
+
+        afm.close()
         shutil.rmtree(str(dataset_to_remove.folder))
         self.write_json()
+
+    def get_datasets_by_analysis(self, analysis_name: str) -> list[type[DatasetChild]]:
+        """Get all output datasets from a given analysis.
+
+        Parameters
+        ----------
+        analysis_name: str
+        Name of the analysis of which to get the output datasets.
+
+        Returns
+        -------
+        list[type[DatasetChild]]
+        List of the analysis output datasets.
+        """
+        return list(
+            dataset["dataset"]
+            for dataset in self.datasets.values()
+            if dataset["analysis"] == analysis_name
+        )
+
+    def delete_analysis(self, analysis_name: str) -> None:
+        """Delete all output datasets from an analysis.
+
+        WARNING: all the analysis output files will be deleted.
+
+        """
+        for dataset_to_delete in self.get_datasets_by_analysis(analysis_name):
+            self._delete_dataset(dataset_to_delete.name)
 
     def get_dataset(self, dataset_name: str) -> type[DatasetChild] | None:
         """Get an analysis dataset from its name.
@@ -539,6 +576,7 @@ class Dataset:
             "datasets": {
                 name: {
                     "class": dataset["class"],
+                    "analysis": dataset["analysis"],
                     "json": str(dataset["dataset"].folder / f"{name}.json"),
                 }
                 for name, dataset in self.datasets.items()
@@ -581,6 +619,7 @@ class Dataset:
             )
             datasets[name] = {
                 "class": dataset["class"],
+                "analysis": dataset["analysis"],
                 "dataset": dataset_class.from_json(Path(dataset["json"])),
             }
         return cls(

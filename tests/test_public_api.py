@@ -1095,7 +1095,7 @@ def test_edit_analysis_before_run(
     assert analysis_ads.instrument.end_to_end_db == new_instrument.end_to_end_db
 
 
-def test_remove_analysis_dataset(
+def test_delete_analysis_dataset(
     tmp_path: pytest.fixture, audio_files: pytest.fixture
 ) -> None:
     dataset = Dataset(
@@ -1143,3 +1143,69 @@ def test_remove_analysis_dataset(
         # The JSON should be updated
         new_dataset = Dataset.from_json(dataset.folder / "dataset.json")
         assert ds.name not in new_dataset.datasets.keys()
+
+
+@pytest.mark.parametrize(
+    "analysis_to_delete",
+    [
+        pytest.param(
+            Analysis(
+                analysis_type=AnalysisType.AUDIO,
+                data_duration=Timedelta(seconds=1),
+                name="analysis_to_delete",
+                sample_rate=24_000,
+                fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
+            ),
+            id="audio_only",
+        )
+    ],
+)
+def test_delete_analysis(
+    tmp_path: pytest.fixture, audio_files: pytest.fixture, analysis_to_delete: Analysis
+) -> None:
+    dataset = Dataset(
+        folder=tmp_path,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+    )
+
+    dataset.build()
+
+    # Add another analysis to check that it is not affected by the deletion
+
+    analysis_to_keep = Analysis(
+        analysis_type=AnalysisType.AUDIO
+        | AnalysisType.SPECTROGRAM
+        | AnalysisType.MATRIX,
+        data_duration=dataset.origin_dataset.duration / 10,
+        name="analysis_to_keep",
+        sample_rate=24_000,
+        fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
+    )
+
+    dataset.run_analysis(analysis_to_keep)
+    dataset.run_analysis(analysis_to_delete)
+
+    datasets_to_keep = dataset.get_datasets_by_analysis(analysis_to_keep.name)
+    datasets_to_delete = dataset.get_datasets_by_analysis(analysis_to_delete.name)
+
+    assert all(ds.folder.exists() for ds in (datasets_to_keep + datasets_to_delete))
+
+    dataset.delete_analysis(analysis_to_delete.name)
+
+    deserialized_dataset = Dataset.from_json(dataset.folder / "dataset.json")
+
+    for public_dataset in (dataset, deserialized_dataset):
+        datasets_to_keep = public_dataset.get_datasets_by_analysis(
+            analysis_to_keep.name
+        )
+        datasets_to_delete = public_dataset.get_datasets_by_analysis(
+            analysis_to_delete.name
+        )
+
+        assert all(ds.folder.exists() for ds in datasets_to_keep)
+        assert not any(ds.folder.exists() for ds in datasets_to_delete)
+
+        assert all(ds.name in public_dataset.datasets.keys() for ds in datasets_to_keep)
+        assert not any(
+            ds.name in public_dataset.datasets.keys() for ds in datasets_to_delete
+        )
