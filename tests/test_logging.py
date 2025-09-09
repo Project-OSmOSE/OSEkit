@@ -7,13 +7,23 @@ import pytest
 import yaml
 
 from osekit import setup_logging
+from osekit.config import TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
 from osekit.logging_context import LoggingContext
+from osekit.public_api.dataset import Dataset
 
 
 @pytest.fixture
 def setup_module_logging() -> None:
     """Set up the osekit logging."""
     setup_logging()
+
+
+@pytest.fixture(autouse=True)
+def reset_logging():
+    """Reset the python logging module."""
+    yield
+    importlib.reload(logging)
+
 
 @pytest.fixture
 def temp_user_logging_config(tmp_path: Path) -> Path:
@@ -92,7 +102,11 @@ def set_user_config_env(temp_user_logging_config: Path) -> None:
 
 
 @pytest.mark.allow_log_write_to_file
-def test_user_logging_config(set_user_config_env, caplog, tmp_path: Path):
+def test_user_logging_config(
+    set_user_config_env: pytest.fixture,
+    caplog: pytest.fixture,
+    tmp_path: Path,
+) -> None:
     assert (
         len(logging.getLogger("test_user_logger").handlers) > 0
     )  # This is a tweaky way of checking if the test_user_logger logger has already been created
@@ -105,7 +119,11 @@ def test_user_logging_config(set_user_config_env, caplog, tmp_path: Path):
     assert "User debug log" in open(f"{tmp_path}/logs.log").read()
 
 
-def test_default_logging_config(setup_module_logging, caplog, tmp_path: Path):
+def test_default_logging_config(
+    setup_module_logging: pytest.fixture,
+    caplog: pytest.fixture,
+    tmp_path: Path,
+) -> None:
     assert (
         len(logging.getLogger("dataset").handlers) > 0
     )  # This is a tweaky way of checking if the test_user_logger logger has already been created
@@ -118,7 +136,7 @@ def test_default_logging_config(setup_module_logging, caplog, tmp_path: Path):
 
 
 @pytest.mark.unit
-def test_logging_context(caplog) -> None:
+def test_logging_context(caplog: pytest.fixture) -> None:
     logging_context = LoggingContext()
 
     context_logger = logging.getLogger("context_logger")
@@ -140,3 +158,23 @@ def test_logging_context(caplog) -> None:
     assert caplog.records[1].message == "From context logger"
     assert caplog.records[2].name == "default_logger"
     assert caplog.records[2].message == "From default logger again"
+
+
+def test_public_api_dataset_logger(
+    audio_files: pytest.fixture, tmp_path: pytest.fixture
+) -> None:
+    dataset = Dataset(
+        folder=tmp_path,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+    )
+
+    # Without setting the logging up, the PublicAPI should log directly to the root logger
+    dataset.build()
+    assert dataset.logger == logging.getLogger()
+    dataset.reset()
+
+    # With setting the logging up, the PublicAPI should log to the dataset's logger
+    setup_logging()
+    dataset.build()
+    assert dataset.logger != logging.getLogger()
+    assert dataset.logger.parent == logging.getLogger("dataset")
