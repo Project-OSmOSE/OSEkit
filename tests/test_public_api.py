@@ -1129,6 +1129,10 @@ def test_delete_analysis_dataset(
     ds3 = dataset.get_dataset(f"{analysis_1.name}_audio")
     ds4 = dataset.get_dataset(f"{analysis_2.name}_audio")
 
+    # Tests Dataset.get_datasets_by_analysis
+    assert dataset.get_datasets_by_analysis("analysis_1") == [ds3, ds1]
+    assert dataset.get_datasets_by_analysis("analysis_2") == [ds4, ds2]
+
     datasets = [ds1, ds2, ds3, ds4]
 
     for i, ds in enumerate(datasets):
