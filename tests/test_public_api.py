@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from copy import deepcopy
 
 import numpy as np
@@ -8,6 +9,7 @@ from pandas import Timedelta, Timestamp
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming
 
+from osekit import setup_logging
 from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
@@ -1093,3 +1095,23 @@ def test_edit_analysis_before_run(
 
     # Instrument has been edited
     assert analysis_ads.instrument.end_to_end_db == new_instrument.end_to_end_db
+
+
+def test_logger(
+    audio_files: pytest.fixture, tmp_path: pytest.fixture, reset_logging: pytest.fixture
+) -> None:
+    dataset = Dataset(
+        folder=tmp_path,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+    )
+
+    # Without setting the logging up, the PublicAPI should log directly to the root logger
+    dataset.build()
+    assert dataset.logger == logging.getLogger()
+    dataset.reset()
+
+    # With setting the logging up, the PublicAPI should log to the dataset's logger
+    setup_logging()
+    dataset.build()
+    assert dataset.logger != logging.getLogger()
+    assert dataset.logger.parent == logging.getLogger("dataset")
