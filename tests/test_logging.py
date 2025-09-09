@@ -7,7 +7,9 @@ import pytest
 import yaml
 
 from osekit import setup_logging
+from osekit.config import TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
 from osekit.logging_context import LoggingContext
+from osekit.public_api.dataset import Dataset
 
 
 @pytest.fixture
@@ -156,3 +158,23 @@ def test_logging_context(caplog: pytest.fixture) -> None:
     assert caplog.records[1].message == "From context logger"
     assert caplog.records[2].name == "default_logger"
     assert caplog.records[2].message == "From default logger again"
+
+
+def test_public_api_dataset_logger(
+    audio_files: pytest.fixture, tmp_path: pytest.fixture
+) -> None:
+    dataset = Dataset(
+        folder=tmp_path,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+    )
+
+    # Without setting the logging up, the PublicAPI should log directly to the root logger
+    dataset.build()
+    assert dataset.logger == logging.getLogger()
+    dataset.reset()
+
+    # With setting the logging up, the PublicAPI should log to the dataset's logger
+    setup_logging()
+    dataset.build()
+    assert dataset.logger != logging.getLogger()
+    assert dataset.logger.parent == logging.getLogger("dataset")
