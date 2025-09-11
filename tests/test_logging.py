@@ -1,15 +1,32 @@
 import importlib
 import logging
 import os
+from pathlib import Path
 
 import pytest
 import yaml
 
+from osekit import setup_logging
+from osekit.config import TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
 from osekit.logging_context import LoggingContext
+from osekit.public_api.dataset import Dataset
 
 
 @pytest.fixture
-def temp_user_logging_config(tmp_path):
+def setup_module_logging() -> None:
+    """Set up the osekit logging."""
+    setup_logging()
+
+
+@pytest.fixture(autouse=True)
+def reset_logging():
+    """Reset the python logging module."""
+    yield
+    importlib.reload(logging)
+
+
+@pytest.fixture
+def temp_user_logging_config(tmp_path: Path) -> Path:
     """Writes a yaml logging config file in tmp_path, then returns its path.
 
     Parameters
@@ -58,7 +75,7 @@ def temp_user_logging_config(tmp_path):
 
 
 @pytest.fixture
-def set_user_config_env(temp_user_logging_config):
+def set_user_config_env(temp_user_logging_config: Path) -> None:
     """Set the OSMOSE_USER_CONFIG environment variable to the pytest tmp_file directory.
     This will be read by osekit during import to find the simulated user logging_config.yaml
     During setup, the logging module is reloaded to clear all configs, then the osekit module is reloaded with a OSMOSE_USER_CONFIG environment key locating the mocked user config file.
@@ -71,22 +88,24 @@ def set_user_config_env(temp_user_logging_config):
 
     """
     importlib.reload(logging)
-    import osekit
 
     original_config_env = os.getenv("OSMOSE_USER_CONFIG", None)
     os.environ["OSMOSE_USER_CONFIG"] = str(temp_user_logging_config.parent)
-    importlib.reload(osekit)
+    setup_logging()
     yield
     if original_config_env:
         os.environ["OSMOSE_USER_CONFIG"] = original_config_env
     else:
         del os.environ["OSMOSE_USER_CONFIG"]
     importlib.reload(logging)
-    importlib.reload(osekit)
 
 
 @pytest.mark.allow_log_write_to_file
-def test_user_logging_config(set_user_config_env, caplog, tmp_path):
+def test_user_logging_config(
+    set_user_config_env: pytest.fixture,
+    caplog: pytest.fixture,
+    tmp_path: Path,
+) -> None:
     assert (
         len(logging.getLogger("test_user_logger").handlers) > 0
     )  # This is a tweaky way of checking if the test_user_logger logger has already been created
@@ -99,7 +118,11 @@ def test_user_logging_config(set_user_config_env, caplog, tmp_path):
     assert "User debug log" in open(f"{tmp_path}/logs.log").read()
 
 
-def test_default_logging_config(caplog, tmp_path):
+def test_default_logging_config(
+    setup_module_logging: pytest.fixture,
+    caplog: pytest.fixture,
+    tmp_path: Path,
+) -> None:
     assert (
         len(logging.getLogger("dataset").handlers) > 0
     )  # This is a tweaky way of checking if the test_user_logger logger has already been created
@@ -112,7 +135,7 @@ def test_default_logging_config(caplog, tmp_path):
 
 
 @pytest.mark.unit
-def test_logging_context(caplog):
+def test_logging_context(caplog: pytest.fixture) -> None:
     logging_context = LoggingContext()
 
     context_logger = logging.getLogger("context_logger")
@@ -134,3 +157,23 @@ def test_logging_context(caplog):
     assert caplog.records[1].message == "From context logger"
     assert caplog.records[2].name == "default_logger"
     assert caplog.records[2].message == "From default logger again"
+
+
+def test_public_api_dataset_logger(
+    audio_files: pytest.fixture, tmp_path: pytest.fixture
+) -> None:
+    dataset = Dataset(
+        folder=tmp_path,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+    )
+
+    # Without setting the logging up, the PublicAPI should log directly to the root logger
+    dataset.build()
+    assert dataset.logger == logging.getLogger()
+    dataset.reset()
+
+    # With setting the logging up, the PublicAPI should log to the dataset's logger
+    setup_logging()
+    dataset.build()
+    assert dataset.logger != logging.getLogger()
+    assert dataset.logger.parent == logging.getLogger("dataset")
