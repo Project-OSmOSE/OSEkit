@@ -48,3 +48,5 @@ def setup_logging(
         logging.config.dictConfig(logging_config)
     else:
         logging.basicConfig(level=default_level)
+        msg = "Configuration file not found, using default configuration."
+        logging.warning(msg)
