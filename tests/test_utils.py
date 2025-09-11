@@ -14,6 +14,7 @@ from osekit.utils.core_utils import (
 )
 from osekit.utils.formatting_utils import aplose2raven
 from osekit.utils.path_utils import move_tree
+from pandas import Timedelta
 
 
 @pytest.fixture
@@ -60,7 +61,7 @@ def audio_timestamps() -> list:
 
 @pytest.fixture
 def audio_durations(audio_timestamps: pytest.fixture) -> list:
-    return [30] * len(audio_timestamps)
+    return [Timedelta("30s")] * len(audio_timestamps)
 
 
 @pytest.mark.unit
