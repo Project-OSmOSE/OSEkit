@@ -49,4 +49,4 @@ def setup_logging(
     else:
         logging.basicConfig(level=default_level)
         msg = "Configuration file not found, using default configuration."
-        logging.warning(msg)
+        logging.getLogger(__name__).warning(msg)
