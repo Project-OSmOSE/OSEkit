@@ -146,7 +146,11 @@ class Dataset:
             source=self.folder,
             destination=self.folder / "other",
             excluded_paths={file.path for file in ads.files}
-            | set((self.folder / "log").iterdir())
+            | set(
+                (self.folder / "log").iterdir()
+                if (self.folder / "log").exists()
+                else ()
+            )
             | {self.folder / "log"},
         )
         self._sort_dataset(ads)
@@ -156,6 +160,16 @@ class Dataset:
         self.logger.info("Build done!")
 
     def _create_logger(self) -> None:
+        if not logging.getLogger("dataset").handlers:
+            message = (
+                "Logging has not been configured. "
+                "The dataset will use the root logger. "
+                "Use osekit.setup_logging() if wanted."
+            )
+            logging.warning(message)
+            self.logger = logging.getLogger()
+            return
+
         logs_directory = self.folder / "log"
         if not logs_directory.exists():
             logs_directory.mkdir(mode=DPDEFAULT)
