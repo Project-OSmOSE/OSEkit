@@ -98,7 +98,6 @@ def set_user_config_env(temp_user_logging_config: Path) -> None:
     else:
         del os.environ["OSMOSE_USER_CONFIG"]
     importlib.reload(logging)
-    setup_logging()
 
 
 @pytest.mark.allow_log_write_to_file
