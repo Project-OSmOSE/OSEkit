@@ -1216,7 +1216,7 @@ def test_audio_dataset_from_files(
             [],
             pytest.raises(
                 ValueError,
-                match=r"`begin` .* must be smaller than `end`",
+                match=r"`end` .* must be greater than `begin`",
             ),
             pd.Timestamp("2024-01-01 12:01:00"),
             pd.Timestamp("2024-01-01 12:00:00"),

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import bisect
 import copy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
@@ -15,15 +15,51 @@ if TYPE_CHECKING:
 class Event:
     """Events are bounded between begin an end attributes.
 
-    Classes that have a begin and an end should inherit from Event.
+    Classes that have a beginning and an end should inherit from Event.
     """
 
-    begin: Timestamp
-    end: Timestamp
+    _begin: Timestamp = field(init=False, repr=False, compare=True)
+    _end: Timestamp = field(init=False, repr=False, compare=True)
+
+    def __init__(
+        self,
+        begin: Timestamp,
+        end: Timestamp
+    ) -> None:
+        """Initialize an Event instance with a beginning and an end."""
+        if begin > end:
+            msg = f"Invalid Event: `end` ({end}) must be greater than `begin` ({begin})."  # noqa: E501
+            raise ValueError(msg)
+        self._begin = begin
+        self._end = end
+
+    @property
+    def begin(self) -> Timestamp:
+        """Beginning of the event."""
+        return self._begin
+
+    @begin.setter
+    def begin(self, value: Timestamp) -> None:
+        if hasattr(self, "_end") and value > self._end:
+            msg = f"Invalid Event: `end` ({self._end}) must be greater than `begin` ({value})."  # noqa: E501
+            raise ValueError(msg)
+        self._begin = value
+
+    @property
+    def end(self) -> Timestamp:
+        """End of the event."""
+        return self._end
+
+    @end.setter
+    def end(self, value: Timestamp) -> None:
+        if hasattr(self, "_begin") and value < self._begin:
+            msg = f"Invalid Event: `end` ({value}) must be greater than `begin` ({self._begin})."  # noqa: E501
+            raise ValueError(msg)
+        self._end = value
 
     @property
     def duration(self) -> Timedelta:
-        """Return the total duration of the data in seconds."""
+        """Duration of the event."""
         return self.end - self.begin
 
     def overlaps(self, other: type[Event] | Event) -> bool:

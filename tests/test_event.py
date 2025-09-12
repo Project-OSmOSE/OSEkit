@@ -326,3 +326,97 @@ def test_get_overlapping_events(
     )
 
     assert len(overlap_result) == len(expected_result)
+
+
+@pytest.mark.parametrize(
+    ("initial", "updates", "expected_values", "error_at"),
+    [
+        pytest.param(
+            [
+                ("begin", Timestamp("2024-01-01 00:00:00")),
+                ("end", Timestamp("2024-01-02 00:00:00")),
+            ],
+            [
+                ("begin", Timestamp("2024-01-01 12:00:00")),
+                ("end", Timestamp("2024-01-02 12:00:00")),
+            ],
+            (Timestamp("2024-01-01 12:00:00"), Timestamp("2024-01-02 12:00:00")),
+            None,
+            id="valid sequential updates",
+        ),
+        pytest.param(
+            [
+                ("begin", Timestamp("2024-01-01 00:00:00")),
+                ("end", Timestamp("2024-01-02 00:00:00")),
+            ],
+            [("begin", Timestamp("2024-01-03 00:00:00"))],
+            (Timestamp("2024-01-01 00:00:00"), Timestamp("2024-01-02 00:00:00")),
+            0,
+            id="invalid begin > end",
+        ),
+        pytest.param(
+            [
+                ("begin", Timestamp("2024-01-01 00:00:00")),
+                ("end", Timestamp("2024-01-02 00:00:00")),
+            ],
+            [("end", Timestamp("2023-12-31 23:59:59"))],
+            (Timestamp("2024-01-01 00:00:00"), Timestamp("2024-01-02 00:00:00")),
+            0,
+            id="invalid end < begin",
+        ),
+        pytest.param(
+            [
+                ("begin", Timestamp("2024-01-01 00:00:00")),
+                ("end", Timestamp("2024-01-02 00:00:00")),
+            ],
+            [
+                ("begin", Timestamp("2024-01-01 12:00:00")),
+                ("end", Timestamp("2024-01-01 06:00:00")),
+                ("end", Timestamp("2024-01-02 12:00:00")),
+            ],
+            (Timestamp("2024-01-01 12:00:00"), Timestamp("2024-01-02 12:00:00")),
+            1,
+            id="mixed valid and invalid updates",
+        ),
+        pytest.param(
+            [
+                ("begin", Timestamp("2024-01-01 00:00:00")),
+                ("end", Timestamp("2024-01-01 01:00:00")),
+            ],
+            [("begin", Timestamp("2024-01-01 01:00:00"))],
+            (Timestamp("2024-01-01 01:00:00"), Timestamp("2024-01-01 01:00:00")),
+            None,
+            id="begin equals end edge",
+        ),
+        pytest.param(
+            [
+                ("begin", Timestamp("2024-01-01 00:00:00")),
+                ("end", Timestamp("2024-01-01 01:00:00")),
+            ],
+            [("end", Timestamp("2024-01-01 00:00:00"))],
+            (Timestamp("2024-01-01 00:00:00"), Timestamp("2024-01-01 00:00:00")),
+            None,
+            id="end equals begin edge",
+        ),
+    ],
+)
+
+def test_event_begin_end_updates(
+    initial: list[tuple[str, Timestamp]],
+    updates: list[tuple[str, Timestamp]],
+    expected_values: tuple[Timestamp, Timestamp],
+    error_at: int | None,
+) -> None:
+    initial_dict = dict(initial)
+    cool_event = Event(begin=initial_dict["begin"], end=initial_dict["end"])
+
+    for i, (attr, value) in enumerate(updates):
+        if error_at is not None and i == error_at:
+            with pytest.raises(ValueError, match="`end`.*must be greater than `begin`.*"):
+                setattr(cool_event, attr, value)
+        else:
+            setattr(cool_event, attr, value)
+
+    assert cool_event.begin == expected_values[0]
+    assert cool_event.end == expected_values[1]
+
