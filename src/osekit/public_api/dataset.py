@@ -561,6 +561,50 @@ class Dataset:
             if dataset["analysis"] == analysis_name
         )
 
+    def rename_analysis(self, analysis_name: str, new_analysis_name: str) -> None:
+        """Rename an already ran analysis.
+
+        Parameters
+        ----------
+        analysis_name: str
+            Name of the analysis to rename.
+        new_analysis_name: str
+            New name of the analysis to rename.
+
+        """
+        if analysis_name == "original":
+            raise ValueError("You can't rename the original dataset.")
+        if analysis_name not in self.datasets:
+            raise ValueError(f"Unknown analysis {analysis_name}.")
+        if analysis_name == new_analysis_name:
+            return
+
+        keys_to_rename = {}
+        for analysis_dataset in self.datasets.values():
+            if analysis_dataset["analysis"] == analysis_name:
+                analysis_dataset["analysis"] = new_analysis_name
+                ds = analysis_dataset["dataset"]
+                old_name, new_name = (
+                    ds.name,
+                    new_analysis_name + (f"_{ds.suffix}" if ds.suffix else ""),
+                )
+                ds.base_name = new_analysis_name
+                old_folder = ds.folder
+                new_folder = ds.folder.parent / new_name
+                keys_to_rename[old_name] = new_name
+
+                ds.move_files(new_folder)
+                move_tree(
+                    old_folder, new_folder, excluded_paths=old_folder.glob("*.json")
+                )  # Moves exported files
+                shutil.rmtree(str(old_folder))
+                ds.write_json(ds.folder)
+
+        for old_name, new_name in keys_to_rename.items():
+            self.datasets[new_name] = self.datasets.pop(old_name)
+
+        self.write_json()
+
     def delete_analysis(self, analysis_name: str) -> None:
         """Delete all output datasets from an analysis.
 
