@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from contextlib import AbstractContextManager, nullcontext
+from contextlib import nullcontext
 
 import pytest
 from pandas import Timestamp
