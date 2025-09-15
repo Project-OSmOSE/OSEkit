@@ -26,10 +26,15 @@ jobs:
     - name: Run tests with coverage
       run: |
         uv run coverage run -m pytest
+        uv run coverage xml -i
         uv run coverage report
 
-    - name: Coveralls GitHub Action
+    - name: Publish to Coveralls
       uses: coverallsapp/github-action@v2.3.6
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+      env:
+        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
 
     - name: Run Ruff
       run: uv run ruff check --output-format=github --select E4,E7,E9,F
