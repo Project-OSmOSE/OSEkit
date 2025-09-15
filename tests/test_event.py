@@ -331,72 +331,84 @@ def test_get_overlapping_events(
 
 
 @pytest.mark.parametrize(
-    ("initial", "updates", "expected_values", "expectation"),
+    ("event", "updated_begin", "updated_end", "expected"),
     [
         pytest.param(
-            [
-                ("begin", Timestamp("2024-01-01 00:00:00")),
-                ("end", Timestamp("2024-01-02 00:00:00")),
-            ],
-            ("begin", Timestamp("2024-01-01 12:00:00")),
-            (Timestamp("2024-01-01 12:00:00"), Timestamp("2024-01-02 00:00:00")),
-            nullcontext(),
+            Event(
+                begin=Timestamp("2024-01-01 00:00:00"),
+                end=Timestamp("2024-01-02 00:00:00"),
+            ),
+            Timestamp("2024-01-01 12:00:00"),
+            None,
+            nullcontext(
+                Event(
+                    begin=Timestamp("2024-01-01 12:00:00"),
+                    end=Timestamp("2024-01-02 00:00:00"),
+                )
+            ),
             id="valid begin",
         ),
         pytest.param(
-            [
-                ("begin", Timestamp("2024-01-01 00:00:00")),
-                ("end", Timestamp("2024-01-02 00:00:00")),
-            ],
-            ("end", Timestamp("2024-01-02 12:00:00")),
-            (Timestamp("2024-01-01 00:00:00"), Timestamp("2024-01-02 12:00:00")),
-            nullcontext(),
+            Event(
+                begin=Timestamp("2024-01-01 00:00:00"),
+                end=Timestamp("2024-01-02 00:00:00"),
+            ),
+            None,
+            Timestamp("2024-01-02 12:00:00"),
+            nullcontext(
+                Event(
+                    begin=Timestamp("2024-01-01 00:00:00"),
+                    end=Timestamp("2024-01-02 12:00:00"),
+                )
+            ),
             id="valid end",
         ),
         pytest.param(
-            [
-                ("begin", Timestamp("2024-01-01 00:00:00")),
-                ("end", Timestamp("2024-01-02 00:00:00")),
-            ],
-            ("begin", Timestamp("2024-01-03 00:00:00")),
-            (Timestamp("2024-01-01 00:00:00"), Timestamp("2024-01-02 00:00:00")),
+            Event(
+                begin=Timestamp("2024-01-01 00:00:00"),
+                end=Timestamp("2024-01-02 00:00:00"),
+            ),
+            Timestamp("2024-01-03 00:00:00"),
+            None,
             pytest.raises(ValueError, match="`end`.*must be greater than `begin`.*"),
             id="invalid begin > end",
         ),
         pytest.param(
-            [
-                ("begin", Timestamp("2024-01-01 00:00:00")),
-                ("end", Timestamp("2024-01-02 00:00:00")),
-            ],
-            ("end", Timestamp("2023-12-31 23:59:59")),
-            (Timestamp("2024-01-01 00:00:00"), Timestamp("2024-01-02 00:00:00")),
+            Event(
+                begin=Timestamp("2024-01-01 00:00:00"),
+                end=Timestamp("2024-01-02 00:00:00"),
+            ),
+            None,
+            Timestamp("2023-12-31 23:59:59"),
             pytest.raises(ValueError, match="`end`.*must be greater than `begin`.*"),
             id="invalid end < begin",
         ),
         pytest.param(
-            [
-                ("begin", Timestamp("2024-01-01 00:00:00")),
-                ("end", Timestamp("2024-01-01 01:00:00")),
-            ],
-            ("begin", Timestamp("2024-01-01 01:00:00")),
-            (Timestamp("2024-01-01 00:00:00"), Timestamp("2024-01-01 01:00:00")),
+            Event(
+                begin=Timestamp("2024-01-01 00:00:00"),
+                end=Timestamp("2024-01-01 01:00:00"),
+            ),
+            Timestamp("2024-01-01 01:00:00"),
+            None,
             pytest.raises(ValueError, match="`end`.*must be greater than `begin`.*"),
             id="begin and end equals",
         ),
     ],
 )
 def test_event_begin_end_updates(
-    initial: list[tuple[str, Timestamp]],
-    updates: tuple[str, Timestamp],
-    expected_values: tuple[Timestamp, Timestamp],
-    expectation: AbstractContextManager[BaseException | None],
+    event: Event,
+    updated_begin: Timestamp | None,
+    updated_end: Timestamp | None,
+    expected: Event,
 ) -> None:
-    initial_dict = dict(initial)
-    cool_event = Event(begin=initial_dict["begin"], end=initial_dict["end"])
+    def update_event(
+        cool_event: Event, begin: Timestamp | None, end: Timestamp | None
+    ) -> Event:
+        if begin:
+            cool_event.begin = begin
+        if end:
+            cool_event.end = end
+        return cool_event
 
-    with expectation as e:
-        assert setattr(cool_event, updates[0], updates[1]) == e
-
-    assert cool_event.begin == expected_values[0]
-    assert cool_event.end == expected_values[1]
-
+    with expected as e:
+        assert update_event(event, updated_begin, updated_end) == e
