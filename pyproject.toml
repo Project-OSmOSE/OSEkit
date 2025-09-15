@@ -20,6 +20,11 @@ dependencies = [
     "tomlkit>=0.13.2",
     "tqdm>=4.67.1",
 ]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
 
 [project.scripts]
 OSEkit = "OSmOSE:main"
