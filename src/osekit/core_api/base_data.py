@@ -103,6 +103,7 @@ class BaseData(Generic[TItem, TFile], Event):
         Begin can only be set to a posterior date from the original begin.
 
         """
+        self.items = [item for item in self.items if item.end >= value]
         for item in self.items:
             item.begin = max(item.begin, value)
 
@@ -118,6 +119,7 @@ class BaseData(Generic[TItem, TFile], Event):
     @end.setter
     def end(self, value: Timestamp) -> None:
         """Return true if every item of this data object is empty."""
+        self.items = [item for item in self.items if item.begin < value]
         for item in self.items:
             item.end = min(item.end, value)
 

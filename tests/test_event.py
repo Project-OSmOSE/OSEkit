@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from contextlib import nullcontext
+
 import pytest
 from pandas import Timestamp
 
@@ -326,3 +328,107 @@ def test_get_overlapping_events(
     )
 
     assert len(overlap_result) == len(expected_result)
+
+
+@pytest.mark.parametrize(
+    ("event", "updated_begin", "updated_end", "expected"),
+    [
+        pytest.param(
+            Event(
+                begin=Timestamp("2024-01-01 00:00:00"),
+                end=Timestamp("2024-01-02 00:00:00"),
+            ),
+            Timestamp("2024-01-01 12:00:00"),
+            None,
+            nullcontext(
+                Event(
+                    begin=Timestamp("2024-01-01 12:00:00"),
+                    end=Timestamp("2024-01-02 00:00:00"),
+                )
+            ),
+            id="valid_begin",
+        ),
+        pytest.param(
+            Event(
+                begin=Timestamp("2024-01-01 00:00:00"),
+                end=Timestamp("2024-01-02 00:00:00"),
+            ),
+            None,
+            Timestamp("2024-01-02 12:00:00"),
+            nullcontext(
+                Event(
+                    begin=Timestamp("2024-01-01 00:00:00"),
+                    end=Timestamp("2024-01-02 12:00:00"),
+                )
+            ),
+            id="valid_end",
+        ),
+        pytest.param(
+            Event(
+                begin=Timestamp("2024-01-01 00:00:00"),
+                end=Timestamp("2024-01-02 00:00:00"),
+            ),
+            Timestamp("2024-01-03 00:00:00"),
+            None,
+            pytest.raises(ValueError, match="`end`.*must be greater than `begin`.*"),
+            id="invalid_begin_after_end",
+        ),
+        pytest.param(
+            Event(
+                begin=Timestamp("2024-01-01 00:00:00"),
+                end=Timestamp("2024-01-02 00:00:00"),
+            ),
+            None,
+            Timestamp("2023-12-31 23:59:59"),
+            pytest.raises(ValueError, match="`end`.*must be greater than `begin`.*"),
+            id="invalid_end_before_begin",
+        ),
+        pytest.param(
+            Event(
+                begin=Timestamp("2024-01-01 00:00:00"),
+                end=Timestamp("2024-01-01 01:00:00"),
+            ),
+            Timestamp("2024-01-01 01:00:00"),
+            None,
+            pytest.raises(ValueError, match="`end`.*must be greater than `begin`.*"),
+            id="begin_equals_end",
+        ),
+    ],
+)
+def test_event_begin_end_updates(
+    event: Event,
+    updated_begin: Timestamp | None,
+    updated_end: Timestamp | None,
+    expected: Event,
+) -> None:
+    def update_event(
+        cool_event: Event, begin: Timestamp | None, end: Timestamp | None
+    ) -> Event:
+        if begin:
+            cool_event.begin = begin
+        if end:
+            cool_event.end = end
+        return cool_event
+
+    with expected as e:
+        assert update_event(event, updated_begin, updated_end) == e
+
+
+@pytest.mark.parametrize(
+    ("begin", "end"),
+    [
+        pytest.param(
+            Timestamp("2024-01-02 00:00:00"),
+            Timestamp("2024-01-01 00:00:00"),
+            id="begin_after_end",
+        ),
+        pytest.param(
+            Timestamp("2024-01-01 00:00:00"),
+            Timestamp("2024-01-01 00:00:00"),
+            id="begin_equals_end",
+        ),
+    ],
+)
+def test_event_errors(begin: Timestamp, end: Timestamp) -> None:
+    with pytest.raises(ValueError, match="`end`.*must be greater than `begin`.*") as e:
+        assert Event(begin=begin, end=end) == e
