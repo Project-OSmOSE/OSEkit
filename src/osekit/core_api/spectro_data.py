@@ -212,7 +212,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             raise ValueError("SpectroData should have either items or audio_data.")
 
         sx = self.fft.stft(
-            self.audio_data.get_value_calibrated(reject_dc=True),
+            self.audio_data.get_value_calibrated(),
             padding="zeros",
         )
 
@@ -261,7 +261,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         nfft = self.fft.mfft
 
         _, sx = welch(
-            self.audio_data.get_value_calibrated(reject_dc=True),
+            self.audio_data.get_value_calibrated(),
             fs=self.audio_data.sample_rate,
             window=window,
             nperseg=nperseg,

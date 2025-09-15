@@ -23,7 +23,7 @@ from osekit.core_api.audio_dataset import AudioDataset
 from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.audio_item import AudioItem
 from osekit.utils import audio_utils
-from osekit.utils.audio_utils import generate_sample_audio
+from osekit.utils.audio_utils import generate_sample_audio, Normalization, normalize
 
 
 @pytest.mark.parametrize(
@@ -754,6 +754,69 @@ def test_audio_resample_quality(
         ad.sample_rate,
         upsampling_frequency,
     ) == (upsampling_quality if upsampling_quality is not None else upsampling_default)
+
+
+@pytest.mark.parametrize(
+    ("audio_files", "normalization"),
+    [
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 10,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            Normalization.RAW,
+            id="no_normalization",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 10,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            Normalization.DC_REJECT,
+            id="dc_reject",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 10,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            Normalization.ZSCORE,
+            id="z_score",
+        ),
+    ],
+    indirect=["audio_files"],
+)
+def test_normalize_audio_data(
+    audio_files: tuple[list[AudioFile], pytest.fixtures.Subrequest],
+    normalization: Normalization,
+) -> None:
+    afs, _ = audio_files
+
+    raw_data = np.linspace(0.0, 1.0, 10)
+    normalized_data = normalize(values=raw_data, normalization=normalization)
+
+    if normalization == Normalization.RAW:
+        assert np.array_equal(raw_data, normalized_data)
+    else:
+        assert not np.array_equal(raw_data, normalized_data)
+
+    # AudioData
+    ad = AudioData.from_files(afs, normalization=normalization)
+    assert np.array_equal(ad.get_value(), normalized_data)
+
+    # AudioDataset
+    ads = AudioDataset.from_files(afs, normalization=normalization)
+    assert ads.data[0].normalization == normalization
+    assert np.array_equal(ads.data[0].get_value(), normalized_data)
 
 
 @pytest.mark.parametrize(

@@ -110,6 +110,59 @@ The data is fetched seamlessly on-demand from the audio file(s). The opening/clo
 
 Eventual time gap between audio items are filled with ``0.`` values.
 
+Normalization
+"""""""""""""
+
+The fetched audio data can be normalized according to the presets given by the :class:`osekit.utils.audio_utils.Normalization` flag:
+
+.. list-table:: Normalization presets
+   :widths: 10 10
+   :header-rows: 1
+
+   * - Name
+     - Description
+   * - ``Normalization.RAW``
+     - :math:`x`
+   * - ``Normalization.DC_REJECT``
+     - :math:`x-\overline{ x }`
+   * - ``Normalization.PEAK``
+     - :math:`\frac{x}{x_\text{max}}`
+   * - ``Normalization.ZSCORE``
+     - :math:`\frac{ x-\overline{x} }{\sigma (x)}`
+
+To normalize the data, simply set the :attr:`osekit.core_api.audio_data.AudioData.normalization` property to the
+requested normalization flag:
+
+.. code-block:: python
+
+    from osekit.core_api.audio_data.AudioData import AudioData
+    from osekit.utils.audio_utils.normalization import Normalization
+
+    ad = AudioData(...)
+    ad.normalization = Normalization.ZSCORE # Note: normalization also is a parameter of the AudioData initializer
+
+    v = ad.get_value() # The fetched data will then be normalized
+
+.. note::
+
+    The ``Normalization.DC_REJECT`` normalization can be combined with any single other normalization:
+
+    .. code-block:: python
+
+        from osekit.utils.audio_utils.normalization import Normalization
+
+        dc_peak = Normalization.DC_REJECT | Normalization.PEAK
+
+.. warning::
+
+    Instantiating another combination of normalizations will raise an error:
+
+    .. code-block:: python
+
+        from osekit.utils.audio_utils.normalization import Normalization
+
+        incorrect_normalization = Normalization.RAW | Normalization.PEAK
+        incorrect_normalization = Normalization.DC_REJECT | Normalization.RAW | Normalization.PEAK
 
 Calibration
 """""""""""
@@ -124,8 +177,8 @@ allows for retrieving the data in the shape of the recorded acoustic pressure.
 
 .. code-block:: python
 
-    from osekit.core_api.instrument import Instrument
     from osekit.core_api.audio_data import AudioData
+    from osekit.core_api.instrument import Instrument
     import numpy as np
 
     instrument = Instrument(end_to_end_db = 150) # The raw 1. WAV value equals 150 dB SPL re 1 uPa
@@ -170,6 +223,7 @@ an ``AudioDataset`` from a given folder containing audio files:
 
     from pathlib import Path
     from osekit.core_api.audio_dataset import AudioDataset
+    from osekit.core_api.instrument import Instrument
     from pandas import Timestamp, Timedelta
 
     folder = Path(r"...")
@@ -179,7 +233,9 @@ an ``AudioDataset`` from a given folder containing audio files:
         strptime_format="%y_%m_%d_%H_%M_%S", # To parse the files begin Timestamp
         begin=Timestamp("2009-01-06 12:00:00"),
         end=Timestamp("2009-01-06 14:00:00"),
-        data_duration=Timedelta("10s")
+        data_duration=Timedelta("10s"),
+        instrument=Instrument(end_to_end_db=150),
+        normalization="dc_reject"
     )
 
 The resulting ``AudioDataset`` will contain 10s-long ``AudioData`` ranging from ``2009-01-06 12:00:00`` to ``2009-01-06 14:00:00``.

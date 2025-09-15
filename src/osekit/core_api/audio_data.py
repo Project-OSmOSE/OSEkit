@@ -20,7 +20,7 @@ from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.audio_item import AudioItem
 from osekit.core_api.base_data import BaseData
 from osekit.core_api.instrument import Instrument
-from osekit.utils.audio_utils import resample
+from osekit.utils.audio_utils import resample, Normalization, normalize
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -40,6 +40,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         end: Timestamp | None = None,
         sample_rate: int | None = None,
         instrument: Instrument | None = None,
+        normalization: Normalization = Normalization.RAW,
     ) -> None:
         """Initialize an AudioData from a list of AudioItems.
 
@@ -58,11 +59,14 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         instrument: Instrument | None
             Instrument that might be used to obtain acoustic pressure from
             the wav audio data.
+        normalization: Normalization
+            The type of normalization to apply to the audio data.
 
         """
         super().__init__(items=items, begin=begin, end=end)
         self._set_sample_rate(sample_rate=sample_rate)
         self.instrument = instrument
+        self.normalization = normalization
 
     @property
     def nb_channels(self) -> int:
@@ -76,6 +80,15 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         """Shape of the audio data."""
         data_length = round(self.sample_rate * self.duration.total_seconds())
         return data_length if self.nb_channels <= 1 else (data_length, self.nb_channels)
+
+    @property
+    def normalization(self) -> Normalization:
+        """The type of normalization to apply to the audio data."""
+        return self._normalization
+
+    @normalization.setter
+    def normalization(self, value: Normalization) -> None:
+        self._normalization = value
 
     def __eq__(self, other: AudioData) -> bool:
         """Override __eq__."""
@@ -100,15 +113,10 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             return
         self.sample_rate = None
 
-    def get_value(self, reject_dc: bool = False) -> np.ndarray:
+    def get_value(self) -> np.ndarray:
         """Return the value of the audio data.
 
         The data from the audio file will be resampled if necessary.
-
-        Parameters
-        ----------
-        reject_dc: bool
-            If True, the values will be centered on 0.
 
         Returns
         -------
@@ -123,20 +131,14 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             item_data = item_data[: min(item_data.shape[0], data.shape[0] - idx)]
             data[idx : idx + len(item_data)] = item_data
             idx += len(item_data)
-        if reject_dc:
-            data -= data.mean()
-        return data
 
-    def get_value_calibrated(self, reject_dc: bool = False) -> np.ndarray:
+        return normalize(data, self.normalization)
+
+    def get_value_calibrated(self) -> np.ndarray:
         """Return the value of the audio data accounting for the calibration factor.
 
         If the instrument parameter of the audio data is not None, the returned value is
         calibrated in units of Pa.
-
-        Parameters
-        ----------
-        reject_dc: bool
-            If True, the values will be centered on 0.
 
         Returns
         -------
@@ -144,7 +146,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             The calibrated value of the audio data.
 
         """
-        raw_data = self.get_value(reject_dc=reject_dc)
+        raw_data = self.get_value()
         calibration_factor = (
             1.0 if self.instrument is None else self.instrument.end_to_end
         )
@@ -288,6 +290,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             | instrument_dict
             | {
                 "sample_rate": self.sample_rate,
+                "normalization": self.normalization.value,
             }
         )
 
@@ -315,6 +318,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         return cls.from_base_data(
             data=base_data,
             sample_rate=dictionary["sample_rate"],
+            normalization=Normalization(dictionary["normalization"]),
             instrument=instrument,
         )
 
@@ -326,6 +330,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         end: Timestamp | None = None,
         sample_rate: float | None = None,
         instrument: Instrument | None = None,
+        normalization: Normalization = Normalization.RAW,
     ) -> AudioData:
         """Return an AudioData object from a list of AudioFiles.
 
@@ -344,6 +349,8 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         instrument: Instrument | None
             Instrument that might be used to obtain acoustic pressure from
             the wav audio data.
+        normalization: Normalization
+            The type of normalization to apply to the audio data.
 
         Returns
         -------
@@ -355,6 +362,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             data=BaseData.from_files(files, begin, end),
             sample_rate=sample_rate,
             instrument=instrument,
+            normalization=normalization,
         )
 
     @classmethod
@@ -363,6 +371,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         data: BaseData,
         sample_rate: float | None = None,
         instrument: Instrument | None = None,
+        normalization: Normalization = Normalization.RAW,
     ) -> AudioData:
         """Return an AudioData object from a BaseData object.
 
@@ -375,6 +384,8 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         instrument: Instrument | None
             Instrument that might be used to obtain acoustic pressure from
             the wav audio data.
+        normalization: Literal["raw","dc_reject","zscore"]
+            The type of normalization to apply to the audio data.
 
         Returns
         -------
@@ -386,4 +397,5 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             items=[AudioItem.from_base_item(item) for item in data.items],
             sample_rate=sample_rate,
             instrument=instrument,
+            normalization=normalization,
         )

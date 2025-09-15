@@ -261,6 +261,8 @@ Let's now say we want to export audio, spectrum matrices and spectrograms with t
      - ``10 s``
    * - Sample rate
      - ``48 kHz``
+   * - Audio data normalization
+     - ``dc_reject`` (removes the audio DC component)
    * - FFT
      - ``hamming window``, ``1024 points``, ``40% overlap``
 
@@ -291,6 +293,7 @@ Then we are all set for running the analysis:
         end=dataset.origin_dataset.begin + Timedelta(hours=1.5), # 1h30 after the begin of the original dataset
         data_duration=Timedelta("10s"), # Duration of the output data
         sample_rate=48_000, # Sample rate of the output data
+        normalization="dc_reject",
         name="full_analysis", # You can name the analysis, or keep the default name.
         fft=sft, # The FFT parameters
     )
