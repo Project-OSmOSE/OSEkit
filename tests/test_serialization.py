@@ -21,13 +21,14 @@ from osekit.core_api.instrument import Instrument
 from osekit.core_api.spectro_data import SpectroData
 from osekit.core_api.spectro_dataset import SpectroDataset
 from osekit.core_api.spectro_file import SpectroFile
+from osekit.utils.audio_utils import Normalization
 
 if TYPE_CHECKING:
     from pathlib import Path
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "begin", "end", "sample_rate"),
+    ("audio_files", "begin", "end", "sample_rate", "normalization"),
     [
         pytest.param(
             {
@@ -39,6 +40,7 @@ if TYPE_CHECKING:
             None,
             None,
             48_000,
+            Normalization.RAW,
             id="full_file_no_resample",
         ),
         pytest.param(
@@ -50,7 +52,21 @@ if TYPE_CHECKING:
             },
             None,
             None,
+            48_000,
+            Normalization.ZSCORE,
+            id="normalized_audio",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00"),
+            },
+            None,
+            None,
             24_000,
+            Normalization.RAW,
             id="full_file_downsample",
         ),
         pytest.param(
@@ -63,6 +79,7 @@ if TYPE_CHECKING:
             None,
             None,
             96_000,
+            Normalization.RAW,
             id="full_file_upsample",
         ),
         pytest.param(
@@ -75,6 +92,7 @@ if TYPE_CHECKING:
             Timestamp("2024-01-01 12:00:01"),
             Timestamp("2024-01-01 12:00:02"),
             48_000,
+            Normalization.RAW,
             id="file_part",
         ),
         pytest.param(
@@ -87,6 +105,7 @@ if TYPE_CHECKING:
             Timestamp("2024-01-01 12:00:01"),
             Timestamp("2024-01-01 12:00:02"),
             24_000,
+            Normalization.RAW,
             id="two_files_with_resample",
         ),
         pytest.param(
@@ -100,6 +119,7 @@ if TYPE_CHECKING:
             Timestamp("2024-01-01 12:00:01"),
             Timestamp("2024-01-01 12:00:04"),
             48_000,
+            Normalization.RAW,
             id="two_files_with_gap",
         ),
         pytest.param(
@@ -113,7 +133,22 @@ if TYPE_CHECKING:
             Timestamp("2024-01-01 12:00:01+0200"),
             Timestamp("2024-01-01 12:00:04+0200"),
             48_000,
+            Normalization.RAW,
             id="localized_files",
+        ),
+        pytest.param(
+            {
+                "duration": 2,
+                "sample_rate": 48_000,
+                "nb_files": 2,
+                "inter_file_duration": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00+0200"),
+            },
+            Timestamp("2024-01-01 12:00:01+0200"),
+            Timestamp("2024-01-01 12:00:04+0200"),
+            48_000,
+            Normalization.DC_REJECT,
+            id="localized_normalized_files",
         ),
     ],
     indirect=["audio_files"],
@@ -124,6 +159,7 @@ def test_audio_data_serialization(
     begin: Timestamp | None,
     end: Timestamp | None,
     sample_rate: float,
+    normalization: Normalization,
 ) -> None:
     audio_files, _ = audio_files
 
@@ -132,13 +168,14 @@ def test_audio_data_serialization(
         begin=begin,
         end=end,
         sample_rate=sample_rate,
+        normalization=normalization,
     )
 
     assert np.array_equal(ad.get_value(), AudioData.from_dict(ad.to_dict()).get_value())
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "data_duration", "sample_rate", "name"),
+    ("audio_files", "data_duration", "sample_rate", "normalization", "name"),
     [
         pytest.param(
             {
@@ -148,6 +185,7 @@ def test_audio_data_serialization(
             },
             Timedelta(seconds=1),
             48_000,
+            Normalization.RAW,
             None,
             id="one_audio_data_one_file_no_resample",
         ),
@@ -159,6 +197,7 @@ def test_audio_data_serialization(
             },
             Timedelta(seconds=2),
             48_000,
+            Normalization.RAW,
             None,
             id="one_audio_data_two_files_no_resample",
         ),
@@ -170,6 +209,7 @@ def test_audio_data_serialization(
             },
             Timedelta(seconds=2),
             24_000,
+            Normalization.RAW,
             None,
             id="one_audio_data_two_files_downsample",
         ),
@@ -181,6 +221,7 @@ def test_audio_data_serialization(
             },
             Timedelta(seconds=1),
             [12_000, 24_000, 48_000, 96_000],
+            Normalization.RAW,
             None,
             id="multiple_audio_data_different_sample_rates",
         ),
@@ -192,6 +233,7 @@ def test_audio_data_serialization(
             },
             Timedelta(seconds=1),
             48_000,
+            Normalization.RAW,
             "merriweather post pavilion",
             id="named_ads",
         ),
@@ -204,6 +246,7 @@ def test_audio_data_serialization(
             },
             Timedelta(seconds=1),
             48_000,
+            Normalization.RAW,
             "merriweather post pavilion",
             id="localized_ads",
         ),
@@ -215,6 +258,7 @@ def test_audio_dataset_serialization(
     audio_files: tuple[list[AudioFile], pytest.fixtures.Subrequest],
     data_duration: Timestamp | None,
     sample_rate: float | list[float],
+    normalization: Normalization,
     name: str | None,
 ) -> None:
     audio_files, request = audio_files
@@ -230,6 +274,7 @@ def test_audio_dataset_serialization(
         tmp_path,
         strptime_format=strptime_format,
         data_duration=data_duration,
+        normalization=normalization,
         name=name,
     )
 
@@ -259,6 +304,7 @@ def test_audio_dataset_serialization(
     assert ads.has_default_name == ads2.has_default_name
     assert ads.sample_rate == ads2.sample_rate
     assert ads.begin == ads2.begin
+    assert ads.normalization == ads2.normalization
 
     assert all(
         np.array_equal(ad.get_value(), ad2.get_value())

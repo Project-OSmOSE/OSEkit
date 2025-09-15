@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import time
+from contextlib import nullcontext
 from pathlib import Path
+from typing import Union
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -12,6 +15,7 @@ from osekit.utils.core_utils import (
     locked,
     nb_files_per_batch,
 )
+from osekit.utils.audio_utils import Normalization, normalize
 from osekit.utils.formatting_utils import aplose2raven
 from osekit.utils.path_utils import move_tree
 from pandas import Timedelta
@@ -363,3 +367,128 @@ def test_get_closest_value_index(
     expected: int,
 ) -> None:
     assert get_closest_value_index(values=values, target=target) == expected
+
+
+@pytest.mark.parametrize(
+    ("normalizations", "expected"),
+    [
+        pytest.param(
+            [Normalization.RAW],
+            nullcontext(Normalization.RAW),
+            id="raw_is_fine",
+        ),
+        pytest.param(
+            [1],
+            nullcontext(Normalization.RAW),
+            id="int_raw_is_fine",
+        ),
+        pytest.param(
+            [Normalization.DC_REJECT],
+            nullcontext(Normalization.DC_REJECT),
+            id="dc_reject_is_fine",
+        ),
+        pytest.param(
+            [Normalization.DC_REJECT, Normalization.PEAK],
+            nullcontext(Normalization.DC_REJECT | Normalization.PEAK),
+            id="dc_and_peak_is_fine",
+        ),
+        pytest.param(
+            [Normalization.DC_REJECT, Normalization.ZSCORE],
+            nullcontext(Normalization.DC_REJECT | Normalization.ZSCORE),
+            id="dc_and_zscore_is_fine",
+        ),
+        pytest.param(
+            [10],
+            nullcontext(Normalization.DC_REJECT | Normalization.ZSCORE),
+            id="int_dc_and_zscore_is_fine",
+        ),
+        pytest.param(
+            [Normalization.DC_REJECT, Normalization.PEAK, Normalization.ZSCORE],
+            pytest.raises(ValueError),
+            id="dc_reject_can_be_combined_with_only_one_other_value",
+        ),
+        pytest.param(
+            [Normalization.PEAK, Normalization.ZSCORE],
+            pytest.raises(ValueError),
+            id="combination_without_dc_raises",
+        ),
+        pytest.param(
+            [4, 8],
+            pytest.raises(ValueError),
+            id="int_combination_without_dc_raises",
+        ),
+        pytest.param(
+            [12],
+            pytest.raises(ValueError),
+            id="int_direct_combination_without_dc_raises",
+        ),
+    ],
+)
+def test_combined_normalization(
+    normalizations: list[Union[Normalization, int]], expected
+) -> None:
+    def combine_normalizations(normalizations: list[Union[Normalization, int]]):
+        normalizations = [
+            Normalization(n) if type(n) is int else n for n in normalizations
+        ]
+        output = normalizations[0]
+        for n in normalizations[1:]:
+            output = output | n
+        return output
+
+    with expected as e:
+        assert combine_normalizations(normalizations) == e
+
+
+@pytest.mark.parametrize(
+    ("values", "normalization", "expected"),
+    [
+        pytest.param(
+            np.array([0.0, 1.0, 2.0]),
+            Normalization.RAW,
+            np.array([0.0, 1.0, 2.0]),
+            id="raw",
+        ),
+        pytest.param(
+            np.array([0.0, 1.0, 2.0]),
+            Normalization.DC_REJECT,
+            np.array([-1.0, 0.0, 1.0]),
+            id="dc_reject",
+        ),
+        pytest.param(
+            np.array([0.0, 1.0, 2.0]),
+            Normalization.PEAK,
+            np.array([0.0, 0.5, 1.0]),
+            id="peak",
+        ),
+        pytest.param(
+            np.array([-0.25, 0.5, 0.0]),
+            Normalization.PEAK,
+            np.array([-0.5, 1.0, 0.0]),
+            id="peak_with_negative_values",
+        ),
+        pytest.param(
+            np.array([-0.5, 0.25, 0.0]),
+            Normalization.PEAK,
+            np.array([-1.0, 0.5, 0.0]),
+            id="peak_with_negative_max",
+        ),
+        pytest.param(
+            np.array([0.0, 1.0, 2.0]),
+            Normalization.ZSCORE,
+            np.array([-1.224744871391589, 0.0, 1.224744871391589]),
+            id="zscore",
+        ),
+        pytest.param(
+            np.array([0.0, 2.0, 4.0]),
+            Normalization.DC_REJECT | Normalization.PEAK,
+            np.array([-1.0, 0.0, 1.0]),
+            id="dc_reject_and_peak",
+        ),
+    ],
+)
+def test_normalization(
+    values: np.ndarray, normalization: Normalization, expected: np.ndarray
+) -> None:
+    normalized = normalize(values=values, normalization=normalization)
+    assert np.array_equal(normalized, expected)

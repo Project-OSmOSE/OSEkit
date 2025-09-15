@@ -13,6 +13,7 @@ This LTAS will:
 * Start at the begin of the first audio file
 * End at the end of the last audio file
 * Be downsampled at ``24 kHz``
+* Have its DC component removed
 
 | The FFT used for computing the spectrograms will use a ``1024 samples``-long hamming window.
 | The ``hop`` of LTAS ``ShortTimeFFT`` objects is forced to the size of the window (no overlap).

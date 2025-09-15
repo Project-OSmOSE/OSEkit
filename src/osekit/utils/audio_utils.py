@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import enum
 from typing import Literal
 
 import numpy as np
@@ -112,3 +113,58 @@ def resample(data: np.ndarray, origin_sr: float, target_sr: float) -> np.ndarray
         else resample_quality_settings["downsample"]
     )
     return soxr.resample(data, origin_sr, target_sr, quality=quality)
+
+
+def normalize_raw(values: np.ndarray) -> np.ndarray:
+    """No normalization of the audio data."""
+    return values
+
+
+def normalize_dc_reject(values: np.ndarray) -> np.ndarray:
+    """Reject the DC component of the audio data."""
+    return values - values.mean()
+
+
+def normalize_peak(values: np.ndarray) -> np.ndarray:
+    """Return values normalized so that the peak value is 1.0."""
+    return values / max(abs(values))
+
+
+def normalize_zscore(values: np.ndarray) -> np.ndarray:
+    """Return normalized zscore from the audio data."""
+    return (values - values.mean()) / values.std()
+
+
+class NormalizationValider(enum.EnumMeta):
+    """
+    Metaclass used for validating the normalization flag,
+    as only REJECT_DC can be combined with (exactly) one other normalization.
+    """
+
+    def __call__(cls, *args, **kwargs):
+        instance = super().__call__(*args, **kwargs)
+
+        mask = instance.value & ~Normalization.DC_REJECT.value
+        if mask & (mask - 1):
+            message = "Combined normalizations can only be DC_REJECT combined with exactly one other normalization type."
+            raise ValueError(message)
+
+        return instance
+
+
+class Normalization(enum.Flag, metaclass=NormalizationValider):
+    RAW = enum.auto()
+    DC_REJECT = enum.auto()
+    PEAK = enum.auto()
+    ZSCORE = enum.auto()
+
+
+def normalize(values: np.ndarray, normalization: Normalization) -> np.ndarray:
+    """Normalize the audio data."""
+    if Normalization.DC_REJECT in normalization:
+        values = normalize_dc_reject(values)
+    if Normalization.PEAK in normalization:
+        values = normalize_peak(values)
+    if Normalization.ZSCORE in normalization:
+        values = normalize_zscore(values)
+    return values
