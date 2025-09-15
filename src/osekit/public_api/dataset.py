@@ -113,7 +113,7 @@ class Dataset:
     @property
     def analyses(self) -> list[str]:
         """Return the list of the names of the analyses ran with this Dataset."""
-        return list(set(dataset["analysis"] for dataset in self.datasets.values()))
+        return list({dataset["analysis"] for dataset in self.datasets.values()})
 
     def build(self) -> None:
         """Build the Dataset.
@@ -250,15 +250,15 @@ class Dataset:
         analysis: Analysis,
         audio_dataset: AudioDataset | None = None,
     ) -> SpectroDataset | LTASDataset:
-        """Return a SpectroDataset (or LTASDataset) created from the analysis parameters.
+        """Return a SpectroDataset (or LTASDataset) created from analysis parameters.
 
         Parameters
         ----------
         analysis: Analysis
             Analysis for which to generate an AudioDataset object.
         audio_dataset: AudioDataset|None
-            If provided, the SpectroDataset will be initialized from this
-            AudioDataset. This can be used to edit the analysis (e.g. adding/removing data)
+            If provided, the SpectroDataset will be initialized from this AudioDataset.
+             This can be used to edit the analysis (e.g. adding/removing data)
             before running it.
 
         Returns
@@ -271,9 +271,8 @@ class Dataset:
 
         """
         if analysis.fft is None:
-            raise ValueError(
-                "FFT parameter should be given if spectra outputs are selected.",
-            )
+            msg = "FFT parameter should be given if spectra outputs are selected."
+            raise ValueError(msg)
 
         ads = (
             self.get_analysis_audiodataset(analysis=analysis)
@@ -432,7 +431,7 @@ class Dataset:
 
         """
         # Import here to avoid circular imports since the script needs to import Dataset
-        from osekit.public_api import export_analysis
+        from osekit.public_api import export_analysis  # noqa: PLC0415
 
         if self.job_builder is None:
             export_analysis.write_analysis(
@@ -532,6 +531,7 @@ class Dataset:
         ----------
         dataset_name: str
             Name of the dataset to remove.
+
         """
         dataset_to_remove = self.get_dataset(dataset_name)
         if dataset_to_remove is None:
@@ -548,18 +548,19 @@ class Dataset:
         Parameters
         ----------
         analysis_name: str
-        Name of the analysis of which to get the output datasets.
+            Name of the analysis of which to get the output datasets.
 
         Returns
         -------
         list[type[DatasetChild]]
         List of the analysis output datasets.
+
         """
-        return list(
+        return [
             dataset["dataset"]
             for dataset in self.datasets.values()
             if dataset["analysis"] == analysis_name
-        )
+        ]
 
     def rename_analysis(self, analysis_name: str, new_analysis_name: str) -> None:
         """Rename an already ran analysis.
