@@ -346,7 +346,7 @@ def test_get_overlapping_events(
                     end=Timestamp("2024-01-02 00:00:00"),
                 )
             ),
-            id="valid begin",
+            id="valid_begin",
         ),
         pytest.param(
             Event(
@@ -361,7 +361,7 @@ def test_get_overlapping_events(
                     end=Timestamp("2024-01-02 12:00:00"),
                 )
             ),
-            id="valid end",
+            id="valid_end",
         ),
         pytest.param(
             Event(
@@ -371,7 +371,7 @@ def test_get_overlapping_events(
             Timestamp("2024-01-03 00:00:00"),
             None,
             pytest.raises(ValueError, match="`end`.*must be greater than `begin`.*"),
-            id="invalid begin > end",
+            id="invalid_begin_after_end",
         ),
         pytest.param(
             Event(
@@ -381,7 +381,7 @@ def test_get_overlapping_events(
             None,
             Timestamp("2023-12-31 23:59:59"),
             pytest.raises(ValueError, match="`end`.*must be greater than `begin`.*"),
-            id="invalid end < begin",
+            id="invalid_end_before_begin",
         ),
         pytest.param(
             Event(
@@ -391,7 +391,7 @@ def test_get_overlapping_events(
             Timestamp("2024-01-01 01:00:00"),
             None,
             pytest.raises(ValueError, match="`end`.*must be greater than `begin`.*"),
-            id="begin and end equals",
+            id="begin_equals_end",
         ),
     ],
 )
@@ -412,3 +412,23 @@ def test_event_begin_end_updates(
 
     with expected as e:
         assert update_event(event, updated_begin, updated_end) == e
+
+
+@pytest.mark.parametrize(
+    ("begin", "end"),
+    [
+        pytest.param(
+            Timestamp("2024-01-02 00:00:00"),
+            Timestamp("2024-01-01 00:00:00"),
+            id="begin_after_end",
+        ),
+        pytest.param(
+            Timestamp("2024-01-01 00:00:00"),
+            Timestamp("2024-01-01 00:00:00"),
+            id="begin_equals_end",
+        ),
+    ],
+)
+def test_event_errors(begin: Timestamp, end: Timestamp) -> None:
+    with pytest.raises(ValueError, match="`end`.*must be greater than `begin`.*") as e:
+        assert Event(begin=begin, end=end) == e
