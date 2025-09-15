@@ -27,11 +27,8 @@ class Event:
         end: Timestamp
     ) -> None:
         """Initialize an Event instance with a beginning and an end."""
-        if begin > end:
-            msg = f"Invalid Event: `end` ({end}) must be greater than `begin` ({begin})."  # noqa: E501
-            raise ValueError(msg)
-        self._begin = begin
-        self._end = end
+        self.begin = begin
+        self.end = end
 
     @property
     def begin(self) -> Timestamp:
@@ -40,7 +37,7 @@ class Event:
 
     @begin.setter
     def begin(self, value: Timestamp) -> None:
-        if hasattr(self, "_end") and value > self._end:
+        if hasattr(self, "_end") and value >= self._end:
             msg = f"Invalid Event: `end` ({self._end}) must be greater than `begin` ({value})."  # noqa: E501
             raise ValueError(msg)
         self._begin = value
@@ -52,7 +49,7 @@ class Event:
 
     @end.setter
     def end(self, value: Timestamp) -> None:
-        if hasattr(self, "_begin") and value < self._begin:
+        if hasattr(self, "_begin") and value <= self._begin:
             msg = f"Invalid Event: `end` ({value}) must be greater than `begin` ({self._begin})."  # noqa: E501
             raise ValueError(msg)
         self._end = value
@@ -151,8 +148,8 @@ class Event:
 
         """  # noqa: E501
         events = sorted(
-            [copy.copy(event) for event in events],
-            key=lambda event: (event.begin, event.end),
+            events,
+            key=lambda event: (event.begin, -1*event.duration),
         )
         concatenated_events = []
         for event in events:
