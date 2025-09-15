@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from contextlib import nullcontext
-from typing import ContextManager
+from contextlib import AbstractContextManager, nullcontext
 
 import pytest
 from pandas import Timestamp
@@ -390,7 +389,7 @@ def test_event_begin_end_updates(
     initial: list[tuple[str, Timestamp]],
     updates: tuple[str, Timestamp],
     expected_values: tuple[Timestamp, Timestamp],
-    expectation: ContextManager[None],
+    expectation: AbstractContextManager[BaseException | None],
 ) -> None:
     initial_dict = dict(initial)
     cool_event = Event(begin=initial_dict["begin"], end=initial_dict["end"])
