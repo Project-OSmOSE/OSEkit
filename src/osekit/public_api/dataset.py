@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, TypeVar
 
 from osekit import config
 from osekit.config import DPDEFAULT, resample_quality_settings
+from osekit.core_api import audio_file_manager as afm
 from osekit.core_api.audio_dataset import AudioDataset
 from osekit.core_api.base_dataset import BaseDataset
 from osekit.core_api.instrument import Instrument
@@ -109,6 +110,11 @@ class Dataset:
         """Return the AudioDataset from which this Dataset has been built."""
         return self.get_dataset("original")
 
+    @property
+    def analyses(self) -> list[str]:
+        """Return the list of the names of the analyses ran with this Dataset."""
+        return list({dataset["analysis"] for dataset in self.datasets.values()})
+
     def build(self) -> None:
         """Build the Dataset.
 
@@ -129,7 +135,11 @@ class Dataset:
             name="original",
             instrument=self.instrument,
         )
-        self.datasets[ads.name] = {"class": type(ads).__name__, "dataset": ads}
+        self.datasets[ads.name] = {
+            "class": type(ads).__name__,
+            "analysis": "original",
+            "dataset": ads,
+        }
 
         self.logger.info("Organizing dataset folder...")
         move_tree(
@@ -179,6 +189,8 @@ class Dataset:
         the "other" folder to the root folder.
         WARNING: all other files and folders will be deleted.
         """
+        afm.close()
+
         files_to_remove = list(self.folder.iterdir())
         self.get_dataset("original").move_files(self.folder)
 
@@ -239,15 +251,15 @@ class Dataset:
         analysis: Analysis,
         audio_dataset: AudioDataset | None = None,
     ) -> SpectroDataset | LTASDataset:
-        """Return a SpectroDataset (or LTASDataset) created from the analysis parameters.
+        """Return a SpectroDataset (or LTASDataset) created from analysis parameters.
 
         Parameters
         ----------
         analysis: Analysis
             Analysis for which to generate an AudioDataset object.
         audio_dataset: AudioDataset|None
-            If provided, the SpectroDataset will be initialized from this
-            AudioDataset. This can be used to edit the analysis (e.g. adding/removing data)
+            If provided, the SpectroDataset will be initialized from this AudioDataset.
+             This can be used to edit the analysis (e.g. adding/removing data)
             before running it.
 
         Returns
@@ -260,9 +272,8 @@ class Dataset:
 
         """
         if analysis.fft is None:
-            raise ValueError(
-                "FFT parameter should be given if spectra outputs are selected.",
-            )
+            msg = "FFT parameter should be given if spectra outputs are selected."
+            raise ValueError(msg)
 
         ads = (
             self.get_analysis_audiodataset(analysis=analysis)
@@ -312,6 +323,14 @@ class Dataset:
             AudioData etc.)
 
         """
+        if analysis.name in self.analyses:
+            message = (
+                f"Analysis {analysis.name} already exists."
+                f"Please choose a different name,"
+                f"or delete it with the Dataset.delete_analysis() method."
+            )
+            raise ValueError(message)
+
         ads = (
             self.get_analysis_audiodataset(analysis=analysis)
             if audio_dataset is None
@@ -319,7 +338,7 @@ class Dataset:
         )
 
         if AnalysisType.AUDIO in analysis.analysis_type:
-            self._add_audio_dataset(ads=ads)
+            self._add_audio_dataset(ads=ads, analysis_name=analysis.name)
 
         sds = None
         if analysis.is_spectro:
@@ -327,7 +346,7 @@ class Dataset:
                 analysis=analysis,
                 audio_dataset=ads,
             )
-            self._add_spectro_dataset(sds=sds)
+            self._add_spectro_dataset(sds=sds, analysis_name=analysis.name)
 
         self.export_analysis(
             analysis_type=analysis.analysis_type,
@@ -342,9 +361,14 @@ class Dataset:
     def _add_audio_dataset(
         self,
         ads: AudioDataset,
+        analysis_name: str,
     ) -> None:
         ads.folder = self._get_audio_dataset_subpath(ads=ads)
-        self.datasets[ads.name] = {"class": type(ads).__name__, "dataset": ads}
+        self.datasets[ads.name] = {
+            "class": type(ads).__name__,
+            "analysis": analysis_name,
+            "dataset": ads,
+        }
         ads.write_json(ads.folder)
 
     def _get_audio_dataset_subpath(
@@ -408,7 +432,7 @@ class Dataset:
 
         """
         # Import here to avoid circular imports since the script needs to import Dataset
-        from osekit.public_api import export_analysis
+        from osekit.public_api import export_analysis  # noqa: PLC0415
 
         if self.job_builder is None:
             export_analysis.write_analysis(
@@ -459,9 +483,14 @@ class Dataset:
     def _add_spectro_dataset(
         self,
         sds: SpectroDataset | LTASDataset,
+        analysis_name: str,
     ) -> None:
         sds.folder = self._get_spectro_dataset_subpath(sds=sds)
-        self.datasets[sds.name] = {"class": type(sds).__name__, "dataset": sds}
+        self.datasets[sds.name] = {
+            "class": type(sds).__name__,
+            "dataset": sds,
+            "analysis": analysis_name,
+        }
         sds.write_json(sds.folder)
 
     def _get_spectro_dataset_subpath(
@@ -492,6 +521,101 @@ class Dataset:
     def _sort_spectro_dataset(self, dataset: SpectroDataset | LTASDataset) -> None:
         raise NotImplementedError
 
+    def _delete_dataset(self, dataset_name: str) -> None:
+        """Delete an analysis dataset.
+
+        WARNING: all the analysis output files will be deleted.
+        WARNING: removing linked datasets (e.g. an AudioDataset to which a SpectroDataset is
+        linked) might lead to errors.
+
+        Parameters
+        ----------
+        dataset_name: str
+            Name of the dataset to remove.
+
+        """
+        dataset_to_remove = self.get_dataset(dataset_name)
+        if dataset_to_remove is None:
+            return
+        self.datasets.pop(dataset_to_remove.name)
+
+        afm.close()
+        shutil.rmtree(str(dataset_to_remove.folder))
+        self.write_json()
+
+    def get_datasets_by_analysis(self, analysis_name: str) -> list[type[DatasetChild]]:
+        """Get all output datasets from a given analysis.
+
+        Parameters
+        ----------
+        analysis_name: str
+            Name of the analysis of which to get the output datasets.
+
+        Returns
+        -------
+        list[type[DatasetChild]]
+        List of the analysis output datasets.
+
+        """
+        return [
+            dataset["dataset"]
+            for dataset in self.datasets.values()
+            if dataset["analysis"] == analysis_name
+        ]
+
+    def rename_analysis(self, analysis_name: str, new_analysis_name: str) -> None:
+        """Rename an already ran analysis.
+
+        Parameters
+        ----------
+        analysis_name: str
+            Name of the analysis to rename.
+        new_analysis_name: str
+            New name of the analysis to rename.
+
+        """
+        if analysis_name == "original":
+            raise ValueError("You can't rename the original dataset.")
+        if analysis_name not in self.datasets:
+            raise ValueError(f"Unknown analysis {analysis_name}.")
+        if analysis_name == new_analysis_name:
+            return
+
+        keys_to_rename = {}
+        for analysis_dataset in self.datasets.values():
+            if analysis_dataset["analysis"] == analysis_name:
+                analysis_dataset["analysis"] = new_analysis_name
+                ds = analysis_dataset["dataset"]
+                old_name, new_name = (
+                    ds.name,
+                    new_analysis_name + (f"_{ds.suffix}" if ds.suffix else ""),
+                )
+                ds.base_name = new_analysis_name
+                old_folder = ds.folder
+                new_folder = ds.folder.parent / new_name
+                keys_to_rename[old_name] = new_name
+
+                ds.move_files(new_folder)
+                move_tree(
+                    old_folder, new_folder, excluded_paths=old_folder.glob("*.json")
+                )  # Moves exported files
+                shutil.rmtree(str(old_folder))
+                ds.write_json(ds.folder)
+
+        for old_name, new_name in keys_to_rename.items():
+            self.datasets[new_name] = self.datasets.pop(old_name)
+
+        self.write_json()
+
+    def delete_analysis(self, analysis_name: str) -> None:
+        """Delete all output datasets from an analysis.
+
+        WARNING: all the analysis output files will be deleted.
+
+        """
+        for dataset_to_delete in self.get_datasets_by_analysis(analysis_name):
+            self._delete_dataset(dataset_to_delete.name)
+
     def get_dataset(self, dataset_name: str) -> type[DatasetChild] | None:
         """Get an analysis dataset from its name.
 
@@ -507,6 +631,8 @@ class Dataset:
 
         """
         if dataset_name not in self.datasets:
+            message = f"Dataset '{dataset_name}' not found."
+            self.logger.warning(message)
             return None
         return self.datasets[dataset_name]["dataset"]
 
@@ -523,6 +649,7 @@ class Dataset:
             "datasets": {
                 name: {
                     "class": dataset["class"],
+                    "analysis": dataset["analysis"],
                     "json": str(dataset["dataset"].folder / f"{name}.json"),
                 }
                 for name, dataset in self.datasets.items()
@@ -565,6 +692,7 @@ class Dataset:
             )
             datasets[name] = {
                 "class": dataset["class"],
+                "analysis": dataset["analysis"],
                 "dataset": dataset_class.from_json(Path(dataset["json"])),
             }
         return cls(
