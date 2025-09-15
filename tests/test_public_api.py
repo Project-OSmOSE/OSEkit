@@ -1286,3 +1286,49 @@ def test_existing_analysis_warning(
             fft=ShortTimeFFT(hamming(1024), hop=1024, fs=24_000),
         )
     )
+
+
+def test_rename_analysis(tmp_path: pytest.fixture, audio_files: pytest.fixture) -> None:
+    dataset = Dataset(
+        folder=tmp_path,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+    )
+
+    dataset.build()
+
+    first_name, second_name = "fontaines", "dc"
+
+    analysis = Analysis(
+        analysis_type=AnalysisType.AUDIO
+        | AnalysisType.SPECTROGRAM
+        | AnalysisType.MATRIX,
+        data_duration=dataset.origin_dataset.duration / 10,
+        name=first_name,
+        sample_rate=24_000,
+        fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
+    )
+
+    dataset.run_analysis(analysis)
+
+    dataset.rename_analysis(first_name, second_name)
+
+    assert first_name not in dataset.analyses
+    assert second_name in dataset.analyses
+
+    assert len(dataset.get_datasets_by_analysis(second_name)) == 2
+    assert not dataset.get_datasets_by_analysis(first_name)
+
+    assert not (dataset.folder / "data" / "audio" / f"{first_name}_audio").exists()
+    assert (dataset.folder / "data" / "audio" / f"{second_name}_audio").exists()
+
+    assert not (dataset.folder / "processed" / first_name).exists()
+    assert (dataset.folder / "processed" / second_name).exists()
+
+    assert (
+        len(
+            Dataset.from_json(dataset.folder / "dataset.json").get_datasets_by_analysis(
+                second_name
+            )
+        )
+        == 2
+    )
