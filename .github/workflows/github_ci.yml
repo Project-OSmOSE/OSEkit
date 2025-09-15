@@ -28,5 +28,8 @@ jobs:
         uv run coverage run -m pytest
         uv run coverage report
 
+    - name: Coveralls GitHub Action
+      uses: coverallsapp/github-action@v2.3.6
+
     - name: Run Ruff
       run: uv run ruff check --output-format=github --select E4,E7,E9,F
