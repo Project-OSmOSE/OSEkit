@@ -71,6 +71,10 @@ class BaseDataset(Generic[TData, TFile], Event):
             else self._name
         )
 
+    @base_name.setter
+    def base_name(self, name: str) -> None:
+        self._name = name
+
     @property
     def name(self) -> str:
         """Name of the dataset with suffix."""

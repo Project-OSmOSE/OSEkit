@@ -1093,3 +1093,242 @@ def test_edit_analysis_before_run(
 
     # Instrument has been edited
     assert analysis_ads.instrument.end_to_end_db == new_instrument.end_to_end_db
+
+
+def test_delete_analysis_dataset(
+    tmp_path: pytest.fixture, audio_files: pytest.fixture
+) -> None:
+    dataset = Dataset(
+        folder=tmp_path,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+    )
+
+    dataset.build()
+
+    analysis_1 = Analysis(
+        analysis_type=AnalysisType.AUDIO | AnalysisType.SPECTROGRAM,
+        data_duration=dataset.origin_dataset.duration / 10,
+        name="analysis_1",
+        sample_rate=24_000,
+        fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
+    )
+
+    analysis_2 = Analysis(
+        analysis_type=AnalysisType.AUDIO | AnalysisType.SPECTROGRAM,
+        data_duration=dataset.origin_dataset.duration / 10,
+        name="analysis_2",
+        sample_rate=20_000,
+        fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=20_000),
+    )
+
+    dataset.run_analysis(analysis_1)
+    dataset.run_analysis(analysis_2)
+
+    ds1 = dataset.get_dataset(analysis_1.name)
+    ds2 = dataset.get_dataset(analysis_2.name)
+    ds3 = dataset.get_dataset(f"{analysis_1.name}_audio")
+    ds4 = dataset.get_dataset(f"{analysis_2.name}_audio")
+
+    # Tests Dataset.get_datasets_by_analysis
+    assert dataset.get_datasets_by_analysis("analysis_1") == [ds3, ds1]
+    assert dataset.get_datasets_by_analysis("analysis_2") == [ds4, ds2]
+
+    datasets = [ds1, ds2, ds3, ds4]
+
+    for i, ds in enumerate(datasets):
+        assert ds.name in dataset.datasets.keys()
+        assert ds.folder.exists()
+
+        dataset._delete_dataset(str(ds.name))
+
+        assert ds.name not in dataset.datasets.keys()
+        assert not ds.folder.exists()
+
+        # The JSON should be updated
+        new_dataset = Dataset.from_json(dataset.folder / "dataset.json")
+        assert ds.name not in new_dataset.datasets.keys()
+
+
+@pytest.mark.parametrize(
+    "analysis_to_delete",
+    [
+        pytest.param(
+            Analysis(
+                analysis_type=AnalysisType.AUDIO,
+                data_duration=Timedelta(seconds=1),
+                name="analysis_to_delete",
+                sample_rate=24_000,
+                fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
+            ),
+            id="audio_only",
+        ),
+        pytest.param(
+            Analysis(
+                analysis_type=AnalysisType.SPECTROGRAM,
+                data_duration=Timedelta(seconds=1),
+                name="analysis_to_delete",
+                sample_rate=24_000,
+                fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
+            ),
+            id="spectro_only",
+        ),
+        pytest.param(
+            Analysis(
+                analysis_type=AnalysisType.AUDIO | AnalysisType.SPECTROGRAM,
+                data_duration=Timedelta(seconds=1),
+                name="analysis_to_delete",
+                sample_rate=24_000,
+                fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
+            ),
+            id="audio_and_spectro",
+        ),
+    ],
+)
+def test_delete_analysis(
+    tmp_path: pytest.fixture, audio_files: pytest.fixture, analysis_to_delete: Analysis
+) -> None:
+    dataset = Dataset(
+        folder=tmp_path,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+    )
+
+    dataset.build()
+
+    # Add another analysis to check that it is not affected by the deletion
+
+    analysis_to_keep = Analysis(
+        analysis_type=AnalysisType.AUDIO
+        | AnalysisType.SPECTROGRAM
+        | AnalysisType.MATRIX,
+        data_duration=dataset.origin_dataset.duration / 10,
+        name="analysis_to_keep",
+        sample_rate=24_000,
+        fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
+    )
+
+    dataset.run_analysis(analysis_to_keep)
+    dataset.run_analysis(analysis_to_delete)
+
+    assert all(
+        analysis in dataset.analyses
+        for analysis in (analysis_to_keep.name, analysis_to_delete.name)
+    )
+
+    datasets_to_keep = dataset.get_datasets_by_analysis(analysis_to_keep.name)
+    datasets_to_delete = dataset.get_datasets_by_analysis(analysis_to_delete.name)
+
+    assert all(ds.folder.exists() for ds in (datasets_to_keep + datasets_to_delete))
+
+    dataset.delete_analysis(analysis_to_delete.name)
+
+    assert analysis_to_keep.name in dataset.analyses
+    assert analysis_to_delete.name not in dataset.analyses
+
+    deserialized_dataset = Dataset.from_json(dataset.folder / "dataset.json")
+
+    for public_dataset in (dataset, deserialized_dataset):
+        datasets_to_keep = public_dataset.get_datasets_by_analysis(
+            analysis_to_keep.name
+        )
+        datasets_to_delete = public_dataset.get_datasets_by_analysis(
+            analysis_to_delete.name
+        )
+
+        assert all(ds.folder.exists() for ds in datasets_to_keep)
+        assert not any(ds.folder.exists() for ds in datasets_to_delete)
+
+        assert all(ds.name in public_dataset.datasets.keys() for ds in datasets_to_keep)
+        assert not any(
+            ds.name in public_dataset.datasets.keys() for ds in datasets_to_delete
+        )
+
+
+def test_existing_analysis_warning(
+    tmp_path: pytest.fixture, audio_files: pytest.fixture
+) -> None:
+    dataset = Dataset(
+        folder=tmp_path,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+    )
+
+    dataset.build()
+
+    dataset.run_analysis(
+        Analysis(
+            analysis_type=AnalysisType.AUDIO,
+            data_duration=dataset.origin_dataset.duration / 10,
+            name="my_analysis",
+            sample_rate=24_000,
+        )
+    )
+
+    with pytest.raises(ValueError) as excinfo:
+        dataset.run_analysis(
+            Analysis(
+                analysis_type=AnalysisType.SPECTROGRAM,
+                data_duration=dataset.origin_dataset.duration / 10,
+                name="my_analysis",
+                sample_rate=24_000,
+                fft=ShortTimeFFT(hamming(1024), hop=1024, fs=24_000),
+            )
+        )
+
+        assert "my_analysis already exists" in str(excinfo.value)
+
+    dataset.delete_analysis("my_analysis")
+
+    dataset.run_analysis(
+        Analysis(
+            analysis_type=AnalysisType.SPECTROGRAM,
+            data_duration=dataset.origin_dataset.duration / 10,
+            name="my_analysis",
+            sample_rate=24_000,
+            fft=ShortTimeFFT(hamming(1024), hop=1024, fs=24_000),
+        )
+    )
+
+
+def test_rename_analysis(tmp_path: pytest.fixture, audio_files: pytest.fixture) -> None:
+    dataset = Dataset(
+        folder=tmp_path,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+    )
+
+    dataset.build()
+
+    first_name, second_name = "fontaines", "dc"
+
+    analysis = Analysis(
+        analysis_type=AnalysisType.AUDIO
+        | AnalysisType.SPECTROGRAM
+        | AnalysisType.MATRIX,
+        data_duration=dataset.origin_dataset.duration / 10,
+        name=first_name,
+        sample_rate=24_000,
+        fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
+    )
+
+    dataset.run_analysis(analysis)
+
+    dataset.rename_analysis(first_name, second_name)
+
+    assert first_name not in dataset.analyses
+    assert second_name in dataset.analyses
+
+    assert len(dataset.get_datasets_by_analysis(second_name)) == 2
+    assert not dataset.get_datasets_by_analysis(first_name)
+
+    assert not (dataset.folder / "data" / "audio" / f"{first_name}_audio").exists()
+    assert (dataset.folder / "data" / "audio" / f"{second_name}_audio").exists()
+
+    assert not (dataset.folder / "processed" / first_name).exists()
+    assert (dataset.folder / "processed" / second_name).exists()
+
+    assert (
+        len(
+            Dataset.from_json(dataset.folder / "dataset.json").get_datasets_by_analysis(
+                second_name
+            )
+        )
+        == 2
+    )
