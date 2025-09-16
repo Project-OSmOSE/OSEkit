@@ -11,7 +11,7 @@
 
 ![version](https://img.shields.io/pypi/v/osekit?label=osekit)
 ![PyPI status](https://img.shields.io/pypi/status/osekit)
-![Coverage Status](https://coveralls.io/repos/github/Project-OSmOSE/OSEkit/badge.svg?branch=version-bump)(https://coveralls.io/github/Project-OSmOSE/OSEkit?branch=version-bump)
+![Coverage Status](https://coveralls.io/repos/github/Project-OSmOSE/OSEkit/badge.svg?branch=version-bump)
 ![license](https://img.shields.io/github/license/mashape/apistatus.svg)
 ![Open Source Love](https://img.shields.io/badge/open%20source-♡-lightgrey)
 ![Python 3.12](https://img.shields.io/pypi/pyversions/osekit)
