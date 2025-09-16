@@ -2,18 +2,18 @@
 <br>
 <div align="center">
 
-[![OSEkit logo](https://raw.githubusercontent.com/Project-OSmOSE/OSEkit/refs/heads/main/docs/logo/osekit_small.png)](https://github.com/Project-OSmOSE/OSEkit)
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-[![OSmOSE logo](https://raw.githubusercontent.com/Project-OSmOSE/OSEkit/refs/heads/main/docs/logo/osmose_texte_sombre_small.png)](https://osmose.ifremer.fr/)
+[![OSEkit logo](https://raw.githubusercontent.com/Project-OSmOSE/OSEkit/refs/heads/main/docs/logo/osekit_mid.png)](https://github.com/Project-OSmOSE/OSEkit)
 
 <br>
 <br>
 
-![version](https://img.shields.io/badge/package_version-0.3.0-orange)
-![PyPI status](https://img.shields.io/pypi/status/ansicolortags.svg)
+![version](https://img.shields.io/pypi/v/osekit?label=osekit)
+![PyPI status](https://img.shields.io/pypi/status/osekit)
+[![Coverage Status](https://coveralls.io/repos/github/Project-OSmOSE/OSEkit/badge.svg?branch=version-bump)](https://coveralls.io/github/Project-OSmOSE/OSEkit?branch=version-bump)
 ![license](https://img.shields.io/github/license/mashape/apistatus.svg)
 ![Open Source Love](https://img.shields.io/badge/open%20source-♡-lightgrey)
-![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)
+![Python 3.12](https://img.shields.io/pypi/pyversions/osekit)
+
 
 **OSEkit** is an open source python package dedicated to the management and analysis of data in underwater passive acoustics.
 
@@ -47,5 +47,13 @@ All details to start using our toolkit and make the most out of it are given in 
 
 <br>
 
+
+<div align="center">
+
+[![OSmOSE logo](https://raw.githubusercontent.com/Project-OSmOSE/OSEkit/refs/heads/main/docs/logo/osmose_texte_sombre_small.png)](https://osmose.ifremer.fr/)
+
+</div>
+
+<br>
 
 <sub>© OSmOSE team, 2023-present</sub>
