@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from osekit import config
+from osekit import config, setup_logging
 from osekit.config import global_logging_context as glc
 from osekit.config import resample_quality_settings
 from osekit.public_api.analysis import AnalysisType
@@ -62,6 +62,7 @@ def write_analysis(
         Logger to use to log the analysis steps.
 
     """
+
     logger = glc.logger if logger is None else logger
 
     logger.info("Running analysis...")
@@ -240,6 +241,12 @@ if __name__ == "__main__":
         help="Turn multiprocessing on or off.",
     )
     parser.add_argument(
+        "--use-logging-setup",
+        type=str,
+        default="false",
+        help="Call osekit.setup_logging() before running the analysis.",
+    )
+    parser.add_argument(
         "--nb-processes",
         type=str,
         default=None,
@@ -249,6 +256,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     os.environ["DISABLE_TQDM"] = "" if not args.tqdm_disable else str(args.tqdm_disable)
+
+    if args.use_logging_setup.lower() == "true":
+        setup_logging()
 
     config.multiprocessing["is_active"] = args.multiprocessing.lower() == "true"
     config.nb_processes = (

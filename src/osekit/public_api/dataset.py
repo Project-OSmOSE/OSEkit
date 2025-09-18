@@ -470,6 +470,7 @@ class Dataset:
                 f"--upsampling-quality {resample_quality_settings['upsample']} "
                 f"--umask {get_umask()} "
                 f"--multiprocessing {config.multiprocessing['is_active']} "
+                f"--use-logging-setup true "
                 f"--nb-processes {config.multiprocessing['nb_processes']} ",
                 jobname="OSmOSE_Analysis",
                 preset="low",
