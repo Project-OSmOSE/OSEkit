@@ -6,10 +6,11 @@ from pandas import Timedelta
 
 
 class JobStatus(Enum):
-    PREPARED = 1
-    QUEUED = 2
-    RUNNING = 3
-    COMPLETED = 4
+    UNPREPARED = 1
+    PREPARED = 2
+    QUEUED = 3
+    RUNNING = 4
+    COMPLETED = 5
 
 
 class Job:
@@ -34,7 +35,7 @@ class Job:
         self.venv_name = venv_name
         self.queue = queue
         self.name = name
-        self._status = JobStatus.PREPARED
+        self._status = JobStatus.UNPREPARED
 
     @property
     def script_path(self) -> Path:
@@ -144,3 +145,4 @@ class Job:
 {self.venv_activate_script}
 python {str(self.script_path)} {" ".join(self.script_args)}
 """)
+        self.progress()

@@ -7,6 +7,9 @@ from pathlib import Path
     ("initial_status", "expected_status"),
     [
         pytest.param(
+            JobStatus.UNPREPARED, JobStatus.PREPARED, id="unprepared_becomes_prepared"
+        ),
+        pytest.param(
             JobStatus.PREPARED, JobStatus.QUEUED, id="prepared_becomes_queued"
         ),
         pytest.param(JobStatus.QUEUED, JobStatus.RUNNING, id="queued_becomes_running"),
@@ -20,7 +23,7 @@ from pathlib import Path
 )
 def test_job_progress(initial_status: JobStatus, expected_status: JobStatus) -> None:
     job = Job(script_path=Path(r""))
-    assert job.status == JobStatus.PREPARED
+    assert job.status == JobStatus.UNPREPARED
     job._status = initial_status
     job.progress()
     assert job.status == expected_status
