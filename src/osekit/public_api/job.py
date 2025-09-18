@@ -45,6 +45,10 @@ class Job:
         self._script_path = path
 
     @property
+    def output_folder(self) -> Path:
+        return self.script_path.parent
+
+    @property
     def script_args(self) -> list[str]:
         return self._script_args
 
@@ -80,6 +84,10 @@ class Job:
     def walltime(self) -> Timedelta:
         return self._walltime
 
+    @property
+    def walltime_str(self) -> str:
+        return str(self.walltime).split("days")[-1].strip()
+
     @walltime.setter
     def walltime(self, walltime: str | Timedelta) -> None:
         self._walltime = (
@@ -93,6 +101,10 @@ class Job:
     @venv_name.setter
     def venv_name(self, venv_name: str) -> None:
         self._venv_name = venv_name
+
+    @property
+    def venv_activate_script(self) -> str:
+        return f". /appli/anaconda/latest/etc/profile.d/conda.sh; conda activate {self.venv_name}"
 
     @property
     def queue(self) -> Literal["omp", "mpi"]:
@@ -118,3 +130,17 @@ class Job:
         if self.status == JobStatus.COMPLETED:
             return
         self._status = JobStatus(self._status.value + 1)
+
+    def write_pbs(self, path: Path) -> None:
+        with path.open("w") as file:
+            file.write(f"""#!/bin/bash
+#PBS -N {self.name}
+#PBS -q {self.queue}
+#PBS -l select={self.chunks}:ncpus={self.ncpus}:mem={self.mem}
+#PBS -l walltime={self.walltime_str}
+#PBS -o {str(self.output_folder / self.name)}.out
+#PBS -e {str(self.output_folder / self.name)}.err
+
+{self.venv_activate_script}
+python {str(self.script_path)} {" ".join(self.script_args)}
+""")

@@ -60,7 +60,6 @@ def write_analysis(
         Index after the last data object to write.
     logger: logging.Logger | None
         Logger to use to log the analysis steps.
-
     """
 
     logger = glc.logger if logger is None else logger
