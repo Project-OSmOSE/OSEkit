@@ -41,6 +41,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         sample_rate: int | None = None,
         instrument: Instrument | None = None,
         normalization: Normalization = Normalization.RAW,
+        normalization_values: dict | None = None,
     ) -> None:
         """Initialize an AudioData from a list of AudioItems.
 
@@ -67,6 +68,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         self._set_sample_rate(sample_rate=sample_rate)
         self.instrument = instrument
         self.normalization = normalization
+        self.normalization_values = normalization_values
 
     @property
     def nb_channels(self) -> int:
@@ -89,6 +91,30 @@ class AudioData(BaseData[AudioItem, AudioFile]):
     @normalization.setter
     def normalization(self, value: Normalization) -> None:
         self._normalization = value
+
+    @property
+    def normalization_values(self) -> dict:
+        return self._normalization_values
+
+    @normalization_values.setter
+    def normalization_values(self, value: dict | None) -> None:
+        self._normalization_values = (
+            value
+            if value
+            else {
+                "mean": None,
+                "peak": None,
+                "std": None,
+            }
+        )
+
+    def get_normalization_values(self) -> dict:
+        values = self.get_raw_value()
+        return {
+            "mean": values.mean(),
+            "peak": values.max(),
+            "std": values.std(),
+        }
 
     def __eq__(self, other: AudioData) -> bool:
         """Override __eq__."""
@@ -113,8 +139,8 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             return
         self.sample_rate = None
 
-    def get_value(self) -> np.ndarray:
-        """Return the value of the audio data.
+    def get_raw_value(self) -> np.ndarray:
+        """Return the raw value of the audio data before normalization.
 
         The data from the audio file will be resampled if necessary.
 
@@ -131,8 +157,24 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             item_data = item_data[: min(item_data.shape[0], data.shape[0] - idx)]
             data[idx : idx + len(item_data)] = item_data
             idx += len(item_data)
+        return data
 
-        return normalize(data, self.normalization)
+    def get_value(self) -> np.ndarray:
+        """Return the value of the audio data.
+
+        The data from the audio file will be resampled if necessary.
+
+        Returns
+        -------
+        np.ndarray:
+            The value of the audio data.
+
+        """
+        return normalize(
+            values=self.get_raw_value(),
+            normalization=self.normalization,
+            **self.normalization_values,
+        )
 
     def get_value_calibrated(self) -> np.ndarray:
         """Return the value of the audio data accounting for the calibration factor.
@@ -230,7 +272,13 @@ class AudioData(BaseData[AudioItem, AudioFile]):
 
         """
         return [
-            AudioData.from_base_data(base_data, self.sample_rate)
+            AudioData.from_base_data(
+                data=base_data,
+                sample_rate=self.sample_rate,
+                instrument=self.instrument,
+                normalization=self.normalization,
+                normalization_values=self.get_normalization_values(),
+            )
             for base_data in super().split(nb_subdata)
         ]
 
@@ -291,6 +339,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             | {
                 "sample_rate": self.sample_rate,
                 "normalization": self.normalization.value,
+                "normalization_values": self.normalization_values,
             }
         )
 
@@ -319,6 +368,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             data=base_data,
             sample_rate=dictionary["sample_rate"],
             normalization=Normalization(dictionary["normalization"]),
+            normalization_values=dictionary["normalization_values"],
             instrument=instrument,
         )
 
@@ -372,6 +422,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         sample_rate: float | None = None,
         instrument: Instrument | None = None,
         normalization: Normalization = Normalization.RAW,
+        normalization_values: dict | None = None,
     ) -> AudioData:
         """Return an AudioData object from a BaseData object.
 
@@ -386,6 +437,8 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             the wav audio data.
         normalization: Literal["raw","dc_reject","zscore"]
             The type of normalization to apply to the audio data.
+        normalization_values: dict|None
+            Mean, peak and std values with which to normalize the data.
 
         Returns
         -------
@@ -398,4 +451,5 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             sample_rate=sample_rate,
             instrument=instrument,
             normalization=normalization,
+            normalization_values=normalization_values,
         )
