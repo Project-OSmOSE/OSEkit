@@ -1566,6 +1566,21 @@ def test_split_data(
             assert subdata.instrument == data.instrument
             assert subdata.normalization == data.normalization
 
+            subsubdata_shape = subdata.shape // nb_subdata
+            for subsubdata, subdata_range in zip(
+                subdata.split(nb_subdata),
+                range(0, subdata.shape, subsubdata_shape),
+                strict=False,
+            ):
+                assert np.array_equal(
+                    subsubdata.get_value(),
+                    subdata.get_value()[
+                        subdata_range : subdata_range + subsubdata_shape
+                    ],
+                )
+                assert subsubdata.instrument == subdata.instrument
+                assert subsubdata.normalization == subdata.normalization
+
 
 @pytest.mark.parametrize(
     ("audio_files", "start_frame", "stop_frame", "expected_begin", "expected_data"),
