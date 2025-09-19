@@ -25,7 +25,7 @@ from osekit.core_api.ltas_dataset import LTASDataset
 from osekit.core_api.spectro_data import SpectroData
 from osekit.core_api.spectro_dataset import SpectroDataset
 from osekit.core_api.spectro_file import SpectroFile
-from osekit.utils.audio_utils import generate_sample_audio
+from osekit.utils.audio_utils import generate_sample_audio, Normalization
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -170,7 +170,7 @@ def test_spectro_parameters_in_npz_files(
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "nb_chunks", "sft"),
+    ("audio_files", "instrument", "normalization", "nb_chunks", "sft"),
     [
         pytest.param(
             {
@@ -179,6 +179,8 @@ def test_spectro_parameters_in_npz_files(
                 "nb_files": 1,
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
             },
+            None,
+            None,
             3,
             ShortTimeFFT(hamming(1_024), 1_024, 1_024),
             id="6_seconds_split_in_3",
@@ -190,6 +192,8 @@ def test_spectro_parameters_in_npz_files(
                 "nb_files": 1,
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
             },
+            None,
+            None,
             1,
             ShortTimeFFT(hamming(1_024), 100, 1_024),
             id="1_npz_file",
@@ -201,6 +205,8 @@ def test_spectro_parameters_in_npz_files(
                 "nb_files": 1,
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
             },
+            None,
+            None,
             3,
             ShortTimeFFT(hamming(1_024), 100, 1_024),
             id="6_seconds_split_in_3_with_overlap",
@@ -212,6 +218,8 @@ def test_spectro_parameters_in_npz_files(
                 "nb_files": 1,
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
             },
+            None,
+            None,
             4,
             ShortTimeFFT(hamming(1_024), 100, 1_024),
             id="8_seconds_split_in_4",
@@ -223,6 +231,8 @@ def test_spectro_parameters_in_npz_files(
                 "nb_files": 1,
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
             },
+            None,
+            None,
             4,
             ShortTimeFFT(hamming(12_000), 12_000, 48_000),
             id="high_sr_no_overlap",
@@ -234,6 +244,8 @@ def test_spectro_parameters_in_npz_files(
                 "nb_files": 1,
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
             },
+            None,
+            None,
             3,
             ShortTimeFFT(hamming(12_000), 10_000, 48_000),
             id="high_sr_overlap",
@@ -245,6 +257,8 @@ def test_spectro_parameters_in_npz_files(
                 "nb_files": 1,
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
             },
+            None,
+            None,
             6,
             ShortTimeFFT(hamming(1_024), 1_024, 1_024),
             id="6_seconds_split_in_6",
@@ -256,9 +270,37 @@ def test_spectro_parameters_in_npz_files(
                 "nb_files": 1,
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
             },
+            None,
+            None,
             6,
             ShortTimeFFT(hamming(1_024), 100, 1_024),
             id="6_seconds_split_in_6_with_overlap",
+        ),
+        pytest.param(
+            {
+                "duration": 6,
+                "sample_rate": 1_024,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            Instrument(end_to_end_db=150.0),
+            None,
+            6,
+            ShortTimeFFT(hamming(1_024), 100, 1_024),
+            id="audio_data_with_instrument",
+        ),
+        pytest.param(
+            {
+                "duration": 6,
+                "sample_rate": 1_024,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            None,
+            Normalization.ZSCORE,
+            6,
+            ShortTimeFFT(hamming(1_024), 100, 1_024),
+            id="audio_data_with_normalization",
         ),
     ],
     indirect=["audio_files"],
@@ -266,6 +308,8 @@ def test_spectro_parameters_in_npz_files(
 def test_spectrogram_from_npz_files(
     tmp_path: Path,
     audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
+    instrument: Instrument | None,
+    normalization: Normalization | None,
     nb_chunks: int,
     sft: ShortTimeFFT,
 ) -> None:
@@ -274,7 +318,9 @@ def test_spectrogram_from_npz_files(
         for f in tmp_path.glob("*.wav")
     ]
 
-    ad = AudioData.from_files(afs)
+    ad = AudioData.from_files(files=afs, instrument=instrument)
+    if normalization:
+        ad.normalization = normalization
     sd = SpectroData.from_audio_data(ad, sft)
 
     sd_split = sd.split(nb_chunks)
@@ -298,7 +344,9 @@ def test_spectrogram_from_npz_files(
         AudioFile(f, strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED)
         for f in (tmp_path / "audio").glob("*.wav")
     ]
-    ad = AudioData.from_files(afs)
+    ad = AudioData.from_files(afs, instrument=instrument)
+    if normalization:
+        ad.normalization = normalization
     sd = SpectroData.from_audio_data(ad, sft)
 
     sds = SpectroDataset.from_folder(
