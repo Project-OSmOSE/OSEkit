@@ -1441,7 +1441,7 @@ def test_write_files(
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "nb_subdata", "instrument", "original_audio_data"),
+    ("audio_files", "nb_subdata", "instrument", "normalization", "original_audio_data"),
     [
         pytest.param(
             {
@@ -1451,6 +1451,7 @@ def test_write_files(
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
             },
             2,
+            None,
             None,
             generate_sample_audio(1, 48_000, dtype=np.float64),
             id="even_samples_split_in_two",
@@ -1464,6 +1465,7 @@ def test_write_files(
             },
             4,
             None,
+            None,
             generate_sample_audio(1, 48_000, dtype=np.float64),
             id="even_samples_split_in_four",
         ),
@@ -1475,6 +1477,7 @@ def test_write_files(
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
             },
             2,
+            None,
             None,
             generate_sample_audio(1, 48_000, dtype=np.float64),
             id="odd_samples_split_in_two",
@@ -1488,6 +1491,7 @@ def test_write_files(
             },
             4,
             None,
+            None,
             generate_sample_audio(1, 48_001, dtype=np.float64),
             id="odd_samples_split_in_four",
         ),
@@ -1499,6 +1503,7 @@ def test_write_files(
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
             },
             3,
+            None,
             None,
             generate_sample_audio(1, 10, dtype=np.float64),
             id="infinite_decimal_points",
@@ -1512,8 +1517,22 @@ def test_write_files(
             },
             4,
             Instrument(end_to_end_db=150.0),
+            None,
             generate_sample_audio(1, 48_000, dtype=np.float64),
             id="audio_data_with_instrument",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            4,
+            None,
+            Normalization.ZSCORE,
+            generate_sample_audio(1, 48_000, dtype=np.float64),
+            id="audio_data_with_normalization",
         ),
     ],
     indirect=["audio_files"],
@@ -1523,6 +1542,7 @@ def test_split_data(
     audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
     nb_subdata: int,
     instrument: Instrument | None,
+    normalization: Normalization | None,
     original_audio_data: list[np.ndarray],
 ) -> None:
     dataset = AudioDataset.from_folder(
@@ -1530,6 +1550,8 @@ def test_split_data(
         strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
         instrument=instrument,
     )
+    if normalization:
+        dataset.normalization = normalization
     for data in dataset.data:
         subdata_shape = data.shape // nb_subdata
         for subdata, data_range in zip(
@@ -1542,6 +1564,7 @@ def test_split_data(
                 data.get_value()[data_range : data_range + subdata_shape],
             )
             assert subdata.instrument == data.instrument
+            assert subdata.normalization == data.normalization
 
 
 @pytest.mark.parametrize(
