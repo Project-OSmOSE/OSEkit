@@ -94,6 +94,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
 
     @property
     def normalization_values(self) -> dict:
+        """Mean, peak and std values used for normalization."""
         return self._normalization_values
 
     @normalization_values.setter
@@ -316,6 +317,9 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             start_timestamp,
             stop_timestamp,
             sample_rate=self.sample_rate,
+            instrument=self.instrument,
+            normalization=self.normalization,
+            normalization_values=self.get_normalization_values(),
         )
 
     def to_dict(self) -> dict:
@@ -381,6 +385,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         sample_rate: float | None = None,
         instrument: Instrument | None = None,
         normalization: Normalization = Normalization.RAW,
+        normalization_values: dict | None = None,
     ) -> AudioData:
         """Return an AudioData object from a list of AudioFiles.
 
@@ -401,6 +406,8 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             the wav audio data.
         normalization: Normalization
             The type of normalization to apply to the audio data.
+        normalization_values: dict|None
+            Mean, peak and std values with which to normalize the data.
 
         Returns
         -------
@@ -413,6 +420,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             sample_rate=sample_rate,
             instrument=instrument,
             normalization=normalization,
+            normalization_values=normalization_values,
         )
 
     @classmethod
