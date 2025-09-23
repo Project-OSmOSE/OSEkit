@@ -72,15 +72,14 @@ class AudioFileManager:
             stop = frames
 
         if not 0 <= start < frames:
-            raise ValueError(
-                "Start should be between 0 and the last frame of the audio file.",
-            )
+            msg = "Start should be between 0 and the last frame of the audio file."
+            raise ValueError(msg)
         if not 0 <= stop <= frames:
-            raise ValueError(
-                "Stop should be between 0 and the last frame of the audio file.",
-            )
+            msg = "Stop should be between 0 and the last frame of the audio file."
+            raise ValueError(msg)
         if start > stop:
-            raise ValueError("Start should be inferior to Stop.")
+            msg = "Start should be inferior to Stop."
+            raise ValueError(msg)
 
         self.opened_file.seek(start)
         return self.opened_file.read(stop - start)
