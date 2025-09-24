@@ -8,13 +8,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import numpy as np
 import obspy
 import soundfile as sf
 
 if TYPE_CHECKING:
     from os import PathLike
-
-    import numpy as np
 
 
 class AudioFileManager:
@@ -42,6 +41,39 @@ class AudioFileManager:
         self.close()
         self._open(path)
 
+    @staticmethod
+    def _check_boudaries(start: int, stop: int, frames: int) -> None:
+        if not 0 <= start < frames:
+            msg = "Start should be between 0 and the last frame of the audio file."
+            raise ValueError(msg)
+        if not 0 <= stop <= frames:
+            msg = "Stop should be between 0 and the last frame of the audio file."
+            raise ValueError(msg)
+        if start > stop:
+            msg = "Start should be inferior to Stop."
+            raise ValueError(msg)
+
+    @staticmethod
+    def _read_mseed(path: PathLike | str, start: int, stop: int) -> np.ndarray:
+        """Read the content of a mseed file between the start and stop frames.
+
+        Parameters
+        ----------
+        path: PathLike | str
+            Path to the mseed file.
+        start: int
+            First frame to read.
+        stop: int
+            Frame after the last frame to read.
+
+        Returns
+        -------
+        np.ndarray:
+            A (stop-start)-long array containing the mseed audio data.
+
+        """
+        return np.concat([trace.data for trace in obspy.read(path).traces])[start:stop]
+
     def read(
         self,
         path: PathLike | str,
@@ -68,20 +100,13 @@ class AudioFileManager:
             A (channel * frames) array containing the audio data.
 
         """
-        self._switch(path)
         _, frames, _ = self.info(path)
         if stop is None:
             stop = frames
+        self._check_boudaries(start=start, stop=stop, frames=frames)
 
-        if not 0 <= start < frames:
-            msg = "Start should be between 0 and the last frame of the audio file."
-            raise ValueError(msg)
-        if not 0 <= stop <= frames:
-            msg = "Stop should be between 0 and the last frame of the audio file."
-            raise ValueError(msg)
-        if start > stop:
-            msg = "Start should be inferior to Stop."
-            raise ValueError(msg)
+        if Path(path).suffix == ".mseed":
+            return self._read_mseed(path=path, start=start, stop=stop)
 
         self.opened_file.seek(start)
         return self.opened_file.read(stop - start)
