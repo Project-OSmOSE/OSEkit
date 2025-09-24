@@ -5,8 +5,10 @@ This workflow avoids closing/opening a same file repeatedly.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
+import obspy
 import soundfile as sf
 
 if TYPE_CHECKING:
@@ -98,9 +100,39 @@ class AudioFileManager:
             Sample rate, number of frames and channels of the audio file.
 
         """
+        if Path(path).suffix == ".mseed":
+            return self.mseed_info(path)
+
         self._switch(path)
         return (
             self.opened_file.samplerate,
             self.opened_file.frames,
             self.opened_file.channels,
+        )
+
+    @staticmethod
+    def mseed_info(path: PathLike | str) -> tuple[int, int, int]:
+        """Return the sample rate, number of frames and channels of the mseed file.
+
+        Parameters
+        ----------
+        path: PathLike | str
+            Path to the mseed file.
+
+        Returns
+        -------
+        tuple[int,int,int]:
+            Sample rate, number of frames and channels of the mseed file.
+
+        """
+        metadata = obspy.read(pathname_or_url=path, headonly=True)
+        sample_rate = set(trace.meta.sampling_rate for trace in metadata.traces)
+        if len(sample_rate) != 1:
+            raise ValueError("Audio file has inconsistent sampling rate.")
+        sample_rate = sample_rate.pop()
+        frames = sum(trace.meta.npts for trace in metadata.traces)
+        return (
+            sample_rate,
+            frames,
+            1,
         )
