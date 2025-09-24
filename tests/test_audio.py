@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Literal
 
 import numpy as np
+import obspy
 import pandas as pd
 import pytest
 import soundfile as sf
@@ -15,6 +16,7 @@ import osekit
 from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+    TIMESTAMP_FORMATS_EXPORTED_FILES,
     resample_quality_settings,
 )
 from osekit.core_api import audio_file_manager as afm
@@ -23,7 +25,7 @@ from osekit.core_api.audio_dataset import AudioDataset
 from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.audio_item import AudioItem
 from osekit.utils import audio_utils
-from osekit.utils.audio_utils import generate_sample_audio, Normalization, normalize
+from osekit.utils.audio_utils import Normalization, generate_sample_audio, normalize
 
 
 @pytest.mark.parametrize(
@@ -195,6 +197,53 @@ def test_audio_file_read(
 ) -> None:
     files, request = audio_files
     assert np.allclose(files[0].read(start, stop), expected, atol=1e-7)
+
+
+@pytest.mark.parametrize(
+    ("streams", "files_begin", "begin", "end", "expected_data"),
+    [
+        pytest.param(
+            [
+                obspy.Stream(
+                    obspy.Trace(
+                        data=np.array(range(10), dtype=np.int32),
+                        header={"sampling_rate": 0.1},
+                    ),
+                ),
+            ],
+            [Timestamp("2002-04-02 03:27:00")],
+            None,
+            None,
+            np.array(range(10)),
+            id="one_file_one_trace_full",
+        ),
+    ],
+)
+def test_mseed_file_read(
+    tmp_path: pytest.fixture,
+    streams: list[obspy.Stream],
+    files_begin: list[pd.Timestamp],
+    begin: pd.Timestamp | None,
+    end: pd.Timestamp | None,
+    expected_data: np.ndarray,
+) -> None:
+    # WRITE MSEED FILES
+    for stream, begin in zip(streams, files_begin, strict=False):
+        stream.write(
+            tmp_path / f"{begin.strftime(TIMESTAMP_FORMATS_EXPORTED_FILES[1])}.mseed"
+        )
+
+    audio_files = [
+        AudioFile(path, strptime_format=TIMESTAMP_FORMATS_EXPORTED_FILES[1])
+        for path in tmp_path.glob("*.mseed")
+    ]
+
+    assert audio_files[0].begin == begin
+    assert audio_files[0].sample_rate == streams[0].traces[0].meta.sampling_rate
+
+    audio_data = AudioData.from_files(audio_files, begin=begin, end=end)
+
+    assert np.array_equal(audio_data.get_value(), expected_data)
 
 
 @pytest.mark.parametrize(
