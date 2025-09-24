@@ -120,19 +120,25 @@ def normalize_raw(values: np.ndarray) -> np.ndarray:
     return values
 
 
-def normalize_dc_reject(values: np.ndarray) -> np.ndarray:
+def normalize_dc_reject(
+    values: np.ndarray, dc_component: float | None = None
+) -> np.ndarray:
     """Reject the DC component of the audio data."""
-    return values - values.mean()
+    return values - (values.mean() if dc_component is None else dc_component)
 
 
-def normalize_peak(values: np.ndarray) -> np.ndarray:
+def normalize_peak(values: np.ndarray, peak: float | None = None) -> np.ndarray:
     """Return values normalized so that the peak value is 1.0."""
-    return values / max(abs(values))
+    return values / (max(abs(values)) if peak is None else peak)
 
 
-def normalize_zscore(values: np.ndarray) -> np.ndarray:
+def normalize_zscore(
+    values: np.ndarray, mean: float | None = None, std: float | None = None
+) -> np.ndarray:
     """Return normalized zscore from the audio data."""
-    return (values - values.mean()) / values.std()
+    mean = values.mean() if mean is None else mean
+    std = values.std() if std is None else std
+    return (values - mean) / std
 
 
 class NormalizationValider(enum.EnumMeta):
@@ -159,12 +165,18 @@ class Normalization(enum.Flag, metaclass=NormalizationValider):
     ZSCORE = enum.auto()
 
 
-def normalize(values: np.ndarray, normalization: Normalization) -> np.ndarray:
+def normalize(
+    values: np.ndarray,
+    normalization: Normalization,
+    mean: float | None = None,
+    peak: float | None = None,
+    std: float | None = None,
+) -> np.ndarray:
     """Normalize the audio data."""
     if Normalization.DC_REJECT in normalization:
-        values = normalize_dc_reject(values)
+        values = normalize_dc_reject(values=values, dc_component=mean)
     if Normalization.PEAK in normalization:
-        values = normalize_peak(values)
+        values = normalize_peak(values=values, peak=peak)
     if Normalization.ZSCORE in normalization:
-        values = normalize_zscore(values)
+        values = normalize_zscore(values=values, mean=mean, std=std)
     return values

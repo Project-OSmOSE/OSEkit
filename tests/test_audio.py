@@ -22,6 +22,7 @@ from osekit.core_api.audio_data import AudioData
 from osekit.core_api.audio_dataset import AudioDataset
 from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.audio_item import AudioItem
+from osekit.core_api.instrument import Instrument
 from osekit.utils import audio_utils
 from osekit.utils.audio_utils import generate_sample_audio, Normalization, normalize
 
@@ -1440,7 +1441,7 @@ def test_write_files(
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "nb_subdata", "original_audio_data"),
+    ("audio_files", "nb_subdata", "instrument", "normalization", "original_audio_data"),
     [
         pytest.param(
             {
@@ -1450,6 +1451,8 @@ def test_write_files(
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
             },
             2,
+            None,
+            None,
             generate_sample_audio(1, 48_000, dtype=np.float64),
             id="even_samples_split_in_two",
         ),
@@ -1461,6 +1464,8 @@ def test_write_files(
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
             },
             4,
+            None,
+            None,
             generate_sample_audio(1, 48_000, dtype=np.float64),
             id="even_samples_split_in_four",
         ),
@@ -1472,6 +1477,8 @@ def test_write_files(
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
             },
             2,
+            None,
+            None,
             generate_sample_audio(1, 48_000, dtype=np.float64),
             id="odd_samples_split_in_two",
         ),
@@ -1483,6 +1490,8 @@ def test_write_files(
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
             },
             4,
+            None,
+            None,
             generate_sample_audio(1, 48_001, dtype=np.float64),
             id="odd_samples_split_in_four",
         ),
@@ -1494,8 +1503,36 @@ def test_write_files(
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
             },
             3,
+            None,
+            None,
             generate_sample_audio(1, 10, dtype=np.float64),
             id="infinite_decimal_points",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            4,
+            Instrument(end_to_end_db=150.0),
+            None,
+            generate_sample_audio(1, 48_000, dtype=np.float64),
+            id="audio_data_with_instrument",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+            },
+            4,
+            None,
+            Normalization.ZSCORE,
+            generate_sample_audio(1, 48_000, dtype=np.float64),
+            id="audio_data_with_normalization",
         ),
     ],
     indirect=["audio_files"],
@@ -1504,12 +1541,17 @@ def test_split_data(
     tmp_path: Path,
     audio_files: tuple[list[Path], pytest.fixtures.Subrequest],
     nb_subdata: int,
+    instrument: Instrument | None,
+    normalization: Normalization | None,
     original_audio_data: list[np.ndarray],
 ) -> None:
     dataset = AudioDataset.from_folder(
         tmp_path,
         strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+        instrument=instrument,
     )
+    if normalization:
+        dataset.normalization = normalization
     for data in dataset.data:
         subdata_shape = data.shape // nb_subdata
         for subdata, data_range in zip(
@@ -1521,6 +1563,23 @@ def test_split_data(
                 subdata.get_value(),
                 data.get_value()[data_range : data_range + subdata_shape],
             )
+            assert subdata.instrument == data.instrument
+            assert subdata.normalization == data.normalization
+
+            subsubdata_shape = subdata.shape // nb_subdata
+            for subsubdata, subdata_range in zip(
+                subdata.split(nb_subdata),
+                range(0, subdata.shape, subsubdata_shape),
+                strict=False,
+            ):
+                assert np.array_equal(
+                    subsubdata.get_value(),
+                    subdata.get_value()[
+                        subdata_range : subdata_range + subsubdata_shape
+                    ],
+                )
+                assert subsubdata.instrument == subdata.instrument
+                assert subsubdata.normalization == subdata.normalization
 
 
 @pytest.mark.parametrize(
