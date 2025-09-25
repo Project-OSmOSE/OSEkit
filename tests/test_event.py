@@ -344,7 +344,7 @@ def test_get_overlapping_events(
                 Event(
                     begin=Timestamp("2024-01-01 12:00:00"),
                     end=Timestamp("2024-01-02 00:00:00"),
-                )
+                ),
             ),
             id="valid_begin",
         ),
@@ -359,7 +359,7 @@ def test_get_overlapping_events(
                 Event(
                     begin=Timestamp("2024-01-01 00:00:00"),
                     end=Timestamp("2024-01-02 12:00:00"),
-                )
+                ),
             ),
             id="valid_end",
         ),
@@ -402,7 +402,9 @@ def test_event_begin_end_updates(
     expected: Event,
 ) -> None:
     def update_event(
-        cool_event: Event, begin: Timestamp | None, end: Timestamp | None
+        cool_event: Event,
+        begin: Timestamp | None,
+        end: Timestamp | None,
     ) -> Event:
         if begin:
             cool_event.begin = begin
@@ -432,3 +434,15 @@ def test_event_begin_end_updates(
 def test_event_errors(begin: Timestamp, end: Timestamp) -> None:
     with pytest.raises(ValueError, match="`end`.*must be greater than `begin`.*") as e:
         assert Event(begin=begin, end=end) == e
+
+
+def test_repr() -> None:
+    assert (
+        repr(
+            Event(
+                begin=Timestamp("1990-09-12 12:00:00"),
+                end=Timestamp("1990-09-12 12:00:10"),
+            )
+        )
+        == "1990-09-12 12:00:00"
+    )
