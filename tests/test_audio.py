@@ -368,6 +368,35 @@ def test_mseed_file_read(
     assert np.array_equal(audio_data.get_value(), expected_data)
 
 
+def test_inconsistent_mseed_sample_rate_error(tmp_path: pytest.fixture) -> None:
+    filename = (
+        tmp_path
+        / f"{Timestamp('2002-04-02 03:27:00').strftime(TIMESTAMP_FORMATS_EXPORTED_FILES[1])}.mseed"
+    )
+
+    obspy.Stream(
+        [
+            obspy.Trace(
+                data=np.array(range(10), dtype=np.int32),
+                header={"sampling_rate": 10},
+            ),
+            obspy.Trace(
+                data=np.array(range(10, 20), dtype=np.int32),
+                header={"sampling_rate": 20},
+            ),
+        ],
+    ).write(filename)
+
+    with pytest.raises(
+        ValueError,
+        match="Audio file has inconsistent sampling rate.",
+    ) as e:
+        assert (
+            AudioFile(filename, strptime_format=TIMESTAMP_FORMATS_EXPORTED_FILES[1])
+            == e
+        )
+
+
 @pytest.mark.parametrize(
     ("audio_files", "start", "stop", "expected"),
     [
