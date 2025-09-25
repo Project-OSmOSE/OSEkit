@@ -208,7 +208,7 @@ def test_audio_file_read(
                 obspy.Stream(
                     obspy.Trace(
                         data=np.array(range(10), dtype=np.int32),
-                        header={"sampling_rate": 0.1},
+                        header={"sampling_rate": 10},
                     ),
                 ),
             ],
@@ -217,6 +217,117 @@ def test_audio_file_read(
             None,
             np.array(range(10)),
             id="one_file_one_trace_full",
+        ),
+        pytest.param(
+            [
+                obspy.Stream(
+                    obspy.Trace(
+                        data=np.array(range(10), dtype=np.int32),
+                        header={"sampling_rate": 10},
+                    ),
+                ),
+                obspy.Stream(
+                    obspy.Trace(
+                        data=np.array(range(10, 20), dtype=np.int32),
+                        header={"sampling_rate": 10},
+                    ),
+                ),
+            ],
+            [Timestamp("2002-04-02 03:27:00"), Timestamp("2002-04-02 03:27:01")],
+            None,
+            None,
+            np.array(range(20)),
+            id="multiple_files_one_trace_full",
+        ),
+        pytest.param(
+            [
+                obspy.Stream(
+                    [
+                        obspy.Trace(
+                            data=np.array(range(10), dtype=np.int32),
+                            header={"sampling_rate": 10},
+                        ),
+                        obspy.Trace(
+                            data=np.array(range(10, 20), dtype=np.int32),
+                            header={"sampling_rate": 10},
+                        ),
+                    ],
+                ),
+            ],
+            [Timestamp("2002-04-02 03:27:00")],
+            None,
+            None,
+            np.array(range(20)),
+            id="one_file_two_traces_full",
+        ),
+        pytest.param(
+            [
+                obspy.Stream(
+                    [
+                        obspy.Trace(
+                            data=np.array(range(10), dtype=np.int32),
+                            header={"sampling_rate": 10},
+                        ),
+                        obspy.Trace(
+                            data=np.array(range(10, 20), dtype=np.int32),
+                            header={"sampling_rate": 10},
+                        ),
+                    ],
+                ),
+                obspy.Stream(
+                    obspy.Trace(
+                        data=np.array(range(20, 30), dtype=np.int32),
+                        header={"sampling_rate": 10},
+                    ),
+                ),
+            ],
+            [Timestamp("2002-04-02 03:27:00"), Timestamp("2002-04-02 03:27:02")],
+            None,
+            None,
+            np.array(range(30)),
+            id="multiple_files_multiple_traces_full",
+        ),
+        pytest.param(
+            [
+                obspy.Stream(
+                    obspy.Trace(
+                        data=np.array(range(10), dtype=np.int32),
+                        header={"sampling_rate": 10},
+                    ),
+                ),
+            ],
+            [Timestamp("2002-04-02 03:27:00")],
+            Timestamp("2002-04-02 03:27:00.23"),
+            Timestamp("2002-04-02 03:27:00.48"),
+            np.array(range(2, 4)),
+            id="one_file_one_trace_part",
+        ),
+        pytest.param(
+            [
+                obspy.Stream(
+                    [
+                        obspy.Trace(
+                            data=np.array(range(10), dtype=np.int32),
+                            header={"sampling_rate": 10},
+                        ),
+                        obspy.Trace(
+                            data=np.array(range(10, 20), dtype=np.int32),
+                            header={"sampling_rate": 10},
+                        ),
+                    ],
+                ),
+                obspy.Stream(
+                    obspy.Trace(
+                        data=np.array(range(20, 30), dtype=np.int32),
+                        header={"sampling_rate": 10},
+                    ),
+                ),
+            ],
+            [Timestamp("2002-04-02 03:27:00"), Timestamp("2002-04-02 03:27:02")],
+            Timestamp("2002-04-02 03:27:00.85"),
+            Timestamp("2002-04-02 03:27:02.64"),
+            np.array(range(8, 26)),
+            id="multiple_files_multiple_traces_part",
         ),
     ],
 )
@@ -229,9 +340,10 @@ def test_mseed_file_read(
     expected_data: np.ndarray,
 ) -> None:
     # WRITE MSEED FILES
-    for stream, begin in zip(streams, files_begin, strict=False):
+    for stream, file_begin in zip(streams, files_begin, strict=False):
         stream.write(
-            tmp_path / f"{begin.strftime(TIMESTAMP_FORMATS_EXPORTED_FILES[1])}.mseed"
+            tmp_path
+            / f"{file_begin.strftime(TIMESTAMP_FORMATS_EXPORTED_FILES[1])}.mseed",
         )
 
     audio_files = [
@@ -239,8 +351,14 @@ def test_mseed_file_read(
         for path in tmp_path.glob("*.mseed")
     ]
 
-    assert audio_files[0].begin == begin
-    assert audio_files[0].sample_rate == streams[0].traces[0].meta.sampling_rate
+    assert all(
+        audio_file.begin == file_begin
+        for audio_file, file_begin in zip(audio_files, files_begin, strict=False)
+    )
+    assert all(
+        audio_file.sample_rate == stream.traces[0].meta.sampling_rate
+        for audio_file, stream in zip(audio_files, streams, strict=False)
+    )
 
     audio_data = AudioData.from_files(audio_files, begin=begin, end=end)
 
