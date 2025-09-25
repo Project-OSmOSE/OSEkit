@@ -123,6 +123,19 @@ def test_read(
             ),
             id="out_of_bounds_stop_raises_error",
         ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 1,
+            },
+            (20_000, 10_000),
+            pytest.raises(
+                ValueError,
+                match="Start should be inferior to Stop.",
+            ),
+            id="start_after_stop_raises_error",
+        ),
     ],
     indirect=["audio_files"],
 )
