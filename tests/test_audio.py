@@ -346,18 +346,21 @@ def test_mseed_file_read(
             / f"{file_begin.strftime(TIMESTAMP_FORMATS_EXPORTED_FILES[1])}.mseed",
         )
 
-    audio_files = [
-        AudioFile(path, strptime_format=TIMESTAMP_FORMATS_EXPORTED_FILES[1])
-        for path in tmp_path.glob("*.mseed")
-    ]
+    audio_files = sorted(
+        (
+            AudioFile(path, strptime_format=TIMESTAMP_FORMATS_EXPORTED_FILES[1])
+            for path in tmp_path.glob("*.mseed")
+        ),
+        key=lambda af: af.begin,
+    )
 
     assert all(
         audio_file.begin == file_begin
-        for audio_file, file_begin in zip(audio_files, files_begin, strict=False)
+        for audio_file, file_begin in zip(audio_files, files_begin, strict=True)
     )
     assert all(
         audio_file.sample_rate == stream.traces[0].meta.sampling_rate
-        for audio_file, stream in zip(audio_files, streams, strict=False)
+        for audio_file, stream in zip(audio_files, streams, strict=True)
     )
 
     audio_data = AudioData.from_files(audio_files, begin=begin, end=end)
