@@ -1,3 +1,4 @@
+import subprocess
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -16,11 +17,11 @@ class JobStatus(Enum):
 
 @dataclass
 class JobConfig:
-    chunks: int = (1,)
-    ncpus: int = (1,)
-    mem: str = ("8gb",)
-    walltime: str | Timedelta = ("01:00:00",)
-    venv_name: str = ("osmose",)
+    chunks: int = 1
+    ncpus: int = 1
+    mem: str = "8gb"
+    walltime: str | Timedelta = "01:00:00"
+    venv_name: str = "osmose"
     queue: Literal["omp", "mpi"] = "omp"
 
 
@@ -28,13 +29,13 @@ class Job:
     def __init__(
         self,
         script_path: Path,
-        script_args: list[str] | None = None,
+        script_args: dict | None = None,
         config: JobConfig | None = None,
         name: str = "osekit_analysis",
     ) -> None:
         config = JobConfig() if config is None else config
         self.script_path = script_path
-        self.script_args = script_args if script_args else []
+        self.script_args = script_args if script_args else {}
         self.chunks = config.chunks
         self.ncpus = config.ncpus
         self.mem = config.mem
@@ -57,11 +58,11 @@ class Job:
         return self.script_path.parent
 
     @property
-    def script_args(self) -> list[str]:
+    def script_args(self) -> dict:
         return self._script_args
 
     @script_args.setter
-    def script_args(self, args: list[str]) -> None:
+    def script_args(self, args: dict) -> None:
         self._script_args = args
 
     @property
@@ -150,6 +151,10 @@ class Job:
 #PBS -e {self.output_folder / self.name!s}.err
 
 {self.venv_activate_script}
-python {self.script_path!s} {" ".join(self.script_args)}
+python {self.script_path!s} {" ".join(f"--{key} {value}" for key, value in self.script_args.items())}
 """)
+        self.progress()
+
+    def submit_pbs(self) -> None:
+        subprocess.run(["qsub", self.script_path], check=False)
         self.progress()
