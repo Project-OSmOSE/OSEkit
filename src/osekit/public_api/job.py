@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Literal
@@ -13,27 +14,33 @@ class JobStatus(Enum):
     COMPLETED = 5
 
 
+@dataclass
+class JobConfig:
+    chunks: int = (1,)
+    ncpus: int = (1,)
+    mem: str = ("8gb",)
+    walltime: str | Timedelta = ("01:00:00",)
+    venv_name: str = ("osmose",)
+    queue: Literal["omp", "mpi"] = "omp"
+
+
 class Job:
     def __init__(
         self,
         script_path: Path,
         script_args: list[str] | None = None,
-        chunks: int = 1,
-        ncpus: int = 1,
-        mem: str = "8gb",
-        walltime: str | Timedelta = "01:00:00",
-        venv_name: str = "osmose",
-        queue: Literal["omp", "mpi"] = "omp",
+        config: JobConfig | None = None,
         name: str = "osekit_analysis",
     ) -> None:
+        config = JobConfig() if config is None else config
         self.script_path = script_path
         self.script_args = script_args if script_args else []
-        self.chunks = chunks
-        self.ncpus = ncpus
-        self.mem = mem
-        self.walltime = walltime
-        self.venv_name = venv_name
-        self.queue = queue
+        self.chunks = config.chunks
+        self.ncpus = config.ncpus
+        self.mem = config.mem
+        self.walltime = config.walltime
+        self.venv_name = config.venv_name
+        self.queue = config.queue
         self.name = name
         self._status = JobStatus.UNPREPARED
 
@@ -139,10 +146,10 @@ class Job:
 #PBS -q {self.queue}
 #PBS -l select={self.chunks}:ncpus={self.ncpus}:mem={self.mem}
 #PBS -l walltime={self.walltime_str}
-#PBS -o {str(self.output_folder / self.name)}.out
-#PBS -e {str(self.output_folder / self.name)}.err
+#PBS -o {self.output_folder / self.name!s}.out
+#PBS -e {self.output_folder / self.name!s}.err
 
 {self.venv_activate_script}
-python {str(self.script_path)} {" ".join(self.script_args)}
+python {self.script_path!s} {" ".join(self.script_args)}
 """)
         self.progress()
