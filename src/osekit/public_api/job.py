@@ -18,7 +18,7 @@ class JobStatus(Enum):
 @dataclass
 class JobConfig:
     chunks: int = 1
-    ncpus: int = 1
+    ncpus: int = 2
     mem: str = "8gb"
     walltime: str | Timedelta = "01:00:00"
     venv_name: str = "osmose"
@@ -32,6 +32,7 @@ class Job:
         script_args: dict | None = None,
         config: JobConfig | None = None,
         name: str = "osekit_analysis",
+        output_folder: Path | None = None,
     ) -> None:
         config = JobConfig() if config is None else config
         self.script_path = script_path
@@ -43,7 +44,9 @@ class Job:
         self.venv_name = config.venv_name
         self.queue = config.queue
         self.name = name
+        self.output_folder = output_folder
         self._status = JobStatus.UNPREPARED
+        self._path = None
 
     @property
     def script_path(self) -> Path:
@@ -52,10 +55,6 @@ class Job:
     @script_path.setter
     def script_path(self, path: Path) -> None:
         self._script_path = path
-
-    @property
-    def output_folder(self) -> Path:
-        return self.script_path.parent
 
     @property
     def script_args(self) -> dict:
@@ -135,26 +134,59 @@ class Job:
     def status(self) -> JobStatus:
         return self._status
 
+    @property
+    def path(self) -> Path | None:
+        return self._path
+
+    @path.setter
+    def path(self, path: Path) -> None:
+        self._path = path
+
+    @property
+    def output_folder(self) -> Path | None:
+        return self._output_folder
+
+    @output_folder.setter
+    def output_folder(self, output_folder: Path | None) -> None:
+        self._output_folder = output_folder
+
     def progress(self) -> None:
         if self.status == JobStatus.COMPLETED:
             return
         self._status = JobStatus(self._status.value + 1)
 
     def write_pbs(self, path: Path) -> None:
-        with path.open("w") as file:
-            file.write(f"""#!/bin/bash
-#PBS -N {self.name}
-#PBS -q {self.queue}
-#PBS -l select={self.chunks}:ncpus={self.ncpus}:mem={self.mem}
-#PBS -l walltime={self.walltime_str}
-#PBS -o {self.output_folder / self.name!s}.out
-#PBS -e {self.output_folder / self.name!s}.err
+        preamble = "#!/bin/bash"
+        request = {
+            "-N": self.name,
+            "-q": self.queue,
+            "-l": [
+                f"select={self.chunks}:ncpus={self.ncpus}:mem={self.mem}",
+                f"walltime={self.walltime_str}",
+            ],
+            "-o": f"{self.output_folder}/{self.name}.out"
+            if self.output_folder
+            else None,
+            "-e": f"{self.output_folder}/{self.name}.err"
+            if self.output_folder
+            else None,
+        }
+        request_str = "\n".join(
+            f"#PBS {key} {value}"
+            if type(value) is not list
+            else "\n".join(f"#PBS {key} {value_part}" for value_part in value)
+            for key, value in request.items()
+            if value
+        )
+        script = f"python {self.script_path} {' '.join(f'--{key} {value}' for key, value in self.script_args.items())}"
 
-{self.venv_activate_script}
-python {self.script_path!s} {" ".join(f"--{key} {value}" for key, value in self.script_args.items())}
-""")
+        pbs = "\n".join((preamble, request_str, self.venv_activate_script, script))
+        with path.open("w") as file:
+            file.write(pbs)
+
+        self.path = path
         self.progress()
 
     def submit_pbs(self) -> None:
-        subprocess.run(["qsub", self.script_path], check=False)
+        subprocess.run(["qsub", self.path], check=False)
         self.progress()
