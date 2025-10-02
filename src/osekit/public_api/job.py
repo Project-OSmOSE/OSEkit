@@ -211,7 +211,10 @@ class Job:
 
     def submit_pbs(self) -> None:
         request = subprocess.run(
-            ["qsub", self.path], capture_output=True, text=True, check=False
+            ["qsub", self.path],
+            capture_output=True,
+            text=True,
+            check=False,
         )
         self.job_id = request.stdout.split(".", maxsplit=1)[0].strip()
         self.progress()
@@ -221,7 +224,10 @@ class Job:
             return
 
         request = subprocess.run(
-            ["qstat", "-f", self.job_id], capture_output=True, text=True, check=True
+            ["qstat", "-f", self.job_id],
+            capture_output=True,
+            text=True,
+            check=False,
         )
         stdout = request.stdout
 
@@ -229,6 +235,7 @@ class Job:
             err = request.stderr
             if "Job has finished" in err:
                 self.status = JobStatus.COMPLETED
+                self.job_info["job_state"] = "C"
             if "Unknown Job Id" in err:
                 raise ValueError(f"Unknown Job Id {self.job_id}")
             return
@@ -240,3 +247,25 @@ class Job:
             key, value = line.split("=", 1)
             info[key.strip()] = value.strip()
         self.job_info = info
+
+    def update_status(self) -> JobStatus:
+        if self.job_id is None:
+            self.status = (
+                JobStatus.PREPARED
+                if self.path and self.path.exists()
+                else JobStatus.UNPREPARED
+            )
+            return self.status
+
+        self.update_info()
+
+        if self.status == JobStatus.COMPLETED:
+            return self.status
+
+        job_state = {
+            "Q": JobStatus.QUEUED,
+            "R": JobStatus.RUNNING,
+        }
+        if self.job_info["job_state"] in job_state:
+            self.status = job_state[self.job_info["job_state"]]
+        return self.status
