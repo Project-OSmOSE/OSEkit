@@ -235,7 +235,10 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
 
         """
         kwargs.update(
-            {"file_class": AudioFile, "supported_file_extensions": [".wav", ".flac"]},
+            {
+                "file_class": AudioFile,
+                "supported_file_extensions": [".wav", ".flac", ".mseed"],
+            },
         )
         base_dataset = BaseDataset.from_folder(
             folder=folder,
@@ -338,7 +341,9 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         return cls(
             [
                 AudioData.from_base_data(
-                    data=data, sample_rate=sample_rate, normalization=normalization
+                    data=data,
+                    sample_rate=sample_rate,
+                    normalization=normalization,
                 )
                 for data in base_dataset.data
             ],

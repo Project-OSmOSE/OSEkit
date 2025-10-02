@@ -5,14 +5,15 @@ This workflow avoids closing/opening a same file repeatedly.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
+import numpy as np
+import obspy
 import soundfile as sf
 
 if TYPE_CHECKING:
     from os import PathLike
-
-    import numpy as np
 
 
 class AudioFileManager:
@@ -40,6 +41,39 @@ class AudioFileManager:
         self.close()
         self._open(path)
 
+    @staticmethod
+    def _check_boudaries(start: int, stop: int, frames: int) -> None:
+        if not 0 <= start < frames:
+            msg = "Start should be between 0 and the last frame of the audio file."
+            raise ValueError(msg)
+        if not 0 <= stop <= frames:
+            msg = "Stop should be between 0 and the last frame of the audio file."
+            raise ValueError(msg)
+        if start > stop:
+            msg = "Start should be inferior to Stop."
+            raise ValueError(msg)
+
+    @staticmethod
+    def _read_mseed(path: PathLike | str, start: int, stop: int) -> np.ndarray:
+        """Read the content of a mseed file between the start and stop frames.
+
+        Parameters
+        ----------
+        path: PathLike | str
+            Path to the mseed file.
+        start: int
+            First frame to read.
+        stop: int
+            Frame after the last frame to read.
+
+        Returns
+        -------
+        np.ndarray:
+            A (stop-start)-long array containing the mseed audio data.
+
+        """
+        return np.concat([trace.data for trace in obspy.read(path).traces])[start:stop]
+
     def read(
         self,
         path: PathLike | str,
@@ -66,21 +100,13 @@ class AudioFileManager:
             A (channel * frames) array containing the audio data.
 
         """
-        self._switch(path)
         _, frames, _ = self.info(path)
         if stop is None:
             stop = frames
+        self._check_boudaries(start=start, stop=stop, frames=frames)
 
-        if not 0 <= start < frames:
-            raise ValueError(
-                "Start should be between 0 and the last frame of the audio file.",
-            )
-        if not 0 <= stop <= frames:
-            raise ValueError(
-                "Stop should be between 0 and the last frame of the audio file.",
-            )
-        if start > stop:
-            raise ValueError("Start should be inferior to Stop.")
+        if Path(path).suffix == ".mseed":
+            return self._read_mseed(path=path, start=start, stop=stop)
 
         self.opened_file.seek(start)
         return self.opened_file.read(stop - start)
@@ -99,9 +125,39 @@ class AudioFileManager:
             Sample rate, number of frames and channels of the audio file.
 
         """
+        if Path(path).suffix == ".mseed":
+            return self.mseed_info(path)
+
         self._switch(path)
         return (
             self.opened_file.samplerate,
             self.opened_file.frames,
             self.opened_file.channels,
+        )
+
+    @staticmethod
+    def mseed_info(path: PathLike | str) -> tuple[int, int, int]:
+        """Return the sample rate, number of frames and channels of the mseed file.
+
+        Parameters
+        ----------
+        path: PathLike | str
+            Path to the mseed file.
+
+        Returns
+        -------
+        tuple[int,int,int]:
+            Sample rate, number of frames and channels of the mseed file.
+
+        """
+        metadata = obspy.read(pathname_or_url=path, headonly=True)
+        sample_rate = set(trace.meta.sampling_rate for trace in metadata.traces)
+        if len(sample_rate) != 1:
+            raise ValueError("Audio file has inconsistent sampling rate.")
+        sample_rate = sample_rate.pop()
+        frames = sum(trace.meta.npts for trace in metadata.traces)
+        return (
+            sample_rate,
+            frames,
+            1,
         )
