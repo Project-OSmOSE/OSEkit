@@ -24,7 +24,7 @@ class Event:
     def __init__(
         self,
         begin: Timestamp,
-        end: Timestamp
+        end: Timestamp,
     ) -> None:
         """Initialize an Event instance with a beginning and an end."""
         self.begin = begin
@@ -58,6 +58,9 @@ class Event:
     def duration(self) -> Timedelta:
         """Duration of the event."""
         return self.end - self.begin
+
+    def __repr__(self) -> str:
+        return str(self.begin)
 
     def overlaps(self, other: type[Event] | Event) -> bool:
         """Return True if the other event shares time with the current event.
@@ -149,7 +152,7 @@ class Event:
         """  # noqa: E501
         events = sorted(
             events,
-            key=lambda event: (event.begin, -1*event.duration),
+            key=lambda event: (event.begin, -1 * event.duration),
         )
         concatenated_events = []
         for event in events:
