@@ -47,6 +47,8 @@ class Job:
         self.output_folder = output_folder
         self._status = JobStatus.UNPREPARED
         self._path = None
+        self._id = None
+        self._info = None
 
     @property
     def script_path(self) -> Path:
@@ -134,6 +136,10 @@ class Job:
     def status(self) -> JobStatus:
         return self._status
 
+    @status.setter
+    def status(self, status: JobStatus) -> None:
+        self._status = status
+
     @property
     def path(self) -> Path | None:
         return self._path
@@ -149,6 +155,22 @@ class Job:
     @output_folder.setter
     def output_folder(self, output_folder: Path | None) -> None:
         self._output_folder = output_folder
+
+    @property
+    def job_id(self) -> str:
+        return self._id
+
+    @job_id.setter
+    def job_id(self, job_id: str) -> None:
+        self._id = job_id
+
+    @property
+    def job_info(self) -> dict | None:
+        return self._info
+
+    @job_info.setter
+    def job_info(self, info: dict) -> None:
+        self._info = info
 
     def progress(self) -> None:
         if self.status == JobStatus.COMPLETED:
@@ -188,5 +210,33 @@ class Job:
         self.progress()
 
     def submit_pbs(self) -> None:
-        subprocess.run(["qsub", self.path], check=False)
+        request = subprocess.run(
+            ["qsub", self.path], capture_output=True, text=True, check=False
+        )
+        self.job_id = request.stdout.split(".", maxsplit=1)[0].strip()
         self.progress()
+
+    def update_info(self) -> None:
+        if self.job_id is None:
+            return
+
+        request = subprocess.run(
+            ["qstat", "-f", self.job_id], capture_output=True, text=True, check=True
+        )
+        stdout = request.stdout
+
+        if not stdout:
+            err = request.stderr
+            if "Job has finished" in err:
+                self.status = JobStatus.COMPLETED
+            if "Unknown Job Id" in err:
+                raise ValueError(f"Unknown Job Id {self.job_id}")
+            return
+
+        info = {}
+        for line in stdout.splitlines():
+            if "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            info[key.strip()] = value.strip()
+        self.job_info = info
