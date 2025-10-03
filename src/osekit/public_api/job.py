@@ -210,6 +210,9 @@ class Job:
         self.progress()
 
     def submit_pbs(self) -> None:
+        if self.update_status() is not JobStatus.PREPARED:
+            raise ValueError("Job should be written before being submitted.")
+
         request = subprocess.run(
             ["qsub", self.path],
             capture_output=True,
@@ -269,3 +272,30 @@ class Job:
         if self.job_info["job_state"] in job_state:
             self.status = job_state[self.job_info["job_state"]]
         return self.status
+
+
+class JobBuilder:
+    def __init__(self, config: JobConfig = JobConfig) -> None:
+        self.config = config
+        self.jobs = []
+
+    def create_job(
+        self,
+        script_path: Path,
+        script_args: dict | None = None,
+        name: str = "osekit_analysis",
+        output_folder: Path | None = None,
+    ) -> None:
+        job = Job(
+            script_path=script_path,
+            script_args=script_args,
+            name=name,
+            output_folder=output_folder,
+            config=self.config,
+        )
+        job.write_pbs(output_folder / f"{name}.pbs")
+        self.jobs.append(job)
+
+    def submit_pbs(self) -> None:
+        for job in self.jobs:
+            job.submit_pbs()
