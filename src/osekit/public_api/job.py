@@ -298,4 +298,6 @@ class JobBuilder:
 
     def submit_pbs(self) -> None:
         for job in self.jobs:
+            if job.update_status() is not JobStatus.PREPARED:
+                continue
             job.submit_pbs()
