@@ -463,7 +463,7 @@ class Dataset:
             nb_batches=nb_jobs,
         )
 
-        for start, stop in batch_indexes:
+        for index, (start, stop) in enumerate(batch_indexes):
             self.job_builder.create_job(
                 script_path=Path(export_analysis.__file__),
                 script_args={
@@ -484,7 +484,7 @@ class Dataset:
                     "nb-processes": config.multiprocessing["nb_processes"],
                     "use-logging-setup": "True",
                 },
-                name=name + (f"_{start}" if len(batch_indexes) > 1 else ""),
+                name=name + (f"_{index}" if len(batch_indexes) > 1 else ""),
                 output_folder=self.folder / "log",
             )
         self.job_builder.submit_pbs()
