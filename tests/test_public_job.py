@@ -177,3 +177,67 @@ def test_submit_pbs_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
 
     assert job.job_id == "35173"
     assert job.status == JobStatus.QUEUED
+
+
+def test_update_info_no_job_id() -> None:
+    job = Job(Path("pixies.py"))
+    job.job_id = None
+    job.update_info()
+    assert job.job_info is None
+
+
+def test_update_info_parse_stdout(monkeypatch: pytest.MonkeyPatch) -> None:
+    job = Job(Path("fontaines.py"))
+    job.job_id = "43"
+    job.status = JobStatus.RUNNING
+    raw = " frankie = cosmos \navey=tare\nattic= abasement\nthis will be ignored"
+
+    class Dummy:
+        stdout = raw
+        stderr = ""
+
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        lambda *args, **kwargs: Dummy(),
+    )
+    job.update_info()
+    assert job.job_info == {"frankie": "cosmos", "avey": "tare", "attic": "abasement"}
+
+
+def test_update_info_completed(monkeypatch: pytest.MonkeyPatch) -> None:
+    job = Job(Path("amok.py"))
+    job.job_id = "25022013"
+    job.job_info = {}
+
+    class Dummy:
+        stdout = ""
+        stderr = "Atoms\nJob has finished\nFor peace"
+
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        lambda *args, **kwargs: Dummy(),
+    )
+
+    job.update_info()
+    assert job.status == JobStatus.COMPLETED
+    assert job.job_info["job_state"] == "C"
+
+
+def test_update_info_unknown_job_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    job = Job(Path("pompom.py"))
+    job.job_id = "17112014"
+
+    class Dummy:
+        stdout = ""
+        stderr = "Error: Unknown Job Id 17112014"
+
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        lambda *args, **kwargs: Dummy(),
+    )
+
+    with pytest.raises(ValueError, match="Unknown Job Id 17112014") as e:
+        assert job.update_info() == e
