@@ -241,3 +241,32 @@ def test_update_info_unknown_job_raises(monkeypatch: pytest.MonkeyPatch) -> None
 
     with pytest.raises(ValueError, match="Unknown Job Id 17112014") as e:
         assert job.update_info() == e
+
+
+def test_update_status(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    job = Job(Path("porticoquartet.py"))
+    job.path = tmp_path / "pompidou.pbs"
+
+    assert job.update_status() == JobStatus.UNPREPARED
+
+    job.path.write_text("prickly pear")
+    assert job.update_status() == JobStatus.PREPARED
+
+    monkeypatch.setattr(
+        job,
+        "update_info",
+        lambda: None,
+    )
+
+    job.job_info = {"job_state": "Q"}
+    job.job_id = "5129195"
+    assert job.update_status() == JobStatus.QUEUED
+    assert job.status == JobStatus.QUEUED
+
+    job.job_info = {"job_state": "R"}
+    assert job.update_status() == JobStatus.RUNNING
+    assert job.status == JobStatus.RUNNING
+
+    job.status = JobStatus.COMPLETED
+    assert job.update_status() == JobStatus.COMPLETED
+    assert job.status == JobStatus.COMPLETED
