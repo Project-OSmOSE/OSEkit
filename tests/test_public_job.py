@@ -4,7 +4,8 @@ from pathlib import Path
 import pytest
 from pandas import Timedelta
 
-from osekit.public_api.job import Job, JobConfig, JobStatus
+import osekit.public_api.job as job_module
+from osekit.public_api.job import Job, JobBuilder, JobConfig, JobStatus
 
 
 @pytest.mark.parametrize(
@@ -270,3 +271,89 @@ def test_update_status(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     job.status = JobStatus.COMPLETED
     assert job.update_status() == JobStatus.COMPLETED
     assert job.status == JobStatus.COMPLETED
+
+
+def test_job_builder_write(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    called = {}
+
+    class DummyJob:
+        def __init__(self, **kwargs: dict) -> None:
+            called["init_job"] = kwargs
+            self.path = None
+            self.status = JobStatus.UNPREPARED
+
+        def write_pbs(self, path: Path) -> None:
+            called["write_pbs"] = path
+            self.path = path
+            self.status = JobStatus.PREPARED
+
+    monkeypatch.setattr(job_module, "Job", DummyJob)
+
+    job_config = JobConfig(
+        nb_nodes=2,
+        ncpus=16,
+        mem="60gb",
+        walltime=Timedelta(hours=2),
+        venv_name="abyssinie",
+        queue="mpi",
+    )
+
+    job_builder = JobBuilder(config=job_config)
+
+    assert job_builder.jobs == []
+
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+    script = tmp_path / "script.py"
+    script.write_text("")
+
+    job_builder.create_job(
+        script_path=script,
+        script_args={"les": "fantômes", "de": "baleines"},
+        name="idylle_des_abysses",
+        output_folder=output_dir,
+    )
+
+    keywords = called["init_job"]
+    assert keywords["script_path"] == script
+    assert keywords["script_args"] == {"les": "fantômes", "de": "baleines"}
+    assert keywords["name"] == "idylle_des_abysses"
+    assert keywords["output_folder"] == output_dir
+
+    assert len(job_builder.jobs) == 1
+
+    assert called["write_pbs"] == output_dir / "idylle_des_abysses.pbs"
+
+    assert job_builder.jobs[0].status == JobStatus.PREPARED
+
+
+def test_job_builder_submit(monkeypatch: pytest.MonkeyPatch) -> None:
+    submitted_jobs = []
+
+    class DummyJob:
+        def __init__(self, name: str, status: JobStatus) -> None:
+            self.name = name
+            self.status = status
+
+        def submit_pbs(self) -> None:
+            submitted_jobs.append(self.name)
+
+        def update_status(self) -> JobStatus:
+            return self.status
+
+    monkeypatch.setattr(job_module, "Job", DummyJob)
+
+    jobs = [
+        DummyJob(name="unprepared", status=JobStatus.UNPREPARED),
+        DummyJob(name="prepared", status=JobStatus.PREPARED),
+        DummyJob(name="queued", status=JobStatus.QUEUED),
+        DummyJob(name="running", status=JobStatus.RUNNING),
+        DummyJob(name="completed", status=JobStatus.COMPLETED),
+    ]
+
+    job_builder = JobBuilder()
+    job_builder.jobs = jobs
+
+    job_builder.submit_pbs()
+
+    assert submitted_jobs == ["prepared"]
