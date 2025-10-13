@@ -1,3 +1,4 @@
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -140,3 +141,39 @@ def test_write_pbs(tmp_path: Path) -> None:
 
     assert job.path == pbs_path
     assert job.status == JobStatus.PREPARED
+
+
+def test_submit_pbs_without_write_raises() -> None:
+    job = Job(Path("script.py"))
+    with pytest.raises(
+        ValueError,
+        match="Job should be written before being submitted.",
+    ) as e:
+        assert job.submit_pbs() == e
+
+
+def test_submit_pbs_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    script = tmp_path / "boc.py"
+    script.write_text("")
+    outdir = tmp_path
+    job = Job(script, name="amobishoproden", output_folder=outdir)
+    pbs_path = tmp_path / "amobishoproden.pbs"
+    job.write_pbs(pbs_path)
+
+    class Dummy:
+        def __init__(self) -> None:
+            """Dummy subprocess.run output."""
+            self.stdout = "35173.server\n"
+            self.stderr = ""
+
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        lambda *args, **kwargs: Dummy(),
+    )
+
+    assert job.status == JobStatus.PREPARED
+    job.submit_pbs()
+
+    assert job.job_id == "35173"
+    assert job.status == JobStatus.QUEUED
