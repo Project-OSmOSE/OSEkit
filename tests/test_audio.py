@@ -24,7 +24,7 @@ from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.audio_item import AudioItem
 from osekit.core_api.instrument import Instrument
 from osekit.utils import audio_utils
-from osekit.utils.audio_utils import generate_sample_audio, Normalization, normalize
+from osekit.utils.audio_utils import Normalization, generate_sample_audio, normalize
 
 
 @pytest.mark.parametrize(
@@ -1870,3 +1870,61 @@ def test_audio_data_equality(
 
     # AudioDataset equality should account for sample rate
     assert ads1 != ads2
+
+
+@pytest.mark.parametrize(
+    ("ad_values", "nb_parts"),
+    [
+        pytest.param(
+            [1, 2, 3],
+            1,
+            id="positive_values_one_part",
+        ),
+    ],
+)
+def test_normalization_values(
+    monkeypatch: pytest.MonkeyPatch,
+    ad_values: list[float],
+    nb_parts: int,
+) -> None:
+    def mocked_init(self: AudioData, **kwargs: dict) -> None:
+        self.normalization = kwargs.pop("normalization", Normalization.RAW)
+        self.normalization_values = kwargs.pop("normalization_values", None)
+        self.mocked_values = kwargs.pop("mocked_values", None)
+
+    def mocked_shape(self: AudioData) -> tuple[int, int]:
+        return len(self.mocked_values), 1
+
+    monkeypatch.setattr(AudioData, "__init__", mocked_init)
+    monkeypatch.setattr(AudioData, "shape", property(mocked_shape))
+    monkeypatch.setattr(
+        AudioData,
+        "get_raw_value",
+        lambda ad: np.array(ad.mocked_values),
+    )
+
+    ad = AudioData(mocked_values=ad_values)
+    ad_part_length = len(ad_values) // nb_parts
+    ad_parts = [
+        AudioData(
+            mocked_values=ad_values[
+                ad_part * ad_part_length : ad_part * ad_part_length + ad_part_length
+            ],
+        )
+        for ad_part in range(nb_parts)
+    ]
+
+    expected_mean = ad.get_raw_value().mean()
+    expected_std = ad.get_raw_value().std()
+    expected_peak = np.abs(ad.get_raw_value()).max()
+
+    global_normalization_values = ad.get_normalization_values()
+    lazy_normalization_values = ad.get_normalization_values(ad_parts)
+
+    assert global_normalization_values["mean"] == expected_mean
+    assert global_normalization_values["std"] == expected_std
+    assert global_normalization_values["peak"] == expected_peak
+
+    assert lazy_normalization_values["mean"] == expected_mean
+    assert lazy_normalization_values["std"] == expected_std
+    assert lazy_normalization_values["peak"] == expected_peak

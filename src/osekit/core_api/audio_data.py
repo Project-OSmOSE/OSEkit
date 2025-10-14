@@ -20,7 +20,7 @@ from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.audio_item import AudioItem
 from osekit.core_api.base_data import BaseData
 from osekit.core_api.instrument import Instrument
-from osekit.utils.audio_utils import resample, Normalization, normalize
+from osekit.utils.audio_utils import Normalization, normalize, resample
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -109,12 +109,25 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             }
         )
 
-    def get_normalization_values(self) -> dict:
-        values = self.get_raw_value()
+    def get_normalization_values(self, parts: list[AudioData] | None = None) -> dict:
+        if parts is None:
+            values = self.get_raw_value()
+            return {
+                "mean": values.mean(),
+                "peak": values.max(),
+                "std": values.std(),
+            }
+        mean = np.mean([part.get_mean() for part in parts], dtype=np.float64)
+        peak = np.max([part.get_peak() for part in parts])
+        total_length = np.sum(part.shape[0] for part in parts)
+        std = (
+            np.sum(part.get_squared_sum_of_deviation(mean=mean) for part in parts)
+            / total_length
+        ) ** 0.5
         return {
-            "mean": values.mean(),
-            "peak": values.max(),
-            "std": values.std(),
+            "mean": mean,
+            "peak": peak,
+            "std": std,
         }
 
     def __eq__(self, other: AudioData) -> bool:
@@ -139,6 +152,32 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             self.sample_rate = sr
             return
         self.sample_rate = None
+
+    def get_mean(self) -> float:
+        """Get the mean of the audio data."""
+        return self.get_raw_value().mean()
+
+    def get_squared_sum_of_deviation(self, mean: float | None = None) -> float:
+        """Get the squared sum of deviation of the audio data from the mean.
+
+        Parameters
+        ----------
+        mean: float
+            The mean from which the deviation is computed.
+            If not specified, it is computed from the audio data.
+
+        Returns
+        -------
+        float:
+            The squared sum of deviation of the audio data from the mean.
+
+        """
+        mean = mean or self.get_mean()
+        return sum((self.get_raw_value() - mean) ** 2)
+
+    def get_peak(self) -> float:
+        """Get the absolute peak value of the audio data."""
+        return np.abs(self.get_raw_value()).max()
 
     def get_raw_value(self) -> np.ndarray:
         """Return the raw value of the audio data before normalization.
@@ -272,21 +311,24 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             The list of AudioData subdata objects.
 
         """
-        normalization_values = (
-            self.normalization_values
-            if any(self.normalization_values.values())
-            else self.get_normalization_values()
-        )
-        return [
+        ad_parts = [
             AudioData.from_base_data(
                 data=base_data,
                 sample_rate=self.sample_rate,
                 instrument=self.instrument,
                 normalization=self.normalization,
-                normalization_values=normalization_values,
             )
             for base_data in super().split(nb_subdata)
         ]
+
+        normalization_values = (
+            self.normalization_values
+            if any(self.normalization_values.values())
+            else self.get_normalization_values(ad_parts)
+        )
+        for ad in ad_parts:
+            ad.normalization_values = normalization_values
+        return ad_parts
 
     def split_frames(self, start_frame: int = 0, stop_frame: int = -1) -> AudioData:
         """Return a new AudioData from a subpart of this AudioData's data.
@@ -453,7 +495,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         instrument: Instrument | None
             Instrument that might be used to obtain acoustic pressure from
             the wav audio data.
-        normalization: Literal["raw","dc_reject","zscore"]
+        normalization: Normalization
             The type of normalization to apply to the audio data.
         normalization_values: dict|None
             Mean, peak and std values with which to normalize the data.
