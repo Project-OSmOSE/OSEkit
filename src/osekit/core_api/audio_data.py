@@ -113,13 +113,16 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         if parts is None:
             values = self.get_raw_value()
             return {
-                "mean": values.mean(),
-                "peak": values.max(),
+                "mean": self.get_mean(raw_values=values),
+                "peak": self.get_peak(raw_values=values),
                 "std": values.std(),
             }
-        mean = np.mean([part.get_mean() for part in parts], dtype=np.float64)
-        peak = np.max([part.get_peak() for part in parts])
         total_length = np.sum(part.shape[0] for part in parts)
+        mean = np.sum(
+            [part.get_mean(total_length=total_length) for part in parts],
+            dtype=np.float64,
+        )
+        peak = max([part.get_peak() for part in parts], key=abs)
         std = (
             np.sum(part.get_squared_sum_of_deviation(mean=mean) for part in parts)
             / total_length
@@ -153,11 +156,21 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             return
         self.sample_rate = None
 
-    def get_mean(self) -> float:
+    def get_mean(
+        self,
+        raw_values: np.ndarray | None = None,
+        total_length: int | None = None,
+    ) -> float:
         """Get the mean of the audio data."""
-        return self.get_raw_value().mean()
+        raw_values = raw_values if raw_values is not None else self.get_raw_value()
+        total_length = total_length or len(raw_values)
+        return sum(raw_values) / total_length
 
-    def get_squared_sum_of_deviation(self, mean: float | None = None) -> float:
+    def get_squared_sum_of_deviation(
+        self,
+        raw_values: np.ndarray | None = None,
+        mean: float | None = None,
+    ) -> float:
         """Get the squared sum of deviation of the audio data from the mean.
 
         Parameters
@@ -172,12 +185,14 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             The squared sum of deviation of the audio data from the mean.
 
         """
+        raw_values = raw_values if raw_values is not None else self.get_raw_value()
         mean = mean or self.get_mean()
-        return sum((self.get_raw_value() - mean) ** 2)
+        return sum((raw_values - mean) ** 2)
 
-    def get_peak(self) -> float:
+    def get_peak(self, raw_values: np.ndarray | None = None) -> float:
         """Get the absolute peak value of the audio data."""
-        return np.abs(self.get_raw_value()).max()
+        raw_values = raw_values if raw_values is not None else self.get_raw_value()
+        return max(raw_values, key=abs)
 
     def get_raw_value(self) -> np.ndarray:
         """Return the raw value of the audio data before normalization.
