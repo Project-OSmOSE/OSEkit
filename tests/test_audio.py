@@ -1873,19 +1873,46 @@ def test_audio_data_equality(
 
 
 @pytest.mark.parametrize(
-    ("ad_values", "nb_parts"),
+    ("ad_parts", "expected"),
     [
         pytest.param(
-            [1, 2, 3],
-            1,
+            [[1, 2, 3]],
+            {
+                "mean": 2.0,
+                "peak": 3,
+                "std": 0.816496580927726,
+            },
             id="positive_values_one_part",
+        ),
+        pytest.param(
+            [[-4, 5, -8, 1, 2, 3]],
+            {
+                "mean": -0.16666666666666666,
+                "peak": -8,
+                "std": 4.4503433076062295,
+            },
+            id="negative_peak",
+        ),
+        pytest.param(
+            [
+                [1, 2, 3],
+                [3, 1],
+                [-5, -8, 5, 2],
+                [0, 2, 0.5],
+            ],
+            {
+                "mean": 0.5416666666666666,
+                "peak": -8,
+                "std": 3.4487819911125466,
+            },
+            id="normalization_from_parts",
         ),
     ],
 )
 def test_normalization_values(
     monkeypatch: pytest.MonkeyPatch,
-    ad_values: list[float],
-    nb_parts: int,
+    ad_parts: list[list[float]],
+    expected: dict[str, float],
 ) -> None:
     def mocked_init(self: AudioData, **kwargs: dict) -> None:
         self.normalization = kwargs.pop("normalization", Normalization.RAW)
@@ -1903,20 +1930,17 @@ def test_normalization_values(
         lambda ad: np.array(ad.mocked_values),
     )
 
-    ad = AudioData(mocked_values=ad_values)
-    ad_part_length = len(ad_values) // nb_parts
+    ad = AudioData(mocked_values=[v for ad_part in ad_parts for v in ad_part])
     ad_parts = [
         AudioData(
-            mocked_values=ad_values[
-                ad_part * ad_part_length : ad_part * ad_part_length + ad_part_length
-            ],
+            mocked_values=ad_part,
         )
-        for ad_part in range(nb_parts)
+        for ad_part in ad_parts
     ]
 
-    expected_mean = ad.get_raw_value().mean()
-    expected_std = ad.get_raw_value().std()
-    expected_peak = np.abs(ad.get_raw_value()).max()
+    expected_mean = expected["mean"]
+    expected_std = expected["std"]
+    expected_peak = expected["peak"]
 
     global_normalization_values = ad.get_normalization_values()
     lazy_normalization_values = ad.get_normalization_values(ad_parts)
