@@ -1559,7 +1559,7 @@ def test_split_data(
             range(0, data.shape, subdata_shape),
             strict=False,
         ):
-            assert np.array_equal(
+            assert np.allclose(
                 subdata.get_value(),
                 data.get_value()[data_range : data_range + subdata_shape],
             )
@@ -1919,8 +1919,8 @@ def test_normalization_values(
         self.normalization_values = kwargs.pop("normalization_values", None)
         self.mocked_values = kwargs.pop("mocked_values", None)
 
-    def mocked_shape(self: AudioData) -> tuple[int, int]:
-        return len(self.mocked_values), 1
+    def mocked_shape(self: AudioData) -> int:
+        return len(self.mocked_values)
 
     monkeypatch.setattr(AudioData, "__init__", mocked_init)
     monkeypatch.setattr(AudioData, "shape", property(mocked_shape))

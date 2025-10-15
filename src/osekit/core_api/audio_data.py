@@ -117,7 +117,9 @@ class AudioData(BaseData[AudioItem, AudioFile]):
                 "peak": self.get_peak(raw_values=values),
                 "std": values.std(),
             }
-        total_length = np.sum(part.shape[0] for part in parts)
+        total_length = np.sum(
+            part.shape if type(part.shape) is int else part.shape[0] for part in parts
+        )
         mean = np.sum(
             [part.get_mean(total_length=total_length) for part in parts],
             dtype=np.float64,
