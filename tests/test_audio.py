@@ -24,7 +24,7 @@ from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.audio_item import AudioItem
 from osekit.core_api.instrument import Instrument
 from osekit.utils import audio_utils
-from osekit.utils.audio_utils import generate_sample_audio, Normalization, normalize
+from osekit.utils.audio_utils import Normalization, generate_sample_audio, normalize
 
 
 @pytest.mark.parametrize(
@@ -1580,6 +1580,23 @@ def test_split_data(
                 )
                 assert subsubdata.instrument == subdata.instrument
                 assert subsubdata.normalization == subdata.normalization
+
+
+def test_split_data_normalization_pass(patch_audio_data: None) -> None:
+    ad = AudioData()
+    ad.mocked_value = [1, 2, 3]
+    original_normalization_values = ad.get_normalization_values()
+    assert all(v for v in original_normalization_values.values())
+
+    assert all(
+        part.normalization_values == original_normalization_values
+        for part in ad.split(nb_subdata=2, pass_normalization=True)
+    )
+    assert all(
+        normalization_value is None
+        for part in ad.split(nb_subdata=2, pass_normalization=False)
+        for normalization_value in part.normalization_values.values()
+    )
 
 
 @pytest.mark.parametrize(
