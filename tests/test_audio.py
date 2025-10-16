@@ -27,6 +27,28 @@ from osekit.utils import audio_utils
 from osekit.utils.audio_utils import Normalization, generate_sample_audio, normalize
 
 
+def test_patch_audio_data(patch_audio_data: None) -> None:
+    mocked_value = [1.0, 2.0, 3.0]
+    audio_data = AudioData(
+        mocked_value=mocked_value,  # Type: ignore # Unexpected argument
+    )
+    assert (
+        audio_data.mocked_value == mocked_value  # Type: ignore # Unresolved attribute
+    )
+
+    assert audio_data.shape == len(mocked_value)
+    assert type(audio_data.begin) is Timestamp
+    assert type(audio_data.end) is Timestamp
+
+    audio_data.normalization = Normalization.DC_REJECT
+
+    assert np.array_equal(audio_data.get_raw_value(), mocked_value)
+    assert np.array_equal(
+        audio_data.get_value(),
+        [v - np.mean(mocked_value, dtype=float) for v in mocked_value],
+    )
+
+
 @pytest.mark.parametrize(
     "audio_files",
     [
@@ -1604,7 +1626,7 @@ def test_split_data_normalization_pass(patch_audio_data: None) -> None:
     assert all(
         normalization_value is None
         for normalization_value in ad.split_frames(
-            pass_normalization=False
+            pass_normalization=False,
         ).normalization_values.values()
     )
 
