@@ -204,7 +204,7 @@ def patch_audio_data(monkeypatch: pytest.MonkeyPatch) -> None:
         }
         for key, value in defaults.items():
             if key not in kwargs:
-                kwargs[key] = value
+                kwargs.update(**{key: value})
 
         original_init(self, *args, **kwargs)
         if mocked_value is not None:

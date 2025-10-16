@@ -1597,6 +1597,16 @@ def test_split_data_normalization_pass(patch_audio_data: None) -> None:
         for part in ad.split(nb_subdata=2, pass_normalization=False)
         for normalization_value in part.normalization_values.values()
     )
+    assert (
+        ad.split_frames(pass_normalization=True).normalization_values
+        == original_normalization_values
+    )
+    assert all(
+        normalization_value is None
+        for normalization_value in ad.split_frames(
+            pass_normalization=False
+        ).normalization_values.values()
+    )
 
 
 @pytest.mark.parametrize(
