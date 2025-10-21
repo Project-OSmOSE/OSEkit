@@ -4,8 +4,8 @@ from pathlib import Path
 import pytest
 from pandas import Timedelta
 
-import osekit.public_api.job as job_module
-from osekit.public_api.job import Job, JobBuilder, JobConfig, JobStatus
+import osekit.utils.job as job_module
+from osekit.utils.job import Job, JobBuilder, JobConfig, JobStatus
 
 
 @pytest.mark.parametrize(

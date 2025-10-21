@@ -1,4 +1,4 @@
-"""The job module provides classes that run Public API analyses on a remote server.
+"""The job module provides classes that run analyses on a remote server.
 
 If a JobBuilder is attached to a Public API Dataset, the analyses will be ran through
 jobs, with writting/submitting of PBS files.
@@ -62,7 +62,7 @@ class JobConfig:
 
 
 class Job:
-    """Job that concern a specific Public API Analysis."""
+    """Job that concerns a specific analysis."""
 
     def __init__(
         self,
