@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
-from pandas import Timedelta
+from matplotlib.dates import num2date
+from pandas import Timedelta, Timestamp
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming
 
@@ -1019,8 +1020,13 @@ def test_ltas(audio_files: pytest.fixture, tmp_path: pytest.fixture) -> None:
     assert np.array_equal(ltas_ds.data[0].get_value(), ltas_ds2.data[0].get_value())
 
 
+@pytest.mark.parametrize(
+    "audio_files",
+    [{"date_begin": Timestamp("2020-01-01 00:00:00", tz="UTC")}],
+    indirect=True,
+)
 def test_spectro_axis(
-    audio_files: pytest.fixture,
+    audio_files: tuple[list[AudioFile], ...],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     audio_files, _ = audio_files
@@ -1032,24 +1038,33 @@ def test_spectro_axis(
 
     plot_kwargs = {}
 
-    def mock_pcolormesh(self, time, freq, sx, **kwargs):
-        plot_kwargs["time"] = time
-        plot_kwargs["freq"] = freq
+    def mock_imshow(
+        self: plt.Axes,
+        sx: np.ndarray,
+        **kwargs: str,
+    ) -> None:
         plot_kwargs["sx"] = sx
-        for kwarg in kwargs:
-            plot_kwargs[kwarg] = kwargs[kwarg]
 
-    monkeypatch.setattr(plt.Axes, "pcolormesh", mock_pcolormesh)
+        for k, v in kwargs.items():
+            plot_kwargs[k] = v
+
+    monkeypatch.setattr(plt.Axes, "imshow", mock_imshow)
 
     sd.plot()
 
-    assert np.array_equal(
-        plot_kwargs["time"],
-        pd.date_range(sd.begin, sd.end, periods=sd.shape[1]),
-    )
-    assert np.array_equal(plot_kwargs["freq"], sd.fft.f)
     assert (plot_kwargs["vmin"], plot_kwargs["vmax"]) == sd.v_lim
     assert plot_kwargs["cmap"] == sd.colormap
+    assert plot_kwargs["origin"] == "lower"
+    assert plot_kwargs["aspect"] == "auto"
+    assert plot_kwargs["interpolation"] == "none"
+
+    t1, t2, f1, f2 = plot_kwargs["extent"]
+    t1, t2 = map(num2date, (t1, t2))
+    t1, t2 = map(Timestamp, (t1, t2))
+    assert t1 == sd.begin
+    assert t2 == sd.end
+    assert f1 == sd.fft.f[0]
+    assert f2 == sd.fft.f[-1]
 
 
 def test_spectro_default_v_lim(audio_files: pytest.fixture) -> None:
