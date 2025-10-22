@@ -6,6 +6,7 @@ The data is accessed via a SpectroItem object per SpectroFile.
 
 from __future__ import annotations
 
+import gc
 from typing import TYPE_CHECKING, Literal
 
 import matplotlib.pyplot as plt
@@ -18,7 +19,6 @@ from osekit.config import (
 )
 from osekit.core_api.audio_data import AudioData
 from osekit.core_api.base_data import BaseData
-from osekit.core_api.frequency_scale import Scale
 from osekit.core_api.spectro_file import SpectroFile
 from osekit.core_api.spectro_item import SpectroItem
 
@@ -26,6 +26,8 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from pandas import Timestamp
+
+    from osekit.core_api.frequency_scale import Scale
 
 
 class SpectroData(BaseData[SpectroItem, SpectroFile]):
@@ -414,6 +416,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         self.plot(ax=ax, sx=sx, scale=scale)
         plt.savefig(f"{folder / str(self)}", bbox_inches="tight", pad_inches=0)
         plt.close()
+        gc.collect()
 
     def write(
         self,
