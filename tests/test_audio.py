@@ -24,7 +24,29 @@ from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.audio_item import AudioItem
 from osekit.core_api.instrument import Instrument
 from osekit.utils import audio_utils
-from osekit.utils.audio_utils import generate_sample_audio, Normalization, normalize
+from osekit.utils.audio_utils import Normalization, generate_sample_audio, normalize
+
+
+def test_patch_audio_data(patch_audio_data: None) -> None:
+    mocked_value = [1.0, 2.0, 3.0]
+    audio_data = AudioData(
+        mocked_value=mocked_value,  # Type: ignore # Unexpected argument
+    )
+    assert (
+        audio_data.mocked_value == mocked_value  # Type: ignore # Unresolved attribute
+    )
+
+    assert audio_data.shape == len(mocked_value)
+    assert type(audio_data.begin) is Timestamp
+    assert type(audio_data.end) is Timestamp
+
+    audio_data.normalization = Normalization.DC_REJECT
+
+    assert np.array_equal(audio_data.get_raw_value(), mocked_value)
+    assert np.array_equal(
+        audio_data.get_value(),
+        [v - np.mean(mocked_value, dtype=float) for v in mocked_value],
+    )
 
 
 @pytest.mark.parametrize(
@@ -1580,6 +1602,33 @@ def test_split_data(
                 )
                 assert subsubdata.instrument == subdata.instrument
                 assert subsubdata.normalization == subdata.normalization
+
+
+def test_split_data_normalization_pass(patch_audio_data: None) -> None:
+    ad = AudioData()
+    ad.mocked_value = [1, 2, 3]
+    original_normalization_values = ad.get_normalization_values()
+    assert all(v for v in original_normalization_values.values())
+
+    assert all(
+        part.normalization_values == original_normalization_values
+        for part in ad.split(nb_subdata=2, pass_normalization=True)
+    )
+    assert all(
+        normalization_value is None
+        for part in ad.split(nb_subdata=2, pass_normalization=False)
+        for normalization_value in part.normalization_values.values()
+    )
+    assert (
+        ad.split_frames(pass_normalization=True).normalization_values
+        == original_normalization_values
+    )
+    assert all(
+        normalization_value is None
+        for normalization_value in ad.split_frames(
+            pass_normalization=False,
+        ).normalization_values.values()
+    )
 
 
 @pytest.mark.parametrize(

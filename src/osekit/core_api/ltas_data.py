@@ -139,7 +139,7 @@ class LTASData(SpectroData):
                 SpectroData.from_audio_data(ad, self.fft),
                 nb_time_bins=self.nb_time_bins,
             )
-            for ad in self.audio_data.split(self.nb_time_bins)
+            for ad in self.audio_data.split(self.nb_time_bins, pass_normalization=False)
         ]
 
         if depth != 0:
