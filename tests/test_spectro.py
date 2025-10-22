@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gc
 from contextlib import nullcontext
 from typing import TYPE_CHECKING
 
@@ -25,7 +26,7 @@ from osekit.core_api.ltas_dataset import LTASDataset
 from osekit.core_api.spectro_data import SpectroData
 from osekit.core_api.spectro_dataset import SpectroDataset
 from osekit.core_api.spectro_file import SpectroFile
-from osekit.utils.audio_utils import generate_sample_audio, Normalization
+from osekit.utils.audio_utils import Normalization, generate_sample_audio
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -1063,3 +1064,43 @@ def test_spectro_default_v_lim(audio_files: pytest.fixture) -> None:
 
     assert sd.v_lim == (-120.0, 0.0)
     assert sd_inst.v_lim == (0.0, 170.0)
+
+
+def test_garbage_collection_after_save_spectrogram(
+    tmp_path: Path,
+    audio_files: tuple[list[AudioFile], pytest.fixtures.Subrequest],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    files, _ = audio_files
+    ad = AudioData.from_files(files)
+    sft = ShortTimeFFT(win=hamming(1024), hop=128, fs=ad.sample_rate)
+
+    sd = SpectroData.from_audio_data(ad, sft)
+    ltas = LTASData.from_spectro_data(spectro_data=sd, nb_time_bins=4)
+
+    collect_calls = [0]
+
+    def patch_collect() -> None:
+        collect_calls[0] += 1
+
+    monkeypatch.setattr(gc, "collect", patch_collect)
+    monkeypatch.setattr(SpectroData, "plot", lambda *args, **kwargs: None)
+    monkeypatch.setattr(plt, "savefig", lambda *args, **kwargs: None)
+
+    sd.save_spectrogram(tmp_path / "output")
+
+    assert collect_calls[0] == 1
+
+    ltas.save_spectrogram(tmp_path / "output")
+
+    assert collect_calls[0] == 2  # noqa: PLR2004
+
+    sds = SpectroDataset([sd] * 5)
+    sds.save_spectrogram(tmp_path / "output")
+
+    assert collect_calls[0] == 7  # noqa: PLR2004
+
+    ltass = LTASDataset([ltas] * 5)
+    ltass.save_spectrogram(tmp_path / "output")
+
+    assert collect_calls[0] == 12  # noqa: PLR2004

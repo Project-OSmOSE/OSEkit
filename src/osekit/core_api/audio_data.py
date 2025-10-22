@@ -20,7 +20,7 @@ from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.audio_item import AudioItem
 from osekit.core_api.base_data import BaseData
 from osekit.core_api.instrument import Instrument
-from osekit.utils.audio_utils import resample, Normalization, normalize
+from osekit.utils.audio_utils import Normalization, normalize, resample
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -258,13 +258,23 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             return resample(item_data, item.sample_rate, self.sample_rate)
         return item_data
 
-    def split(self, nb_subdata: int = 2) -> list[AudioData]:
+    def split(
+        self,
+        nb_subdata: int = 2,
+        *,
+        pass_normalization: bool = True,
+    ) -> list[AudioData]:
         """Split the audio data object in the specified number of audio subdata.
 
         Parameters
         ----------
         nb_subdata: int
             Number of subdata in which to split the data.
+        pass_normalization: bool
+            If True, the normalization values (mean, std, peak) will be computed
+            from the original audio data and passed to the split chunks.
+            If the original AudioData is very long, this might lead to
+            a RAM saturation.
 
         Returns
         -------
@@ -273,7 +283,9 @@ class AudioData(BaseData[AudioItem, AudioFile]):
 
         """
         normalization_values = (
-            self.normalization_values
+            None
+            if not pass_normalization
+            else self.normalization_values
             if any(self.normalization_values.values())
             else self.get_normalization_values()
         )
@@ -288,7 +300,13 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             for base_data in super().split(nb_subdata)
         ]
 
-    def split_frames(self, start_frame: int = 0, stop_frame: int = -1) -> AudioData:
+    def split_frames(
+        self,
+        start_frame: int = 0,
+        stop_frame: int = -1,
+        *,
+        pass_normalization: bool = True,
+    ) -> AudioData:
         """Return a new AudioData from a subpart of this AudioData's data.
 
         Parameters
@@ -297,6 +315,11 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             First frame included in the new AudioData.
         stop_frame: int
             First frame after the last frame included in the new AudioData.
+        pass_normalization: bool
+            If True, the normalization values (mean, std, peak) will be computed
+            from the original audio data and passed to the split chunks.
+            If the original AudioData is very long, this might lead to
+            a RAM saturation.
 
         Returns
         -------
@@ -318,7 +341,9 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             else self.begin + Timedelta(seconds=stop_frame / self.sample_rate)
         )
         normalization_values = (
-            self.normalization_values
+            None
+            if not pass_normalization
+            else self.normalization_values
             if any(self.normalization_values.values())
             else self.get_normalization_values()
         )
@@ -453,7 +478,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         instrument: Instrument | None
             Instrument that might be used to obtain acoustic pressure from
             the wav audio data.
-        normalization: Literal["raw","dc_reject","zscore"]
+        normalization: Normalization
             The type of normalization to apply to the audio data.
         normalization_values: dict|None
             Mean, peak and std values with which to normalize the data.
