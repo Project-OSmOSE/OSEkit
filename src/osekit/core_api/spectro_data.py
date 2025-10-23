@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Literal
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.dates import date2num
 from scipy.signal import ShortTimeFFT, welch
 
 from osekit.config import (
@@ -357,13 +358,16 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         sx = sx if scale is None else scale.rescale(sx, freq)
 
-        ax.pcolormesh(
-            time,
-            freq,
+        ax.xaxis_date()
+        ax.imshow(
             sx,
             vmin=self._v_lim[0],
             vmax=self._v_lim[1],
             cmap=self.colormap,
+            origin="lower",
+            aspect="auto",
+            interpolation="none",
+            extent=(date2num(time[0]), date2num(time[-1]), freq[0], freq[-1]),
         )
 
     def to_db(self, sx: np.ndarray) -> np.ndarray:
