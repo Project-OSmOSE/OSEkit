@@ -356,7 +356,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         time = pd.date_range(start=self.begin, end=self.end, periods=sx.shape[1])
         freq = self.fft.f
 
-        sx = sx if scale is None else scale.rescale(sx, freq)
+        sx = sx if scale is None else scale.rescale(sx_matrix=sx, original_scale=freq)
 
         ax.xaxis_date()
         ax.imshow(

@@ -125,7 +125,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
     def _save_spectrogram(self, sd: SpectroData, folder: Path) -> None:
         """Save the spectrogram data."""
-        sd.save_spectrogram(folder)
+        sd.save_spectrogram(folder=folder, scale=self.scale)
 
     def save_spectrogram(
         self,
