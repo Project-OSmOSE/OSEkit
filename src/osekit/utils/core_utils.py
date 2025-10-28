@@ -292,7 +292,7 @@ def get_closest_value_index(target: float, values: list[float]) -> int:
     ----------
     target: float
         Target value from which the closest value is to be found.
-    values: float
+    values: list[float]
         List of values in which the closest value from target is
         to be found.
 

@@ -153,7 +153,8 @@ class Scale:
         """
         mapped_scale = self.map(len(original_scale))
         return [
-            get_closest_value_index(mapped, original_scale) for mapped in mapped_scale
+            get_closest_value_index(target=mapped, values=original_scale)
+            for mapped in mapped_scale
         ]
 
     def get_mapped_values(self, original_scale: list[float]) -> list[float]:
@@ -195,7 +196,7 @@ class Scale:
         if type(original_scale) is np.ndarray:
             original_scale = original_scale.tolist()
 
-        new_scale_indexes = self.get_mapped_indexes(original_scale)
+        new_scale_indexes = self.get_mapped_indexes(original_scale=original_scale)
 
         return sx_matrix[new_scale_indexes]
 
