@@ -21,6 +21,7 @@ from osekit.core_api.audio_data import AudioData
 from osekit.core_api.audio_dataset import AudioDataset
 from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.event import Event
+from osekit.core_api.frequency_scale import Scale, ScalePart
 from osekit.core_api.instrument import Instrument
 from osekit.core_api.ltas_data import LTASData
 from osekit.core_api.ltas_dataset import LTASDataset
@@ -1119,3 +1120,44 @@ def test_garbage_collection_after_save_spectrogram(
     ltass.save_spectrogram(tmp_path / "output")
 
     assert collect_calls[0] == 12  # noqa: PLR2004
+
+
+def test_spectrodataset_scale(
+    tmp_path: Path,
+    patch_audio_data: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ad = AudioData(
+        mocked_value=np.linspace(0.0, 1.0, 1000),  # Type: ignore # Unexpected argument
+    )
+
+    fft = ShortTimeFFT(win=hamming(512), hop=128, fs=ad.sample_rate)
+    scale = Scale(
+        [
+            ScalePart(0.0, 0.25, 0.0, 500.0),
+            ScalePart(0.25, 1.0, 500.0, 20_000.0, scale_type="log"),
+        ],
+    )
+
+    sd = SpectroData.from_audio_data(data=ad, fft=fft)
+
+    sds = SpectroDataset(data=[sd], scale=scale)
+
+    def mock_plot(*args: list[...], **kwargs: dict) -> None:
+        assert kwargs["scale"] == scale
+
+    def mock_empty_method(*args: list[...], **kwargs: dict) -> None:
+        return
+
+    monkeypatch.setattr(SpectroData, "plot", mock_plot)
+    monkeypatch.setattr(SpectroData, "write", mock_empty_method)
+    monkeypatch.setattr(plt, "savefig", mock_empty_method)
+    sds.save_spectrogram(tmp_path)
+    sds.save_all(tmp_path, tmp_path)
+
+    ltas = LTASData.from_spectro_data(sd, nb_time_bins=50)
+    ltas_ds = LTASDataset([ltas])
+    ltas_ds.scale = scale
+
+    ltas_ds.save_spectrogram(tmp_path)
+    ltas_ds.save_all(tmp_path, tmp_path)
