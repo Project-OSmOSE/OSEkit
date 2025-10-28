@@ -1,3 +1,5 @@
+"""Module that provides scripts for running public API analyses."""
+
 from __future__ import annotations
 
 import argparse
@@ -26,10 +28,11 @@ def write_analysis(
     matrix_folder_name: str,
     spectrogram_folder_name: str,
     welch_folder_name: str,
-    link: bool = True,
     first: int = 0,
     last: int | None = None,
     logger: logging.Logger | None = None,
+    *,
+    link: bool = True,
 ) -> None:
     """Write SpectroDataset output files to disk.
 
@@ -60,8 +63,8 @@ def write_analysis(
         Index after the last data object to write.
     logger: logging.Logger | None
         Logger to use to log the analysis steps.
-    """
 
+    """
     logger = glc.logger if logger is None else logger
 
     logger.info("Running analysis...")

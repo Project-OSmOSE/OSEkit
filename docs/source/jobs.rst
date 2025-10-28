@@ -31,14 +31,16 @@ instance to the :attr:`osekit.public_api.dataset.Dataset.job_builder` attribute:
         queue="omp" # Queue in which the job will be submitted
     )
 
-    job_builder = JobBuilder(
+    dataset.job_builder = JobBuilder(
         config=job_config,
     )
-
-    dataset.job_builder = job_builder
 
     # Now the dataset has a non-None job_builder attribute,
     # running an analysis will write a PBS file in the logs directory
     # and submit it to the requested queue.
 
     dataset.run_analysis(...) # See the Analysis documentation
+
+
+Public API
+^^^^^^^^^^
