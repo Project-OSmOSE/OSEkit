@@ -31,7 +31,7 @@ from osekit.utils.path_utils import move_tree
 
 if TYPE_CHECKING:
     from osekit.core_api.audio_file import AudioFile
-    from osekit.public_api.job import JobBuilder
+    from osekit.utils.job import JobBuilder
 
 
 class Dataset:
