@@ -451,9 +451,9 @@ class Dataset:
                 sds=sds,
                 link=link,
                 subtype=subtype,
-                matrix_folder_name=matrix_folder_name,
-                spectrogram_folder_name=spectrogram_folder_name,
-                welch_folder_name=welch_folder_name,
+                matrix_folder_name=Path(matrix_folder_name),
+                spectrogram_folder_name=Path(spectrogram_folder_name),
+                welch_folder_name=Path(welch_folder_name),
                 logger=self.logger,
             )
             return
@@ -463,14 +463,21 @@ class Dataset:
             nb_batches=nb_jobs,
         )
 
+        ads_json = (
+            ads.folder / f"{ads.name}.json"
+            if AnalysisType.AUDIO in analysis_type
+            else "None"
+        )
+        sds_json = sds.folder / f"{sds.name}.json" if sds is not None else "None"
+
         for index, (start, stop) in enumerate(batch_indexes):
             self.job_builder.create_job(
                 script_path=Path(export_analysis.__file__),
                 script_args={
                     "dataset-json-path": self.folder / "dataset.json",
                     "analysis": analysis_type.value,
-                    "ads-name": ads.name if ads is not None else "None",
-                    "sds-name": sds.name if sds is not None else "None",
+                    "ads-json": ads_json,
+                    "sds-json": sds_json,
                     "subtype": subtype,
                     "matrix-folder-name": matrix_folder_name,
                     "spectrogram-folder-name": spectrogram_folder_name,

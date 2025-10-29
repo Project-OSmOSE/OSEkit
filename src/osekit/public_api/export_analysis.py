@@ -3,27 +3,23 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from osekit import config, setup_logging
 from osekit.config import global_logging_context as glc
 from osekit.config import resample_quality_settings
+from osekit.core_api.audio_dataset import AudioDataset
+from osekit.core_api.spectro_dataset import SpectroDataset
 from osekit.public_api.analysis import AnalysisType
 from osekit.public_api.dataset import Dataset
-
-if TYPE_CHECKING:
-    import logging
-
-    from osekit.core_api.audio_dataset import AudioDataset
-    from osekit.core_api.spectro_dataset import SpectroDataset
 
 
 def write_analysis(
     analysis_type: AnalysisType,
-    ads: AudioDataset,
-    sds: SpectroDataset,
+    ads: AudioDataset | None,
+    sds: SpectroDataset | None,
     subtype: str,
     matrix_folder_name: str,
     spectrogram_folder_name: str,
@@ -136,13 +132,6 @@ if __name__ == "__main__":
 
     required = parser.add_argument_group("required arguments")
     required.add_argument(
-        "--dataset-json-path",
-        "-p",
-        required=True,
-        help="The path to the Dataset JSON file.",
-        type=str,
-    )
-    required.add_argument(
         "--analysis",
         "-a",
         required=True,
@@ -150,17 +139,17 @@ if __name__ == "__main__":
         type=int,
     )
     required.add_argument(
-        "--ads-name",
+        "--ads-json",
         "-ads",
         required=True,
-        help="Name of the AudioDataset to export during this analysis.",
+        help="Path to the JSON of the AudioDataset to export during this analysis.",
         type=str,
     )
     required.add_argument(
-        "--sds-name",
+        "--sds-json",
         "-sds",
         required=True,
-        help="Name of the SpectroDataset to export during this analysis.",
+        help="Path to the JSON of the SpectroDataset to export during this analysis.",
         type=str,
     )
     parser.add_argument(
@@ -254,6 +243,12 @@ if __name__ == "__main__":
         default=None,
         help="Set the number of processes to use.",
     )
+    parser.add_argument(
+        "--dataset-json-path",
+        "-p",
+        help="The path to the Dataset JSON file of which to use the logger.",
+        type=str,
+    )
 
     args = parser.parse_args()
 
@@ -263,9 +258,10 @@ if __name__ == "__main__":
         setup_logging()
 
     config.multiprocessing["is_active"] = args.multiprocessing.lower() == "true"
-    config.nb_processes = (
-        None if args.nb_processes.lower() == "none" else int(args.nb_processes)
-    )
+    if (nb_processes := args.nb_processes) is not None:
+        config.nb_processes = (
+            None if nb_processes.lower() == "none" else int(nb_processes)
+        )
 
     os.umask(args.umask)
 
@@ -274,12 +270,23 @@ if __name__ == "__main__":
     if args.upsampling_quality is not None:
         resample_quality_settings["upsample"] = args.upsampling_quality
 
-    dataset = Dataset.from_json(file=Path(args.dataset_json_path))
-
-    ads, sds = (
-        dataset.get_dataset(ds_name) if ds_name.lower() != "none" else None
-        for ds_name in (args.ads_name, args.sds_name)
+    logger = (
+        logging.getLogger()
+        if (args.dataset_json_path is None or args.dataset_json_path.lower() == "none")
+        else Dataset.from_json(Path(args.dataset_json_path)).logger
     )
+
+    ads = (
+        AudioDataset.from_json(Path(args.ads_json))
+        if args.ads_json.lower() != "none"
+        else None
+    )
+    sds = (
+        SpectroDataset.from_json(Path(args.sds_json))
+        if args.sds_json.lower() != "none"
+        else None
+    )
+
     subtype = None if args.subtype.lower() == "none" else args.subtype
 
     analysis_type = AnalysisType(args.analysis)
@@ -295,5 +302,5 @@ if __name__ == "__main__":
         first=args.first,
         last=args.last,
         link=True,
-        logger=dataset.logger,
+        logger=logger,
     )
