@@ -281,7 +281,8 @@ def create_parser() -> argparse.ArgumentParser:
     return parser
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Export an analysis."""
     args = create_parser().parse_args()
 
     os.environ["DISABLE_TQDM"] = "" if not args.tqdm_disable else str(args.tqdm_disable)
@@ -291,7 +292,7 @@ if __name__ == "__main__":
 
     config.multiprocessing["is_active"] = args.multiprocessing.lower() == "true"
     if (nb_processes := args.nb_processes) is not None:
-        config.nb_processes = (
+        config.multiprocessing["nb_processes"] = (
             None if nb_processes.lower() == "none" else int(nb_processes)
         )
 
@@ -336,3 +337,7 @@ if __name__ == "__main__":
         link=True,
         logger=logger,
     )
+
+
+if __name__ == "__main__":
+    main()
