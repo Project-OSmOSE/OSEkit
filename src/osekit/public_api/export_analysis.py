@@ -187,7 +187,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--welch-folder-path",
         "-wf",
-        required=True,
+        required=False,
         help="The path of the folder in which the npz welch files are written.",
         type=str,
         default=None,
@@ -196,7 +196,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--first",
         "-f",
-        required=True,
+        required=False,
         help="The index of the first file to export.",
         type=int,
         default=0,
@@ -205,7 +205,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--last",
         "-l",
-        required=True,
+        required=False,
         help="The index after the last file to export.",
         type=int,
         default=-1,
@@ -240,8 +240,8 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--tqdm-disable",
         required=False,
-        type=int,
-        default=1,
+        type=str,
+        default="true",
         help="Disable TQDM progress bars.",
     )
 
