@@ -20,10 +20,10 @@ def write_analysis(
     analysis_type: AnalysisType,
     ads: AudioDataset | None,
     sds: SpectroDataset | None,
-    subtype: str,
-    matrix_folder_name: str,
-    spectrogram_folder_name: str,
-    welch_folder_name: str,
+    subtype: str | None = None,
+    matrix_folder_path: Path | None = None,
+    spectrogram_folder_path: Path | None = None,
+    welch_folder_path: Path | None = None,
     first: int = 0,
     last: int | None = None,
     logger: logging.Logger | None = None,
@@ -45,11 +45,11 @@ def write_analysis(
         The AudioDataset of which the data should be written.
     sds: SpectroDataset
         The SpectroDataset of which the data should be written.
-    matrix_folder_name: Path
+    matrix_folder_path: Path
         The folder in which the matrix npz files should be written.
-    spectrogram_folder_name: Path
+    spectrogram_folder_path: Path
         The folder in which the spectrogram png files should be written.
-    welch_folder_name: Path
+    welch_folder_path: Path
         The folder in which the welch npz files should be written.
     link: bool
         If set to True, the ads data will be linked to the exported files.
@@ -93,8 +93,8 @@ def write_analysis(
     ):
         logger.info("Computing and writing spectrum matrices and spectrograms...")
         sds.save_all(
-            matrix_folder=sds.folder / matrix_folder_name,
-            spectrogram_folder=sds.folder / spectrogram_folder_name,
+            matrix_folder=matrix_folder_path,
+            spectrogram_folder=spectrogram_folder_path,
             link=link,
             first=first,
             last=last,
@@ -102,14 +102,14 @@ def write_analysis(
     elif AnalysisType.SPECTROGRAM in analysis_type:
         logger.info("Computing and writing spectrograms...")
         sds.save_spectrogram(
-            folder=sds.folder / spectrogram_folder_name,
+            folder=spectrogram_folder_path,
             first=first,
             last=last,
         )
     elif AnalysisType.MATRIX in analysis_type:
         logger.info("Computing and writing spectrum matrices...")
         sds.write(
-            folder=sds.folder / matrix_folder_name,
+            folder=matrix_folder_path,
             link=link,
             first=first,
             last=last,
@@ -117,7 +117,7 @@ def write_analysis(
     if AnalysisType.WELCH in analysis_type:
         logger.info("Computing and writing welches...")
         sds.write_welch(
-            folder=sds.folder / welch_folder_name,
+            folder=welch_folder_path,
             first=first,
             last=last,
         )
@@ -264,7 +264,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--nb-processes",
         required=False,
-        type=int,
+        type=str,
         default=None,
         help="Set the number of processes to use.",
     )
@@ -328,9 +328,9 @@ if __name__ == "__main__":
         ads=ads,
         sds=sds,
         subtype=subtype,
-        matrix_folder_name=args.matrix_folder_name,
-        spectrogram_folder_name=args.spectrogram_folder_name,
-        welch_folder_name=args.welch_folder_name,
+        matrix_folder_path=Path(args.matrix_folder_path),
+        spectrogram_folder_path=Path(args.spectrogram_folder_path),
+        welch_folder_path=Path(args.welch_folder_path),
         first=args.first,
         last=args.last,
         link=True,

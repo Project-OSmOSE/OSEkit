@@ -444,6 +444,19 @@ class Dataset:
         # Import here to avoid circular imports since the script needs to import Dataset
         from osekit.public_api import export_analysis  # noqa: PLC0415
 
+        matrix_folder_path, spectrogram_folder_path, welch_folder_path = (
+            (
+                sds.folder / name
+                for name in (
+                    matrix_folder_name,
+                    spectrogram_folder_name,
+                    welch_folder_name,
+                )
+            )
+            if sds is not None
+            else ("None", "None", "None")
+        )
+
         if self.job_builder is None:
             export_analysis.write_analysis(
                 analysis_type=analysis_type,
@@ -451,9 +464,9 @@ class Dataset:
                 sds=sds,
                 link=link,
                 subtype=subtype,
-                matrix_folder_name=Path(matrix_folder_name),
-                spectrogram_folder_name=Path(spectrogram_folder_name),
-                welch_folder_name=Path(welch_folder_name),
+                matrix_folder_path=matrix_folder_path,
+                spectrogram_folder_path=spectrogram_folder_path,
+                welch_folder_path=welch_folder_path,
                 logger=self.logger,
             )
             return
@@ -474,14 +487,13 @@ class Dataset:
             self.job_builder.create_job(
                 script_path=Path(export_analysis.__file__),
                 script_args={
-                    "dataset-json-path": self.folder / "dataset.json",
                     "analysis": analysis_type.value,
                     "ads-json": ads_json,
                     "sds-json": sds_json,
                     "subtype": subtype,
-                    "matrix-folder-name": matrix_folder_name,
-                    "spectrogram-folder-name": spectrogram_folder_name,
-                    "welch-folder-name": welch_folder_name,
+                    "matrix-folder-path": matrix_folder_path,
+                    "spectrogram-folder-path": spectrogram_folder_path,
+                    "welch-folder-path": welch_folder_path,
                     "first": start,
                     "last": stop,
                     "downsampling-quality": resample_quality_settings["downsample"],
@@ -490,6 +502,7 @@ class Dataset:
                     "multiprocessing": str(config.multiprocessing["is_active"]),
                     "nb-processes": config.multiprocessing["nb_processes"],
                     "use-logging-setup": "True",
+                    "dataset-json-path": self.folder / "dataset.json",
                 },
                 name=name + (f"_{index}" if len(batch_indexes) > 1 else ""),
                 output_folder=self.folder / "log",

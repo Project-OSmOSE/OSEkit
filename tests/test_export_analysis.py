@@ -78,7 +78,7 @@ def test_specified_arguments() -> None:
         "--umask": 0o022,
         "--tqdm-disable": "False",
         "--multiprocessing": "True",
-        "--nb-processes": 3,
+        "--nb-processes": "3",  # String because it might be "None"
         "--use-logging-setup": "True",
         "--dataset-json-path": r"path/to/dataset.json",
     }
