@@ -127,31 +127,36 @@ def write_analysis(
     logger.info("Analysis done!")
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+def create_parser() -> argparse.ArgumentParser:
+    """Create the argument parser."""
+    parser = argparse.ArgumentParser(description="Export audio/spectro datasets.")
 
-    required = parser.add_argument_group("required arguments")
-    required.add_argument(
+    parser.add_argument(
         "--analysis",
         "-a",
         required=True,
-        help="Flags representing which files to export during this analysis.",
+        help="Flags representing which files to export. See AnalysisType doc for more info.",
         type=int,
     )
-    required.add_argument(
+
+    parser.add_argument(
         "--ads-json",
         "-ads",
-        required=True,
-        help="Path to the JSON of the AudioDataset to export during this analysis.",
+        required=False,
+        help="Path to the JSON of the AudioDataset to export.",
         type=str,
+        default=None,
     )
-    required.add_argument(
+
+    parser.add_argument(
         "--sds-json",
         "-sds",
-        required=True,
-        help="Path to the JSON of the SpectroDataset to export during this analysis.",
+        required=False,
+        help="Path to the JSON of the SpectroDataset to export.",
         type=str,
+        default=None,
     )
+
     parser.add_argument(
         "--subtype",
         "-sbtp",
@@ -160,28 +165,35 @@ if __name__ == "__main__":
         type=str,
         default=None,
     )
-    required.add_argument(
-        "--matrix-folder-name",
-        "-mfn",
-        required=True,
-        help="The name of the folder in which the npz matrix files are written.",
+
+    parser.add_argument(
+        "--matrix-folder-path",
+        "-mf",
+        required=False,
+        help="The path of the folder in which the npz matrix files are written.",
         type=str,
+        default=None,
     )
-    required.add_argument(
-        "--spectrogram-folder-name",
-        "-sfn",
-        required=True,
-        help="The name of the folder in which the png spectrogram files are written.",
+
+    parser.add_argument(
+        "--spectrogram-folder-path",
+        "-sf",
+        required=False,
+        help="The path of the folder in which the png spectrogram files are written.",
         type=str,
+        default=None,
     )
-    required.add_argument(
-        "--welch-folder-name",
-        "-wfn",
+
+    parser.add_argument(
+        "--welch-folder-path",
+        "-wf",
         required=True,
-        help="The name of the folder in which the npz welch files are written.",
+        help="The path of the folder in which the npz welch files are written.",
         type=str,
+        default=None,
     )
-    required.add_argument(
+
+    parser.add_argument(
         "--first",
         "-f",
         required=True,
@@ -189,7 +201,8 @@ if __name__ == "__main__":
         type=int,
         default=0,
     )
-    required.add_argument(
+
+    parser.add_argument(
         "--last",
         "-l",
         required=True,
@@ -197,6 +210,7 @@ if __name__ == "__main__":
         type=int,
         default=-1,
     )
+
     parser.add_argument(
         "--downsampling-quality",
         "-dq",
@@ -205,6 +219,7 @@ if __name__ == "__main__":
         type=str,
         default=None,
     )
+
     parser.add_argument(
         "--upsampling-quality",
         "-uq",
@@ -213,44 +228,61 @@ if __name__ == "__main__":
         type=str,
         default=None,
     )
+
     parser.add_argument(
         "--umask",
+        required=False,
         type=int,
         default=0o002,
         help="The umask to apply on the created file permissions.",
     )
+
     parser.add_argument(
         "--tqdm-disable",
+        required=False,
         type=int,
         default=1,
         help="Disable TQDM progress bars.",
     )
+
     parser.add_argument(
         "--multiprocessing",
+        required=False,
         type=str,
         default="false",
         help="Turn multiprocessing on or off.",
     )
+
     parser.add_argument(
         "--use-logging-setup",
+        required=False,
         type=str,
         default="false",
         help="Call osekit.setup_logging() before running the analysis.",
     )
+
     parser.add_argument(
         "--nb-processes",
-        type=str,
+        required=False,
+        type=int,
         default=None,
         help="Set the number of processes to use.",
     )
+
     parser.add_argument(
         "--dataset-json-path",
         "-p",
+        required=False,
         help="The path to the Dataset JSON file of which to use the logger.",
         type=str,
+        default=None,
     )
 
-    args = parser.parse_args()
+    return parser
+
+
+if __name__ == "__main__":
+    args = create_parser().parse_args()
 
     os.environ["DISABLE_TQDM"] = "" if not args.tqdm_disable else str(args.tqdm_disable)
 
