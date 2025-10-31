@@ -9,7 +9,6 @@ from pathlib import Path
 
 from osekit import config, setup_logging
 from osekit.config import global_logging_context as glc
-from osekit.config import resample_quality_settings
 from osekit.core_api.audio_dataset import AudioDataset
 from osekit.core_api.spectro_dataset import SpectroDataset
 from osekit.public_api.analysis import AnalysisType
@@ -299,9 +298,9 @@ def main() -> None:
     os.umask(args.umask)
 
     if args.downsampling_quality is not None:
-        resample_quality_settings["downsample"] = args.downsampling_quality
+        config.resample_quality_settings["downsample"] = args.downsampling_quality
     if args.upsampling_quality is not None:
-        resample_quality_settings["upsample"] = args.upsampling_quality
+        config.resample_quality_settings["upsample"] = args.upsampling_quality
 
     logger = (
         logging.getLogger()

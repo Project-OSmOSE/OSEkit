@@ -193,7 +193,7 @@ def test_main_script(monkeypatch: pytest.MonkeyPatch, script_arguments: dict) ->
     assert calls["subtype"] == script_arguments["--subtype"]
     assert calls["matrix_folder_path"] == Path(script_arguments["--matrix-folder-path"])
     assert calls["spectrogram_folder_path"] == Path(
-        script_arguments["--spectrogram-folder-path"]
+        script_arguments["--spectrogram-folder-path"],
     )
     assert calls["welch_folder_path"] == Path(script_arguments["--welch-folder-path"])
     assert calls["first"] == script_arguments["--first"]
