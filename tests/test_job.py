@@ -182,6 +182,32 @@ def test_submit_pbs_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
     assert job.status == JobStatus.QUEUED
 
 
+def test_submit_pbs_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    script = tmp_path / "boc.py"
+    script.write_text("")
+    outdir = tmp_path
+    job = Job(script, name="amobishoproden", output_folder=outdir)
+    pbs_path = tmp_path / "amobishoproden.pbs"
+    job.write_pbs(pbs_path)
+
+    class Dummy:
+        def __init__(self) -> None:
+            """Dummy subprocess.run output."""
+            raise subprocess.CalledProcessError(5, "err")
+
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        lambda *args, **kwargs: Dummy(),
+    )
+
+    assert job.status == JobStatus.PREPARED
+    with pytest.raises(RuntimeError, match="Submission failed with exit code 5") as e:
+        assert job.submit_pbs() == e
+
+    assert job.status == JobStatus.PREPARED
+
+
 def test_update_info_no_job_id() -> None:
     job = Job(Path("pixies.py"))
     job.job_id = None
@@ -243,6 +269,24 @@ def test_update_info_unknown_job_raises(monkeypatch: pytest.MonkeyPatch) -> None
     )
 
     with pytest.raises(ValueError, match="Unknown Job Id 17112014") as e:
+        assert job.update_info() == e
+
+
+def test_update_info_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    job = Job(Path("pompom.py"))
+    job.job_id = "17112014"
+
+    class Dummy:
+        def __init__(self) -> None:
+            raise subprocess.CalledProcessError(5, "err")
+
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        lambda *args, **kwargs: Dummy(),
+    )
+
+    with pytest.raises(RuntimeError, match="Qstat failed with exit code 5") as e:
         assert job.update_info() == e
 
 
