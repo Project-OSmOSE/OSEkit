@@ -7,13 +7,12 @@ from pathlib import Path
 import yaml
 
 from osekit import utils
-from osekit.job import Job_builder
 
 __all__ = [
-    "Job_builder",
     "setup_logging",
     "utils",
 ]
+
 
 def setup_logging(
     config_file: str | Path = "logging_config.yaml",

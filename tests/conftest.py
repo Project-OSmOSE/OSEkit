@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import sys
+from collections.abc import Generator
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -12,6 +13,7 @@ import pytest
 import soundfile as sf
 from pandas import Timestamp
 
+from osekit import config
 from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
@@ -227,3 +229,14 @@ def patch_audio_data(monkeypatch: pytest.MonkeyPatch) -> None:
         "get_raw_value",
         mocked_get_raw_value,
     )
+
+
+@pytest.fixture(autouse=True)
+def restore_config() -> Generator:
+    resample_quality_settings = {**config.resample_quality_settings}
+    multiprocessing = {**config.multiprocessing}
+    yield
+    for key, value in resample_quality_settings.items():
+        config.resample_quality_settings[key] = value
+    for key, value in multiprocessing.items():
+        config.multiprocessing[key] = value
