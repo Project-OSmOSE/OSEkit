@@ -71,8 +71,8 @@ and follow the console arguments of the :mod:`osekit.public_api.export_analysis`
     sds.folder = Path(...)
 
     # Datasets must be serialized
-    ads.write_json(ads.foler/"output")
-    sds.write_json(sds.foler/"output")
+    ads.write_json(ads.folder/"output")
+    sds.write_json(sds.folder/"output")
 
     # Export specifications
     # All parameters are listed in this example, but all parameters other than analysis have default values
