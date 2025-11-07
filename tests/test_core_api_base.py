@@ -1078,7 +1078,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
 
 
 @pytest.mark.parametrize(
-    ("files", "begin", "end", "data_duration", "mode", "expected"),
+    ("files", "begin", "end", "data_duration", "mode", "overlap", "expected"),
     [
         pytest.param(
             [
@@ -1092,6 +1092,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
             Timestamp("2015-08-28 12:13:12"),
             Timedelta(seconds=30),
             "timedelta_total",
+            0.0,
             [
                 [
                     (
@@ -1131,6 +1132,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
             Timestamp("2015-08-28 12:14:12"),
             Timedelta(minutes=1),
             "timedelta_total",
+            0.0,
             [
                 [
                     (
@@ -1151,7 +1153,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
                     ),
                 ],
             ],
-            id="total_two_continuous_files_without_overlap",
+            id="total_two_continuous_files_without_file_overlap",
         ),
         pytest.param(
             [
@@ -1170,6 +1172,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
             Timestamp("2015-08-28 12:14:12"),
             Timedelta(seconds=45),
             "timedelta_total",
+            0.0,
             [
                 [
                     (
@@ -1213,7 +1216,70 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
                     ),
                 ],
             ],
-            id="total_two_continuous_files_with_overlap",
+            id="total_two_continuous_files_with_file_overlap",
+        ),
+        pytest.param(
+            [
+                BaseFile(
+                    "depression",
+                    begin=Timestamp("2015-08-28 12:12:12"),
+                    end=Timestamp("2015-08-28 12:13:12"),
+                ),
+                BaseFile(
+                    "cherry",
+                    begin=Timestamp("2015-08-28 12:13:12"),
+                    end=Timestamp("2015-08-28 12:14:12"),
+                ),
+            ],
+            Timestamp("2015-08-28 12:12:12"),
+            Timestamp("2015-08-28 12:14:12"),
+            Timedelta(minutes=1),
+            "timedelta_total",
+            0.25,
+            [
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:12:12"),
+                            end=Timestamp("2015-08-28 12:13:12"),
+                        ),
+                        "depression",
+                    ),
+                ],
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:12:57"),
+                            end=Timestamp("2015-08-28 12:13:12"),
+                        ),
+                        "depression",
+                    ),
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:12"),
+                            end=Timestamp("2015-08-28 12:13:57"),
+                        ),
+                        "cherry",
+                    ),
+                ],
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:42"),
+                            end=Timestamp("2015-08-28 12:14:12"),
+                        ),
+                        "cherry",
+                    ),
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:14:12"),
+                            end=Timestamp("2015-08-28 12:14:42"),
+                        ),
+                        None,
+                    ),
+                ],
+            ],
+            id="total_two_continuous_files_with_data_overlap",
         ),
         pytest.param(
             [
@@ -1227,6 +1293,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
             Timestamp("2015-08-28 12:13:12"),
             Timedelta(seconds=30),
             "timedelta_file",
+            0.0,
             [
                 [
                     (
@@ -1266,6 +1333,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
             Timestamp("2015-08-28 12:14:12"),
             Timedelta(minutes=1),
             "timedelta_file",
+            0.0,
             [
                 [
                     (
@@ -1286,7 +1354,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
                     ),
                 ],
             ],
-            id="file_two_continuous_files_without_overlap",
+            id="file_two_continuous_files_without_file_overlap",
         ),
         pytest.param(
             [
@@ -1305,6 +1373,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
             Timestamp("2015-08-28 12:14:12"),
             Timedelta(seconds=45),
             "timedelta_file",
+            0.0,
             [
                 [
                     (
@@ -1348,7 +1417,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
                     ),
                 ],
             ],
-            id="file_two_continuous_files_with_overlap",
+            id="file_two_continuous_files_with_file_overlap",
         ),
         pytest.param(
             [
@@ -1367,6 +1436,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
             Timestamp("2015-08-28 12:14:12"),
             Timedelta(minutes=1),
             "timedelta_total",
+            0.0,
             [
                 [
                     (
@@ -1420,6 +1490,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
             Timestamp("2015-08-28 12:14:12"),
             Timedelta(minutes=1),
             "timedelta_file",
+            0.0,
             [
                 [
                     (
@@ -1473,6 +1544,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
             Timestamp("2015-08-28 12:14:12"),
             Timedelta(minutes=1),
             "timedelta_total",
+            0.0,
             [
                 [
                     (
@@ -1526,6 +1598,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
             Timestamp("2015-08-28 12:14:12"),
             Timedelta(minutes=1),
             "timedelta_file",
+            0.0,
             [
                 [
                     (
@@ -1579,6 +1652,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
             Timestamp("2015-08-28 12:14:12"),
             Timedelta(minutes=1),
             "timedelta_total",
+            0.0,
             [
                 [
                     (
@@ -1632,6 +1706,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
             Timestamp("2015-08-28 12:14:12"),
             Timedelta(minutes=1),
             "timedelta_file",
+            0.0,
             [
                 [
                     (
@@ -1692,9 +1767,17 @@ def test_get_base_data_from_files(
     end: Timestamp,
     data_duration: Timedelta,
     mode: Literal["timedelta_total", "timedelta_file"],
+    overlap: float,
     expected: list[list[tuple[Event, str | None]]],
 ) -> None:
-    data = BaseDataset.from_files(files, begin, end, mode, data_duration).data
+    data = BaseDataset.from_files(
+        files=files,
+        begin=begin,
+        end=end,
+        mode=mode,
+        overlap=overlap,
+        data_duration=data_duration,
+    ).data
 
     for d, e in zip(data, expected, strict=True):
         for item, expected_tuple in zip(d.items, e, strict=True):

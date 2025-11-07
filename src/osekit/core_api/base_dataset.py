@@ -257,6 +257,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         end: Timestamp | None = None,
         mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
         data_duration: Timedelta | None = None,
+        overlap: float = 0.0,
         name: str | None = None,
     ) -> BaseDataset:
         """Return a base BaseDataset object from a list of Files.
@@ -285,6 +286,8 @@ class BaseDataset(Generic[TData, TFile], Event):
             If mode is set to "files", this parameter has no effect.
             If provided, data will be evenly distributed between begin and end.
             Else, one data object will cover the whole time period.
+        overlap: float
+            Overlap percentage between consecutive data.
         name: str|None
             Name of the dataset.
 
@@ -306,17 +309,19 @@ class BaseDataset(Generic[TData, TFile], Event):
         if data_duration:
             data_base = (
                 cls._get_base_data_from_files_timedelta_total(
-                    begin,
-                    end,
-                    data_duration,
-                    files,
+                    begin=begin,
+                    end=end,
+                    data_duration=data_duration,
+                    files=files,
+                    overlap=overlap,
                 )
                 if mode == "timedelta_total"
                 else cls._get_base_data_from_files_timedelta_file(
-                    begin,
-                    end,
-                    data_duration,
-                    files,
+                    begin=begin,
+                    end=end,
+                    data_duration=data_duration,
+                    files=files,
+                    overlap=overlap,
                 )
             )
         else:
@@ -330,12 +335,19 @@ class BaseDataset(Generic[TData, TFile], Event):
         end: Timestamp,
         data_duration: Timedelta,
         files: list[TFile],
+        overlap: float = 0,
     ) -> list[BaseData]:
+        if not 0 <= overlap < 1:
+            msg = f"Overlap ({overlap}) must be between 0 and 1."
+            raise ValueError(msg)
+
         active_file_index = 0
         output = []
         files = sorted(files, key=lambda f: f.begin)
+        freq = data_duration * (1 - overlap)
+
         for data_begin in tqdm(
-            date_range(begin, end, freq=data_duration, inclusive="left"),
+            date_range(begin, end, freq=freq, inclusive="left"),
             disable=os.environ.get("DISABLE_TQDM", ""),
         ):
             data_end = Timestamp(data_begin + data_duration)
@@ -367,7 +379,12 @@ class BaseDataset(Generic[TData, TFile], Event):
         end: Timestamp,
         data_duration: Timedelta,
         files: list[TFile],
+        overlap: float = 0,
     ) -> list[BaseData]:
+        if not 0 <= overlap < 1:
+            msg = f"Overlap ({overlap}) must be between 0 and 1."
+            raise ValueError(msg)
+
         files = sorted(files, key=lambda file: file.begin)
         first = max(0, bisect(files, begin, key=lambda f: f.begin) - 1)
         last = bisect(files, end, key=lambda f: f.begin)
