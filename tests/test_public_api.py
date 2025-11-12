@@ -1095,6 +1095,7 @@ def test_edit_analysis_before_run(
     analysis.sample_rate = new_sr
     analysis.fft.fs = new_sr
     ads.name = new_name
+    analysis.name = new_name
     ads.instrument = new_instrument
     ads.data = new_data
     ads.normalization = new_normalization
