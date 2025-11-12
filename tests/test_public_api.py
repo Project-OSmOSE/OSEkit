@@ -1077,7 +1077,7 @@ def test_edit_analysis_before_run(
 
     analysis = Analysis(
         analysis_type=AnalysisType.AUDIO | AnalysisType.SPECTROGRAM,
-        data_duration=dataset.origin_dataset.duration / 10,
+        data_duration=dataset.origin_dataset.duration / 2,
         name="original_analysis",
         sample_rate=24_000,
         fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
@@ -1143,7 +1143,7 @@ def test_delete_analysis_dataset(
 
     analysis_1 = Analysis(
         analysis_type=AnalysisType.AUDIO | AnalysisType.SPECTROGRAM,
-        data_duration=dataset.origin_dataset.duration / 10,
+        data_duration=dataset.origin_dataset.duration / 2,
         name="analysis_1",
         sample_rate=24_000,
         fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
@@ -1151,7 +1151,7 @@ def test_delete_analysis_dataset(
 
     analysis_2 = Analysis(
         analysis_type=AnalysisType.AUDIO | AnalysisType.SPECTROGRAM,
-        data_duration=dataset.origin_dataset.duration / 10,
+        data_duration=dataset.origin_dataset.duration / 2,
         name="analysis_2",
         sample_rate=20_000,
         fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=20_000),
@@ -1238,7 +1238,7 @@ def test_delete_analysis(
         analysis_type=AnalysisType.AUDIO
         | AnalysisType.SPECTROGRAM
         | AnalysisType.MATRIX,
-        data_duration=dataset.origin_dataset.duration / 10,
+        data_duration=dataset.origin_dataset.duration / 2,
         name="analysis_to_keep",
         sample_rate=24_000,
         fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
@@ -1295,7 +1295,7 @@ def test_existing_analysis_warning(
     dataset.run_analysis(
         Analysis(
             analysis_type=AnalysisType.AUDIO,
-            data_duration=dataset.origin_dataset.duration / 10,
+            data_duration=dataset.origin_dataset.duration / 2,
             name="my_analysis",
             sample_rate=24_000,
         ),
@@ -1305,7 +1305,7 @@ def test_existing_analysis_warning(
         dataset.run_analysis(
             Analysis(
                 analysis_type=AnalysisType.SPECTROGRAM,
-                data_duration=dataset.origin_dataset.duration / 10,
+                data_duration=dataset.origin_dataset.duration / 2,
                 name="my_analysis",
                 sample_rate=24_000,
                 fft=ShortTimeFFT(hamming(1024), hop=1024, fs=24_000),
@@ -1319,7 +1319,7 @@ def test_existing_analysis_warning(
     dataset.run_analysis(
         Analysis(
             analysis_type=AnalysisType.SPECTROGRAM,
-            data_duration=dataset.origin_dataset.duration / 10,
+            data_duration=dataset.origin_dataset.duration / 2,
             name="my_analysis",
             sample_rate=24_000,
             fft=ShortTimeFFT(hamming(1024), hop=1024, fs=24_000),
@@ -1341,7 +1341,7 @@ def test_rename_analysis(tmp_path: pytest.fixture, audio_files: pytest.fixture) 
         analysis_type=AnalysisType.AUDIO
         | AnalysisType.SPECTROGRAM
         | AnalysisType.MATRIX,
-        data_duration=dataset.origin_dataset.duration / 10,
+        data_duration=dataset.origin_dataset.duration / 2,
         name=first_name,
         sample_rate=24_000,
         fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
@@ -1386,7 +1386,7 @@ def test_spectro_analysis_with_existing_ads(
 
     analysis = Analysis(
         analysis_type=AnalysisType.AUDIO,
-        data_duration=dataset.origin_dataset.duration / 10,
+        data_duration=dataset.origin_dataset.duration / 2,
         name="audio",
         sample_rate=24_000,
     )
