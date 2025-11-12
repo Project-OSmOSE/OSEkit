@@ -435,6 +435,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         end: Timestamp | None = None,
         timezone: str | pytz.timezone | None = None,
         mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
+        overlap: float = 0.0,
         data_duration: Timedelta | None = None,
         name: str | None = None,
     ) -> BaseDataset:
@@ -471,6 +472,8 @@ class BaseDataset(Generic[TData, TFile], Event):
             be created from the beginning of the first file that the begin timestamp is into, until it would resume
             in a data beginning between two files. Then, the next data object will be created from the
             beginning of the next original file and so on.
+        overlap: float
+            Overlap percentage between consecutive data.
         data_duration: Timedelta | None
             Duration of the data objects.
             If mode is set to "files", this parameter has no effect.
@@ -512,6 +515,7 @@ class BaseDataset(Generic[TData, TFile], Event):
             begin=begin,
             end=end,
             mode=mode,
+            overlap=overlap,
             data_duration=data_duration,
             name=name,
         )
