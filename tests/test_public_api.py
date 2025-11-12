@@ -1130,7 +1130,8 @@ def test_edit_analysis_before_run(
 
 
 def test_delete_analysis_dataset(
-    tmp_path: pytest.fixture, audio_files: pytest.fixture
+    tmp_path: pytest.fixture,
+    audio_files: pytest.fixture,
 ) -> None:
     dataset = Dataset(
         folder=tmp_path,
@@ -1219,7 +1220,9 @@ def test_delete_analysis_dataset(
     ],
 )
 def test_delete_analysis(
-    tmp_path: pytest.fixture, audio_files: pytest.fixture, analysis_to_delete: Analysis
+    tmp_path: pytest.fixture,
+    audio_files: pytest.fixture,
+    analysis_to_delete: Analysis,
 ) -> None:
     dataset = Dataset(
         folder=tmp_path,
@@ -1262,10 +1265,10 @@ def test_delete_analysis(
 
     for public_dataset in (dataset, deserialized_dataset):
         datasets_to_keep = public_dataset.get_datasets_by_analysis(
-            analysis_to_keep.name
+            analysis_to_keep.name,
         )
         datasets_to_delete = public_dataset.get_datasets_by_analysis(
-            analysis_to_delete.name
+            analysis_to_delete.name,
         )
 
         assert all(ds.folder.exists() for ds in datasets_to_keep)
@@ -1278,7 +1281,8 @@ def test_delete_analysis(
 
 
 def test_existing_analysis_warning(
-    tmp_path: pytest.fixture, audio_files: pytest.fixture
+    tmp_path: pytest.fixture,
+    audio_files: pytest.fixture,
 ) -> None:
     dataset = Dataset(
         folder=tmp_path,
@@ -1293,7 +1297,7 @@ def test_existing_analysis_warning(
             data_duration=dataset.origin_dataset.duration / 10,
             name="my_analysis",
             sample_rate=24_000,
-        )
+        ),
     )
 
     with pytest.raises(ValueError) as excinfo:
@@ -1304,7 +1308,7 @@ def test_existing_analysis_warning(
                 name="my_analysis",
                 sample_rate=24_000,
                 fft=ShortTimeFFT(hamming(1024), hop=1024, fs=24_000),
-            )
+            ),
         )
 
         assert "my_analysis already exists" in str(excinfo.value)
@@ -1318,7 +1322,7 @@ def test_existing_analysis_warning(
             name="my_analysis",
             sample_rate=24_000,
             fft=ShortTimeFFT(hamming(1024), hop=1024, fs=24_000),
-        )
+        ),
     )
 
 
@@ -1361,8 +1365,48 @@ def test_rename_analysis(tmp_path: pytest.fixture, audio_files: pytest.fixture) 
     assert (
         len(
             Dataset.from_json(dataset.folder / "dataset.json").get_datasets_by_analysis(
-                second_name
-            )
+                second_name,
+            ),
         )
         == 2
     )
+
+
+def test_spectro_analysis_with_existing_ads(
+    tmp_path: pytest.fixture,
+    audio_files: pytest.fixture,
+) -> None:
+    dataset = Dataset(
+        folder=tmp_path,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+    )
+
+    dataset.build()
+
+    analysis = Analysis(
+        analysis_type=AnalysisType.AUDIO,
+        data_duration=dataset.origin_dataset.duration / 10,
+        name="audio",
+        sample_rate=24_000,
+    )
+
+    dataset.run_analysis(analysis)
+
+    analysis_2 = Analysis(
+        AnalysisType.SPECTROGRAM,
+        name="spectro",
+        fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
+    )
+
+    dataset.run_analysis(analysis_2, audio_dataset=dataset.get_dataset("audio"))
+
+    ads = dataset.get_dataset("audio")
+    sds = dataset.get_dataset("spectro")
+
+    assert type(ads) is AudioDataset
+    assert type(sds) is SpectroDataset
+
+    for ad, sd in zip(ads.data, sds.data, strict=True):
+        assert ad.begin == sd.begin
+        assert ad.end == sd.end
+        assert sd.audio_data == ad
