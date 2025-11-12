@@ -149,7 +149,7 @@ class Dataset:
             | set(
                 (self.folder / "log").iterdir()
                 if (self.folder / "log").exists()
-                else ()
+                else (),
             )
             | {self.folder / "log"},
         )
@@ -284,7 +284,7 @@ class Dataset:
         sds = SpectroDataset.from_audio_dataset(
             audio_dataset=ads,
             fft=analysis.fft,
-            name=ads.base_name,
+            name=analysis.name,
             v_lim=analysis.v_lim,
             colormap=analysis.colormap,
             scale=analysis.scale,
@@ -597,7 +597,9 @@ class Dataset:
 
                 ds.move_files(new_folder)
                 move_tree(
-                    old_folder, new_folder, excluded_paths=old_folder.glob("*.json")
+                    old_folder,
+                    new_folder,
+                    excluded_paths=old_folder.glob("*.json"),
                 )  # Moves exported files
                 shutil.rmtree(str(old_folder))
                 ds.write_json(ds.folder)
