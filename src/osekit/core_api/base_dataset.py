@@ -6,7 +6,6 @@ that simplify repeated operations on the data.
 
 from __future__ import annotations
 
-import math
 import os
 from bisect import bisect
 from pathlib import Path
@@ -22,6 +21,7 @@ from osekit.core_api.base_data import BaseData
 from osekit.core_api.base_file import BaseFile
 from osekit.core_api.event import Event
 from osekit.core_api.json_serializer import deserialize_json, serialize_json
+from osekit.utils.timestamp_utils import last_window_end
 
 if TYPE_CHECKING:
     import pytz
@@ -389,6 +389,8 @@ class BaseDataset(Generic[TData, TFile], Event):
         first = max(0, bisect(files, begin, key=lambda f: f.begin) - 1)
         last = bisect(files, end, key=lambda f: f.begin)
 
+        data_hop = data_duration * (1 - overlap)
+
         output = []
         files_chunk = []
         for idx, file in tqdm(
@@ -400,9 +402,11 @@ class BaseDataset(Generic[TData, TFile], Event):
             files_chunk = [file]
 
             for next_file in files[idx + 1 :]:
-                upper_data_limit = file.begin + data_duration * math.ceil(
-                    (files_chunk[-1].end - file.begin).total_seconds()
-                    / data_duration.total_seconds(),
+                upper_data_limit = last_window_end(
+                    begin=file.begin,
+                    end=files_chunk[-1].end,
+                    window_hop=data_hop,
+                    window_duration=data_duration,
                 )
                 if upper_data_limit < next_file.begin:
                     break
@@ -413,7 +417,7 @@ class BaseDataset(Generic[TData, TFile], Event):
                 for data_begin in date_range(
                     file.begin,
                     files_chunk[-1].end,
-                    freq=data_duration,
+                    freq=data_hop,
                     inclusive="left",
                 )
             )
