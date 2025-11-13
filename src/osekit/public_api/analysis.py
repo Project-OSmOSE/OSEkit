@@ -68,6 +68,7 @@ class Analysis:
         end: Timestamp | None = None,
         data_duration: Timedelta | None = None,
         mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
+        overlap: float = 0.0,
         sample_rate: float | None = None,
         normalization: Normalization = Normalization.RAW,
         name: str | None = None,
@@ -104,6 +105,8 @@ class Analysis:
             be created from the beginning of the first file that the begin timestamp is into, until it would resume
             in a data beginning between two files. Then, the next data object will be created from the
             beginning of the next original file and so on.
+        overlap: float
+            Overlap percentage between consecutive data.
         sample_rate: float | None
             Sample rate of the new analysis data.
             Audio data will be resampled if provided, else the sample rate
@@ -145,6 +148,7 @@ class Analysis:
         self.end = end
         self.data_duration = data_duration
         self.mode = mode
+        self.overlap = overlap
         self.sample_rate = sample_rate
         self.name = name
         self.normalization = normalization

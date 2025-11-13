@@ -2,11 +2,12 @@
 
 from __future__ import annotations  # Backwards compatibility with Python < 3.10
 
+import math
 import re
 
 import pandas as pd
 import pytz
-from pandas import Timestamp
+from pandas import Timedelta, Timestamp
 
 from osekit.config import TIMESTAMP_FORMAT_AUDIO_FILE
 from osekit.config import global_logging_context as glc
@@ -240,3 +241,15 @@ def strptime_from_text(text: str, datetime_template: str | list[str]) -> Timesta
         if c == "%"
     )
     return pd.to_datetime(date_string, format=cleaned_date_template)
+
+
+def last_window_end(
+    begin: Timestamp,
+    end: Timestamp,
+    window_duration: Timedelta,
+    window_hop: Timedelta,
+) -> Timestamp:
+    """Compute the end Timestamp of the last window for a sliding window starting from begin to end."""
+    max_hops = math.ceil((end - begin).total_seconds() / window_hop.total_seconds()) - 1
+    last_window_start = begin + window_hop * max_hops
+    return last_window_start + window_duration
