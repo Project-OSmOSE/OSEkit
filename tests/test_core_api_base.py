@@ -301,6 +301,63 @@ def test_base_dataset_from_files(
 
 
 @pytest.mark.parametrize(
+    ("overlap", "mode"),
+    [
+        pytest.param(
+            -1.0,
+            "timedelta_files",
+            id="negative_overlap_files",
+        ),
+        pytest.param(
+            1.0,
+            "timedelta_files",
+            id="one_overlap_files",
+        ),
+        pytest.param(
+            10.0,
+            "timedelta_files",
+            id="greater_than_one_overlap_files",
+        ),
+        pytest.param(
+            -1.0,
+            "timedelta_total",
+            id="negative_overlap_total",
+        ),
+        pytest.param(
+            1.0,
+            "timedelta_total",
+            id="one_overlap_total",
+        ),
+        pytest.param(
+            10.0,
+            "timedelta_total",
+            id="greater_than_one_overlap_total",
+        ),
+    ],
+)
+def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> None:
+    with pytest.raises(
+        ValueError,
+        match=rf"Overlap \({overlap}\) must be between 0 and 1.",
+    ) as e:
+        assert (
+            BaseDataset.from_files(
+                [
+                    BaseFile(
+                        path=Path("foo"),
+                        begin=Timestamp("2016-02-05 00:00:00"),
+                        end=Timestamp("2016-02-05 00:10:00"),
+                    ),
+                ],
+                data_duration=Timedelta(seconds=1),
+                mode=mode,
+                overlap=overlap,
+            )
+            == e
+        )
+
+
+@pytest.mark.parametrize(
     "destination_folder",
     [
         pytest.param(
