@@ -365,13 +365,13 @@ correspond to a given frequency range on a given area of the y-axis:
             ScalePart(
                 p_min=.5, # From 50% of the axis
                 p_max=.7, # To 70% of the axis
-                f_min=0., # From 5 kHz
-                f_max=3_000., # To 20 kHz
+                f_min=0., # From DC
+                f_max=3_000., # To 3 kHz
             ),
             ScalePart(
                 p_min=.7, # From 70% of the axis
                 p_max=1., # To 100% of the axis
-                f_min=0., # From 0 Hz
+                f_min=0., # From DC
                 f_max=72_000, # To 72 kHz
             ),
         ],
