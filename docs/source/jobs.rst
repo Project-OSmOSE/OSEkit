@@ -85,7 +85,7 @@ and follow the console arguments of the :mod:`osekit.public_api.export_analysis`
         "spectrogram-folder-path": sds.folder/"output", # Folder in which png spectrograms are exported
         "welch-folder-path": "None",  # Folder in which npz welch matrices are exported
         "first": 0, # First data of the dataset to be exported
-        "last": -1, # Last data of the dataset to be exported
+        "last": len(ads.data), # Last data of the dataset to be exported, up to the last one if not included
         "downsampling-quality": "HQ",
         "upsampling-quality": "VHQ",
         "umask": 0o022,

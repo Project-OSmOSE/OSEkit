@@ -207,7 +207,7 @@ def create_parser() -> argparse.ArgumentParser:
         required=False,
         help="The index after the last file to export.",
         type=int,
-        default=-1,
+        default=None,
     )
 
     parser.add_argument(

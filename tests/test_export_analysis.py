@@ -60,7 +60,7 @@ def test_argument_defaults() -> None:
     assert args.spectrogram_folder_path is None
     assert args.welch_folder_path is None
     assert args.first == 0
-    assert args.last == -1
+    assert args.last is None
     assert args.downsampling_quality is None
     assert args.upsampling_quality is None
     assert args.umask == 0o002  # noqa: PLR2004
