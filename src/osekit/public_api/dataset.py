@@ -285,7 +285,7 @@ class Dataset:
         sds = SpectroDataset.from_audio_dataset(
             audio_dataset=ads,
             fft=analysis.fft,
-            name=ads.base_name,
+            name=analysis.name,
             v_lim=analysis.v_lim,
             colormap=analysis.colormap,
             scale=analysis.scale,
