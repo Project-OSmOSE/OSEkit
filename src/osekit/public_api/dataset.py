@@ -233,6 +233,7 @@ class Dataset:
             end=analysis.end,
             data_duration=analysis.data_duration,
             mode=analysis.mode,
+            overlap=analysis.overlap,
             normalization=analysis.normalization,
             name=analysis.name,
             instrument=self.instrument,

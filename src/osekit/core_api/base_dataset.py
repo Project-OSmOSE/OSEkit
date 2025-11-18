@@ -6,7 +6,6 @@ that simplify repeated operations on the data.
 
 from __future__ import annotations
 
-import math
 import os
 from bisect import bisect
 from pathlib import Path
@@ -22,6 +21,7 @@ from osekit.core_api.base_data import BaseData
 from osekit.core_api.base_file import BaseFile
 from osekit.core_api.event import Event
 from osekit.core_api.json_serializer import deserialize_json, serialize_json
+from osekit.utils.timestamp_utils import last_window_end
 
 if TYPE_CHECKING:
     import pytz
@@ -257,6 +257,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         end: Timestamp | None = None,
         mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
         data_duration: Timedelta | None = None,
+        overlap: float = 0.0,
         name: str | None = None,
     ) -> BaseDataset:
         """Return a base BaseDataset object from a list of Files.
@@ -285,6 +286,8 @@ class BaseDataset(Generic[TData, TFile], Event):
             If mode is set to "files", this parameter has no effect.
             If provided, data will be evenly distributed between begin and end.
             Else, one data object will cover the whole time period.
+        overlap: float
+            Overlap percentage between consecutive data.
         name: str|None
             Name of the dataset.
 
@@ -306,17 +309,19 @@ class BaseDataset(Generic[TData, TFile], Event):
         if data_duration:
             data_base = (
                 cls._get_base_data_from_files_timedelta_total(
-                    begin,
-                    end,
-                    data_duration,
-                    files,
+                    begin=begin,
+                    end=end,
+                    data_duration=data_duration,
+                    files=files,
+                    overlap=overlap,
                 )
                 if mode == "timedelta_total"
                 else cls._get_base_data_from_files_timedelta_file(
-                    begin,
-                    end,
-                    data_duration,
-                    files,
+                    begin=begin,
+                    end=end,
+                    data_duration=data_duration,
+                    files=files,
+                    overlap=overlap,
                 )
             )
         else:
@@ -330,12 +335,19 @@ class BaseDataset(Generic[TData, TFile], Event):
         end: Timestamp,
         data_duration: Timedelta,
         files: list[TFile],
+        overlap: float = 0,
     ) -> list[BaseData]:
+        if not 0 <= overlap < 1:
+            msg = f"Overlap ({overlap}) must be between 0 and 1."
+            raise ValueError(msg)
+
         active_file_index = 0
         output = []
         files = sorted(files, key=lambda f: f.begin)
+        freq = data_duration * (1 - overlap)
+
         for data_begin in tqdm(
-            date_range(begin, end, freq=data_duration, inclusive="left"),
+            date_range(begin, end, freq=freq, inclusive="left"),
             disable=os.environ.get("DISABLE_TQDM", ""),
         ):
             data_end = Timestamp(data_begin + data_duration)
@@ -367,10 +379,17 @@ class BaseDataset(Generic[TData, TFile], Event):
         end: Timestamp,
         data_duration: Timedelta,
         files: list[TFile],
+        overlap: float = 0,
     ) -> list[BaseData]:
+        if not 0 <= overlap < 1:
+            msg = f"Overlap ({overlap}) must be between 0 and 1."
+            raise ValueError(msg)
+
         files = sorted(files, key=lambda file: file.begin)
         first = max(0, bisect(files, begin, key=lambda f: f.begin) - 1)
         last = bisect(files, end, key=lambda f: f.begin)
+
+        data_hop = data_duration * (1 - overlap)
 
         output = []
         files_chunk = []
@@ -383,9 +402,11 @@ class BaseDataset(Generic[TData, TFile], Event):
             files_chunk = [file]
 
             for next_file in files[idx + 1 :]:
-                upper_data_limit = file.begin + data_duration * math.ceil(
-                    (files_chunk[-1].end - file.begin).total_seconds()
-                    / data_duration.total_seconds(),
+                upper_data_limit = last_window_end(
+                    begin=file.begin,
+                    end=files_chunk[-1].end,
+                    window_hop=data_hop,
+                    window_duration=data_duration,
                 )
                 if upper_data_limit < next_file.begin:
                     break
@@ -396,7 +417,7 @@ class BaseDataset(Generic[TData, TFile], Event):
                 for data_begin in date_range(
                     file.begin,
                     files_chunk[-1].end,
-                    freq=data_duration,
+                    freq=data_hop,
                     inclusive="left",
                 )
             )
@@ -414,6 +435,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         end: Timestamp | None = None,
         timezone: str | pytz.timezone | None = None,
         mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
+        overlap: float = 0.0,
         data_duration: Timedelta | None = None,
         name: str | None = None,
     ) -> BaseDataset:
@@ -450,6 +472,8 @@ class BaseDataset(Generic[TData, TFile], Event):
             be created from the beginning of the first file that the begin timestamp is into, until it would resume
             in a data beginning between two files. Then, the next data object will be created from the
             beginning of the next original file and so on.
+        overlap: float
+            Overlap percentage between consecutive data.
         data_duration: Timedelta | None
             Duration of the data objects.
             If mode is set to "files", this parameter has no effect.
@@ -491,6 +515,7 @@ class BaseDataset(Generic[TData, TFile], Event):
             begin=begin,
             end=end,
             mode=mode,
+            overlap=overlap,
             data_duration=data_duration,
             name=name,
         )
