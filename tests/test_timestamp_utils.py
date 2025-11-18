@@ -3,11 +3,12 @@ from __future__ import annotations
 import logging
 
 import pytest
-from pandas import Timestamp
+from pandas import Timedelta, Timestamp
 
 from osekit.utils.timestamp_utils import (
     build_regex_from_datetime_template,
     is_datetime_template_valid,
+    last_window_end,
     localize_timestamp,
     reformat_timestamp,
     strftime_osmose_format,
@@ -631,3 +632,50 @@ def test_localize_timestamp_doesnt_warn_when_timezones_have_same_utcoffset(
 
     assert "will be converted" not in caplog.text
     assert result == expected
+
+
+@pytest.mark.parametrize(
+    ("begin", "end", "window_duration", "window_hop", "expected"),
+    [
+        pytest.param(
+            Timestamp("2000-01-01 00:00:00"),
+            Timestamp("2000-01-01 00:01:00"),
+            Timedelta(seconds=10),
+            Timedelta(seconds=10),
+            Timestamp("2000-01-01 00:01:00"),
+            id="no_overlap_ends_at_end",
+        ),
+        pytest.param(
+            Timestamp("2000-01-01 00:00:00"),
+            Timestamp("2000-01-01 00:00:58"),
+            Timedelta(seconds=10),
+            Timedelta(seconds=10),
+            Timestamp("2000-01-01 00:01:00"),
+            id="no_overlap_ends_after_end",
+        ),
+        pytest.param(
+            Timestamp("2000-01-01 00:00:00"),
+            Timestamp("2000-01-01 00:01:00"),
+            Timedelta(seconds=10),
+            Timedelta(seconds=1),
+            Timestamp("2000-01-01 00:01:09"),
+            id="overlap_ends_after_end",
+        ),
+    ],
+)
+def test_last_window_end(
+    begin: Timestamp,
+    end: Timestamp,
+    window_duration: Timedelta,
+    window_hop: Timedelta,
+    expected: Timestamp,
+) -> None:
+    assert (
+        last_window_end(
+            begin=begin,
+            end=end,
+            window_duration=window_duration,
+            window_hop=window_hop,
+        )
+        == expected
+    )

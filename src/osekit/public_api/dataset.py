@@ -149,7 +149,7 @@ class Dataset:
             | set(
                 (self.folder / "log").iterdir()
                 if (self.folder / "log").exists()
-                else ()
+                else (),
             )
             | {self.folder / "log"},
         )
@@ -233,6 +233,7 @@ class Dataset:
             end=analysis.end,
             data_duration=analysis.data_duration,
             mode=analysis.mode,
+            overlap=analysis.overlap,
             normalization=analysis.normalization,
             name=analysis.name,
             instrument=self.instrument,
@@ -597,7 +598,9 @@ class Dataset:
 
                 ds.move_files(new_folder)
                 move_tree(
-                    old_folder, new_folder, excluded_paths=old_folder.glob("*.json")
+                    old_folder,
+                    new_folder,
+                    excluded_paths=old_folder.glob("*.json"),
                 )  # Moves exported files
                 shutil.rmtree(str(old_folder))
                 ds.write_json(ds.folder)
