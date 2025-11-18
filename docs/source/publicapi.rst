@@ -8,3 +8,4 @@ Public API
 
    dataset
    analysis
+   export_analysis

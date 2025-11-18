@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import logging
 import shutil
-import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar
 
@@ -32,7 +31,7 @@ from osekit.utils.path_utils import move_tree
 
 if TYPE_CHECKING:
     from osekit.core_api.audio_file import AudioFile
-    from osekit.job import Job_builder
+    from osekit.utils.job import JobBuilder
 
 
 class Dataset:
@@ -52,7 +51,7 @@ class Dataset:
         depth: float = 0.0,
         timezone: str | None = None,
         datasets: dict | None = None,
-        job_builder: Job_builder | None = None,
+        job_builder: JobBuilder | None = None,
         instrument: Instrument | None = None,
     ) -> None:
         """Initialize a Dataset.
@@ -303,6 +302,7 @@ class Dataset:
         self,
         analysis: Analysis,
         audio_dataset: AudioDataset | None = None,
+        nb_jobs: int = 1,
     ) -> None:
         """Create a new analysis dataset from the original audio files.
 
@@ -322,6 +322,8 @@ class Dataset:
             Else, an AudioDataset will be created from the analysis parameters.
             This can be used to edit the analysis AudioDataset (adding/removing
             AudioData etc.)
+        nb_jobs: int
+            Number of jobs to run in parallel.
 
         """
         if analysis.name in self.analyses:
@@ -355,6 +357,8 @@ class Dataset:
             sds=sds,
             link=True,
             subtype=analysis.subtype,
+            nb_jobs=nb_jobs,
+            name=analysis.name,
         )
 
         self.write_json()
@@ -397,6 +401,8 @@ class Dataset:
         matrix_folder_name: str = "matrix",
         spectrogram_folder_name: str = "spectrogram",
         welch_folder_name: str = "welch",
+        nb_jobs: int = 1,
+        name: str = "OSEkit_analysis",
     ) -> None:
         """Perform an analysis and write the results on disk.
 
@@ -430,10 +436,27 @@ class Dataset:
             If set to True, the ads data will be linked to the exported files.
         subtype: str | None
             The subtype of the audio files as provided by the soundfile module.
+        nb_jobs: int
+            The number of jobs to run in parallel.
+        name: str
+            The name of the analysis being performed.
 
         """
         # Import here to avoid circular imports since the script needs to import Dataset
         from osekit.public_api import export_analysis  # noqa: PLC0415
+
+        matrix_folder_path, spectrogram_folder_path, welch_folder_path = (
+            (
+                sds.folder / name
+                for name in (
+                    matrix_folder_name,
+                    spectrogram_folder_name,
+                    welch_folder_name,
+                )
+            )
+            if sds is not None
+            else ("None", "None", "None")
+        )
 
         if self.job_builder is None:
             export_analysis.write_analysis(
@@ -442,44 +465,50 @@ class Dataset:
                 sds=sds,
                 link=link,
                 subtype=subtype,
-                matrix_folder_name=matrix_folder_name,
-                spectrogram_folder_name=spectrogram_folder_name,
-                welch_folder_name=welch_folder_name,
+                matrix_folder_path=matrix_folder_path,
+                spectrogram_folder_path=spectrogram_folder_path,
+                welch_folder_path=welch_folder_path,
                 logger=self.logger,
             )
             return
 
         batch_indexes = file_indexes_per_batch(
             total_nb_files=len(ads.data),
-            nb_batches=self.job_builder.nb_jobs,
+            nb_batches=nb_jobs,
         )
 
-        for start, stop in batch_indexes:
-            self.job_builder.build_job_file(
-                script_path=export_analysis.__file__,
-                script_args=f"--dataset-json-path {self.folder / 'dataset.json'} "
-                f"--analysis {analysis_type.value} "
-                f"--ads-name {ads.name if ads is not None else 'None'} "
-                f"--sds-name {sds.name if sds is not None else 'None'} "
-                f"--subtype {subtype} "
-                f"--matrix-folder-name {matrix_folder_name} "
-                f"--spectrogram-folder-name {spectrogram_folder_name} "
-                f"--welch-folder-name {welch_folder_name} "
-                f"--first {start} "
-                f"--last {stop} "
-                f"--downsampling-quality {resample_quality_settings['downsample']} "
-                f"--upsampling-quality {resample_quality_settings['upsample']} "
-                f"--umask {get_umask()} "
-                f"--multiprocessing {config.multiprocessing['is_active']} "
-                f"--nb-processes {config.multiprocessing['nb_processes']} ",
-                jobname="OSmOSE_Analysis",
-                preset="low",
-                env_name=sys.executable.replace("/bin/python", ""),
-                mem="32G",
-                walltime="01:00:00",
-                logdir=self.folder / "log",
+        ads_json = (
+            ads.folder / f"{ads.name}.json"
+            if AnalysisType.AUDIO in analysis_type
+            else "None"
+        )
+        sds_json = sds.folder / f"{sds.name}.json" if sds is not None else "None"
+
+        for index, (start, stop) in enumerate(batch_indexes):
+            self.job_builder.create_job(
+                script_path=Path(export_analysis.__file__),
+                script_args={
+                    "analysis": analysis_type.value,
+                    "ads-json": ads_json,
+                    "sds-json": sds_json,
+                    "subtype": subtype,
+                    "matrix-folder-path": matrix_folder_path,
+                    "spectrogram-folder-path": spectrogram_folder_path,
+                    "welch-folder-path": welch_folder_path,
+                    "first": start,
+                    "last": stop,
+                    "downsampling-quality": resample_quality_settings["downsample"],
+                    "upsampling-quality": resample_quality_settings["upsample"],
+                    "umask": get_umask(),
+                    "multiprocessing": str(config.multiprocessing["is_active"]),
+                    "nb-processes": config.multiprocessing["nb_processes"],
+                    "use-logging-setup": "True",
+                    "dataset-json-path": self.folder / "dataset.json",
+                },
+                name=name + (f"_{index}" if len(batch_indexes) > 1 else ""),
+                output_folder=self.folder / "log",
             )
-        self.job_builder.submit_job()
+        self.job_builder.submit_pbs()
 
     def _add_spectro_dataset(
         self,
