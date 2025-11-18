@@ -60,7 +60,8 @@ class Event:
         return self.end - self.begin
 
     def __repr__(self) -> str:
-        return str(self.begin)
+        """Overwrite repr."""
+        return f"{self.begin} - {self.end}"
 
     def overlaps(self, other: type[Event] | Event) -> bool:
         """Return True if the other event shares time with the current event.
