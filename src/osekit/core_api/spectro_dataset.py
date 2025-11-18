@@ -230,6 +230,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         detrend: str | callable | False = "constant",
         scaling: Literal["density", "spectrum"] = "density",
         average: Literal["mean", "median"] = "mean",
+        pxs: DataFrame | None = None,
         *,
         return_onesided: bool = True,
     ) -> None:
@@ -251,19 +252,26 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             Selects between computing the power spectral density (‘density’) where Pxx has units of V**2/Hz and computing the squared magnitude spectrum (‘spectrum’) where Pxx has units of V**2, if x is measured in V and fs is measured in Hz. Defaults to ‘density’
         average: Literal["mean", "median"]
             Method to use when averaging periodograms. Defaults to ‘mean’.
+        pxs: DataFrame | None
+            Welch values as returned by SpectroDataset.get_welch().
+            If provided, the computation will be skipped and the provided pxs values will be written to disk.
         return_onesided: bool
             If True, return a one-sided spectrum for real data. If False return a two-sided spectrum. Defaults to True, but for complex data, a two-sided spectrum is always returned.
 
         """
         folder.mkdir(parents=True, exist_ok=True, mode=DPDEFAULT)
-        pxs = self.get_welch(
-            first=first,
-            last=last,
-            nperseg=nperseg,
-            detrend=detrend,
-            scaling=scaling,
-            average=average,
-            return_onesided=return_onesided,
+        pxs = (
+            self.get_welch(
+                first=first,
+                last=last,
+                nperseg=nperseg,
+                detrend=detrend,
+                scaling=scaling,
+                average=average,
+                return_onesided=return_onesided,
+            )
+            if pxs is None
+            else pxs
         )
         np.savez(
             file=folder / f"{self.data[first]}.npz",
