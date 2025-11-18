@@ -232,6 +232,7 @@ class Dataset:
             end=analysis.end,
             data_duration=analysis.data_duration,
             mode=analysis.mode,
+            overlap=analysis.overlap,
             normalization=analysis.normalization,
             name=analysis.name,
             instrument=self.instrument,
@@ -283,7 +284,7 @@ class Dataset:
         sds = SpectroDataset.from_audio_dataset(
             audio_dataset=ads,
             fft=analysis.fft,
-            name=ads.base_name,
+            name=analysis.name,
             v_lim=analysis.v_lim,
             colormap=analysis.colormap,
             scale=analysis.scale,

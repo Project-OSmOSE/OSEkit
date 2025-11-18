@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
 import numpy as np
+from pandas import DataFrame
 from scipy.signal import ShortTimeFFT
 
 from osekit.config import DPDEFAULT
@@ -144,7 +145,6 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         last: int|None
             Index after the last SpectroData object to export.
 
-
         """
         last = len(self.data) if last is None else last
         multiprocess(
@@ -157,11 +157,12 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
     def _get_welch(
         self,
         sd: SpectroData,
-        nperseg,
-        detrend,
-        return_onesided,
-        scaling,
-        average,
+        nperseg: int | None = None,
+        detrend: str | callable | False = "constant",
+        scaling: Literal["density", "spectrum"] = "density",
+        average: Literal["mean", "median"] = "mean",
+        *,
+        return_onesided: bool = True,
     ) -> tuple[SpectroData, np.ndarray]:
         """Get the welch value of each SpectroData."""
         return sd, sd.get_welch(
@@ -172,20 +173,40 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             average=average,
         )
 
-    def write_welch(
+    def get_welch(
         self,
-        folder: Path,
         first: int = 0,
         last: int | None = None,
         nperseg: int | None = None,
         detrend: str | callable | False = "constant",
-        return_onesided: bool = True,
         scaling: Literal["density", "spectrum"] = "density",
         average: Literal["mean", "median"] = "mean",
-    ) -> None:
-        folder.mkdir(parents=True, exist_ok=True, mode=DPDEFAULT)
-        timestamps = []
-        pxs = []
+        *,
+        return_onesided: bool = True,
+    ) -> DataFrame:
+        """Return the welch values of the SpectroDataset.
+
+        Each SpectroData of the SpectroDataset represent one column of the welch values.
+
+        Parameters
+        ----------
+        first: int
+            Index of the first SpectroData object to include in the welch.
+        last: int
+            Index after the last SpectroData object to include in the welch.
+        nperseg: int|None
+            Length of each segment. Defaults to None, but if window is str or tuple, is set to 256, and if window is array_like, is set to the length of the window.
+        detrend: str | callable | False
+            Specifies how to detrend each segment. If detrend is a string, it is passed as the type argument to the detrend function. If it is a function, it takes a segment and returns a detrended segment. If detrend is False, no detrending is done. Defaults to ‘constant’.
+        scaling: Literal["density", "spectrum"]
+            Selects between computing the power spectral density (‘density’) where Pxx has units of V**2/Hz and computing the squared magnitude spectrum (‘spectrum’) where Pxx has units of V**2, if x is measured in V and fs is measured in Hz. Defaults to ‘density’
+        average: Literal["mean", "median"]
+            Method to use when averaging periodograms. Defaults to ‘mean’.
+        return_onesided: bool
+            If True, return a one-sided spectrum for real data. If False return a two-sided spectrum. Defaults to True, but for complex data, a two-sided spectrum is always returned.
+
+        """
+        output = {}
         for data, welch in multiprocess(
             self._get_welch,
             self.data[first:last],
@@ -196,12 +217,66 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             scaling=scaling,
             average=average,
         ):
-            timestamps.append(f"{data.begin!s}_{data.end!s}")
-            pxs.append(welch)
+            timestamp = f"{data.begin!s}_{data.end!s}"
+            output[timestamp] = welch
+        return DataFrame(output)
+
+    def write_welch(
+        self,
+        folder: Path,
+        first: int = 0,
+        last: int | None = None,
+        nperseg: int | None = None,
+        detrend: str | callable | False = "constant",
+        scaling: Literal["density", "spectrum"] = "density",
+        average: Literal["mean", "median"] = "mean",
+        pxs: DataFrame | None = None,
+        *,
+        return_onesided: bool = True,
+    ) -> None:
+        """Write the welch values of the SpectroDataset in a npz file.
+
+        Parameters
+        ----------
+        folder: Path
+            The folder in which the NPZ file will be written.
+        first: int
+            Index of the first SpectroData object to include in the welch.
+        last: int
+            Index after the last SpectroData object to include in the welch.
+        nperseg: int|None
+            Length of each segment. Defaults to None, but if window is str or tuple, is set to 256, and if window is array_like, is set to the length of the window.
+        detrend: str | callable | False
+            Specifies how to detrend each segment. If detrend is a string, it is passed as the type argument to the detrend function. If it is a function, it takes a segment and returns a detrended segment. If detrend is False, no detrending is done. Defaults to ‘constant’.
+        scaling: Literal["density", "spectrum"]
+            Selects between computing the power spectral density (‘density’) where Pxx has units of V**2/Hz and computing the squared magnitude spectrum (‘spectrum’) where Pxx has units of V**2, if x is measured in V and fs is measured in Hz. Defaults to ‘density’
+        average: Literal["mean", "median"]
+            Method to use when averaging periodograms. Defaults to ‘mean’.
+        pxs: DataFrame | None
+            Welch values as returned by SpectroDataset.get_welch().
+            If provided, the computation will be skipped and the provided pxs values will be written to disk.
+        return_onesided: bool
+            If True, return a one-sided spectrum for real data. If False return a two-sided spectrum. Defaults to True, but for complex data, a two-sided spectrum is always returned.
+
+        """
+        folder.mkdir(parents=True, exist_ok=True, mode=DPDEFAULT)
+        pxs = (
+            self.get_welch(
+                first=first,
+                last=last,
+                nperseg=nperseg,
+                detrend=detrend,
+                scaling=scaling,
+                average=average,
+                return_onesided=return_onesided,
+            )
+            if pxs is None
+            else pxs
+        )
         np.savez(
             file=folder / f"{self.data[first]}.npz",
-            timestamps=timestamps,
-            pxs=pxs,
+            timestamps=list(pxs.columns),
+            pxs=pxs.to_numpy().T,
             freq=self.fft.f,
         )
 
@@ -407,6 +482,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         end: Timestamp | None = None,
         timezone: str | pytz.timezone | None = None,
         mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
+        overlap: float = 0.0,
         data_duration: Timedelta | None = None,
         name: str | None = None,
         v_lim: tuple[float, float] | None | object = sentinel_value,
@@ -441,6 +517,8 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             be created from the beginning of the first file that the begin timestamp is into, until it would resume
             in a data beginning between two files. Then, the next data object will be created from the
             beginning of the next original file and so on.
+        overlap: float
+            Overlap percentage between consecutive data.
         data_duration: Timedelta | None
             Duration of the spectro data objects.
             If mode is set to "files", this parameter has no effect.
@@ -469,6 +547,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             end=end,
             timezone=timezone,
             mode=mode,
+            overlap=overlap,
             data_duration=data_duration,
             **kwargs,
         )
