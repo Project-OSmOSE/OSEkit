@@ -134,6 +134,7 @@ class Dataset:
             name="original",
             instrument=self.instrument,
         )
+
         self.datasets[ads.name] = {
             "class": type(ads).__name__,
             "analysis": "original",
@@ -682,7 +683,11 @@ class Dataset:
                 name: {
                     "class": dataset["class"],
                     "analysis": dataset["analysis"],
-                    "json": str(dataset["dataset"].folder / f"{name}.json"),
+                    "json": str(
+                        (dataset["dataset"].folder / f"{name}.json").relative_to(
+                            self.folder,
+                        ),
+                    ),
                 }
                 for name, dataset in self.datasets.items()
             },
@@ -711,6 +716,7 @@ class Dataset:
             The deserialized dataset.
 
         """
+        folder = Path(dictionary["folder"])
         datasets = {}
         for name, dataset in dictionary["datasets"].items():
             dataset_class = (
@@ -725,10 +731,10 @@ class Dataset:
             datasets[name] = {
                 "class": dataset["class"],
                 "analysis": dataset["analysis"],
-                "dataset": dataset_class.from_json(Path(dataset["json"])),
+                "dataset": dataset_class.from_json(folder / Path(dataset["json"])),
             }
         return cls(
-            folder=Path(dictionary["folder"]),
+            folder=folder,
             instrument=Instrument.from_dict(dictionary["instrument"]),
             strptime_format=dictionary["strptime_format"],
             gps_coordinates=dictionary["gps_coordinates"],
