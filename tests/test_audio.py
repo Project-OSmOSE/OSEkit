@@ -843,7 +843,16 @@ def test_normalize_audio_data(
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "begin", "end", "mode", "duration", "expected_audio_data"),
+    (
+        "audio_files",
+        "begin",
+        "end",
+        "mode",
+        "strptime_format",
+        "first_file_begin",
+        "duration",
+        "expected_audio_data",
+    ),
     [
         pytest.param(
             {
@@ -856,6 +865,8 @@ def test_normalize_audio_data(
             None,
             None,
             "timedelta_total",
+            TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+            None,
             None,
             generate_sample_audio(1, 48_000),
             id="one_entire_file",
@@ -871,6 +882,8 @@ def test_normalize_audio_data(
             None,
             None,
             "timedelta_total",
+            TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+            None,
             pd.Timedelta(seconds=1),
             generate_sample_audio(
                 nb_files=3,
@@ -891,6 +904,8 @@ def test_normalize_audio_data(
             None,
             None,
             "timedelta_total",
+            TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+            None,
             pd.Timedelta(seconds=1),
             [
                 generate_sample_audio(nb_files=1, nb_samples=96_000)[0][0:48_000],
@@ -916,6 +931,8 @@ def test_normalize_audio_data(
             None,
             None,
             "timedelta_total",
+            TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+            None,
             pd.Timedelta(seconds=1),
             generate_sample_audio(nb_files=2, nb_samples=48_000),
             id="overlapping_files",
@@ -932,6 +949,8 @@ def test_normalize_audio_data(
             None,
             None,
             "files",
+            TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+            None,
             None,
             generate_sample_audio(
                 nb_files=3,
@@ -952,6 +971,8 @@ def test_normalize_audio_data(
             None,
             None,
             "files",
+            TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+            None,
             None,
             [
                 generate_sample_audio(nb_files=1, nb_samples=96_000)[0][0:48_000],
@@ -971,6 +992,8 @@ def test_normalize_audio_data(
             None,
             None,
             "files",
+            TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+            None,
             None,
             [
                 generate_sample_audio(nb_files=1, nb_samples=48_000)[0][0:24_000],
@@ -978,6 +1001,50 @@ def test_normalize_audio_data(
                 generate_sample_audio(nb_files=1, nb_samples=48_000)[0],
             ],
             id="files_mode_with_overlap",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 3,
+                "inter_file_duration": 0,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            None,
+            None,
+            "files",
+            None,
+            None,
+            None,
+            generate_sample_audio(
+                nb_files=3,
+                nb_samples=48_000,
+                series_type="increase",
+            ),
+            id="files_mode_with_default_timestamps",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 3,
+                "inter_file_duration": 0,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            None,
+            None,
+            "files",
+            None,
+            Timestamp("2020-01-01 00:00:00"),
+            None,
+            generate_sample_audio(
+                nb_files=3,
+                nb_samples=48_000,
+                series_type="increase",
+            ),
+            id="files_mode_with_given_timestamps",
         ),
     ],
     indirect=["audio_files"],
@@ -988,15 +1055,18 @@ def test_audio_dataset_from_folder(
     begin: pd.Timestamp | None,
     end: pd.Timestamp | None,
     mode: Literal["files", "timedelta_total", "timedelta_file"],
+    strptime_format: str,
+    first_file_begin: Timestamp | None,
     duration: pd.Timedelta | None,
     expected_audio_data: list[np.ndarray],
 ) -> None:
     dataset = AudioDataset.from_folder(
         tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+        strptime_format=strptime_format,
         begin=begin,
         end=end,
         mode=mode,
+        first_file_begin=first_file_begin,
         data_duration=duration,
     )
     for idx, data in enumerate(dataset.data):
