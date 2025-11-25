@@ -428,7 +428,7 @@ class BaseDataset(Generic[TData, TFile], Event):
     def from_folder(  # noqa: PLR0913
         cls,
         folder: Path,
-        strptime_format: str,
+        strptime_format: str | None,
         file_class: type[TFile] = BaseFile,
         supported_file_extensions: list[str] | None = None,
         begin: Timestamp | None = None,
@@ -437,6 +437,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
         overlap: float = 0.0,
         data_duration: Timedelta | None = None,
+        first_file_begin: Timestamp | None = None,
         name: str | None = None,
     ) -> BaseDataset:
         """Return a BaseDataset from a folder containing the base files.
@@ -445,8 +446,12 @@ class BaseDataset(Generic[TData, TFile], Event):
         ----------
         folder: Path
             The folder containing the files.
-        strptime_format: str
-            The strptime format of the timestamps in the file names.
+        strptime_format: str | None
+            The strptime format used in the filenames.
+            It should use valid strftime codes (https://strftime.org/).
+            If None, the first audio file of the folder will start
+            at first_file_begin, and each following file will start
+            at the end of the previous one.
         file_class: type[Tfile]
             Derived type of BaseFile used to instantiate the dataset.
         supported_file_extensions: list[str]
@@ -479,6 +484,9 @@ class BaseDataset(Generic[TData, TFile], Event):
             If mode is set to "files", this parameter has no effect.
             If provided, data will be evenly distributed between begin and end.
             Else, one object will cover the whole time period.
+        first_file_begin: Timestamp | None
+            Timestamp of the first audio file being processed.
+            Will be ignored if striptime_format is specified.
         name: str|None
             Name of the dataset.
 
@@ -492,14 +500,20 @@ class BaseDataset(Generic[TData, TFile], Event):
             supported_file_extensions = []
         valid_files = []
         rejected_files = []
+        first_file_begin = first_file_begin or Timestamp("2020-01-01 00:00:00")
         for file in tqdm(folder.iterdir(), disable=os.environ.get("DISABLE_TQDM", "")):
-            if file.suffix.lower() not in supported_file_extensions:
-                continue
-            try:
-                f = file_class(file, strptime_format=strptime_format, timezone=timezone)
-                valid_files.append(f)
-            except (ValueError, LibsndfileError):
-                rejected_files.append(file)
+            is_file_ok = _parse_file(
+                file=file,
+                file_class=file_class,
+                supported_file_extensions=supported_file_extensions,
+                strptime_format=strptime_format,
+                timezone=timezone,
+                begin_timestamp=first_file_begin,
+                valid_files=valid_files,
+                rejected_files=rejected_files,
+            )
+            if is_file_ok:
+                first_file_begin += valid_files[-1].duration
 
         if rejected_files:
             rejected_files = "\n\t".join(f.name for f in rejected_files)
@@ -519,3 +533,28 @@ class BaseDataset(Generic[TData, TFile], Event):
             data_duration=data_duration,
             name=name,
         )
+
+
+def _parse_file(
+    file: Path,
+    file_class: type,
+    supported_file_extensions: list[str],
+    strptime_format: str,
+    timezone: str | pytz.timezone | None,
+    begin_timestamp: Timestamp,
+    valid_files: list[BaseFile],
+    rejected_files: list[Path],
+) -> bool:
+    if file.suffix.lower() not in supported_file_extensions:
+        return False
+    try:
+        if strptime_format is None:
+            f = file_class(file, begin=begin_timestamp, timezone=timezone)
+        else:
+            f = file_class(file, strptime_format=strptime_format, timezone=timezone)
+        valid_files.append(f)
+    except (ValueError, LibsndfileError):
+        rejected_files.append(file)
+        return False
+    else:
+        return True

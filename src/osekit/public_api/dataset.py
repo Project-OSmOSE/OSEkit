@@ -13,6 +13,8 @@ import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar
 
+from pandas import Timestamp
+
 from osekit import config
 from osekit.config import DPDEFAULT, resample_quality_settings
 from osekit.core_api import audio_file_manager as afm
@@ -46,13 +48,14 @@ class Dataset:
     def __init__(  # noqa: PLR0913
         self,
         folder: Path,
-        strptime_format: str,
+        strptime_format: str | None,
         gps_coordinates: str | list | tuple = (0, 0),
         depth: float = 0.0,
         timezone: str | None = None,
         datasets: dict | None = None,
         job_builder: JobBuilder | None = None,
         instrument: Instrument | None = None,
+        first_file_begin: Timestamp | None = None,
     ) -> None:
         """Initialize a Dataset.
 
@@ -60,9 +63,12 @@ class Dataset:
         ----------
         folder: Path
             Path to the folder containing the original audio files.
-        strptime_format: str
+        strptime_format: str | None
             The strptime format used in the filenames.
             It should use valid strftime codes (https://strftime.org/).
+            If None, the first audio file of the folder will start
+            at first_file_begin, and each following file will start
+            at the end of the previous one.
         gps_coordinates: str | list | tuple
             GPS coordinates of the location were audio files were recorded.
         depth: float
@@ -84,6 +90,9 @@ class Dataset:
             Instrument that might be used to obtain acoustic pressure from
             the wav audio data.
             See the osekit.core_api.instrument module for more info.
+        first_file_begin: Timestamp | None
+            Timestamp of the first audio file being processed.
+            Will be ignored if striptime_format is specified.
 
         """
         self.folder = folder
@@ -94,6 +103,7 @@ class Dataset:
         self.datasets = datasets if datasets is not None else {}
         self.job_builder = job_builder
         self.instrument = instrument
+        self.first_file_begin = first_file_begin
 
     @property
     def origin_files(self) -> list[AudioFile] | None:
@@ -129,6 +139,7 @@ class Dataset:
         ads = AudioDataset.from_folder(
             self.folder,
             strptime_format=self.strptime_format,
+            first_file_begin=self.first_file_begin,
             mode="files",
             timezone=self.timezone,
             name="original",
