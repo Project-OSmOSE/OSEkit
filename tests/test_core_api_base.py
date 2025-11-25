@@ -730,7 +730,7 @@ def test_base_dataset_from_folder(
     ):
         assert data.begin == expected[0].begin
         assert data.end == expected[0].end
-        assert np.array_equal([f.path for f in data.files], expected[1])
+        assert np.array_equal(sorted(f.path for f in data.files), sorted(expected[1]))
 
 
 @pytest.mark.parametrize(
