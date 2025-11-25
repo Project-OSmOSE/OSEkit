@@ -214,8 +214,14 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         if not self.audio_data or not self.fft:
             raise ValueError("SpectroData should have either items or audio_data.")
 
+        audio_data = self.audio_data.get_value_calibrated()
+        if len(audio_data.shape) > 1:
+            audio_data = audio_data[
+                :, 0
+            ]  # Only takes first channel of multichannel audio files.
+
         sx = self.fft.stft(
-            self.audio_data.get_value_calibrated(),
+            audio_data,
             padding="zeros",
         )
 
