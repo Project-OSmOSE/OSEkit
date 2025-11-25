@@ -37,6 +37,7 @@ class BaseFile(Event):
     def __init__(
         self,
         path: PathLike | str,
+        relative_root: PathLike | str | None = None,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         strptime_format: str | list[str] | None = None,
@@ -51,6 +52,9 @@ class BaseFile(Event):
         ----------
         path: PathLike | str
             Full path to the file.
+        relative_root: PathLike | str | None
+            Root path according to which the path is specified.
+            If None, the path is absolute.
         begin: pandas.Timestamp | None
             Timestamp corresponding to the first data point in the file.
             If it is not provided, strptime_format is mandatory.
@@ -70,6 +74,7 @@ class BaseFile(Event):
             to the specified timezone.
 
         """
+        self.relative_root = relative_root
         self.path = Path(path)
 
         if begin is None and strptime_format is None:
@@ -88,6 +93,39 @@ class BaseFile(Event):
             self.begin = localize_timestamp(self.begin, timezone)
 
         self.end = end if end is not None else (self.begin + Timedelta(seconds=1))
+
+    @property
+    def relative_root(self) -> Path | None:
+        """Root path according to which the path is specified.
+
+        If None, the path is absolute.
+        """
+        return self._relative_root
+
+    @relative_root.setter
+    def relative_root(self, relative_root: Path | None) -> None:
+        self._relative_root = relative_root
+
+    @property
+    def path(self) -> Path:
+        """Absolute path of the file."""
+        return (
+            self.relative_root / self.relative_path
+            if self.relative_root
+            else self.relative_path
+        )
+
+    @path.setter
+    def path(self, path: PathLike | str) -> None:
+        path = Path(path)
+        self._path = (
+            path.relative_to(self.relative_root) if self.relative_root else path
+        )
+
+    @property
+    def relative_path(self) -> Path:
+        """Path of the file relative to the relative_root path."""
+        return self._path
 
     def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray:
         """Return the data that is between start and stop from the file.

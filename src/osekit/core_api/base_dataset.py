@@ -190,6 +190,11 @@ class BaseDataset(Generic[TData, TFile], Event):
         ):
             data.write(folder=folder, link=link)
 
+    def set_files_as_relative(self) -> None:
+        """Set the dataset folder as relative root of the files."""
+        for file in self.files:
+            file.relative_root = self.folder
+
     def to_dict(self) -> dict:
         """Serialize a BaseDataset to a dictionary.
 
@@ -199,6 +204,7 @@ class BaseDataset(Generic[TData, TFile], Event):
             The serialized dictionary representing the BaseDataset.
 
         """
+        self.set_files_as_relative()
         return {
             "data": {str(d): d.to_dict() for d in self.data},
             "name": self._name,
