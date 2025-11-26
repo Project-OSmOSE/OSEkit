@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import soundfile as sf
-from pandas import Timestamp
+from pandas import Timedelta, Timestamp
 
 import osekit
 from osekit.config import (
@@ -17,6 +17,7 @@ from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
     resample_quality_settings,
 )
+from osekit.core_api import AudioFileManager
 from osekit.core_api import audio_file_manager as afm
 from osekit.core_api.audio_data import AudioData
 from osekit.core_api.audio_dataset import AudioDataset
@@ -221,6 +222,38 @@ def test_audio_file_read(
     assert np.allclose(files[0].read(start, stop)[:, 0], expected, atol=1e-7)
 
 
+def test_multichannel_audio_file_read(monkeypatch: pytest.MonkeyPatch) -> None:
+    full_file = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3], [4, 4, 4], [5, 5, 5]])
+
+    def read_patch(*args: list, **kwargs: dict) -> np.ndarray:
+        start, stop = kwargs["start"], kwargs["stop"]
+        return full_file[start:stop, :]
+
+    monkeypatch.setattr(AudioFileManager, "read", read_patch)
+
+    def init_patch(self: AudioFile, *args: list, **kwargs: dict) -> None:
+        self.begin = kwargs["begin"]
+        self.path = kwargs["path"]
+        self.end = kwargs["end"]
+        self.sample_rate = kwargs["sample_rate"]
+
+    monkeypatch.setattr(AudioFile, "__init__", init_patch)
+
+    af = AudioFile(
+        begin=Timestamp("2005-10-18 00:00:00"),
+        end=Timestamp("2005-10-18 00:00:01"),
+        path=Path(r"foo"),
+        sample_rate=5,
+    )
+
+    assert np.array_equal(af.read(start=af.begin, stop=af.end), full_file)
+
+    assert np.array_equal(
+        af.read(start=af.begin, stop=af.begin + Timedelta(seconds=3 / 5)),
+        full_file[:3, :],
+    )
+
+
 @pytest.mark.parametrize(
     ("audio_files", "start", "stop", "expected"),
     [
@@ -418,6 +451,17 @@ def test_audio_item(
     files, request = audio_files
     item = AudioItem(files[0], start, stop)
     assert np.array_equal(item.get_value()[:, 0], expected)
+    assert item.shape == item.get_value().shape
+
+
+def test_empty_audio_item() -> None:
+    item = AudioItem(
+        begin=Timestamp("1997-01-28 00:00:00"),
+        end=Timestamp("1997-01-28 00:00:01"),
+    )
+    assert item.is_empty
+    assert item.shape == (0, 1)
+    assert np.array_equal(item.get_value(), np.zeros((1, 1)))
 
 
 @pytest.mark.parametrize(
