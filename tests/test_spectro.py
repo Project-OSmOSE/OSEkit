@@ -1161,3 +1161,28 @@ def test_spectrodataset_scale(
 
     ltas_ds.save_spectrogram(tmp_path)
     ltas_ds.save_all(tmp_path, tmp_path)
+
+
+def test_spectro_multichannel_audio_file(
+    monkeypatch: pytest.MonkeyPatch,
+    patch_audio_data: pytest.MonkeyPatch,
+) -> None:
+    ad = AudioData(mocked_value=[[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])
+
+    sft = ShortTimeFFT(win=hamming(512), hop=128, fs=48_000)
+
+    sd = SpectroData.from_audio_data(ad, sft)
+
+    treated_audio = []
+
+    def patch_stft(*args: list, **kwargs: dict) -> None:
+        treated_audio.append(kwargs["x"])
+
+    monkeypatch.setattr(ShortTimeFFT, "stft", patch_stft)
+
+    sd.get_value()
+
+    assert np.array_equal(
+        treated_audio[0],
+        [1, 5, 9],
+    )  # Only first channel is accounted for.

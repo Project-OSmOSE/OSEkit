@@ -217,11 +217,12 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         audio_data = self.audio_data.get_value_calibrated()
         if len(audio_data.shape) > 1:
             audio_data = audio_data[
-                :, 0
+                :,
+                0,
             ]  # Only takes first channel of multichannel audio files.
 
         sx = self.fft.stft(
-            audio_data,
+            x=audio_data,
             padding="zeros",
         )
 
