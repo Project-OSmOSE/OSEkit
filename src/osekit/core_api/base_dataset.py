@@ -501,7 +501,9 @@ class BaseDataset(Generic[TData, TFile], Event):
         valid_files = []
         rejected_files = []
         first_file_begin = first_file_begin or Timestamp("2020-01-01 00:00:00")
-        for file in tqdm(folder.iterdir(), disable=os.environ.get("DISABLE_TQDM", "")):
+        for file in tqdm(
+            sorted(folder.iterdir()), disable=os.environ.get("DISABLE_TQDM", "")
+        ):
             is_file_ok = _parse_file(
                 file=file,
                 file_class=file_class,
