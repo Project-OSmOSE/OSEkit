@@ -75,7 +75,7 @@ def test_spectrogram_shape(
     spectro_dataset = SpectroDataset.from_audio_dataset(dataset, sft)
     for audio, spectro in zip(dataset.data, spectro_dataset.data, strict=False):
         assert spectro.shape == spectro.get_value().shape
-        assert spectro.shape == (sft.f.shape[0], sft.p_num(audio.shape))
+        assert spectro.shape == (sft.f.shape[0], sft.p_num(audio.length))
 
 
 @pytest.mark.parametrize(
@@ -165,7 +165,7 @@ def test_spectro_parameters_in_npz_files(
     assert sf.hop == sft.hop
     assert sf.mfft == sft.mfft
     assert sf.sample_rate == sft.fs
-    nb_time_bins = sft.t(ad.shape).shape[0]
+    nb_time_bins = sft.t(ad.length).shape[0]
     assert np.array_equal(
         sf.time,
         np.arange(nb_time_bins) * ad.duration.total_seconds() / nb_time_bins,
@@ -1167,7 +1167,7 @@ def test_spectro_multichannel_audio_file(
     monkeypatch: pytest.MonkeyPatch,
     patch_audio_data: pytest.MonkeyPatch,
 ) -> None:
-    ad = AudioData(mocked_value=[[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])
+    ad = AudioData(mocked_value=np.array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]]))
 
     sft = ShortTimeFFT(win=hamming(512), hop=128, fs=48_000)
 

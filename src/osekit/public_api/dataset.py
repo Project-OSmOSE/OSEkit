@@ -313,6 +313,7 @@ class Dataset:
         self,
         analysis: Analysis,
         audio_dataset: AudioDataset | None = None,
+        spectro_dataset: SpectroDataset | None = None,
         nb_jobs: int = 1,
     ) -> None:
         """Create a new analysis dataset from the original audio files.
@@ -331,8 +332,14 @@ class Dataset:
         audio_dataset: AudioDataset
             If provided, the analysis will be run on this AudioDataset.
             Else, an AudioDataset will be created from the analysis parameters.
-            This can be used to edit the analysis AudioDataset (adding/removing
-            AudioData etc.)
+            This can be used to edit the analysis AudioDataset (adding, removing,
+            renaming AudioData etc.)
+        spectro_dataset: SpectroDataset
+            If provided, the spectral analysis will be run on this SpectroDataset.
+            Else, a SpectroDataset will be created from the audio_dataset if provided,
+            or from the analysis parameters.
+            This can be used to edit the analysis SpectroDataset (adding, removing,
+            renaming SpectroData etc.)
         nb_jobs: int
             Number of jobs to run in parallel.
 
@@ -356,9 +363,13 @@ class Dataset:
 
         sds = None
         if analysis.is_spectro:
-            sds = self.get_analysis_spectrodataset(
-                analysis=analysis,
-                audio_dataset=ads,
+            sds = (
+                self.get_analysis_spectrodataset(
+                    analysis=analysis,
+                    audio_dataset=ads,
+                )
+                if spectro_dataset is None
+                else spectro_dataset
             )
             self._add_spectro_dataset(sds=sds, analysis_name=analysis.name)
 

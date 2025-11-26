@@ -32,19 +32,20 @@ def test_patch_audio_data(patch_audio_data: None) -> None:
     audio_data = AudioData(
         mocked_value=mocked_value,  # Type: ignore # Unexpected argument
     )
-    assert (
-        audio_data.mocked_value == mocked_value  # Type: ignore # Unresolved attribute
+    assert np.array_equal(
+        audio_data.mocked_value[:, 0],  # Type: ignore # Unresolved attribute
+        mocked_value,
     )
 
-    assert audio_data.shape == len(mocked_value)
+    assert audio_data.shape == (len(mocked_value), 1)
     assert type(audio_data.begin) is Timestamp
     assert type(audio_data.end) is Timestamp
 
     audio_data.normalization = Normalization.DC_REJECT
 
-    assert np.array_equal(audio_data.get_raw_value(), mocked_value)
+    assert np.array_equal(audio_data.get_raw_value()[:, 0], mocked_value)
     assert np.array_equal(
-        audio_data.get_value(),
+        audio_data.get_value()[:, 0],
         [v - np.mean(mocked_value, dtype=float) for v in mocked_value],
     )
 
@@ -217,7 +218,7 @@ def test_audio_file_read(
     expected: np.ndarray,
 ) -> None:
     files, request = audio_files
-    assert np.allclose(files[0].read(start, stop), expected, atol=1e-7)
+    assert np.allclose(files[0].read(start, stop)[:, 0], expected, atol=1e-7)
 
 
 @pytest.mark.parametrize(
@@ -416,7 +417,7 @@ def test_audio_item(
 ) -> None:
     files, request = audio_files
     item = AudioItem(files[0], start, stop)
-    assert np.array_equal(item.get_value(), expected)
+    assert np.array_equal(item.get_value()[:, 0], expected)
 
 
 @pytest.mark.parametrize(
@@ -544,11 +545,11 @@ def test_audio_data(
     stop: pd.Timestamp | None,
     expected: np.ndarray,
 ) -> None:
-    files, request = audio_files
+    files, _ = audio_files
     data = AudioData.from_files(files, begin=start, end=stop)
     if all(item.is_empty for item in data.items):
         data.sample_rate = 48_000
-    assert np.array_equal(data.get_value(), expected)
+    assert np.array_equal(data.get_value()[:, 0], expected)
 
 
 @pytest.mark.parametrize(
@@ -592,7 +593,7 @@ def test_read_vs_soundfile(
 ) -> None:
     audio_files, _ = audio_files
     ad = AudioData.from_files(audio_files)
-    assert np.array_equal(sf.read(audio_files[0].path)[0], ad.get_value())
+    assert np.array_equal(sf.read(audio_files[0].path)[0], ad.get_value()[:, 0])
 
 
 @pytest.mark.parametrize(
@@ -834,12 +835,12 @@ def test_normalize_audio_data(
 
     # AudioData
     ad = AudioData.from_files(afs, normalization=normalization)
-    assert np.array_equal(ad.get_value(), normalized_data)
+    assert np.array_equal(ad.get_value()[:, 0], normalized_data)
 
     # AudioDataset
     ads = AudioDataset.from_files(afs, normalization=normalization)
     assert ads.data[0].normalization == normalization
-    assert np.array_equal(ads.data[0].get_value(), normalized_data)
+    assert np.array_equal(ads.data[0].get_value()[:, 0], normalized_data)
 
 
 @pytest.mark.parametrize(
@@ -1070,7 +1071,7 @@ def test_audio_dataset_from_folder(
         data_duration=duration,
     )
     for idx, data in enumerate(dataset.data):
-        vs = data.get_value()
+        vs = data.get_value()[:, 0]
         assert np.array_equal(expected_audio_data[idx], vs)
 
 
@@ -1189,7 +1190,7 @@ def test_audio_dataset_from_files(
         data_duration=duration,
     )
     assert all(
-        np.array_equal(data.get_value(), expected)
+        np.array_equal(data.get_value()[:, 0], expected)
         for (data, expected) in zip(dataset.data, expected_audio_data, strict=False)
     )
 
@@ -1413,7 +1414,7 @@ def test_audio_dataset_from_folder_errors_warnings(
                 strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
             )
             assert all(
-                np.array_equal(data.get_value(), expected)
+                np.array_equal(data.get_value()[:, 0], expected)
                 for (data, expected) in zip(
                     dataset.data,
                     expected_audio_data,
@@ -1526,7 +1527,10 @@ def test_write_files(
     dataset.write(output_path, subtype=subtype, link=link)
     for data in dataset.data:
         assert f"{data}.wav" in [f.name for f in output_path.glob("*.wav")]
-        assert np.allclose(data.get_value(), sf.read(output_path / f"{data}.wav")[0])
+        assert np.allclose(
+            data.get_value()[:, 0],
+            sf.read(output_path / f"{data}.wav")[0],
+        )
 
         if link:
             assert str(next(iter(data.files)).path) == str(output_path / f"{data}.wav")
@@ -1645,10 +1649,10 @@ def test_split_data(
     if normalization:
         dataset.normalization = normalization
     for data in dataset.data:
-        subdata_shape = data.shape // nb_subdata
+        subdata_shape = data.length // nb_subdata
         for subdata, data_range in zip(
             data.split(nb_subdata),
-            range(0, data.shape, subdata_shape),
+            range(0, data.length, subdata_shape),
             strict=False,
         ):
             assert np.array_equal(
@@ -1658,10 +1662,10 @@ def test_split_data(
             assert subdata.instrument == data.instrument
             assert subdata.normalization == data.normalization
 
-            subsubdata_shape = subdata.shape // nb_subdata
+            subsubdata_shape = subdata.length // nb_subdata
             for subsubdata, subdata_range in zip(
                 subdata.split(nb_subdata),
-                range(0, subdata.shape, subsubdata_shape),
+                range(0, subdata.length, subsubdata_shape),
                 strict=False,
             ):
                 assert np.array_equal(
@@ -1790,7 +1794,7 @@ def test_split_data_frames(
     ad = dataset.data[0].split_frames(start_frame, stop_frame)
 
     assert ad.begin == expected_begin
-    assert np.array_equal(ad.get_value(), expected_data)
+    assert np.array_equal(ad.get_value()[:, 0], expected_data)
 
 
 @pytest.mark.parametrize(

@@ -7,6 +7,7 @@ The data is accessed via a SpectroItem object per SpectroFile.
 from __future__ import annotations
 
 import gc
+import itertools
 from typing import TYPE_CHECKING, Literal
 
 import matplotlib.pyplot as plt
@@ -214,15 +215,11 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         if not self.audio_data or not self.fft:
             raise ValueError("SpectroData should have either items or audio_data.")
 
-        audio_data = self.audio_data.get_value_calibrated()
-        if len(audio_data.shape) > 1:
-            audio_data = audio_data[
+        sx = self.fft.stft(
+            x=self.audio_data.get_value_calibrated()[
                 :,
                 0,
-            ]  # Only takes first channel of multichannel audio files.
-
-        sx = self.fft.stft(
-            x=audio_data,
+            ],  # Only consider the 1st channel
             padding="zeros",
         )
 
@@ -271,7 +268,9 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         nfft = self.fft.mfft
 
         _, sx = welch(
-            self.audio_data.get_value_calibrated(),
+            self.audio_data.get_value_calibrated()[
+                :, 0
+            ],  # Only considers the 1rst channel
             fs=self.audio_data.sample_rate,
             window=window,
             nperseg=nperseg,
@@ -530,7 +529,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         """
         split_frames = list(
-            np.linspace(0, self.audio_data.shape, nb_subdata + 1, dtype=int),
+            np.linspace(0, self.audio_data.length, nb_subdata + 1, dtype=int),
         )
         split_frames = [
             self.fft.nearest_k_p(frame) if idx < (len(split_frames) - 1) else frame
@@ -539,7 +538,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         ad_split = [
             self.audio_data.split_frames(start_frame=a, stop_frame=b)
-            for a, b in zip(split_frames, split_frames[1:], strict=False)
+            for a, b in itertools.pairwise(split_frames)
         ]
         return [
             SpectroData.from_audio_data(

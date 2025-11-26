@@ -170,7 +170,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
     def from_folder(  # noqa: PLR0913
         cls,
         folder: Path,
-        strptime_format: str,
+        strptime_format: str | None,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         timezone: str | pytz.timezone | None = None,
@@ -189,8 +189,12 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         ----------
         folder: Path
             The folder containing the audio files.
-        strptime_format: str
-            The strptime format of the timestamps in the audio file names.
+        strptime_format: str | None
+            The strptime format used in the filenames.
+            It should use valid strftime codes (https://strftime.org/).
+            If None, the first audio file of the folder will start
+            at first_file_begin, and each following file will start
+            at the end of the previous one.
         begin: Timestamp | None
             The begin of the audio dataset.
             Defaulted to the begin of the first file.
