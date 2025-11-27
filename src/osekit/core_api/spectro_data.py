@@ -122,6 +122,19 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         )
         return ax
 
+    @BaseData.end.setter
+    def end(self, end: Timestamp | None) -> None:
+        """Trim the end timestamp of the data.
+
+        End can only be set to an anterior date from the original end.
+
+        """
+        if end >= self.end:
+            return
+        if self.audio_data:
+            self.audio_data.end = end
+        BaseData.end.fset(self, end)
+
     @property
     def shape(self) -> tuple[int, ...]:
         """Shape of the Spectro data."""
@@ -269,7 +282,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         _, sx = welch(
             self.audio_data.get_value_calibrated()[
-                :, 0
+                :,
+                0,
             ],  # Only considers the 1rst channel
             fs=self.audio_data.sample_rate,
             window=window,
