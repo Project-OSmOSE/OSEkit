@@ -13,9 +13,6 @@ import numpy as np
 import soundfile as sf
 from pandas import Timedelta, Timestamp
 
-from osekit.config import (
-    TIMESTAMP_FORMATS_EXPORTED_FILES,
-)
 from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.audio_item import AudioItem
 from osekit.core_api.base_data import BaseData
@@ -252,7 +249,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         """
         file = AudioFile(
             path=folder / f"{self}.wav",
-            strptime_format=TIMESTAMP_FORMATS_EXPORTED_FILES,
+            begin=self.begin,
         )
         self.items = AudioData.from_files([file]).items
 
