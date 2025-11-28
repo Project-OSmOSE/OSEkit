@@ -100,7 +100,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         _, ax = plt.subplots(
             nrows=1,
             ncols=1,
-            figsize=(1.3 * 1800 / 100, 1.3 * 512 / 100),
+            figsize=(1813 / 100, 512 / 100),
             dpi=100,
         )
 
