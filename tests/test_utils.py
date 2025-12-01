@@ -3,22 +3,21 @@ from __future__ import annotations
 import time
 from contextlib import nullcontext
 from pathlib import Path
-from typing import Union
 
 import numpy as np
 import pandas as pd
 import pytest
+from pandas import Timedelta
 
+from osekit.utils.audio_utils import Normalization, normalize
 from osekit.utils.core_utils import (
     file_indexes_per_batch,
     get_closest_value_index,
     locked,
     nb_files_per_batch,
 )
-from osekit.utils.audio_utils import Normalization, normalize
 from osekit.utils.formatting_utils import aplose2raven
-from osekit.utils.path_utils import move_tree
-from pandas import Timedelta
+from osekit.utils.path_utils import absolute_path, move_tree
 
 
 @pytest.fixture
@@ -168,6 +167,44 @@ def test_move_tree(
 
     if not files - unmoved_files:
         assert not destination.exists()
+
+
+@pytest.mark.parametrize(
+    ("target_path", "root_path", "expected"),
+    [
+        pytest.param(
+            Path().absolute() / "starry" / "cat",
+            None,
+            nullcontext(Path().absolute() / "starry" / "cat"),
+            id="absolute_path_should_remain_absolute",
+        ),
+        pytest.param(
+            Path().absolute() / "starry" / "cat",
+            Path().absolute() / "other_folder",
+            nullcontext(Path().absolute() / "starry" / "cat"),
+            id="absolute_path_should_remain_absolute_even_if_provided_root",
+        ),
+        pytest.param(
+            Path("cat"),
+            Path().absolute() / "starry",
+            nullcontext(Path().absolute() / "starry" / "cat"),
+            id="relative_path_should_become_absolute",
+        ),
+        pytest.param(
+            Path("cat"),
+            None,
+            pytest.raises(ValueError, match="cat should be absolute"),
+            id="relative_path_without_root_raises",
+        ),
+    ],
+)
+def test_absolute_path(
+    target_path: Path,
+    root_path: Path | None,
+    expected: Path,
+) -> None:
+    with expected as e:
+        assert absolute_path(target_path=target_path, root_path=root_path) == e
 
 
 @pytest.mark.parametrize(
@@ -425,9 +462,10 @@ def test_get_closest_value_index(
     ],
 )
 def test_combined_normalization(
-    normalizations: list[Union[Normalization, int]], expected
+    normalizations: list[Normalization | int],
+    expected,
 ) -> None:
-    def combine_normalizations(normalizations: list[Union[Normalization, int]]):
+    def combine_normalizations(normalizations: list[Normalization | int]):
         normalizations = [
             Normalization(n) if type(n) is int else n for n in normalizations
         ]
@@ -488,7 +526,9 @@ def test_combined_normalization(
     ],
 )
 def test_normalization(
-    values: np.ndarray, normalization: Normalization, expected: np.ndarray
+    values: np.ndarray,
+    normalization: Normalization,
+    expected: np.ndarray,
 ) -> None:
     normalized = normalize(values=values, normalization=normalization)
     assert np.array_equal(normalized, expected)

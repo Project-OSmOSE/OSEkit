@@ -5,6 +5,7 @@ A File object associates file-written data to timestamps.
 
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING
 
 from osekit.config import (
@@ -119,7 +120,7 @@ class BaseFile(Event):
     def path(self, path: PathLike | str) -> None:
         path = Path(path)
         self._path = (
-            path.relative_to(self.relative_root) if self.relative_root else path
+            os.path.relpath(path, self.relative_root) if self.relative_root else path
         )
 
     @property

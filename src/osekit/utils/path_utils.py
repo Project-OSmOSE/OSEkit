@@ -42,3 +42,35 @@ def move_tree(
         shutil.move(file, file_destination / file.name)
     if not any(destination.iterdir()):
         destination.rmdir()
+
+
+def absolute_path(target_path: Path, root_path: Path | None = None) -> Path:
+    """Return the absolute path of a file from a relative root path.
+
+    If the file is already absolute or if the root path is None, will
+    return the absolute path.
+
+    Parameters
+    ----------
+    target_path: Path
+        Path to return as absolute.
+        Should already be absolute if no root_path is provided.
+    root_path: Path | None
+        Path from which the target_path is relatively expressed.
+        If None, target_path should be absolute.
+
+    Returns
+    -------
+    Path:
+        The absolute path to target_path.
+
+    """
+    if target_path.is_absolute():
+        return target_path
+    if root_path is None:
+        msg = (
+            rf"No root path is specified."
+            rf"Target path {target_path!s} should be absolute."
+        )
+        raise ValueError(msg)
+    return root_path / target_path

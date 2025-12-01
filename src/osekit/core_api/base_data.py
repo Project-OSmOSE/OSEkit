@@ -21,6 +21,7 @@ from osekit.config import (
 from osekit.core_api.base_file import BaseFile
 from osekit.core_api.base_item import BaseItem
 from osekit.core_api.event import Event
+from osekit.utils.path_utils import absolute_path
 from osekit.utils.timestamp_utils import strptime_from_text
 
 TItem = TypeVar("TItem", bound=BaseItem)
@@ -169,13 +170,20 @@ class BaseData(Generic[TItem, TFile], Event):
         }
 
     @classmethod
-    def from_dict(cls, dictionary: dict) -> BaseData:
+    def from_dict(
+        cls,
+        dictionary: dict,
+        root_path: Path | None = None,
+    ) -> BaseData:
         """Deserialize a BaseData from a dictionary.
 
         Parameters
         ----------
         dictionary: dict
             The serialized dictionary representing the BaseData.
+        root_path: Path | None
+            Path according to which the "files" values are expressed.
+            If None, "files" values should be absolute.
 
         Returns
         -------
@@ -185,7 +193,10 @@ class BaseData(Generic[TItem, TFile], Event):
         """
         files = [
             BaseFile(
-                Path(file["path"]),
+                absolute_path(
+                    target_path=Path(file["path"]),
+                    root_path=root_path,
+                ),
                 begin=strptime_from_text(
                     file["begin"],
                     datetime_template=TIMESTAMP_FORMATS_EXPORTED_FILES,

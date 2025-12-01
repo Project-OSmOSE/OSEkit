@@ -213,13 +213,16 @@ class BaseDataset(Generic[TData, TFile], Event):
         }
 
     @classmethod
-    def from_dict(cls, dictionary: dict) -> BaseDataset:
+    def from_dict(cls, dictionary: dict, root_path: Path | None = None) -> BaseDataset:
         """Deserialize a BaseDataset from a dictionary.
 
         Parameters
         ----------
         dictionary: dict
             The serialized dictionary representing the BaseData.
+        root_path: Path | None
+            Path according to which the "files" values are expressed.
+            If None, "files" values should be absolute.
 
         Returns
         -------
@@ -228,7 +231,10 @@ class BaseDataset(Generic[TData, TFile], Event):
 
         """
         return cls(
-            [BaseData.from_dict(d) for d in dictionary["data"].values()],
+            [
+                BaseData.from_dict(dictionary=d, root_path=root_path)
+                for d in dictionary["data"].values()
+            ],
             name=dictionary["name"],
             suffix=dictionary["suffix"],
             folder=Path(dictionary["folder"]),
@@ -253,7 +259,7 @@ class BaseDataset(Generic[TData, TFile], Event):
             The deserialized BaseDataset.
 
         """
-        return cls.from_dict(deserialize_json(file))
+        return cls.from_dict(dictionary=deserialize_json(file), root_path=file.parent)
 
     @classmethod
     def from_files(  # noqa: PLR0913
