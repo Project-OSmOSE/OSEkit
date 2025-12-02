@@ -31,7 +31,7 @@ def set_path_reference(
         if type(value) is dict:
             set_path_reference(value, root_path, reference)
             continue
-        if key == "path":
+        if key in ("path", "folder", "json"):
             serialized_dict[key] = (
                 (root_path / value).resolve()
                 if reference == "absolute"
