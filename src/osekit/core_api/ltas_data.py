@@ -19,6 +19,7 @@ and each part is replaced with an average of the stft performed within it.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -258,7 +259,12 @@ class LTASData(SpectroData):
         return super().to_dict() | {"nb_time_bins": self.nb_time_bins}
 
     @classmethod
-    def from_dict(cls, dictionary: dict, sft: ShortTimeFFT | None = None) -> LTASData:
+    def from_dict(
+        cls,
+        dictionary: dict,
+        sft: ShortTimeFFT | None = None,
+        root_path: Path | None = None,
+    ) -> LTASData:
         """Deserialize a LTASDataset from a dictionary.
 
         Parameters
@@ -268,6 +274,9 @@ class LTASData(SpectroData):
         sft: ShortTimeFFT | None
             The ShortTimeFFT used to compute the spectrogram.
             If not provided, the SFT parameters must be included in the dictionary.
+        root_path: Path | None
+            Path according to which the "files" values are expressed.
+            If None, "files" values should be absolute.
 
         Returns
         -------
@@ -276,7 +285,7 @@ class LTASData(SpectroData):
 
         """
         return cls.from_spectro_data(
-            SpectroData.from_dict(dictionary),
+            SpectroData.from_dict(dictionary=dictionary, sft=sft, root_path=root_path),
             nb_time_bins=dictionary["nb_time_bins"],
         )
 

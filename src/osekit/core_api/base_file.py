@@ -5,12 +5,16 @@ A File object associates file-written data to timestamps.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import os
+from collections.abc import Generator
+from contextlib import contextmanager
+from typing import TYPE_CHECKING, Any
 
 from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMATS_EXPORTED_FILES,
 )
+from osekit.utils.path_utils import absolute_path
 from osekit.utils.timestamp_utils import localize_timestamp
 
 if TYPE_CHECKING:
@@ -37,7 +41,6 @@ class BaseFile(Event):
     def __init__(
         self,
         path: PathLike | str,
-        relative_root: PathLike | str | None = None,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         strptime_format: str | list[str] | None = None,
@@ -52,9 +55,6 @@ class BaseFile(Event):
         ----------
         path: PathLike | str
             Full path to the file.
-        relative_root: PathLike | str | None
-            Root path according to which the path is specified.
-            If None, the path is absolute.
         begin: pandas.Timestamp | None
             Timestamp corresponding to the first data point in the file.
             If it is not provided, strptime_format is mandatory.
@@ -136,13 +136,16 @@ class BaseFile(Event):
         }
 
     @classmethod
-    def from_dict(cls, serialized: dict) -> BaseFile:
+    def from_dict(cls, serialized: dict, root_path: Path | None = None) -> BaseFile:
         """Return a BaseFile object from a dictionary.
 
         Parameters
         ----------
         serialized: dict
             The serialized dictionary representing the BaseFile.
+        root_path: Path | None
+            Path according to which the "files" values are expressed.
+            If None, "files" values should be absolute.
 
         Returns
         -------
@@ -151,7 +154,9 @@ class BaseFile(Event):
 
         """
         return cls(
-            path=serialized["path"],
+            path=absolute_path(
+                target_path=Path(serialized["path"]), root_path=root_path
+            ),
             strptime_format=TIMESTAMP_FORMATS_EXPORTED_FILES,
         )
 
@@ -182,3 +187,18 @@ class BaseFile(Event):
         folder.mkdir(exist_ok=True, parents=True)
         self.path.rename(destination_path)
         self.path = destination_path
+
+
+@contextmanager
+def relative_paths(
+    files: list[BaseFile],
+    root_path: Path,
+) -> Generator[None, Any, None]:
+    """Context manager that express files as relative to a root path."""
+    try:
+        for file in files:
+            file.path = os.path.relpath(file.path, root_path)
+        yield
+    finally:
+        for file in files:
+            file.path = (root_path / file.path).resolve()

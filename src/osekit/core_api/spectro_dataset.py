@@ -14,7 +14,9 @@ from pandas import DataFrame
 from scipy.signal import ShortTimeFFT
 
 from osekit.config import DPDEFAULT
+from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.base_dataset import BaseDataset
+from osekit.core_api.base_file import relative_paths
 from osekit.core_api.frequency_scale import Scale
 from osekit.core_api.json_serializer import deserialize_json
 from osekit.core_api.spectro_data import SpectroData
@@ -108,6 +110,11 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
     def folder(self) -> Path:
         """Folder in which the dataset files are located."""
         return self._folder if self._folder is not None else super().folder
+
+    @property
+    def audio_files(self) -> set[AudioFile]:
+        """AudioFiles to which the spectro data in this dataset is linked."""
+        return {af for sd in self.data for af in sd.audio_data.files}
 
     @folder.setter
     def folder(self, folder: Path) -> None:
@@ -429,13 +436,20 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         }
 
     @classmethod
-    def from_dict(cls, dictionary: dict) -> SpectroDataset:
+    def from_dict(
+        cls,
+        dictionary: dict,
+        root_path: Path | None = None,
+    ) -> SpectroDataset:
         """Deserialize a SpectroDataset from a dictionary.
 
         Parameters
         ----------
         dictionary: dict
             The serialized dictionary representing the SpectroDataset.
+        root_path: Path | None
+            Path according to which the "files" values are expressed.
+            If None, "files" values should be absolute.
 
         Returns
         -------
@@ -459,6 +473,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             cls.data_cls.from_dict(
                 params,
                 sft=next(sft for sft, linked_data in sfts if name in linked_data),
+                root_path=root_path,
             )
             for name, params in dictionary["data"].items()
         ]
@@ -608,6 +623,11 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             v_lim=v_lim,
         )
 
+    def write_json(self, folder: Path) -> None:
+        """Write a serialized BaseDataset to a JSON file."""
+        with relative_paths(files=self.audio_files, root_path=folder):
+            super().write_json(folder=folder)
+
     @classmethod
     def from_json(cls, file: Path) -> SpectroDataset:
         """Deserialize a SpectroDataset from a JSON file.
@@ -629,4 +649,4 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         # AudioData.from_json() is supposed to return a BaseData
         # without this duplicate definition...
         # I might look back at all this in the future
-        return cls.from_dict(deserialize_json(file))
+        return cls.from_dict(dictionary=deserialize_json(file), root_path=file.parent)

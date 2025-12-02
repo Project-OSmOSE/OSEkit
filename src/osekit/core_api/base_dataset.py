@@ -8,10 +8,8 @@ from __future__ import annotations
 
 import os
 from bisect import bisect
-from collections.abc import Generator
-from contextlib import contextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar
+from typing import TYPE_CHECKING, Generic, Literal, TypeVar
 
 from pandas import Timedelta, Timestamp, date_range
 from soundfile import LibsndfileError
@@ -20,7 +18,7 @@ from tqdm import tqdm
 from osekit.config import TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
 from osekit.config import global_logging_context as glc
 from osekit.core_api.base_data import BaseData
-from osekit.core_api.base_file import BaseFile
+from osekit.core_api.base_file import BaseFile, relative_paths
 from osekit.core_api.event import Event
 from osekit.core_api.json_serializer import deserialize_json, serialize_json
 from osekit.utils.timestamp_utils import last_window_end
@@ -192,21 +190,6 @@ class BaseDataset(Generic[TData, TFile], Event):
         ):
             data.write(folder=folder, link=link)
 
-    @contextmanager
-    def change_files_root(
-        self,
-        root_folder: Path | None = None,
-    ) -> Generator[None, Any, None]:
-        """Set the dataset files paths as relative to the specified folder."""
-        try:
-            root_folder = root_folder or self.folder
-            for file in self.files:
-                file.path = Path(os.path.relpath(file.path, root_folder))
-            yield
-        finally:
-            for file in self.files:
-                file.path = (root_folder / file.path).resolve()
-
     def to_dict(self) -> dict:
         """Serialize a BaseDataset to a dictionary.
 
@@ -254,7 +237,7 @@ class BaseDataset(Generic[TData, TFile], Event):
 
     def write_json(self, folder: Path) -> None:
         """Write a serialized BaseDataset to a JSON file."""
-        with self.change_files_root(root_folder=folder):
+        with relative_paths(files=self.files, root_path=folder):
             serialize_json(folder / f"{self.name}.json", self.to_dict())
 
     @classmethod

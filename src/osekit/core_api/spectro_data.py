@@ -731,6 +731,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         cls,
         dictionary: dict,
         sft: ShortTimeFFT | None = None,
+        root_path: Path | None = None,
     ) -> SpectroData:
         """Deserialize a SpectroData from a dictionary.
 
@@ -741,6 +742,9 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         sft: ShortTimeFFT | None
             The ShortTimeFFT used to compute the spectrogram.
             If not provided, the SFT parameters must be included in the dictionary.
+        root_path: Path | None
+            Path according to which the "files" values are expressed.
+            If None, "files" values should be absolute.
 
         Returns
         -------
@@ -755,14 +759,17 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             sft = ShortTimeFFT(**dictionary["sft"])
 
         if dictionary["audio_data"] is None:
-            base_data = BaseData.from_dict(dictionary)
+            base_data = BaseData.from_dict(dictionary=dictionary, root_path=root_path)
             return cls.from_base_data(
                 data=base_data,
                 fft=sft,
                 colormap=dictionary["colormap"],
             )
 
-        audio_data = AudioData.from_dict(dictionary["audio_data"])
+        audio_data = AudioData.from_dict(
+            dictionary=dictionary["audio_data"],
+            root_path=root_path,
+        )
         v_lim = (
             None if type(dictionary["v_lim"]) is object else tuple(dictionary["v_lim"])
         )
@@ -775,7 +782,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         if dictionary["files"]:
             spectro_files = [
-                SpectroFile.from_dict(sf) for sf in dictionary["files"].values()
+                SpectroFile.from_dict(serialized=sf, root_path=root_path)
+                for sf in dictionary["files"].values()
             ]
             spectro_data.items = SpectroData.from_files(spectro_files).items
 
