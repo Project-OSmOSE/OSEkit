@@ -383,13 +383,16 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         )
 
     @classmethod
-    def from_dict(cls, dictionary: dict) -> AudioData:
+    def from_dict(cls, dictionary: dict, root_path: Path | None = None) -> AudioData:
         """Deserialize an AudioData from a dictionary.
 
         Parameters
         ----------
         dictionary: dict
             The serialized dictionary representing the AudioData.
+        root_path: Path | None
+            Path according to which the "files" values are expressed.
+            If None, "files" values should be absolute.
 
         Returns
         -------
@@ -397,7 +400,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             The deserialized AudioData.
 
         """
-        base_data = BaseData.from_dict(dictionary)
+        base_data = BaseData.from_dict(dictionary=dictionary, root_path=root_path)
         instrument = (
             None
             if dictionary["instrument"] is None

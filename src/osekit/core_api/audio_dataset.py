@@ -145,13 +145,16 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         )
 
     @classmethod
-    def from_dict(cls, dictionary: dict) -> AudioDataset:
+    def from_dict(cls, dictionary: dict, root_path: Path | None = None) -> AudioDataset:
         """Deserialize an AudioDataset from a dictionary.
 
         Parameters
         ----------
         dictionary: dict
             The serialized dictionary representing the AudioDataset.
+        root_path: Path | None
+            Path according to which the "files" values are expressed.
+            If None, "files" values should be absolute.
 
         Returns
         -------
@@ -159,12 +162,16 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             The deserialized AudioDataset.
 
         """
-        return cls(
-            [AudioData.from_dict(d) for d in dictionary["data"].values()],
+        audio_dataset = cls(
+            [
+                AudioData.from_dict(dictionary=d, root_path=root_path)
+                for d in dictionary["data"].values()
+            ],
             name=dictionary["name"],
             suffix=dictionary["suffix"],
             folder=Path(dictionary["folder"]),
         )
+        return audio_dataset
 
     @classmethod
     def from_folder(  # noqa: PLR0913
@@ -377,4 +384,4 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         # AudioData.from_json() is supposed to return a BaseData
         # without this duplicate definition...
         # I might look back at all this in the future
-        return cls.from_dict(deserialize_json(file))
+        return cls.from_dict(dictionary=deserialize_json(file), root_path=file.parent)

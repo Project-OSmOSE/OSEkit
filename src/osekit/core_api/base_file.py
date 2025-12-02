@@ -5,7 +5,6 @@ A File object associates file-written data to timestamps.
 
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING
 
 from osekit.config import (
@@ -75,7 +74,6 @@ class BaseFile(Event):
             to the specified timezone.
 
         """
-        self.relative_root = relative_root
         self.path = Path(path)
 
         if begin is None and strptime_format is None:
@@ -96,37 +94,13 @@ class BaseFile(Event):
         self.end = end if end is not None else (self.begin + Timedelta(seconds=1))
 
     @property
-    def relative_root(self) -> Path | None:
-        """Root path according to which the path is specified.
-
-        If None, the path is absolute.
-        """
-        return self._relative_root
-
-    @relative_root.setter
-    def relative_root(self, relative_root: Path | None) -> None:
-        self._relative_root = relative_root
-
-    @property
     def path(self) -> Path:
-        """Absolute path of the file."""
-        return (
-            self.relative_root / self.relative_path
-            if self.relative_root
-            else self.relative_path
-        )
+        """Path of the file."""
+        return self._path
 
     @path.setter
     def path(self, path: PathLike | str) -> None:
-        path = Path(path)
-        self._path = (
-            os.path.relpath(path, self.relative_root) if self.relative_root else path
-        )
-
-    @property
-    def relative_path(self) -> Path:
-        """Path of the file relative to the relative_root path."""
-        return self._path
+        self._path = Path(path)
 
     def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray:
         """Return the data that is between start and stop from the file.
@@ -176,9 +150,8 @@ class BaseFile(Event):
             The deserialized BaseFile object.
 
         """
-        path = serialized["path"]
         return cls(
-            path=path,
+            path=serialized["path"],
             strptime_format=TIMESTAMP_FORMATS_EXPORTED_FILES,
         )
 

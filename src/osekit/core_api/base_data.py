@@ -193,10 +193,7 @@ class BaseData(Generic[TItem, TFile], Event):
         """
         files = [
             BaseFile(
-                absolute_path(
-                    target_path=Path(file["path"]),
-                    root_path=root_path,
-                ),
+                path=absolute_path(target_path=Path(file["path"]), root_path=root_path),
                 begin=strptime_from_text(
                     file["begin"],
                     datetime_template=TIMESTAMP_FORMATS_EXPORTED_FILES,

@@ -8,8 +8,10 @@ from __future__ import annotations
 
 import os
 from bisect import bisect
+from collections.abc import Generator
+from contextlib import contextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING, Generic, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar
 
 from pandas import Timedelta, Timestamp, date_range
 from soundfile import LibsndfileError
@@ -190,10 +192,20 @@ class BaseDataset(Generic[TData, TFile], Event):
         ):
             data.write(folder=folder, link=link)
 
-    def set_files_as_relative(self) -> None:
-        """Set the dataset folder as relative root of the files."""
-        for file in self.files:
-            file.relative_root = self.folder
+    @contextmanager
+    def change_files_root(
+        self,
+        root_folder: Path | None = None,
+    ) -> Generator[None, Any, None]:
+        """Set the dataset files paths as relative to the specified folder."""
+        try:
+            root_folder = root_folder or self.folder
+            for file in self.files:
+                file.path = Path(os.path.relpath(file.path, root_folder))
+            yield
+        finally:
+            for file in self.files:
+                file.path = (root_folder / file.path).resolve()
 
     def to_dict(self) -> dict:
         """Serialize a BaseDataset to a dictionary.
@@ -204,7 +216,6 @@ class BaseDataset(Generic[TData, TFile], Event):
             The serialized dictionary representing the BaseDataset.
 
         """
-        self.set_files_as_relative()
         return {
             "data": {str(d): d.to_dict() for d in self.data},
             "name": self._name,
@@ -230,7 +241,7 @@ class BaseDataset(Generic[TData, TFile], Event):
             The deserialized BaseDataset.
 
         """
-        return cls(
+        base_dataset = cls(
             [
                 BaseData.from_dict(dictionary=d, root_path=root_path)
                 for d in dictionary["data"].values()
@@ -239,10 +250,12 @@ class BaseDataset(Generic[TData, TFile], Event):
             suffix=dictionary["suffix"],
             folder=Path(dictionary["folder"]),
         )
+        return base_dataset
 
     def write_json(self, folder: Path) -> None:
         """Write a serialized BaseDataset to a JSON file."""
-        serialize_json(folder / f"{self.name}.json", self.to_dict())
+        with self.change_files_root(root_folder=folder):
+            serialize_json(folder / f"{self.name}.json", self.to_dict())
 
     @classmethod
     def from_json(cls, file: Path) -> BaseDataset:
@@ -522,7 +535,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         if not valid_files:
             raise FileNotFoundError(f"No valid file found in {folder}.")
 
-        return BaseDataset.from_files(
+        base_dataset = BaseDataset.from_files(
             files=valid_files,
             begin=begin,
             end=end,
@@ -531,3 +544,5 @@ class BaseDataset(Generic[TData, TFile], Event):
             data_duration=data_duration,
             name=name,
         )
+        base_dataset.folder = folder
+        return base_dataset
