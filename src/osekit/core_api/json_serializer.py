@@ -6,6 +6,62 @@ from pathlib import Path
 from typing import Literal
 
 
+def absolute_to_relative(
+    target_path: os.PathLike | str, root_path: os.PathLike | str
+) -> Path:
+    """Convert an absolute path in a relative path.
+
+    Parameters
+    ----------
+    target_path: os.PathLike | str
+        Absolute path to the target.
+    root_path: os.PathLike | str
+        Path relative to which the target should be expressed.
+
+    Returns
+    -------
+    Path:
+        Target path expressed relative to the root path.
+
+    """
+    target_path, root_path = map(Path, (target_path, root_path))
+    return Path(os.path.relpath(path=target_path, start=root_path))
+
+
+def relative_to_absolute(
+    target_path: os.PathLike | str,
+    root_path: os.PathLike | str,
+) -> Path:
+    r"""Convert a relative path in an absolute path.
+
+    Parameters
+    ----------
+    target_path: os.PathLike | str
+        Relative path to the target.
+        If the target is absolute, the first folder with a same name will be considered
+        as the first common parent.
+    root_path: os.PathLike | str
+        Path from which the target is expressed.
+
+    Returns
+    -------
+    Path:
+        Absolute path to the target.
+
+    >>> str(relative_to_absolute(target_path=r'relative\target', root_path=r'C:\absolute\root'))
+    'C:\\absolute\\root\\relative\\target'
+    >>> str(relative_to_absolute(target_path=r'D:\absolute\path\root\target', root_path=r'C:\absolute\root'))
+    'C:\\absolute\\root\\target'
+
+    """
+    target_path, root_path = map(Path, (target_path, root_path))
+    if target_path.is_absolute():
+        return Path(
+            str(root_path) + str(target_path).split(root_path.stem, maxsplit=1)[1],
+        )
+    return (root_path / target_path).resolve()
+
+
 def set_path_reference(
     serialized_dict: dict,
     root_path: Path,
@@ -33,9 +89,9 @@ def set_path_reference(
             continue
         if key in ("path", "folder", "json"):
             serialized_dict[key] = (
-                (root_path / value).resolve()
+                str(relative_to_absolute(target_path=value, root_path=root_path))
                 if reference == "absolute"
-                else os.path.relpath(value, root_path)
+                else str(absolute_to_relative(target_path=value, root_path=root_path))
             )
 
 
