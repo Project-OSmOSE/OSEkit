@@ -930,3 +930,14 @@ def test_spectro_dataset_serialization(
     assert sds.scale == sds4.scale
     assert sds.has_default_name == sds4.has_default_name
     assert sds.begin == sds4.begin
+
+
+"""
+def test_absolute_to_relative(target: str, root: str, expected: str) -> None:
+
+
+def test_relative_paths_serialization(tmp_path: Path) -> None:
+    dictionary = {
+        "path": "",
+    }
+"""

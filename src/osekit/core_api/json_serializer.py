@@ -2,7 +2,7 @@
 
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath  # noqa: F401
 from typing import Literal
 
 from osekit.utils.path_utils import is_absolute
@@ -41,8 +41,8 @@ def relative_to_absolute(
     ----------
     target_path: os.PathLike | str
         Relative path to the target.
-        If the target is absolute, the first folder with a same name will be considered
-        as the first common parent.
+        If the target is absolute, the first folder in the root parents that appear
+        in the target parent will be considered as common.
     root_path: os.PathLike | str
         Path from which the target is expressed.
 
@@ -51,18 +51,27 @@ def relative_to_absolute(
     Path:
         Absolute path to the target.
 
-    >>> str(relative_to_absolute(target_path=r'relative\target', root_path=r'C:\absolute\root'))
+    >>> str(PureWindowsPath(relative_to_absolute(target_path=r'relative\target', root_path=r'C:\absolute\root')))
     'C:\\absolute\\root\\relative\\target'
-    >>> str(relative_to_absolute(target_path=r'D:\absolute\path\root\target', root_path=r'C:\absolute\root'))
-    'C:\\absolute\\root\\target'
+    >>> str(PureWindowsPath(relative_to_absolute(target_path=r'D:\absolute\path\root\target', root_path=r'C:\absolute\root')))
+    'C:\\absolute\\path\\root\\target'
+    >>> str(PurePosixPath(relative_to_absolute(target_path=r'C:/user/cool/data/audio/fun.wav', root_path=r'/home/dataset/cool/processed/stuff')))
+    '/home/dataset/cool/data/audio/fun.wav'
 
     """
-    target_path, root_path = map(Path, (target_path, root_path))
+    target_path, root_path = map(PureWindowsPath, (target_path, root_path))
     if is_absolute(target_path):
-        return Path(
-            str(root_path) + str(target_path).split(root_path.stem, maxsplit=1)[1],
+        first_common_folder = next(
+            folder for folder in root_path.parts if folder in target_path.parts
         )
-    return (root_path / target_path).resolve()
+        return Path(
+            PureWindowsPath(
+                str(root_path).split(first_common_folder)[0]
+                + first_common_folder
+                + str(target_path).split(first_common_folder, maxsplit=1)[1],
+            )
+        )
+    return Path(root_path / target_path).resolve()
 
 
 def set_path_reference(
