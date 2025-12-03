@@ -5,9 +5,12 @@ import os
 from pathlib import Path
 from typing import Literal
 
+from osekit.utils.path_utils import is_absolute
+
 
 def absolute_to_relative(
-    target_path: os.PathLike | str, root_path: os.PathLike | str
+    target_path: os.PathLike | str,
+    root_path: os.PathLike | str,
 ) -> Path:
     """Convert an absolute path in a relative path.
 
@@ -55,7 +58,7 @@ def relative_to_absolute(
 
     """
     target_path, root_path = map(Path, (target_path, root_path))
-    if target_path.is_absolute():
+    if is_absolute(target_path):
         return Path(
             str(root_path) + str(target_path).split(root_path.stem, maxsplit=1)[1],
         )
