@@ -134,6 +134,7 @@ class Dataset:
             name="original",
             instrument=self.instrument,
         )
+
         self.datasets[ads.name] = {
             "class": type(ads).__name__,
             "analysis": "original",
@@ -690,7 +691,6 @@ class Dataset:
                 None if self.instrument is None else self.instrument.to_dict()
             ),
             "depth": self.depth,
-            "folder": str(self.folder),
             "gps_coordinates": self.gps_coordinates,
             "strptime_format": self.strptime_format,
             "timezone": self.timezone,
@@ -728,7 +728,7 @@ class Dataset:
                 "dataset": dataset_class.from_json(Path(dataset["json"])),
             }
         return cls(
-            folder=Path(dictionary["folder"]),
+            folder=Path(),
             instrument=Instrument.from_dict(dictionary["instrument"]),
             strptime_format=dictionary["strptime_format"],
             gps_coordinates=dictionary["gps_coordinates"],
@@ -758,6 +758,7 @@ class Dataset:
 
         """
         instance = cls.from_dict(deserialize_json(file))
+        instance.folder = file.parent
         instance._create_logger()  # noqa: SLF001
         return instance
 
