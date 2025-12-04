@@ -998,33 +998,33 @@ def test_relative_to_absolute(target: str, root: str, expected: str) -> None:
     assert path.resolve() == Path(PureWindowsPath(expected)).resolve()
 
 
-def test_relative_paths_serialization() -> None:
+def test_relative_paths_serialization(tmp_path: Path) -> None:
     dictionary = {
-        "path": str(PureWindowsPath("C:/user/cool")),
-        "folder": str(PureWindowsPath("C:/user/cool")),
-        "json": str(PureWindowsPath("C:/user/cool")),
-        "ignored": str(PureWindowsPath("C:/user/cool")),
+        "path": str(tmp_path / "user" / "cool"),
+        "folder": str(tmp_path / "user" / "cool"),
+        "json": str(tmp_path / "user" / "cool"),
+        "ignored": str(tmp_path / "user" / "cool"),
         "not_a_path": "hello",
         "nested_dict": {
-            "path": str(PureWindowsPath("C:/user/cool")),
-            "folder": str(PureWindowsPath("C:/user/cool")),
-            "json": str(PureWindowsPath("C:/user/cool")),
-            "ignored": str(PureWindowsPath("C:/user/cool")),
+            "path": str(tmp_path / "user" / "cool"),
+            "folder": str(tmp_path / "user" / "cool"),
+            "json": str(tmp_path / "user" / "cool"),
+            "ignored": str(tmp_path / "user" / "cool"),
             "not_a_path": "hello",
         },
     }
 
     relative_to_user_folder = {
-        "path": str(PureWindowsPath("cool")),
-        "folder": str(PureWindowsPath("cool")),
-        "json": str(PureWindowsPath("cool")),
-        "ignored": str(PureWindowsPath("C:/user/cool")),
+        "path": str(Path("cool")),
+        "folder": str(Path("cool")),
+        "json": str(Path("cool")),
+        "ignored": str(tmp_path / "user" / "cool"),
         "not_a_path": "hello",
         "nested_dict": {
-            "path": str(PureWindowsPath("cool")),
-            "folder": str(PureWindowsPath("cool")),
-            "json": str(PureWindowsPath("cool")),
-            "ignored": str(PureWindowsPath("C:/user/cool")),
+            "path": str(Path("cool")),
+            "folder": str(Path("cool")),
+            "json": str(Path("cool")),
+            "ignored": str(tmp_path / "user" / "cool"),
             "not_a_path": "hello",
         },
     }
@@ -1034,7 +1034,7 @@ def test_relative_paths_serialization() -> None:
     # Absolute to relative
     set_path_reference(
         serialized_dict=dict_copy,
-        root_path=Path(PureWindowsPath("C:/user")),
+        root_path=tmp_path / "user",
         reference="relative",
     )
     assert dict_copy == relative_to_user_folder
@@ -1042,7 +1042,7 @@ def test_relative_paths_serialization() -> None:
     # Relative to absolute
     set_path_reference(
         serialized_dict=dict_copy,
-        root_path=Path(PureWindowsPath("C:/user")),
+        root_path=tmp_path / "user",
         reference="absolute",
     )
     assert dict_copy == dictionary
@@ -1050,7 +1050,7 @@ def test_relative_paths_serialization() -> None:
     # Absolute to absolute
     set_path_reference(
         serialized_dict=dict_copy,
-        root_path=Path(PureWindowsPath("C:/user")),
+        root_path=tmp_path / "user",
         reference="absolute",
     )
     assert dict_copy == dictionary
