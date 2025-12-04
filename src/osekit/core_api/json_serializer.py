@@ -62,14 +62,16 @@ def relative_to_absolute(
     target_path, root_path = map(PureWindowsPath, (target_path, root_path))
     if is_absolute(target_path):
         first_common_folder = next(
-            folder for folder in root_path.parts if folder in target_path.parts
+            folder
+            for folder in root_path.parts
+            if (folder in target_path.parts and folder != root_path.anchor)
         )
         return Path(
             PureWindowsPath(
                 str(root_path).split(first_common_folder)[0]
                 + first_common_folder
                 + str(target_path).split(first_common_folder, maxsplit=1)[1],
-            )
+            ),
         )
     return Path(root_path / target_path).resolve()
 
