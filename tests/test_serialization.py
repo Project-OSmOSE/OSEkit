@@ -18,7 +18,7 @@ from osekit.core_api.audio_dataset import AudioDataset
 from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.frequency_scale import Scale, ScalePart
 from osekit.core_api.instrument import Instrument
-from osekit.core_api.json_serializer import relative_to_absolute
+from osekit.core_api.json_serializer import relative_to_absolute, set_path_reference
 from osekit.core_api.spectro_data import SpectroData
 from osekit.core_api.spectro_dataset import SpectroDataset
 from osekit.core_api.spectro_file import SpectroFile
@@ -998,9 +998,59 @@ def test_relative_to_absolute(target: str, root: str, expected: str) -> None:
     assert path.resolve() == Path(PureWindowsPath(expected)).resolve()
 
 
-"""
-def test_relative_paths_serialization(tmp_path: Path) -> None:
+def test_relative_paths_serialization() -> None:
     dictionary = {
-        "path": "",
+        "path": str(PureWindowsPath("C:/user/cool")),
+        "folder": str(PureWindowsPath("C:/user/cool")),
+        "json": str(PureWindowsPath("C:/user/cool")),
+        "ignored": str(PureWindowsPath("C:/user/cool")),
+        "not_a_path": "hello",
+        "nested_dict": {
+            "path": str(PureWindowsPath("C:/user/cool")),
+            "folder": str(PureWindowsPath("C:/user/cool")),
+            "json": str(PureWindowsPath("C:/user/cool")),
+            "ignored": str(PureWindowsPath("C:/user/cool")),
+            "not_a_path": "hello",
+        },
     }
-"""
+
+    relative_to_user_folder = {
+        "path": str(PureWindowsPath("cool")),
+        "folder": str(PureWindowsPath("cool")),
+        "json": str(PureWindowsPath("cool")),
+        "ignored": str(PureWindowsPath("C:/user/cool")),
+        "not_a_path": "hello",
+        "nested_dict": {
+            "path": str(PureWindowsPath("cool")),
+            "folder": str(PureWindowsPath("cool")),
+            "json": str(PureWindowsPath("cool")),
+            "ignored": str(PureWindowsPath("C:/user/cool")),
+            "not_a_path": "hello",
+        },
+    }
+
+    dict_copy = dict(dictionary)
+
+    # Absolute to relative
+    set_path_reference(
+        serialized_dict=dict_copy,
+        root_path=Path(PureWindowsPath("C:/user")),
+        reference="relative",
+    )
+    assert dict_copy == relative_to_user_folder
+
+    # Relative to absolute
+    set_path_reference(
+        serialized_dict=dict_copy,
+        root_path=Path(PureWindowsPath("C:/user")),
+        reference="absolute",
+    )
+    assert dict_copy == dictionary
+
+    # Absolute to absolute
+    set_path_reference(
+        serialized_dict=dict_copy,
+        root_path=Path(PureWindowsPath("C:/user")),
+        reference="absolute",
+    )
+    assert dict_copy == dictionary
