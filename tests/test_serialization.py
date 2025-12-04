@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from pathlib import Path, PureWindowsPath
 
 import numpy as np
 import pytest
@@ -18,13 +18,11 @@ from osekit.core_api.audio_dataset import AudioDataset
 from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.frequency_scale import Scale, ScalePart
 from osekit.core_api.instrument import Instrument
+from osekit.core_api.json_serializer import relative_to_absolute, set_path_reference
 from osekit.core_api.spectro_data import SpectroData
 from osekit.core_api.spectro_dataset import SpectroDataset
 from osekit.core_api.spectro_file import SpectroFile
 from osekit.utils.audio_utils import Normalization
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 @pytest.mark.parametrize(
@@ -930,3 +928,129 @@ def test_spectro_dataset_serialization(
     assert sds.scale == sds4.scale
     assert sds.has_default_name == sds4.has_default_name
     assert sds.begin == sds4.begin
+
+
+"""
+    >>> str(PureWindowsPath(relative_to_absolute(target_path=r'relative\target', root_path=r'C:\absolute\root')))
+    'C:\\absolute\\root\\relative\\target'
+    >>> str(PureWindowsPath(relative_to_absolute(target_path=r'D:\absolute\\path\root\target', root_path=r'C:\absolute\root')))
+    'C:\\absolute\\path\\root\\target'
+    >>> str(PurePosixPath(relative_to_absolute(target_path=r'C:/user/cool/data/audio/fun.wav', root_path=r'/home/dataset/cool/processed/stuff')))
+    '/home/dataset/cool/data/audio/fun.wav'
+"""
+
+
+@pytest.mark.parametrize(
+    ("target", "root", "expected"),
+    [
+        pytest.param(
+            "saphir.wav",
+            "C:/baston",
+            "C:/baston/saphir.wav",
+            id="relative_to_windows_root",
+        ),
+        pytest.param(
+            "i/want/sky.wav",
+            "C:/what/would",
+            "C:/what/would/i/want/sky.wav",
+            id="relative_tree_to_windows_root",
+        ),
+        pytest.param(
+            "agency/group",
+            "/the",
+            "/the/agency/group",
+            id="relative_tree_to_posix_root",
+        ),
+        pytest.param(
+            "C:/user/dataset/file.csv",
+            "C:/root/to/dataset",
+            "C:/root/to/dataset/file.csv",
+            id="absolute_windows_path_to_windows_root",
+        ),
+        pytest.param(
+            "C:/user/dataset/file.csv",
+            "C:/root/to/dataset/with/more",
+            "C:/root/to/dataset/file.csv",
+            id="absolute_windows_path_to_windows_root_takes_first_common_folder",
+        ),
+        pytest.param(
+            "C:/user/datasets/audio/analysis/audio/audio/audio.wav",
+            "C:/root/to/my_datasets/audio/some/stuff",
+            "C:/root/to/my_datasets/audio/analysis/audio/audio/audio.wav",
+            id="absolute_windows_path_to_windows_root_with_repeated_folders",
+        ),
+        pytest.param(
+            "C:/user/datasets/audio/analysis/audio/audio/audio.wav",
+            "/root/to/my_datasets/audio/some/stuff",
+            "/root/to/my_datasets/audio/analysis/audio/audio/audio.wav",
+            id="absolute_windows_path_to_posix_root_with_repeated_folders",
+        ),
+        pytest.param(
+            "audio/analysis/audio/audio/audio.wav",
+            "/root/to/my_datasets/audio/some/stuff",
+            "/root/to/my_datasets/audio/some/stuff/audio/analysis/audio/audio/audio.wav",
+            id="relative_path_to_posix_root_with_repeated_folders",
+        ),
+    ],
+)
+def test_relative_to_absolute(target: str, root: str, expected: str) -> None:
+    path: Path = relative_to_absolute(target_path=target, root_path=root)
+    assert path.resolve() == Path(PureWindowsPath(expected)).resolve()
+
+
+def test_relative_paths_serialization(tmp_path: Path) -> None:
+    dictionary = {
+        "path": str(tmp_path / "user" / "cool"),
+        "folder": str(tmp_path / "user" / "cool"),
+        "json": str(tmp_path / "user" / "cool"),
+        "ignored": str(tmp_path / "user" / "cool"),
+        "not_a_path": "hello",
+        "nested_dict": {
+            "path": str(tmp_path / "user" / "cool"),
+            "folder": str(tmp_path / "user" / "cool"),
+            "json": str(tmp_path / "user" / "cool"),
+            "ignored": str(tmp_path / "user" / "cool"),
+            "not_a_path": "hello",
+        },
+    }
+
+    relative_to_user_folder = {
+        "path": str(Path("cool")),
+        "folder": str(Path("cool")),
+        "json": str(Path("cool")),
+        "ignored": str(tmp_path / "user" / "cool"),
+        "not_a_path": "hello",
+        "nested_dict": {
+            "path": str(Path("cool")),
+            "folder": str(Path("cool")),
+            "json": str(Path("cool")),
+            "ignored": str(tmp_path / "user" / "cool"),
+            "not_a_path": "hello",
+        },
+    }
+
+    dict_copy = dict(dictionary)
+
+    # Absolute to relative
+    set_path_reference(
+        serialized_dict=dict_copy,
+        root_path=tmp_path / "user",
+        reference="relative",
+    )
+    assert dict_copy == relative_to_user_folder
+
+    # Relative to absolute
+    set_path_reference(
+        serialized_dict=dict_copy,
+        root_path=tmp_path / "user",
+        reference="absolute",
+    )
+    assert dict_copy == dictionary
+
+    # Absolute to absolute
+    set_path_reference(
+        serialized_dict=dict_copy,
+        root_path=tmp_path / "user",
+        reference="absolute",
+    )
+    assert dict_copy == dictionary
