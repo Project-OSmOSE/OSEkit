@@ -1186,3 +1186,37 @@ def test_spectro_multichannel_audio_file(
         treated_audio[0],
         [1, 5, 9],
     )  # Only first channel is accounted for.
+
+
+def test_spectro_begin_and_end(monkeypatch: pytest.MonkeyPatch) -> None:
+    def mocked_ad_init(
+        self: AudioData | SpectroData,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        begin: Timestamp = kwargs["begin"]
+        end: Timestamp = kwargs["end"]
+
+        self.items = [Event(begin=begin, end=end)]
+        self.begin = kwargs["begin"]
+        self.end = kwargs["end"]
+
+    monkeypatch.setattr(AudioData, "__init__", mocked_ad_init)
+    monkeypatch.setattr(SpectroData, "__init__", mocked_ad_init)
+
+    ad = AudioData(
+        begin=Timestamp("2020-01-01 00:00:00"),
+        end=Timestamp("2020-01-01 00:01:00"),
+    )
+    sd = SpectroData(
+        begin=Timestamp("2020-01-01 00:00:00"),
+        end=Timestamp("2020-01-01 00:01:00"),
+    )
+
+    sd.audio_data = ad
+
+    sd.begin = Timestamp("2020-01-01 00:00:15")
+    sd.end = Timestamp("2020-01-01 00:00:30")
+
+    assert ad.begin == sd.begin
+    assert ad.end == sd.end

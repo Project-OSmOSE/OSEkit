@@ -135,6 +135,19 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             self.audio_data.end = end
         BaseData.end.fset(self, end)
 
+    @BaseData.begin.setter
+    def begin(self, begin: Timestamp | None) -> None:
+        """Trim the begin timestamp of the data.
+
+        Begin can only be set to a posterior date from the original begin.
+
+        """
+        if begin <= self.begin:
+            return
+        if self.audio_data:
+            self.audio_data.begin = begin
+        BaseData.begin.fset(self, begin)
+
     @property
     def shape(self) -> tuple[int, ...]:
         """Shape of the Spectro data."""
