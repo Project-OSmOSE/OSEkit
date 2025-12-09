@@ -43,6 +43,21 @@ The complete list of extra parameters is provided in the :class:`osekit.public_a
         strptime_format="%y%m%d%H%M%S" # Must match the strptime format of your audio files
     )
 
+If you don't know (or don't care to parse) the start timestamps of your audio files, you can specify the `first_file_begin` parameter.
+Then, the first valid audio file found in the folder will be considered as starting at this timestamp,
+and each next valid audio file will be considered as starting directly after the end of the previous one:
+
+.. code-block:: python
+
+    from osekit.public_api.dataset import Dataset
+    from pathlib import Path
+
+    dataset = Dataset(
+        folder=Path(r"...\dataset_folder"),
+        strptime_format=None # Must match the strptime format of your audio files,
+        first_file_begin=Timestamp("2020-01-01 00:00:00") # Will mark the start of your audio files
+    )
+
 Once this is done, the ``Dataset`` can be built using the :meth:`osekit.public_api.dataset.Dataset.build` method.
 
 .. code-block:: python
