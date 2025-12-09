@@ -251,7 +251,7 @@ Non-timestamped audio files
 
 In case you don't know the timestamps at which your audio files were recorded (or you don't care specifying them), you can specify
 a default timestamp at which the first valid audio file in the folder will be considered to start thanks to the
-`first_file_begin` parameter.
+``first_file_begin`` parameter.
 
 Each next valid audio file will be considered to start immediately after the end of the previous one.
 
@@ -275,8 +275,8 @@ Each next valid audio file will be considered to start immediately after the end
         normalization="dc_reject"
     )
 
-In the example above, the first valid file in the folder will be considered to start at `2009-01-06 10:00:00`.
-If this first file is 1 hour-long, the next one will be considered to start at `2009-01-06 11:00:00`, and so on.
+In the example above, the first valid file in the folder will be considered to start at ``2009-01-06 10:00:00``.
+If this first file is 1 hour-long, the next one will be considered to start at ``2009-01-06 11:00:00``, and so on.
 
 Manipulation
 """"""""""""

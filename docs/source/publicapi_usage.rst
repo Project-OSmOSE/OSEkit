@@ -43,7 +43,7 @@ The complete list of extra parameters is provided in the :class:`osekit.public_a
         strptime_format="%y%m%d%H%M%S" # Must match the strptime format of your audio files
     )
 
-If you don't know (or don't care to parse) the start timestamps of your audio files, you can specify the `first_file_begin` parameter.
+If you don't know (or don't care to parse) the start timestamps of your audio files, you can specify the ``first_file_begin`` parameter.
 Then, the first valid audio file found in the folder will be considered as starting at this timestamp,
 and each next valid audio file will be considered as starting directly after the end of the previous one:
 
