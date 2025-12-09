@@ -1,5 +1,5 @@
-Computing multiple spectrograms
-===============================
+Computing multiple spectrograms (timestamped files)
+===================================================
 
 .. _example_multiple_spectrograms:
 

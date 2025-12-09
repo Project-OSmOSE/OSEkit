@@ -62,4 +62,5 @@ In the ``docs/source/_static/sample_audio/timestamped`` folder, files are just n
     example_reshaping_multiple_files
     example_spectrogram
     example_multiple_spectrograms
+    example_multiple_spectrograms_id
     example_ltas
