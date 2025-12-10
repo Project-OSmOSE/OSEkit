@@ -148,7 +148,10 @@ class BaseDataset(Generic[TData, TFile], Event):
             Destination folder in which the dataset files will be moved.
 
         """
-        for file in tqdm(self.files, disable=os.environ.get("DISABLE_TQDM", "")):
+        for file in tqdm(
+            self.files,
+            disable=os.getenv("DISABLE_TQDM", "False").lower() in ("true", "1", "t"),
+        ):
             file.move(folder)
         self._folder = folder
 
@@ -186,7 +189,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         last = len(self.data) if last is None else last
         for data in tqdm(
             self.data[first:last],
-            disable=os.environ.get("DISABLE_TQDM", ""),
+            disable=os.getenv("DISABLE_TQDM", "False").lower() in ("true", "1", "t"),
         ):
             data.write(folder=folder, link=link)
 
@@ -348,7 +351,7 @@ class BaseDataset(Generic[TData, TFile], Event):
 
         for data_begin in tqdm(
             date_range(begin, end, freq=freq, inclusive="left"),
-            disable=os.environ.get("DISABLE_TQDM", ""),
+            disable=os.getenv("DISABLE_TQDM", "False").lower() in ("true", "1", "t"),
         ):
             data_end = Timestamp(data_begin + data_duration)
             while (
@@ -395,7 +398,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         files_chunk = []
         for idx, file in tqdm(
             enumerate(files[first:last]),
-            disable=os.environ.get("DISABLE_TQDM", ""),
+            disable=os.getenv("DISABLE_TQDM", "False").lower() in ("true", "1", "t"),
         ):
             if file in files_chunk:
                 continue
@@ -492,7 +495,10 @@ class BaseDataset(Generic[TData, TFile], Event):
             supported_file_extensions = []
         valid_files = []
         rejected_files = []
-        for file in tqdm(folder.iterdir(), disable=os.environ.get("DISABLE_TQDM", "")):
+        for file in tqdm(
+            folder.iterdir(),
+            disable=os.getenv("DISABLE_TQDM", "False").lower() in ("true", "1", "t"),
+        ):
             if file.suffix.lower() not in supported_file_extensions:
                 continue
             try:
