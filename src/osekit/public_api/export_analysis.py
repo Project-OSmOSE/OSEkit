@@ -239,7 +239,6 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--tqdm-disable",
         required=False,
-        type=bool,
         action=argparse.BooleanOptionalAction,
         default=True,
         help="Disable TQDM progress bars.",
@@ -248,7 +247,6 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--multiprocessing",
         required=False,
-        type=bool,
         action=argparse.BooleanOptionalAction,
         default=False,
         help="Turn multiprocessing on or off.",
@@ -257,7 +255,6 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--use-logging-setup",
         required=False,
-        type=bool,
         action=argparse.BooleanOptionalAction,
         default=False,
         help="Call osekit.setup_logging() before running the analysis.",
