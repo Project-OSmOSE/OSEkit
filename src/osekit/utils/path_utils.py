@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import shutil
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pathlib import Path
+    from os import PathLike
 
 
 def move_tree(
@@ -42,3 +43,11 @@ def move_tree(
         shutil.move(file, file_destination / file.name)
     if not any(destination.iterdir()):
         destination.rmdir()
+
+
+def is_absolute(path: PathLike | str) -> bool:
+    """Check if a path is a absolute path in any OS format."""
+    for formatted_path in (PureWindowsPath(path), PurePosixPath(path), Path(path)):
+        if formatted_path.is_absolute():
+            return True
+    return False
