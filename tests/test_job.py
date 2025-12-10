@@ -355,14 +355,18 @@ def test_job_builder_write(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
 
     job_builder.create_job(
         script_path=script,
-        script_args={"les": "fantômes", "de": "baleines"},
+        script_args={"les": "fantômes", "de": "baleines", "bool": False},
         name="idylle_des_abysses",
         output_folder=output_dir,
     )
 
     keywords = called["init_job"]
     assert keywords["script_path"] == script
-    assert keywords["script_args"] == {"les": "fantômes", "de": "baleines"}
+    assert keywords["script_args"] == {
+        "les": "fantômes",
+        "de": "baleines",
+        "bool": False,
+    }
     assert keywords["name"] == "idylle_des_abysses"
     assert keywords["output_folder"] == output_dir
 
@@ -371,6 +375,33 @@ def test_job_builder_write(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     assert called["write_pbs"] == output_dir / "idylle_des_abysses.pbs"
 
     assert job_builder.jobs[0].status == JobStatus.PREPARED
+
+
+def test_build_arg_string_booleans(tmp_path: Path):
+    job_builder = JobBuilder()
+    assert job_builder.jobs == []
+
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+    script = tmp_path / "script.py"
+    script.write_text("")
+
+    job_builder.create_job(
+        script_path=script,
+        script_args={
+            "danser": False,
+            "avec": True,
+            "le": 0.3,
+            "vent": "test"
+        },
+        name="danser_avec_le_vent",
+        output_folder=output_dir,
+    )
+
+    job = next(iter(job_builder.jobs))
+    arg_str = job._build_arg_string()
+
+    assert arg_str == "--no-danser --avec --le 0.3 --vent test"
 
 
 def test_job_builder_submit(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -43,7 +43,11 @@ def multiprocess(
     if bypass_multiprocessing or not config.multiprocessing["is_active"]:
         return list(
             func(element, *args, **kwargs)
-            for element in tqdm(enumerable, disable=os.environ.get("DISABLE_TQDM", ""))
+            for element in tqdm(
+                enumerable,
+                disable=os.getenv("DISABLE_TQDM", "False").lower()
+                in ("true", "1", "t"),
+            )
         )
 
     partial_func = partial(func, *args, **kwargs)
@@ -53,6 +57,7 @@ def multiprocess(
             tqdm(
                 pool.imap(partial_func, enumerable),
                 total=len(list(enumerable)),
-                disable=os.environ.get("DISABLE_TQDM", ""),
+                disable=os.getenv("DISABLE_TQDM", "False").lower()
+                in ("true", "1", "t"),
             ),
         )
