@@ -256,20 +256,15 @@ class Job:
             return
         self._status = JobStatus(self._status.value + 1)
 
-
     def _build_arg_string(self) -> str:
         """Build a string representation of the job's arguments."""
         arg_list = []
         for key, value in self.script_args.items():
             if isinstance(value, bool):
-                if value:
-                    arg_list.append(f"--{key}")
-                else:
-                    arg_list.append(f"--no-{key}")
+                arg_list.append(f"--{'no-' if not value else ''}{key}")
             else:
                 arg_list.append(f"--{key} {value}")
         return " ".join(arg_list)
-
 
     def write_pbs(self, path: Path) -> None:
         """Write a PBS file matching the job.
