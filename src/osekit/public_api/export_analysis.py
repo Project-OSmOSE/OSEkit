@@ -239,24 +239,27 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--tqdm-disable",
         required=False,
-        type=str,
-        default="true",
+        type=bool,
+        action=argparse.BooleanOptionalAction,
+        default=True,
         help="Disable TQDM progress bars.",
     )
 
     parser.add_argument(
         "--multiprocessing",
         required=False,
-        type=str,
-        default="false",
+        type=bool,
+        action=argparse.BooleanOptionalAction,
+        default=False,
         help="Turn multiprocessing on or off.",
     )
 
     parser.add_argument(
         "--use-logging-setup",
         required=False,
-        type=str,
-        default="false",
+        type=bool,
+        action=argparse.BooleanOptionalAction,
+        default=False,
         help="Call osekit.setup_logging() before running the analysis.",
     )
 
@@ -284,12 +287,12 @@ def main() -> None:
     """Export an analysis."""
     args = create_parser().parse_args()
 
-    os.environ["DISABLE_TQDM"] = "" if not args.tqdm_disable else str(args.tqdm_disable)
+    os.environ["DISABLE_TQDM"] = str(args.tqdm_disable)
 
-    if args.use_logging_setup.lower() == "true":
+    if args.use_logging_setup:
         setup_logging()
 
-    config.multiprocessing["is_active"] = args.multiprocessing.lower() == "true"
+    config.multiprocessing["is_active"] = args.multiprocessing
     if (nb_processes := args.nb_processes) is not None:
         config.multiprocessing["nb_processes"] = (
             None if nb_processes.lower() == "none" else int(nb_processes)
