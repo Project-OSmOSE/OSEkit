@@ -256,6 +256,16 @@ class Job:
             return
         self._status = JobStatus(self._status.value + 1)
 
+    def _build_arg_string(self) -> str:
+        """Build a string representation of the job's arguments."""
+        arg_list = []
+        for key, value in self.script_args.items():
+            if isinstance(value, bool):
+                arg_list.append(f"--{'no-' if not value else ''}{key}")
+            else:
+                arg_list.append(f"--{key} {value}")
+        return " ".join(arg_list)
+
     def write_pbs(self, path: Path) -> None:
         """Write a PBS file matching the job.
 
@@ -287,7 +297,8 @@ class Job:
             for key, value in request.items()
             if value
         )
-        script = f"python {self.script_path} {' '.join(f'--{key} {value}' for key, value in self.script_args.items())}"
+
+        script = f"python {self.script_path} {self._build_arg_string()}"
 
         pbs = f"{preamble}\n{request_str}\n{self.venv_activate_script}\n{script}"
         with path.open("w") as file:
