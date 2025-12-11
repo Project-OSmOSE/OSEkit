@@ -109,16 +109,16 @@ class BaseData(Generic[TItem, TFile], Event):
 
     @property
     def end(self) -> Timestamp:
+        """Return the end timestamp of the data."""
+        return max(item.end for item in self.items)
+
+    @end.setter
+    def end(self, value: Timestamp) -> None:
         """Trim the end timestamp of the data.
 
         End can only be set to an anterior date from the original end.
 
         """
-        return max(item.end for item in self.items)
-
-    @end.setter
-    def end(self, value: Timestamp) -> None:
-        """Return true if every item of this data object is empty."""
         self.items = [item for item in self.items if item.begin < value]
         for item in self.items:
             item.end = min(item.end, value)

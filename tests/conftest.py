@@ -196,7 +196,7 @@ def patch_audio_data(monkeypatch: pytest.MonkeyPatch) -> None:
     def mocked_init(
         self: AudioData,
         *args: list,
-        mocked_value: list[float] | None = None,
+        mocked_value: list[float] | np.ndarray | None = None,
         **kwargs: dict,
     ) -> None:
         defaults = {
@@ -211,15 +211,20 @@ def patch_audio_data(monkeypatch: pytest.MonkeyPatch) -> None:
         original_init(self, *args, **kwargs)
         if mocked_value is not None:
             self.mocked_value = mocked_value
+            if type(mocked_value) is list or len(mocked_value.shape) == 1:
+                self.mocked_value = np.array(self.mocked_value).reshape(
+                    len(mocked_value),
+                    1,
+                )
 
-    def mocked_shape(self: AudioData) -> int:
+    def mocked_shape(self: AudioData) -> tuple[int, int]:
         if hasattr(self, "mocked_value"):
-            return len(self.mocked_value)
+            return self.mocked_value.shape
         return original_shape.fget(self)
 
     def mocked_get_raw_value(self: AudioData) -> np.ndarray:
         if hasattr(self, "mocked_value"):
-            return np.array(self.mocked_value)
+            return self.mocked_value
         return original_get_raw_value(self)
 
     monkeypatch.setattr(AudioData, "__init__", mocked_init)

@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from os import PathLike
+    from pathlib import Path
 
     import numpy as np
     import pytz
@@ -85,7 +85,13 @@ class AudioFile(BaseFile):
 
         """
         start_sample, stop_sample = self.frames_indexes(start, stop)
-        return afm.read(self.path, start=start_sample, stop=stop_sample)
+        data = afm.read(self.path, start=start_sample, stop=stop_sample)
+        if len(data.shape) == 1:
+            return data.reshape(
+                data.shape[0],
+                1,
+            )  # 2D array to match the format of multichannel audio
+        return data
 
     def frames_indexes(self, start: Timestamp, stop: Timestamp) -> tuple[int, int]:
         """Return the indexes of the frames between the start and stop timestamps.

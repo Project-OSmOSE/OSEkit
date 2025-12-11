@@ -13,9 +13,6 @@ import numpy as np
 import soundfile as sf
 from pandas import Timedelta, Timestamp
 
-from osekit.config import (
-    TIMESTAMP_FORMATS_EXPORTED_FILES,
-)
 from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.audio_item import AudioItem
 from osekit.core_api.base_data import BaseData
@@ -78,10 +75,19 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         )
 
     @property
-    def shape(self) -> tuple[int, ...] | int:
-        """Shape of the audio data."""
-        data_length = round(self.sample_rate * self.duration.total_seconds())
-        return data_length if self.nb_channels <= 1 else (data_length, self.nb_channels)
+    def shape(self) -> tuple[int, int]:
+        """Shape of the audio data.
+
+        First element is the number of data point in each channel,
+        second element is the number of channels.
+
+        """
+        return self.length, self.nb_channels
+
+    @property
+    def length(self) -> int:
+        """Number of data points in each channel."""
+        return round(self.sample_rate * self.duration.total_seconds())
 
     @property
     def normalization(self) -> Normalization:
@@ -110,7 +116,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         )
 
     def get_normalization_values(self) -> dict:
-        values = self.get_raw_value()
+        values = np.array(self.get_raw_value())
         return {
             "mean": values.mean(),
             "peak": values.max(),
@@ -243,7 +249,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         """
         file = AudioFile(
             path=folder / f"{self}.wav",
-            strptime_format=TIMESTAMP_FORMATS_EXPORTED_FILES,
+            begin=self.begin,
         )
         self.items = AudioData.from_files([file]).items
 
@@ -253,6 +259,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         if item.is_empty:
             return item_data.repeat(
                 round(item.duration.total_seconds() * self.sample_rate),
+                axis=0,
             )
         if item.sample_rate != self.sample_rate:
             return resample(item_data, item.sample_rate, self.sample_rate)
@@ -329,7 +336,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         """
         if start_frame < 0:
             raise ValueError("Start_frame must be greater than or equal to 0.")
-        if stop_frame < -1 or stop_frame > self.shape:
+        if stop_frame < -1 or stop_frame > self.length:
             raise ValueError("Stop_frame must be lower than the length of the data.")
 
         start_timestamp = self.begin + Timedelta(

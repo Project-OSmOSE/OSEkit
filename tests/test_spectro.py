@@ -75,7 +75,7 @@ def test_spectrogram_shape(
     spectro_dataset = SpectroDataset.from_audio_dataset(dataset, sft)
     for audio, spectro in zip(dataset.data, spectro_dataset.data, strict=False):
         assert spectro.shape == spectro.get_value().shape
-        assert spectro.shape == (sft.f.shape[0], sft.p_num(audio.shape))
+        assert spectro.shape == (sft.f.shape[0], sft.p_num(audio.length))
 
 
 @pytest.mark.parametrize(
@@ -165,7 +165,7 @@ def test_spectro_parameters_in_npz_files(
     assert sf.hop == sft.hop
     assert sf.mfft == sft.mfft
     assert sf.sample_rate == sft.fs
-    nb_time_bins = sft.t(ad.shape).shape[0]
+    nb_time_bins = sft.t(ad.length).shape[0]
     assert np.array_equal(
         sf.time,
         np.arange(nb_time_bins) * ad.duration.total_seconds() / nb_time_bins,
@@ -1161,3 +1161,62 @@ def test_spectrodataset_scale(
 
     ltas_ds.save_spectrogram(tmp_path)
     ltas_ds.save_all(tmp_path, tmp_path)
+
+
+def test_spectro_multichannel_audio_file(
+    monkeypatch: pytest.MonkeyPatch,
+    patch_audio_data: pytest.MonkeyPatch,
+) -> None:
+    ad = AudioData(mocked_value=np.array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]]))
+
+    sft = ShortTimeFFT(win=hamming(512), hop=128, fs=48_000)
+
+    sd = SpectroData.from_audio_data(ad, sft)
+
+    treated_audio = []
+
+    def patch_stft(*args: list, **kwargs: dict) -> None:
+        treated_audio.append(kwargs["x"])
+
+    monkeypatch.setattr(ShortTimeFFT, "stft", patch_stft)
+
+    sd.get_value()
+
+    assert np.array_equal(
+        treated_audio[0],
+        [1, 5, 9],
+    )  # Only first channel is accounted for.
+
+
+def test_spectro_begin_and_end(monkeypatch: pytest.MonkeyPatch) -> None:
+    def mocked_ad_init(
+        self: AudioData | SpectroData,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        begin: Timestamp = kwargs["begin"]
+        end: Timestamp = kwargs["end"]
+
+        self.items = [Event(begin=begin, end=end)]
+        self.begin = kwargs["begin"]
+        self.end = kwargs["end"]
+
+    monkeypatch.setattr(AudioData, "__init__", mocked_ad_init)
+    monkeypatch.setattr(SpectroData, "__init__", mocked_ad_init)
+
+    ad = AudioData(
+        begin=Timestamp("2020-01-01 00:00:00"),
+        end=Timestamp("2020-01-01 00:01:00"),
+    )
+    sd = SpectroData(
+        begin=Timestamp("2020-01-01 00:00:00"),
+        end=Timestamp("2020-01-01 00:01:00"),
+    )
+
+    sd.audio_data = ad
+
+    sd.begin = Timestamp("2020-01-01 00:00:15")
+    sd.end = Timestamp("2020-01-01 00:00:30")
+
+    assert ad.begin == sd.begin
+    assert ad.end == sd.end

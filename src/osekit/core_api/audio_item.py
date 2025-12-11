@@ -4,12 +4,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy as np
+
 from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.base_file import BaseFile
 from osekit.core_api.base_item import BaseItem
 
 if TYPE_CHECKING:
-    import numpy as np
     from pandas import Timestamp
 
 
@@ -46,19 +47,23 @@ class AudioItem(BaseItem[AudioFile]):
     @property
     def nb_channels(self) -> int:
         """Number of channels in the associated AudioFile."""
-        return 0 if self.is_empty else self.file.channels
+        return 1 if self.is_empty else self.file.channels
 
     @property
-    def shape(self) -> int:
+    def shape(self) -> tuple[int, int]:
         """Number of points in the audio item data."""
+        if self.is_empty:
+            return 0, self.nb_channels
         start_sample, end_sample = self.file.frames_indexes(self.begin, self.end)
-        return end_sample - start_sample
+        return end_sample - start_sample, self.nb_channels
 
     def get_value(self) -> np.ndarray:
         """Get the values from the File between the begin and stop timestamps.
 
         If the Item is empty, return a single 0.
         """
+        if self.is_empty:
+            return np.zeros((1, self.nb_channels))
         return super().get_value()
 
     @classmethod
