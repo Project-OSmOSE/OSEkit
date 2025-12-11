@@ -1697,7 +1697,7 @@ wheels = [
 
 [[package]]
 name = "osekit"
-version = "0.4.1"
+version = "0.4.2b1"
 source = { editable = "." }
 dependencies = [
     { name = "matplotlib" },
