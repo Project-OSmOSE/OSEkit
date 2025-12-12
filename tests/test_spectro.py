@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gc
 from contextlib import nullcontext
 from typing import TYPE_CHECKING
 
@@ -7,7 +8,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
-from pandas import Timedelta
+from matplotlib.dates import num2date
+from pandas import Timedelta, Timestamp
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming
 
@@ -19,13 +21,14 @@ from osekit.core_api.audio_data import AudioData
 from osekit.core_api.audio_dataset import AudioDataset
 from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.event import Event
+from osekit.core_api.frequency_scale import Scale, ScalePart
 from osekit.core_api.instrument import Instrument
 from osekit.core_api.ltas_data import LTASData
 from osekit.core_api.ltas_dataset import LTASDataset
 from osekit.core_api.spectro_data import SpectroData
 from osekit.core_api.spectro_dataset import SpectroDataset
 from osekit.core_api.spectro_file import SpectroFile
-from osekit.utils.audio_utils import generate_sample_audio, Normalization
+from osekit.utils.audio_utils import Normalization, generate_sample_audio
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -72,7 +75,7 @@ def test_spectrogram_shape(
     spectro_dataset = SpectroDataset.from_audio_dataset(dataset, sft)
     for audio, spectro in zip(dataset.data, spectro_dataset.data, strict=False):
         assert spectro.shape == spectro.get_value().shape
-        assert spectro.shape == (sft.f.shape[0], sft.p_num(audio.shape))
+        assert spectro.shape == (sft.f.shape[0], sft.p_num(audio.length))
 
 
 @pytest.mark.parametrize(
@@ -162,7 +165,7 @@ def test_spectro_parameters_in_npz_files(
     assert sf.hop == sft.hop
     assert sf.mfft == sft.mfft
     assert sf.sample_rate == sft.fs
-    nb_time_bins = sft.t(ad.shape).shape[0]
+    nb_time_bins = sft.t(ad.length).shape[0]
     assert np.array_equal(
         sf.time,
         np.arange(nb_time_bins) * ad.duration.total_seconds() / nb_time_bins,
@@ -1018,8 +1021,13 @@ def test_ltas(audio_files: pytest.fixture, tmp_path: pytest.fixture) -> None:
     assert np.array_equal(ltas_ds.data[0].get_value(), ltas_ds2.data[0].get_value())
 
 
+@pytest.mark.parametrize(
+    "audio_files",
+    [{"date_begin": Timestamp("2020-01-01 00:00:00", tz="UTC")}],
+    indirect=True,
+)
 def test_spectro_axis(
-    audio_files: pytest.fixture,
+    audio_files: tuple[list[AudioFile], ...],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     audio_files, _ = audio_files
@@ -1031,24 +1039,33 @@ def test_spectro_axis(
 
     plot_kwargs = {}
 
-    def mock_pcolormesh(self, time, freq, sx, **kwargs):
-        plot_kwargs["time"] = time
-        plot_kwargs["freq"] = freq
+    def mock_imshow(
+        self: plt.Axes,
+        sx: np.ndarray,
+        **kwargs: str,
+    ) -> None:
         plot_kwargs["sx"] = sx
-        for kwarg in kwargs:
-            plot_kwargs[kwarg] = kwargs[kwarg]
 
-    monkeypatch.setattr(plt.Axes, "pcolormesh", mock_pcolormesh)
+        for k, v in kwargs.items():
+            plot_kwargs[k] = v
+
+    monkeypatch.setattr(plt.Axes, "imshow", mock_imshow)
 
     sd.plot()
 
-    assert np.array_equal(
-        plot_kwargs["time"],
-        pd.date_range(sd.begin, sd.end, periods=sd.shape[1]),
-    )
-    assert np.array_equal(plot_kwargs["freq"], sd.fft.f)
     assert (plot_kwargs["vmin"], plot_kwargs["vmax"]) == sd.v_lim
     assert plot_kwargs["cmap"] == sd.colormap
+    assert plot_kwargs["origin"] == "lower"
+    assert plot_kwargs["aspect"] == "auto"
+    assert plot_kwargs["interpolation"] == "none"
+
+    t1, t2, f1, f2 = plot_kwargs["extent"]
+    t1, t2 = map(num2date, (t1, t2))
+    t1, t2 = map(Timestamp, (t1, t2))
+    assert t1 == sd.begin
+    assert t2 == sd.end
+    assert f1 == sd.fft.f[0]
+    assert f2 == sd.fft.f[-1]
 
 
 def test_spectro_default_v_lim(audio_files: pytest.fixture) -> None:
@@ -1063,3 +1080,143 @@ def test_spectro_default_v_lim(audio_files: pytest.fixture) -> None:
 
     assert sd.v_lim == (-120.0, 0.0)
     assert sd_inst.v_lim == (0.0, 170.0)
+
+
+def test_garbage_collection_after_save_spectrogram(
+    tmp_path: Path,
+    audio_files: tuple[list[AudioFile], pytest.fixtures.Subrequest],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    files, _ = audio_files
+    ad = AudioData.from_files(files)
+    sft = ShortTimeFFT(win=hamming(1024), hop=128, fs=ad.sample_rate)
+
+    sd = SpectroData.from_audio_data(ad, sft)
+    ltas = LTASData.from_spectro_data(spectro_data=sd, nb_time_bins=4)
+
+    collect_calls = [0]
+
+    def patch_collect() -> None:
+        collect_calls[0] += 1
+
+    monkeypatch.setattr(gc, "collect", patch_collect)
+    monkeypatch.setattr(SpectroData, "plot", lambda *args, **kwargs: None)
+    monkeypatch.setattr(plt, "savefig", lambda *args, **kwargs: None)
+
+    sd.save_spectrogram(tmp_path / "output")
+
+    assert collect_calls[0] == 1
+
+    ltas.save_spectrogram(tmp_path / "output")
+
+    assert collect_calls[0] == 2  # noqa: PLR2004
+
+    sds = SpectroDataset([sd] * 5)
+    sds.save_spectrogram(tmp_path / "output")
+
+    assert collect_calls[0] == 7  # noqa: PLR2004
+
+    ltass = LTASDataset([ltas] * 5)
+    ltass.save_spectrogram(tmp_path / "output")
+
+    assert collect_calls[0] == 12  # noqa: PLR2004
+
+
+def test_spectrodataset_scale(
+    tmp_path: Path,
+    patch_audio_data: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ad = AudioData(
+        mocked_value=np.linspace(0.0, 1.0, 1000),  # Type: ignore # Unexpected argument
+    )
+
+    fft = ShortTimeFFT(win=hamming(512), hop=128, fs=ad.sample_rate)
+    scale = Scale(
+        [
+            ScalePart(0.0, 0.25, 0.0, 500.0),
+            ScalePart(0.25, 1.0, 500.0, 20_000.0, scale_type="log"),
+        ],
+    )
+
+    sd = SpectroData.from_audio_data(data=ad, fft=fft)
+
+    sds = SpectroDataset(data=[sd], scale=scale)
+
+    def mock_plot(*args: list[...], **kwargs: dict) -> None:
+        assert kwargs["scale"] == scale
+
+    def mock_empty_method(*args: list[...], **kwargs: dict) -> None:
+        return
+
+    monkeypatch.setattr(SpectroData, "plot", mock_plot)
+    monkeypatch.setattr(SpectroData, "write", mock_empty_method)
+    monkeypatch.setattr(plt, "savefig", mock_empty_method)
+    sds.save_spectrogram(tmp_path)
+    sds.save_all(tmp_path, tmp_path)
+
+    ltas = LTASData.from_spectro_data(sd, nb_time_bins=50)
+    ltas_ds = LTASDataset([ltas])
+    ltas_ds.scale = scale
+
+    ltas_ds.save_spectrogram(tmp_path)
+    ltas_ds.save_all(tmp_path, tmp_path)
+
+
+def test_spectro_multichannel_audio_file(
+    monkeypatch: pytest.MonkeyPatch,
+    patch_audio_data: pytest.MonkeyPatch,
+) -> None:
+    ad = AudioData(mocked_value=np.array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]]))
+
+    sft = ShortTimeFFT(win=hamming(512), hop=128, fs=48_000)
+
+    sd = SpectroData.from_audio_data(ad, sft)
+
+    treated_audio = []
+
+    def patch_stft(*args: list, **kwargs: dict) -> None:
+        treated_audio.append(kwargs["x"])
+
+    monkeypatch.setattr(ShortTimeFFT, "stft", patch_stft)
+
+    sd.get_value()
+
+    assert np.array_equal(
+        treated_audio[0],
+        [1, 5, 9],
+    )  # Only first channel is accounted for.
+
+
+def test_spectro_begin_and_end(monkeypatch: pytest.MonkeyPatch) -> None:
+    def mocked_ad_init(
+        self: AudioData | SpectroData,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        begin: Timestamp = kwargs["begin"]
+        end: Timestamp = kwargs["end"]
+
+        self.items = [Event(begin=begin, end=end)]
+        self.begin = kwargs["begin"]
+        self.end = kwargs["end"]
+
+    monkeypatch.setattr(AudioData, "__init__", mocked_ad_init)
+    monkeypatch.setattr(SpectroData, "__init__", mocked_ad_init)
+
+    ad = AudioData(
+        begin=Timestamp("2020-01-01 00:00:00"),
+        end=Timestamp("2020-01-01 00:01:00"),
+    )
+    sd = SpectroData(
+        begin=Timestamp("2020-01-01 00:00:00"),
+        end=Timestamp("2020-01-01 00:01:00"),
+    )
+
+    sd.audio_data = ad
+
+    sd.begin = Timestamp("2020-01-01 00:00:15")
+    sd.end = Timestamp("2020-01-01 00:00:30")
+
+    assert ad.begin == sd.begin
+    assert ad.end == sd.end

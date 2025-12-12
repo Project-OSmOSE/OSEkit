@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Literal
 
+import numpy as np
 import pytest
 from pandas import Timedelta, Timestamp
 
@@ -298,6 +299,438 @@ def test_base_dataset_from_files(
         data_duration=duration,
     )
     assert expected_data_events == [Event(d.begin, d.end) for d in ads.data]
+
+
+@pytest.mark.parametrize(
+    ("overlap", "mode"),
+    [
+        pytest.param(
+            -1.0,
+            "timedelta_files",
+            id="negative_overlap_files",
+        ),
+        pytest.param(
+            1.0,
+            "timedelta_files",
+            id="one_overlap_files",
+        ),
+        pytest.param(
+            10.0,
+            "timedelta_files",
+            id="greater_than_one_overlap_files",
+        ),
+        pytest.param(
+            -1.0,
+            "timedelta_total",
+            id="negative_overlap_total",
+        ),
+        pytest.param(
+            1.0,
+            "timedelta_total",
+            id="one_overlap_total",
+        ),
+        pytest.param(
+            10.0,
+            "timedelta_total",
+            id="greater_than_one_overlap_total",
+        ),
+    ],
+)
+def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> None:
+    with pytest.raises(
+        ValueError,
+        match=rf"Overlap \({overlap}\) must be between 0 and 1.",
+    ) as e:
+        assert (
+            BaseDataset.from_files(
+                [
+                    BaseFile(
+                        path=Path("foo"),
+                        begin=Timestamp("2016-02-05 00:00:00"),
+                        end=Timestamp("2016-02-05 00:10:00"),
+                    ),
+                ],
+                data_duration=Timedelta(seconds=1),
+                mode=mode,
+                overlap=overlap,
+            )
+            == e
+        )
+
+
+@pytest.mark.parametrize(
+    (
+        "strptime_format",
+        "supported_file_extensions",
+        "begin",
+        "end",
+        "timezone",
+        "mode",
+        "overlap",
+        "data_duration",
+        "first_file_begin",
+        "name",
+        "files",
+        "expected_data_events",
+    ),
+    [
+        pytest.param(
+            "%y%m%d%H%M%S",
+            [".wav"],
+            None,
+            None,
+            None,
+            "files",
+            0.0,
+            None,
+            None,
+            None,
+            [Path(r"231201000000.wav")],
+            [
+                (
+                    Event(
+                        begin=Timestamp("2023-12-01 00:00:00"),
+                        end=Timestamp("2023-12-01 00:00:01"),
+                    ),
+                    [Path(r"231201000000.wav")],
+                ),
+            ],
+            id="one_file_default",
+        ),
+        pytest.param(
+            None,
+            [".wav"],
+            None,
+            None,
+            None,
+            "files",
+            0.0,
+            None,
+            Timestamp("2023-12-01 00:00:00"),
+            None,
+            [Path(r"bbjuni.wav")],
+            [
+                (
+                    Event(
+                        begin=Timestamp("2023-12-01 00:00:00"),
+                        end=Timestamp("2023-12-01 00:00:01"),
+                    ),
+                    [Path(r"bbjuni.wav")],
+                ),
+            ],
+            id="one_file_no_strptime",
+        ),
+        pytest.param(
+            None,
+            [".wav"],
+            None,
+            None,
+            None,
+            "files",
+            0.0,
+            None,
+            Timestamp("2023-12-01 00:00:00"),
+            None,
+            [Path(r"cool.wav"), Path(r"fun.wav")],
+            [
+                (
+                    Event(
+                        begin=Timestamp("2023-12-01 00:00:00"),
+                        end=Timestamp("2023-12-01 00:00:01"),
+                    ),
+                    [Path(r"cool.wav")],
+                ),
+                (
+                    Event(
+                        begin=Timestamp("2023-12-01 00:00:01"),
+                        end=Timestamp("2023-12-01 00:00:02"),
+                    ),
+                    [Path(r"fun.wav")],
+                ),
+            ],
+            id="multiple_files_no_strptime_should_be_consecutive",
+        ),
+        pytest.param(
+            None,
+            [".wav", ".mp3"],
+            None,
+            None,
+            None,
+            "files",
+            0.0,
+            None,
+            Timestamp("2023-12-01 00:00:00"),
+            None,
+            [Path(r"cool.wav"), Path(r"fun.mp3"), Path("boring.flac")],
+            [
+                (
+                    Event(
+                        begin=Timestamp("2023-12-01 00:00:00"),
+                        end=Timestamp("2023-12-01 00:00:01"),
+                    ),
+                    [Path(r"cool.wav")],
+                ),
+                (
+                    Event(
+                        begin=Timestamp("2023-12-01 00:00:01"),
+                        end=Timestamp("2023-12-01 00:00:02"),
+                    ),
+                    [Path(r"fun.mp3")],
+                ),
+            ],
+            id="only_specified_formats_are_kept",
+        ),
+        pytest.param(
+            None,
+            [".wav"],
+            None,
+            None,
+            None,
+            "timedelta_total",
+            0.0,
+            Timedelta(seconds=0.5),
+            Timestamp("2023-12-01 00:00:00"),
+            None,
+            [Path(r"cool.wav"), Path(r"fun.wav")],
+            [
+                (
+                    Event(
+                        begin=Timestamp("2023-12-01 00:00:00"),
+                        end=Timestamp("2023-12-01 00:00:00.5"),
+                    ),
+                    [Path(r"cool.wav")],
+                ),
+                (
+                    Event(
+                        begin=Timestamp("2023-12-01 00:00:00.5"),
+                        end=Timestamp("2023-12-01 00:00:01"),
+                    ),
+                    [Path(r"cool.wav")],
+                ),
+                (
+                    Event(
+                        begin=Timestamp("2023-12-01 00:00:01"),
+                        end=Timestamp("2023-12-01 00:00:01.5"),
+                    ),
+                    [Path(r"fun.wav")],
+                ),
+                (
+                    Event(
+                        begin=Timestamp("2023-12-01 00:00:01.5"),
+                        end=Timestamp("2023-12-01 00:00:02"),
+                    ),
+                    [Path(r"fun.wav")],
+                ),
+            ],
+            id="timedelta_total",
+        ),
+        pytest.param(
+            None,
+            [".wav"],
+            None,
+            None,
+            None,
+            "timedelta_total",
+            0.5,
+            Timedelta(seconds=1),
+            Timestamp("2023-12-01 00:00:00"),
+            None,
+            [Path(r"cool.wav"), Path(r"fun.wav")],
+            [
+                (
+                    Event(
+                        begin=Timestamp("2023-12-01 00:00:00"),
+                        end=Timestamp("2023-12-01 00:00:01"),
+                    ),
+                    [Path(r"cool.wav")],
+                ),
+                (
+                    Event(
+                        begin=Timestamp("2023-12-01 00:00:00.5"),
+                        end=Timestamp("2023-12-01 00:00:01.5"),
+                    ),
+                    [Path(r"cool.wav"), Path(r"fun.wav")],
+                ),
+                (
+                    Event(
+                        begin=Timestamp("2023-12-01 00:00:01"),
+                        end=Timestamp("2023-12-01 00:00:02"),
+                    ),
+                    [Path(r"fun.wav")],
+                ),
+                (
+                    Event(
+                        begin=Timestamp("2023-12-01 00:00:01.5"),
+                        end=Timestamp("2023-12-01 00:00:02.5"),
+                    ),
+                    [Path(r"fun.wav")],
+                ),
+            ],
+            id="timedelta_total_with_overlap",
+        ),
+        pytest.param(
+            None,
+            [".wav"],
+            Timestamp("2023-12-01 00:00:00.5"),
+            Timestamp("2023-12-01 00:00:01.5"),
+            None,
+            "timedelta_total",
+            0.0,
+            Timedelta(seconds=0.5),
+            Timestamp("2023-12-01 00:00:00"),
+            None,
+            [Path(r"cool.wav"), Path(r"fun.wav")],
+            [
+                (
+                    Event(
+                        begin=Timestamp("2023-12-01 00:00:00.5"),
+                        end=Timestamp("2023-12-01 00:00:01"),
+                    ),
+                    [Path(r"cool.wav")],
+                ),
+                (
+                    Event(
+                        begin=Timestamp("2023-12-01 00:00:01"),
+                        end=Timestamp("2023-12-01 00:00:01.5"),
+                    ),
+                    [Path(r"fun.wav")],
+                ),
+            ],
+            id="timedelta_total_between_timestamps",
+        ),
+        pytest.param(
+            "%y%m%d%H%M%S",
+            [".wav"],
+            Timestamp("2023-12-01 00:00:00.5"),
+            Timestamp("2023-12-01 00:00:01.5"),
+            None,
+            "timedelta_total",
+            0.0,
+            Timedelta(seconds=0.5),
+            None,
+            None,
+            [Path(r"231201000000.wav"), Path(r"231201000001.wav")],
+            [
+                (
+                    Event(
+                        begin=Timestamp("2023-12-01 00:00:00.5"),
+                        end=Timestamp("2023-12-01 00:00:01"),
+                    ),
+                    [Path(r"231201000000.wav")],
+                ),
+                (
+                    Event(
+                        begin=Timestamp("2023-12-01 00:00:01"),
+                        end=Timestamp("2023-12-01 00:00:01.5"),
+                    ),
+                    [Path(r"231201000001.wav")],
+                ),
+            ],
+            id="striptime_format",
+        ),
+        pytest.param(
+            "%y%m%d%H%M%S",
+            [".wav"],
+            Timestamp("2023-12-01 00:00:00.5+01:00"),
+            Timestamp("2023-12-01 00:00:01.5+01:00"),
+            "Europe/Warsaw",
+            "timedelta_total",
+            0.0,
+            Timedelta(seconds=0.5),
+            None,
+            None,
+            [Path(r"231201000000.wav"), Path(r"231201000001.wav")],
+            [
+                (
+                    Event(
+                        begin=Timestamp("2023-12-01 00:00:00.5+01:00"),
+                        end=Timestamp("2023-12-01 00:00:01+01:00"),
+                    ),
+                    [Path(r"231201000000.wav")],
+                ),
+                (
+                    Event(
+                        begin=Timestamp("2023-12-01 00:00:01+01:00"),
+                        end=Timestamp("2023-12-01 00:00:01.5+01:00"),
+                    ),
+                    [Path(r"231201000001.wav")],
+                ),
+            ],
+            id="timezone_location",
+        ),
+        pytest.param(
+            "%y%m%d%H%M%S%z",
+            [".wav"],
+            Timestamp("2023-12-01 01:00:00.5+01:00"),
+            Timestamp("2023-12-01 01:00:01.5+01:00"),
+            "Europe/Warsaw",
+            "timedelta_total",
+            0.0,
+            Timedelta(seconds=0.5),
+            None,
+            None,
+            [Path(r"231201000000+0000.wav"), Path(r"231201000001+0000.wav")],
+            [
+                (
+                    Event(
+                        begin=Timestamp("2023-12-01 01:00:00.5+01:00"),
+                        end=Timestamp("2023-12-01 01:00:01+01:00"),
+                    ),
+                    [Path(r"231201000000+0000.wav")],
+                ),
+                (
+                    Event(
+                        begin=Timestamp("2023-12-01 01:00:01+01:00"),
+                        end=Timestamp("2023-12-01 01:00:01.5+01:00"),
+                    ),
+                    [Path(r"231201000001+0000.wav")],
+                ),
+            ],
+            id="timezone_conversion",
+        ),
+    ],
+)
+def test_base_dataset_from_folder(
+    monkeypatch: pytest.monkeypatch,
+    strptime_format: str | None,
+    supported_file_extensions: list[str],
+    begin: Timestamp | None,
+    end: Timestamp | None,
+    timezone: str | None,
+    mode: Literal["files", "timedelta_total", "timedelta_file"],
+    overlap: float,
+    data_duration: Timedelta | None,
+    first_file_begin: Timestamp | None,
+    name: str | None,
+    files: list[Path],
+    expected_data_events: list[tuple[Event, list[Path]]],
+) -> None:
+    monkeypatch.setattr(Path, "iterdir", lambda x: files)
+
+    bds = BaseDataset.from_folder(
+        folder=Path("foo"),
+        strptime_format=strptime_format,
+        supported_file_extensions=supported_file_extensions,
+        begin=begin,
+        end=end,
+        timezone=timezone,
+        mode=mode,
+        overlap=overlap,
+        data_duration=data_duration,
+        first_file_begin=first_file_begin,
+        name=name,
+    )
+
+    assert bds.name == name if name else str(bds.begin)
+
+    for expected, data in zip(
+        sorted(expected_data_events, key=lambda e: e[0].begin),
+        sorted(bds.data, key=lambda e: e.begin),
+        strict=True,
+    ):
+        assert data.begin == expected[0].begin
+        assert data.end == expected[0].end
+        assert np.array_equal(sorted(f.path for f in data.files), sorted(expected[1]))
 
 
 @pytest.mark.parametrize(
@@ -1078,7 +1511,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
 
 
 @pytest.mark.parametrize(
-    ("files", "begin", "end", "data_duration", "mode", "expected"),
+    ("files", "begin", "end", "data_duration", "mode", "overlap", "expected"),
     [
         pytest.param(
             [
@@ -1092,6 +1525,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
             Timestamp("2015-08-28 12:13:12"),
             Timedelta(seconds=30),
             "timedelta_total",
+            0.0,
             [
                 [
                     (
@@ -1131,6 +1565,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
             Timestamp("2015-08-28 12:14:12"),
             Timedelta(minutes=1),
             "timedelta_total",
+            0.0,
             [
                 [
                     (
@@ -1151,7 +1586,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
                     ),
                 ],
             ],
-            id="total_two_continuous_files_without_overlap",
+            id="total_two_continuous_files_without_file_overlap",
         ),
         pytest.param(
             [
@@ -1170,6 +1605,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
             Timestamp("2015-08-28 12:14:12"),
             Timedelta(seconds=45),
             "timedelta_total",
+            0.0,
             [
                 [
                     (
@@ -1213,7 +1649,70 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
                     ),
                 ],
             ],
-            id="total_two_continuous_files_with_overlap",
+            id="total_two_continuous_files_with_file_overlap",
+        ),
+        pytest.param(
+            [
+                BaseFile(
+                    "depression",
+                    begin=Timestamp("2015-08-28 12:12:12"),
+                    end=Timestamp("2015-08-28 12:13:12"),
+                ),
+                BaseFile(
+                    "cherry",
+                    begin=Timestamp("2015-08-28 12:13:12"),
+                    end=Timestamp("2015-08-28 12:14:12"),
+                ),
+            ],
+            Timestamp("2015-08-28 12:12:12"),
+            Timestamp("2015-08-28 12:14:12"),
+            Timedelta(minutes=1),
+            "timedelta_total",
+            0.25,
+            [
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:12:12"),
+                            end=Timestamp("2015-08-28 12:13:12"),
+                        ),
+                        "depression",
+                    ),
+                ],
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:12:57"),
+                            end=Timestamp("2015-08-28 12:13:12"),
+                        ),
+                        "depression",
+                    ),
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:12"),
+                            end=Timestamp("2015-08-28 12:13:57"),
+                        ),
+                        "cherry",
+                    ),
+                ],
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:13:42"),
+                            end=Timestamp("2015-08-28 12:14:12"),
+                        ),
+                        "cherry",
+                    ),
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:14:12"),
+                            end=Timestamp("2015-08-28 12:14:42"),
+                        ),
+                        None,
+                    ),
+                ],
+            ],
+            id="total_two_continuous_files_with_data_overlap",
         ),
         pytest.param(
             [
@@ -1227,6 +1726,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
             Timestamp("2015-08-28 12:13:12"),
             Timedelta(seconds=30),
             "timedelta_file",
+            0.0,
             [
                 [
                     (
@@ -1266,6 +1766,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
             Timestamp("2015-08-28 12:14:12"),
             Timedelta(minutes=1),
             "timedelta_file",
+            0.0,
             [
                 [
                     (
@@ -1286,7 +1787,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
                     ),
                 ],
             ],
-            id="file_two_continuous_files_without_overlap",
+            id="file_two_continuous_files_without_file_overlap",
         ),
         pytest.param(
             [
@@ -1305,6 +1806,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
             Timestamp("2015-08-28 12:14:12"),
             Timedelta(seconds=45),
             "timedelta_file",
+            0.0,
             [
                 [
                     (
@@ -1348,7 +1850,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
                     ),
                 ],
             ],
-            id="file_two_continuous_files_with_overlap",
+            id="file_two_continuous_files_with_file_overlap",
         ),
         pytest.param(
             [
@@ -1367,6 +1869,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
             Timestamp("2015-08-28 12:14:12"),
             Timedelta(minutes=1),
             "timedelta_total",
+            0.0,
             [
                 [
                     (
@@ -1420,6 +1923,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
             Timestamp("2015-08-28 12:14:12"),
             Timedelta(minutes=1),
             "timedelta_file",
+            0.0,
             [
                 [
                     (
@@ -1473,6 +1977,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
             Timestamp("2015-08-28 12:14:12"),
             Timedelta(minutes=1),
             "timedelta_total",
+            0.0,
             [
                 [
                     (
@@ -1526,6 +2031,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
             Timestamp("2015-08-28 12:14:12"),
             Timedelta(minutes=1),
             "timedelta_file",
+            0.0,
             [
                 [
                     (
@@ -1579,6 +2085,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
             Timestamp("2015-08-28 12:14:12"),
             Timedelta(minutes=1),
             "timedelta_total",
+            0.0,
             [
                 [
                     (
@@ -1632,6 +2139,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
             Timestamp("2015-08-28 12:14:12"),
             Timedelta(minutes=1),
             "timedelta_file",
+            0.0,
             [
                 [
                     (
@@ -1692,9 +2200,17 @@ def test_get_base_data_from_files(
     end: Timestamp,
     data_duration: Timedelta,
     mode: Literal["timedelta_total", "timedelta_file"],
+    overlap: float,
     expected: list[list[tuple[Event, str | None]]],
 ) -> None:
-    data = BaseDataset.from_files(files, begin, end, mode, data_duration).data
+    data = BaseDataset.from_files(
+        files=files,
+        begin=begin,
+        end=end,
+        mode=mode,
+        overlap=overlap,
+        data_duration=data_duration,
+    ).data
 
     for d, e in zip(data, expected, strict=True):
         for item, expected_tuple in zip(d.items, e, strict=True):

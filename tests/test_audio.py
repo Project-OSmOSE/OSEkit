@@ -10,7 +10,7 @@ import obspy
 import pandas as pd
 import pytest
 import soundfile as sf
-from pandas import Timestamp
+from pandas import Timedelta, Timestamp
 
 import osekit
 from osekit.config import (
@@ -19,6 +19,7 @@ from osekit.config import (
     TIMESTAMP_FORMATS_EXPORTED_FILES,
     resample_quality_settings,
 )
+from osekit.core_api import AudioFileManager
 from osekit.core_api import audio_file_manager as afm
 from osekit.core_api.audio_data import AudioData
 from osekit.core_api.audio_dataset import AudioDataset
@@ -27,6 +28,29 @@ from osekit.core_api.audio_item import AudioItem
 from osekit.core_api.instrument import Instrument
 from osekit.utils import audio_utils
 from osekit.utils.audio_utils import Normalization, generate_sample_audio, normalize
+
+
+def test_patch_audio_data(patch_audio_data: None) -> None:
+    mocked_value = [1.0, 2.0, 3.0]
+    audio_data = AudioData(
+        mocked_value=mocked_value,  # Type: ignore # Unexpected argument
+    )
+    assert np.array_equal(
+        audio_data.mocked_value[:, 0],  # Type: ignore # Unresolved attribute
+        mocked_value,
+    )
+
+    assert audio_data.shape == (len(mocked_value), 1)
+    assert type(audio_data.begin) is Timestamp
+    assert type(audio_data.end) is Timestamp
+
+    audio_data.normalization = Normalization.DC_REJECT
+
+    assert np.array_equal(audio_data.get_raw_value()[:, 0], mocked_value)
+    assert np.array_equal(
+        audio_data.get_value()[:, 0],
+        [v - np.mean(mocked_value, dtype=float) for v in mocked_value],
+    )
 
 
 @pytest.mark.parametrize(
@@ -197,7 +221,39 @@ def test_audio_file_read(
     expected: np.ndarray,
 ) -> None:
     files, request = audio_files
-    assert np.allclose(files[0].read(start, stop), expected, atol=1e-7)
+    assert np.allclose(files[0].read(start, stop)[:, 0], expected, atol=1e-7)
+
+
+def test_multichannel_audio_file_read(monkeypatch: pytest.MonkeyPatch) -> None:
+    full_file = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3], [4, 4, 4], [5, 5, 5]])
+
+    def read_patch(*args: list, **kwargs: dict) -> np.ndarray:
+        start, stop = kwargs["start"], kwargs["stop"]
+        return full_file[start:stop, :]
+
+    monkeypatch.setattr(AudioFileManager, "read", read_patch)
+
+    def init_patch(self: AudioFile, *args: list, **kwargs: dict) -> None:
+        self.begin = kwargs["begin"]
+        self.path = kwargs["path"]
+        self.end = kwargs["end"]
+        self.sample_rate = kwargs["sample_rate"]
+
+    monkeypatch.setattr(AudioFile, "__init__", init_patch)
+
+    af = AudioFile(
+        begin=Timestamp("2005-10-18 00:00:00"),
+        end=Timestamp("2005-10-18 00:00:01"),
+        path=Path(r"foo"),
+        sample_rate=5,
+    )
+
+    assert np.array_equal(af.read(start=af.begin, stop=af.end), full_file)
+
+    assert np.array_equal(
+        af.read(start=af.begin, stop=af.begin + Timedelta(seconds=3 / 5)),
+        full_file[:3, :],
+    )
 
 
 @pytest.mark.parametrize(
@@ -593,7 +649,18 @@ def test_audio_item(
 ) -> None:
     files, request = audio_files
     item = AudioItem(files[0], start, stop)
-    assert np.array_equal(item.get_value(), expected)
+    assert np.array_equal(item.get_value()[:, 0], expected)
+    assert item.shape == item.get_value().shape
+
+
+def test_empty_audio_item() -> None:
+    item = AudioItem(
+        begin=Timestamp("1997-01-28 00:00:00"),
+        end=Timestamp("1997-01-28 00:00:01"),
+    )
+    assert item.is_empty
+    assert item.shape == (0, 1)
+    assert np.array_equal(item.get_value(), np.zeros((1, 1)))
 
 
 @pytest.mark.parametrize(
@@ -721,11 +788,11 @@ def test_audio_data(
     stop: pd.Timestamp | None,
     expected: np.ndarray,
 ) -> None:
-    files, request = audio_files
+    files, _ = audio_files
     data = AudioData.from_files(files, begin=start, end=stop)
     if all(item.is_empty for item in data.items):
         data.sample_rate = 48_000
-    assert np.array_equal(data.get_value(), expected)
+    assert np.array_equal(data.get_value()[:, 0], expected)
 
 
 @pytest.mark.parametrize(
@@ -769,7 +836,7 @@ def test_read_vs_soundfile(
 ) -> None:
     audio_files, _ = audio_files
     ad = AudioData.from_files(audio_files)
-    assert np.array_equal(sf.read(audio_files[0].path)[0], ad.get_value())
+    assert np.array_equal(sf.read(audio_files[0].path)[0], ad.get_value()[:, 0])
 
 
 @pytest.mark.parametrize(
@@ -1011,16 +1078,25 @@ def test_normalize_audio_data(
 
     # AudioData
     ad = AudioData.from_files(afs, normalization=normalization)
-    assert np.array_equal(ad.get_value(), normalized_data)
+    assert np.array_equal(ad.get_value()[:, 0], normalized_data)
 
     # AudioDataset
     ads = AudioDataset.from_files(afs, normalization=normalization)
     assert ads.data[0].normalization == normalization
-    assert np.array_equal(ads.data[0].get_value(), normalized_data)
+    assert np.array_equal(ads.data[0].get_value()[:, 0], normalized_data)
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "begin", "end", "mode", "duration", "expected_audio_data"),
+    (
+        "audio_files",
+        "begin",
+        "end",
+        "mode",
+        "strptime_format",
+        "first_file_begin",
+        "duration",
+        "expected_audio_data",
+    ),
     [
         pytest.param(
             {
@@ -1033,6 +1109,8 @@ def test_normalize_audio_data(
             None,
             None,
             "timedelta_total",
+            TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+            None,
             None,
             generate_sample_audio(1, 48_000),
             id="one_entire_file",
@@ -1048,6 +1126,8 @@ def test_normalize_audio_data(
             None,
             None,
             "timedelta_total",
+            TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+            None,
             pd.Timedelta(seconds=1),
             generate_sample_audio(
                 nb_files=3,
@@ -1068,6 +1148,8 @@ def test_normalize_audio_data(
             None,
             None,
             "timedelta_total",
+            TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+            None,
             pd.Timedelta(seconds=1),
             [
                 generate_sample_audio(nb_files=1, nb_samples=96_000)[0][0:48_000],
@@ -1093,6 +1175,8 @@ def test_normalize_audio_data(
             None,
             None,
             "timedelta_total",
+            TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+            None,
             pd.Timedelta(seconds=1),
             generate_sample_audio(nb_files=2, nb_samples=48_000),
             id="overlapping_files",
@@ -1109,6 +1193,8 @@ def test_normalize_audio_data(
             None,
             None,
             "files",
+            TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+            None,
             None,
             generate_sample_audio(
                 nb_files=3,
@@ -1129,6 +1215,8 @@ def test_normalize_audio_data(
             None,
             None,
             "files",
+            TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+            None,
             None,
             [
                 generate_sample_audio(nb_files=1, nb_samples=96_000)[0][0:48_000],
@@ -1148,6 +1236,8 @@ def test_normalize_audio_data(
             None,
             None,
             "files",
+            TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+            None,
             None,
             [
                 generate_sample_audio(nb_files=1, nb_samples=48_000)[0][0:24_000],
@@ -1155,6 +1245,50 @@ def test_normalize_audio_data(
                 generate_sample_audio(nb_files=1, nb_samples=48_000)[0],
             ],
             id="files_mode_with_overlap",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 3,
+                "inter_file_duration": 0,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            None,
+            None,
+            "files",
+            None,
+            None,
+            None,
+            generate_sample_audio(
+                nb_files=3,
+                nb_samples=48_000,
+                series_type="increase",
+            ),
+            id="files_mode_with_default_timestamps",
+        ),
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 48_000,
+                "nb_files": 3,
+                "inter_file_duration": 0,
+                "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
+                "series_type": "increase",
+            },
+            None,
+            None,
+            "files",
+            None,
+            Timestamp("2020-01-01 00:00:00"),
+            None,
+            generate_sample_audio(
+                nb_files=3,
+                nb_samples=48_000,
+                series_type="increase",
+            ),
+            id="files_mode_with_given_timestamps",
         ),
     ],
     indirect=["audio_files"],
@@ -1165,19 +1299,22 @@ def test_audio_dataset_from_folder(
     begin: pd.Timestamp | None,
     end: pd.Timestamp | None,
     mode: Literal["files", "timedelta_total", "timedelta_file"],
+    strptime_format: str,
+    first_file_begin: Timestamp | None,
     duration: pd.Timedelta | None,
     expected_audio_data: list[np.ndarray],
 ) -> None:
     dataset = AudioDataset.from_folder(
         tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+        strptime_format=strptime_format,
         begin=begin,
         end=end,
         mode=mode,
+        first_file_begin=first_file_begin,
         data_duration=duration,
     )
     for idx, data in enumerate(dataset.data):
-        vs = data.get_value()
+        vs = data.get_value()[:, 0]
         assert np.array_equal(expected_audio_data[idx], vs)
 
 
@@ -1296,7 +1433,7 @@ def test_audio_dataset_from_files(
         data_duration=duration,
     )
     assert all(
-        np.array_equal(data.get_value(), expected)
+        np.array_equal(data.get_value()[:, 0], expected)
         for (data, expected) in zip(dataset.data, expected_audio_data, strict=False)
     )
 
@@ -1520,7 +1657,7 @@ def test_audio_dataset_from_folder_errors_warnings(
                 strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
             )
             assert all(
-                np.array_equal(data.get_value(), expected)
+                np.array_equal(data.get_value()[:, 0], expected)
                 for (data, expected) in zip(
                     dataset.data,
                     expected_audio_data,
@@ -1633,7 +1770,10 @@ def test_write_files(
     dataset.write(output_path, subtype=subtype, link=link)
     for data in dataset.data:
         assert f"{data}.wav" in [f.name for f in output_path.glob("*.wav")]
-        assert np.allclose(data.get_value(), sf.read(output_path / f"{data}.wav")[0])
+        assert np.allclose(
+            data.get_value()[:, 0],
+            sf.read(output_path / f"{data}.wav")[0],
+        )
 
         if link:
             assert str(next(iter(data.files)).path) == str(output_path / f"{data}.wav")
@@ -1752,10 +1892,10 @@ def test_split_data(
     if normalization:
         dataset.normalization = normalization
     for data in dataset.data:
-        subdata_shape = data.shape // nb_subdata
+        subdata_shape = data.length // nb_subdata
         for subdata, data_range in zip(
             data.split(nb_subdata),
-            range(0, data.shape, subdata_shape),
+            range(0, data.length, subdata_shape),
             strict=False,
         ):
             assert np.array_equal(
@@ -1765,10 +1905,10 @@ def test_split_data(
             assert subdata.instrument == data.instrument
             assert subdata.normalization == data.normalization
 
-            subsubdata_shape = subdata.shape // nb_subdata
+            subsubdata_shape = subdata.length // nb_subdata
             for subsubdata, subdata_range in zip(
                 subdata.split(nb_subdata),
-                range(0, subdata.shape, subsubdata_shape),
+                range(0, subdata.length, subsubdata_shape),
                 strict=False,
             ):
                 assert np.array_equal(
@@ -1779,6 +1919,33 @@ def test_split_data(
                 )
                 assert subsubdata.instrument == subdata.instrument
                 assert subsubdata.normalization == subdata.normalization
+
+
+def test_split_data_normalization_pass(patch_audio_data: None) -> None:
+    ad = AudioData()
+    ad.mocked_value = [1, 2, 3]
+    original_normalization_values = ad.get_normalization_values()
+    assert all(v for v in original_normalization_values.values())
+
+    assert all(
+        part.normalization_values == original_normalization_values
+        for part in ad.split(nb_subdata=2, pass_normalization=True)
+    )
+    assert all(
+        normalization_value is None
+        for part in ad.split(nb_subdata=2, pass_normalization=False)
+        for normalization_value in part.normalization_values.values()
+    )
+    assert (
+        ad.split_frames(pass_normalization=True).normalization_values
+        == original_normalization_values
+    )
+    assert all(
+        normalization_value is None
+        for normalization_value in ad.split_frames(
+            pass_normalization=False,
+        ).normalization_values.values()
+    )
 
 
 @pytest.mark.parametrize(
@@ -1870,7 +2037,7 @@ def test_split_data_frames(
     ad = dataset.data[0].split_frames(start_frame, stop_frame)
 
     assert ad.begin == expected_begin
-    assert np.array_equal(ad.get_value(), expected_data)
+    assert np.array_equal(ad.get_value()[:, 0], expected_data)
 
 
 @pytest.mark.parametrize(

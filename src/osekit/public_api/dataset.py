@@ -10,9 +10,10 @@ from __future__ import annotations
 
 import logging
 import shutil
-import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar
+
+from pandas import Timestamp
 
 from osekit import config
 from osekit.config import DPDEFAULT, resample_quality_settings
@@ -32,7 +33,7 @@ from osekit.utils.path_utils import move_tree
 
 if TYPE_CHECKING:
     from osekit.core_api.audio_file import AudioFile
-    from osekit.job import Job_builder
+    from osekit.utils.job import JobBuilder
 
 
 class Dataset:
@@ -47,13 +48,14 @@ class Dataset:
     def __init__(  # noqa: PLR0913
         self,
         folder: Path,
-        strptime_format: str,
+        strptime_format: str | None,
         gps_coordinates: str | list | tuple = (0, 0),
         depth: float = 0.0,
         timezone: str | None = None,
         datasets: dict | None = None,
-        job_builder: Job_builder | None = None,
+        job_builder: JobBuilder | None = None,
         instrument: Instrument | None = None,
+        first_file_begin: Timestamp | None = None,
     ) -> None:
         """Initialize a Dataset.
 
@@ -61,9 +63,12 @@ class Dataset:
         ----------
         folder: Path
             Path to the folder containing the original audio files.
-        strptime_format: str
+        strptime_format: str | None
             The strptime format used in the filenames.
             It should use valid strftime codes (https://strftime.org/).
+            If None, the first audio file of the folder will start
+            at first_file_begin, and each following file will start
+            at the end of the previous one.
         gps_coordinates: str | list | tuple
             GPS coordinates of the location were audio files were recorded.
         depth: float
@@ -85,6 +90,9 @@ class Dataset:
             Instrument that might be used to obtain acoustic pressure from
             the wav audio data.
             See the osekit.core_api.instrument module for more info.
+        first_file_begin: Timestamp | None
+            Timestamp of the first audio file being processed.
+            Will be ignored if striptime_format is specified.
 
         """
         self.folder = folder
@@ -95,6 +103,7 @@ class Dataset:
         self.datasets = datasets if datasets is not None else {}
         self.job_builder = job_builder
         self.instrument = instrument
+        self.first_file_begin = first_file_begin
 
     @property
     def origin_files(self) -> list[AudioFile] | None:
@@ -130,11 +139,13 @@ class Dataset:
         ads = AudioDataset.from_folder(
             self.folder,
             strptime_format=self.strptime_format,
+            first_file_begin=self.first_file_begin,
             mode="files",
             timezone=self.timezone,
             name="original",
             instrument=self.instrument,
         )
+
         self.datasets[ads.name] = {
             "class": type(ads).__name__,
             "analysis": "original",
@@ -149,7 +160,7 @@ class Dataset:
             | set(
                 (self.folder / "log").iterdir()
                 if (self.folder / "log").exists()
-                else ()
+                else (),
             )
             | {self.folder / "log"},
         )
@@ -233,6 +244,7 @@ class Dataset:
             end=analysis.end,
             data_duration=analysis.data_duration,
             mode=analysis.mode,
+            overlap=analysis.overlap,
             normalization=analysis.normalization,
             name=analysis.name,
             instrument=self.instrument,
@@ -284,7 +296,7 @@ class Dataset:
         sds = SpectroDataset.from_audio_dataset(
             audio_dataset=ads,
             fft=analysis.fft,
-            name=ads.base_name,
+            name=analysis.name,
             v_lim=analysis.v_lim,
             colormap=analysis.colormap,
             scale=analysis.scale,
@@ -302,6 +314,8 @@ class Dataset:
         self,
         analysis: Analysis,
         audio_dataset: AudioDataset | None = None,
+        spectro_dataset: SpectroDataset | None = None,
+        nb_jobs: int = 1,
     ) -> None:
         """Create a new analysis dataset from the original audio files.
 
@@ -319,8 +333,16 @@ class Dataset:
         audio_dataset: AudioDataset
             If provided, the analysis will be run on this AudioDataset.
             Else, an AudioDataset will be created from the analysis parameters.
-            This can be used to edit the analysis AudioDataset (adding/removing
-            AudioData etc.)
+            This can be used to edit the analysis AudioDataset (adding, removing,
+            renaming AudioData etc.)
+        spectro_dataset: SpectroDataset
+            If provided, the spectral analysis will be run on this SpectroDataset.
+            Else, a SpectroDataset will be created from the audio_dataset if provided,
+            or from the analysis parameters.
+            This can be used to edit the analysis SpectroDataset (adding, removing,
+            renaming SpectroData etc.)
+        nb_jobs: int
+            Number of jobs to run in parallel.
 
         """
         if analysis.name in self.analyses:
@@ -342,9 +364,13 @@ class Dataset:
 
         sds = None
         if analysis.is_spectro:
-            sds = self.get_analysis_spectrodataset(
-                analysis=analysis,
-                audio_dataset=ads,
+            sds = (
+                self.get_analysis_spectrodataset(
+                    analysis=analysis,
+                    audio_dataset=ads,
+                )
+                if spectro_dataset is None
+                else spectro_dataset
             )
             self._add_spectro_dataset(sds=sds, analysis_name=analysis.name)
 
@@ -354,6 +380,8 @@ class Dataset:
             sds=sds,
             link=True,
             subtype=analysis.subtype,
+            nb_jobs=nb_jobs,
+            name=analysis.name,
         )
 
         self.write_json()
@@ -396,6 +424,8 @@ class Dataset:
         matrix_folder_name: str = "matrix",
         spectrogram_folder_name: str = "spectrogram",
         welch_folder_name: str = "welch",
+        nb_jobs: int = 1,
+        name: str = "OSEkit_analysis",
     ) -> None:
         """Perform an analysis and write the results on disk.
 
@@ -429,10 +459,27 @@ class Dataset:
             If set to True, the ads data will be linked to the exported files.
         subtype: str | None
             The subtype of the audio files as provided by the soundfile module.
+        nb_jobs: int
+            The number of jobs to run in parallel.
+        name: str
+            The name of the analysis being performed.
 
         """
         # Import here to avoid circular imports since the script needs to import Dataset
         from osekit.public_api import export_analysis  # noqa: PLC0415
+
+        matrix_folder_path, spectrogram_folder_path, welch_folder_path = (
+            (
+                sds.folder / name
+                for name in (
+                    matrix_folder_name,
+                    spectrogram_folder_name,
+                    welch_folder_name,
+                )
+            )
+            if sds is not None
+            else ("None", "None", "None")
+        )
 
         if self.job_builder is None:
             export_analysis.write_analysis(
@@ -441,44 +488,50 @@ class Dataset:
                 sds=sds,
                 link=link,
                 subtype=subtype,
-                matrix_folder_name=matrix_folder_name,
-                spectrogram_folder_name=spectrogram_folder_name,
-                welch_folder_name=welch_folder_name,
+                matrix_folder_path=matrix_folder_path,
+                spectrogram_folder_path=spectrogram_folder_path,
+                welch_folder_path=welch_folder_path,
                 logger=self.logger,
             )
             return
 
         batch_indexes = file_indexes_per_batch(
             total_nb_files=len(ads.data),
-            nb_batches=self.job_builder.nb_jobs,
+            nb_batches=nb_jobs,
         )
 
-        for start, stop in batch_indexes:
-            self.job_builder.build_job_file(
-                script_path=export_analysis.__file__,
-                script_args=f"--dataset-json-path {self.folder / 'dataset.json'} "
-                f"--analysis {analysis_type.value} "
-                f"--ads-name {ads.name if ads is not None else 'None'} "
-                f"--sds-name {sds.name if sds is not None else 'None'} "
-                f"--subtype {subtype} "
-                f"--matrix-folder-name {matrix_folder_name} "
-                f"--spectrogram-folder-name {spectrogram_folder_name} "
-                f"--welch-folder-name {welch_folder_name} "
-                f"--first {start} "
-                f"--last {stop} "
-                f"--downsampling-quality {resample_quality_settings['downsample']} "
-                f"--upsampling-quality {resample_quality_settings['upsample']} "
-                f"--umask {get_umask()} "
-                f"--multiprocessing {config.multiprocessing['is_active']} "
-                f"--nb-processes {config.multiprocessing['nb_processes']} ",
-                jobname="OSmOSE_Analysis",
-                preset="low",
-                env_name=sys.executable.replace("/bin/python", ""),
-                mem="32G",
-                walltime="01:00:00",
-                logdir=self.folder / "log",
+        ads_json = (
+            ads.folder / f"{ads.name}.json"
+            if AnalysisType.AUDIO in analysis_type
+            else "None"
+        )
+        sds_json = sds.folder / f"{sds.name}.json" if sds is not None else "None"
+
+        for index, (start, stop) in enumerate(batch_indexes):
+            self.job_builder.create_job(
+                script_path=Path(export_analysis.__file__),
+                script_args={
+                    "analysis": analysis_type.value,
+                    "ads-json": ads_json,
+                    "sds-json": sds_json,
+                    "subtype": subtype,
+                    "matrix-folder-path": matrix_folder_path,
+                    "spectrogram-folder-path": spectrogram_folder_path,
+                    "welch-folder-path": welch_folder_path,
+                    "first": start,
+                    "last": stop,
+                    "downsampling-quality": resample_quality_settings["downsample"],
+                    "upsampling-quality": resample_quality_settings["upsample"],
+                    "umask": get_umask(),
+                    "multiprocessing": config.multiprocessing["is_active"],
+                    "nb-processes": config.multiprocessing["nb_processes"],
+                    "use-logging-setup": True,
+                    "dataset-json-path": self.folder / "dataset.json",
+                },
+                name=name + (f"_{index}" if len(batch_indexes) > 1 else ""),
+                output_folder=self.folder / "log",
             )
-        self.job_builder.submit_job()
+        self.job_builder.submit_pbs()
 
     def _add_spectro_dataset(
         self,
@@ -597,7 +650,9 @@ class Dataset:
 
                 ds.move_files(new_folder)
                 move_tree(
-                    old_folder, new_folder, excluded_paths=old_folder.glob("*.json")
+                    old_folder,
+                    new_folder,
+                    excluded_paths=old_folder.glob("*.json"),
                 )  # Moves exported files
                 shutil.rmtree(str(old_folder))
                 ds.write_json(ds.folder)
@@ -658,7 +713,6 @@ class Dataset:
                 None if self.instrument is None else self.instrument.to_dict()
             ),
             "depth": self.depth,
-            "folder": str(self.folder),
             "gps_coordinates": self.gps_coordinates,
             "strptime_format": self.strptime_format,
             "timezone": self.timezone,
@@ -696,7 +750,7 @@ class Dataset:
                 "dataset": dataset_class.from_json(Path(dataset["json"])),
             }
         return cls(
-            folder=Path(dictionary["folder"]),
+            folder=Path(),
             instrument=Instrument.from_dict(dictionary["instrument"]),
             strptime_format=dictionary["strptime_format"],
             gps_coordinates=dictionary["gps_coordinates"],
@@ -726,6 +780,7 @@ class Dataset:
 
         """
         instance = cls.from_dict(deserialize_json(file))
+        instance.folder = file.parent
         instance._create_logger()  # noqa: SLF001
         return instance
 

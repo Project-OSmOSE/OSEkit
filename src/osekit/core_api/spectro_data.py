@@ -6,11 +6,14 @@ The data is accessed via a SpectroItem object per SpectroFile.
 
 from __future__ import annotations
 
+import gc
+import itertools
 from typing import TYPE_CHECKING, Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.dates import date2num
 from scipy.signal import ShortTimeFFT, welch
 
 from osekit.config import (
@@ -18,7 +21,6 @@ from osekit.config import (
 )
 from osekit.core_api.audio_data import AudioData
 from osekit.core_api.base_data import BaseData
-from osekit.core_api.frequency_scale import Scale
 from osekit.core_api.spectro_file import SpectroFile
 from osekit.core_api.spectro_item import SpectroItem
 
@@ -26,6 +28,8 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from pandas import Timestamp
+
+    from osekit.core_api.frequency_scale import Scale
 
 
 class SpectroData(BaseData[SpectroItem, SpectroFile]):
@@ -96,7 +100,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         _, ax = plt.subplots(
             nrows=1,
             ncols=1,
-            figsize=(1.3 * 1800 / 100, 1.3 * 512 / 100),
+            figsize=(1813 / 100, 512 / 100),
             dpi=100,
         )
 
@@ -117,6 +121,32 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             wspace=0,
         )
         return ax
+
+    @BaseData.end.setter
+    def end(self, end: Timestamp | None) -> None:
+        """Trim the end timestamp of the data.
+
+        End can only be set to an anterior date from the original end.
+
+        """
+        if end >= self.end:
+            return
+        if self.audio_data:
+            self.audio_data.end = end
+        BaseData.end.fset(self, end)
+
+    @BaseData.begin.setter
+    def begin(self, begin: Timestamp | None) -> None:
+        """Trim the begin timestamp of the data.
+
+        Begin can only be set to a posterior date from the original begin.
+
+        """
+        if begin <= self.begin:
+            return
+        if self.audio_data:
+            self.audio_data.begin = begin
+        BaseData.begin.fset(self, begin)
 
     @property
     def shape(self) -> tuple[int, ...]:
@@ -212,7 +242,10 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             raise ValueError("SpectroData should have either items or audio_data.")
 
         sx = self.fft.stft(
-            self.audio_data.get_value_calibrated(),
+            x=self.audio_data.get_value_calibrated()[
+                :,
+                0,
+            ],  # Only consider the 1st channel
             padding="zeros",
         )
 
@@ -261,7 +294,10 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         nfft = self.fft.mfft
 
         _, sx = welch(
-            self.audio_data.get_value_calibrated(),
+            self.audio_data.get_value_calibrated()[
+                :,
+                0,
+            ],  # Only considers the 1rst channel
             fs=self.audio_data.sample_rate,
             window=window,
             nperseg=nperseg,
@@ -353,15 +389,18 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         time = pd.date_range(start=self.begin, end=self.end, periods=sx.shape[1])
         freq = self.fft.f
 
-        sx = sx if scale is None else scale.rescale(sx, freq)
+        sx = sx if scale is None else scale.rescale(sx_matrix=sx, original_scale=freq)
 
-        ax.pcolormesh(
-            time,
-            freq,
+        ax.xaxis_date()
+        ax.imshow(
             sx,
             vmin=self._v_lim[0],
             vmax=self._v_lim[1],
             cmap=self.colormap,
+            origin="lower",
+            aspect="auto",
+            interpolation="none",
+            extent=(date2num(time[0]), date2num(time[-1]), freq[0], freq[-1]),
         )
 
     def to_db(self, sx: np.ndarray) -> np.ndarray:
@@ -414,6 +453,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         self.plot(ax=ax, sx=sx, scale=scale)
         plt.savefig(f"{folder / str(self)}", bbox_inches="tight", pad_inches=0)
         plt.close()
+        gc.collect()
 
     def write(
         self,
@@ -516,7 +556,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         """
         split_frames = list(
-            np.linspace(0, self.audio_data.shape, nb_subdata + 1, dtype=int),
+            np.linspace(0, self.audio_data.length, nb_subdata + 1, dtype=int),
         )
         split_frames = [
             self.fft.nearest_k_p(frame) if idx < (len(split_frames) - 1) else frame
@@ -525,7 +565,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         ad_split = [
             self.audio_data.split_frames(start_frame=a, stop_frame=b)
-            for a, b in zip(split_frames, split_frames[1:], strict=False)
+            for a, b in itertools.pairwise(split_frames)
         ]
         return [
             SpectroData.from_audio_data(

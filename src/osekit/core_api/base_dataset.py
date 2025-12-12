@@ -6,7 +6,6 @@ that simplify repeated operations on the data.
 
 from __future__ import annotations
 
-import math
 import os
 from bisect import bisect
 from pathlib import Path
@@ -22,6 +21,7 @@ from osekit.core_api.base_data import BaseData
 from osekit.core_api.base_file import BaseFile
 from osekit.core_api.event import Event
 from osekit.core_api.json_serializer import deserialize_json, serialize_json
+from osekit.utils.timestamp_utils import last_window_end
 
 if TYPE_CHECKING:
     import pytz
@@ -148,7 +148,10 @@ class BaseDataset(Generic[TData, TFile], Event):
             Destination folder in which the dataset files will be moved.
 
         """
-        for file in tqdm(self.files, disable=os.environ.get("DISABLE_TQDM", "")):
+        for file in tqdm(
+            self.files,
+            disable=os.getenv("DISABLE_TQDM", "False").lower() in ("true", "1", "t"),
+        ):
             file.move(folder)
         self._folder = folder
 
@@ -186,7 +189,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         last = len(self.data) if last is None else last
         for data in tqdm(
             self.data[first:last],
-            disable=os.environ.get("DISABLE_TQDM", ""),
+            disable=os.getenv("DISABLE_TQDM", "False").lower() in ("true", "1", "t"),
         ):
             data.write(folder=folder, link=link)
 
@@ -257,6 +260,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         end: Timestamp | None = None,
         mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
         data_duration: Timedelta | None = None,
+        overlap: float = 0.0,
         name: str | None = None,
     ) -> BaseDataset:
         """Return a base BaseDataset object from a list of Files.
@@ -285,6 +289,8 @@ class BaseDataset(Generic[TData, TFile], Event):
             If mode is set to "files", this parameter has no effect.
             If provided, data will be evenly distributed between begin and end.
             Else, one data object will cover the whole time period.
+        overlap: float
+            Overlap percentage between consecutive data.
         name: str|None
             Name of the dataset.
 
@@ -306,17 +312,19 @@ class BaseDataset(Generic[TData, TFile], Event):
         if data_duration:
             data_base = (
                 cls._get_base_data_from_files_timedelta_total(
-                    begin,
-                    end,
-                    data_duration,
-                    files,
+                    begin=begin,
+                    end=end,
+                    data_duration=data_duration,
+                    files=files,
+                    overlap=overlap,
                 )
                 if mode == "timedelta_total"
                 else cls._get_base_data_from_files_timedelta_file(
-                    begin,
-                    end,
-                    data_duration,
-                    files,
+                    begin=begin,
+                    end=end,
+                    data_duration=data_duration,
+                    files=files,
+                    overlap=overlap,
                 )
             )
         else:
@@ -330,13 +338,20 @@ class BaseDataset(Generic[TData, TFile], Event):
         end: Timestamp,
         data_duration: Timedelta,
         files: list[TFile],
+        overlap: float = 0,
     ) -> list[BaseData]:
+        if not 0 <= overlap < 1:
+            msg = f"Overlap ({overlap}) must be between 0 and 1."
+            raise ValueError(msg)
+
         active_file_index = 0
         output = []
         files = sorted(files, key=lambda f: f.begin)
+        freq = data_duration * (1 - overlap)
+
         for data_begin in tqdm(
-            date_range(begin, end, freq=data_duration, inclusive="left"),
-            disable=os.environ.get("DISABLE_TQDM", ""),
+            date_range(begin, end, freq=freq, inclusive="left"),
+            disable=os.getenv("DISABLE_TQDM", "False").lower() in ("true", "1", "t"),
         ):
             data_end = Timestamp(data_begin + data_duration)
             while (
@@ -367,25 +382,34 @@ class BaseDataset(Generic[TData, TFile], Event):
         end: Timestamp,
         data_duration: Timedelta,
         files: list[TFile],
+        overlap: float = 0,
     ) -> list[BaseData]:
+        if not 0 <= overlap < 1:
+            msg = f"Overlap ({overlap}) must be between 0 and 1."
+            raise ValueError(msg)
+
         files = sorted(files, key=lambda file: file.begin)
         first = max(0, bisect(files, begin, key=lambda f: f.begin) - 1)
         last = bisect(files, end, key=lambda f: f.begin)
+
+        data_hop = data_duration * (1 - overlap)
 
         output = []
         files_chunk = []
         for idx, file in tqdm(
             enumerate(files[first:last]),
-            disable=os.environ.get("DISABLE_TQDM", ""),
+            disable=os.getenv("DISABLE_TQDM", "False").lower() in ("true", "1", "t"),
         ):
             if file in files_chunk:
                 continue
             files_chunk = [file]
 
             for next_file in files[idx + 1 :]:
-                upper_data_limit = file.begin + data_duration * math.ceil(
-                    (files_chunk[-1].end - file.begin).total_seconds()
-                    / data_duration.total_seconds(),
+                upper_data_limit = last_window_end(
+                    begin=file.begin,
+                    end=files_chunk[-1].end,
+                    window_hop=data_hop,
+                    window_duration=data_duration,
                 )
                 if upper_data_limit < next_file.begin:
                     break
@@ -396,7 +420,7 @@ class BaseDataset(Generic[TData, TFile], Event):
                 for data_begin in date_range(
                     file.begin,
                     files_chunk[-1].end,
-                    freq=data_duration,
+                    freq=data_hop,
                     inclusive="left",
                 )
             )
@@ -407,14 +431,16 @@ class BaseDataset(Generic[TData, TFile], Event):
     def from_folder(  # noqa: PLR0913
         cls,
         folder: Path,
-        strptime_format: str,
+        strptime_format: str | None,
         file_class: type[TFile] = BaseFile,
         supported_file_extensions: list[str] | None = None,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         timezone: str | pytz.timezone | None = None,
         mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
+        overlap: float = 0.0,
         data_duration: Timedelta | None = None,
+        first_file_begin: Timestamp | None = None,
         name: str | None = None,
     ) -> BaseDataset:
         """Return a BaseDataset from a folder containing the base files.
@@ -423,8 +449,12 @@ class BaseDataset(Generic[TData, TFile], Event):
         ----------
         folder: Path
             The folder containing the files.
-        strptime_format: str
-            The strptime format of the timestamps in the file names.
+        strptime_format: str | None
+            The strptime format used in the filenames.
+            It should use valid strftime codes (https://strftime.org/).
+            If None, the first audio file of the folder will start
+            at first_file_begin, and each following file will start
+            at the end of the previous one.
         file_class: type[Tfile]
             Derived type of BaseFile used to instantiate the dataset.
         supported_file_extensions: list[str]
@@ -450,11 +480,16 @@ class BaseDataset(Generic[TData, TFile], Event):
             be created from the beginning of the first file that the begin timestamp is into, until it would resume
             in a data beginning between two files. Then, the next data object will be created from the
             beginning of the next original file and so on.
+        overlap: float
+            Overlap percentage between consecutive data.
         data_duration: Timedelta | None
             Duration of the data objects.
             If mode is set to "files", this parameter has no effect.
             If provided, data will be evenly distributed between begin and end.
             Else, one object will cover the whole time period.
+        first_file_begin: Timestamp | None
+            Timestamp of the first audio file being processed.
+            Will be ignored if striptime_format is specified.
         name: str|None
             Name of the dataset.
 
@@ -468,14 +503,23 @@ class BaseDataset(Generic[TData, TFile], Event):
             supported_file_extensions = []
         valid_files = []
         rejected_files = []
-        for file in tqdm(folder.iterdir(), disable=os.environ.get("DISABLE_TQDM", "")):
-            if file.suffix.lower() not in supported_file_extensions:
-                continue
-            try:
-                f = file_class(file, strptime_format=strptime_format, timezone=timezone)
-                valid_files.append(f)
-            except (ValueError, LibsndfileError):
-                rejected_files.append(file)
+        first_file_begin = first_file_begin or Timestamp("2020-01-01 00:00:00")
+        for file in tqdm(
+            sorted(folder.iterdir()),
+            disable=os.getenv("DISABLE_TQDM", "False").lower() in ("true", "1", "t"),
+        ):
+            is_file_ok = _parse_file(
+                file=file,
+                file_class=file_class,
+                supported_file_extensions=supported_file_extensions,
+                strptime_format=strptime_format,
+                timezone=timezone,
+                begin_timestamp=first_file_begin,
+                valid_files=valid_files,
+                rejected_files=rejected_files,
+            )
+            if is_file_ok:
+                first_file_begin += valid_files[-1].duration
 
         if rejected_files:
             rejected_files = "\n\t".join(f.name for f in rejected_files)
@@ -491,6 +535,32 @@ class BaseDataset(Generic[TData, TFile], Event):
             begin=begin,
             end=end,
             mode=mode,
+            overlap=overlap,
             data_duration=data_duration,
             name=name,
         )
+
+
+def _parse_file(
+    file: Path,
+    file_class: type,
+    supported_file_extensions: list[str],
+    strptime_format: str,
+    timezone: str | pytz.timezone | None,
+    begin_timestamp: Timestamp,
+    valid_files: list[BaseFile],
+    rejected_files: list[Path],
+) -> bool:
+    if file.suffix.lower() not in supported_file_extensions:
+        return False
+    try:
+        if strptime_format is None:
+            f = file_class(file, begin=begin_timestamp, timezone=timezone)
+        else:
+            f = file_class(file, strptime_format=strptime_format, timezone=timezone)
+        valid_files.append(f)
+    except (ValueError, LibsndfileError):
+        rejected_files.append(file)
+        return False
+    else:
+        return True

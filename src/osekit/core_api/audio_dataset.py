@@ -170,11 +170,12 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
     def from_folder(  # noqa: PLR0913
         cls,
         folder: Path,
-        strptime_format: str,
+        strptime_format: str | None,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         timezone: str | pytz.timezone | None = None,
         mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
+        overlap: float = 0.0,
         data_duration: Timedelta | None = None,
         sample_rate: float | None = None,
         name: str | None = None,
@@ -188,8 +189,12 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         ----------
         folder: Path
             The folder containing the audio files.
-        strptime_format: str
-            The strptime format of the timestamps in the audio file names.
+        strptime_format: str | None
+            The strptime format used in the filenames.
+            It should use valid strftime codes (https://strftime.org/).
+            If None, the first audio file of the folder will start
+            at first_file_begin, and each following file will start
+            at the end of the previous one.
         begin: Timestamp | None
             The begin of the audio dataset.
             Defaulted to the begin of the first file.
@@ -211,6 +216,8 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             be created from the beginning of the first file that the begin timestamp is into, until it would resume
             in a data beginning between two files. Then, the next data object will be created from the
             beginning of the next original file and so on.
+        overlap: float
+            Overlap percentage between consecutive data.
         data_duration: Timedelta | None
             Duration of the audio data objects.
             If mode is set to "files", this parameter has no effect.
@@ -237,7 +244,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         kwargs.update(
             {
                 "file_class": AudioFile,
-                "supported_file_extensions": [".wav", ".flac", ".mseed"],
+                "supported_file_extensions": [".wav", ".flac", ".mseed", ".mp3"],
             },
         )
         base_dataset = BaseDataset.from_folder(
@@ -247,6 +254,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             end=end,
             timezone=timezone,
             mode=mode,
+            overlap=overlap,
             data_duration=data_duration,
             **kwargs,
         )
@@ -265,6 +273,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
+        overlap: float = 0.0,
         data_duration: Timedelta | None = None,
         sample_rate: float | None = None,
         name: str | None = None,
@@ -292,6 +301,8 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             be created from the beginning of the first file that the begin timestamp is into, until it would resume
             in a data beginning between two files. Then, the next data object will be created from the
             beginning of the next original file and so on.
+        overlap: float
+            Overlap percentage between consecutive data.
         data_duration: Timedelta | None
             Duration of the data objects.
             If mode is set to "files", this parameter has no effect.
@@ -318,6 +329,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             begin=begin,
             end=end,
             mode=mode,
+            overlap=overlap,
             data_duration=data_duration,
         )
         return cls.from_base_dataset(

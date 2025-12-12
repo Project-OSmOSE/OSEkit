@@ -246,6 +246,38 @@ This is the default behaviour, but other ways of computing the ``AudioData`` tim
 You don't have to worry about the shape of the original audio files: audio data will be fetched seamlessly in the corresponding
 file(s) whenever you need it.
 
+Non-timestamped audio files
+"""""""""""""""""""""""""""
+
+In case you don't know the timestamps at which your audio files were recorded (or you don't care specifying them), you can specify
+a default timestamp at which the first valid audio file in the folder will be considered to start thanks to the
+``first_file_begin`` parameter.
+
+Each next valid audio file will be considered to start immediately after the end of the previous one.
+
+.. code-block:: python
+
+    from pathlib import Path
+    from osekit.core_api.audio_dataset import AudioDataset
+    from osekit.core_api.instrument import Instrument
+    from pandas import Timestamp, Timedelta
+
+    folder = Path(r"...")
+    ads = AudioDataset.from_folder
+    (
+        folder=folder,
+        strptime_format=None # Will use first_file_begin to timestamp the files
+        first_file_begin=Timestamp("2009-01-06 10:00:00"),
+        begin=Timestamp("2009-01-06 12:00:00"), # We can still specify the begin/end timestamps of the required dataset
+        end=Timestamp("2009-01-06 14:00:00"),
+        data_duration=Timedelta("10s"),
+        instrument=Instrument(end_to_end_db=150),
+        normalization="dc_reject"
+    )
+
+In the example above, the first valid file in the folder will be considered to start at ``2009-01-06 10:00:00``.
+If this first file is 1 hour-long, the next one will be considered to start at ``2009-01-06 11:00:00``, and so on.
+
 Manipulation
 """"""""""""
 
@@ -365,13 +397,13 @@ correspond to a given frequency range on a given area of the y-axis:
             ScalePart(
                 p_min=.5, # From 50% of the axis
                 p_max=.7, # To 70% of the axis
-                f_min=0., # From 5 kHz
-                f_max=3_000., # To 20 kHz
+                f_min=0., # From DC
+                f_max=3_000., # To 3 kHz
             ),
             ScalePart(
                 p_min=.7, # From 70% of the axis
                 p_max=1., # To 100% of the axis
-                f_min=0., # From 0 Hz
+                f_min=0., # From DC
                 f_max=72_000, # To 72 kHz
             ),
         ],

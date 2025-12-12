@@ -1,35 +1,33 @@
+"""Module that provides scripts for running public API analyses."""
+
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING
 
-from osekit import config
+from osekit import config, setup_logging
 from osekit.config import global_logging_context as glc
-from osekit.config import resample_quality_settings
+from osekit.core_api.audio_dataset import AudioDataset
+from osekit.core_api.spectro_dataset import SpectroDataset
 from osekit.public_api.analysis import AnalysisType
 from osekit.public_api.dataset import Dataset
-
-if TYPE_CHECKING:
-    import logging
-
-    from osekit.core_api.audio_dataset import AudioDataset
-    from osekit.core_api.spectro_dataset import SpectroDataset
 
 
 def write_analysis(
     analysis_type: AnalysisType,
-    ads: AudioDataset,
-    sds: SpectroDataset,
-    subtype: str,
-    matrix_folder_name: str,
-    spectrogram_folder_name: str,
-    welch_folder_name: str,
-    link: bool = True,
+    ads: AudioDataset | None,
+    sds: SpectroDataset | None,
+    subtype: str | None = None,
+    matrix_folder_path: Path | None = None,
+    spectrogram_folder_path: Path | None = None,
+    welch_folder_path: Path | None = None,
     first: int = 0,
     last: int | None = None,
     logger: logging.Logger | None = None,
+    *,
+    link: bool = True,
 ) -> None:
     """Write SpectroDataset output files to disk.
 
@@ -46,11 +44,11 @@ def write_analysis(
         The AudioDataset of which the data should be written.
     sds: SpectroDataset
         The SpectroDataset of which the data should be written.
-    matrix_folder_name: Path
+    matrix_folder_path: Path
         The folder in which the matrix npz files should be written.
-    spectrogram_folder_name: Path
+    spectrogram_folder_path: Path
         The folder in which the spectrogram png files should be written.
-    welch_folder_name: Path
+    welch_folder_path: Path
         The folder in which the welch npz files should be written.
     link: bool
         If set to True, the ads data will be linked to the exported files.
@@ -94,8 +92,8 @@ def write_analysis(
     ):
         logger.info("Computing and writing spectrum matrices and spectrograms...")
         sds.save_all(
-            matrix_folder=sds.folder / matrix_folder_name,
-            spectrogram_folder=sds.folder / spectrogram_folder_name,
+            matrix_folder=matrix_folder_path,
+            spectrogram_folder=spectrogram_folder_path,
             link=link,
             first=first,
             last=last,
@@ -103,14 +101,14 @@ def write_analysis(
     elif AnalysisType.SPECTROGRAM in analysis_type:
         logger.info("Computing and writing spectrograms...")
         sds.save_spectrogram(
-            folder=sds.folder / spectrogram_folder_name,
+            folder=spectrogram_folder_path,
             first=first,
             last=last,
         )
     elif AnalysisType.MATRIX in analysis_type:
         logger.info("Computing and writing spectrum matrices...")
         sds.write(
-            folder=sds.folder / matrix_folder_name,
+            folder=matrix_folder_path,
             link=link,
             first=first,
             last=last,
@@ -118,7 +116,7 @@ def write_analysis(
     if AnalysisType.WELCH in analysis_type:
         logger.info("Computing and writing welches...")
         sds.write_welch(
-            folder=sds.folder / welch_folder_name,
+            folder=welch_folder_path,
             first=first,
             last=last,
         )
@@ -128,38 +126,36 @@ def write_analysis(
     logger.info("Analysis done!")
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+def create_parser() -> argparse.ArgumentParser:
+    """Create the argument parser."""
+    parser = argparse.ArgumentParser(description="Export audio/spectro datasets.")
 
-    required = parser.add_argument_group("required arguments")
-    required.add_argument(
-        "--dataset-json-path",
-        "-p",
-        required=True,
-        help="The path to the Dataset JSON file.",
-        type=str,
-    )
-    required.add_argument(
+    parser.add_argument(
         "--analysis",
         "-a",
         required=True,
-        help="Flags representing which files to export during this analysis.",
+        help="Flags representing which files to export. See AnalysisType doc for more info.",
         type=int,
     )
-    required.add_argument(
-        "--ads-name",
+
+    parser.add_argument(
+        "--ads-json",
         "-ads",
-        required=True,
-        help="Name of the AudioDataset to export during this analysis.",
+        required=False,
+        help="Path to the JSON of the AudioDataset to export.",
         type=str,
+        default=None,
     )
-    required.add_argument(
-        "--sds-name",
+
+    parser.add_argument(
+        "--sds-json",
         "-sds",
-        required=True,
-        help="Name of the SpectroDataset to export during this analysis.",
+        required=False,
+        help="Path to the JSON of the SpectroDataset to export.",
         type=str,
+        default=None,
     )
+
     parser.add_argument(
         "--subtype",
         "-sbtp",
@@ -168,43 +164,52 @@ if __name__ == "__main__":
         type=str,
         default=None,
     )
-    required.add_argument(
-        "--matrix-folder-name",
-        "-mfn",
-        required=True,
-        help="The name of the folder in which the npz matrix files are written.",
+
+    parser.add_argument(
+        "--matrix-folder-path",
+        "-mf",
+        required=False,
+        help="The path of the folder in which the npz matrix files are written.",
         type=str,
+        default=None,
     )
-    required.add_argument(
-        "--spectrogram-folder-name",
-        "-sfn",
-        required=True,
-        help="The name of the folder in which the png spectrogram files are written.",
+
+    parser.add_argument(
+        "--spectrogram-folder-path",
+        "-sf",
+        required=False,
+        help="The path of the folder in which the png spectrogram files are written.",
         type=str,
+        default=None,
     )
-    required.add_argument(
-        "--welch-folder-name",
-        "-wfn",
-        required=True,
-        help="The name of the folder in which the npz welch files are written.",
+
+    parser.add_argument(
+        "--welch-folder-path",
+        "-wf",
+        required=False,
+        help="The path of the folder in which the npz welch files are written.",
         type=str,
+        default=None,
     )
-    required.add_argument(
+
+    parser.add_argument(
         "--first",
         "-f",
-        required=True,
+        required=False,
         help="The index of the first file to export.",
         type=int,
         default=0,
     )
-    required.add_argument(
+
+    parser.add_argument(
         "--last",
         "-l",
-        required=True,
+        required=False,
         help="The index after the last file to export.",
         type=int,
-        default=-1,
+        default=None,
     )
+
     parser.add_argument(
         "--downsampling-quality",
         "-dq",
@@ -213,6 +218,7 @@ if __name__ == "__main__":
         type=str,
         default=None,
     )
+
     parser.add_argument(
         "--upsampling-quality",
         "-uq",
@@ -221,53 +227,98 @@ if __name__ == "__main__":
         type=str,
         default=None,
     )
+
     parser.add_argument(
         "--umask",
+        required=False,
         type=int,
         default=0o002,
         help="The umask to apply on the created file permissions.",
     )
+
     parser.add_argument(
         "--tqdm-disable",
-        type=int,
-        default=1,
+        required=False,
+        action=argparse.BooleanOptionalAction,
+        default=True,
         help="Disable TQDM progress bars.",
     )
+
     parser.add_argument(
         "--multiprocessing",
-        type=str,
-        default="false",
+        required=False,
+        action=argparse.BooleanOptionalAction,
+        default=False,
         help="Turn multiprocessing on or off.",
     )
+
+    parser.add_argument(
+        "--use-logging-setup",
+        required=False,
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Call osekit.setup_logging() before running the analysis.",
+    )
+
     parser.add_argument(
         "--nb-processes",
+        required=False,
         type=str,
         default=None,
         help="Set the number of processes to use.",
     )
 
-    args = parser.parse_args()
-
-    os.environ["DISABLE_TQDM"] = "" if not args.tqdm_disable else str(args.tqdm_disable)
-
-    config.multiprocessing["is_active"] = args.multiprocessing.lower() == "true"
-    config.nb_processes = (
-        None if args.nb_processes.lower() == "none" else int(args.nb_processes)
+    parser.add_argument(
+        "--dataset-json-path",
+        "-p",
+        required=False,
+        help="The path to the Dataset JSON file of which to use the logger.",
+        type=str,
+        default=None,
     )
+
+    return parser
+
+
+def main() -> None:
+    """Export an analysis."""
+    args = create_parser().parse_args()
+
+    os.environ["DISABLE_TQDM"] = str(args.tqdm_disable)
+
+    if args.use_logging_setup:
+        setup_logging()
+
+    config.multiprocessing["is_active"] = args.multiprocessing
+    if (nb_processes := args.nb_processes) is not None:
+        config.multiprocessing["nb_processes"] = (
+            None if nb_processes.lower() == "none" else int(nb_processes)
+        )
 
     os.umask(args.umask)
 
     if args.downsampling_quality is not None:
-        resample_quality_settings["downsample"] = args.downsampling_quality
+        config.resample_quality_settings["downsample"] = args.downsampling_quality
     if args.upsampling_quality is not None:
-        resample_quality_settings["upsample"] = args.upsampling_quality
+        config.resample_quality_settings["upsample"] = args.upsampling_quality
 
-    dataset = Dataset.from_json(file=Path(args.dataset_json_path))
-
-    ads, sds = (
-        dataset.get_dataset(ds_name) if ds_name.lower() != "none" else None
-        for ds_name in (args.ads_name, args.sds_name)
+    logger = (
+        logging.getLogger()
+        if (args.dataset_json_path is None or args.dataset_json_path.lower() == "none")
+        else Dataset.from_json(Path(args.dataset_json_path)).logger
     )
+
+    ads = (
+        AudioDataset.from_json(Path(args.ads_json))
+        if args.ads_json.lower() != "none"
+        else None
+    )
+    sds = (
+        SpectroDataset.from_json(Path(args.sds_json))
+        if args.sds_json.lower() != "none"
+        else None
+    )
+
     subtype = None if args.subtype.lower() == "none" else args.subtype
 
     analysis_type = AnalysisType(args.analysis)
@@ -277,11 +328,15 @@ if __name__ == "__main__":
         ads=ads,
         sds=sds,
         subtype=subtype,
-        matrix_folder_name=args.matrix_folder_name,
-        spectrogram_folder_name=args.spectrogram_folder_name,
-        welch_folder_name=args.welch_folder_name,
+        matrix_folder_path=Path(args.matrix_folder_path),
+        spectrogram_folder_path=Path(args.spectrogram_folder_path),
+        welch_folder_path=Path(args.welch_folder_path),
         first=args.first,
         last=args.last,
         link=True,
-        logger=dataset.logger,
+        logger=logger,
     )
+
+
+if __name__ == "__main__":
+    main()

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import pytest
 from pandas import Timestamp
@@ -138,3 +140,46 @@ def test_welch_spectrodataset(
         sd = sds.data[i]
         assert sd.begin == t_timestamp
         assert np.array_equal(pxs[i], sd.get_welch())
+
+
+def test_welch_provided_pxs(
+    monkeypatch: pytest.MonkeyPatch,
+    audio_files: pytest.fixture,
+) -> None:
+    afs, _ = audio_files
+    ads = AudioDataset.from_files(files=afs, mode="files")
+    sds = SpectroDataset.from_audio_dataset(
+        ads,
+        fft=ShortTimeFFT(hamming(512), 512, ads.sample_rate),
+    )
+
+    get_welch_method = SpectroDataset._get_welch
+    pxs_computation_count = [0]
+
+    def patch_get_welch(*args: list, **kwargs: dict) -> tuple[SpectroData, np.ndarray]:
+        pxs_computation_count[0] += 1
+        return get_welch_method(*args, **kwargs)
+
+    monkeypatch.setattr(SpectroDataset, "_get_welch", patch_get_welch)
+
+    pxs = sds.get_welch()
+
+    assert pxs_computation_count[0] == 1
+
+    def patch_none(*args: list, **kwargs: dict) -> None:
+        return
+
+    savez = {}
+
+    def patch_savez(*args: list, **kwargs: dict) -> None:
+        savez.update(kwargs)
+
+    monkeypatch.setattr(np, "savez", patch_savez)
+    monkeypatch.setattr(Path, "mkdir", patch_none)
+
+    sds.write_welch(folder=afs[0].path, pxs=pxs)
+
+    assert pxs_computation_count[0] == 1
+
+    assert savez["timestamps"] == list(pxs.columns)
+    assert np.array_equal(savez["pxs"], pxs.to_numpy().T)

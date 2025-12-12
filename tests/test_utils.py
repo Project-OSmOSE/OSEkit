@@ -3,22 +3,21 @@ from __future__ import annotations
 import time
 from contextlib import nullcontext
 from pathlib import Path
-from typing import Union
 
 import numpy as np
 import pandas as pd
 import pytest
+from pandas import Timedelta
 
+from osekit.utils.audio_utils import Normalization, normalize
 from osekit.utils.core_utils import (
     file_indexes_per_batch,
     get_closest_value_index,
     locked,
     nb_files_per_batch,
 )
-from osekit.utils.audio_utils import Normalization, normalize
 from osekit.utils.formatting_utils import aplose2raven
-from osekit.utils.path_utils import move_tree
-from pandas import Timedelta
+from osekit.utils.path_utils import is_absolute, move_tree
 
 
 @pytest.fixture
@@ -168,6 +167,40 @@ def test_move_tree(
 
     if not files - unmoved_files:
         assert not destination.exists()
+
+
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    [
+        pytest.param(
+            r"C:/tindersticks/soft/tissue",
+            True,
+            id="windows_absolute_path",
+        ),
+        pytest.param(
+            r"/car/seat/headrest",
+            True,
+            id="unix_absolute_path",
+        ),
+        pytest.param(
+            r"she/past/away",
+            False,
+            id="windows_relative_path_in_subdir",
+        ),
+        pytest.param(
+            r"./arabia/mountain",
+            False,
+            id="unix_relative_path_from_current",
+        ),
+        pytest.param(
+            r"../../part/company",
+            False,
+            id="unix_relative_path_from_upper_dir",
+        ),
+    ],
+)
+def test_is_absolute(path: str, expected: bool) -> None:
+    assert is_absolute(path) == expected
 
 
 @pytest.mark.parametrize(
@@ -425,9 +458,10 @@ def test_get_closest_value_index(
     ],
 )
 def test_combined_normalization(
-    normalizations: list[Union[Normalization, int]], expected
+    normalizations: list[Normalization | int],
+    expected,
 ) -> None:
-    def combine_normalizations(normalizations: list[Union[Normalization, int]]):
+    def combine_normalizations(normalizations: list[Normalization | int]):
         normalizations = [
             Normalization(n) if type(n) is int else n for n in normalizations
         ]
@@ -488,7 +522,9 @@ def test_combined_normalization(
     ],
 )
 def test_normalization(
-    values: np.ndarray, normalization: Normalization, expected: np.ndarray
+    values: np.ndarray,
+    normalization: Normalization,
+    expected: np.ndarray,
 ) -> None:
     normalized = normalize(values=values, normalization=normalization)
     assert np.array_equal(normalized, expected)

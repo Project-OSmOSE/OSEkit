@@ -3,18 +3,23 @@ from __future__ import annotations
 import logging
 import os
 import sys
+from collections.abc import Generator
 from pathlib import Path
 from unittest.mock import MagicMock
 
+import numpy as np
 import pandas as pd
 import pytest
 import soundfile as sf
+from pandas import Timestamp
 
+from osekit import config
 from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
 )
 from osekit.core_api import AudioFileManager
+from osekit.core_api.audio_data import AudioData
 from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.base_dataset import BaseDataset
 from osekit.core_api.base_file import BaseFile
@@ -180,3 +185,63 @@ def base_dataset(tmp_path: Path) -> BaseDataset:
         for file, timestamp in zip(files, timestamps, strict=False)
     ]
     return BaseDataset.from_files(files=bfs, mode="files")
+
+
+@pytest.fixture
+def patch_audio_data(monkeypatch: pytest.MonkeyPatch) -> None:
+    original_init = AudioData.__init__
+    original_get_raw_value = AudioData.get_raw_value
+    original_shape = AudioData.shape
+
+    def mocked_init(
+        self: AudioData,
+        *args: list,
+        mocked_value: list[float] | np.ndarray | None = None,
+        **kwargs: dict,
+    ) -> None:
+        defaults = {
+            "begin": Timestamp("2000-01-01 00:00:00"),
+            "end": Timestamp("2000-01-01 00:00:01"),
+            "sample_rate": 48000,
+        }
+        for key, value in defaults.items():
+            if key not in kwargs:
+                kwargs.update(**{key: value})
+
+        original_init(self, *args, **kwargs)
+        if mocked_value is not None:
+            self.mocked_value = mocked_value
+            if type(mocked_value) is list or len(mocked_value.shape) == 1:
+                self.mocked_value = np.array(self.mocked_value).reshape(
+                    len(mocked_value),
+                    1,
+                )
+
+    def mocked_shape(self: AudioData) -> tuple[int, int]:
+        if hasattr(self, "mocked_value"):
+            return self.mocked_value.shape
+        return original_shape.fget(self)
+
+    def mocked_get_raw_value(self: AudioData) -> np.ndarray:
+        if hasattr(self, "mocked_value"):
+            return self.mocked_value
+        return original_get_raw_value(self)
+
+    monkeypatch.setattr(AudioData, "__init__", mocked_init)
+    monkeypatch.setattr(AudioData, "shape", property(mocked_shape))
+    monkeypatch.setattr(
+        AudioData,
+        "get_raw_value",
+        mocked_get_raw_value,
+    )
+
+
+@pytest.fixture(autouse=True)
+def restore_config() -> Generator:
+    resample_quality_settings = {**config.resample_quality_settings}
+    multiprocessing = {**config.multiprocessing}
+    yield
+    for key, value in resample_quality_settings.items():
+        config.resample_quality_settings[key] = value
+    for key, value in multiprocessing.items():
+        config.multiprocessing[key] = value
