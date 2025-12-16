@@ -328,7 +328,7 @@ def test_spectrogram_from_npz_files(
 
     sd_split = sd.split(nb_chunks)
 
-    import soundfile as sf
+    import soundfile as sf  # noqa: PLC0415
 
     for spectro in sd_split:
         spectro.write(tmp_path / "output")
