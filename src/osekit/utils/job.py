@@ -4,6 +4,7 @@ If a JobBuilder is attached to a Public API Dataset, the analyses will be ran th
 jobs, with writting/submitting of PBS files.
 
 """
+from __future__ import annotations
 
 import subprocess
 from dataclasses import dataclass
@@ -307,15 +308,35 @@ class Job:
         self.path = path
         self.progress()
 
-    def submit_pbs(self) -> None:
-        """Submit the PBS file of the job to a PBS queueing system."""
+    def submit_pbs(self, depend_on: Job | list[Job] | str | list[str] | None = None) -> None:
+        """Submit the PBS file of the job to a PBS queueing system.
+
+        Parameters
+        ----------
+        depend_on: Job | list[Job] | str | None
+            Job dependency. Can be:
+            - A Job instance: will wait for that job to complete successfully
+            - A list of Job instances: will wait for all jobs to complete successfully
+            - A string: job ID (e.g., "12345.datarmor") or dependency specification
+            - None: no dependency
+
+        """
         if self.update_status() is not JobStatus.PREPARED:
             msg = "Job should be written before being submitted."
             raise ValueError(msg)
 
+        cmd = ["qsub"]
+
+        if depend_on is not None:
+            dependency_str = self._build_dependency_string(depend_on)
+            if dependency_str:
+                cmd.extend(["-W", f"depend={dependency_str}"])
+
+        cmd.append(str(self.path))
+
         try:
             request = subprocess.run(
-                ["qsub", self.path],
+                cmd,
                 capture_output=True,
                 text=True,
                 check=False,
@@ -326,6 +347,52 @@ class Job:
 
         self.job_id = request.stdout.split(".", maxsplit=1)[0].strip()
         self.progress()
+
+    @staticmethod
+    def _build_dependency_string(
+        depend_on: Job | list[Job] | str | list[str], dependency_type: str = "afterok"
+    ) -> str:
+        """Build a PBS dependency string.
+
+        Parameters
+        ----------
+        depend_on: Job | list[Job] | str | list[str]
+            Job(s) or job ID(s) to depend on.
+        dependency_type: str
+            Type of dependency (afterok, afterany, afternotok, after).
+
+        Returns
+        -------
+        str:
+            PBS dependency string (e.g., "afterok:12345:12346").
+
+        """
+        job_ids = []
+
+        if isinstance(depend_on, str):
+            if ":" in depend_on:
+                return depend_on
+            else:
+                job_ids.append(depend_on)
+        elif isinstance(depend_on, Job):
+            if depend_on.job_id is None:
+                msg = f"Job '{depend_on.name}' has not been submitted yet."
+                raise ValueError(msg)
+            job_ids.append(depend_on.job_id)
+        elif isinstance(depend_on, list):
+            for item in depend_on:
+                if isinstance(item, str):
+                    job_ids.append(item)
+                elif isinstance(item, Job):
+                    if item.job_id is None:
+                        msg = f"Job '{item.name}' has not been submitted yet."
+                        raise ValueError(msg)
+                    job_ids.append(item.job_id)
+
+        if not job_ids:
+            return ""
+
+        return f"{dependency_type}:{':'.join(job_ids)}"
 
     def update_info(self) -> None:
         """Request info about the job and update it."""
@@ -443,9 +510,25 @@ class JobBuilder:
         job.write_pbs(output_folder / f"{name}.pbs")
         self.jobs.append(job)
 
-    def submit_pbs(self) -> None:
-        """Submit all repared jobs to the PBS queueing system."""
+    def submit_pbs(
+        self, dependencies: dict[str, "Job | list[Job]"] | None = None
+    ) -> None:
+        """Submit all prepared jobs to the PBS queueing system.
+
+        Parameters
+        ----------
+        dependencies: dict[str, Job | list[Job]] | None
+            Optional dictionary mapping job names to their dependencies.
+            Example: {"job2": job1, "job3": [job1, job2]}
+
+        """
         for job in self.jobs:
             if job.update_status() is not JobStatus.PREPARED:
                 continue
-            job.submit_pbs()
+
+            # Check if this job has dependencies
+            depend_on = None
+            if dependencies and job.name in dependencies:
+                depend_on = dependencies[job.name]
+
+            job.submit_pbs(depend_on=depend_on)
