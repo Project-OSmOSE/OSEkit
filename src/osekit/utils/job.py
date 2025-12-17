@@ -308,12 +308,12 @@ class Job:
         self.path = path
         self.progress()
 
-    def submit_pbs(self, depend_on: Job | list[Job] | str | list[str] | None = None) -> None:
+    def submit_pbs(self, dependency: Job | list[Job] | str | list[str] | None = None) -> None:
         """Submit the PBS file of the job to a PBS queueing system.
 
         Parameters
         ----------
-        depend_on: Job | list[Job] | str | None
+        dependency: Job | list[Job] | str | None
             Job dependency. Can be:
             - A Job instance: will wait for that job to complete successfully
             - A list of Job instances: will wait for all jobs to complete successfully
@@ -327,8 +327,8 @@ class Job:
 
         cmd = ["qsub"]
 
-        if depend_on is not None:
-            dependency_str = self._build_dependency_string(depend_on)
+        if dependency is not None:
+            dependency_str = self._build_dependency_string(dependency)
             if dependency_str:
                 cmd.extend(["-W", f"depend={dependency_str}"])
 
@@ -368,16 +368,12 @@ class Job:
             Normalized list of dependencies.
 
         """
-        # Ensure we have a list
         depend_on_list = depend_on if isinstance(depend_on, list) else [depend_on]
 
-        # Strip dependency type prefix from strings (e.g., "afterok:12345" -> "12345")
-        normalized = [
+        return [
             dep.lstrip(f"{dependency_type}:") if isinstance(dep, str) else dep
             for dep in depend_on_list
         ]
-
-        return normalized
 
     @staticmethod
     def _build_dependency_string(
@@ -408,10 +404,8 @@ class Job:
         'afterany:12345'
 
         """
-        # Normalize input
         depend_on_list = Job._normalize_dependencies(dependency, dependency_type)
 
-        # Check for unsubmitted jobs
         if unsubmitted_job := next(
             (
                 j
@@ -423,7 +417,6 @@ class Job:
             msg = f"Job '{unsubmitted_job.name}' has not been submitted yet."
             raise ValueError(msg)
 
-        # Build dependency string
         job_ids = [
             dep.job_id if isinstance(dep, Job) else dep
             for dep in depend_on_list
@@ -568,4 +561,4 @@ class JobBuilder:
             if dependencies and job.name in dependencies:
                 depend_on = dependencies[job.name]
 
-            job.submit_pbs(depend_on=depend_on)
+            job.submit_pbs(dependency=depend_on)

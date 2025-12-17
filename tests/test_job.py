@@ -416,7 +416,7 @@ def test_job_builder_submit(monkeypatch: pytest.MonkeyPatch) -> None:
             self.name = name
             self.status = status
 
-        def submit_pbs(self, depend_on=None) -> None:  # Add depend_on parameter
+        def submit_pbs(self, dependency=None) -> None:
             submitted_jobs.append(self.name)
 
         def update_status(self) -> JobStatus:
@@ -468,27 +468,29 @@ def test_build_dependency_string_with_string_input(
     assert dep_str == expected
 
 
-def test_build_dependency_string_with_single_job() -> None:
-    """Test building dependency string from a single Job instance."""
-    job = Job(Path("script.py"))
-    job.job_id = "12345"
-    job.status = JobStatus.QUEUED
-
-    dep_str = Job._build_dependency_string(job)
-    assert dep_str == "afterok:12345"
-
-
-def test_build_dependency_string_with_multiple_jobs() -> None:
-    """Test building dependency string from multiple Job instances."""
+@pytest.mark.parametrize(
+    ("job_ids", "expected"),
+    [
+        pytest.param(["12345"], "afterok:12345", id="single_job"),
+        pytest.param(
+            ["12345", "67890", "11111"], "afterok:12345:67890:11111", id="multiple_jobs"
+        ),
+    ],
+)
+def test_build_dependency_string_with_job_instances(
+    job_ids: list[str], expected: str
+) -> None:
+    """Test building dependency string from Job instance(s)."""
     jobs = []
-    for i, job_id in enumerate(["12345", "67890", "11111"], 1):
+    for i, job_id in enumerate(job_ids, 1):
         job = Job(Path(f"script{i}.py"))
         job.job_id = job_id
         job.status = JobStatus.QUEUED
         jobs.append(job)
 
-    dep_str = Job._build_dependency_string(jobs)
-    assert dep_str == "afterok:12345:67890:11111"
+    dependency = jobs[0] if len(jobs) == 1 else jobs
+    dep_str = Job._build_dependency_string(dependency)
+    assert dep_str == expected
 
 
 @pytest.mark.parametrize(
@@ -528,29 +530,43 @@ def test_build_dependency_string_with_unsubmitted_job_in_list_raises() -> None:
 
 
 @pytest.mark.parametrize(
-    ("dependency", "expected_depend_flag"),
+    ("dependency_setup", "expected_depend_flag"),
     [
         pytest.param(
-            "12345.datarmor",
+            lambda: "12345.datarmor",
             "depend=afterok:12345.datarmor",
             id="string_dependency",
         ),
         pytest.param(
-            ["11111", "22222", "33333"],
+            lambda: ["11111", "22222", "33333"],
             "depend=afterok:11111:22222:33333",
             id="multiple_string_dependencies",
         ),
+        pytest.param(
+            lambda: "job_instance",  # Special marker
+            "depend=afterok:12345",
+            id="job_instance_dependency",
+        ),
     ],
 )
-def test_submit_pbs_with_dependencies(
+def test_submit_pbs_with_various_dependencies(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
-    dependency: str | list[str],
+    dependency_setup: callable,
     expected_depend_flag: str,
 ) -> None:
     """Test submitting jobs with various dependency configurations."""
     script = tmp_path / "script.py"
     script.write_text("")
+
+    # Setup dependency
+    dependency = dependency_setup()
+    if dependency == "job_instance":
+        job1 = Job(script, name="job1", output_folder=tmp_path)
+        job1.job_id = "12345"
+        job1.status = JobStatus.QUEUED
+        dependency = job1
+
     job = Job(script, name="dependent_job", output_folder=tmp_path)
     pbs_path = tmp_path / "dependent_job.pbs"
     job.write_pbs(pbs_path)
@@ -567,45 +583,8 @@ def test_submit_pbs_with_dependencies(
 
     monkeypatch.setattr(subprocess, "run", mock_run)
 
-    job.submit_pbs(depend_on=dependency)
+    job.submit_pbs(dependency=dependency)
 
     assert "-W" in captured_cmd
     w_index = captured_cmd.index("-W")
     assert captured_cmd[w_index + 1] == expected_depend_flag
-
-
-def test_submit_pbs_with_job_instance_dependency(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Test submitting a job that depends on Job instances."""
-    script = tmp_path / "script.py"
-    script.write_text("")
-
-    # Create a dependency job
-    job1 = Job(script, name="job1", output_folder=tmp_path)
-    job1.job_id = "12345"
-    job1.status = JobStatus.QUEUED
-
-    # Create a dependent job
-    job2 = Job(script, name="job2", output_folder=tmp_path)
-    pbs_path = tmp_path / "job2.pbs"
-    job2.write_pbs(pbs_path)
-
-    captured_cmd = []
-
-    class Dummy:
-        stdout = "67890.server\n"
-        stderr = ""
-
-    def mock_run(cmd, *args, **kwargs):
-        captured_cmd.extend(cmd)
-        return Dummy()
-
-    monkeypatch.setattr(subprocess, "run", mock_run)
-
-    # Test single Job dependency
-    job2.submit_pbs(depend_on=job1)
-
-    assert "-W" in captured_cmd
-    w_index = captured_cmd.index("-W")
-    assert captured_cmd[w_index + 1] == "depend=afterok:12345"
