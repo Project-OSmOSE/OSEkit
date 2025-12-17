@@ -349,8 +349,40 @@ class Job:
         self.progress()
 
     @staticmethod
+    def _normalize_dependencies(
+        depend_on: Job | list[Job] | str | list[str],
+        dependency_type: str,
+    ) -> list[Job | str]:
+        """Normalize dependency input to a list and strip prefixes from strings.
+
+        Parameters
+        ----------
+        depend_on: Job | list[Job] | str | list[str]
+            Raw dependency input.
+        dependency_type: str
+            Type of dependency (used to strip prefixes like "afterok:").
+
+        Returns
+        -------
+        list[Job | str]
+            Normalized list of dependencies.
+
+        """
+        # Ensure we have a list
+        depend_on_list = depend_on if isinstance(depend_on, list) else [depend_on]
+
+        # Strip dependency type prefix from strings (e.g., "afterok:12345" -> "12345")
+        normalized = [
+            dep.lstrip(f"{dependency_type}:") if isinstance(dep, str) else dep
+            for dep in depend_on_list
+        ]
+
+        return normalized
+
+    @staticmethod
     def _build_dependency_string(
-        depend_on: Job | list[Job] | str | list[str], dependency_type: str = "afterok"
+        dependency: Job | list[Job] | str | list[str],
+        dependency_type: str = "afterok",
     ) -> str:
         """Build a PBS dependency string.
 
@@ -363,34 +395,39 @@ class Job:
 
         Returns
         -------
-        str:
-            PBS dependency string (e.g., "afterok:12345:12346").
+        str
+            PBS dependency string.
+
+        Examples
+        --------
+        >>> Job._build_dependency_string("12345")
+        'afterok:12345'
+        >>> Job._build_dependency_string(["12345", "67890"])
+        'afterok:12345:67890'
+        >>> Job._build_dependency_string("12345", dependency_type="afterany")
+        'afterany:12345'
 
         """
-        job_ids = []
+        # Normalize input
+        depend_on_list = Job._normalize_dependencies(dependency, dependency_type)
 
-        if isinstance(depend_on, str):
-            if ":" in depend_on:
-                return depend_on
-            else:
-                job_ids.append(depend_on)
-        elif isinstance(depend_on, Job):
-            if depend_on.job_id is None:
-                msg = f"Job '{depend_on.name}' has not been submitted yet."
-                raise ValueError(msg)
-            job_ids.append(depend_on.job_id)
-        elif isinstance(depend_on, list):
-            for item in depend_on:
-                if isinstance(item, str):
-                    job_ids.append(item)
-                elif isinstance(item, Job):
-                    if item.job_id is None:
-                        msg = f"Job '{item.name}' has not been submitted yet."
-                        raise ValueError(msg)
-                    job_ids.append(item.job_id)
+        # Check for unsubmitted jobs
+        if unsubmitted_job := next(
+            (
+                j
+                for j in depend_on_list
+                if isinstance(j, Job) and j.status.value < JobStatus.QUEUED.value
+            ),
+            None,
+        ):
+            msg = f"Job '{unsubmitted_job.name}' has not been submitted yet."
+            raise ValueError(msg)
 
-        if not job_ids:
-            return ""
+        # Build dependency string
+        job_ids = [
+            dep.job_id if isinstance(dep, Job) else dep
+            for dep in depend_on_list
+        ]
 
         return f"{dependency_type}:{':'.join(job_ids)}"
 
