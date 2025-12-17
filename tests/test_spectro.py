@@ -269,14 +269,14 @@ def test_spectro_parameters_in_npz_files(
         pytest.param(
             {
                 "duration": 6,
-                "sample_rate": 1_024,
+                "sample_rate": 28_000,
                 "nb_files": 1,
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
             },
             None,
             None,
             6,
-            ShortTimeFFT(hamming(1_024), 100, 1_024),
+            ShortTimeFFT(hamming(1_024), 100, 28_000),
             id="6_seconds_split_in_6_with_overlap",
         ),
         pytest.param(
@@ -289,7 +289,7 @@ def test_spectro_parameters_in_npz_files(
             Instrument(end_to_end_db=150.0),
             None,
             6,
-            ShortTimeFFT(hamming(1_024), 100, 1_024),
+            ShortTimeFFT(hamming(1_024), 1_024, 1_024),
             id="audio_data_with_instrument",
         ),
         pytest.param(
@@ -302,7 +302,7 @@ def test_spectro_parameters_in_npz_files(
             None,
             Normalization.ZSCORE,
             6,
-            ShortTimeFFT(hamming(1_024), 100, 1_024),
+            ShortTimeFFT(hamming(1_024), 1_024, 1_024),
             id="audio_data_with_normalization",
         ),
     ],
