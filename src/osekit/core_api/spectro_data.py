@@ -619,6 +619,14 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
     def get_overlapped_bins(cls, sd1: SpectroData, sd2: SpectroData) -> np.ndarray:
         """Compute the bins that overflow between the two spectro data.
 
+        The idea is that if there is a SpectroData sd2 that follows sd1,
+        sd1.get_value() will return the bins up to the first overlapping bin,
+        and sd2 will return the bins from the first overlapping bin.
+
+        Signal processing guys might want to burn my house to the ground for it,
+        but it seems to effectively resolve the issue we have with visible junction
+        between spectrogram zoomed parts.
+
         Parameters
         ----------
         sd1: SpectroData
