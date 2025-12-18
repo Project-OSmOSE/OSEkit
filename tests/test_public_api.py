@@ -1411,3 +1411,61 @@ def test_spectro_analysis_with_existing_ads(
         assert ad.begin == sd.begin
         assert ad.end == sd.end
         assert sd.audio_data == ad
+
+
+@pytest.mark.parametrize(
+    ("fft", "zoomed_levels", "expected"),
+    [
+        pytest.param(
+            ShortTimeFFT(hamming(1024), hop=1024, fs=24_000),
+            None,
+            [],
+            id="no_zoom",
+        ),
+        pytest.param(
+            ShortTimeFFT(hamming(1024), hop=1024, fs=24_000),
+            [1],
+            [],
+            id="x1_zoom_only_equals_no_zoom",
+        ),
+        pytest.param(
+            ShortTimeFFT(hamming(1024), hop=1024, fs=24_000),
+            [2],
+            [
+                ShortTimeFFT(hamming(1024), hop=512, fs=24_000),
+            ],
+            id="x2_zoom_only",
+        ),
+        pytest.param(
+            ShortTimeFFT(hamming(1024), hop=1024, fs=24_000),
+            [2, 4, 8],
+            [
+                ShortTimeFFT(hamming(1024), hop=512, fs=24_000),
+                ShortTimeFFT(hamming(1024), hop=256, fs=24_000),
+                ShortTimeFFT(hamming(1024), hop=128, fs=24_000),
+            ],
+            id="multiple_zoom_levels",
+        ),
+        pytest.param(
+            ShortTimeFFT(hamming(1024), hop=1024, fs=24_000),
+            [3],
+            [
+                ShortTimeFFT(hamming(1024), hop=341, fs=24_000),
+            ],
+            id="hop_is_rounded_down",
+        ),
+    ],
+)
+def test_default_zoomed_sft(
+    fft: ShortTimeFFT,
+    zoomed_levels: list[int] | None,
+    expected: list[ShortTimeFFT],
+) -> None:
+    for sft, expected_sft in zip(
+        Analysis._get_zoomed_ffts(fft, zoomed_levels),
+        expected,
+        strict=True,
+    ):
+        assert np.array_equal(sft.win, expected_sft.win)
+        assert sft.hop == expected_sft.hop
+        assert sft.fs == expected_sft.fs
