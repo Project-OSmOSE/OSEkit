@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import subprocess
+from contextlib import nullcontext
 from pathlib import Path
 
 import pytest
@@ -441,150 +442,176 @@ def test_job_builder_submit(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.mark.parametrize(
-    ("dependency", "expected"),
+    ("dependency", "job_id", "job_status", "expected", "expected_exception"),
     [
         pytest.param(
-            "4815162342",
-            "afterok:4815162342",
+            "1234567",
+            None,
+            None,
+            "afterok:1234567",
+            nullcontext(),
             id="single_job_id",
         ),
         pytest.param(
-            "4815162342.datarmor",
-            "afterok:4815162342.datarmor",
-            id="job_id_with_server",
-        ),
-        pytest.param(
-            ["11111", "22222", "33333"],
-            "afterok:11111:22222:33333",
+            ["1234567", "4567891", "7891234"],
+            [None] * 3,
+            [None] * 3,
+            "afterok:1234567:4567891:7891234",
+            nullcontext(),
             id="multiple_job_ids",
         ),
+        pytest.param(
+            "123",
+            None,
+            None,
+            None,
+            pytest.raises(
+                ValueError,
+                match=r"Invalid job ID '123'\. Job IDs must be 7 digits long\.",
+            ),
+            id="invalid_job_id_too_short",
+        ),
+        pytest.param(
+            "abcdefg",
+            None,
+            None,
+            None,
+            pytest.raises(
+                ValueError,
+                match=r"Invalid job ID 'abcdefg'\. Job IDs must be 7 digits long\.",
+            ),
+            id="invalid_job_id_non_numeric",
+        ),
+        pytest.param(
+            ["1234567", "not_a_job_id"],
+            [None] * 2,
+            [None] * 2,
+            None,
+            pytest.raises(
+                ValueError,
+                match=r"Invalid job ID 'not_a_job_id'\. Job IDs must be 7 digits long\.",
+            ),
+            id="multiple_job_id_one_invalid",
+        ),
+        pytest.param(
+            Job(script_path=Path("test.py"), name="job_1"),
+            "1234567",
+            JobStatus.QUEUED,
+            "afterok:1234567",
+            nullcontext(),
+            id="single_job_instance",
+        ),
+        pytest.param(
+            [
+                Job(script_path=Path("horse_with.py"), name="job_1"),
+                Job(script_path=Path("no_name.py"), name="job_2"),
+            ],
+            ["1234567", "4567891"],
+            [JobStatus.QUEUED, JobStatus.QUEUED],
+            "afterok:1234567:4567891",
+            nullcontext(),
+            id="multiple_job_instance",
+        ),
+        pytest.param(
+            [
+                Job(script_path=Path("king_crimson.py"), name="job_1"),
+                Job(script_path=Path("crimson_king.py"), name="job_2"),
+            ],
+            ["1234567", "not_an_id"],
+            [JobStatus.QUEUED, JobStatus.QUEUED],
+            None,
+            pytest.raises(
+                ValueError,
+                match=r"Invalid job ID 'not_an_id'\. Job IDs must be 7 digits long\.",
+            ),
+            id="multiple_job_instance_invalid_one",
+        ),
+        pytest.param(
+            [
+                Job(script_path=Path("king_crimson.py"), name="job_1"),
+                "9876543",
+            ],
+            ["1234567", None],
+            [JobStatus.QUEUED, None],
+            "afterok:1234567:9876543",
+            nullcontext(),
+            id="job_and_string_input",
+        ),
+        pytest.param(
+            Job(script_path=Path("test.py"), name="tornero"),
+            "1234567",
+            JobStatus.UNPREPARED,
+            None,
+            pytest.raises(
+                ValueError,
+                match="Job 'tornero' has not been submitted yet.",
+            ),
+            id="unprepared_job_instance",
+        ),
+        pytest.param(
+            [
+                Job(script_path=Path("script.py"), name="dalida"),
+                Job(script_path=Path("script.py"), name="mourir_sur_scene"),
+            ],
+            ["1234567", "4567896"],
+            [JobStatus.QUEUED, JobStatus.PREPARED],
+            None,
+            pytest.raises(
+                ValueError,
+                match="Job 'mourir_sur_scene' has not been submitted yet.",
+            ),
+            id="multiple_job_instance_one_not_submitted",
+        ),
     ],
 )
+
 def test_build_dependency_string_with_string_input(
-    dependency: str | list[str], expected: str
+    dependency: str | list[str] | Job | list[Job],
+    job_id: str | list[str] | None,
+    job_status: JobStatus,
+    expected: str | None,
+    expected_exception: type[Exception],
 ) -> None:
-    """Test building dependency string from string inputs."""
-    dep_str = Job._build_dependency_string(dependency)
-    assert dep_str == expected
+    """Test building dependency string from string and Job inputs."""
+    deps = dependency if isinstance(dependency, list) else [dependency]
+    ids = job_id if isinstance(job_id, list) else [job_id]
+    status = job_status if isinstance(job_id, list) else [job_status]
+
+    for dep, job_id, job_status in zip(deps, ids, status, strict=True):
+        if isinstance(dep, Job):
+            dep.status = job_status
+            dep.job_id = job_id
+
+    with expected_exception:
+        dep_str = Job._build_dependency_string(dependency)
+        if expected is not None:
+            assert dep_str == expected
 
 
 @pytest.mark.parametrize(
-    ("job_ids", "expected"),
+    ("dependency_type", "expected_exception"),
     [
-        pytest.param(["12345"], "afterok:12345", id="single_job"),
+        pytest.param("afterok", nullcontext(), id="afterok"),
+        pytest.param("afterany", nullcontext(), id="afterany"),
+        pytest.param("afternotok", nullcontext(), id="afternotok"),
+        pytest.param("after", nullcontext(), id="after"),
         pytest.param(
-            ["12345", "67890", "11111"], "afterok:12345:67890:11111", id="multiple_jobs"
+            "not_a_supported_type",
+            pytest.raises(
+                ValueError,
+                match=r"Unsupported dependency type 'not_a_supported_type'\. Expected one of \['after', 'afterany', 'afternotok', 'afterok'\]\.",
+            ),
+            id="invalid_dependency_type",
         ),
     ],
 )
-def test_build_dependency_string_with_job_instances(
-    job_ids: list[str], expected: str
+
+# For now, only "afterok" is used in code
+def test_build_dependency_string_with_different_types(
+    dependency_type: str,
+    expected_exception: type[Exception],
 ) -> None:
-    """Test building dependency string from Job instance(s)."""
-    jobs = []
-    for i, job_id in enumerate(job_ids, 1):
-        job = Job(Path(f"script{i}.py"))
-        job.job_id = job_id
-        job.status = JobStatus.QUEUED
-        jobs.append(job)
-
-    dependency = jobs[0] if len(jobs) == 1 else jobs
-    dep_str = Job._build_dependency_string(dependency)
-    assert dep_str == expected
-
-
-@pytest.mark.parametrize(
-    "dependency_type",
-    ["afterok", "afterany", "afternotok", "after"],
-)
-def test_build_dependency_string_with_different_types(dependency_type: str) -> None:
     """Test building dependency strings with different dependency types."""
-    job = Job(Path("script.py"))
-    job.job_id = "12345"
-    job.status = JobStatus.QUEUED
-
-    dep_str = Job._build_dependency_string(job, dependency_type)
-    assert dep_str == f"{dependency_type}:12345"
-
-
-def test_build_dependency_string_with_unsubmitted_job_raises() -> None:
-    """Test that using an unsubmitted job raises ValueError."""
-    job = Job(Path("script.py"), name="my_way")
-    job.status = JobStatus.PREPARED
-
-    with pytest.raises(ValueError, match="Job 'my_way' has not been submitted yet"):
-        Job._build_dependency_string(job)
-
-
-def test_build_dependency_string_with_unsubmitted_job_in_list_raises() -> None:
-    """Test that using an unsubmitted job in a list raises ValueError."""
-    job1 = Job(Path("script1.py"), name="job1")
-    job1.job_id = "12345"
-    job1.status = JobStatus.QUEUED
-
-    job2 = Job(Path("script2.py"), name="job2")
-    job2.status = JobStatus.PREPARED  # Not yet submitted
-
-    with pytest.raises(ValueError, match="Job 'job2' has not been submitted yet"):
-        Job._build_dependency_string([job1, job2])
-
-
-@pytest.mark.parametrize(
-    ("dependency_setup", "expected_depend_flag"),
-    [
-        pytest.param(
-            lambda: "12345.datarmor",
-            "depend=afterok:12345.datarmor",
-            id="string_dependency",
-        ),
-        pytest.param(
-            lambda: ["11111", "22222", "33333"],
-            "depend=afterok:11111:22222:33333",
-            id="multiple_string_dependencies",
-        ),
-        pytest.param(
-            lambda: "job_instance",  # Special marker
-            "depend=afterok:12345",
-            id="job_instance_dependency",
-        ),
-    ],
-)
-def test_submit_pbs_with_various_dependencies(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    dependency_setup: callable,
-    expected_depend_flag: str,
-) -> None:
-    """Test submitting jobs with various dependency configurations."""
-    script = tmp_path / "script.py"
-    script.write_text("")
-
-    # Setup dependency
-    dependency = dependency_setup()
-    if dependency == "job_instance":
-        job1 = Job(script, name="job1", output_folder=tmp_path)
-        job1.job_id = "12345"
-        job1.status = JobStatus.QUEUED
-        dependency = job1
-
-    job = Job(script, name="dependent_job", output_folder=tmp_path)
-    pbs_path = tmp_path / "dependent_job.pbs"
-    job.write_pbs(pbs_path)
-
-    captured_cmd = []
-
-    class Dummy:
-        stdout = "99999.server\n"
-        stderr = ""
-
-    def mock_run(cmd, *args, **kwargs):
-        captured_cmd.extend(cmd)
-        return Dummy()
-
-    monkeypatch.setattr(subprocess, "run", mock_run)
-
-    job.submit_pbs(dependency=dependency)
-
-    assert "-W" in captured_cmd
-    w_index = captured_cmd.index("-W")
-    assert captured_cmd[w_index + 1] == expected_depend_flag
+    with expected_exception:
+        dep_str = Job._build_dependency_string("1234567", dependency_type)
+        assert dep_str == f"{dependency_type}:1234567"

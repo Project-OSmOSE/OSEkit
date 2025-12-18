@@ -6,6 +6,7 @@ jobs, with writting/submitting of PBS files.
 """
 from __future__ import annotations
 
+import re
 import subprocess
 from dataclasses import dataclass
 from enum import Enum
@@ -348,44 +349,40 @@ class Job:
         self.job_id = request.stdout.split(".", maxsplit=1)[0].strip()
         self.progress()
 
+    _VALID_DEPENDENCY_TYPES = {"afterok", "afterany", "afternotok", "after"}
+
     @staticmethod
-    def _normalize_dependencies(
-        depend_on: Job | list[Job] | str | list[str],
-        dependency_type: str,
-    ) -> list[Job | str]:
-        """Normalize dependency input to a list and strip prefixes from strings.
+    def _validate_dependency_type(dependency_type: str) -> None:
+        if dependency_type not in Job._VALID_DEPENDENCY_TYPES:
+            raise ValueError(
+                f"Unsupported dependency type '{dependency_type}'. "
+                f"Expected one of {sorted(Job._VALID_DEPENDENCY_TYPES)}."
+            )
 
-        Parameters
-        ----------
-        depend_on: Job | list[Job] | str | list[str]
-            Raw dependency input.
-        dependency_type: str
-            Type of dependency (used to strip prefixes like "afterok:").
+    _JOB_ID_PATTERN = re.compile(r"\d{7}")
 
-        Returns
-        -------
-        list[Job | str]
-            Normalized list of dependencies.
-
-        """
-        depend_on_list = depend_on if isinstance(depend_on, list) else [depend_on]
-
-        return [
-            dep.lstrip(f"{dependency_type}:") if isinstance(dep, str) else dep
-            for dep in depend_on_list
-        ]
+    @staticmethod
+    def _validate_dependency(dependency: str | Job | list[str] | list[Job]) -> list[str]:
+        deps = dependency if isinstance(dependency, list) else [dependency]
+        job_ids = [dep.job_id if isinstance(dep, Job) else dep for dep in deps]
+        for job_id in job_ids:
+            if not Job._JOB_ID_PATTERN.fullmatch(job_id):
+                raise ValueError(
+                    f"Invalid job ID '{job_id}'. Job IDs must be 7 digits long."
+                )
+        return job_ids
 
     @staticmethod
     def _build_dependency_string(
-        dependency: Job | list[Job] | str | list[str],
+        dependency: str | Job | list[str] | list[Job],
         dependency_type: str = "afterok",
     ) -> str:
         """Build a PBS dependency string.
 
         Parameters
         ----------
-        depend_on: Job | list[Job] | str | list[str]
-            Job(s) or job ID(s) to depend on.
+        dependency: Job | str
+            Job or job ID to depend on.
         dependency_type: str
             Type of dependency (afterok, afterany, afternotok, after).
 
@@ -396,33 +393,30 @@ class Job:
 
         Examples
         --------
-        >>> Job._build_dependency_string("12345")
-        'afterok:12345'
-        >>> Job._build_dependency_string(["12345", "67890"])
-        'afterok:12345:67890'
-        >>> Job._build_dependency_string("12345", dependency_type="afterany")
-        'afterany:12345'
+        >>> Job._build_dependency_string("1234567")
+        'afterok:1234567'
+        >>> Job._build_dependency_string(["1234567", "4567891"])
+        'afterok:1234567:4567891'
+        >>> Job._build_dependency_string("7894561", dependency_type="afterany")
+        'afterany:7894651'
 
         """
-        depend_on_list = Job._normalize_dependencies(dependency, dependency_type)
+        dependency = dependency if isinstance(dependency, list) else [dependency]
+        id_str = Job._validate_dependency(dependency)
+        Job._validate_dependency_type(dependency_type)
 
         if unsubmitted_job := next(
-            (
-                j
-                for j in depend_on_list
-                if isinstance(j, Job) and j.status.value < JobStatus.QUEUED.value
-            ),
-            None,
+                (
+                        j
+                        for j in dependency
+                        if isinstance(j, Job) and j.status.value < JobStatus.QUEUED.value
+                ),
+                None,
         ):
             msg = f"Job '{unsubmitted_job.name}' has not been submitted yet."
             raise ValueError(msg)
 
-        job_ids = [
-            dep.job_id if isinstance(dep, Job) else dep
-            for dep in depend_on_list
-        ]
-
-        return f"{dependency_type}:{':'.join(job_ids)}"
+        return f"{dependency_type}:{':'.join(id_str)}"
 
     def update_info(self) -> None:
         """Request info about the job and update it."""
