@@ -81,7 +81,7 @@ class Analysis:
         scale: Scale | None = None,
         nb_ltas_time_bins: int | None = None,
         zoom_levels: list[int] | None = None,
-        zoomed_fft: list[ShortTimeFFT] | None = None,
+        zoomed_ffts: list[ShortTimeFFT] | None = None,
     ) -> None:
         """Initialize an Analysis object.
 
@@ -153,7 +153,7 @@ class Analysis:
             This will only affect spectral exports, and if AnalysisType.AUDIO is
             included in the analysis, zoomed SpectroDatasets will be linked to the
             x1 zoom SpectroData.
-        zoomed_fft: list[ShortTimeFFT | None]
+        zoomed_ffts: list[ShortTimeFFT | None]
             FFT to use for computing the zoomed spectra.
             By default, SpectroDatasets with a zoomed factor z will use the
             same FFT as the z=1 SpectroDataset, but with a hop that is
@@ -182,8 +182,8 @@ class Analysis:
         self.fft = fft
         self.zoom_levels = list({1, *zoom_levels}) if zoom_levels else None
         self.zoomed_fft = (
-            zoomed_fft
-            if zoomed_fft
+            zoomed_ffts
+            if zoomed_ffts
             else self._get_zoomed_ffts(x1_fft=fft, zoom_levels=self.zoom_levels)
         )
 
