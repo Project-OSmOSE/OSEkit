@@ -11,7 +11,6 @@ dependencies = [
     "matplotlib>=3.10.7",
     "notebook>=7.4.4",
     "numpy>=2.2.6",
-    "obspy>=1.4.2",
     "pandas>=2.2.3",
     "pytest>=8.3.5",
     "pyyaml>=6.0.2",
@@ -29,6 +28,11 @@ classifiers = [
 
 [project.scripts]
 OSEkit = "OSmOSE:main"
+
+[project.optional-dependencies]
+mseed = [
+    "obspy",
+]
 
 [build-system]
 requires = ["hatchling"]

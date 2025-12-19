@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pytest
 
-from osekit.core_api.audio_file_manager import AudioFileManager
+from osekit.audio_backend.audio_file_manager import AudioFileManager
 from osekit.utils.audio_utils import generate_sample_audio
 
 if TYPE_CHECKING:
@@ -83,7 +83,7 @@ def test_read(
             (-10, None),
             pytest.raises(
                 ValueError,
-                match="Start should be between 0 and the last frame of the audio file.",
+                match=r"Start should be between 0 and the last frame of the audio file.",
             ),
             id="negative_start_raises_error",
         ),
@@ -96,7 +96,7 @@ def test_read(
             (50_000, None),
             pytest.raises(
                 ValueError,
-                match="Start should be between 0 and the last frame of the audio file.",
+                match=r"Start should be between 0 and the last frame of the audio file.",
             ),
             id="out_of_bounds_start_raises_error",
         ),
@@ -109,7 +109,7 @@ def test_read(
             (None, -10),
             pytest.raises(
                 ValueError,
-                match="Stop should be between 0 and the last frame of the audio file.",
+                match=r"Stop should be between 0 and the last frame of the audio file.",
             ),
             id="negative_stop_raises_error",
         ),
@@ -122,7 +122,7 @@ def test_read(
             (None, 50_000),
             pytest.raises(
                 ValueError,
-                match="Stop should be between 0 and the last frame of the audio file.",
+                match=r"Stop should be between 0 and the last frame of the audio file.",
             ),
             id="out_of_bounds_stop_raises_error",
         ),
@@ -135,7 +135,7 @@ def test_read(
             (20_000, 10_000),
             pytest.raises(
                 ValueError,
-                match="Start should be inferior to Stop.",
+                match=r"Start should be inferior to Stop.",
             ),
             id="start_after_stop_raises_error",
         ),
@@ -208,12 +208,13 @@ def test_switch(
     expected_opened_files: list[int],
 ) -> None:
     afm = AudioFileManager()
+    sf_back = afm._soundfile
     audio_files, _ = audio_files
     audio_files = [af.path for af in audio_files]
     for file in file_openings:
         afm.read(path=audio_files[file])
     assert [audio_files.index(f) for f in patch_afm_open] == expected_opened_files
-    assert audio_files.index(Path(afm.opened_file.name)) == file_openings[-1]
+    assert audio_files.index(Path(sf_back._file.name)) == file_openings[-1]
 
 
 @pytest.mark.parametrize(
@@ -232,13 +233,14 @@ def test_switch(
 )
 def test_close(audio_files: tuple[list[AudioFile], pytest.fixtures.Subrequest]) -> None:
     afm = AudioFileManager()
-    assert afm.opened_file is None
+    sf_back = afm._soundfile
+    assert sf_back._file is None
     audio_files, _ = audio_files
     afm.read(audio_files[0].path)
-    assert afm.opened_file is not None
-    assert Path(afm.opened_file.name) == audio_files[0].path
+    assert sf_back._file is not None
+    assert Path(sf_back._file.name) == audio_files[0].path
     afm.close()
-    assert afm.opened_file is None
+    assert sf_back._file is None
 
 
 @pytest.mark.parametrize(
@@ -257,9 +259,10 @@ def test_close(audio_files: tuple[list[AudioFile], pytest.fixtures.Subrequest]) 
 )
 def test_info(audio_files: tuple[list[AudioFile], pytest.fixtures.Subrequest]) -> None:
     afm = AudioFileManager()
+    sf_back = afm._soundfile
     audio_files, request = audio_files
     for file in audio_files:
-        assert afm.opened_file is None or Path(afm.opened_file.name) != file.path.name
+        assert sf_back._file is None or Path(sf_back._file.name) != file.path.name
         sample_rate, frames, channels = afm.info(file.path)
         assert request.param["sample_rate"] == sample_rate
         assert request.param["duration"] * request.param["sample_rate"] == frames
