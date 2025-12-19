@@ -111,7 +111,7 @@ def test_write_pbs(tmp_path: Path) -> None:
 
     job = Job(
         script_path=script,
-        script_args={"vieille": "face", "de": "rat"},
+        script_args={"vieille": "face", "de": "rat", "cool": False, "fun": True},
         name="berlioz",
         output_folder=output_dir,
     )
@@ -141,6 +141,8 @@ def test_write_pbs(tmp_path: Path) -> None:
     assert last.startswith(f"python {script}")
     assert "--vieille face" in last
     assert "--de rat" in last
+    assert "--no-cool" in last
+    assert "--fun" in last
 
     assert job.path == pbs_path
     assert job.status == JobStatus.PREPARED
@@ -392,7 +394,7 @@ def test_build_arg_string_booleans(tmp_path: Path):
             "danser": False,
             "avec": True,
             "le": 0.3,
-            "vent": "test"
+            "vent": "test",
         },
         name="danser_avec_le_vent",
         output_folder=output_dir,
