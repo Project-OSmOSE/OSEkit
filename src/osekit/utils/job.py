@@ -6,7 +6,6 @@ jobs, with writting/submitting of PBS files.
 """
 from __future__ import annotations
 
-import re
 import subprocess
 from dataclasses import dataclass
 from enum import Enum
@@ -359,14 +358,11 @@ class Job:
                 f"Expected one of {sorted(Job._VALID_DEPENDENCY_TYPES)}."
             )
 
-    _JOB_ID_PATTERN = re.compile(r"\d{7}")
-
     @staticmethod
-    def _validate_dependency(dependency: str | Job | list[str] | list[Job]) -> list[str]:
-        deps = dependency if isinstance(dependency, list) else [dependency]
-        job_ids = [dep.job_id if isinstance(dep, Job) else dep for dep in deps]
+    def _validate_dependency(dependency: list[str] | list[Job]) -> list[str]:
+        job_ids = [dep.job_id if isinstance(dep, Job) else dep for dep in dependency]
         for job_id in job_ids:
-            if not Job._JOB_ID_PATTERN.fullmatch(job_id):
+            if not job_id.isdigit() or len(job_id)!=7:
                 raise ValueError(
                     f"Invalid job ID '{job_id}'. Job IDs must be 7 digits long."
                 )

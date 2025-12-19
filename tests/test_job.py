@@ -442,29 +442,26 @@ def test_job_builder_submit(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.mark.parametrize(
-    ("dependency", "job_id", "job_status", "expected", "expected_exception"),
+    ("dependency", "ids", "status", "expected"),
     [
         pytest.param(
-            "1234567",
-            None,
-            None,
-            "afterok:1234567",
-            nullcontext(),
+            ["1234567"],
+            [None],
+            [None],
+            nullcontext("afterok:1234567"),
             id="single_job_id",
         ),
         pytest.param(
             ["1234567", "4567891", "7891234"],
             [None] * 3,
             [None] * 3,
-            "afterok:1234567:4567891:7891234",
-            nullcontext(),
+            nullcontext("afterok:1234567:4567891:7891234"),
             id="multiple_job_ids",
         ),
         pytest.param(
-            "123",
-            None,
-            None,
-            None,
+            ["123"],
+            [None],
+            [None],
             pytest.raises(
                 ValueError,
                 match=r"Invalid job ID '123'\. Job IDs must be 7 digits long\.",
@@ -472,10 +469,19 @@ def test_job_builder_submit(monkeypatch: pytest.MonkeyPatch) -> None:
             id="invalid_job_id_too_short",
         ),
         pytest.param(
-            "abcdefg",
-            None,
-            None,
-            None,
+            [Job(script_path=Path("test.py"), name="job_1")],
+            ["12345678"],
+            [JobStatus.QUEUED],
+            pytest.raises(
+                ValueError,
+                match=r"Invalid job ID '12345678'\. Job IDs must be 7 digits long\.",
+            ),
+            id="invalid_job_id_too_long",
+        ),
+        pytest.param(
+            ["abcdefg"],
+            [None],
+            [None],
             pytest.raises(
                 ValueError,
                 match=r"Invalid job ID 'abcdefg'\. Job IDs must be 7 digits long\.",
@@ -486,7 +492,6 @@ def test_job_builder_submit(monkeypatch: pytest.MonkeyPatch) -> None:
             ["1234567", "not_a_job_id"],
             [None] * 2,
             [None] * 2,
-            None,
             pytest.raises(
                 ValueError,
                 match=r"Invalid job ID 'not_a_job_id'\. Job IDs must be 7 digits long\.",
@@ -494,11 +499,10 @@ def test_job_builder_submit(monkeypatch: pytest.MonkeyPatch) -> None:
             id="multiple_job_id_one_invalid",
         ),
         pytest.param(
-            Job(script_path=Path("test.py"), name="job_1"),
-            "1234567",
-            JobStatus.QUEUED,
-            "afterok:1234567",
-            nullcontext(),
+            [Job(script_path=Path("test.py"), name="job_1")],
+            ["1234567"],
+            [JobStatus.QUEUED],
+            nullcontext("afterok:1234567"),
             id="single_job_instance",
         ),
         pytest.param(
@@ -508,8 +512,7 @@ def test_job_builder_submit(monkeypatch: pytest.MonkeyPatch) -> None:
             ],
             ["1234567", "4567891"],
             [JobStatus.QUEUED, JobStatus.QUEUED],
-            "afterok:1234567:4567891",
-            nullcontext(),
+            nullcontext("afterok:1234567:4567891"),
             id="multiple_job_instance",
         ),
         pytest.param(
@@ -519,7 +522,6 @@ def test_job_builder_submit(monkeypatch: pytest.MonkeyPatch) -> None:
             ],
             ["1234567", "not_an_id"],
             [JobStatus.QUEUED, JobStatus.QUEUED],
-            None,
             pytest.raises(
                 ValueError,
                 match=r"Invalid job ID 'not_an_id'\. Job IDs must be 7 digits long\.",
@@ -533,15 +535,13 @@ def test_job_builder_submit(monkeypatch: pytest.MonkeyPatch) -> None:
             ],
             ["1234567", None],
             [JobStatus.QUEUED, None],
-            "afterok:1234567:9876543",
-            nullcontext(),
+            nullcontext("afterok:1234567:9876543"),
             id="job_and_string_input",
         ),
         pytest.param(
-            Job(script_path=Path("test.py"), name="tornero"),
-            "1234567",
-            JobStatus.UNPREPARED,
-            None,
+            [Job(script_path=Path("test.py"), name="tornero")],
+            ["1234567"],
+            [JobStatus.UNPREPARED],
             pytest.raises(
                 ValueError,
                 match="Job 'tornero' has not been submitted yet.",
@@ -555,7 +555,6 @@ def test_job_builder_submit(monkeypatch: pytest.MonkeyPatch) -> None:
             ],
             ["1234567", "4567896"],
             [JobStatus.QUEUED, JobStatus.PREPARED],
-            None,
             pytest.raises(
                 ValueError,
                 match="Job 'mourir_sur_scene' has not been submitted yet.",
@@ -566,35 +565,28 @@ def test_job_builder_submit(monkeypatch: pytest.MonkeyPatch) -> None:
 )
 
 def test_build_dependency_string_with_string_input(
-    dependency: str | list[str] | Job | list[Job],
-    job_id: str | list[str] | None,
-    job_status: JobStatus,
+    dependency: list[str] | list[Job],
+    ids: list[str] | None,
+    status: list[JobStatus],
     expected: str | None,
-    expected_exception: type[Exception],
 ) -> None:
     """Test building dependency string from string and Job inputs."""
-    deps = dependency if isinstance(dependency, list) else [dependency]
-    ids = job_id if isinstance(job_id, list) else [job_id]
-    status = job_status if isinstance(job_id, list) else [job_status]
-
-    for dep, job_id, job_status in zip(deps, ids, status, strict=True):
+    for dep, id, st in zip(dependency, ids, status, strict=True):
         if isinstance(dep, Job):
-            dep.status = job_status
-            dep.job_id = job_id
+            dep.status = st
+            dep.job_id = id
 
-    with expected_exception:
-        dep_str = Job._build_dependency_string(dependency)
-        if expected is not None:
-            assert dep_str == expected
+    with expected as e:
+        assert Job._build_dependency_string(dependency) == e
 
 
 @pytest.mark.parametrize(
-    ("dependency_type", "expected_exception"),
+    ("dependency_type", "expected"),
     [
-        pytest.param("afterok", nullcontext(), id="afterok"),
-        pytest.param("afterany", nullcontext(), id="afterany"),
-        pytest.param("afternotok", nullcontext(), id="afternotok"),
-        pytest.param("after", nullcontext(), id="after"),
+        pytest.param("afterok", nullcontext("afterok:1234567"), id="afterok"),
+        pytest.param("afterany", nullcontext("afterany:1234567"), id="afterany"),
+        pytest.param("afternotok", nullcontext("afternotok:1234567"), id="afternotok"),
+        pytest.param("after", nullcontext("after:1234567"), id="after"),
         pytest.param(
             "not_a_supported_type",
             pytest.raises(
@@ -606,12 +598,10 @@ def test_build_dependency_string_with_string_input(
     ],
 )
 
-# For now, only "afterok" is used in code
 def test_build_dependency_string_with_different_types(
     dependency_type: str,
-    expected_exception: type[Exception],
+    expected: type[Exception],
 ) -> None:
     """Test building dependency strings with different dependency types."""
-    with expected_exception:
-        dep_str = Job._build_dependency_string("1234567", dependency_type)
-        assert dep_str == f"{dependency_type}:1234567"
+    with expected as e:
+        assert Job._build_dependency_string("1234567", dependency_type) == e
