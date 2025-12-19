@@ -199,7 +199,7 @@ def test_inconsistent_mseed_sample_rate_error(tmp_path: pytest.fixture) -> None:
 
     with pytest.raises(
         ValueError,
-        match="Audio file has inconsistent sampling rate.",
+        match=r"Inconsistent sampling rates in MSEED file.",
     ) as e:
         assert (
             AudioFile(filename, strptime_format=TIMESTAMP_FORMATS_EXPORTED_FILES[1])

@@ -35,7 +35,7 @@ class MSeedBackend:
         metadata = obspy.read(pathname_or_url=path, headonly=True)
         sample_rate = {trace.meta.sampling_rate for trace in metadata.traces}
         if len(sample_rate) != 1:
-            msg = "Inconsistent sampling rates in MSEED file"
+            msg = "Inconsistent sampling rates in MSEED file."
             raise ValueError(msg)
 
         frames = sum(trace.meta.npts for trace in metadata.traces)
