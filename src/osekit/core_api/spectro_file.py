@@ -122,9 +122,12 @@ class SpectroFile(BaseFile):
 
             start_bin = (
                 next(
-                    idx
-                    for idx, t in enumerate(time)
-                    if self.begin + Timedelta(seconds=t) > start
+                    (
+                        idx
+                        for idx, t in enumerate(time)
+                        if self.begin + Timedelta(seconds=t) > start
+                    ),
+                    1,
                 )
                 - 1
             )
@@ -132,9 +135,12 @@ class SpectroFile(BaseFile):
 
             stop_bin = (
                 next(
-                    idx
-                    for idx, t in list(enumerate(time))[::-1]
-                    if self.begin + Timedelta(seconds=t) < stop
+                    (
+                        idx
+                        for idx, t in list(enumerate(time))[::-1]
+                        if self.begin + Timedelta(seconds=t) < stop
+                    ),
+                    len(time) - 2,
                 )
                 + 1
             )
