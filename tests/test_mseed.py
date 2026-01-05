@@ -1,3 +1,7 @@
+import builtins
+import types
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -142,7 +146,7 @@ obspy = pytest.importorskip("obspy")
     ],
 )
 def test_mseed_file_read(
-    tmp_path: pytest.fixture,
+    tmp_path: Path,
     streams: list[obspy.Stream],
     files_begin: list[pd.Timestamp],
     begin: pd.Timestamp | None,
@@ -178,7 +182,7 @@ def test_mseed_file_read(
     assert np.array_equal(audio_data.get_value()[:, 0], expected_data)
 
 
-def test_inconsistent_mseed_sample_rate_error(tmp_path: pytest.fixture) -> None:
+def test_inconsistent_mseed_sample_rate_error(tmp_path: Path) -> None:
     filename = (
         tmp_path
         / f"{Timestamp('2002-04-02 03:27:00').strftime(TIMESTAMP_FORMATS_EXPORTED_FILES[1])}.mseed"
@@ -205,3 +209,28 @@ def test_inconsistent_mseed_sample_rate_error(tmp_path: pytest.fixture) -> None:
             AudioFile(filename, strptime_format=TIMESTAMP_FORMATS_EXPORTED_FILES[1])
             == e
         )
+
+
+def test_missing_dependency(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    real_import = builtins.__import__
+
+    def raise_obspy_import_error(
+        name: str,
+        *args: list,
+        **kwargs: dict,
+    ) -> types.ModuleType:
+        if name == "obspy":
+            msg = "No module named 'obspy'"
+            raise ImportError(msg)
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", raise_obspy_import_error)
+
+    dummy_file = tmp_path / "dummy.mseed"
+    dummy_file.touch()
+
+    with pytest.raises(
+        ImportError,
+        match="MSEED support requires the optional dependency 'obspy'",
+    ) as e:
+        assert AudioFile(dummy_file, begin=Timestamp("2020-01-01 00:00:00")) == e

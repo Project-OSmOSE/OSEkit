@@ -5,6 +5,8 @@ import soundfile as sf
 
 
 class SoundFileBackend:
+    """Backend for reading conventional audio files (WAV, FLAC, MP3...)."""
+
     def __init__(self) -> None:
         """Instantiate a SoundFileBackend."""
         self._file: sf.SoundFile | None = None

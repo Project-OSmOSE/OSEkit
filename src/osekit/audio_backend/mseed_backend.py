@@ -3,15 +3,22 @@ from os import PathLike
 import numpy as np
 
 
+def _require_obspy() -> None:
+    try:
+        import obspy  # noqa: PLC0415, F401
+    except ImportError as e:
+        msg = "MSEED support requires the optional dependency 'obspy' "
+        "Install with: pip install osekit[mseed]. "
+        "If you're on windows and don't use conda, may the force be with you."
+        raise ImportError(msg) from e
+
+
 class MSeedBackend:
+    """Backend for reading sismology MSEED files."""
+
     def __init__(self) -> None:
-        try:
-            import obspy  # noqa: F401, PLC0415
-        except ImportError as e:
-            msg = "MSEED support requires the optional dependency 'obspy' "
-            "Install with: pip install osekit[mseed]. "
-            "If you're on windows and don't use conda, may the force be with you."
-            raise ImportError(msg) from e
+        """Initialize the MSEED backend."""
+        _require_obspy()
 
     def close(self) -> None:
         """Close the currently opened file. No use in MSEED files."""
@@ -30,7 +37,8 @@ class MSeedBackend:
             Sample rate, number of frames and channels of the MSEED file.
 
         """
-        import obspy  # type: ignore[import-not-found]  # noqa: PLC0415
+        _require_obspy()
+        import obspy  # type: ignore[import-not-found]
 
         metadata = obspy.read(pathname_or_url=path, headonly=True)
         sample_rate = {trace.meta.sampling_rate for trace in metadata.traces}
@@ -68,7 +76,8 @@ class MSeedBackend:
             A (channel * frames) array containing the MSEED data.
 
         """
-        import obspy  # type: ignore[import-not-found]  # noqa: PLC0415
+        _require_obspy()
+        import obspy  # type: ignore[import-not-found]
 
         file_content = obspy.read(path)
 
