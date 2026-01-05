@@ -71,7 +71,6 @@ class MSeedBackend:
         import obspy  # type: ignore[import-not-found]  # noqa: PLC0415
 
         file_content = obspy.read(path)
-        file_content.merge(method=1, fill_value=0)
 
         data = np.concatenate([trace.data for trace in file_content])
         return data[start:stop]

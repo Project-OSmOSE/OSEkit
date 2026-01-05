@@ -175,7 +175,7 @@ def test_mseed_file_read(
 
     audio_data = AudioData.from_files(audio_files, begin=begin, end=end)
 
-    assert np.array_equal(audio_data.get_value(), expected_data)
+    assert np.array_equal(audio_data.get_value()[:, 0], expected_data)
 
 
 def test_inconsistent_mseed_sample_rate_error(tmp_path: pytest.fixture) -> None:
