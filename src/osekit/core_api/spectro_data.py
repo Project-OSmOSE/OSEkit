@@ -82,6 +82,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         self._db_ref = db_ref
         self.v_lim = v_lim
         self.colormap = "viridis" if colormap is None else colormap
+        self.previous_data = None
+        self.next_data = None
 
     @staticmethod
     def get_default_ax() -> plt.Axes:
@@ -249,10 +251,25 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             padding="zeros",
         )
 
+        sx = self._merge_with_previous(sx)
+        sx = self._remove_overlap_with_next(sx)
+
         if self.sx_dtype is float:
             sx = abs(sx) ** 2
 
         return sx
+
+    def _merge_with_previous(self, data: np.ndarray) -> np.ndarray:
+        if self.previous_data is None:
+            return data
+        olap = SpectroData.get_overlapped_bins(self.previous_data, self)
+        return np.hstack((olap, data[:, olap.shape[1] :]))
+
+    def _remove_overlap_with_next(self, data: np.ndarray) -> np.ndarray:
+        if self.next_data is None:
+            return data
+        olap = SpectroData.get_overlapped_bins(self, self.next_data)
+        return data[:, : -olap.shape[1]]
 
     def get_welch(
         self,
@@ -567,7 +584,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             self.audio_data.split_frames(start_frame=a, stop_frame=b)
             for a, b in itertools.pairwise(split_frames)
         ]
-        return [
+        sd_split = [
             SpectroData.from_audio_data(
                 data=ad,
                 fft=self.fft,
@@ -576,6 +593,12 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             )
             for ad in ad_split
         ]
+
+        for sd1, sd2 in itertools.pairwise(sd_split):
+            sd1.next_data = sd2
+            sd2.previous_data = sd1
+
+        return sd_split
 
     def _get_value_from_items(self, items: list[SpectroItem]) -> np.ndarray:
         if not all(
@@ -588,23 +611,51 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         if len({i.file.get_fft().delta_t for i in items if not i.is_empty}) > 1:
             raise ValueError("Items don't have the same time resolution.")
 
-        output = items[0].get_value(fft=self.fft, sx_dtype=self.sx_dtype)
-        for item in items[1:]:
-            p1_le = self.fft.lower_border_end[1] - self.fft.p_min
-            output = np.hstack(
-                (
-                    output[:, :-p1_le],
-                    (
-                        output[:, -p1_le:]
-                        + item.get_value(fft=self.fft, sx_dtype=self.sx_dtype)[
-                            :,
-                            :p1_le,
-                        ]
-                    ),
-                    item.get_value(fft=self.fft, sx_dtype=self.sx_dtype)[:, p1_le:],
-                ),
-            )
-        return output
+        return np.hstack(
+            [item.get_value(fft=self.fft, sx_dtype=self.sx_dtype) for item in items],
+        )
+
+    @classmethod
+    def get_overlapped_bins(cls, sd1: SpectroData, sd2: SpectroData) -> np.ndarray:
+        """Compute the bins that overflow between the two spectro data.
+
+        The idea is that if there is a SpectroData sd2 that follows sd1,
+        sd1.get_value() will return the bins up to the first overlapping bin,
+        and sd2 will return the bins from the first overlapping bin.
+
+        Signal processing guys might want to burn my house to the ground for it,
+        but it seems to effectively resolve the issue we have with visible junction
+        between spectrogram zoomed parts.
+
+        Parameters
+        ----------
+        sd1: SpectroData
+            The spectro data that ends before sd2.
+        sd2: SpectroData
+            The spectro data that starts after sd1.
+
+        Returns
+        -------
+        np.ndarray:
+            The overlapped bins.
+            If there are p bins, sd1 and sd2 values should be concatenated as:
+            np.hstack(sd1[:,:-p], result, sd2[:,p:])
+
+        """
+        fft = sd1.fft
+        sd1_ub = fft.upper_border_begin(sd1.audio_data.shape[0])
+        sd1_bin_start = fft.nearest_k_p(k=sd1_ub[0], left=True)
+        sd2_lb = fft.lower_border_end
+        sd2_bin_stop = fft.nearest_k_p(k=sd2_lb[0], left=False)
+
+        ad1 = sd1.audio_data.split_frames(start_frame=sd1_bin_start)
+        ad2 = sd2.audio_data.split_frames(stop_frame=sd2_bin_stop)
+
+        sd_part1 = SpectroData.from_audio_data(ad1, fft=fft).get_value()
+        sd_part2 = SpectroData.from_audio_data(ad2, fft=fft).get_value()
+
+        p1_le = fft.lower_border_end[1] - fft.p_min
+        return sd_part1[:, -p1_le:] + sd_part2[:, :p1_le]
 
     @classmethod
     def from_files(
