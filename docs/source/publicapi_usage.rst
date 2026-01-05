@@ -1,7 +1,7 @@
+.. _publicapi_usage:
+
 Public API
 ----------
-
-.. _publicapi_usage:
 
 This API provides tools for working on large sets of audio data.
 
@@ -9,10 +9,10 @@ Basically, the whole point of **OSEkit**'s Public API is to export large amounts
 
 The :class:`osekit.public_api.dataset.Dataset` class is the cornerstone of **OSEkit**'s Public API.
 
+.. _build:
+
 Building a ``Dataset``
 ^^^^^^^^^^^^^^^^^^^^^^
-
-.. _build:
 
 At first, A ``Dataset`` is built from a raw folder containing the audio files to be processed.
 For example, this folder containing 4 audio files plus some extra files:
@@ -140,10 +140,10 @@ The remaining parameters of the analysis (begin and end **Timestamps**, duration
    If the ``Analysis`` contains spectral computations (either ``AnalysisType.MATRIX``, ``AnalysisType.SPECTROGRAM`` or ``AnalysisType.WELCH`` is in ``analysis_type``), a `scipy ShortTimeFFT instance <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.ShortTimeFFT.html#scipy.signal.ShortTimeFFT>`_ should be passed to the ``Analysis`` initializer.
 
 
+.. _editing_analysis:
+
 Checking/Editing the analysis
 """""""""""""""""""""""""""""
-
-.. _editing_analysis:
 
 If you want to take a peek at what the analysis output will be before actually running it, the :meth:`osekit.public_api.dataset.Dataset.get_analysis_audiodataset` and :meth:`osekit.public_api.dataset.Dataset.get_analysis_spectrodataset` methods
 return a :class:`osekit.core_api.audio_dataset.AudioDataset` and a :class:`osekit.core_api.spectro_dataset.SpectroDataset` instance, respectively.
@@ -218,10 +218,10 @@ The corresponding ``Analysis`` is the following:
 
     dataset.run_analysis(analysis=analysis) # And that's it!
 
+.. _output_1:
+
 Output 1
 """"""""
-
-.. _output_1:
 
 Once the analysis is run, a :class:`osekit.core_api.audio_dataset.AudioDataset` instance named ``cool_reshape`` has been created and added to the dataset's :attr:`osekit.public_api.dataset.Dataset.datasets` field.
 

@@ -1,7 +1,7 @@
+.. _example_ltas:
+
 Computing a Long-Term Average Spectrum
 ======================================
-
-.. _example_ltas:
 
 In this example, we want to compute a :ref:`LTAS <ltas>` of audio data over a long period of time.
 
