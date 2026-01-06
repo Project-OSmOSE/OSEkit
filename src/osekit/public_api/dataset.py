@@ -749,7 +749,7 @@ class Dataset:
             "analysis": dataset["analysis"],
             "json": str(dataset["dataset"].folder / f"{name}.json"),
         }
-        if type(dataset) in (SpectroDataset, LTASDataset):
+        if type(dataset["dataset"]) in (SpectroDataset, LTASDataset):
             output |= {
                 "zoom_level": dataset["zoom_level"],
                 "zoom_reference": dataset["zoom_reference"],
