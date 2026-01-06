@@ -787,6 +787,9 @@ class Dataset:
                 "analysis": dataset["analysis"],
                 "dataset": dataset_class.from_json(Path(dataset["json"])),
             }
+            for zoom_info in ("zoom_level", "zoom_reference"):
+                if zoom_info in dataset:
+                    datasets[name][zoom_info] = dataset[zoom_info]
         return cls(
             folder=Path(),
             instrument=Instrument.from_dict(dictionary["instrument"]),
