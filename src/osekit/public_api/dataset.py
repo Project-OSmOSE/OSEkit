@@ -378,8 +378,9 @@ class Dataset:
             self._add_audio_dataset(ads=ads, analysis_name=analysis.name)
 
         sds = None
+        zoom_sdses = {}
         if analysis.is_spectro:
-            sds, zoomed_sds = (
+            sds, zoom_sdses = (
                 self.get_analysis_spectrodatasets(
                     analysis=analysis,
                     audio_dataset=ads,
@@ -388,16 +389,24 @@ class Dataset:
                 else spectro_dataset
             )
             self._add_spectro_dataset(sds=sds, analysis_name=analysis.name)
+            for zoom_level, zoom_sds in zoom_sdses.items():
+                self._add_spectro_dataset(
+                    sds=zoom_sds,
+                    analysis_name=analysis.name,
+                    zoom_level=zoom_level,
+                    zoom_reference=sds.name,
+                )
 
-        self.export_analysis(
-            analysis_type=analysis.analysis_type,
-            ads=ads,
-            sds=sds,
-            link=True,
-            subtype=analysis.subtype,
-            nb_jobs=nb_jobs,
-            name=analysis.name,
-        )
+        for analysis_sds in [sds, *list(zoom_sdses.values())]:
+            self.export_analysis(
+                analysis_type=analysis.analysis_type,
+                ads=ads,
+                sds=analysis_sds,
+                link=True,
+                subtype=analysis.subtype,
+                nb_jobs=nb_jobs,
+                name=analysis.name,
+            )
 
         self.write_json()
 
@@ -552,12 +561,16 @@ class Dataset:
         self,
         sds: SpectroDataset | LTASDataset,
         analysis_name: str,
+        zoom_level: int = 1,
+        zoom_reference: str | None = None,
     ) -> None:
         sds.folder = self._get_spectro_dataset_subpath(sds=sds)
         self.datasets[sds.name] = {
             "class": type(sds).__name__,
             "dataset": sds,
             "analysis": analysis_name,
+            "zoom_level": zoom_level,
+            "zoom_reference": zoom_reference,
         }
         sds.write_json(sds.folder)
 
@@ -717,11 +730,7 @@ class Dataset:
         """
         return {
             "datasets": {
-                name: {
-                    "class": dataset["class"],
-                    "analysis": dataset["analysis"],
-                    "json": str(dataset["dataset"].folder / f"{name}.json"),
-                }
+                name: self.analysis_dataset_to_dict(name=name)
                 for name, dataset in self.datasets.items()
             },
             "instrument": (
@@ -732,6 +741,20 @@ class Dataset:
             "strptime_format": self.strptime_format,
             "timezone": self.timezone,
         }
+
+    def analysis_dataset_to_dict(self, name: str) -> dict:
+        dataset = self.datasets[name]
+        output = {
+            "class": dataset["class"],
+            "analysis": dataset["analysis"],
+            "json": str(dataset["dataset"].folder / f"{name}.json"),
+        }
+        if type(dataset) in (SpectroDataset, LTASDataset):
+            output |= {
+                "zoom_level": dataset["zoom_level"],
+                "zoom_reference": dataset["zoom_reference"],
+            }
+        return output
 
     @classmethod
     def from_dict(cls, dictionary: dict) -> Dataset:
