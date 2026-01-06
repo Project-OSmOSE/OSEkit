@@ -258,12 +258,18 @@ class Dataset:
 
         return ads
 
-    def get_analysis_spectrodataset(
+    def get_analysis_spectrodatasets(
         self,
         analysis: Analysis,
         audio_dataset: AudioDataset | None = None,
-    ) -> SpectroDataset | LTASDataset:
-        """Return a SpectroDataset (or LTASDataset) created from analysis parameters.
+    ) -> tuple[
+        SpectroDataset | LTASDataset,
+        dict[int, list[SpectroDataset | LTASDataset]],
+    ]:
+        """Return SpectroDatasets (or LTASDatasets) created from analysis parameters.
+
+        The output contains the unzoomed dataset (matching the analysis data_duration) plus
+        the potential zoomed datasets.
 
         Parameters
         ----------
@@ -276,11 +282,14 @@ class Dataset:
 
         Returns
         -------
-        SpectroDataset | LTASDataset:
-            The SpectroDataset that match the analysis parameters.
-            This SpectroDataset can be used, for example, to have a peek at the
+        tuple[SpectroDataset | LTASDataset, dict[int,list[SpectroDataset | LTASDataset]]]:
+            SpectroDatasets that match the analysis parameters.
+            The first element of the tuple is the unzoomed analysis dataset.
+            The second element of the tuple is a dict, with the key
+            being the zoom level and the value the corresponding analysis dataset.
+            These SpectroDataset can be used, for example, to have a peek at the
             analysis output before running it.
-            If Analysis.is_ltas is True, a LTASDataset is returned.
+            If Analysis.nb_ltas_time_bins is not None, a LTASDataset is returned.
 
         """
         if analysis.fft is None:
@@ -308,7 +317,13 @@ class Dataset:
                 nb_time_bins=analysis.nb_ltas_time_bins,
             )
 
-        return sds
+        if analysis.zoom_levels is None:
+            return sds, {}
+
+        return sds, sds.get_zoomed_spectro_datasets(
+            zoom_levels=analysis.zoom_levels,
+            zoom_ffts=analysis.zoom_ffts,
+        )
 
     def run_analysis(
         self,
@@ -364,8 +379,8 @@ class Dataset:
 
         sds = None
         if analysis.is_spectro:
-            sds = (
-                self.get_analysis_spectrodataset(
+            sds, zoomed_sds = (
+                self.get_analysis_spectrodatasets(
                     analysis=analysis,
                     audio_dataset=ads,
                 )

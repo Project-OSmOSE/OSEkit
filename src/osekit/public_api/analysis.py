@@ -81,7 +81,7 @@ class Analysis:
         scale: Scale | None = None,
         nb_ltas_time_bins: int | None = None,
         zoom_levels: list[int] | None = None,
-        zoomed_ffts: list[ShortTimeFFT] | None = None,
+        zoom_ffts: list[ShortTimeFFT] | None = None,
     ) -> None:
         """Initialize an Analysis object.
 
@@ -153,7 +153,7 @@ class Analysis:
             This will only affect spectral exports, and if AnalysisType.AUDIO is
             included in the analysis, zoomed SpectroDatasets will be linked to the
             x1 zoom SpectroData.
-        zoomed_ffts: list[ShortTimeFFT | None]
+        zoom_ffts: list[ShortTimeFFT | None]
             FFT to use for computing the zoomed spectra.
             By default, SpectroDatasets with a zoomed factor z will use the
             same FFT as the z=1 SpectroDataset, but with a hop that is
@@ -181,11 +181,7 @@ class Analysis:
 
         self.fft = fft
         self.zoom_levels = list({1, *zoom_levels}) if zoom_levels else None
-        self.zoomed_fft = (
-            zoomed_ffts
-            if zoomed_ffts
-            else self._get_zoomed_ffts(x1_fft=fft, zoom_levels=self.zoom_levels)
-        )
+        self.zoom_ffts = zoom_ffts
 
     @property
     def is_spectro(self) -> bool:
@@ -198,42 +194,3 @@ class Analysis:
                 AnalysisType.WELCH,
             )
         )
-
-    @staticmethod
-    def _get_zoomed_ffts(
-        x1_fft: ShortTimeFFT,
-        zoom_levels: list[int] | None,
-    ) -> list[ShortTimeFFT]:
-        """Compute the default FFTs to use for computing the zoomed spectra.
-
-        By default, SpectroDatasets with a zoomed factor z will use the
-        same FFT as the z=1 SpectroDataset, but with a hop that is
-        divided by z.
-
-        Parameters
-        ----------
-        x1_fft: ShortTimeFFT
-            FFT used for computing the unzoomed spectra.
-        zoom_levels: list[int] | None
-            Additional zoom levels used for computing the spectra.
-
-        Returns
-        -------
-        list[ShortTimeFFT]
-        FFTs used for computing the zoomed spectra.
-
-        """
-        if not zoom_levels:
-            return []
-        zoomed_ffts = []
-        for zoom_level in zoom_levels:
-            if zoom_level == 1:
-                continue
-            zoomed_ffts.append(
-                ShortTimeFFT(
-                    win=x1_fft.win,
-                    hop=x1_fft.hop // zoom_level,
-                    fs=x1_fft.fs,
-                ),
-            )
-        return zoomed_ffts

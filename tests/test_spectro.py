@@ -1224,3 +1224,47 @@ def test_spectro_begin_and_end(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert ad.begin == sd.begin
     assert ad.end == sd.end
+
+
+@pytest.mark.parametrize(
+    ("fft", "zoom_level", "expected"),
+    [
+        pytest.param(
+            ShortTimeFFT(hamming(1024), hop=1024, fs=24_000),
+            1,
+            ShortTimeFFT(hamming(1024), hop=1024, fs=24_000),
+            id="x1_zoom_only_equals_no_zoom",
+        ),
+        pytest.param(
+            ShortTimeFFT(hamming(1024), hop=1024, fs=24_000),
+            2,
+            ShortTimeFFT(hamming(1024), hop=512, fs=24_000),
+            id="x2_zoom",
+        ),
+        pytest.param(
+            ShortTimeFFT(hamming(1024), hop=1024, fs=24_000),
+            8,
+            ShortTimeFFT(hamming(1024), hop=128, fs=24_000),
+            id="x8_zoom",
+        ),
+        pytest.param(
+            ShortTimeFFT(hamming(1024), hop=1024, fs=24_000),
+            3,
+            ShortTimeFFT(hamming(1024), hop=341, fs=24_000),
+            id="hop_is_rounded_down",
+        ),
+    ],
+)
+def test_get_zoom_fft(
+    patch_audio_data: pytest.MonkeyPatch,
+    fft: ShortTimeFFT,
+    zoom_level: int,
+    expected: ShortTimeFFT,
+) -> None:
+    sds = SpectroDataset(
+        [SpectroData.from_audio_data(AudioData(mocked_value=[]), fft=fft)],
+    )
+    zoom_fft = sds._get_zoomed_fft(zoom_level)
+    assert np.array_equal(zoom_fft.win, expected.win)
+    assert zoom_fft.hop == expected.hop
+    assert zoom_fft.fs == expected.fs
