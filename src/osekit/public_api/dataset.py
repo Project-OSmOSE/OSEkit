@@ -261,6 +261,7 @@ class Dataset:
                 file.unlink()
 
         self.datasets = {}
+        self.logger = None
 
     def get_analysis_audiodataset(self, analysis: Analysis) -> AudioDataset:
         """Return an AudioDataset created from the analysis parameters.
