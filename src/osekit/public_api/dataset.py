@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import logging
 import shutil
-from collections.abc import Iterable
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar
 
@@ -31,6 +30,7 @@ from osekit.utils.core_utils import (
 from osekit.utils.path_utils import move_tree
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
     from os import PathLike
 
     from pandas import Timestamp
@@ -107,6 +107,7 @@ class Dataset:
         self.job_builder = job_builder
         self.instrument = instrument
         self.first_file_begin = first_file_begin
+        self.logger = None
 
     @property
     def origin_files(self) -> list[AudioFile] | None:
@@ -194,6 +195,11 @@ class Dataset:
             folder.
 
         """
+        self._create_logger()
+
+        msg = f"{'Moving' if move_files else 'Copying'} files to the dataset folder."
+        self.logger.info(msg)
+
         if not self.folder.exists():
             self.folder.mkdir(mode=DPDEFAULT)
 
@@ -207,6 +213,8 @@ class Dataset:
         self.build()
 
     def _create_logger(self) -> None:
+        if self.logger:
+            return
         if not logging.getLogger("dataset").handlers:
             message = (
                 "Logging has not been configured. "
@@ -219,7 +227,7 @@ class Dataset:
 
         logs_directory = self.folder / "log"
         if not logs_directory.exists():
-            logs_directory.mkdir(mode=DPDEFAULT)
+            logs_directory.mkdir(mode=DPDEFAULT, parents=True)
         self.logger = logging.getLogger("dataset").getChild(self.folder.name)
         file_handler = logging.FileHandler(logs_directory / "logs.log", mode="w")
         file_handler.setFormatter(
