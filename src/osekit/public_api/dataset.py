@@ -10,10 +10,9 @@ from __future__ import annotations
 
 import logging
 import shutil
+from collections.abc import Iterable
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar
-
-from pandas import Timestamp
 
 from osekit import config
 from osekit.config import DPDEFAULT, resample_quality_settings
@@ -32,6 +31,10 @@ from osekit.utils.core_utils import (
 from osekit.utils.path_utils import move_tree
 
 if TYPE_CHECKING:
+    from os import PathLike
+
+    from pandas import Timestamp
+
     from osekit.core_api.audio_file import AudioFile
     from osekit.utils.job import JobBuilder
 
@@ -124,7 +127,9 @@ class Dataset:
         """Return the list of the names of the analyses ran with this Dataset."""
         return list({dataset["analysis"] for dataset in self.datasets.values()})
 
-    def build(self) -> None:
+    def build(
+        self,
+    ) -> None:
         """Build the Dataset.
 
         Building a dataset moves the original audio files to a specific folder
@@ -169,6 +174,37 @@ class Dataset:
         self.write_json()
 
         self.logger.info("Build done!")
+
+    def build_from_files(
+        self,
+        files: Iterable[PathLike | str],
+        *,
+        move_files: bool = False,
+    ) -> None:
+        """Build the dataset from the specified files.
+
+        The files will be copied (or moved) to the dataset.folder folder.
+
+        Parameters
+        ----------
+        files: Iterable[PathLike|str]
+            Files that are included in the dataset.
+        move_files: bool
+            If set to True, the files will be moved (rather than copied) in the dataset
+            folder.
+
+        """
+        if not self.folder.exists():
+            self.folder.mkdir(mode=DPDEFAULT)
+
+        for file in map(Path, files):
+            destination = self.folder / file.name
+            if move_files:
+                file.replace(destination)
+            else:
+                shutil.copyfile(file, destination)
+
+        self.build()
 
     def _create_logger(self) -> None:
         if not logging.getLogger("dataset").handlers:
