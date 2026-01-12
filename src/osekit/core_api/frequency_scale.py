@@ -11,6 +11,7 @@ spectrogram to be plotted on a custom frequency scale.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Literal
 
 import numpy as np
@@ -18,6 +19,7 @@ import numpy as np
 from osekit.utils.core_utils import get_closest_value_index
 
 
+@dataclass(frozen=True)
 class ScalePart:
     """Represent a part of the frequency scale of a spectrogram.
 
@@ -25,71 +27,56 @@ class ScalePart:
     p_min (in % of the axis), representing f_min
     to:
     p_max (in % of the axis), representing f_max
+
+    Parameters
+    ----------
+    p_min: float
+        Position (in percent) of the bottom of the scale part on the full scale.
+        p_min should be comprised between 0. and 1.
+    p_max: float
+        Position (in percent) of the top of the scale part on the full scale.
+        p_max should be comprised between 0. and 1.
+    f_min: float
+        Frequency corresponding to the bottom of the scale part.
+    f_max: float
+        Frequency corresponding to the top of the scale part.
+    scale_type: Literal["lin", "log"]
+        Type of the scale, either linear or logarithmic.
+
     """
 
-    def __init__(
-        self,
-        p_min: float,
-        p_max: float,
-        f_min: float,
-        f_max: float,
-        scale_type: Literal["lin", "log"] = "lin",
-    ) -> None:
-        """Initialize a ScalePart.
+    p_min: float
+    p_max: float
+    f_min: float
+    f_max: float
+    scale_type: Literal["lin", "log"] = "lin"
 
-        Parameters
-        ----------
-        p_min: float
-            Position (in percent) of the bottom of the scale part on the full scale.
-            p_min should be comprised between 0. and 1.
-        p_max: float
-            Position (in percent) of the top of the scale part on the full scale.
-            p_max should be comprised between 0. and 1.
-        f_min: float
-            Frequency corresponding to the bottom of the scale part.
-        f_max: float
-            Frequency corresponding to the top of the scale part.
-        scale_type: Literal["lin", "log"]
-            Type of the scale, either linear or logarithmic.
-
-        """
-        self.p_min = p_min
-        self.p_max = p_max
-        self.f_min = f_min
-        self.f_max = f_max
-        self.scale_type = scale_type
-
-    @property
-    def p_min(self) -> float:
-        """Position (in percent) of the bottom of the scale part on the full scale.
-
-        p_min should be comprised between 0. and 1., 0. being the bottom row
-        and 1. begin the top row of the spectrogram .
-        """
-        return self._p_min
-
-    @p_min.setter
-    def p_min(self, value: float) -> None:
-        if not 0.0 <= value <= 1.0:
-            msg = f"p_min should be comprised between 0. and 1., got {value}."
+    def __post_init__(self) -> None:
+        """Check if ScalePart values are correct."""
+        err = []
+        if not 0.0 <= self.p_min <= 1.0:
+            err.append(f"p_min must be between 0 and 1, got {self.p_min}")
+        if not 0.0 <= self.p_max <= 1.0:
+            err.append(f"p_max must be between 0 and 1, got {self.p_max}")
+        if self.p_min >= self.p_max:
+            err.append(
+                f"p_min must be strictly inferior than p_max, got ({self.p_min},{self.p_max})",
+            )
+        if self.f_min < 0:
+            err.append(
+                f"f_min must be positive, got {self.f_min}",
+            )
+        if self.f_max < 0:
+            err.append(
+                f"f_max must be positive, got {self.f_max}",
+            )
+        if self.f_min >= self.f_max:
+            err.append(
+                f"f_min must be strictly inferior than f_max, got ({self.f_min},{self.f_max})",
+            )
+        if err:
+            msg = "\n".join(err)
             raise ValueError(msg)
-        self._p_min = value
-
-    @property
-    def p_max(self) -> float:
-        """Position (in percent) of the top of the scale part on the full scale.
-
-        p_min should be comprised between 0. and 1., 0. being the bottom row
-        and 1. begin the top row of the spectrogram .
-        """
-        return self._p_max
-
-    @p_max.setter
-    def p_max(self, value: float) -> None:
-        if not 0.0 <= value <= 1.0:
-            msg = f"p_max should be comprised between 0. and 1., got {value}."
-            raise ValueError(msg)
-        self._p_max = value
 
     def get_frequencies(self, nb_points: int) -> list[int]:
         """Return the frequency points of the present scale part."""
