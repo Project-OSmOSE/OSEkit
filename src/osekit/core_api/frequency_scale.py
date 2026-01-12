@@ -41,8 +41,10 @@ class ScalePart:
         ----------
         p_min: float
             Position (in percent) of the bottom of the scale part on the full scale.
+            p_min should be comprised between 0. and 1.
         p_max: float
             Position (in percent) of the top of the scale part on the full scale.
+            p_max should be comprised between 0. and 1.
         f_min: float
             Frequency corresponding to the bottom of the scale part.
         f_max: float
@@ -55,7 +57,39 @@ class ScalePart:
         self.p_max = p_max
         self.f_min = f_min
         self.f_max = f_max
-        self.scale_type: Literal["lin", "log"] = scale_type
+        self.scale_type = scale_type
+
+    @property
+    def p_min(self) -> float:
+        """Position (in percent) of the bottom of the scale part on the full scale.
+
+        p_min should be comprised between 0. and 1., 0. being the bottom row
+        and 1. begin the top row of the spectrogram .
+        """
+        return self._p_min
+
+    @p_min.setter
+    def p_min(self, value: float) -> None:
+        if not 0.0 <= value <= 1.0:
+            msg = f"p_min should be comprised between 0. and 1., got {value}."
+            raise ValueError(msg)
+        self._p_min = value
+
+    @property
+    def p_max(self) -> float:
+        """Position (in percent) of the top of the scale part on the full scale.
+
+        p_min should be comprised between 0. and 1., 0. being the bottom row
+        and 1. begin the top row of the spectrogram .
+        """
+        return self._p_max
+
+    @p_max.setter
+    def p_max(self, value: float) -> None:
+        if not 0.0 <= value <= 1.0:
+            msg = f"p_max should be comprised between 0. and 1., got {value}."
+            raise ValueError(msg)
+        self._p_max = value
 
     def get_frequencies(self, nb_points: int) -> list[int]:
         """Return the frequency points of the present scale part."""
