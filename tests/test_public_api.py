@@ -1425,7 +1425,10 @@ def test_build_specific_files(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -
     base_folder = [p1, p2, p3, p4]
     dest_folder = []
 
-    dataset = Dataset(folder=tmp_path, strptime_format="%y%m%d%H%M%S")
+    dataset = Dataset(
+        folder=tmp_path / "non_existing_folder",
+        strptime_format="%y%m%d%H%M%S",
+    )
 
     def mock_copyfile(file: Path, destination: Path) -> None:
         assert destination.parent == dataset.folder
@@ -1446,10 +1449,21 @@ def test_build_specific_files(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -
     monkeypatch.setattr(Path, "replace", mock_replace)
     monkeypatch.setattr(Dataset, "build", build_mock)
 
+    mkdir_calls = []
+
+    def mkdir_mock(self: Path, *args: list, **kwargs: dict) -> None:
+        mkdir_calls.append(self)
+
+    monkeypatch.setattr(Path, "mkdir", mkdir_mock)
+
+    assert dataset.folder not in mkdir_calls
+
     # Build from files COPY MODE
     dataset.build_from_files(
         (p1, p2),
     )
+
+    assert dataset.folder in mkdir_calls
 
     assert np.array_equal(base_folder, [p1, p2, p3, p4])
     assert np.array_equal(dest_folder, [p1, p2])
