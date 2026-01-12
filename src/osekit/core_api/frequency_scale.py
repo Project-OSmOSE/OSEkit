@@ -23,19 +23,14 @@ from osekit.utils.core_utils import get_closest_value_index
 class ScalePart:
     """Represent a part of the frequency scale of a spectrogram.
 
-    The given part goes from:
-    p_min (in % of the axis), representing f_min
-    to:
-    p_max (in % of the axis), representing f_max
-
-    Parameters
-    ----------
     p_min: float
-        Position (in percent) of the bottom of the scale part on the full scale.
-        p_min should be comprised between 0. and 1.
+        Relative position of the bottom of the scale part on the full scale.
+        Must be in the interval [0.0, 1.0], where 0.0 is the bottom of the scale
+        and 1.0 is the top.
     p_max: float
-        Position (in percent) of the top of the scale part on the full scale.
-        p_max should be comprised between 0. and 1.
+        Relative position of the top of the scale part on the full scale.
+        Must be in the interval [0.0, 1.0], where 0.0 is the bottom of the scale
+        and 1.0 is the top.
     f_min: float
         Frequency corresponding to the bottom of the scale part.
     f_max: float
