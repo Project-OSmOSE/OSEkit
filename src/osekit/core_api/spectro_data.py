@@ -763,7 +763,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             colormap=colormap,
         )
 
-    def to_dict(self, embed_sft: bool = True) -> dict:
+    def to_dict(self, *, embed_sft: bool = True) -> dict:
         """Serialize a SpectroData to a dictionary.
 
         Parameters
