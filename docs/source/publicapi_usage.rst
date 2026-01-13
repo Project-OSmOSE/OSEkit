@@ -1,7 +1,7 @@
+.. _publicapi_usage:
+
 Public API
 ----------
-
-.. _publicapi_usage:
 
 This API provides tools for working on large sets of audio data.
 
@@ -9,10 +9,10 @@ Basically, the whole point of **OSEkit**'s Public API is to export large amounts
 
 The :class:`osekit.public_api.dataset.Dataset` class is the cornerstone of **OSEkit**'s Public API.
 
+.. _build:
+
 Building a ``Dataset``
 ^^^^^^^^^^^^^^^^^^^^^^
-
-.. _build:
 
 At first, A ``Dataset`` is built from a raw folder containing the audio files to be processed.
 For example, this folder containing 4 audio files plus some extra files:
@@ -88,6 +88,38 @@ In this ``AudioDataset``, one :class:`osekit.core_api.audio_data.AudioData` has 
 Additionally, both this Core API ``Audiodataset`` and the Public API ``Dataset`` have been serialized
 into the ``original.json`` and ``dataset.json`` files, respectively.
 
+Building a dataset from specific files
+""""""""""""""""""""""""""""""""""""""
+
+It is possible to pass a specific collection of files to build within the dataset.
+
+This is done thanks to the :meth:`osekit.public_api.dataset.Dataset.build_from_files` method.
+The collection of files passed as the ``files`` parameter will be either moved or copied (depending on
+the ``move_files`` parameter) within ``Dataset.folder`` before the build is done. If ``Dataset.folder`` does
+not exist, it will be created before the files are moved:
+
+.. code-block:: python
+
+    from pathlib import Path
+    from osekit.public_api.dataset import Dataset
+
+    # Pick the files you want to include to the dataset
+    files = (
+        r"cool\stuff\2007-11-05_00-01-00.wav",
+        r"cool\things\2007-11-05_00-03-00.wav",
+        r"cool\things\2007-11-05_00-05-00.wav"
+    )
+
+    # Set the DESTINATION folder of the dataset in the folder parameter
+    dataset = Dataset(
+        folder = Path(r"cool\odd_hours"),
+        strptime_format="%Y-%m-%d_%H-%M-%S",
+    )
+
+    dataset.build_from_files(
+        files=files,
+        move_files=False, # Copy files rather than moving them
+    )
 
 Running an ``Analysis``
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -139,11 +171,10 @@ The remaining parameters of the analysis (begin and end **Timestamps**, duration
 
    If the ``Analysis`` contains spectral computations (either ``AnalysisType.MATRIX``, ``AnalysisType.SPECTROGRAM`` or ``AnalysisType.WELCH`` is in ``analysis_type``), a `scipy ShortTimeFFT instance <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.ShortTimeFFT.html#scipy.signal.ShortTimeFFT>`_ should be passed to the ``Analysis`` initializer.
 
+.. _editing_analysis:
 
 Checking/Editing the analysis
 """""""""""""""""""""""""""""
-
-.. _editing_analysis:
 
 If you want to take a peek at what the analysis output will be before actually running it, the :meth:`osekit.public_api.dataset.Dataset.get_analysis_audiodataset` and :meth:`osekit.public_api.dataset.Dataset.get_analysis_spectrodataset` methods
 return a :class:`osekit.core_api.audio_dataset.AudioDataset` and a :class:`osekit.core_api.spectro_dataset.SpectroDataset` instance, respectively.
@@ -218,10 +249,10 @@ The corresponding ``Analysis`` is the following:
 
     dataset.run_analysis(analysis=analysis) # And that's it!
 
+.. _output_1:
+
 Output 1
 """"""""
-
-.. _output_1:
 
 Once the analysis is run, a :class:`osekit.core_api.audio_dataset.AudioDataset` instance named ``cool_reshape`` has been created and added to the dataset's :attr:`osekit.public_api.dataset.Dataset.datasets` field.
 
