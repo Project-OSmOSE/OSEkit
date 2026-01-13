@@ -235,7 +235,7 @@ class LTASData(SpectroData):
             nb_time_bins=nb_time_bins,
         )
 
-    def to_dict(self, embed_sft: bool = True) -> dict:
+    def to_dict(self, *, embed_sft: bool = True) -> dict:
         """Serialize a LTASData to a dictionary.
 
         Parameters
@@ -255,7 +255,9 @@ class LTASData(SpectroData):
             The serialized dictionary representing the LTASData.
 
         """
-        return super().to_dict() | {"nb_time_bins": self.nb_time_bins}
+        return super().to_dict(embed_sft=embed_sft) | {
+            "nb_time_bins": self.nb_time_bins,
+        }
 
     @classmethod
     def from_dict(cls, dictionary: dict, sft: ShortTimeFFT | None = None) -> LTASData:
@@ -276,7 +278,7 @@ class LTASData(SpectroData):
 
         """
         return cls.from_spectro_data(
-            SpectroData.from_dict(dictionary),
+            SpectroData.from_dict(dictionary, sft=sft),
             nb_time_bins=dictionary["nb_time_bins"],
         )
 
