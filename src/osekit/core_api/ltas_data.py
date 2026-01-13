@@ -235,7 +235,7 @@ class LTASData(SpectroData):
             nb_time_bins=nb_time_bins,
         )
 
-    def to_dict(self, embed_sft: bool = True) -> dict:
+    def to_dict(self, *, embed_sft: bool = True) -> dict:
         """Serialize a LTASData to a dictionary.
 
         Parameters
