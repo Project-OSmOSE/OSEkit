@@ -6,8 +6,9 @@ The data is accessed via an Item object per File.
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Generic, TypeVar
+from typing import Any, Generic, Self, TypeVar
 
 import numpy as np
 from pandas import Timestamp, date_range
@@ -27,12 +28,15 @@ TItem = TypeVar("TItem", bound=BaseItem)
 TFile = TypeVar("TFile", bound=BaseFile)
 
 
-class BaseData(Generic[TItem, TFile], Event):
+class BaseData(Generic[TItem, TFile], Event, ABC):
     """Base class for the Data objects.
 
     Data corresponds to data scattered through different Files.
     The data is accessed via an Item object per File.
     """
+
+    item_cls: type[TItem]
+    file_cls: type[TFile]
 
     def __init__(
         self,
@@ -59,7 +63,7 @@ class BaseData(Generic[TItem, TFile], Event):
 
         """
         if not items:
-            items = [BaseItem(begin=begin, end=end)]
+            items = [self.make_empty_item(begin=begin, end=end)]
         self.items = items
         self._begin = min(item.begin for item in self.items)
         self._end = max(item.end for item in self.items)
@@ -135,9 +139,11 @@ class BaseData(Generic[TItem, TFile], Event):
         """
         path.mkdir(parents=True, exist_ok=True, mode=DPDEFAULT)
 
+    @abstractmethod
     def write(self, folder: Path, link: bool = False) -> None:
         """Abstract method for writing data to file."""
 
+    @abstractmethod
     def link(self, folder: Path) -> None:
         """Abstract method for linking data to a file in a given folder.
 
@@ -184,14 +190,10 @@ class BaseData(Generic[TItem, TFile], Event):
 
         """
         files = [
-            BaseFile(
-                Path(file["path"]),
+            cls.make_file(
+                path=Path(file["path"]),
                 begin=strptime_from_text(
                     file["begin"],
-                    datetime_template=TIMESTAMP_FORMATS_EXPORTED_FILES,
-                ),
-                end=strptime_from_text(
-                    file["end"],
                     datetime_template=TIMESTAMP_FORMATS_EXPORTED_FILES,
                 ),
             )
@@ -199,7 +201,29 @@ class BaseData(Generic[TItem, TFile], Event):
         ]
         begin = Timestamp(dictionary["begin"])
         end = Timestamp(dictionary["end"])
-        return cls.from_files(files, begin, end)
+        return cls.from_base_dict(dictionary, files, begin, end)
+
+    @classmethod
+    def make_file(cls, path: Path, begin: Timestamp) -> type[TFile]: ...
+
+    @classmethod
+    @abstractmethod
+    def make_item(
+        cls,
+        file: TFile | None = None,
+        begin: Timestamp | None = None,
+        end: Timestamp | None = None,
+    ) -> TItem: ...
+
+    @classmethod
+    @abstractmethod
+    def from_base_dict(
+        cls,
+        dictionary: dict,
+        files: list[TFile],
+        begin: Timestamp,
+        end: Timestamp,
+    ) -> Self: ...
 
     @property
     def files(self) -> set[TFile]:
@@ -234,7 +258,8 @@ class BaseData(Generic[TItem, TFile], Event):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         name: str | None = None,
-    ) -> BaseData[TItem, TFile]:
+        **kwargs: Any,
+    ) -> Self:
         """Return a base DataBase object from a list of Files.
 
         Parameters
@@ -257,7 +282,7 @@ class BaseData(Generic[TItem, TFile], Event):
 
         """
         items = cls.items_from_files(files=files, begin=begin, end=end)
-        return cls(items=items, name=name)
+        return cls(items=items, name=name, **kwargs)
 
     @classmethod
     def items_from_files(
@@ -265,7 +290,7 @@ class BaseData(Generic[TItem, TFile], Event):
         files: list[TFile],
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
-    ) -> list[BaseItem]:
+    ) -> list[TItem]:
         """Return a list of Items from a list of Files and timestamps.
 
         The Items range from begin to end.
@@ -295,12 +320,14 @@ class BaseData(Generic[TItem, TFile], Event):
             file for file in files if file.overlaps(Event(begin=begin, end=end))
         ]
 
-        items = [BaseItem(file, begin, end) for file in included_files]
+        items = [
+            cls.make_item(file=file, begin=begin, end=end) for file in included_files
+        ]
         if not items:
-            items.append(BaseItem(begin=begin, end=end))
+            items.append(cls.make_item(begin=begin, end=end))
         if (first_item := sorted(items, key=lambda item: item.begin)[0]).begin > begin:
-            items.append(BaseItem(begin=begin, end=first_item.begin))
+            items.append(cls.make_item(begin=begin, end=first_item.begin))
         if (last_item := sorted(items, key=lambda item: item.end)[-1]).end < end:
-            items.append(BaseItem(begin=last_item.end, end=end))
+            items.append(cls.make_item(begin=last_item.end, end=end))
         items = Event.remove_overlaps(items)
-        return Event.fill_gaps(items, BaseItem)
+        return Event.fill_gaps(items, cls.item_cls)

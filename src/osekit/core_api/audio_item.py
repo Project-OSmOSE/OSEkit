@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from osekit.core_api.audio_file import AudioFile
-from osekit.core_api.base_file import BaseFile
 from osekit.core_api.base_item import BaseItem
 
 if TYPE_CHECKING:
@@ -65,17 +64,3 @@ class AudioItem(BaseItem[AudioFile]):
         if self.is_empty:
             return np.zeros((1, self.nb_channels))
         return super().get_value()
-
-    @classmethod
-    def from_base_item(cls, item: BaseItem) -> AudioItem:
-        """Return an AudioItem object from a BaseItem object."""
-        file = item.file
-        if not file or isinstance(file, AudioFile):
-            return cls(file=file, begin=item.begin, end=item.end)
-        if isinstance(file, BaseFile):
-            return cls(
-                file=AudioFile.from_base_file(file),
-                begin=item.begin,
-                end=item.end,
-            )
-        raise TypeError

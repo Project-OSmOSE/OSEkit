@@ -30,11 +30,14 @@ class AudioData(BaseData[AudioItem, AudioFile]):
     The data is accessed via an AudioItem object per AudioFile.
     """
 
+    item_cls = AudioItem
+
     def __init__(
         self,
         items: list[AudioItem] | None = None,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
+        name: str | None = None,
         sample_rate: int | None = None,
         instrument: Instrument | None = None,
         normalization: Normalization = Normalization.RAW,
@@ -54,6 +57,8 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         end: Timestamp | None
             Only effective if items is None.
             Set the end of the empty data.
+        name: str | None
+            Name of the exported files.
         instrument: Instrument | None
             Instrument that might be used to obtain acoustic pressure from
             the wav audio data.
@@ -61,7 +66,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             The type of normalization to apply to the audio data.
 
         """
-        super().__init__(items=items, begin=begin, end=end)
+        super().__init__(items=items, begin=begin, end=end, name=name)
         self._set_sample_rate(sample_rate=sample_rate)
         self.instrument = instrument
         self.normalization = normalization
@@ -114,6 +119,19 @@ class AudioData(BaseData[AudioItem, AudioFile]):
                 "std": None,
             }
         )
+
+    @classmethod
+    def make_item(
+        cls,
+        file: AudioFile | None = None,
+        begin: Timestamp | None = None,
+        end: Timestamp | None = None,
+    ) -> AudioItem:
+        return AudioItem(file=file, begin=begin, end=end)
+
+    @classmethod
+    def make_file(cls, path: Path, begin: Timestamp) -> AudioFile:
+        return AudioFile(path=path, begin=begin)
 
     def get_normalization_values(self) -> dict:
         values = np.array(self.get_raw_value())
@@ -390,7 +408,13 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         )
 
     @classmethod
-    def from_dict(cls, dictionary: dict) -> AudioData:
+    def from_base_dict(
+        cls,
+        dictionary: dict,
+        files: list[AudioFile],
+        begin: Timestamp,
+        end: Timestamp,
+    ) -> AudioData:
         """Deserialize an AudioData from a dictionary.
 
         Parameters
@@ -404,102 +428,34 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             The deserialized AudioData.
 
         """
-        base_data = BaseData.from_dict(dictionary)
         instrument = (
             None
             if dictionary["instrument"] is None
             else Instrument.from_dict(dictionary["instrument"])
         )
-        return cls.from_base_data(
-            data=base_data,
+        return cls.from_files(
+            files=files,
+            begin=begin,
+            end=end,
+            instrument=instrument,
             sample_rate=dictionary["sample_rate"],
             normalization=Normalization(dictionary["normalization"]),
             normalization_values=dictionary["normalization_values"],
-            instrument=instrument,
         )
 
     @classmethod
-    def from_files(
+    def from_files(  # noqa: D102
         cls,
-        files: list[AudioFile],
+        files: list[AudioFile],  # The method is redefined just to specify the type
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
-        sample_rate: float | None = None,
-        instrument: Instrument | None = None,
-        normalization: Normalization = Normalization.RAW,
-        normalization_values: dict | None = None,
+        name: str | None = None,
+        **kwargs,
     ) -> AudioData:
-        """Return an AudioData object from a list of AudioFiles.
-
-        Parameters
-        ----------
-        files: list[AudioFile]
-            List of AudioFiles containing the data.
-        begin: Timestamp | None
-            Begin of the data object.
-            Defaulted to the begin of the first file.
-        end: Timestamp | None
-            End of the data object.
-            Defaulted to the end of the last file.
-        sample_rate: float | None
-            Sample rate of the AudioData.
-        instrument: Instrument | None
-            Instrument that might be used to obtain acoustic pressure from
-            the wav audio data.
-        normalization: Normalization
-            The type of normalization to apply to the audio data.
-        normalization_values: dict|None
-            Mean, peak and std values with which to normalize the data.
-
-        Returns
-        -------
-        AudioData:
-            The AudioData object.
-
-        """
-        return cls.from_base_data(
-            data=BaseData.from_files(files, begin, end),
-            sample_rate=sample_rate,
-            instrument=instrument,
-            normalization=normalization,
-            normalization_values=normalization_values,
-        )
-
-    @classmethod
-    def from_base_data(
-        cls,
-        data: BaseData,
-        sample_rate: float | None = None,
-        instrument: Instrument | None = None,
-        normalization: Normalization = Normalization.RAW,
-        normalization_values: dict | None = None,
-    ) -> AudioData:
-        """Return an AudioData object from a BaseData object.
-
-        Parameters
-        ----------
-        data: BaseData
-            BaseData object to convert to AudioData.
-        sample_rate: float | None
-            Sample rate of the AudioData.
-        instrument: Instrument | None
-            Instrument that might be used to obtain acoustic pressure from
-            the wav audio data.
-        normalization: Normalization
-            The type of normalization to apply to the audio data.
-        normalization_values: dict|None
-            Mean, peak and std values with which to normalize the data.
-
-        Returns
-        -------
-        AudioData:
-            The AudioData object.
-
-        """
-        return cls(
-            items=[AudioItem.from_base_item(item) for item in data.items],
-            sample_rate=sample_rate,
-            instrument=instrument,
-            normalization=normalization,
-            normalization_values=normalization_values,
+        return super().from_files(
+            files=files,  # This way, this static error doesn't appear to the user
+            begin=begin,
+            end=end,
+            name=name,
+            **kwargs,
         )

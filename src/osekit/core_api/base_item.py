@@ -5,6 +5,7 @@ Items correspond to a portion of a File object.
 
 from __future__ import annotations
 
+from abc import ABC
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
 TFile = TypeVar("TFile", bound=BaseFile)
 
 
-class BaseItem(Generic[TFile], Event):
+class BaseItem(Generic[TFile], Event, ABC):
     """Base class for the Item objects.
 
     An Item correspond to a portion of a File object.
