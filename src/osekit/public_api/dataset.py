@@ -159,6 +159,7 @@ class Dataset:
         }
 
         self.logger.info("Organizing dataset folder...")
+        afm.close()
         move_tree(
             source=self.folder,
             destination=self.folder / "other",
