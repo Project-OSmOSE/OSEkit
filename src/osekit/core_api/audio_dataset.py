@@ -32,6 +32,8 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
 
     """
 
+    file_cls = AudioFile
+
     def __init__(
         self,
         data: list[AudioData],
@@ -145,26 +147,8 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         )
 
     @classmethod
-    def from_dict(cls, dictionary: dict) -> AudioDataset:
-        """Deserialize an AudioDataset from a dictionary.
-
-        Parameters
-        ----------
-        dictionary: dict
-            The serialized dictionary representing the AudioDataset.
-
-        Returns
-        -------
-        AudioDataset
-            The deserialized AudioDataset.
-
-        """
-        return cls(
-            [AudioData.from_dict(d) for d in dictionary["data"].values()],
-            name=dictionary["name"],
-            suffix=dictionary["suffix"],
-            folder=Path(dictionary["folder"]),
-        )
+    def data_from_dict(cls, dictionary: dict) -> list[AudioData]:
+        return [AudioData.from_dict(data) for data in dictionary.values()]
 
     @classmethod
     def from_folder(  # noqa: PLR0913
@@ -181,7 +165,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         name: str | None = None,
         instrument: Instrument | None = None,
         normalization: Normalization = Normalization.RAW,
-        **kwargs: any,
+        **kwargs,
     ) -> AudioDataset:
         """Return an AudioDataset from a folder containing the audio files.
 
@@ -241,13 +225,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             The audio dataset.
 
         """
-        kwargs.update(
-            {
-                "file_class": AudioFile,
-                "supported_file_extensions": [".wav", ".flac", ".mp3"],
-            },
-        )
-        base_dataset = BaseDataset.from_folder(
+        return super().from_folder(
             folder=folder,
             strptime_format=strptime_format,
             begin=begin,
@@ -256,13 +234,9 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             mode=mode,
             overlap=overlap,
             data_duration=data_duration,
-            **kwargs,
-        )
-        return cls.from_base_dataset(
-            base_dataset=base_dataset,
+            sample_rate=sample_rate,
             name=name,
             instrument=instrument,
-            sample_rate=sample_rate,
             normalization=normalization,
         )
 
@@ -272,11 +246,11 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         files: list[AudioFile],
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
+        name: str | None = None,
         mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
         overlap: float = 0.0,
         data_duration: Timedelta | None = None,
         sample_rate: float | None = None,
-        name: str | None = None,
         instrument: Instrument | None = None,
         normalization: Normalization = Normalization.RAW,
     ) -> AudioDataset:
@@ -324,20 +298,34 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         The DataBase object.
 
         """
-        base = BaseDataset.from_files(
+        return super().from_files(
             files=files,
             begin=begin,
             end=end,
+            name=name,
+            instrument=instrument,
+            normalization=normalization,
+            sample_rate=sample_rate,
             mode=mode,
             overlap=overlap,
             data_duration=data_duration,
         )
-        return cls.from_base_dataset(
-            base,
+
+    @classmethod
+    def data_from_files(
+        cls,
+        files: list[AudioFile],
+        begin: Timestamp | None = None,
+        end: Timestamp | None = None,
+        name: str | None = None,
+        **kwargs,
+    ) -> AudioData:
+        return AudioData.from_files(
+            files=files,
+            begin=begin,
+            end=end,
             name=name,
-            sample_rate=sample_rate,
-            instrument=instrument,
-            normalization=normalization,
+            **kwargs,
         )
 
     @classmethod
