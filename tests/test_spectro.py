@@ -269,14 +269,14 @@ def test_spectro_parameters_in_npz_files(
         pytest.param(
             {
                 "duration": 6,
-                "sample_rate": 1_024,
+                "sample_rate": 28_000,
                 "nb_files": 1,
                 "date_begin": pd.Timestamp("2024-01-01 12:00:00"),
             },
             None,
             None,
             6,
-            ShortTimeFFT(hamming(1_024), 100, 1_024),
+            ShortTimeFFT(hamming(1_024), 100, 28_000),
             id="6_seconds_split_in_6_with_overlap",
         ),
         pytest.param(
@@ -289,7 +289,7 @@ def test_spectro_parameters_in_npz_files(
             Instrument(end_to_end_db=150.0),
             None,
             6,
-            ShortTimeFFT(hamming(1_024), 100, 1_024),
+            ShortTimeFFT(hamming(1_024), 1_024, 1_024),
             id="audio_data_with_instrument",
         ),
         pytest.param(
@@ -302,7 +302,7 @@ def test_spectro_parameters_in_npz_files(
             None,
             Normalization.ZSCORE,
             6,
-            ShortTimeFFT(hamming(1_024), 100, 1_024),
+            ShortTimeFFT(hamming(1_024), 1_024, 1_024),
             id="audio_data_with_normalization",
         ),
     ],
@@ -328,7 +328,7 @@ def test_spectrogram_from_npz_files(
 
     sd_split = sd.split(nb_chunks)
 
-    import soundfile as sf
+    import soundfile as sf  # noqa: PLC0415
 
     for spectro in sd_split:
         spectro.write(tmp_path / "output")
@@ -985,10 +985,14 @@ def test_spectrodata_split(
         colormap=colormap,
     )
     sd_parts = sd.split(parts)
-    for sd_part in sd_parts:
+    for idx, sd_part in enumerate(sd_parts):
         assert sd_part.fft is sd.fft
         assert sd_part.v_lim == sd.v_lim
         assert sd_part.colormap == sd.colormap
+        if idx > 0:
+            assert sd_part.previous_data == sd_parts[idx - 1]
+        if idx < len(sd_parts) - 1:
+            assert sd_part.next_data == sd_parts[idx + 1]
     assert sd_parts[0].begin == sd.begin
     assert sd_parts[-1].end == sd.end
 

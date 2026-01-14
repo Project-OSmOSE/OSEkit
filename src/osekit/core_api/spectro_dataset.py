@@ -360,7 +360,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             sd.link_audio_data(ad)
 
     def update_json_audio_data(self, first: int, last: int) -> None:
-        """Update the serialized JSON file with the spectro data from first to int.
+        """Update the serialized JSON file with the spectro data from first to last.
 
         The update is done while using the locked decorator.
         That way, if a SpectroDataset is processed through multiple jobs,
