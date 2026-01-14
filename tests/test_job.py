@@ -418,7 +418,7 @@ def test_job_builder_submit(monkeypatch: pytest.MonkeyPatch) -> None:
             self.status = status
 
         def submit_pbs(self, dependency=None) -> None:
-            submitted_jobs.append(self.name)
+            submitted_jobs.append((self.name, dependency))
 
         def update_status(self) -> JobStatus:
             return self.status
@@ -436,9 +436,11 @@ def test_job_builder_submit(monkeypatch: pytest.MonkeyPatch) -> None:
     job_builder = JobBuilder()
     job_builder.jobs = jobs
 
-    job_builder.submit_pbs()
+    dependencies = {"prepared": jobs[0]}
 
-    assert submitted_jobs == ["prepared"]
+    job_builder.submit_pbs(dependencies=dependencies)
+
+    assert submitted_jobs == [("prepared", jobs[0])]
 
 
 @pytest.mark.parametrize(
@@ -578,6 +580,30 @@ def test_build_dependency_string_with_string_input(
 
     with expected as e:
         assert Job._build_dependency_string(dependency) == e
+
+
+def test_submit_pbs_adds_dependency_flag(tmp_path, monkeypatch):
+    script = tmp_path / "script.py"
+    script.write_text("")
+    job = Job(script, name="crazy_diamond", output_folder=tmp_path)
+    job.write_pbs(tmp_path / "wywh.pbs")
+
+    captured_cmd = {}
+
+    class Dummy:
+        stdout = "1234567.server\n"
+        stderr = ""
+
+    def fake_run(cmd, *args, **kwargs):
+        captured_cmd["cmd"] = cmd
+        return Dummy()
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    job.submit_pbs(dependency="1234567")
+
+    assert "-W" in captured_cmd["cmd"]
+    assert "depend=afterok:1234567" in captured_cmd["cmd"]
 
 
 @pytest.mark.parametrize(
