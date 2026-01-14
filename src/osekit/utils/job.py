@@ -4,6 +4,7 @@ If a JobBuilder is attached to a Public API Dataset, the analyses will be ran th
 jobs, with writting/submitting of PBS files.
 
 """
+from __future__ import annotations
 
 import subprocess
 from dataclasses import dataclass
@@ -307,15 +308,35 @@ class Job:
         self.path = path
         self.progress()
 
-    def submit_pbs(self) -> None:
-        """Submit the PBS file of the job to a PBS queueing system."""
+    def submit_pbs(self, dependency: Job | list[Job] | str | list[str] | None = None) -> None:
+        """Submit the PBS file of the job to a PBS queueing system.
+
+        Parameters
+        ----------
+        dependency: Job | list[Job] | str | None
+            Job dependency. Can be:
+            - A Job instance: will wait for that job to complete successfully
+            - A list of Job instances: will wait for all jobs to complete successfully
+            - A string: job ID (e.g., "12345.datarmor") or dependency specification
+            - None: no dependency
+
+        """
         if self.update_status() is not JobStatus.PREPARED:
             msg = "Job should be written before being submitted."
             raise ValueError(msg)
 
+        cmd = ["qsub"]
+
+        if dependency is not None:
+            dependency_str = self._build_dependency_string(dependency)
+            if dependency_str:
+                cmd.extend(["-W", f"depend={dependency_str}"])
+
+        cmd.append(str(self.path))
+
         try:
             request = subprocess.run(
-                ["qsub", self.path],
+                cmd,
                 capture_output=True,
                 text=True,
                 check=False,
@@ -326,6 +347,72 @@ class Job:
 
         self.job_id = request.stdout.split(".", maxsplit=1)[0].strip()
         self.progress()
+
+    _VALID_DEPENDENCY_TYPES = {"afterok", "afterany", "afternotok", "after"}
+
+    @staticmethod
+    def _validate_dependency_type(dependency_type: str) -> None:
+        if dependency_type not in Job._VALID_DEPENDENCY_TYPES:
+            raise ValueError(
+                f"Unsupported dependency type '{dependency_type}'. "
+                f"Expected one of {sorted(Job._VALID_DEPENDENCY_TYPES)}."
+            )
+
+    @staticmethod
+    def _validate_dependency(dependency: list[str] | list[Job]) -> list[str]:
+        job_ids = [dep.job_id if isinstance(dep, Job) else dep for dep in dependency]
+        for job_id in job_ids:
+            if not job_id.isdigit() or len(job_id)!=7:
+                raise ValueError(
+                    f"Invalid job ID '{job_id}'. Job IDs must be 7 digits long."
+                )
+        return job_ids
+
+    @staticmethod
+    def _build_dependency_string(
+        dependency: str | Job | list[str] | list[Job],
+        dependency_type: str = "afterok",
+    ) -> str:
+        """Build a PBS dependency string.
+
+        Parameters
+        ----------
+        dependency: Job | str
+            Job or job ID to depend on.
+        dependency_type: str
+            Type of dependency (afterok, afterany, afternotok, after).
+
+        Returns
+        -------
+        str
+            PBS dependency string.
+
+        Examples
+        --------
+        >>> Job._build_dependency_string("1234567")
+        'afterok:1234567'
+        >>> Job._build_dependency_string(["1234567", "4567891"])
+        'afterok:1234567:4567891'
+        >>> Job._build_dependency_string("7894561", dependency_type="afterany")
+        'afterany:7894651'
+
+        """
+        dependency = dependency if isinstance(dependency, list) else [dependency]
+        id_str = Job._validate_dependency(dependency)
+        Job._validate_dependency_type(dependency_type)
+
+        if unsubmitted_job := next(
+                (
+                        j
+                        for j in dependency
+                        if isinstance(j, Job) and j.status.value < JobStatus.QUEUED.value
+                ),
+                None,
+        ):
+            msg = f"Job '{unsubmitted_job.name}' has not been submitted yet."
+            raise ValueError(msg)
+
+        return f"{dependency_type}:{':'.join(id_str)}"
 
     def update_info(self) -> None:
         """Request info about the job and update it."""
@@ -443,9 +530,25 @@ class JobBuilder:
         job.write_pbs(output_folder / f"{name}.pbs")
         self.jobs.append(job)
 
-    def submit_pbs(self) -> None:
-        """Submit all repared jobs to the PBS queueing system."""
+    def submit_pbs(
+        self, dependencies: dict[str, "Job | list[Job]"] | None = None
+    ) -> None:
+        """Submit all prepared jobs to the PBS queueing system.
+
+        Parameters
+        ----------
+        dependencies: dict[str, Job | list[Job]] | None
+            Optional dictionary mapping job names to their dependencies.
+            Example: {"job2": job1, "job3": [job1, job2]}
+
+        """
         for job in self.jobs:
             if job.update_status() is not JobStatus.PREPARED:
                 continue
-            job.submit_pbs()
+
+            # Check if this job has dependencies
+            depend_on = None
+            if dependencies and job.name in dependencies:
+                depend_on = dependencies[job.name]
+
+            job.submit_pbs(dependency=depend_on)
