@@ -1,7 +1,7 @@
+.. _example_multiple_spectrograms:
+
 Computing multiple spectrograms (timestamped files)
 ===================================================
-
-.. _example_multiple_spectrograms:
 
 In this example, we want to export spectrograms drawn from the sample audio dataset with the following requirements:
 

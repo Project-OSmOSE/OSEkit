@@ -9,19 +9,19 @@ The audio data is decoupled from audio files: audio data can be fetched across m
 The ``Core API`` provides ways of computing and plotting spectrograms, which are also treated as time-bound data that can be joined with
 audio (or any other type of) data.
 
+.. _event:
+
 Event
 """""
-
-.. _event:
 
 The :class:`osekit.core_api.event.Event` represent anything that is time-bound: an ``Event`` has a begin and an end, which are described as `pandas Timestamps <https://pandas.pydata.org/docs/reference/api/pandas.Timestamp.html>`_.
 
 Almost every other class in **OSEkit** inherits from ``Event``.
 
+.. _data_files:
+
 Data and Files
 """"""""""""""
-
-.. _data_files:
 
 Decoupling data from files is the cornerstone of **OSEkit**'s behaviour.
 Users can define data events from any list of files without worrying of whether the data events scatter across multiple files,

@@ -244,7 +244,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         kwargs.update(
             {
                 "file_class": AudioFile,
-                "supported_file_extensions": [".wav", ".flac", ".mp3"],
+                "supported_file_extensions": [".wav", ".flac", ".mseed", ".mp3"],
             },
         )
         base_dataset = BaseDataset.from_folder(

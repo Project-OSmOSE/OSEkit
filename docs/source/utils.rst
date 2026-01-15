@@ -1,7 +1,7 @@
+.. _utils:
+
 Utils
 -----
-
-.. _utils:
 
 .. toctree::
    :maxdepth: 1

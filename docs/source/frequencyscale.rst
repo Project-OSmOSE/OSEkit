@@ -1,7 +1,7 @@
+.. _frequencyscale:
+
 Custom Frequency Scale
 ----------------------
-
-.. _frequencyscale:
 
 .. autoclass:: osekit.core_api.frequency_scale.Scale
    :members:

@@ -1,7 +1,7 @@
+.. _example_reshaping_multiple_files:
+
 Reshaping multiple files
 ========================
-
-.. _example_reshaping_multiple_files:
 
 In this example, we want to export reshaped files from the sample audio dataset with the following requirements:
 

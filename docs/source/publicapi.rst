@@ -1,7 +1,7 @@
+.. _publicapi:
+
 Public API
 ----------
-
-.. _publicapi:
 
 .. toctree::
    :maxdepth: 1

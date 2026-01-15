@@ -1,7 +1,7 @@
+.. _multiprocessing:
+
 Multiprocessing
 ---------------
-
-.. _multiprocessing:
 
 **OSEkit** can be set up to distribute computations over multiple threads. Such computations are:
 

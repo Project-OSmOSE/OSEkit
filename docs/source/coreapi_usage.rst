@@ -1,7 +1,7 @@
+.. _coreapi_usage:
+
 Usage
 -----
-
-.. _coreapi_usage:
 
 Audio File
 ^^^^^^^^^^
@@ -164,10 +164,10 @@ requested normalization flag:
         incorrect_normalization = Normalization.RAW | Normalization.PEAK
         incorrect_normalization = Normalization.DC_REJECT | Normalization.RAW | Normalization.PEAK
 
+.. _instrument_calibration:
+
 Calibration
 """""""""""
-
-.. _instrument_calibration:
 
 The :class:`osekit.core_api.instrument.Instrument` class can be used to provide calibration info to your audio data.
 This can be used to convert raw WAV data to the recorded acoustic pressure.
@@ -419,10 +419,10 @@ The resulting figure presents the full-scale spectrogram at the top (from 0 to 7
 .. image:: _static/spectrograms/frequency_scale.png
 
 
+.. _ltas:
+
 LTAS Data
 ^^^^^^^^^
-
-.. _ltas:
 
 OSEkit provides the :class:`osekit.core_api.ltas_data.LTASData` class for computing and plotting LTAS (**L**\ ong-\ **T**\ erm **A**\ verage **S**\ pectrum).
 
