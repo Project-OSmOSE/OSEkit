@@ -35,6 +35,15 @@ class DummyData(BaseData[DummyItem, DummyFile]):
     def link(self, folder: Path) -> None:
         pass
 
+    def make_split_data(
+        self,
+        files: list[DummyFile],
+        begin: Timestamp,
+        end: Timestamp,
+        **kwargs,
+    ) -> Self:
+        return DummyData(files, begin, end, **kwargs)
+
     @classmethod
     def make_item(
         cls,
@@ -52,24 +61,33 @@ class DummyData(BaseData[DummyItem, DummyFile]):
         begin: Timestamp,
         end: Timestamp,
     ) -> Self:
-        pass
+        return cls.from_files(
+            files=files,
+            begin=begin,
+            end=end,
+        )
 
 
 class DummyDataset(BaseDataset[DummyData, DummyFile]):
     @classmethod
     def data_from_dict(cls, dictionary: dict) -> list[TData]:
-        pass
+        return [DummyData.from_dict(data) for data in dictionary.values()]
 
     @classmethod
     def data_from_files(
         cls,
-        files: list[TFile],
+        files: list[DummyFile],
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         name: str | None = None,
         **kwargs,
     ) -> TData:
-        pass
+        return DummyData.from_files(
+            files=files,
+            begin=begin,
+            end=end,
+            name=name,
+        )
 
     file_cls = DummyFile
 
@@ -421,7 +439,6 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
 @pytest.mark.parametrize(
     (
         "strptime_format",
-        "supported_file_extensions",
         "begin",
         "end",
         "timezone",
@@ -436,7 +453,6 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
     [
         pytest.param(
             "%y%m%d%H%M%S",
-            [".wav"],
             None,
             None,
             None,
@@ -459,7 +475,6 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
         ),
         pytest.param(
             None,
-            [".wav"],
             None,
             None,
             None,
@@ -482,7 +497,6 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
         ),
         pytest.param(
             None,
-            [".wav"],
             None,
             None,
             None,
@@ -512,7 +526,6 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
         ),
         pytest.param(
             None,
-            [".wav", ".mp3"],
             None,
             None,
             None,
@@ -521,7 +534,7 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
             None,
             Timestamp("2023-12-01 00:00:00"),
             None,
-            [Path(r"cool.wav"), Path(r"fun.mp3"), Path("boring.flac")],
+            [Path(r"cool.wav"), Path("boring.shenanigan")],
             [
                 (
                     Event(
@@ -530,19 +543,11 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
                     ),
                     [Path(r"cool.wav")],
                 ),
-                (
-                    Event(
-                        begin=Timestamp("2023-12-01 00:00:01"),
-                        end=Timestamp("2023-12-01 00:00:02"),
-                    ),
-                    [Path(r"fun.mp3")],
-                ),
             ],
             id="only_specified_formats_are_kept",
         ),
         pytest.param(
             None,
-            [".wav"],
             None,
             None,
             None,
@@ -586,7 +591,6 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
         ),
         pytest.param(
             None,
-            [".wav"],
             None,
             None,
             None,
@@ -630,7 +634,6 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
         ),
         pytest.param(
             None,
-            [".wav"],
             Timestamp("2023-12-01 00:00:00.5"),
             Timestamp("2023-12-01 00:00:01.5"),
             None,
@@ -660,7 +663,6 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
         ),
         pytest.param(
             "%y%m%d%H%M%S",
-            [".wav"],
             Timestamp("2023-12-01 00:00:00.5"),
             Timestamp("2023-12-01 00:00:01.5"),
             None,
@@ -690,7 +692,6 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
         ),
         pytest.param(
             "%y%m%d%H%M%S",
-            [".wav"],
             Timestamp("2023-12-01 00:00:00.5+01:00"),
             Timestamp("2023-12-01 00:00:01.5+01:00"),
             "Europe/Warsaw",
@@ -720,7 +721,6 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
         ),
         pytest.param(
             "%y%m%d%H%M%S%z",
-            [".wav"],
             Timestamp("2023-12-01 01:00:00.5+01:00"),
             Timestamp("2023-12-01 01:00:01.5+01:00"),
             "Europe/Warsaw",
@@ -753,7 +753,6 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
 def test_base_dataset_from_folder(
     monkeypatch: pytest.monkeypatch,
     strptime_format: str | None,
-    supported_file_extensions: list[str],
     begin: Timestamp | None,
     end: Timestamp | None,
     timezone: str | None,

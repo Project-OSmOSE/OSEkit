@@ -6,6 +6,7 @@ The data is accessed via an Item object per File.
 
 from __future__ import annotations
 
+import itertools
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Generic, Self, TypeVar
@@ -230,7 +231,7 @@ class BaseData(Generic[TItem, TFile], Event, ABC):
         """All files referred to by the Data."""
         return {item.file for item in self.items if item.file is not None}
 
-    def split(self, nb_subdata: int = 2) -> list[BaseData]:
+    def split(self, nb_subdata: int = 2, **kwargs) -> list[BaseData]:
         """Split the data object in the specified number of subdata.
 
         Parameters
@@ -245,11 +246,20 @@ class BaseData(Generic[TItem, TFile], Event, ABC):
 
         """
         dates = date_range(self.begin, self.end, periods=nb_subdata + 1)
-        subdata_dates = zip(dates, dates[1:], strict=False)
+        subdata_dates = itertools.pairwise(dates)
         return [
-            BaseData.from_files(files=list(self.files), begin=b, end=e)
+            self.make_split_data(files=list(self.files), begin=b, end=e, **kwargs)
             for b, e in subdata_dates
         ]
+
+    @abstractmethod
+    def make_split_data(
+        self,
+        files: list[TFile],
+        begin: Timestamp,
+        end: Timestamp,
+        **kwargs,
+    ) -> Self: ...
 
     @classmethod
     def from_files(

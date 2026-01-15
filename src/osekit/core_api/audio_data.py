@@ -7,7 +7,7 @@ The data is accessed via an AudioItem object per AudioFile.
 from __future__ import annotations
 
 from math import ceil
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 import numpy as np
 import soundfile as sf
@@ -15,7 +15,7 @@ from pandas import Timedelta, Timestamp
 
 from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.audio_item import AudioItem
-from osekit.core_api.base_data import BaseData
+from osekit.core_api.base_data import BaseData, TFile
 from osekit.core_api.instrument import Instrument
 from osekit.utils.audio_utils import Normalization, normalize, resample
 
@@ -288,7 +288,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         nb_subdata: int = 2,
         *,
         pass_normalization: bool = True,
-    ) -> list[AudioData]:
+    ) -> list[Self]:
         """Split the audio data object in the specified number of audio subdata.
 
         Parameters
@@ -314,16 +314,27 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             if any(self.normalization_values.values())
             else self.get_normalization_values()
         )
-        return [
-            AudioData.from_base_data(
-                data=base_data,
-                sample_rate=self.sample_rate,
-                instrument=self.instrument,
-                normalization=self.normalization,
-                normalization_values=normalization_values,
-            )
-            for base_data in super().split(nb_subdata)
-        ]
+        return super().split(
+            nb_subdata=nb_subdata,
+            normalization_values=normalization_values,
+        )
+
+    def make_split_data(
+        self,
+        files: list[TFile],
+        begin: Timestamp,
+        end: Timestamp,
+        normalization_values: dict,
+    ) -> Self:
+        return AudioData.from_files(
+            files=files,
+            begin=begin,
+            end=end,
+            sample_rate=self.sample_rate,
+            instrument=self.instrument,
+            normalization=self.normalization,
+            normalization_values=normalization_values,
+        )
 
     def split_frames(
         self,
@@ -353,9 +364,11 @@ class AudioData(BaseData[AudioItem, AudioFile]):
 
         """
         if start_frame < 0:
-            raise ValueError("Start_frame must be greater than or equal to 0.")
+            msg = "Start_frame must be greater than or equal to 0."
+            raise ValueError(msg)
         if stop_frame < -1 or stop_frame > self.length:
-            raise ValueError("Stop_frame must be lower than the length of the data.")
+            msg = "Stop_frame must be lower than the length of the data."
+            raise ValueError(msg)
 
         start_timestamp = self.begin + Timedelta(
             seconds=ceil(start_frame / self.sample_rate * 1e9) / 1e9,
