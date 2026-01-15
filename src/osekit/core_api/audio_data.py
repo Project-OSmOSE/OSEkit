@@ -324,7 +324,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         files: list[TFile],
         begin: Timestamp,
         end: Timestamp,
-        normalization_values: dict,
+        **kwargs,
     ) -> Self:
         return AudioData.from_files(
             files=files,
@@ -333,7 +333,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             sample_rate=self.sample_rate,
             instrument=self.instrument,
             normalization=self.normalization,
-            normalization_values=normalization_values,
+            normalization_values=kwargs["normalization_values"],
         )
 
     def split_frames(
@@ -427,6 +427,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         files: list[AudioFile],
         begin: Timestamp,
         end: Timestamp,
+        **kwargs,
     ) -> AudioData:
         """Deserialize an AudioData from a dictionary.
 

@@ -164,8 +164,3 @@ class SpectroFile(BaseFile):
             fs=self.sample_rate,
             mfft=self.mfft,
         )
-
-    @classmethod
-    def from_base_file(cls, file: BaseFile) -> SpectroFile:
-        """Return a SpectroFile object from a BaseFile object."""
-        return cls(path=file.path, begin=file.begin)

@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from osekit.core_api.base_file import BaseFile
 from osekit.core_api.base_item import BaseItem
 from osekit.core_api.spectro_file import SpectroFile
 
@@ -45,20 +44,6 @@ class SpectroItem(BaseItem[SpectroFile]):
         """Time resolution of the associated SpectroFile."""
         return None if self.is_empty else self.file.time_resolution
 
-    @classmethod
-    def from_base_item(cls, item: BaseItem) -> SpectroItem:
-        """Return a SpectroItem object from a BaseItem object."""
-        file = item.file
-        if not file or isinstance(file, SpectroFile):
-            return cls(file=file, begin=item.begin, end=item.end)
-        if isinstance(file, BaseFile):
-            return cls(
-                file=SpectroFile.from_base_file(file),
-                begin=item.begin,
-                end=item.end,
-            )
-        raise TypeError
-
     def get_value(
         self,
         fft: ShortTimeFFT | None = None,
@@ -75,10 +60,11 @@ class SpectroItem(BaseItem[SpectroFile]):
                 if sx_dtype is float:
                     sx = abs(sx) ** 2
                 if sx_dtype is complex:
-                    raise TypeError(
-                        "Cannot convert absolute npz values to complex sx values."
-                        "Change the SpectroData dtype to absolute.",
+                    msg = (
+                        "Cannot convert absolute npz values to complex sx values. "
+                        "Change the SpectroData dtype to absolute."
                     )
+                    raise TypeError(msg)
 
             return sx
 

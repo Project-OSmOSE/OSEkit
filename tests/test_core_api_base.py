@@ -43,6 +43,10 @@ class DummyData(BaseData[DummyItem, DummyFile]):
         return DummyData(files, begin, end, **kwargs)
 
     @classmethod
+    def make_file(cls, path: Path, begin: Timestamp) -> DummyFile:
+        return DummyFile(path=path, begin=begin)
+
+    @classmethod
     def make_item(
         cls,
         file: TFile | None = None,

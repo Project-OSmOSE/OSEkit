@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import gc
 import itertools
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, Self
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -20,7 +20,7 @@ from osekit.config import (
     TIMESTAMP_FORMATS_EXPORTED_FILES,
 )
 from osekit.core_api.audio_data import AudioData
-from osekit.core_api.base_data import BaseData
+from osekit.core_api.base_data import BaseData, TFile
 from osekit.core_api.spectro_file import SpectroFile
 from osekit.core_api.spectro_item import SpectroItem
 
@@ -39,12 +39,15 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
     The data is accessed via a SpectroItem object per SpectroFile.
     """
 
+    item_cls = SpectroItem
+
     def __init__(
         self,
         items: list[SpectroItem] | None = None,
         audio_data: AudioData = None,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
+        name: str | None = None,
         fft: ShortTimeFFT | None = None,
         db_ref: float | None = None,
         v_lim: tuple[float, float] | None = None,
@@ -64,6 +67,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         end: Timestamp | None
             Only effective if items is None.
             Set the end of the empty data.
+        name: str | None
+            Name of the exported files.
         fft: ShortTimeFFT
             The short time FFT used for computing the spectrogram.
         db_ref: float | None
@@ -75,7 +80,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             Colormap to use for plotting the spectrogram.
 
         """
-        super().__init__(items=items, begin=begin, end=end)
+        super().__init__(items=items, begin=begin, end=end, name=name)
         self.audio_data = audio_data
         self.fft = fft
         self._sx_dtype = complex
@@ -174,9 +179,10 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         return self._sx_dtype
 
     @sx_dtype.setter
-    def sx_dtype(self, dtype: type[complex]) -> [complex, float]:
+    def sx_dtype(self, dtype: type[complex]) -> None:
         if dtype not in (complex, float):
-            raise ValueError("dtype must be complex or float.")
+            msg = "dtype must be complex or float."
+            raise ValueError(msg)
         self._sx_dtype = dtype
 
     @property
@@ -241,7 +247,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         if not all(item.is_empty for item in self.items):
             return self._get_value_from_items(self.items)
         if not self.audio_data or not self.fft:
-            raise ValueError("SpectroData should have either items or audio_data.")
+            msg = "SpectroData should have either items or audio_data."
+            raise ValueError(msg)
 
         sx = self.fft.stft(
             x=self.audio_data.get_value_calibrated()[
@@ -275,9 +282,10 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         self,
         nperseg: int | None = None,
         detrend: str | callable | False = "constant",
-        return_onesided: bool = True,
         scaling: Literal["density", "spectrum"] = "density",
         average: Literal["mean", "median"] = "mean",
+        *,
+        return_onesided: bool = True,
     ) -> np.ndarray:
         """Estimate power spectral density of the SpectroData using Welch's method.
 
@@ -334,9 +342,10 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         px: np.ndarray | None = None,
         nperseg: int | None = None,
         detrend: str | callable | False = "constant",
-        return_onesided: bool = True,
         scaling: Literal["density", "spectrum"] = "density",
         average: Literal["mean", "median"] = "mean",
+        *,
+        return_onesided: bool = True,
     ) -> None:
         """Write the psd (welch) of the SpectroData to a npz file.
 
@@ -551,20 +560,25 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         """
         if self.begin != audio_data.begin:
-            raise ValueError("The begin of the audio data doesn't match.")
+            msg = "The begin of the audio data doesn't match."
+            raise ValueError(msg)
         if self.end != audio_data.end:
-            raise ValueError("The end of the audio data doesn't match.")
+            msg = "The end of the audio data doesn't match."
+            raise ValueError(msg)
         if self.fft.fs != audio_data.sample_rate:
-            raise ValueError("The sample rate of the audio data doesn't match.")
+            msg = "The sample rate of the audio data doesn't match."
+            raise ValueError(msg)
         self.audio_data = audio_data
 
-    def split(self, nb_subdata: int = 2) -> list[SpectroData]:
+    def split(self, nb_subdata: int = 2, **kwargs) -> list[SpectroData]:
         """Split the spectro data object in the specified number of spectro subdata.
 
         Parameters
         ----------
         nb_subdata: int
             Number of subdata in which to split the data.
+        kwargs: dict
+            Additionnal keyword arguments.
 
         Returns
         -------
@@ -606,10 +620,12 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             for i in items[1:]
             if not i.is_empty
         ):
-            raise ValueError("Items don't have the same frequency bins.")
+            msg = "Items don't have the same frequency bins."
+            raise ValueError(msg)
 
         if len({i.file.get_fft().delta_t for i in items if not i.is_empty}) > 1:
-            raise ValueError("Items don't have the same time resolution.")
+            msg = "Items don't have the same time resolution."
+            raise ValueError(msg)
 
         return np.hstack(
             [item.get_value(fft=self.fft, sx_dtype=self.sx_dtype) for item in items],
@@ -658,11 +674,54 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         return sd_part1[:, -p1_le:] + sd_part2[:, :p1_le]
 
     @classmethod
+    def make_file(cls, path: Path, begin: Timestamp) -> SpectroFile:
+        return SpectroFile(path=path, begin=begin)
+
+    @classmethod
+    def make_item(
+        cls,
+        file: TFile | None = None,
+        begin: Timestamp | None = None,
+        end: Timestamp | None = None,
+    ) -> SpectroItem:
+        return SpectroItem(
+            file=file,
+            begin=begin,
+            end=end,
+        )
+
+    @classmethod
+    def from_base_dict(
+        cls,
+        dictionary: dict,
+        files: list[TFile],
+        begin: Timestamp,
+        end: Timestamp,
+        **kwargs,
+    ) -> Self:
+        return cls.from_files(
+            files=files,
+            begin=begin,
+            end=end,
+            colormap=dictionary["colormap"],
+        )
+
+    def make_split_data(
+        self,
+        files: list[TFile],
+        begin: Timestamp,
+        end: Timestamp,
+        **kwargs,
+    ) -> Self: ...
+
+    @classmethod
     def from_files(
         cls,
         files: list[SpectroFile],
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
+        name: str | None = None,
+        **kwargs,
     ) -> SpectroData:
         """Return a SpectroData object from a list of SpectroFiles.
 
@@ -683,48 +742,18 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             The SpectroData object.
 
         """
-        instance = cls.from_base_data(
-            BaseData.from_files(files, begin, end),
-            fft=files[0].get_fft(),
+        fft = files[0].get_fft()
+        instance = super().from_files(
+            files=files,  # This way, this static error doesn't appear to the user
+            begin=begin,
+            end=end,
+            name=name,
+            fft=fft,
+            **kwargs,
         )
         if not any(file.sx_dtype is complex for file in files):
             instance.sx_dtype = float
         return instance
-
-    @classmethod
-    def from_base_data(
-        cls,
-        data: BaseData,
-        fft: ShortTimeFFT,
-        colormap: str | None = None,
-    ) -> SpectroData:
-        """Return an SpectroData object from a BaseData object.
-
-        Parameters
-        ----------
-        data: BaseData
-            BaseData object to convert to SpectroData.
-        fft: ShortTimeFFT
-            The ShortTimeFFT used to compute the spectrogram.
-        colormap: str
-            The colormap used to plot the spectrogram.
-
-        Returns
-        -------
-        SpectroData:
-            The SpectroData object.
-
-        """
-        items = [SpectroItem.from_base_item(item) for item in data.items]
-        db_ref = next((f.file.db_ref for f in items if f.file.db_ref is not None), None)
-        v_lim = next((f.file.v_lim for f in items if f.file.v_lim is not None), None)
-        return cls(
-            [SpectroItem.from_base_item(item) for item in data.items],
-            fft=fft,
-            db_ref=db_ref,
-            v_lim=v_lim,
-            colormap=colormap,
-        )
 
     @classmethod
     def from_audio_data(
@@ -815,7 +844,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         cls,
         dictionary: dict,
         sft: ShortTimeFFT | None = None,
-    ) -> SpectroData:
+    ) -> Self:
         """Deserialize a SpectroData from a dictionary.
 
         Parameters
@@ -832,19 +861,18 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             The deserialized SpectroData.
 
         """
+        if dictionary["audio_data"] is None:
+            return super().from_dict(
+                dictionary=dictionary,
+                colormap=dictionary["colormap"],
+            )
+
         if sft is None and dictionary["sft"] is None:
-            raise ValueError("Missing sft")
+            msg = "Missing SFT"
+            raise ValueError(msg)
         if sft is None:
             dictionary["sft"]["win"] = np.array(dictionary["sft"]["win"])
             sft = ShortTimeFFT(**dictionary["sft"])
-
-        if dictionary["audio_data"] is None:
-            base_data = BaseData.from_dict(dictionary)
-            return cls.from_base_data(
-                data=base_data,
-                fft=sft,
-                colormap=dictionary["colormap"],
-            )
 
         audio_data = AudioData.from_dict(dictionary["audio_data"])
         v_lim = (

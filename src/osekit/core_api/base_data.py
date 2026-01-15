@@ -176,7 +176,7 @@ class BaseData(Generic[TItem, TFile], Event, ABC):
         }
 
     @classmethod
-    def from_dict(cls, dictionary: dict) -> BaseData:
+    def from_dict(cls, dictionary: dict, **kwargs) -> BaseData:
         """Deserialize a BaseData from a dictionary.
 
         Parameters
@@ -202,9 +202,16 @@ class BaseData(Generic[TItem, TFile], Event, ABC):
         ]
         begin = Timestamp(dictionary["begin"])
         end = Timestamp(dictionary["end"])
-        return cls.from_base_dict(dictionary, files, begin, end)
+        return cls.from_base_dict(
+            dictionary=dictionary,
+            files=files,
+            begin=begin,
+            end=end,
+            **kwargs,
+        )
 
     @classmethod
+    @abstractmethod
     def make_file(cls, path: Path, begin: Timestamp) -> type[TFile]: ...
 
     @classmethod
