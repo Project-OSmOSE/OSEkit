@@ -7,7 +7,6 @@ that simplify repeated operations on the audio data.
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 from typing import TYPE_CHECKING, Literal, Self
 
 from osekit.core_api.audio_data import AudioData
@@ -18,6 +17,8 @@ from osekit.utils.audio_utils import Normalization
 from osekit.utils.multiprocess_utils import multiprocess
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     import pytz
     from pandas import Timedelta, Timestamp
 
@@ -294,8 +295,8 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
 
         Returns
         -------
-        BaseDataset[TItem, TFile]:
-        The DataBase object.
+        AudioDataset:
+        The AudioDataset object.
 
         """
         return super().from_files(

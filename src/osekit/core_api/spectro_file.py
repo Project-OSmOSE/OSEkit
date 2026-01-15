@@ -6,6 +6,7 @@ Metadata (time_resolution) are stored as separate arrays.
 
 from __future__ import annotations
 
+import typing
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -26,6 +27,8 @@ class SpectroFile(BaseFile):
     Spectro files are npz files with Time and Sxx arrays.
     Metadata (time_resolution) are stored as separate arrays.
     """
+
+    supported_extensions: typing.ClassVar = [".npz"]
 
     def __init__(
         self,
