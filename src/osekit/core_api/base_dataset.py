@@ -270,7 +270,7 @@ class BaseDataset(Generic[TData, TFile], Event, ABC):
         name: str | None = None,
         **kwargs,
     ) -> Self:
-        """Return a base BaseDataset object from a list of Files.
+        """Return a base Dataset object from a list of Files.
 
         Parameters
         ----------
@@ -303,8 +303,8 @@ class BaseDataset(Generic[TData, TFile], Event, ABC):
 
         Returns
         -------
-        BaseDataset[TItem, TFile]:
-        The DataBase object.
+        Self:
+            The Dataset object.
 
         """
         if mode == "files":
@@ -472,7 +472,7 @@ class BaseDataset(Generic[TData, TFile], Event, ABC):
         name: str | None = None,
         **kwargs,
     ) -> Self:
-        """Return a BaseDataset from a folder containing the base files.
+        """Return a Dataset from a folder containing the base files.
 
         Parameters
         ----------
@@ -521,7 +521,7 @@ class BaseDataset(Generic[TData, TFile], Event, ABC):
         Returns
         -------
         Self:
-            The base dataset.
+            The dataset.
 
         """
         valid_files = []

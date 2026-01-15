@@ -63,7 +63,7 @@ class BaseData(Generic[TItem, TFile], Event, ABC):
 
         """
         if not items:
-            items = [self.make_empty_item(begin=begin, end=end)]
+            items = [self.make_item(begin=begin, end=end)]
         self.items = items
         self._begin = min(item.begin for item in self.items)
         self._end = max(item.end for item in self.items)
@@ -260,7 +260,7 @@ class BaseData(Generic[TItem, TFile], Event, ABC):
         name: str | None = None,
         **kwargs: Any,
     ) -> Self:
-        """Return a base DataBase object from a list of Files.
+        """Return a Data object from a list of Files.
 
         Parameters
         ----------
@@ -277,8 +277,8 @@ class BaseData(Generic[TItem, TFile], Event, ABC):
 
         Returns
         -------
-        BaseData[TItem, TFile]:
-        The BaseData object.
+        Self:
+        The Data object.
 
         """
         items = cls.items_from_files(files=files, begin=begin, end=end)

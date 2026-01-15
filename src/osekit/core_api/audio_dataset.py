@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, Self
 
 from osekit.core_api.audio_data import AudioData
 from osekit.core_api.audio_file import AudioFile
@@ -166,7 +166,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         instrument: Instrument | None = None,
         normalization: Normalization = Normalization.RAW,
         **kwargs,
-    ) -> AudioDataset:
+    ) -> Self:
         """Return an AudioDataset from a folder containing the audio files.
 
         Parameters
@@ -230,8 +230,8 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             strptime_format=strptime_format,
             begin=begin,
             end=end,
-            timezone=timezone,
             mode=mode,
+            timezone=timezone,
             overlap=overlap,
             data_duration=data_duration,
             sample_rate=sample_rate,
@@ -329,30 +329,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         )
 
     @classmethod
-    def from_base_dataset(
-        cls,
-        base_dataset: BaseDataset,
-        sample_rate: float | None = None,
-        name: str | None = None,
-        instrument: Instrument | None = None,
-        normalization: Normalization = Normalization.RAW,
-    ) -> AudioDataset:
-        """Return an AudioDataset object from a BaseDataset object."""
-        return cls(
-            [
-                AudioData.from_base_data(
-                    data=data,
-                    sample_rate=sample_rate,
-                    normalization=normalization,
-                )
-                for data in base_dataset.data
-            ],
-            name=name,
-            instrument=instrument,
-        )
-
-    @classmethod
-    def from_json(cls, file: Path) -> AudioDataset:
+    def from_json(cls, file: Path) -> Self:
         """Deserialize an AudioDataset from a JSON file.
 
         Parameters
