@@ -384,6 +384,123 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
         update(first=first, last=last)
 
+    def get_zoomed_spectro_datasets(
+        self,
+        zoom_levels: list[int],
+        zoom_ffts: list[ShortTimeFFT] | None,
+    ) -> dict[int, SpectroDataset]:
+        """Return all zoomed SpectroDatasets from the current SpectroDataset.
+
+        For a given zoom level x, each SpectroData from the current SpectroDataset
+        will be split in x parts (that is, a 10s-long SpectroData with x=2 will lead to
+        two 5s-long SpectroDatas).
+
+        Parameters
+        ----------
+        zoom_levels: list[int]
+            All required zoom levels.
+        zoom_ffts: list[ShortTimeFFT]|None
+            FFTs to use for computing the zoomed SpectroDataset.
+            If None, will be defaulted as done in
+            the SpectroDataset._get_zoomed_fft() method.
+
+        Returns
+        -------
+        dict[int, SpectroDataset]
+            Dictionary where the key are the zoom levels, and the values are the
+            corresponding SpectroDatasets.
+
+        """
+        zoom_ffts = zoom_ffts if zoom_ffts is not None else [None] * len(zoom_levels)
+        output = {}
+        for zoom_level, zoom_fft in zip(zoom_levels, zoom_ffts, strict=True):
+            if zoom_level == 1:
+                continue
+            zoom_sds = self.get_zoomed_spectro_dataset(
+                zoom_level=zoom_level,
+                zoom_fft=zoom_fft,
+            )
+            output[zoom_level] = zoom_sds
+        return output
+
+    def get_zoomed_spectro_dataset(
+        self,
+        zoom_level: int,
+        zoom_fft: ShortTimeFFT | None = None,
+    ) -> SpectroDataset:
+        """Return a zoomed SpectroDataset from the current SpectroDataset.
+
+        For a given zoom level x, each SpectroData from the current SpectroDataset
+        will be split in x parts (that is, a 10s-long SpectroData with x=2 will lead to
+        two 5s-long SpectroDatas).
+
+        Parameters
+        ----------
+        zoom_level: int
+            Zoom level of the output SpectroDataset.
+            Each SpectroData from the current SpectroDataset will be split in
+            zoom_level equal-duration parts.
+        zoom_fft: ShortTimeFFT | None
+            FFT to use for computing the zoomed SpectroDataset.
+            If None, will be defaulted as done in
+            the SpectroDataset._get_zoomed_fft() method.
+
+        Returns
+        -------
+        SpectroDataset:
+            Zoomed SpectroDataset from the current SpectroDataset.
+
+        """
+        if zoom_level == 1:
+            return self
+
+        zoom_fft = zoom_fft or self._get_zoomed_fft(zoom_level=zoom_level)
+
+        zoomed_sds = SpectroDataset(
+            [zoomed_sd for sd in self.data for zoomed_sd in sd.split(zoom_level)],
+            name=f"{self.name}_x{zoom_level}",
+            suffix=self.suffix,
+            scale=self.scale,
+            v_lim=self.v_lim,
+        )
+        zoomed_sds.fft = zoom_fft
+
+        return zoomed_sds
+
+    def _get_zoomed_fft(
+        self,
+        zoom_level: int,
+    ) -> ShortTimeFFT:
+        """Compute the default FFT to use for computing the zoomed spectra.
+
+        By default, SpectroDatasets with a zoomed factor z will use the
+        same FFT as the z=1 SpectroDataset, but with a hop that is
+        divided by z.
+
+        Parameters
+        ----------
+        zoom_level: int
+            Zoom level used for computing the spectra.
+
+        Returns
+        -------
+        ShortTimeFFT
+        FFT used for computing the zoomed spectra.
+
+        """
+        if zoom_level < 1:
+            msg = f"Invalid zoom level {zoom_level}."
+            raise ValueError(msg)
+
+        if zoom_level == 1:
+            return self.fft
+
+        return ShortTimeFFT(
+            win=self.fft.win,
+            hop=self.fft.hop // zoom_level,
+            fs=self.fft.fs,
+        )
+
     def to_dict(self) -> dict:
         """Serialize a SpectroDataset to a dictionary.
 

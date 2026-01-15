@@ -3,12 +3,14 @@ from __future__ import annotations
 from enum import Flag, auto
 from typing import TYPE_CHECKING, Literal
 
-from osekit.core_api.frequency_scale import Scale
+from scipy.signal import ShortTimeFFT
+
 from osekit.utils.audio_utils import Normalization
 
 if TYPE_CHECKING:
     from pandas import Timedelta, Timestamp
-    from scipy.signal import ShortTimeFFT
+
+    from osekit.core_api.frequency_scale import Scale
 
 
 class AnalysisType(Flag):
@@ -78,6 +80,8 @@ class Analysis:
         colormap: str | None = None,
         scale: Scale | None = None,
         nb_ltas_time_bins: int | None = None,
+        zoom_levels: list[int] | None = None,
+        zoom_ffts: list[ShortTimeFFT] | None = None,
     ) -> None:
         """Initialize an Analysis object.
 
@@ -141,6 +145,19 @@ class Analysis:
             If None, the spectrogram will be computed regularly.
             If specified, the spectrogram will be computed as LTAS, with the value
             representing the maximum number of averaged time bins.
+        zoom_levels: list[int] | None
+            If specified, additional analyses datasets will be created at the requested
+            zoom levels.
+            e.g. with a data_duration of 10s and zoom_levels = [2,4], 3 SpectroDatasets
+            will be created, with data_duration = 5s and 2.5s.
+            This will only affect spectral exports, and if AnalysisType.AUDIO is
+            included in the analysis, zoomed SpectroDatasets will be linked to the
+            x1 zoom SpectroData.
+        zoom_ffts: list[ShortTimeFFT | None]
+            FFT to use for computing the zoomed spectra.
+            By default, SpectroDatasets with a zoomed factor z will use the
+            same FFT as the z=1 SpectroDataset, but with a hop that is
+            divided by z.
 
         """
         self.analysis_type = analysis_type
@@ -153,16 +170,18 @@ class Analysis:
         self.name = name
         self.normalization = normalization
         self.subtype = subtype
-        self.fft = fft
         self.v_lim = v_lim
         self.colormap = colormap
         self.scale = scale
         self.nb_ltas_time_bins = nb_ltas_time_bins
 
         if self.is_spectro and fft is None:
-            raise ValueError(
-                "FFT parameter should be given if spectra outputs are selected.",
-            )
+            msg = "FFT parameter should be given if spectra outputs are selected."
+            raise ValueError(msg)
+
+        self.fft = fft
+        self.zoom_levels = list({1, *zoom_levels}) if zoom_levels else None
+        self.zoom_ffts = zoom_ffts
 
     @property
     def is_spectro(self) -> bool:

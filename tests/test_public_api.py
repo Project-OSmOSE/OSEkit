@@ -1037,7 +1037,7 @@ def test_get_analysis_spectrodataset(
     )
     dataset.build()
 
-    analysis_sds = dataset.get_analysis_spectrodataset(analysis=analysis)
+    analysis_sds, _ = dataset.get_analysis_spectrodatasets(analysis=analysis)
 
     assert all(
         ad.begin == e.begin and ad.end == e.end
