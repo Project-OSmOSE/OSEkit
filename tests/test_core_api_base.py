@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Literal, Self
 
 import numpy as np
+import pandas as pd
 import pytest
 from pandas import Timedelta, Timestamp
 
@@ -19,8 +20,7 @@ from osekit.core_api.event import Event
 class DummyFile(BaseFile):
     supported_extensions: typing.ClassVar = [".wav"]
 
-    def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray:
-        pass
+    def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray: ...
 
 
 class DummyItem(BaseItem[DummyFile]): ...
@@ -29,11 +29,9 @@ class DummyItem(BaseItem[DummyFile]): ...
 class DummyData(BaseData[DummyItem, DummyFile]):
     item_cls = DummyItem
 
-    def write(self, folder: Path, link: bool = False) -> None:
-        pass
+    def write(self, folder: Path, link: bool = False) -> None: ...
 
-    def link(self, folder: Path) -> None:
-        pass
+    def link(self, folder: Path) -> None: ...
 
     def make_split_data(
         self,
@@ -67,6 +65,23 @@ class DummyData(BaseData[DummyItem, DummyFile]):
             end=end,
         )
 
+    @classmethod
+    def from_files(
+        cls,
+        files: list[DummyFile],
+        begin: Timestamp | None = None,
+        end: Timestamp | None = None,
+        name: str | None = None,
+        **kwargs,
+    ) -> Self:
+        return super().from_files(
+            files=files,
+            begin=begin,
+            end=end,
+            name=name,
+            **kwargs,
+        )
+
 
 class DummyDataset(BaseDataset[DummyData, DummyFile]):
     @classmethod
@@ -90,6 +105,24 @@ class DummyDataset(BaseDataset[DummyData, DummyFile]):
         )
 
     file_cls = DummyFile
+
+
+@pytest.fixture
+def dummy_dataset(tmp_path: Path) -> DummyDataset:
+    files = [tmp_path / f"file_{i}.txt" for i in range(5)]
+    for file in files:
+        file.touch()
+    timestamps = pd.date_range(
+        start=pd.Timestamp("2000-01-01 00:00:00"),
+        freq="1s",
+        periods=5,
+    )
+
+    dfs = [
+        DummyFile(path=file, begin=timestamp, end=timestamp + pd.Timedelta(seconds=1))
+        for file, timestamp in zip(files, timestamps, strict=False)
+    ]
+    return DummyDataset.from_files(files=dfs, mode="files")
 
 
 @pytest.mark.parametrize(
@@ -826,27 +859,27 @@ def test_move_file(
 
 def test_dataset_move(
     tmp_path: Path,
-    base_dataset: DummyDataset,
+    dummy_dataset: DummyDataset,
 ) -> None:
-    origin_files = [Path(str(file.path)) for file in base_dataset.files]
+    origin_files = [Path(str(file.path)) for file in dummy_dataset.files]
 
     # The starting folder of the dataset is the folder where the files are located
-    assert base_dataset.folder == tmp_path
+    assert dummy_dataset.folder == tmp_path
 
     destination = tmp_path / "destination"
-    base_dataset.folder = destination
+    dummy_dataset.folder = destination
 
     # Setting the folder shouldn't move the files
-    assert all(file.path.parent == tmp_path for file in base_dataset.files)
+    assert all(file.path.parent == tmp_path for file in dummy_dataset.files)
     assert all(file.exists for file in origin_files)
 
     # Folder should be changed when dataset is moved
     new_destination = tmp_path / "new_destination"
-    base_dataset.move_files(new_destination)
+    dummy_dataset.move_files(new_destination)
 
     assert new_destination.exists()
     assert new_destination.is_dir()
-    assert base_dataset.folder == new_destination
+    assert dummy_dataset.folder == new_destination
     assert all((new_destination / file.name).exists() for file in origin_files)
     assert not any(file.exists() for file in origin_files)
 

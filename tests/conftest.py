@@ -21,8 +21,6 @@ from osekit.config import (
 from osekit.core_api import AudioFileManager
 from osekit.core_api.audio_data import AudioData
 from osekit.core_api.audio_file import AudioFile
-from osekit.core_api.base_dataset import BaseDataset
-from osekit.core_api.base_file import BaseFile
 from osekit.utils.audio_utils import generate_sample_audio
 
 
@@ -167,24 +165,6 @@ def patch_afm_open(monkeypatch: pytest.MonkeyPatch) -> list[Path]:
 
     monkeypatch.setattr(AudioFileManager, "_open", mock_open)
     return opened_files
-
-
-@pytest.fixture
-def base_dataset(tmp_path: Path) -> BaseDataset:
-    files = [tmp_path / f"file_{i}.txt" for i in range(5)]
-    for file in files:
-        file.touch()
-    timestamps = pd.date_range(
-        start=pd.Timestamp("2000-01-01 00:00:00"),
-        freq="1s",
-        periods=5,
-    )
-
-    bfs = [
-        BaseFile(path=file, begin=timestamp, end=timestamp + pd.Timedelta(seconds=1))
-        for file, timestamp in zip(files, timestamps, strict=False)
-    ]
-    return BaseDataset.from_files(files=bfs, mode="files")
 
 
 @pytest.fixture
