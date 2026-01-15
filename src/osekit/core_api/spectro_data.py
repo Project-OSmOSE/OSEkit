@@ -743,12 +743,16 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         """
         fft = files[0].get_fft()
+        db_ref = next((f.db_ref for f in files if f.db_ref is not None), None)
+        v_lim = next((f.v_lim for f in files if f.v_lim is not None), None)
         instance = super().from_files(
             files=files,  # This way, this static error doesn't appear to the user
             begin=begin,
             end=end,
             name=name,
             fft=fft,
+            db_ref=db_ref,
+            v_lim=v_lim,
             **kwargs,
         )
         if not any(file.sx_dtype is complex for file in files):
