@@ -148,7 +148,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         )
 
     @classmethod
-    def data_from_dict(cls, dictionary: dict) -> list[AudioData]:
+    def _data_from_dict(cls, dictionary: dict) -> list[AudioData]:
         return [AudioData.from_dict(data) for data in dictionary.values()]
 
     @classmethod
@@ -313,14 +313,39 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         )
 
     @classmethod
-    def data_from_files(
+    def _data_from_files(
         cls,
         files: list[AudioFile],
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         name: str | None = None,
-        **kwargs,
+        **kwargs,  # noqa: ANN003
     ) -> AudioData:
+        """Return an AudioData object from a list of AudioFiles.
+
+        The AudioData starts at the begin and ends at end.
+
+        Parameters
+        ----------
+        files: list[AudioFile]
+            List of AudioFiles contained in the AudioData.
+        begin: Timestamp | None
+            Begin of the AudioData.
+            Defaulted to the begin of the first AudioFile.
+        end: Timestamp | None
+            End of the AudioData.
+            Defaulted to the end of the last AudioFile.
+        name: str|None
+            Name of the AudioData.
+        kwargs:
+            Keyword arguments to pass to the AudioData.from_files() method.
+
+        Returns
+        -------
+        AudioData:
+            The AudioData object.
+
+        """
         return AudioData.from_files(
             files=files,
             begin=begin,

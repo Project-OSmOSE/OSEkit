@@ -89,11 +89,11 @@ class DummyData(BaseData[DummyItem, DummyFile]):
 
 class DummyDataset(BaseDataset[DummyData, DummyFile]):
     @classmethod
-    def data_from_dict(cls, dictionary: dict) -> list[TData]:
+    def _data_from_dict(cls, dictionary: dict) -> list[TData]:
         return [DummyData.from_dict(data) for data in dictionary.values()]
 
     @classmethod
-    def data_from_files(
+    def _data_from_files(
         cls,
         files: list[DummyFile],
         begin: Timestamp | None = None,

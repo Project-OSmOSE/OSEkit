@@ -613,11 +613,11 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         )
 
     @classmethod
-    def data_from_dict(cls, dictionary: dict) -> list[SpectroData]:
+    def _data_from_dict(cls, dictionary: dict) -> list[SpectroData]:
         return [SpectroData.from_dict(data) for data in dictionary.values()]
 
     @classmethod
-    def data_from_files(
+    def _data_from_files(
         cls,
         files: list[TFile],
         begin: Timestamp | None = None,

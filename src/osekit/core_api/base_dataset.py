@@ -10,7 +10,7 @@ import os
 from abc import ABC, abstractmethod
 from bisect import bisect
 from pathlib import Path
-from typing import TYPE_CHECKING, Generic, Literal, Self, TypeVar
+from typing import TYPE_CHECKING, Literal, Self, TypeVar
 
 from pandas import Timedelta, Timestamp, date_range
 from soundfile import LibsndfileError
@@ -31,7 +31,7 @@ TData = TypeVar("TData", bound=BaseData)
 TFile = TypeVar("TFile", bound=BaseFile)
 
 
-class BaseDataset(Generic[TData, TFile], Event, ABC):
+class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
     """Base class for Dataset objects.
 
     Datasets are collections of Data, with methods
@@ -160,7 +160,11 @@ class BaseDataset(Generic[TData, TFile], Event, ABC):
 
     @property
     def data_duration(self) -> Timedelta:
-        """Return the most frequent duration among durations of the data of this dataset, rounded to the nearest second."""
+        """Return the most frequent duration among the data of this dataset.
+
+        The duration is rounded to the nearest second.
+
+        """
         data_durations = [
             Timedelta(data.duration).round(freq="1s") for data in self.data
         ]
@@ -169,9 +173,10 @@ class BaseDataset(Generic[TData, TFile], Event, ABC):
     def write(
         self,
         folder: Path,
-        link: bool = False,
         first: int = 0,
         last: int | None = None,
+        *,
+        link: bool = False,
     ) -> None:
         """Write all data objects in the specified folder.
 
@@ -227,7 +232,7 @@ class BaseDataset(Generic[TData, TFile], Event, ABC):
             The deserialized BaseDataset.
 
         """
-        data = cls.data_from_dict(dictionary["data"])
+        data = cls._data_from_dict(dictionary["data"])
         name = dictionary["name"]
         suffix = dictionary["suffix"]
         folder = Path(dictionary["folder"])
@@ -235,7 +240,9 @@ class BaseDataset(Generic[TData, TFile], Event, ABC):
 
     @classmethod
     @abstractmethod
-    def data_from_dict(cls, dictionary: dict) -> list[TData]: ...
+    def _data_from_dict(cls, dictionary: dict) -> list[TData]:
+        """Return a list of Data from a serialized dictionnary."""
+        ...
 
     def write_json(self, folder: Path) -> None:
         """Write a serialized BaseDataset to a JSON file."""
@@ -268,7 +275,7 @@ class BaseDataset(Generic[TData, TFile], Event, ABC):
         data_duration: Timedelta | None = None,
         overlap: float = 0.0,
         name: str | None = None,
-        **kwargs,
+        **kwargs,  # noqa: ANN003
     ) -> Self:
         """Return a base Dataset object from a list of Files.
 
@@ -288,8 +295,9 @@ class BaseDataset(Generic[TData, TFile], Event, ABC):
             "timedelta_total": data objects of duration equal to data_duration will
             be created from the begin timestamp to the end timestamp.
             "timedelta_file": data objects of duration equal to data_duration will
-            be created from the beginning of the first file that the begin timestamp is into, until it would resume
-            in a data beginning between two files. Then, the next data object will be created from the
+            be created from the beginning of the first file that the begin timestamp
+            is into, until it would resume in a data beginning between two files.
+            Then, the next data object will be created from the
             beginning of the next original file and so on.
         data_duration: Timedelta | None
             Duration of the data objects.
@@ -300,6 +308,8 @@ class BaseDataset(Generic[TData, TFile], Event, ABC):
             Overlap percentage between consecutive data.
         name: str|None
             Name of the dataset.
+        kwargs:
+            Keyword arguments to pass to the cls.data_from_files() method.
 
         Returns
         -------
@@ -308,7 +318,7 @@ class BaseDataset(Generic[TData, TFile], Event, ABC):
 
         """
         if mode == "files":
-            data = [cls.data_from_files([f], **kwargs) for f in files]
+            data = [cls._data_from_files([f], **kwargs) for f in files]
             data = BaseData.remove_overlaps(data)
             return cls(data=data, name=name)
 
@@ -338,20 +348,22 @@ class BaseDataset(Generic[TData, TFile], Event, ABC):
             )
         else:
             data_base = [
-                cls.data_from_files(files=files, begin=begin, end=end, **kwargs),
+                cls._data_from_files(files=files, begin=begin, end=end, **kwargs),
             ]
         return cls(data_base, name=name)
 
     @classmethod
     @abstractmethod
-    def data_from_files(
+    def _data_from_files(
         cls,
         files: list[TFile],
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         name: str | None = None,
-        **kwargs,
-    ) -> TData: ...
+        **kwargs,  # noqa: ANN003
+    ) -> TData:
+        """Return a base Dataset object between two timestamps from a list of Files."""
+        ...
 
     @classmethod
     def _get_data_from_files_timedelta_total(
@@ -361,7 +373,7 @@ class BaseDataset(Generic[TData, TFile], Event, ABC):
         data_duration: Timedelta,
         files: list[TFile],
         overlap: float = 0,
-        **kwargs,
+        **kwargs,  # noqa: ANN003
     ) -> list[TData]:
         if not 0 <= overlap < 1:
             msg = f"Overlap ({overlap}) must be between 0 and 1."
@@ -389,7 +401,7 @@ class BaseDataset(Generic[TData, TFile], Event, ABC):
             ):
                 last_active_file_index += 1
             output.append(
-                cls.data_from_files(
+                cls._data_from_files(
                     files[active_file_index:last_active_file_index],
                     data_begin,
                     data_end,
@@ -441,7 +453,7 @@ class BaseDataset(Generic[TData, TFile], Event, ABC):
                 files_chunk.append(next_file)
 
             output.extend(
-                cls.data_from_files(
+                cls._data_from_files(
                     files,
                     data_begin,
                     data_begin + data_duration,
@@ -470,7 +482,7 @@ class BaseDataset(Generic[TData, TFile], Event, ABC):
         data_duration: Timedelta | None = None,
         first_file_begin: Timestamp | None = None,
         name: str | None = None,
-        **kwargs,
+        **kwargs,  # noqa: ANN003
     ) -> Self:
         """Return a Dataset from a folder containing the base files.
 
@@ -517,6 +529,8 @@ class BaseDataset(Generic[TData, TFile], Event, ABC):
             Will be ignored if striptime_format is specified.
         name: str|None
             Name of the dataset.
+        kwargs:
+            Keyword arguments to pass to the cls.from_files() method.
 
         Returns
         -------
