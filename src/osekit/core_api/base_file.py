@@ -5,7 +5,9 @@ A File object associates file-written data to timestamps.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import typing
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Self
 
 from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
@@ -28,11 +30,13 @@ from osekit.core_api.event import Event
 from osekit.utils.timestamp_utils import strptime_from_text
 
 
-class BaseFile(Event):
+class BaseFile(Event, ABC):
     """Base class for the File objects.
 
     A File object associates file-written data to timestamps.
     """
+
+    supported_extensions: typing.ClassVar = []
 
     def __init__(
         self,
@@ -73,9 +77,10 @@ class BaseFile(Event):
         self.path = Path(path)
 
         if begin is None and strptime_format is None:
-            raise ValueError("Either begin or strptime_format must be specified")
+            msg = "Either begin or strptime_format must be specified"
+            raise ValueError(msg)
 
-        self.begin = (
+        begin = (
             begin
             if begin is not None
             else strptime_from_text(
@@ -85,10 +90,12 @@ class BaseFile(Event):
         )
 
         if timezone:
-            self.begin = localize_timestamp(self.begin, timezone)
+            begin = localize_timestamp(begin, timezone)
 
-        self.end = end if end is not None else (self.begin + Timedelta(seconds=1))
+        end = end if end is not None else (begin + Timedelta(seconds=1))
+        super().__init__(begin=begin, end=end)
 
+    @abstractmethod
     def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray:
         """Return the data that is between start and stop from the file.
 
@@ -106,6 +113,7 @@ class BaseFile(Event):
         The data between start and stop.
 
         """
+        ...
 
     def to_dict(self) -> dict:
         """Serialize a BaseFile to a dictionary.
@@ -123,7 +131,7 @@ class BaseFile(Event):
         }
 
     @classmethod
-    def from_dict(cls, serialized: dict) -> BaseFile:
+    def from_dict(cls: type[Self], serialized: dict) -> type[Self]:
         """Return a BaseFile object from a dictionary.
 
         Parameters
@@ -151,7 +159,7 @@ class BaseFile(Event):
         """Overwrite __str__."""
         return self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED)
 
-    def __eq__(self, other: BaseFile):
+    def __eq__(self, other: BaseFile) -> bool:
         """Override __eq__."""
         if not isinstance(other, BaseFile):
             return False

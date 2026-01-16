@@ -6,8 +6,10 @@ The data is accessed via an Item object per File.
 
 from __future__ import annotations
 
+import itertools
+from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Generic, TypeVar
+from typing import Self, TypeVar
 
 import numpy as np
 from pandas import Timestamp, date_range
@@ -27,12 +29,15 @@ TItem = TypeVar("TItem", bound=BaseItem)
 TFile = TypeVar("TFile", bound=BaseFile)
 
 
-class BaseData(Generic[TItem, TFile], Event):
+class BaseData[TItem: BaseItem, TFile: BaseFile](Event, ABC):
     """Base class for the Data objects.
 
     Data corresponds to data scattered through different Files.
     The data is accessed via an Item object per File.
     """
+
+    item_cls: type[TItem]
+    file_cls: type[TFile]
 
     def __init__(
         self,
@@ -59,11 +64,12 @@ class BaseData(Generic[TItem, TFile], Event):
 
         """
         if not items:
-            items = [BaseItem(begin=begin, end=end)]
+            items = [self._make_item(begin=begin, end=end)]
         self.items = items
         self._begin = min(item.begin for item in self.items)
         self._end = max(item.end for item in self.items)
         self._name = name
+        super().__init__(self._begin, self._end)
 
     def __eq__(self, other: BaseData) -> bool:
         """Override __eq__."""
@@ -135,9 +141,11 @@ class BaseData(Generic[TItem, TFile], Event):
         """
         path.mkdir(parents=True, exist_ok=True, mode=DPDEFAULT)
 
-    def write(self, folder: Path, link: bool = False) -> None:
+    @abstractmethod
+    def write(self, folder: Path, *, link: bool = False) -> None:
         """Abstract method for writing data to file."""
 
+    @abstractmethod
     def link(self, folder: Path) -> None:
         """Abstract method for linking data to a file in a given folder.
 
@@ -169,13 +177,19 @@ class BaseData(Generic[TItem, TFile], Event):
         }
 
     @classmethod
-    def from_dict(cls, dictionary: dict) -> BaseData:
+    def from_dict(
+        cls,
+        dictionary: dict,
+        **kwargs,  # noqa: ANN003
+    ) -> BaseData:
         """Deserialize a BaseData from a dictionary.
 
         Parameters
         ----------
         dictionary: dict
             The serialized dictionary representing the BaseData.
+        kwargs:
+            Keyword arguments that are passed to cls.from_base_dict().
 
         Returns
         -------
@@ -184,14 +198,10 @@ class BaseData(Generic[TItem, TFile], Event):
 
         """
         files = [
-            BaseFile(
-                Path(file["path"]),
+            cls._make_file(
+                path=Path(file["path"]),
                 begin=strptime_from_text(
                     file["begin"],
-                    datetime_template=TIMESTAMP_FORMATS_EXPORTED_FILES,
-                ),
-                end=strptime_from_text(
-                    file["end"],
                     datetime_template=TIMESTAMP_FORMATS_EXPORTED_FILES,
                 ),
             )
@@ -199,20 +209,58 @@ class BaseData(Generic[TItem, TFile], Event):
         ]
         begin = Timestamp(dictionary["begin"])
         end = Timestamp(dictionary["end"])
-        return cls.from_files(files, begin, end)
+        return cls._from_base_dict(
+            dictionary=dictionary,
+            files=files,
+            begin=begin,
+            end=end,
+            **kwargs,
+        )
+
+    @classmethod
+    @abstractmethod
+    def _make_file(cls, path: Path, begin: Timestamp) -> type[TFile]:
+        """Make a File from a path and a begin timestamp."""
+        ...
+
+    @classmethod
+    @abstractmethod
+    def _make_item(
+        cls,
+        file: TFile | None = None,
+        begin: Timestamp | None = None,
+        end: Timestamp | None = None,
+    ) -> TItem: ...
+
+    @classmethod
+    @abstractmethod
+    def _from_base_dict(
+        cls,
+        dictionary: dict,
+        files: list[TFile],
+        begin: Timestamp,
+        end: Timestamp,
+        **kwargs,  # noqa: ANN003
+    ) -> Self: ...
 
     @property
     def files(self) -> set[TFile]:
         """All files referred to by the Data."""
         return {item.file for item in self.items if item.file is not None}
 
-    def split(self, nb_subdata: int = 2) -> list[BaseData]:
+    def split(
+        self,
+        nb_subdata: int = 2,
+        **kwargs,  # noqa: ANN003
+    ) -> list[BaseData]:
         """Split the data object in the specified number of subdata.
 
         Parameters
         ----------
         nb_subdata: int
             Number of subdata in which to split the data.
+        **kwargs:
+            Keyword arguments that are passed to self.make_split_data().
 
         Returns
         -------
@@ -221,11 +269,22 @@ class BaseData(Generic[TItem, TFile], Event):
 
         """
         dates = date_range(self.begin, self.end, periods=nb_subdata + 1)
-        subdata_dates = zip(dates, dates[1:], strict=False)
+        subdata_dates = itertools.pairwise(dates)
         return [
-            BaseData.from_files(files=list(self.files), begin=b, end=e)
+            self._make_split_data(files=list(self.files), begin=b, end=e, **kwargs)
             for b, e in subdata_dates
         ]
+
+    @abstractmethod
+    def _make_split_data(
+        self,
+        files: list[TFile],
+        begin: Timestamp,
+        end: Timestamp,
+        **kwargs,  # noqa: ANN003
+    ) -> Self:
+        """Make a Data object after a .split() call."""
+        ...
 
     @classmethod
     def from_files(
@@ -234,8 +293,9 @@ class BaseData(Generic[TItem, TFile], Event):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         name: str | None = None,
-    ) -> BaseData[TItem, TFile]:
-        """Return a base DataBase object from a list of Files.
+        **kwargs,  # noqa: ANN003
+    ) -> Self:
+        """Return a Data object from a list of Files.
 
         Parameters
         ----------
@@ -249,15 +309,17 @@ class BaseData(Generic[TItem, TFile], Event):
             Defaulted to the end of the last file.
         name: str | None
             Name of the exported files.
+        kwargs:
+            Keyword arguments that are passed to the cls constructor.
 
         Returns
         -------
-        BaseData[TItem, TFile]:
-        The BaseData object.
+        Self:
+        The Data object.
 
         """
         items = cls.items_from_files(files=files, begin=begin, end=end)
-        return cls(items=items, name=name)
+        return cls(items=items, name=name, **kwargs)
 
     @classmethod
     def items_from_files(
@@ -265,7 +327,7 @@ class BaseData(Generic[TItem, TFile], Event):
         files: list[TFile],
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
-    ) -> list[BaseItem]:
+    ) -> list[TItem]:
         """Return a list of Items from a list of Files and timestamps.
 
         The Items range from begin to end.
@@ -295,12 +357,14 @@ class BaseData(Generic[TItem, TFile], Event):
             file for file in files if file.overlaps(Event(begin=begin, end=end))
         ]
 
-        items = [BaseItem(file, begin, end) for file in included_files]
+        items = [
+            cls._make_item(file=file, begin=begin, end=end) for file in included_files
+        ]
         if not items:
-            items.append(BaseItem(begin=begin, end=end))
+            items.append(cls._make_item(begin=begin, end=end))
         if (first_item := sorted(items, key=lambda item: item.begin)[0]).begin > begin:
-            items.append(BaseItem(begin=begin, end=first_item.begin))
+            items.append(cls._make_item(begin=begin, end=first_item.begin))
         if (last_item := sorted(items, key=lambda item: item.end)[-1]).end < end:
-            items.append(BaseItem(begin=last_item.end, end=end))
+            items.append(cls._make_item(begin=last_item.end, end=end))
         items = Event.remove_overlaps(items)
-        return Event.fill_gaps(items, BaseItem)
+        return Event.fill_gaps(items, cls.item_cls)
