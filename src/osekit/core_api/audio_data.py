@@ -15,7 +15,7 @@ from pandas import Timedelta, Timestamp
 
 from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.audio_item import AudioItem
-from osekit.core_api.base_data import BaseData, TFile
+from osekit.core_api.base_data import BaseData
 from osekit.core_api.instrument import Instrument
 from osekit.utils.audio_utils import Normalization, normalize, resample
 
@@ -121,19 +121,60 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         )
 
     @classmethod
-    def make_item(
+    def _make_item(
         cls,
         file: AudioFile | None = None,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
     ) -> AudioItem:
+        """Make an AudioItem for a given AudioFile between begin and end timestamps.
+
+        Parameters
+        ----------
+        file: AudioFile
+            AudioFile of the item.
+        begin: Timestamp
+            Begin of the item.
+        end:
+            End of the item.
+
+        Returns
+        -------
+        An AudioItem for the AudioFile file, between the begin and end timestamps.
+
+        """
         return AudioItem(file=file, begin=begin, end=end)
 
     @classmethod
-    def make_file(cls, path: Path, begin: Timestamp) -> AudioFile:
+    def _make_file(cls, path: Path, begin: Timestamp) -> AudioFile:
+        """Make an AudioFile from a path and a begin timestamp.
+
+        Parameters
+        ----------
+        path: Path
+            Path to the file.
+        begin: Timestamp
+            Begin of the file.
+
+        Returns
+        -------
+        AudioFile:
+        The audio file.
+
+        """
         return AudioFile(path=path, begin=begin)
 
     def get_normalization_values(self) -> dict:
+        """Return the values used for normalizing the audio data.
+
+        Returns
+        -------
+        dict:
+            "mean": mean value to substract to center values on 0.
+            "peak": peak value for PEAK normalization
+            "std": standard deviation used for z-score normalization
+
+        """
         values = np.array(self.get_raw_value())
         return {
             "mean": values.mean(),
@@ -320,13 +361,33 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             normalization_values=normalization_values,
         )
 
-    def make_split_data(
+    def _make_split_data(
         self,
-        files: list[TFile],
+        files: list[AudioFile],
         begin: Timestamp,
         end: Timestamp,
-        **kwargs,
-    ) -> Self:
+        **kwargs: tuple[float, float, float],
+    ) -> AudioData:
+        """Return an AudioData object after an AudioData.split() call.
+
+        Parameters
+        ----------
+        files: list[AudioFile]
+            The AudioFiles of the original AudioData.
+        begin: Timestamp
+            The begin timestamp of the split AudioData.
+        end: Timestamp
+            The end timestamp of the split AudioData.
+        kwargs:
+            normalization_values: tuple[float, float, float]
+                Values used for normalizing the split AudioData.
+
+        Returns
+        -------
+        AudioData:
+            The AudioData instance.
+
+        """
         return AudioData.from_files(
             files=files,
             begin=begin,
@@ -422,20 +483,31 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         )
 
     @classmethod
-    def from_base_dict(
+    def _from_base_dict(
         cls,
         dictionary: dict,
         files: list[AudioFile],
         begin: Timestamp,
         end: Timestamp,
-        **kwargs,
+        **kwargs,  # noqa: ANN003
     ) -> AudioData:
-        """Deserialize an AudioData from a dictionary.
+        """Deserialize the AudioData-specific parts of a Data dictionary.
+
+        This method is called within the BaseData.from_dict() method, which
+        deserializes the base files, begin and end parameters.
 
         Parameters
         ----------
         dictionary: dict
             The serialized dictionary representing the AudioData.
+        files: list[AudioFile]
+            The list of deserialized AudioFiles.
+        begin: Timestamp
+            The deserialized begin timestamp.
+        end: Timestamp
+            The deserialized end timestamp.
+        kwargs:
+            None.
 
         Returns
         -------
@@ -459,14 +531,44 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         )
 
     @classmethod
-    def from_files(  # noqa: D102
+    def from_files(
         cls,
         files: list[AudioFile],  # The method is redefined just to specify the type
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         name: str | None = None,
-        **kwargs,
+        **kwargs,  # noqa: ANN003
     ) -> AudioData:
+        """Return a, AudioData object from a list of AudioFiles.
+
+        Parameters
+        ----------
+        files: list[AudioFile]
+            List of AudioFiles containing the data.
+        begin: Timestamp | None
+            Begin of the data object.
+            Defaulted to the begin of the first file.
+        end: Timestamp | None
+            End of the data object.
+            Defaulted to the end of the last file.
+        name: str | None
+            Name of the exported files.
+        kwargs
+            Keyword arguments that are passed to the cls constructor.
+            sample_rate: int
+                The sample rate of the audio data.
+            instrument: Instrument | None
+                Instrument that might be used to obtain acoustic pressure from
+                the wav audio data.
+            normalization: Normalization
+                The type of normalization to apply to the audio data.
+
+        Returns
+        -------
+        Self:
+        The AudioData object.
+
+        """
         return super().from_files(
             files=files,  # This way, this static error doesn't appear to the user
             begin=begin,

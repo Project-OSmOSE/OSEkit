@@ -33,7 +33,7 @@ class DummyData(BaseData[DummyItem, DummyFile]):
 
     def link(self, folder: Path) -> None: ...
 
-    def make_split_data(
+    def _make_split_data(
         self,
         files: list[DummyFile],
         begin: Timestamp,
@@ -43,11 +43,11 @@ class DummyData(BaseData[DummyItem, DummyFile]):
         return DummyData(files, begin, end, **kwargs)
 
     @classmethod
-    def make_file(cls, path: Path, begin: Timestamp) -> DummyFile:
+    def _make_file(cls, path: Path, begin: Timestamp) -> DummyFile:
         return DummyFile(path=path, begin=begin)
 
     @classmethod
-    def make_item(
+    def _make_item(
         cls,
         file: TFile | None = None,
         begin: Timestamp | None = None,
@@ -56,7 +56,7 @@ class DummyData(BaseData[DummyItem, DummyFile]):
         return DummyItem(file=file, begin=begin, end=end)
 
     @classmethod
-    def from_base_dict(
+    def _from_base_dict(
         cls,
         dictionary: dict,
         files: list[TFile],

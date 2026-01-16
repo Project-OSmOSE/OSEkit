@@ -675,16 +675,47 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         return sd_part1[:, -p1_le:] + sd_part2[:, :p1_le]
 
     @classmethod
-    def make_file(cls, path: Path, begin: Timestamp) -> SpectroFile:
+    def _make_file(cls, path: Path, begin: Timestamp) -> SpectroFile:
+        """Make a SpectroFile from a path and a begin timestamp.
+
+        Parameters
+        ----------
+        path: Path
+            Path to the file.
+        begin: Timestamp
+            Begin of the file.
+
+        Returns
+        -------
+        SpectroFile:
+        The spectro file.
+
+        """
         return SpectroFile(path=path, begin=begin)
 
     @classmethod
-    def make_item(
+    def _make_item(
         cls,
         file: TFile | None = None,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
     ) -> SpectroItem:
+        """Make a SpectroItem for a given SpectroFile between begin andend timestamps.
+
+        Parameters
+        ----------
+        file: SpectroFile
+            SpectroFile of the item.
+        begin: Timestamp
+            Begin of the item.
+        end:
+            End of the item.
+
+        Returns
+        -------
+        A SpectroItem for the SpectroFile file, between the begin and end timestamps.
+
+        """
         return SpectroItem(
             file=file,
             begin=begin,
@@ -692,7 +723,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         )
 
     @classmethod
-    def from_base_dict(
+    def _from_base_dict(
         cls,
         dictionary: dict,
         files: list[TFile],
@@ -707,7 +738,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             colormap=dictionary["colormap"],
         )
 
-    def make_split_data(
+    def _make_split_data(
         self,
         files: list[TFile],
         begin: Timestamp,
