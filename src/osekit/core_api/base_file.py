@@ -79,7 +79,7 @@ class BaseFile(Event, ABC):
         if begin is None and strptime_format is None:
             raise ValueError("Either begin or strptime_format must be specified")
 
-        self.begin = (
+        begin = (
             begin
             if begin is not None
             else strptime_from_text(
@@ -91,7 +91,8 @@ class BaseFile(Event, ABC):
         if timezone:
             self.begin = localize_timestamp(self.begin, timezone)
 
-        self.end = end if end is not None else (self.begin + Timedelta(seconds=1))
+        end = end if end is not None else (self.begin + Timedelta(seconds=1))
+        super().__init__(begin=begin, end=end)
 
     @abstractmethod
     def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray:
