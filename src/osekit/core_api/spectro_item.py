@@ -37,7 +37,7 @@ class SpectroItem(BaseItem[SpectroFile]):
             It is defaulted to the SpectroFile end.
 
         """
-        super().__init__(file, begin, end)
+        super().__init__(file=file, begin=begin, end=end)
 
     @property
     def time_resolution(self) -> Timedelta:

@@ -6,7 +6,7 @@ Items correspond to a portion of a File object.
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 import numpy as np
 
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 TFile = TypeVar("TFile", bound=BaseFile)
 
 
-class BaseItem(Generic[TFile], Event, ABC):
+class BaseItem[TFile: BaseFile](Event, ABC):
     """Base class for the Item objects.
 
     An Item correspond to a portion of a File object.
@@ -52,10 +52,10 @@ class BaseItem(Generic[TFile], Event, ABC):
             self.end = end
             return
 
-        self.begin = (
-            max(begin, self.file.begin) if begin is not None else self.file.begin
-        )
-        self.end = min(end, self.file.end) if end is not None else self.file.end
+        begin = max(begin, self.file.begin) if begin is not None else self.file.begin
+        end = min(end, self.file.end) if end is not None else self.file.end
+
+        super().__init__(begin=begin, end=end)
 
     def get_value(self) -> np.ndarray:
         """Get the values from the File between the begin and stop timestamps.

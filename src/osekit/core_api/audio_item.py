@@ -36,7 +36,7 @@ class AudioItem(BaseItem[AudioFile]):
             It is defaulted to the AudioFile end.
 
         """
-        super().__init__(file, begin, end)
+        super().__init__(file=file, begin=begin, end=end)
 
     @property
     def sample_rate(self) -> float:
