@@ -142,7 +142,7 @@ class BaseData(Generic[TItem, TFile], Event, ABC):
         path.mkdir(parents=True, exist_ok=True, mode=DPDEFAULT)
 
     @abstractmethod
-    def write(self, folder: Path, link: bool = False) -> None:
+    def write(self, folder: Path, *, link: bool = False) -> None:
         """Abstract method for writing data to file."""
 
     @abstractmethod
@@ -184,6 +184,8 @@ class BaseData(Generic[TItem, TFile], Event, ABC):
         ----------
         dictionary: dict
             The serialized dictionary representing the BaseData.
+        kwargs:
+            Keyword arguments that are passed to cls.from_base_dict().
 
         Returns
         -------
@@ -232,6 +234,7 @@ class BaseData(Generic[TItem, TFile], Event, ABC):
         files: list[TFile],
         begin: Timestamp,
         end: Timestamp,
+        **kwargs,
     ) -> Self: ...
 
     @property

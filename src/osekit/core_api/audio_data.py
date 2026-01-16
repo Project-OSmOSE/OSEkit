@@ -223,6 +223,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         self,
         folder: Path,
         subtype: str | None = None,
+        *,
         link: bool = False,
     ) -> None:
         """Write the audio data to file.
