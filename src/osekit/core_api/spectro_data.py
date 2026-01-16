@@ -571,15 +571,19 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             raise ValueError(msg)
         self.audio_data = audio_data
 
-    def split(self, nb_subdata: int = 2, **kwargs) -> list[SpectroData]:
+    def split(
+        self,
+        nb_subdata: int = 2,
+        **kwargs,  # noqa: ANN003
+    ) -> list[SpectroData]:
         """Split the spectro data object in the specified number of spectro subdata.
 
         Parameters
         ----------
         nb_subdata: int
             Number of subdata in which to split the data.
-        kwargs: dict
-            Additionnal keyword arguments.
+        kwargs:
+            None
 
         Returns
         -------
@@ -700,7 +704,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
     ) -> SpectroItem:
-        """Make a SpectroItem for a given SpectroFile between begin andend timestamps.
+        """Make a SpectroItem for a given SpectroFile between begin and end timestamps.
 
         Parameters
         ----------
@@ -726,11 +730,35 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
     def _from_base_dict(
         cls,
         dictionary: dict,
-        files: list[TFile],
+        files: list[SpectroFile],
         begin: Timestamp,
         end: Timestamp,
-        **kwargs,
-    ) -> Self:
+        **kwargs,  # noqa: ANN003
+    ) -> SpectroData:
+        """Deserialize the SpectroData-specific parts of a Data dictionary.
+
+        This method is called within the BaseData.from_dict() method, which
+        deserializes the base files, begin and end parameters.
+
+        Parameters
+        ----------
+        dictionary: dict
+            The serialized dictionary representing the SpectroData.
+        files: list[SpectroFile]
+            The list of deserialized SpectroFiles.
+        begin: Timestamp
+            The deserialized begin timestamp.
+        end: Timestamp
+            The deserialized end timestamp.
+        kwargs:
+            None.
+
+        Returns
+        -------
+        SpectroData
+            The deserialized SpectroData.
+
+        """
         return cls.from_files(
             files=files,
             begin=begin,
@@ -743,8 +771,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         files: list[TFile],
         begin: Timestamp,
         end: Timestamp,
-        **kwargs,
-    ) -> Self: ...
+        **kwargs,  # noqa: ANN003
+    ) -> SpectroData: ...
 
     @classmethod
     def from_files(
@@ -767,6 +795,12 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         end: Timestamp | None
             End of the data object.
             Defaulted to the end of the last file.
+        name: str | None
+            Name of the exported files.
+        kwargs
+            Keyword arguments that are passed to the cls constructor.
+            colormap: str
+                Colormap to use for plotting the spectrogram.
 
         Returns
         -------
