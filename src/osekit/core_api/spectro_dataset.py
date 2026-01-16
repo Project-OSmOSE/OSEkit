@@ -286,6 +286,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         data: SpectroData,
         matrix_folder: Path,
         spectrogram_folder: Path,
+        *,
         link: bool,
     ) -> SpectroData:
         """Save the data matrix and spectrogram to disk."""
@@ -298,9 +299,10 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         self,
         matrix_folder: Path,
         spectrogram_folder: Path,
-        link: bool = False,
         first: int = 0,
         last: int | None = None,
+        *,
+        link: bool = False,
     ) -> None:
         """Export both Sx matrices as npz files and spectrograms for each data.
 
@@ -342,10 +344,17 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         ----------
         audio_dataset: AudioDataset
             The AudioDataset which data will be linked to the SpectroDataset data.
+        first: int
+            Index of the first SpectroData and AudioData to link.
+        last: int
+            Index of the last SpectroData and AudioData to link.
 
         """
         if len(audio_dataset.data) != len(self.data):
-            msg = "The audio dataset doesn't contain the same number of data as the spectro dataset."
+            msg = (
+                "The audio dataset doesn't contain the same number of data"
+                " as the spectro dataset."
+            )
             raise ValueError(msg)
 
         last = len(self.data) if last is None else last
@@ -485,7 +494,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         overlap: float = 0.0,
         data_duration: Timedelta | None = None,
         name: str | None = None,
-        **kwargs: any,
+        **kwargs,  # noqa: ANN003
     ) -> Self:
         """Return a SpectroDataset from a folder containing the spectro files.
 
@@ -525,8 +534,8 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             Else, one data object will cover the whole time period.
         name: str|None
             Name of the dataset.
-        kwargs: any
-            Keyword arguments passed to the BaseDataset.from_folder classmethod.
+        kwargs:
+            None.
 
         Returns
         -------
@@ -556,7 +565,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
         overlap: float = 0.0,
         data_duration: Timedelta | None = None,
-        **kwargs,
+        **kwargs,  # noqa: ANN003
     ) -> AudioDataset:
         """Return an SpectroDataset object from a list of SpectroFiles.
 
@@ -595,6 +604,8 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             the wav audio data.
         normalization: Normalization
             The type of normalization to apply to the audio data.
+        kwargs:
+            None.
 
         Returns
         -------
@@ -614,6 +625,19 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
     @classmethod
     def _data_from_dict(cls, dictionary: dict) -> list[SpectroData]:
+        """Return the list of SpectroData objects from the serialized dictionary.
+
+        Parameters
+        ----------
+        dictionary: dict
+            Dictionary representing the serialized SpectroDataset.
+
+        Returns
+        -------
+        list[SpectroData]:
+            The list of deserialized SpectroData objects.
+
+        """
         return [SpectroData.from_dict(data) for data in dictionary.values()]
 
     @classmethod
@@ -623,8 +647,33 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         name: str | None = None,
-        **kwargs,
+        **kwargs,  # noqa: ANN003
     ) -> SpectroData:
+        """Return a SpectroData object from a list of SpectroFiles.
+
+        The SpectroData starts at the begin and ends at end.
+
+        Parameters
+        ----------
+        files: list[SpectroFile]
+            List of SpectroFiles contained in the SpectroData.
+        begin: Timestamp | None
+            Begin of the SpectroData.
+            Defaulted to the begin of the first SpectroFile.
+        end: Timestamp | None
+            End of the SpectroData.
+            Defaulted to the end of the last SpectroFile.
+        name: str|None
+            Name of the SpectroData.
+        kwargs:
+            Keyword arguments to pass to the SpectroData.from_files() method.
+
+        Returns
+        -------
+        SpectroData:
+            The SpectroData object.
+
+        """
         return SpectroData.from_files(
             files=files,
             begin=begin,

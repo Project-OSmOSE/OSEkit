@@ -149,6 +149,19 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
 
     @classmethod
     def _data_from_dict(cls, dictionary: dict) -> list[AudioData]:
+        """Return the list of AudioData objects from the serialized dictionary.
+
+        Parameters
+        ----------
+        dictionary: dict
+            Dictionary representing the serialized AudioDataset.
+
+        Returns
+        -------
+        list[AudioData]:
+            The list of deserialized AudioData objects.
+
+        """
         return [AudioData.from_dict(data) for data in dictionary.values()]
 
     @classmethod
@@ -166,7 +179,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         name: str | None = None,
         instrument: Instrument | None = None,
         normalization: Normalization = Normalization.RAW,
-        **kwargs,
+        **kwargs,  # noqa: ANN003
     ) -> Self:
         """Return an AudioDataset from a folder containing the audio files.
 
