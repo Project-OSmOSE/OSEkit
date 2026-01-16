@@ -77,7 +77,8 @@ class BaseFile(Event, ABC):
         self.path = Path(path)
 
         if begin is None and strptime_format is None:
-            raise ValueError("Either begin or strptime_format must be specified")
+            msg = "Either begin or strptime_format must be specified"
+            raise ValueError(msg)
 
         begin = (
             begin
@@ -89,9 +90,9 @@ class BaseFile(Event, ABC):
         )
 
         if timezone:
-            self.begin = localize_timestamp(self.begin, timezone)
+            begin = localize_timestamp(begin, timezone)
 
-        end = end if end is not None else (self.begin + Timedelta(seconds=1))
+        end = end if end is not None else (begin + Timedelta(seconds=1))
         super().__init__(begin=begin, end=end)
 
     @abstractmethod

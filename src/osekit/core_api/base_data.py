@@ -69,6 +69,7 @@ class BaseData(Generic[TItem, TFile], Event, ABC):
         self._begin = min(item.begin for item in self.items)
         self._end = max(item.end for item in self.items)
         self._name = name
+        super().__init__(self._begin, self._end)
 
     def __eq__(self, other: BaseData) -> bool:
         """Override __eq__."""
