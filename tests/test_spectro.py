@@ -1325,7 +1325,7 @@ def test_spectro_begin_and_end(monkeypatch: pytest.MonkeyPatch) -> None:
     assert ad.end == sd.end
 
 
-def test_spectro_get_welch(
+def test_spectro_write_welch(
     patch_audio_data: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
