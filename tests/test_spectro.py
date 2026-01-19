@@ -77,6 +77,11 @@ def test_spectrogram_shape(
         assert spectro.shape == spectro.get_value().shape
         assert spectro.shape == (sft.f.shape[0], sft.p_num(audio.length))
 
+        nb_points = sft.f.shape[0] * sft.p_num(audio.length)
+        assert spectro.nb_bytes == nb_points * 16
+        spectro.sx_dtype = float
+        assert spectro.nb_bytes == nb_points * 8
+
 
 @pytest.mark.parametrize(
     ("audio_files", "date_begin", "sft"),
