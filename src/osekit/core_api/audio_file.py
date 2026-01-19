@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import typing
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -20,6 +21,8 @@ from osekit.core_api.base_file import BaseFile
 
 class AudioFile(BaseFile):
     """Audio file associated with timestamps."""
+
+    supported_extensions: typing.ClassVar = [".wav", ".flac", ".mp3"]
 
     def __init__(
         self,
@@ -115,11 +118,6 @@ class AudioFile(BaseFile):
         start_sample = floor(((start - self.begin) * self.sample_rate).total_seconds())
         stop_sample = round(((stop - self.begin) * self.sample_rate).total_seconds())
         return start_sample, stop_sample
-
-    @classmethod
-    def from_base_file(cls, file: BaseFile) -> AudioFile:
-        """Return an AudioFile object from a BaseFile object."""
-        return cls(path=file.path, begin=file.begin)
 
     def move(self, folder: Path) -> None:
         """Move the file to the target folder.

@@ -52,7 +52,7 @@ class LTASDataset(SpectroDataset):
 
     @property
     def nb_time_bins(self) -> int:
-        """Number of time bins used to compute the LTAS data.."""
+        """Number of time bins used to compute the LTAS data."""
         return max(
             {d.nb_time_bins for d in self.data},
             key=[d.nb_time_bins for d in self.data].count,
@@ -86,6 +86,7 @@ class LTASDataset(SpectroDataset):
         colormap: str | None = None,
         v_lim: tuple[float, float] | None = sentinel_value,
         scale: Scale | None = None,
+        nb_time_bins: int | None = None,
     ) -> SpectroDataset:
         """Return a SpectroDataset object from an AudioDataset object.
 
@@ -100,4 +101,5 @@ class LTASDataset(SpectroDataset):
                 v_lim=v_lim,
                 scale=scale,
             ),
+            nb_time_bins=nb_time_bins,
         )

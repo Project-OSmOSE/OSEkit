@@ -1,17 +1,180 @@
 from __future__ import annotations
 
+import typing
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Self
 
 import numpy as np
+import pandas as pd
 import pytest
 from pandas import Timedelta, Timestamp
 
 from osekit.config import TIMESTAMP_FORMATS_EXPORTED_FILES
-from osekit.core_api.base_data import BaseData
-from osekit.core_api.base_dataset import BaseDataset
+from osekit.core_api.base_data import BaseData, TFile
+from osekit.core_api.base_dataset import BaseDataset, TData
 from osekit.core_api.base_file import BaseFile
+from osekit.core_api.base_item import BaseItem
 from osekit.core_api.event import Event
+
+
+class DummyFile(BaseFile):
+    supported_extensions: typing.ClassVar = [""]
+
+    def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray: ...
+
+
+class DummyItem(BaseItem[DummyFile]): ...
+
+
+class DummyData(BaseData[DummyItem, DummyFile]):
+    item_cls = DummyItem
+
+    def write(self, folder: Path, link: bool = False) -> None: ...
+
+    def link(self, folder: Path) -> None: ...
+
+    def _make_split_data(
+        self,
+        files: list[DummyFile],
+        begin: Timestamp,
+        end: Timestamp,
+        **kwargs,  # noqa: ANN003
+    ) -> Self:
+        return DummyData.from_files(files=files, begin=begin, end=end, **kwargs)
+
+    @classmethod
+    def _make_file(cls, path: Path, begin: Timestamp) -> DummyFile:
+        return DummyFile(path=path, begin=begin)
+
+    @classmethod
+    def _make_item(
+        cls,
+        file: TFile | None = None,
+        begin: Timestamp | None = None,
+        end: Timestamp | None = None,
+    ) -> DummyItem:
+        return DummyItem(file=file, begin=begin, end=end)
+
+    @classmethod
+    def _from_base_dict(
+        cls,
+        dictionary: dict,
+        files: list[TFile],
+        begin: Timestamp,
+        end: Timestamp,
+        **kwargs,  # noqa: ANN003
+    ) -> Self:
+        return cls.from_files(
+            files=files,
+            begin=begin,
+            end=end,
+        )
+
+    @classmethod
+    def from_files(
+        cls,
+        files: list[DummyFile],
+        begin: Timestamp | None = None,
+        end: Timestamp | None = None,
+        name: str | None = None,
+        **kwargs,  # noqa: ANN003
+    ) -> Self:
+        return super().from_files(
+            files=files,
+            begin=begin,
+            end=end,
+            name=name,
+            **kwargs,
+        )
+
+
+class DummyDataset(BaseDataset[DummyData, DummyFile]):
+    @classmethod
+    def _data_from_dict(cls, dictionary: dict) -> list[TData]:
+        return [DummyData.from_dict(data) for data in dictionary.values()]
+
+    @classmethod
+    def _data_from_files(
+        cls,
+        files: list[DummyFile],
+        begin: Timestamp | None = None,
+        end: Timestamp | None = None,
+        name: str | None = None,
+        **kwargs,
+    ) -> TData:
+        return DummyData.from_files(
+            files=files,
+            begin=begin,
+            end=end,
+            name=name,
+        )
+
+    file_cls = DummyFile
+
+
+@pytest.fixture
+def dummy_dataset(tmp_path: Path) -> DummyDataset:
+    files = [tmp_path / f"file_{i}.txt" for i in range(5)]
+    for file in files:
+        file.touch()
+    timestamps = pd.date_range(
+        start=pd.Timestamp("2000-01-01 00:00:00"),
+        freq="1s",
+        periods=5,
+    )
+
+    dfs = [
+        DummyFile(path=file, begin=timestamp, end=timestamp + pd.Timedelta(seconds=1))
+        for file, timestamp in zip(files, timestamps, strict=False)
+    ]
+    return DummyDataset.from_files(files=dfs, mode="files")
+
+
+def test_base_file_with_no_begin_error() -> None:
+    with pytest.raises(
+        ValueError,
+        match=r"Either begin or strptime_format must be specified",
+    ) as e:
+        assert DummyFile(path=r"foo") == e
+
+
+@pytest.mark.parametrize(
+    ("f1", "f2", "expected"),
+    [
+        pytest.param(
+            DummyFile(path=Path("foo"), begin=Timestamp("2016-02-05 00:00:00")),
+            DummyFile(path=Path("foo"), begin=Timestamp("2016-02-05 00:00:00")),
+            True,
+            id="equal_files",
+        ),
+        pytest.param(
+            DummyFile(path=Path("foo"), begin=Timestamp("2016-02-05 00:00:00")),
+            DummyFile(path=Path("foo"), begin=Timestamp("2016-02-05 00:00:01")),
+            False,
+            id="different_begin_means_unequal",
+        ),
+        pytest.param(
+            DummyFile(path=Path("foo"), begin=Timestamp("2016-02-05 00:00:00")),
+            DummyFile(path=Path("bar"), begin=Timestamp("2016-02-05 00:00:00")),
+            False,
+            id="different_path_means_unequal",
+        ),
+        pytest.param(
+            DummyFile(path=Path("foo"), begin=Timestamp("2016-02-05 00:00:00")),
+            DummyFile(path=Path("bar"), begin=Timestamp("2016-02-05 00:00:01")),
+            False,
+            id="different_path_and_begin_means_unequal",
+        ),
+        pytest.param(
+            DummyFile(path=Path("foo"), begin=Timestamp("2016-02-05 00:00:00")),
+            Path(r"foo"),
+            False,
+            id="BaseFile_unequals_other_type",
+        ),
+    ],
+)
+def test_base_file_equality(f1: DummyFile, f2: DummyFile, expected: bool) -> None:
+    assert (f1 == f2) == expected
 
 
 @pytest.mark.parametrize(
@@ -19,7 +182,7 @@ from osekit.core_api.event import Event
     [
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     path=Path("foo"),
                     begin=Timestamp("2016-02-05 00:00:00"),
                     end=Timestamp("2016-02-05 01:00:00"),
@@ -38,7 +201,7 @@ from osekit.core_api.event import Event
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     path=Path("foo"),
                     begin=Timestamp("2016-02-05 00:00:00"),
                     end=Timestamp("2016-02-05 01:00:00"),
@@ -57,7 +220,7 @@ from osekit.core_api.event import Event
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     path=Path("foo"),
                     begin=Timestamp("2016-02-05 00:00:00"),
                     end=Timestamp("2016-02-05 01:00:00"),
@@ -76,7 +239,7 @@ from osekit.core_api.event import Event
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     path=Path("foo"),
                     begin=Timestamp("2016-02-05 00:00:00"),
                     end=Timestamp("2016-02-05 01:00:00"),
@@ -95,7 +258,7 @@ from osekit.core_api.event import Event
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     path=Path("foo"),
                     begin=Timestamp("2016-02-05 00:00:00"),
                     end=Timestamp("2016-02-05 01:00:00"),
@@ -114,7 +277,7 @@ from osekit.core_api.event import Event
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     path=Path("foo"),
                     begin=Timestamp("2016-02-05 00:00:00"),
                     end=Timestamp("2016-02-05 01:00:00"),
@@ -133,7 +296,7 @@ from osekit.core_api.event import Event
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     path=Path("foo"),
                     begin=Timestamp("2016-02-05 00:00:00"),
                     end=Timestamp("2016-02-05 01:00:00"),
@@ -160,7 +323,7 @@ from osekit.core_api.event import Event
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     path=Path("foo"),
                     begin=Timestamp("2016-02-05 00:00:00"),
                     end=Timestamp("2016-02-05 00:50:00"),
@@ -187,27 +350,27 @@ from osekit.core_api.event import Event
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     path=Path("foo"),
                     begin=Timestamp("2016-02-05 00:00:00"),
                     end=Timestamp("2016-02-05 00:10:00"),
                 ),
-                BaseFile(
+                DummyFile(
                     path=Path("foo"),
                     begin=Timestamp("2016-02-05 00:10:00"),
                     end=Timestamp("2016-02-05 00:20:00"),
                 ),
-                BaseFile(
+                DummyFile(
                     path=Path("foo"),
                     begin=Timestamp("2016-02-05 00:20:00"),
                     end=Timestamp("2016-02-05 00:30:00"),
                 ),
-                BaseFile(
+                DummyFile(
                     path=Path("foo"),
                     begin=Timestamp("2016-02-05 00:30:00"),
                     end=Timestamp("2016-02-05 00:40:00"),
                 ),
-                BaseFile(
+                DummyFile(
                     path=Path("foo"),
                     begin=Timestamp("2016-02-05 00:40:00"),
                     end=Timestamp("2016-02-05 00:50:00"),
@@ -234,27 +397,27 @@ from osekit.core_api.event import Event
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     path=Path("foo"),
                     begin=Timestamp("2016-02-05 00:00:00"),
                     end=Timestamp("2016-02-05 00:10:00"),
                 ),
-                BaseFile(
+                DummyFile(
                     path=Path("foo"),
                     begin=Timestamp("2016-02-05 00:10:00"),
                     end=Timestamp("2016-02-05 00:20:00"),
                 ),
-                BaseFile(
+                DummyFile(
                     path=Path("foo"),
                     begin=Timestamp("2016-02-05 00:20:00"),
                     end=Timestamp("2016-02-05 00:30:00"),
                 ),
-                BaseFile(
+                DummyFile(
                     path=Path("foo"),
                     begin=Timestamp("2016-02-05 00:30:00"),
                     end=Timestamp("2016-02-05 00:40:00"),
                 ),
-                BaseFile(
+                DummyFile(
                     path=Path("foo"),
                     begin=Timestamp("2016-02-05 00:40:00"),
                     end=Timestamp("2016-02-05 00:50:00"),
@@ -286,13 +449,13 @@ from osekit.core_api.event import Event
     ],
 )
 def test_base_dataset_from_files(
-    base_files: list[BaseFile],
+    base_files: list[DummyFile],
     begin: Timestamp | None,
     end: Timestamp | None,
     duration: Timedelta | None,
     expected_data_events: list[Event],
 ) -> None:
-    ads = BaseDataset.from_files(
+    ads = DummyDataset.from_files(
         base_files,
         begin=begin,
         end=end,
@@ -342,9 +505,9 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
         match=rf"Overlap \({overlap}\) must be between 0 and 1.",
     ) as e:
         assert (
-            BaseDataset.from_files(
+            DummyDataset.from_files(
                 [
-                    BaseFile(
+                    DummyFile(
                         path=Path("foo"),
                         begin=Timestamp("2016-02-05 00:00:00"),
                         end=Timestamp("2016-02-05 00:10:00"),
@@ -361,7 +524,6 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
 @pytest.mark.parametrize(
     (
         "strptime_format",
-        "supported_file_extensions",
         "begin",
         "end",
         "timezone",
@@ -376,7 +538,6 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
     [
         pytest.param(
             "%y%m%d%H%M%S",
-            [".wav"],
             None,
             None,
             None,
@@ -385,21 +546,20 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
             None,
             None,
             None,
-            [Path(r"231201000000.wav")],
+            [Path(r"231201000000")],
             [
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:00"),
                         end=Timestamp("2023-12-01 00:00:01"),
                     ),
-                    [Path(r"231201000000.wav")],
+                    [Path(r"231201000000")],
                 ),
             ],
             id="one_file_default",
         ),
         pytest.param(
             None,
-            [".wav"],
             None,
             None,
             None,
@@ -408,21 +568,20 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
             None,
             Timestamp("2023-12-01 00:00:00"),
             None,
-            [Path(r"bbjuni.wav")],
+            [Path(r"bbjuni")],
             [
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:00"),
                         end=Timestamp("2023-12-01 00:00:01"),
                     ),
-                    [Path(r"bbjuni.wav")],
+                    [Path(r"bbjuni")],
                 ),
             ],
             id="one_file_no_strptime",
         ),
         pytest.param(
             None,
-            [".wav"],
             None,
             None,
             None,
@@ -431,28 +590,27 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
             None,
             Timestamp("2023-12-01 00:00:00"),
             None,
-            [Path(r"cool.wav"), Path(r"fun.wav")],
+            [Path(r"cool"), Path(r"fun")],
             [
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:00"),
                         end=Timestamp("2023-12-01 00:00:01"),
                     ),
-                    [Path(r"cool.wav")],
+                    [Path(r"cool")],
                 ),
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:01"),
                         end=Timestamp("2023-12-01 00:00:02"),
                     ),
-                    [Path(r"fun.wav")],
+                    [Path(r"fun")],
                 ),
             ],
             id="multiple_files_no_strptime_should_be_consecutive",
         ),
         pytest.param(
             None,
-            [".wav", ".mp3"],
             None,
             None,
             None,
@@ -461,28 +619,20 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
             None,
             Timestamp("2023-12-01 00:00:00"),
             None,
-            [Path(r"cool.wav"), Path(r"fun.mp3"), Path("boring.flac")],
+            [Path(r"cool"), Path("boring.shenanigan")],
             [
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:00"),
                         end=Timestamp("2023-12-01 00:00:01"),
                     ),
-                    [Path(r"cool.wav")],
-                ),
-                (
-                    Event(
-                        begin=Timestamp("2023-12-01 00:00:01"),
-                        end=Timestamp("2023-12-01 00:00:02"),
-                    ),
-                    [Path(r"fun.mp3")],
+                    [Path(r"cool")],
                 ),
             ],
             id="only_specified_formats_are_kept",
         ),
         pytest.param(
             None,
-            [".wav"],
             None,
             None,
             None,
@@ -491,42 +641,41 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
             Timedelta(seconds=0.5),
             Timestamp("2023-12-01 00:00:00"),
             None,
-            [Path(r"cool.wav"), Path(r"fun.wav")],
+            [Path(r"cool"), Path(r"fun")],
             [
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:00"),
                         end=Timestamp("2023-12-01 00:00:00.5"),
                     ),
-                    [Path(r"cool.wav")],
+                    [Path(r"cool")],
                 ),
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:00.5"),
                         end=Timestamp("2023-12-01 00:00:01"),
                     ),
-                    [Path(r"cool.wav")],
+                    [Path(r"cool")],
                 ),
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:01"),
                         end=Timestamp("2023-12-01 00:00:01.5"),
                     ),
-                    [Path(r"fun.wav")],
+                    [Path(r"fun")],
                 ),
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:01.5"),
                         end=Timestamp("2023-12-01 00:00:02"),
                     ),
-                    [Path(r"fun.wav")],
+                    [Path(r"fun")],
                 ),
             ],
             id="timedelta_total",
         ),
         pytest.param(
             None,
-            [".wav"],
             None,
             None,
             None,
@@ -535,42 +684,41 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
             Timedelta(seconds=1),
             Timestamp("2023-12-01 00:00:00"),
             None,
-            [Path(r"cool.wav"), Path(r"fun.wav")],
+            [Path(r"cool"), Path(r"fun")],
             [
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:00"),
                         end=Timestamp("2023-12-01 00:00:01"),
                     ),
-                    [Path(r"cool.wav")],
+                    [Path(r"cool")],
                 ),
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:00.5"),
                         end=Timestamp("2023-12-01 00:00:01.5"),
                     ),
-                    [Path(r"cool.wav"), Path(r"fun.wav")],
+                    [Path(r"cool"), Path(r"fun")],
                 ),
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:01"),
                         end=Timestamp("2023-12-01 00:00:02"),
                     ),
-                    [Path(r"fun.wav")],
+                    [Path(r"fun")],
                 ),
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:01.5"),
                         end=Timestamp("2023-12-01 00:00:02.5"),
                     ),
-                    [Path(r"fun.wav")],
+                    [Path(r"fun")],
                 ),
             ],
             id="timedelta_total_with_overlap",
         ),
         pytest.param(
             None,
-            [".wav"],
             Timestamp("2023-12-01 00:00:00.5"),
             Timestamp("2023-12-01 00:00:01.5"),
             None,
@@ -579,28 +727,27 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
             Timedelta(seconds=0.5),
             Timestamp("2023-12-01 00:00:00"),
             None,
-            [Path(r"cool.wav"), Path(r"fun.wav")],
+            [Path(r"cool"), Path(r"fun")],
             [
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:00.5"),
                         end=Timestamp("2023-12-01 00:00:01"),
                     ),
-                    [Path(r"cool.wav")],
+                    [Path(r"cool")],
                 ),
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:01"),
                         end=Timestamp("2023-12-01 00:00:01.5"),
                     ),
-                    [Path(r"fun.wav")],
+                    [Path(r"fun")],
                 ),
             ],
             id="timedelta_total_between_timestamps",
         ),
         pytest.param(
             "%y%m%d%H%M%S",
-            [".wav"],
             Timestamp("2023-12-01 00:00:00.5"),
             Timestamp("2023-12-01 00:00:01.5"),
             None,
@@ -609,28 +756,27 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
             Timedelta(seconds=0.5),
             None,
             None,
-            [Path(r"231201000000.wav"), Path(r"231201000001.wav")],
+            [Path(r"231201000000"), Path(r"231201000001")],
             [
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:00.5"),
                         end=Timestamp("2023-12-01 00:00:01"),
                     ),
-                    [Path(r"231201000000.wav")],
+                    [Path(r"231201000000")],
                 ),
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:01"),
                         end=Timestamp("2023-12-01 00:00:01.5"),
                     ),
-                    [Path(r"231201000001.wav")],
+                    [Path(r"231201000001")],
                 ),
             ],
             id="striptime_format",
         ),
         pytest.param(
             "%y%m%d%H%M%S",
-            [".wav"],
             Timestamp("2023-12-01 00:00:00.5+01:00"),
             Timestamp("2023-12-01 00:00:01.5+01:00"),
             "Europe/Warsaw",
@@ -639,28 +785,27 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
             Timedelta(seconds=0.5),
             None,
             None,
-            [Path(r"231201000000.wav"), Path(r"231201000001.wav")],
+            [Path(r"231201000000"), Path(r"231201000001")],
             [
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:00.5+01:00"),
                         end=Timestamp("2023-12-01 00:00:01+01:00"),
                     ),
-                    [Path(r"231201000000.wav")],
+                    [Path(r"231201000000")],
                 ),
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:01+01:00"),
                         end=Timestamp("2023-12-01 00:00:01.5+01:00"),
                     ),
-                    [Path(r"231201000001.wav")],
+                    [Path(r"231201000001")],
                 ),
             ],
             id="timezone_location",
         ),
         pytest.param(
             "%y%m%d%H%M%S%z",
-            [".wav"],
             Timestamp("2023-12-01 01:00:00.5+01:00"),
             Timestamp("2023-12-01 01:00:01.5+01:00"),
             "Europe/Warsaw",
@@ -669,21 +814,21 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
             Timedelta(seconds=0.5),
             None,
             None,
-            [Path(r"231201000000+0000.wav"), Path(r"231201000001+0000.wav")],
+            [Path(r"231201000000+0000"), Path(r"231201000001+0000")],
             [
                 (
                     Event(
                         begin=Timestamp("2023-12-01 01:00:00.5+01:00"),
                         end=Timestamp("2023-12-01 01:00:01+01:00"),
                     ),
-                    [Path(r"231201000000+0000.wav")],
+                    [Path(r"231201000000+0000")],
                 ),
                 (
                     Event(
                         begin=Timestamp("2023-12-01 01:00:01+01:00"),
                         end=Timestamp("2023-12-01 01:00:01.5+01:00"),
                     ),
-                    [Path(r"231201000001+0000.wav")],
+                    [Path(r"231201000001+0000")],
                 ),
             ],
             id="timezone_conversion",
@@ -693,7 +838,6 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
 def test_base_dataset_from_folder(
     monkeypatch: pytest.monkeypatch,
     strptime_format: str | None,
-    supported_file_extensions: list[str],
     begin: Timestamp | None,
     end: Timestamp | None,
     timezone: str | None,
@@ -707,10 +851,9 @@ def test_base_dataset_from_folder(
 ) -> None:
     monkeypatch.setattr(Path, "iterdir", lambda x: files)
 
-    bds = BaseDataset.from_folder(
+    bds = DummyDataset.from_folder(
         folder=Path("foo"),
         strptime_format=strptime_format,
-        supported_file_extensions=supported_file_extensions,
         begin=begin,
         end=end,
         timezone=timezone,
@@ -752,7 +895,7 @@ def test_move_file(
 ) -> None:
     filename = "cool.txt"
     (tmp_path / filename).touch(mode=0o666, exist_ok=True)
-    bf = BaseFile(
+    bf = DummyFile(
         tmp_path / filename,
         begin=Timestamp("2022-04-22 12:12:12"),
         end=Timestamp("2022-04-22 12:13:12"),
@@ -768,27 +911,27 @@ def test_move_file(
 
 def test_dataset_move(
     tmp_path: Path,
-    base_dataset: BaseDataset,
+    dummy_dataset: DummyDataset,
 ) -> None:
-    origin_files = [Path(str(file.path)) for file in base_dataset.files]
+    origin_files = [Path(str(file.path)) for file in dummy_dataset.files]
 
     # The starting folder of the dataset is the folder where the files are located
-    assert base_dataset.folder == tmp_path
+    assert dummy_dataset.folder == tmp_path
 
     destination = tmp_path / "destination"
-    base_dataset.folder = destination
+    dummy_dataset.folder = destination
 
     # Setting the folder shouldn't move the files
-    assert all(file.path.parent == tmp_path for file in base_dataset.files)
+    assert all(file.path.parent == tmp_path for file in dummy_dataset.files)
     assert all(file.exists for file in origin_files)
 
     # Folder should be changed when dataset is moved
     new_destination = tmp_path / "new_destination"
-    base_dataset.move_files(new_destination)
+    dummy_dataset.move_files(new_destination)
 
     assert new_destination.exists()
     assert new_destination.is_dir()
-    assert base_dataset.folder == new_destination
+    assert dummy_dataset.folder == new_destination
     assert all((new_destination / file.name).exists() for file in origin_files)
     assert not any(file.exists() for file in origin_files)
 
@@ -798,7 +941,7 @@ def test_dataset_move(
     [
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     path=Path("cool"),
                     begin=Timestamp("2022-04-22 12:12:12"),
                     end=Timestamp("2022-04-22 12:12:13"),
@@ -819,7 +962,7 @@ def test_dataset_move(
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     path=Path("cool"),
                     begin=Timestamp("2022-04-22 12:12:12"),
                     end=Timestamp("2022-04-22 12:12:13"),
@@ -847,12 +990,12 @@ def test_dataset_move(
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     path=Path("cool"),
                     begin=Timestamp("2022-04-22 12:12:12"),
                     end=Timestamp("2022-04-22 12:12:13"),
                 ),
-                BaseFile(
+                DummyFile(
                     path=Path("fun"),
                     begin=Timestamp("2022-04-22 12:12:13"),
                     end=Timestamp("2022-04-22 12:12:14"),
@@ -894,7 +1037,7 @@ def test_dataset_move(
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     path=Path("cool"),
                     begin=Timestamp("2022-04-22 12:12:12"),
                     end=Timestamp("2022-04-22 12:12:13"),
@@ -915,12 +1058,12 @@ def test_dataset_move(
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     path=Path("cool"),
                     begin=Timestamp("2022-04-22 12:12:12"),
                     end=Timestamp("2022-04-22 12:12:13"),
                 ),
-                BaseFile(
+                DummyFile(
                     path=Path("fun"),
                     begin=Timestamp("2022-04-22 12:12:13"),
                     end=Timestamp("2022-04-22 12:12:14"),
@@ -948,12 +1091,12 @@ def test_dataset_move(
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     path=Path("cool"),
                     begin=Timestamp("2022-04-22 12:12:12"),
                     end=Timestamp("2022-04-22 12:12:13"),
                 ),
-                BaseFile(
+                DummyFile(
                     path=Path("fun"),
                     begin=Timestamp("2022-04-22 12:12:13"),
                     end=Timestamp("2022-04-22 12:12:14"),
@@ -983,12 +1126,12 @@ def test_dataset_move(
 )
 def test_base_dataset_file_mode(
     tmp_path: pytest.fixture,
-    files: list[BaseFile],
+    files: list[DummyFile],
     mode: Literal["files", "timedelta_total"],
     data_duration: Timedelta | None,
     expected_data: list[tuple[Event, str]],
 ) -> None:
-    ds = BaseDataset.from_files(
+    ds = DummyDataset.from_files(
         files=files,
         mode=mode,
         data_duration=data_duration,
@@ -1007,7 +1150,7 @@ def test_base_dataset_file_mode(
     [
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     path=Path("cool"),
                     begin=Timestamp("2022-04-22 12:12:12"),
                     end=Timestamp("2022-04-22 12:12:13"),
@@ -1023,7 +1166,7 @@ def test_base_dataset_file_mode(
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     path=Path("cool"),
                     begin=Timestamp("2022-04-22 12:12:12"),
                     end=Timestamp("2022-04-22 12:12:13"),
@@ -1039,7 +1182,7 @@ def test_base_dataset_file_mode(
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     path=Path("cool"),
                     begin=Timestamp("2022-04-22 12:12:12"),
                     end=Timestamp("2022-04-22 12:12:13"),
@@ -1055,7 +1198,7 @@ def test_base_dataset_file_mode(
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     path=Path("cool"),
                     begin=Timestamp("2022-04-22 12:12:12"),
                     end=Timestamp("2022-04-22 12:12:13"),
@@ -1071,7 +1214,7 @@ def test_base_dataset_file_mode(
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     path=Path("cool"),
                     begin=Timestamp("2022-04-22 12:12:12"),
                     end=Timestamp("2022-04-22 12:12:13"),
@@ -1087,12 +1230,12 @@ def test_base_dataset_file_mode(
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     path=Path("cool"),
                     begin=Timestamp("2022-04-22 12:12:12"),
                     end=Timestamp("2022-04-22 12:12:13"),
                 ),
-                BaseFile(
+                DummyFile(
                     path=Path("fun"),
                     begin=Timestamp("2022-04-22 12:12:14"),
                     end=Timestamp("2022-04-22 12:12:15"),
@@ -1108,12 +1251,12 @@ def test_base_dataset_file_mode(
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     path=Path("cool"),
                     begin=Timestamp("2022-04-22 12:12:12"),
                     end=Timestamp("2022-04-22 12:12:13"),
                 ),
-                BaseFile(
+                DummyFile(
                     path=Path("fun"),
                     begin=Timestamp("2022-04-22 12:12:14"),
                     end=Timestamp("2022-04-22 12:12:15"),
@@ -1129,12 +1272,12 @@ def test_base_dataset_file_mode(
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     path=Path("cool"),
                     begin=Timestamp("2022-04-22 12:12:12"),
                     end=Timestamp("2022-04-22 12:12:13"),
                 ),
-                BaseFile(
+                DummyFile(
                     path=Path("fun"),
                     begin=Timestamp("2022-04-22 12:12:14"),
                     end=Timestamp("2022-04-22 12:12:15"),
@@ -1152,12 +1295,12 @@ def test_base_dataset_file_mode(
 )
 def test_base_data_boundaries(
     monkeypatch: pytest.fixture,
-    files: list[BaseFile],
+    files: list[DummyFile],
     begin: Timestamp,
     end: Timestamp,
     expected_data: Event,
 ) -> None:
-    data = BaseData.from_files(files=files)
+    data = DummyData.from_files(files=files)
     if begin:
         data.begin = begin
     if end:
@@ -1165,14 +1308,14 @@ def test_base_data_boundaries(
     assert data.begin == expected_data.begin
     assert data.end == expected_data.end
 
-    def mocked_get_value(self: BaseData) -> None:
+    def mocked_get_value(self: DummyData) -> None:
         for item in data.items:
             if item.is_empty:
                 continue
             assert item.file.begin <= item.begin
             assert item.file.end >= item.end
 
-    monkeypatch.setattr(BaseData, "get_value", mocked_get_value)
+    monkeypatch.setattr(DummyData, "get_value", mocked_get_value)
 
     data.get_value()
 
@@ -1181,9 +1324,9 @@ def test_base_data_boundaries(
     ("data1", "data2", "expected"),
     [
         pytest.param(
-            BaseData.from_files(
+            DummyData.from_files(
                 [
-                    BaseFile(
+                    DummyFile(
                         "cherry",
                         begin=Timestamp("2015-08-28 12:12:12"),
                         end=Timestamp("2015-08-28 12:13:12"),
@@ -1192,9 +1335,9 @@ def test_base_data_boundaries(
                 begin=None,
                 end=None,
             ),
-            BaseData.from_files(
+            DummyData.from_files(
                 [
-                    BaseFile(
+                    DummyFile(
                         "cherry",
                         begin=Timestamp("2015-08-28 12:12:12"),
                         end=Timestamp("2015-08-28 12:13:12"),
@@ -1207,9 +1350,9 @@ def test_base_data_boundaries(
             id="same_one_full_file",
         ),
         pytest.param(
-            BaseData.from_files(
+            DummyData.from_files(
                 [
-                    BaseFile(
+                    DummyFile(
                         "cherry",
                         begin=Timestamp("2015-08-28 12:12:12"),
                         end=Timestamp("2015-08-28 12:13:12"),
@@ -1218,9 +1361,9 @@ def test_base_data_boundaries(
                 begin=None,
                 end=None,
             ),
-            BaseData.from_files(
+            DummyData.from_files(
                 [
-                    BaseFile(
+                    DummyFile(
                         "cherry",
                         begin=Timestamp("2015-08-28 12:12:12"),
                         end=Timestamp("2015-08-28 12:13:12"),
@@ -1233,9 +1376,9 @@ def test_base_data_boundaries(
             id="same_one_full_file_explicit_timestamps",
         ),
         pytest.param(
-            BaseData.from_files(
+            DummyData.from_files(
                 [
-                    BaseFile(
+                    DummyFile(
                         "cherry",
                         begin=Timestamp("2015-08-28 12:12:12"),
                         end=Timestamp("2015-08-28 12:13:12"),
@@ -1244,9 +1387,9 @@ def test_base_data_boundaries(
                 begin=None,
                 end=None,
             ),
-            BaseData.from_files(
+            DummyData.from_files(
                 [
-                    BaseFile(
+                    DummyFile(
                         "cherry",
                         begin=Timestamp("2015-08-28 12:12:12"),
                         end=Timestamp("2015-08-28 12:13:12"),
@@ -1259,9 +1402,9 @@ def test_base_data_boundaries(
             id="different_begin",
         ),
         pytest.param(
-            BaseData.from_files(
+            DummyData.from_files(
                 [
-                    BaseFile(
+                    DummyFile(
                         "cherry",
                         begin=Timestamp("2015-08-28 12:12:12"),
                         end=Timestamp("2015-08-28 12:13:12"),
@@ -1270,9 +1413,9 @@ def test_base_data_boundaries(
                 begin=None,
                 end=None,
             ),
-            BaseData.from_files(
+            DummyData.from_files(
                 [
-                    BaseFile(
+                    DummyFile(
                         "cherry",
                         begin=Timestamp("2015-08-28 12:12:12"),
                         end=Timestamp("2015-08-28 12:13:12"),
@@ -1285,9 +1428,9 @@ def test_base_data_boundaries(
             id="different_end",
         ),
         pytest.param(
-            BaseData.from_files(
+            DummyData.from_files(
                 [
-                    BaseFile(
+                    DummyFile(
                         "cherry",
                         begin=Timestamp("2015-08-28 12:12:12"),
                         end=Timestamp("2015-08-28 12:13:12"),
@@ -1296,9 +1439,9 @@ def test_base_data_boundaries(
                 begin=None,
                 end=None,
             ),
-            BaseData.from_files(
+            DummyData.from_files(
                 [
-                    BaseFile(
+                    DummyFile(
                         "cherry",
                         begin=Timestamp("2015-08-28 12:12:12"),
                         end=Timestamp("2015-08-28 12:13:12"),
@@ -1311,9 +1454,9 @@ def test_base_data_boundaries(
             id="different_begin_and_end",
         ),
         pytest.param(
-            BaseData.from_files(
+            DummyData.from_files(
                 [
-                    BaseFile(
+                    DummyFile(
                         "beach",
                         begin=Timestamp("2015-08-28 12:12:12"),
                         end=Timestamp("2015-08-28 12:13:12"),
@@ -1322,9 +1465,9 @@ def test_base_data_boundaries(
                 begin=None,
                 end=None,
             ),
-            BaseData.from_files(
+            DummyData.from_files(
                 [
-                    BaseFile(
+                    DummyFile(
                         "house",
                         begin=Timestamp("2015-08-28 12:12:12"),
                         end=Timestamp("2015-08-28 12:13:12"),
@@ -1337,14 +1480,14 @@ def test_base_data_boundaries(
             id="different_file",
         ),
         pytest.param(
-            BaseData.from_files(
+            DummyData.from_files(
                 [
-                    BaseFile(
+                    DummyFile(
                         "beach",
                         begin=Timestamp("2015-08-28 12:12:12"),
                         end=Timestamp("2015-08-28 12:13:12"),
                     ),
-                    BaseFile(
+                    DummyFile(
                         "house",
                         begin=Timestamp("2015-08-28 12:12:14"),
                         end=Timestamp("2015-08-28 12:13:15"),
@@ -1353,14 +1496,14 @@ def test_base_data_boundaries(
                 begin=None,
                 end=None,
             ),
-            BaseData.from_files(
+            DummyData.from_files(
                 [
-                    BaseFile(
+                    DummyFile(
                         "beach",
                         begin=Timestamp("2015-08-28 12:12:12"),
                         end=Timestamp("2015-08-28 12:13:12"),
                     ),
-                    BaseFile(
+                    DummyFile(
                         "house",
                         begin=Timestamp("2015-08-28 12:12:14"),
                         end=Timestamp("2015-08-28 12:13:15"),
@@ -1373,14 +1516,14 @@ def test_base_data_boundaries(
             id="same_two_files",
         ),
         pytest.param(
-            BaseData.from_files(
+            DummyData.from_files(
                 [
-                    BaseFile(
+                    DummyFile(
                         "beach",
                         begin=Timestamp("2015-08-28 12:12:12"),
                         end=Timestamp("2015-08-28 12:13:12"),
                     ),
-                    BaseFile(
+                    DummyFile(
                         "house",
                         begin=Timestamp("2015-08-28 12:12:14"),
                         end=Timestamp("2015-08-28 12:13:15"),
@@ -1389,14 +1532,14 @@ def test_base_data_boundaries(
                 begin=None,
                 end=None,
             ),
-            BaseData.from_files(
+            DummyData.from_files(
                 [
-                    BaseFile(
+                    DummyFile(
                         "cherry",
                         begin=Timestamp("2015-08-28 12:12:12"),
                         end=Timestamp("2015-08-28 12:13:12"),
                     ),
-                    BaseFile(
+                    DummyFile(
                         "house",
                         begin=Timestamp("2015-08-28 12:12:14"),
                         end=Timestamp("2015-08-28 12:13:15"),
@@ -1410,7 +1553,7 @@ def test_base_data_boundaries(
         ),
     ],
 )
-def test_base_data_equality(data1: BaseData, data2: BaseData, expected: bool) -> None:
+def test_base_data_equality(data1: DummyData, data2: DummyData, expected: bool) -> None:
     assert (data1 == data2) == expected
 
 
@@ -1418,9 +1561,9 @@ def test_base_data_equality(data1: BaseData, data2: BaseData, expected: bool) ->
     ("data", "name", "expected"),
     [
         pytest.param(
-            BaseData.from_files(
+            DummyData.from_files(
                 [
-                    BaseFile(
+                    DummyFile(
                         "cherry",
                         begin=Timestamp("2015-08-28 12:12:12"),
                         end=Timestamp("2015-08-28 12:13:12"),
@@ -1434,14 +1577,14 @@ def test_base_data_equality(data1: BaseData, data2: BaseData, expected: bool) ->
             id="default_to_data_begin",
         ),
         pytest.param(
-            BaseData.from_files(
+            DummyData.from_files(
                 [
-                    BaseFile(
+                    DummyFile(
                         "beach",
                         begin=Timestamp("2015-08-28 12:13:12"),
                         end=Timestamp("2015-08-28 12:14:12"),
                     ),
-                    BaseFile(
+                    DummyFile(
                         "cherry",
                         begin=Timestamp("2015-08-28 12:12:12"),
                         end=Timestamp("2015-08-28 12:13:12"),
@@ -1457,9 +1600,9 @@ def test_base_data_equality(data1: BaseData, data2: BaseData, expected: bool) ->
             id="default_to_data_begin_with_unordered_files",
         ),
         pytest.param(
-            BaseData.from_files(
+            DummyData.from_files(
                 [
-                    BaseFile(
+                    DummyFile(
                         "cherry",
                         begin=Timestamp("2015-08-28 12:12:12"),
                         end=Timestamp("2015-08-28 12:13:12"),
@@ -1471,9 +1614,9 @@ def test_base_data_equality(data1: BaseData, data2: BaseData, expected: bool) ->
             id="given_name",
         ),
         pytest.param(
-            BaseData.from_files(
+            DummyData.from_files(
                 [
-                    BaseFile(
+                    DummyFile(
                         "cherry",
                         begin=Timestamp("2015-08-28 12:12:12"),
                         end=Timestamp("2015-08-28 12:13:12"),
@@ -1486,9 +1629,9 @@ def test_base_data_equality(data1: BaseData, data2: BaseData, expected: bool) ->
             id="given_name_over_existing_name",
         ),
         pytest.param(
-            BaseData.from_files(
+            DummyData.from_files(
                 [
-                    BaseFile(
+                    DummyFile(
                         "cherry",
                         begin=Timestamp("2015-08-28 12:12:12"),
                         end=Timestamp("2015-08-28 12:13:12"),
@@ -1504,7 +1647,7 @@ def test_base_data_equality(data1: BaseData, data2: BaseData, expected: bool) ->
         ),
     ],
 )
-def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
+def test_data_name(data: DummyData, name: str | None, expected: str) -> None:
     data.name = name
     assert data.name == expected
     assert str(data) == expected
@@ -1515,7 +1658,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
     [
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     "cherry",
                     begin=Timestamp("2015-08-28 12:12:12"),
                     end=Timestamp("2015-08-28 12:13:12"),
@@ -1550,12 +1693,12 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     "depression",
                     begin=Timestamp("2015-08-28 12:12:12"),
                     end=Timestamp("2015-08-28 12:13:12"),
                 ),
-                BaseFile(
+                DummyFile(
                     "cherry",
                     begin=Timestamp("2015-08-28 12:13:12"),
                     end=Timestamp("2015-08-28 12:14:12"),
@@ -1590,12 +1733,12 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     "depression",
                     begin=Timestamp("2015-08-28 12:12:12"),
                     end=Timestamp("2015-08-28 12:13:12"),
                 ),
-                BaseFile(
+                DummyFile(
                     "cherry",
                     begin=Timestamp("2015-08-28 12:13:12"),
                     end=Timestamp("2015-08-28 12:14:12"),
@@ -1653,12 +1796,12 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     "depression",
                     begin=Timestamp("2015-08-28 12:12:12"),
                     end=Timestamp("2015-08-28 12:13:12"),
                 ),
-                BaseFile(
+                DummyFile(
                     "cherry",
                     begin=Timestamp("2015-08-28 12:13:12"),
                     end=Timestamp("2015-08-28 12:14:12"),
@@ -1716,7 +1859,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     "cherry",
                     begin=Timestamp("2015-08-28 12:12:12"),
                     end=Timestamp("2015-08-28 12:13:12"),
@@ -1751,12 +1894,12 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     "depression",
                     begin=Timestamp("2015-08-28 12:12:12"),
                     end=Timestamp("2015-08-28 12:13:12"),
                 ),
-                BaseFile(
+                DummyFile(
                     "cherry",
                     begin=Timestamp("2015-08-28 12:13:12"),
                     end=Timestamp("2015-08-28 12:14:12"),
@@ -1791,12 +1934,12 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     "depression",
                     begin=Timestamp("2015-08-28 12:12:12"),
                     end=Timestamp("2015-08-28 12:13:12"),
                 ),
-                BaseFile(
+                DummyFile(
                     "cherry",
                     begin=Timestamp("2015-08-28 12:13:12"),
                     end=Timestamp("2015-08-28 12:14:12"),
@@ -1854,12 +1997,12 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     "depression",
                     begin=Timestamp("2015-08-28 12:12:12"),
                     end=Timestamp("2015-08-28 12:13:22"),
                 ),
-                BaseFile(
+                DummyFile(
                     "cherry",
                     begin=Timestamp("2015-08-28 12:13:32"),
                     end=Timestamp("2015-08-28 12:14:12"),
@@ -1908,12 +2051,12 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     "depression",
                     begin=Timestamp("2015-08-28 12:12:12"),
                     end=Timestamp("2015-08-28 12:13:22"),
                 ),
-                BaseFile(
+                DummyFile(
                     "cherry",
                     begin=Timestamp("2015-08-28 12:13:32"),
                     end=Timestamp("2015-08-28 12:14:12"),
@@ -1962,12 +2105,12 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     "depression",
                     begin=Timestamp("2015-08-28 12:12:12"),
                     end=Timestamp("2015-08-28 12:13:02"),
                 ),
-                BaseFile(
+                DummyFile(
                     "cherry",
                     begin=Timestamp("2015-08-28 12:13:22"),
                     end=Timestamp("2015-08-28 12:14:12"),
@@ -2016,12 +2159,12 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     "depression",
                     begin=Timestamp("2015-08-28 12:12:12"),
                     end=Timestamp("2015-08-28 12:13:02"),
                 ),
-                BaseFile(
+                DummyFile(
                     "cherry",
                     begin=Timestamp("2015-08-28 12:13:22"),
                     end=Timestamp("2015-08-28 12:14:12"),
@@ -2070,12 +2213,12 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     "depression",
                     begin=Timestamp("2015-08-28 12:12:00"),
                     end=Timestamp("2015-08-28 12:13:02"),
                 ),
-                BaseFile(
+                DummyFile(
                     "cherry",
                     begin=Timestamp("2015-08-28 12:13:22"),
                     end=Timestamp("2015-08-28 12:14:12"),
@@ -2124,12 +2267,12 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
         ),
         pytest.param(
             [
-                BaseFile(
+                DummyFile(
                     "depression",
                     begin=Timestamp("2015-08-28 12:12:00"),
                     end=Timestamp("2015-08-28 12:13:02"),
                 ),
-                BaseFile(
+                DummyFile(
                     "cherry",
                     begin=Timestamp("2015-08-28 12:13:22"),
                     end=Timestamp("2015-08-28 12:14:12"),
@@ -2195,7 +2338,7 @@ def test_data_name(data: BaseData, name: str | None, expected: str) -> None:
     ],
 )
 def test_get_base_data_from_files(
-    files: list[BaseFile],
+    files: list[DummyFile],
     begin: Timestamp,
     end: Timestamp,
     data_duration: Timedelta,
@@ -2203,7 +2346,7 @@ def test_get_base_data_from_files(
     overlap: float,
     expected: list[list[tuple[Event, str | None]]],
 ) -> None:
-    data = BaseDataset.from_files(
+    data = DummyDataset.from_files(
         files=files,
         begin=begin,
         end=end,
@@ -2222,3 +2365,122 @@ def test_get_base_data_from_files(
                 if item.is_empty
                 else item.file.path.name == expected_filename
             )
+
+
+def test_dummydata_make_split_data() -> None:
+    dfs = [
+        DummyFile(
+            path=Path("foo"),
+            begin=Timestamp("2020-01-01 00:00:00"),
+            end=Timestamp("2020-01-01 00:01:00"),
+        ),
+        DummyFile(
+            path=Path("bar"),
+            begin=Timestamp("2020-01-01 00:01:00"),
+            end=Timestamp("2020-01-01 00:02:00"),
+        ),
+    ]
+    dd = DummyData.from_files(dfs)
+    split_dd = dd._make_split_data(
+        files=dfs,
+        begin=Timestamp("2020-01-01 00:00:30"),
+        end=Timestamp("2020-01-01 00:01:30"),
+        name="cool",
+    )
+    assert split_dd == DummyData.from_files(
+        files=dfs,
+        begin=Timestamp("2020-01-01 00:00:30"),
+        end=Timestamp("2020-01-01 00:01:30"),
+        name="cool",
+    )
+    assert np.array_equal(
+        dd.split(),
+        [
+            DummyData.from_files([dfs[0]]),
+            DummyData.from_files([dfs[1]]),
+        ],
+    )
+
+
+def test_dummydata_make_file() -> None:
+    dfs = [
+        DummyFile(
+            path=Path("foo"),
+            begin=Timestamp("2020-01-01 00:00:00"),
+            end=Timestamp("2020-01-01 00:0:01"),
+        ),
+        DummyFile(
+            path=Path("bar"),
+            begin=Timestamp("2020-01-01 00:01:00"),
+            end=Timestamp("2020-01-01 00:02:00"),
+        ),
+    ]
+    dd = DummyData.from_files(dfs)
+    assert dd._make_file(Path("foo"), begin=Timestamp("2020-01-01 00:00:00")) == dfs[0]
+
+
+def test_dummydata_from_base_dict() -> None:
+    dfs = [
+        DummyFile(
+            path=Path("foo"),
+            begin=Timestamp("2020-01-01 00:00:00"),
+            end=Timestamp("2020-01-01 00:0:01"),
+        ),
+        DummyFile(
+            path=Path("bar"),
+            begin=Timestamp("2020-01-01 00:02:00"),
+            end=Timestamp("2020-01-01 00:03:00"),
+        ),
+    ]
+    dd = DummyData.from_files(
+        files=dfs,
+        begin=Timestamp("2020-01-01 00:00:30"),
+        end=Timestamp("2020-01-01 00:02:30"),
+        name="cool",
+    )
+    dictionary = {}
+    assert (
+        dd._from_base_dict(
+            dictionary=dictionary,
+            files=dfs,
+            begin=dd.begin,
+            end=dd.end,
+            name="cool",
+        )
+        == dd
+    )
+
+
+def test_dummydataset_data_from_dict() -> None:
+    dfs = [
+        DummyFile(
+            path=Path("foo"),
+            begin=Timestamp("2020-01-01 00:00:00"),
+            end=Timestamp("2020-01-01 00:0:01"),
+        ),
+        DummyFile(
+            path=Path("bar"),
+            begin=Timestamp("2020-01-01 00:00:02"),
+            end=Timestamp("2020-01-01 00:00:03"),
+        ),
+    ]
+    dd1 = DummyData.from_files(
+        files=dfs,
+        begin=Timestamp("2020-01-01 00:00:00.5"),
+        end=Timestamp("2020-01-01 00:00:01.5"),
+        name="cool",
+    )
+    dd2 = DummyData.from_files(
+        files=dfs,
+        begin=Timestamp("2020-01-01 00:00:01.75"),
+        end=Timestamp("2020-01-01 00:00:02.25"),
+        name="fun",
+    )
+    dds = DummyDataset(data=[dd1, dd2])
+    dictionary = {"data": dd1.to_dict()}
+    assert (
+        dds._data_from_dict(
+            dictionary=dictionary,
+        )[0]
+        == dd1
+    )

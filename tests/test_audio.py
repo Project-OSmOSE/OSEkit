@@ -1468,6 +1468,25 @@ def test_audio_dataset_from_folder_errors_warnings(
         assert all(f in caplog.text for f in corrupted_audio_files)
 
 
+def test_audio_dataset_instrument(patch_audio_data: None) -> None:
+    ad = [
+        AudioData(mocked_value=[1, 2, 3], instrument=Instrument(end_to_end_db=150.0)),
+        AudioData(mocked_value=[4, 5, 6], instrument=Instrument(end_to_end_db=150.0)),
+    ]
+
+    ads = AudioDataset(data=ad)
+
+    assert ads.instrument == ad[0].instrument
+    assert all(data.instrument == ads.instrument for data in ads.data)
+
+    inst2 = Instrument(end_to_end_db=100.0)
+
+    ads2 = AudioDataset(data=ad, instrument=inst2)
+
+    assert ads2.instrument == inst2
+    assert all(data.instrument == inst2 for data in ads2.data)
+
+
 @pytest.mark.parametrize(
     ("audio_files", "subtype", "link", "expected_audio_data"),
     [
@@ -1839,6 +1858,19 @@ def test_split_data_frames(
 
     assert ad.begin == expected_begin
     assert np.array_equal(ad.get_value()[:, 0], expected_data)
+
+
+def test_split_frames_errors(patch_audio_data: None) -> None:
+    mocked_value = [1, 2, 3]
+    ad = AudioData(mocked_value=mocked_value)
+    error_msgs = [
+        "Start_frame must be greater than or equal to 0.",
+        "Stop_frame must be lower than the length of the data.",
+    ]
+    with pytest.raises(ValueError, match=error_msgs[0]) as e:
+        assert ad.split_frames(start_frame=-1, stop_frame=2) == e
+    with pytest.raises(ValueError, match=error_msgs[1]) as e:
+        assert ad.split_frames(start_frame=0, stop_frame=100) == e
 
 
 @pytest.mark.parametrize(
