@@ -638,7 +638,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             The list of deserialized SpectroData objects.
 
         """
-        return [SpectroData.from_dict(data) for data in dictionary.values()]
+        return [SpectroData.from_dict(dictionary=data) for data in dictionary.values()]
 
     @classmethod
     def _data_from_files(
