@@ -997,7 +997,7 @@ def test_spectrodata_split(
     assert sd_parts[-1].end == sd.end
 
 
-def test_ltas(audio_files: pytest.fixture, tmp_path: pytest.fixture) -> None:
+def test_ltas(audio_files: tuple[list[AudioFile], None], tmp_path: Path) -> None:
     audio_files, _ = audio_files
     ad = AudioData.from_files(audio_files)
     sd = SpectroData.from_audio_data(
@@ -1023,6 +1023,53 @@ def test_ltas(audio_files: pytest.fixture, tmp_path: pytest.fixture) -> None:
     assert type(ltas_ds2) is LTASDataset
     assert type(ltas_ds2.data[0]) is LTASData
     assert np.array_equal(ltas_ds.data[0].get_value(), ltas_ds2.data[0].get_value())
+
+
+def test_ltas_dataset(patch_audio_data: None) -> None:
+    ads = AudioDataset(
+        [
+            AudioData(mocked_value=list(0 for _ in range(48_000))),
+            AudioData(mocked_value=list(0 for _ in range(48_000))),
+        ],
+    )
+
+    sft = ShortTimeFFT(hamming(512), 256, ads.sample_rate)
+
+    sds = SpectroDataset.from_audio_dataset(
+        audio_dataset=ads,
+        fft=sft,
+        colormap="inferno",
+        v_lim=(0.0, 120.0),
+        name="coolzy",
+    )
+    nb_time_bins = 100
+
+    ltas_ds = LTASDataset.from_spectro_dataset(sds, nb_time_bins=nb_time_bins)
+    ltas_ds2 = LTASDataset.from_audio_dataset(
+        audio_dataset=ads,
+        fft=sft,
+        colormap="inferno",
+        v_lim=(0.0, 120.0),
+        nb_time_bins=nb_time_bins,
+        name="coolzy",
+    )
+
+    assert ltas_ds2.name == ltas_ds.name == sds.name
+
+    for ltas_dataset in (ltas_ds, ltas_ds2):
+        for ltas, sd in zip(ltas_dataset.data, sds.data, strict=True):
+            assert np.array_equal(ltas.fft.win, sd.fft.win)
+            assert ltas.fft.hop == len(ltas.fft.win)
+            assert ltas.fft.fs == sd.fft.fs
+            assert ltas.nb_time_bins == nb_time_bins
+            assert ltas.colormap == sd.colormap
+            assert ltas.v_lim == sd.v_lim
+
+        new_nb_time_bins = 200
+
+        ltas_dataset.data[0].nb_time_bins = new_nb_time_bins
+
+        assert ltas_dataset.nb_time_bins == new_nb_time_bins
 
 
 @pytest.mark.parametrize(
