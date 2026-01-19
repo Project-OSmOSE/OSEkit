@@ -1267,6 +1267,87 @@ def test_spectrodataset_scale(
     ltas_ds.save_all(tmp_path, tmp_path)
 
 
+def test_spectro_dataset_properties_propagate(patch_audio_data: None) -> None:
+    ad1, ad2 = AudioData(
+        mocked_value=[0.0 for _ in range(48_000)],  # Type: ignore # Unexpected argument
+    ).split()
+
+    fft = ShortTimeFFT(win=hamming(512), hop=128, fs=ad1.sample_rate)
+
+    sd1 = SpectroData.from_audio_data(ad1, fft)
+    sd2 = SpectroData.from_audio_data(ad2, fft)
+
+    sds = SpectroDataset([sd1, sd2])
+
+    fft2 = ShortTimeFFT(win=hamming(1024), hop=512, fs=12_000)
+
+    sds.fft = fft2
+    for sd in (sd1, sd2):
+        assert sd.fft == fft2
+
+    sds.colormap = "inferno"
+    for sd in (sd1, sd2):
+        assert sd.colormap == "inferno"
+
+
+def test_spectro_dataset_folder_moves_files(
+    patch_audio_data: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ad1, ad2 = AudioData(
+        mocked_value=[0.0 for _ in range(48_000)],  # Type: ignore # Unexpected argument
+    ).split()
+
+    fft = ShortTimeFFT(win=hamming(512), hop=128, fs=ad1.sample_rate)
+
+    sd1 = SpectroData.from_audio_data(ad1, fft)
+    sd2 = SpectroData.from_audio_data(ad2, fft)
+
+    sds = SpectroDataset([sd1, sd2])
+
+    def patch_read_metadata(self: SpectroFile, *args: list, **kwargs: dict) -> None:
+        return
+
+    monkeypatch.setattr(SpectroFile, "_read_metadata", patch_read_metadata)
+
+    sfs = [
+        SpectroFile(
+            "foo.npz",
+            begin=Timestamp("08-17-1943 00:00:00"),
+        ),
+        SpectroFile(
+            "bar.npz",
+            begin=Timestamp("08-17-1943 00:00:00"),
+        ),
+    ]
+
+    def patch_sds_files(
+        self: SpectroDataset,
+        *args: list,
+        **kwargs: dict,
+    ) -> list[SpectroFile]:
+        return sfs
+
+    monkeypatch.setattr(SpectroDataset, "files", property(patch_sds_files))
+
+    move_calls = {}
+
+    def patch_spectrofile_move(
+        self: SpectroFile,
+        folder: Path,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        move_calls[self] = folder
+
+    monkeypatch.setattr(SpectroFile, "move", patch_spectrofile_move)
+
+    sds.folder = Path(r"cool")
+
+    assert move_calls[sfs[0]] == sds.folder
+    assert move_calls[sfs[1]] == sds.folder
+
+
 def test_spectro_multichannel_audio_file(
     monkeypatch: pytest.MonkeyPatch,
     patch_audio_data: pytest.MonkeyPatch,
