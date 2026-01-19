@@ -83,6 +83,18 @@ def test_spectrogram_shape(
         assert spectro.nb_bytes == nb_points * 8
 
 
+def test_spectro_data_sx_dtype(patch_audio_data: None) -> None:
+    sd = SpectroData.from_audio_data(
+        data=AudioData(mocked_value=[0.0 for _ in range(48_000)]),
+        fft=ShortTimeFFT(hamming(1024), 512, 48_000),
+    )
+    assert sd.sx_dtype is complex
+    with pytest.raises(ValueError, match=r"dtype must be complex or float."):
+        sd.sx_dtype = int
+    sd.sx_dtype = float
+    assert sd.sx_dtype is float
+
+
 @pytest.mark.parametrize(
     ("audio_files", "date_begin", "sft"),
     [
