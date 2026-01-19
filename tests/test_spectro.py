@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import gc
 from contextlib import nullcontext
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -29,9 +29,6 @@ from osekit.core_api.spectro_data import SpectroData
 from osekit.core_api.spectro_dataset import SpectroDataset
 from osekit.core_api.spectro_file import SpectroFile
 from osekit.utils.audio_utils import Normalization, generate_sample_audio
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 @pytest.mark.parametrize(
@@ -1326,3 +1323,45 @@ def test_spectro_begin_and_end(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert ad.begin == sd.begin
     assert ad.end == sd.end
+
+
+def test_spectro_get_welch(
+    patch_audio_data: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    created_dir_calls = []
+
+    def mocked_mkdir(self: Path, *args: list, **kwargs: dict) -> None:
+        created_dir_calls.append(self)
+
+    monkeypatch.setattr(Path, "mkdir", mocked_mkdir)
+
+    mocked_welch = np.array(range(100))
+
+    def mocked_get_welch(self: SpectroData, *args: list, **kwargs: dict) -> np.ndarray:
+        return mocked_welch
+
+    monkeypatch.setattr(SpectroData, "get_welch", mocked_get_welch)
+
+    savez_call = {}
+
+    def mocked_savez(**kwargs: dict) -> None:
+        for key, value in kwargs.items():
+            savez_call[key] = value  # noqa: PERF403
+
+    monkeypatch.setattr(np, "savez", mocked_savez)
+
+    sd = SpectroData.from_audio_data(
+        data=AudioData(mocked_value=[0.0 for _ in range(48_000)]),
+        fft=ShortTimeFFT(win=hamming(512), hop=128, fs=48_000),
+    )
+
+    target_folder = Path(r"foo/bar/cool")
+
+    sd.write_welch(target_folder)
+
+    assert target_folder in created_dir_calls
+    assert savez_call["file"] == target_folder / f"{sd}.npz"
+    assert savez_call["timestamps"] == f"{sd.begin}_{sd.end}"
+    assert np.array_equal(savez_call["freq"], sd.fft.f)
+    assert np.array_equal(savez_call["px"], mocked_welch)
