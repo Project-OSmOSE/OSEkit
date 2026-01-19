@@ -130,6 +130,53 @@ def dummy_dataset(tmp_path: Path) -> DummyDataset:
     return DummyDataset.from_files(files=dfs, mode="files")
 
 
+def test_base_file_with_no_begin_error() -> None:
+    with pytest.raises(
+        ValueError,
+        match=r"Either begin or strptime_format must be specified",
+    ) as e:
+        assert DummyFile(path=r"foo") == e
+
+
+@pytest.mark.parametrize(
+    ("f1", "f2", "expected"),
+    [
+        pytest.param(
+            DummyFile(path=Path("foo"), begin=Timestamp("2016-02-05 00:00:00")),
+            DummyFile(path=Path("foo"), begin=Timestamp("2016-02-05 00:00:00")),
+            True,
+            id="equal_files",
+        ),
+        pytest.param(
+            DummyFile(path=Path("foo"), begin=Timestamp("2016-02-05 00:00:00")),
+            DummyFile(path=Path("foo"), begin=Timestamp("2016-02-05 00:00:01")),
+            False,
+            id="different_begin_means_unequal",
+        ),
+        pytest.param(
+            DummyFile(path=Path("foo"), begin=Timestamp("2016-02-05 00:00:00")),
+            DummyFile(path=Path("bar"), begin=Timestamp("2016-02-05 00:00:00")),
+            False,
+            id="different_path_means_unequal",
+        ),
+        pytest.param(
+            DummyFile(path=Path("foo"), begin=Timestamp("2016-02-05 00:00:00")),
+            DummyFile(path=Path("bar"), begin=Timestamp("2016-02-05 00:00:01")),
+            False,
+            id="different_path_and_begin_means_unequal",
+        ),
+        pytest.param(
+            DummyFile(path=Path("foo"), begin=Timestamp("2016-02-05 00:00:00")),
+            Path(r"foo"),
+            False,
+            id="BaseFile_unequals_other_type",
+        ),
+    ],
+)
+def test_base_file_equality(f1: DummyFile, f2: DummyFile, expected: bool) -> None:
+    assert (f1 == f2) == expected
+
+
 @pytest.mark.parametrize(
     ("base_files", "begin", "end", "duration", "expected_data_events"),
     [
