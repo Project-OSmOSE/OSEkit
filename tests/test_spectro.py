@@ -95,6 +95,32 @@ def test_spectro_data_sx_dtype(patch_audio_data: None) -> None:
     assert sd.sx_dtype is float
 
 
+def test_spectro_data_db_ref(
+    patch_audio_data: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sd = SpectroData.from_audio_data(
+        data=AudioData(mocked_value=[0.0 for _ in range(48_000)]),
+        fft=ShortTimeFFT(hamming(1024), 512, 48_000),
+    )
+
+    def set_db_type(return_value: str) -> None:
+        monkeypatch.setattr(SpectroData, "db_type", return_value)
+
+    db_ref = 120.0
+    sd.db_ref = db_ref
+    sd.audio_data.instrument = Instrument(end_to_end_db=150.0)
+
+    set_db_type("FS")
+    assert sd.db_ref == 1.0
+
+    set_db_type("SPL_parameter")
+    assert sd.db_ref == db_ref
+
+    set_db_type("SPL_instrument")
+    assert sd.db_ref == sd.audio_data.instrument.P_REF
+
+
 @pytest.mark.parametrize(
     ("audio_files", "date_begin", "sft"),
     [
