@@ -1841,6 +1841,19 @@ def test_split_data_frames(
     assert np.array_equal(ad.get_value()[:, 0], expected_data)
 
 
+def test_split_frames_errors(patch_audio_data: None) -> None:
+    mocked_value = [1, 2, 3]
+    ad = AudioData(mocked_value=mocked_value)
+    error_msgs = [
+        "Start_frame must be greater than or equal to 0.",
+        "Stop_frame must be lower than the length of the data.",
+    ]
+    with pytest.raises(ValueError, match=error_msgs[0]) as e:
+        assert ad.split_frames(start_frame=-1, stop_frame=2) == e
+    with pytest.raises(ValueError, match=error_msgs[1]) as e:
+        assert ad.split_frames(start_frame=0, stop_frame=100) == e
+
+
 @pytest.mark.parametrize(
     "audio_files",
     [

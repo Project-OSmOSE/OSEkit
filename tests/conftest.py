@@ -171,7 +171,7 @@ def patch_afm_open(monkeypatch: pytest.MonkeyPatch) -> list[Path]:
 def patch_audio_data(monkeypatch: pytest.MonkeyPatch) -> None:
     original_init = AudioData.__init__
     original_get_raw_value = AudioData.get_raw_value
-    original_shape = AudioData.shape
+    original_length = AudioData.length
 
     def mocked_init(
         self: AudioData,
@@ -197,10 +197,10 @@ def patch_audio_data(monkeypatch: pytest.MonkeyPatch) -> None:
                     1,
                 )
 
-    def mocked_shape(self: AudioData) -> tuple[int, int]:
+    def mocked_length(self: AudioData) -> int:
         if hasattr(self, "mocked_value"):
-            return self.mocked_value.shape
-        return original_shape.fget(self)
+            return len(self.mocked_value)
+        return original_length.fget(self)
 
     def mocked_get_raw_value(self: AudioData) -> np.ndarray:
         if hasattr(self, "mocked_value"):
@@ -208,7 +208,7 @@ def patch_audio_data(monkeypatch: pytest.MonkeyPatch) -> None:
         return original_get_raw_value(self)
 
     monkeypatch.setattr(AudioData, "__init__", mocked_init)
-    monkeypatch.setattr(AudioData, "shape", property(mocked_shape))
+    monkeypatch.setattr(AudioData, "length", property(mocked_length))
     monkeypatch.setattr(
         AudioData,
         "get_raw_value",
