@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -1411,3 +1412,73 @@ def test_spectro_analysis_with_existing_ads(
         assert ad.begin == sd.begin
         assert ad.end == sd.end
         assert sd.audio_data == ad
+
+
+def test_build_specific_files(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    p1, p2, p3, p4 = (
+        Path(r"end.mp3"),
+        Path(r"glory.mp3"),
+        Path(r"slow.mp3"),
+        Path(r"story.mp3"),
+    )
+
+    base_folder = [p1, p2, p3, p4]
+    dest_folder = []
+
+    dataset = Dataset(
+        folder=tmp_path / "non_existing_folder",
+        strptime_format="%y%m%d%H%M%S",
+    )
+
+    def mock_copyfile(file: Path, destination: Path) -> None:
+        assert destination.parent == dataset.folder
+        dest_folder.append(file)
+
+    def mock_replace(self: Path, destination: Path) -> None:
+        assert destination.parent == dataset.folder
+        base_folder.remove(self)
+        dest_folder.append(self)
+
+    built_files = []
+
+    def build_mock(*args: list, **kwargs: dict) -> None:
+        for file in dest_folder:
+            built_files.append(file)
+
+    monkeypatch.setattr("shutil.copyfile", mock_copyfile)
+    monkeypatch.setattr(Path, "replace", mock_replace)
+    monkeypatch.setattr(Dataset, "build", build_mock)
+
+    mkdir_calls = []
+
+    def mkdir_mock(self: Path, *args: list, **kwargs: dict) -> None:
+        mkdir_calls.append(self)
+
+    monkeypatch.setattr(Path, "mkdir", mkdir_mock)
+
+    assert dataset.folder not in mkdir_calls
+
+    # Build from files COPY MODE
+    dataset.build_from_files(
+        (p1, p2),
+    )
+
+    assert dataset.folder in mkdir_calls
+
+    assert np.array_equal(base_folder, [p1, p2, p3, p4])
+    assert np.array_equal(dest_folder, [p1, p2])
+    assert np.array_equal(built_files, [p1, p2])
+
+    # Build from files MOVE MODE
+
+    dest_folder = []
+    built_files = []
+
+    dataset.build_from_files(
+        (p1, p2),
+        move_files=True,
+    )
+
+    assert np.array_equal(base_folder, [p3, p4])
+    assert np.array_equal(dest_folder, [p1, p2])
+    assert np.array_equal(built_files, [p1, p2])

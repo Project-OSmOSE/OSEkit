@@ -13,8 +13,6 @@ import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar
 
-from pandas import Timestamp
-
 from osekit import config
 from osekit.config import DPDEFAULT, resample_quality_settings
 from osekit.core_api import audio_file_manager as afm
@@ -32,6 +30,11 @@ from osekit.utils.core_utils import (
 from osekit.utils.path_utils import move_tree
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+    from os import PathLike
+
+    from pandas import Timestamp
+
     from osekit.core_api.audio_file import AudioFile
     from osekit.utils.job import JobBuilder
 
@@ -104,6 +107,7 @@ class Dataset:
         self.job_builder = job_builder
         self.instrument = instrument
         self.first_file_begin = first_file_begin
+        self.logger = None
 
     @property
     def origin_files(self) -> list[AudioFile] | None:
@@ -124,7 +128,9 @@ class Dataset:
         """Return the list of the names of the analyses ran with this Dataset."""
         return list({dataset["analysis"] for dataset in self.datasets.values()})
 
-    def build(self) -> None:
+    def build(
+        self,
+    ) -> None:
         """Build the Dataset.
 
         Building a dataset moves the original audio files to a specific folder
@@ -153,6 +159,7 @@ class Dataset:
         }
 
         self.logger.info("Organizing dataset folder...")
+        afm.close()
         move_tree(
             source=self.folder,
             destination=self.folder / "other",
@@ -170,7 +177,45 @@ class Dataset:
 
         self.logger.info("Build done!")
 
+    def build_from_files(
+        self,
+        files: Iterable[PathLike | str],
+        *,
+        move_files: bool = False,
+    ) -> None:
+        """Build the dataset from the specified files.
+
+        The files will be copied (or moved) to the dataset.folder folder.
+
+        Parameters
+        ----------
+        files: Iterable[PathLike|str]
+            Files that are included in the dataset.
+        move_files: bool
+            If set to True, the files will be moved (rather than copied) in the dataset
+            folder.
+
+        """
+        self._create_logger()
+
+        msg = f"{'Moving' if move_files else 'Copying'} files to the dataset folder."
+        self.logger.info(msg)
+
+        if not self.folder.exists():
+            self.folder.mkdir(mode=DPDEFAULT)
+
+        for file in map(Path, files):
+            destination = self.folder / file.name
+            if move_files:
+                file.replace(destination)
+            else:
+                shutil.copyfile(file, destination)
+
+        self.build()
+
     def _create_logger(self) -> None:
+        if self.logger:
+            return
         if not logging.getLogger("dataset").handlers:
             message = (
                 "Logging has not been configured. "
@@ -183,7 +228,7 @@ class Dataset:
 
         logs_directory = self.folder / "log"
         if not logs_directory.exists():
-            logs_directory.mkdir(mode=DPDEFAULT)
+            logs_directory.mkdir(mode=DPDEFAULT, parents=True)
         self.logger = logging.getLogger("dataset").getChild(self.folder.name)
         file_handler = logging.FileHandler(logs_directory / "logs.log", mode="w")
         file_handler.setFormatter(
@@ -217,6 +262,7 @@ class Dataset:
                 file.unlink()
 
         self.datasets = {}
+        self.logger = None
 
     def get_analysis_audiodataset(self, analysis: Analysis) -> AudioDataset:
         """Return an AudioDataset created from the analysis parameters.

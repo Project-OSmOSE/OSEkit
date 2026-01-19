@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import gc
 from contextlib import nullcontext
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -28,10 +28,8 @@ from osekit.core_api.ltas_dataset import LTASDataset
 from osekit.core_api.spectro_data import SpectroData
 from osekit.core_api.spectro_dataset import SpectroDataset
 from osekit.core_api.spectro_file import SpectroFile
+from osekit.core_api.spectro_item import SpectroItem
 from osekit.utils.audio_utils import Normalization, generate_sample_audio
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 @pytest.mark.parametrize(
@@ -76,6 +74,61 @@ def test_spectrogram_shape(
     for audio, spectro in zip(dataset.data, spectro_dataset.data, strict=False):
         assert spectro.shape == spectro.get_value().shape
         assert spectro.shape == (sft.f.shape[0], sft.p_num(audio.length))
+
+        nb_points = sft.f.shape[0] * sft.p_num(audio.length)
+        assert spectro.nb_bytes == nb_points * 16
+        spectro.sx_dtype = float
+        assert spectro.nb_bytes == nb_points * 8
+
+
+def test_spectro_data_sx_dtype(patch_audio_data: None) -> None:
+    sd = SpectroData.from_audio_data(
+        data=AudioData(mocked_value=[0.0 for _ in range(48_000)]),
+        fft=ShortTimeFFT(hamming(1024), 512, 48_000),
+    )
+    assert sd.sx_dtype is complex
+    with pytest.raises(ValueError, match=r"dtype must be complex or float."):
+        sd.sx_dtype = int
+    sd.sx_dtype = float
+    assert sd.sx_dtype is float
+
+
+def test_spectro_data_db_ref(
+    patch_audio_data: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sd = SpectroData.from_audio_data(
+        data=AudioData(mocked_value=[0.0 for _ in range(48_000)]),
+        fft=ShortTimeFFT(hamming(1024), 512, 48_000),
+    )
+
+    def set_db_type(return_value: str) -> None:
+        monkeypatch.setattr(SpectroData, "db_type", return_value)
+
+    db_ref = 120.0
+    sd.db_ref = db_ref
+    sd.audio_data.instrument = Instrument(end_to_end_db=150.0)
+
+    set_db_type("FS")
+    assert sd.db_ref == 1.0
+
+    set_db_type("SPL_parameter")
+    assert sd.db_ref == db_ref
+
+    set_db_type("SPL_instrument")
+    assert sd.db_ref == sd.audio_data.instrument.P_REF
+
+
+def test_empty_spectro_data_error() -> None:
+    sd = SpectroData(
+        begin=Timestamp("02-24-2009 00:00:00"),
+        end=Timestamp("02-24-2009 00:01:00"),
+    )
+    with pytest.raises(
+        ValueError,
+        match=r"SpectroData should have either items or audio_data.",
+    ):
+        sd.get_value()
 
 
 @pytest.mark.parametrize(
@@ -997,7 +1050,7 @@ def test_spectrodata_split(
     assert sd_parts[-1].end == sd.end
 
 
-def test_ltas(audio_files: pytest.fixture, tmp_path: pytest.fixture) -> None:
+def test_ltas(audio_files: tuple[list[AudioFile], None], tmp_path: Path) -> None:
     audio_files, _ = audio_files
     ad = AudioData.from_files(audio_files)
     sd = SpectroData.from_audio_data(
@@ -1023,6 +1076,53 @@ def test_ltas(audio_files: pytest.fixture, tmp_path: pytest.fixture) -> None:
     assert type(ltas_ds2) is LTASDataset
     assert type(ltas_ds2.data[0]) is LTASData
     assert np.array_equal(ltas_ds.data[0].get_value(), ltas_ds2.data[0].get_value())
+
+
+def test_ltas_dataset(patch_audio_data: None) -> None:
+    ads = AudioDataset(
+        [
+            AudioData(mocked_value=list(0 for _ in range(48_000))),
+            AudioData(mocked_value=list(0 for _ in range(48_000))),
+        ],
+    )
+
+    sft = ShortTimeFFT(hamming(512), 256, ads.sample_rate)
+
+    sds = SpectroDataset.from_audio_dataset(
+        audio_dataset=ads,
+        fft=sft,
+        colormap="inferno",
+        v_lim=(0.0, 120.0),
+        name="coolzy",
+    )
+    nb_time_bins = 100
+
+    ltas_ds = LTASDataset.from_spectro_dataset(sds, nb_time_bins=nb_time_bins)
+    ltas_ds2 = LTASDataset.from_audio_dataset(
+        audio_dataset=ads,
+        fft=sft,
+        colormap="inferno",
+        v_lim=(0.0, 120.0),
+        nb_time_bins=nb_time_bins,
+        name="coolzy",
+    )
+
+    assert ltas_ds2.name == ltas_ds.name == sds.name
+
+    for ltas_dataset in (ltas_ds, ltas_ds2):
+        for ltas, sd in zip(ltas_dataset.data, sds.data, strict=True):
+            assert np.array_equal(ltas.fft.win, sd.fft.win)
+            assert ltas.fft.hop == len(ltas.fft.win)
+            assert ltas.fft.fs == sd.fft.fs
+            assert ltas.nb_time_bins == nb_time_bins
+            assert ltas.colormap == sd.colormap
+            assert ltas.v_lim == sd.v_lim
+
+        new_nb_time_bins = 200
+
+        ltas_dataset.data[0].nb_time_bins = new_nb_time_bins
+
+        assert ltas_dataset.nb_time_bins == new_nb_time_bins
 
 
 @pytest.mark.parametrize(
@@ -1167,6 +1267,109 @@ def test_spectrodataset_scale(
     ltas_ds.save_all(tmp_path, tmp_path)
 
 
+def test_spectro_dataset_properties_propagate(patch_audio_data: None) -> None:
+    ad1, ad2 = AudioData(
+        mocked_value=[0.0 for _ in range(48_000)],  # Type: ignore # Unexpected argument
+    ).split()
+
+    fft = ShortTimeFFT(win=hamming(512), hop=128, fs=ad1.sample_rate)
+
+    sd1 = SpectroData.from_audio_data(ad1, fft)
+    sd2 = SpectroData.from_audio_data(ad2, fft)
+
+    sds = SpectroDataset([sd1, sd2])
+
+    fft2 = ShortTimeFFT(win=hamming(1024), hop=512, fs=12_000)
+
+    sds.fft = fft2
+    for sd in (sd1, sd2):
+        assert sd.fft == fft2
+
+    sds.colormap = "inferno"
+    for sd in (sd1, sd2):
+        assert sd.colormap == "inferno"
+
+
+def test_spectro_dataset_folder_moves_files(
+    patch_audio_data: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ad1, ad2 = AudioData(
+        mocked_value=[0.0 for _ in range(48_000)],  # Type: ignore # Unexpected argument
+    ).split()
+
+    fft = ShortTimeFFT(win=hamming(512), hop=128, fs=ad1.sample_rate)
+
+    sd1 = SpectroData.from_audio_data(ad1, fft)
+    sd2 = SpectroData.from_audio_data(ad2, fft)
+
+    sds = SpectroDataset([sd1, sd2])
+
+    def patch_read_metadata(self: SpectroFile, *args: list, **kwargs: dict) -> None:
+        return
+
+    monkeypatch.setattr(SpectroFile, "_read_metadata", patch_read_metadata)
+
+    sfs = [
+        SpectroFile(
+            "foo.npz",
+            begin=Timestamp("08-17-1943 00:00:00"),
+        ),
+        SpectroFile(
+            "bar.npz",
+            begin=Timestamp("08-17-1943 00:00:00"),
+        ),
+    ]
+
+    def patch_sds_files(
+        self: SpectroDataset,
+        *args: list,
+        **kwargs: dict,
+    ) -> list[SpectroFile]:
+        return sfs
+
+    monkeypatch.setattr(SpectroDataset, "files", property(patch_sds_files))
+
+    move_calls = {}
+
+    def patch_spectrofile_move(
+        self: SpectroFile,
+        folder: Path,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        move_calls[self] = folder
+
+    monkeypatch.setattr(SpectroFile, "move", patch_spectrofile_move)
+
+    sds.folder = Path(r"cool")
+
+    assert move_calls[sfs[0]] == sds.folder
+    assert move_calls[sfs[1]] == sds.folder
+
+
+def test_spectro_dataset_data_from_dict(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sd_from_dict_calls = {}
+
+    def patch_sd_from_dict(dictionary: dict, *args: list, **kwargs: dict) -> str:
+        for k, v in dictionary.items():
+            sd_from_dict_calls[k] = v
+            return k
+        return ""
+
+    monkeypatch.setattr(SpectroData, "from_dict", patch_sd_from_dict)
+
+    output = SpectroDataset._data_from_dict(
+        {"data1": {"cool": "fonz"}, "data2": {"top": "hype"}},
+    )
+
+    assert sd_from_dict_calls["cool"] == "fonz"
+    assert sd_from_dict_calls["top"] == "hype"
+    assert np.array_equal(output, ["cool", "top"])
+
+
 def test_spectro_multichannel_audio_file(
     monkeypatch: pytest.MonkeyPatch,
     patch_audio_data: pytest.MonkeyPatch,
@@ -1224,3 +1427,92 @@ def test_spectro_begin_and_end(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert ad.begin == sd.begin
     assert ad.end == sd.end
+
+
+def test_spectro_write_welch(
+    patch_audio_data: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    created_dir_calls = []
+
+    def mocked_mkdir(self: Path, *args: list, **kwargs: dict) -> None:
+        created_dir_calls.append(self)
+
+    monkeypatch.setattr(Path, "mkdir", mocked_mkdir)
+
+    mocked_welch = np.array(range(100))
+
+    def mocked_get_welch(self: SpectroData, *args: list, **kwargs: dict) -> np.ndarray:
+        return mocked_welch
+
+    monkeypatch.setattr(SpectroData, "get_welch", mocked_get_welch)
+
+    savez_call = {}
+
+    def mocked_savez(**kwargs: dict) -> None:
+        for key, value in kwargs.items():
+            savez_call[key] = value  # noqa: PERF403
+
+    monkeypatch.setattr(np, "savez", mocked_savez)
+
+    sd = SpectroData.from_audio_data(
+        data=AudioData(mocked_value=[0.0 for _ in range(48_000)]),
+        fft=ShortTimeFFT(win=hamming(512), hop=128, fs=48_000),
+    )
+
+    target_folder = Path(r"foo/bar/cool")
+
+    sd.write_welch(target_folder)
+
+    assert target_folder in created_dir_calls
+    assert savez_call["file"] == target_folder / f"{sd}.npz"
+    assert savez_call["timestamps"] == f"{sd.begin}_{sd.end}"
+    assert np.array_equal(savez_call["freq"], sd.fft.f)
+    assert np.array_equal(savez_call["px"], mocked_welch)
+
+
+def test_spectro_get_value_from_items_errors(
+    patch_audio_data: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def mocked_read_metadata(self: SpectroFile, *args: list, **kwargs: dict) -> None:
+        sft = ShortTimeFFT(win=hamming(512), hop=128, fs=48_000)
+        self.sample_rate = sft.fs
+        self.mfft = sft.mfft
+        self.begin, self.end = (
+            Timestamp("09-18-1990 00:00:00"),
+            Timestamp("09-18-1990 00:01:00"),
+        )
+        shape = sft.p_num(int(self.duration.total_seconds() * sft.fs))
+        self.time = np.arange(shape) * self.duration.total_seconds() / shape
+        self.time_resolution = (self.end - self.begin) / len(self.time)
+        self.freq = sft.f
+        self.window = sft.win
+        self.hop = sft.hop
+        self.sx_dtype = complex
+        self.db_ref = 1.0
+        self.v_lim = (0.0, 120.0)
+
+    monkeypatch.setattr(SpectroFile, "_read_metadata", mocked_read_metadata)
+
+    sf1 = SpectroFile(path=r"foo.npz", begin=Timestamp("09-18-1990 00:00:00"))
+    sf2 = SpectroFile(path=r"bar.npz", begin=Timestamp("09-18-1990 00:00:00"))
+    sf3 = SpectroFile(path=r"baz.npz", begin=Timestamp("09-18-1990 00:00:00"))
+
+    sf2.freq /= 2
+    sf3.hop *= 2
+
+    si1, si2, si3 = (
+        SpectroItem(
+            file=sf,
+            begin=sf.begin,
+            end=sf.end,
+        )
+        for sf in (sf1, sf2, sf3)
+    )
+
+    with pytest.raises(ValueError, match=r"Items don't have the same frequency bins."):
+        SpectroData([si1, si2]).get_value()
+
+    with pytest.raises(ValueError, match=r"Items don't have the same time resolution."):
+        SpectroData([si1, si3]).get_value()

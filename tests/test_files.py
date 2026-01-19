@@ -6,8 +6,7 @@ import pytest
 import pytz
 from pandas import Timestamp
 
-from osekit.core_api.base_dataset import BaseDataset
-from osekit.core_api.base_file import BaseFile
+from tests.test_core_api_base import DummyDataset, DummyFile
 
 
 @pytest.mark.parametrize(
@@ -82,7 +81,7 @@ def test_file_localization(
     timezone: str | pytz.timezone | None,
     expected_begin: Timestamp,
 ) -> None:
-    file = BaseFile(
+    file = DummyFile(
         path=Path(file_name),
         strptime_format=strptime_format,
         timezone=timezone,
@@ -169,13 +168,12 @@ def test_dataset_localization(
     expected_begins: list[Timestamp],
 ) -> None:
     for file in file_names:
-        (tmp_path / f"{file}.foo").touch()
+        (tmp_path / f"{file}").touch()
 
-    dataset = BaseDataset.from_folder(
+    dataset = DummyDataset.from_folder(
         tmp_path,
         strptime_format=strptime_format,
         timezone=timezone,
-        supported_file_extensions=[".foo"],
     )
 
     assert all(

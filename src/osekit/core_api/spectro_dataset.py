@@ -7,14 +7,14 @@ that simplify repeated operations on the spectro data.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, Self
 
 import numpy as np
 from pandas import DataFrame
 from scipy.signal import ShortTimeFFT
 
 from osekit.config import DPDEFAULT
-from osekit.core_api.base_dataset import BaseDataset
+from osekit.core_api.base_dataset import BaseDataset, TFile
 from osekit.core_api.frequency_scale import Scale
 from osekit.core_api.json_serializer import deserialize_json
 from osekit.core_api.spectro_data import SpectroData
@@ -40,6 +40,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
     sentinel_value = object()
     _bypass_multiprocessing_on_dataset = False
     data_cls = SpectroData
+    file_cls = SpectroFile
 
     def __init__(
         self,
@@ -285,6 +286,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         data: SpectroData,
         matrix_folder: Path,
         spectrogram_folder: Path,
+        *,
         link: bool,
     ) -> SpectroData:
         """Save the data matrix and spectrogram to disk."""
@@ -297,9 +299,10 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         self,
         matrix_folder: Path,
         spectrogram_folder: Path,
-        link: bool = False,
         first: int = 0,
         last: int | None = None,
+        *,
+        link: bool = False,
     ) -> None:
         """Export both Sx matrices as npz files and spectrograms for each data.
 
@@ -341,12 +344,18 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         ----------
         audio_dataset: AudioDataset
             The AudioDataset which data will be linked to the SpectroDataset data.
+        first: int
+            Index of the first SpectroData and AudioData to link.
+        last: int
+            Index of the last SpectroData and AudioData to link.
 
         """
         if len(audio_dataset.data) != len(self.data):
-            raise ValueError(
-                "The audio dataset doesn't contain the same number of data as the spectro dataset.",
+            msg = (
+                "The audio dataset doesn't contain the same number of data"
+                " as the spectro dataset."
             )
+            raise ValueError(msg)
 
         last = len(self.data) if last is None else last
 
@@ -360,7 +369,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             sd.link_audio_data(ad)
 
     def update_json_audio_data(self, first: int, last: int) -> None:
-        """Update the serialized JSON file with the spectro data from first to int.
+        """Update the serialized JSON file with the spectro data from first to last.
 
         The update is done while using the locked decorator.
         That way, if a SpectroDataset is processed through multiple jobs,
@@ -485,9 +494,8 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         overlap: float = 0.0,
         data_duration: Timedelta | None = None,
         name: str | None = None,
-        v_lim: tuple[float, float] | None | object = sentinel_value,
-        **kwargs: any,
-    ) -> SpectroDataset:
+        **kwargs,  # noqa: ANN003
+    ) -> Self:
         """Return a SpectroDataset from a folder containing the spectro files.
 
         Parameters
@@ -526,10 +534,8 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             Else, one data object will cover the whole time period.
         name: str|None
             Name of the dataset.
-        v_lim: tuple[float, float] | None
-            Limits (in dB) of the colormap used for plotting the spectrogram.
-        kwargs: any
-            Keyword arguments passed to the BaseDataset.from_folder classmethod.
+        kwargs:
+            None.
 
         Returns
         -------
@@ -537,10 +543,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             The audio dataset.
 
         """
-        kwargs.update(
-            {"file_class": SpectroFile, "supported_file_extensions": [".npz"]},
-        )
-        base_dataset = BaseDataset.from_folder(
+        return super().from_folder(
             folder=folder,
             strptime_format=strptime_format,
             begin=begin,
@@ -549,35 +552,134 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             mode=mode,
             overlap=overlap,
             data_duration=data_duration,
-            **kwargs,
-        )
-        sft = next(iter(base_dataset.files)).get_fft()
-        return cls.from_base_dataset(
-            base_dataset=base_dataset,
-            fft=sft,
             name=name,
-            v_lim=v_lim,
         )
 
     @classmethod
-    def from_base_dataset(
+    def from_files(  # noqa: PLR0913
         cls,
-        base_dataset: BaseDataset,
-        fft: ShortTimeFFT,
+        files: list[SpectroFile],
+        begin: Timestamp | None = None,
+        end: Timestamp | None = None,
         name: str | None = None,
-        colormap: str | None = None,
-        scale: Scale | None = None,
-        v_lim: tuple[float, float] | None | object = sentinel_value,
-    ) -> SpectroDataset:
-        """Return a SpectroDataset object from a BaseDataset object."""
-        return cls(
-            [
-                SpectroData.from_base_data(data=data, fft=fft, colormap=colormap)
-                for data in base_dataset.data
-            ],
+        mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
+        overlap: float = 0.0,
+        data_duration: Timedelta | None = None,
+        **kwargs,  # noqa: ANN003
+    ) -> AudioDataset:
+        """Return an SpectroDataset object from a list of SpectroFiles.
+
+        Parameters
+        ----------
+        files: list[SpectroFile]
+            The list of files contained in the Dataset.
+        begin: Timestamp | None
+            Begin of the first data object.
+            Defaulted to the begin of the first file.
+        end: Timestamp | None
+            End of the last data object.
+            Defaulted to the end of the last file.
+        mode: Literal["files", "timedelta_total", "timedelta_file"]
+            Mode of creation of the dataset data from the original files.
+            "files": one data will be created for each file.
+            "timedelta_total": data objects of duration equal to data_duration will
+            be created from the begin timestamp to the end timestamp.
+            "timedelta_file": data objects of duration equal to data_duration will
+            be created from the beginning of the first file that the begin timestamp is into, until it would resume
+            in a data beginning between two files. Then, the next data object will be created from the
+            beginning of the next original file and so on.
+        overlap: float
+            Overlap percentage between consecutive data.
+        data_duration: Timedelta | None
+            Duration of the data objects.
+            If mode is set to "files", this parameter has no effect.
+            If provided, data will be evenly distributed between begin and end.
+            Else, one data object will cover the whole time period.
+        sample_rate: float | None
+            Sample rate of the audio data objects.
+        name: str|None
+            Name of the dataset.
+        instrument: Instrument | None
+            Instrument that might be used to obtain acoustic pressure from
+            the wav audio data.
+        normalization: Normalization
+            The type of normalization to apply to the audio data.
+        kwargs:
+            None.
+
+        Returns
+        -------
+        SpectroDataset:
+        The SpectroDataset object.
+
+        """
+        return super().from_files(
+            files=files,
+            begin=begin,
+            end=end,
             name=name,
-            scale=scale,
-            v_lim=v_lim,
+            mode=mode,
+            overlap=overlap,
+            data_duration=data_duration,
+        )
+
+    @classmethod
+    def _data_from_dict(cls, dictionary: dict) -> list[SpectroData]:
+        """Return the list of SpectroData objects from the serialized dictionary.
+
+        Parameters
+        ----------
+        dictionary: dict
+            Dictionary representing the serialized SpectroDataset.
+
+        Returns
+        -------
+        list[SpectroData]:
+            The list of deserialized SpectroData objects.
+
+        """
+        return [SpectroData.from_dict(dictionary=data) for data in dictionary.values()]
+
+    @classmethod
+    def _data_from_files(
+        cls,
+        files: list[TFile],
+        begin: Timestamp | None = None,
+        end: Timestamp | None = None,
+        name: str | None = None,
+        **kwargs,  # noqa: ANN003
+    ) -> SpectroData:
+        """Return a SpectroData object from a list of SpectroFiles.
+
+        The SpectroData starts at the begin and ends at end.
+
+        Parameters
+        ----------
+        files: list[SpectroFile]
+            List of SpectroFiles contained in the SpectroData.
+        begin: Timestamp | None
+            Begin of the SpectroData.
+            Defaulted to the begin of the first SpectroFile.
+        end: Timestamp | None
+            End of the SpectroData.
+            Defaulted to the end of the last SpectroFile.
+        name: str|None
+            Name of the SpectroData.
+        kwargs:
+            Keyword arguments to pass to the SpectroData.from_files() method.
+
+        Returns
+        -------
+        SpectroData:
+            The SpectroData object.
+
+        """
+        return SpectroData.from_files(
+            files=files,
+            begin=begin,
+            end=end,
+            name=name,
+            **kwargs,
         )
 
     @classmethod

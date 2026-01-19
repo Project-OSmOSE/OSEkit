@@ -7,8 +7,7 @@ that simplify repeated operations on the audio data.
 from __future__ import annotations
 
 import logging
-from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Literal, Self
 
 from osekit.core_api.audio_data import AudioData
 from osekit.core_api.audio_file import AudioFile
@@ -18,6 +17,8 @@ from osekit.utils.audio_utils import Normalization
 from osekit.utils.multiprocess_utils import multiprocess
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     import pytz
     from pandas import Timedelta, Timestamp
 
@@ -31,6 +32,8 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
     that simplify repeated operations on the audio data.
 
     """
+
+    file_cls = AudioFile
 
     def __init__(
         self,
@@ -145,26 +148,21 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         )
 
     @classmethod
-    def from_dict(cls, dictionary: dict) -> AudioDataset:
-        """Deserialize an AudioDataset from a dictionary.
+    def _data_from_dict(cls, dictionary: dict) -> list[AudioData]:
+        """Return the list of AudioData objects from the serialized dictionary.
 
         Parameters
         ----------
         dictionary: dict
-            The serialized dictionary representing the AudioDataset.
+            Dictionary representing the serialized AudioDataset.
 
         Returns
         -------
-        AudioDataset
-            The deserialized AudioDataset.
+        list[AudioData]:
+            The list of deserialized AudioData objects.
 
         """
-        return cls(
-            [AudioData.from_dict(d) for d in dictionary["data"].values()],
-            name=dictionary["name"],
-            suffix=dictionary["suffix"],
-            folder=Path(dictionary["folder"]),
-        )
+        return [AudioData.from_dict(data) for data in dictionary.values()]
 
     @classmethod
     def from_folder(  # noqa: PLR0913
@@ -181,8 +179,8 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         name: str | None = None,
         instrument: Instrument | None = None,
         normalization: Normalization = Normalization.RAW,
-        **kwargs: any,
-    ) -> AudioDataset:
+        **kwargs,  # noqa: ANN003
+    ) -> Self:
         """Return an AudioDataset from a folder containing the audio files.
 
         Parameters
@@ -241,28 +239,18 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             The audio dataset.
 
         """
-        kwargs.update(
-            {
-                "file_class": AudioFile,
-                "supported_file_extensions": [".wav", ".flac", ".mseed", ".mp3"],
-            },
-        )
-        base_dataset = BaseDataset.from_folder(
+        return super().from_folder(
             folder=folder,
             strptime_format=strptime_format,
             begin=begin,
             end=end,
-            timezone=timezone,
             mode=mode,
+            timezone=timezone,
             overlap=overlap,
             data_duration=data_duration,
-            **kwargs,
-        )
-        return cls.from_base_dataset(
-            base_dataset=base_dataset,
+            sample_rate=sample_rate,
             name=name,
             instrument=instrument,
-            sample_rate=sample_rate,
             normalization=normalization,
         )
 
@@ -272,11 +260,11 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         files: list[AudioFile],
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
+        name: str | None = None,
         mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
         overlap: float = 0.0,
         data_duration: Timedelta | None = None,
         sample_rate: float | None = None,
-        name: str | None = None,
         instrument: Instrument | None = None,
         normalization: Normalization = Normalization.RAW,
     ) -> AudioDataset:
@@ -320,51 +308,67 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
 
         Returns
         -------
-        BaseDataset[TItem, TFile]:
-        The DataBase object.
+        AudioDataset:
+        The AudioDataset object.
 
         """
-        base = BaseDataset.from_files(
+        return super().from_files(
             files=files,
             begin=begin,
             end=end,
+            name=name,
+            instrument=instrument,
+            normalization=normalization,
+            sample_rate=sample_rate,
             mode=mode,
             overlap=overlap,
             data_duration=data_duration,
         )
-        return cls.from_base_dataset(
-            base,
-            name=name,
-            sample_rate=sample_rate,
-            instrument=instrument,
-            normalization=normalization,
-        )
 
     @classmethod
-    def from_base_dataset(
+    def _data_from_files(
         cls,
-        base_dataset: BaseDataset,
-        sample_rate: float | None = None,
+        files: list[AudioFile],
+        begin: Timestamp | None = None,
+        end: Timestamp | None = None,
         name: str | None = None,
-        instrument: Instrument | None = None,
-        normalization: Normalization = Normalization.RAW,
-    ) -> AudioDataset:
-        """Return an AudioDataset object from a BaseDataset object."""
-        return cls(
-            [
-                AudioData.from_base_data(
-                    data=data,
-                    sample_rate=sample_rate,
-                    normalization=normalization,
-                )
-                for data in base_dataset.data
-            ],
+        **kwargs,  # noqa: ANN003
+    ) -> AudioData:
+        """Return an AudioData object from a list of AudioFiles.
+
+        The AudioData starts at the begin and ends at end.
+
+        Parameters
+        ----------
+        files: list[AudioFile]
+            List of AudioFiles contained in the AudioData.
+        begin: Timestamp | None
+            Begin of the AudioData.
+            Defaulted to the begin of the first AudioFile.
+        end: Timestamp | None
+            End of the AudioData.
+            Defaulted to the end of the last AudioFile.
+        name: str|None
+            Name of the AudioData.
+        kwargs:
+            Keyword arguments to pass to the AudioData.from_files() method.
+
+        Returns
+        -------
+        AudioData:
+            The AudioData object.
+
+        """
+        return AudioData.from_files(
+            files=files,
+            begin=begin,
+            end=end,
             name=name,
-            instrument=instrument,
+            **kwargs,
         )
 
     @classmethod
-    def from_json(cls, file: Path) -> AudioDataset:
+    def from_json(cls, file: Path) -> Self:
         """Deserialize an AudioDataset from a JSON file.
 
         Parameters

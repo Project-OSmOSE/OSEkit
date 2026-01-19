@@ -1,3 +1,5 @@
+import contextlib
+
 import numpy as np
 import pytest
 
@@ -721,3 +723,112 @@ def test_frequency_scale_equality(scale1: Scale, scale2: Scale, expected: bool) 
 )
 def test_frequency_scale_serialization(scale: Scale) -> None:
     assert Scale.from_dict_value(scale.to_dict_value()) == scale
+
+
+@pytest.mark.parametrize(
+    ("p_min", "p_max", "f_min", "f_max", "expected"),
+    [
+        pytest.param(
+            -0.5,
+            1.0,
+            1.0,
+            100.0,
+            pytest.raises(
+                ValueError,
+                match="p_min must be between 0 and 1, got -0\\.5",
+            ),
+            id="negative_min",
+        ),
+        pytest.param(
+            5.0,
+            1.0,
+            1.0,
+            100.0,
+            pytest.raises(
+                ValueError,
+                match="p_min must be between 0 and 1, got 5\\.0\n"
+                "p_min must be strictly inferior than p_max, got \\(5\\.0,1\\.0\\)",
+            ),
+            id="min_too_big",
+        ),
+        pytest.param(
+            0.0,
+            -1.0,
+            1.0,
+            100.0,
+            pytest.raises(
+                ValueError,
+                match="p_max must be between 0 and 1, got -1\\.0\n"
+                "p_min must be strictly inferior than p_max, got \\(0\\.0,-1\\.0\\)",
+            ),
+            id="negative_max",
+        ),
+        pytest.param(
+            0.0,
+            2.0,
+            1.0,
+            100.0,
+            pytest.raises(
+                ValueError,
+                match=r"p_max must be between 0 and 1, got 2.0",
+            ),
+            id="max_too_big",
+        ),
+        pytest.param(
+            0.5,
+            0.5,
+            1.0,
+            100.0,
+            pytest.raises(
+                ValueError,
+                match="p_min must be strictly inferior than p_max,"
+                " got \\(0\\.5,0\\.5\\)",
+            ),
+            id="p_min_equals_p_max",
+        ),
+        pytest.param(
+            0.0,
+            1.0,
+            -1.0,
+            100.0,
+            pytest.raises(
+                ValueError,
+                match=r"f_min must be positive, got -1.0",
+            ),
+            id="negative_f_min",
+        ),
+        pytest.param(
+            0.0,
+            1.0,
+            0.0,
+            -100.0,
+            pytest.raises(
+                ValueError,
+                match="f_max must be positive, got -100\\.0\n"
+                "f_min must be strictly inferior than f_max, got \\(0\\.0,-100\\.0\\)",
+            ),
+            id="negative_f_max",
+        ),
+        pytest.param(
+            0.0,
+            1.0,
+            500.0,
+            500.0,
+            pytest.raises(
+                ValueError,
+                match="f_min must be strictly inferior than f_max,"
+                " got \\(500\\.0,500\\.0\\)",
+            ),
+            id="f_min_equals_f_max",
+        ),
+    ],
+)
+def test_scale_part_errors(
+    p_min: float,
+    p_max: float,
+    f_min: float,
+    f_max: float,
+    expected: contextlib.AbstractContextManager,
+) -> None:
+    with expected as e:
+        assert ScalePart(p_min=p_min, p_max=p_max, f_min=f_min, f_max=f_max) == e

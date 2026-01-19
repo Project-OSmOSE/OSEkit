@@ -7,9 +7,10 @@ that simplify repeated operations on the data.
 from __future__ import annotations
 
 import os
+from abc import ABC, abstractmethod
 from bisect import bisect
 from pathlib import Path
-from typing import TYPE_CHECKING, Generic, Literal, TypeVar
+from typing import TYPE_CHECKING, Literal, Self, TypeVar
 
 from pandas import Timedelta, Timestamp, date_range
 from soundfile import LibsndfileError
@@ -30,12 +31,14 @@ TData = TypeVar("TData", bound=BaseData)
 TFile = TypeVar("TFile", bound=BaseFile)
 
 
-class BaseDataset(Generic[TData, TFile], Event):
+class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
     """Base class for Dataset objects.
 
     Datasets are collections of Data, with methods
     that simplify repeated operations on the data.
     """
+
+    file_cls: type[TFile]
 
     def __init__(
         self,
@@ -157,7 +160,11 @@ class BaseDataset(Generic[TData, TFile], Event):
 
     @property
     def data_duration(self) -> Timedelta:
-        """Return the most frequent duration among durations of the data of this dataset, rounded to the nearest second."""
+        """Return the most frequent duration among the data of this dataset.
+
+        The duration is rounded to the nearest second.
+
+        """
         data_durations = [
             Timedelta(data.duration).round(freq="1s") for data in self.data
         ]
@@ -166,9 +173,10 @@ class BaseDataset(Generic[TData, TFile], Event):
     def write(
         self,
         folder: Path,
-        link: bool = False,
         first: int = 0,
         last: int | None = None,
+        *,
+        link: bool = False,
     ) -> None:
         """Write all data objects in the specified folder.
 
@@ -210,7 +218,7 @@ class BaseDataset(Generic[TData, TFile], Event):
         }
 
     @classmethod
-    def from_dict(cls, dictionary: dict) -> BaseDataset:
+    def from_dict(cls, dictionary: dict) -> Self:
         """Deserialize a BaseDataset from a dictionary.
 
         Parameters
@@ -224,19 +232,24 @@ class BaseDataset(Generic[TData, TFile], Event):
             The deserialized BaseDataset.
 
         """
-        return cls(
-            [BaseData.from_dict(d) for d in dictionary["data"].values()],
-            name=dictionary["name"],
-            suffix=dictionary["suffix"],
-            folder=Path(dictionary["folder"]),
-        )
+        data = cls._data_from_dict(dictionary["data"])
+        name = dictionary["name"]
+        suffix = dictionary["suffix"]
+        folder = Path(dictionary["folder"])
+        return cls(data=data, name=name, suffix=suffix, folder=folder)
+
+    @classmethod
+    @abstractmethod
+    def _data_from_dict(cls, dictionary: dict) -> list[TData]:
+        """Return a list of Data from a serialized dictionnary."""
+        ...
 
     def write_json(self, folder: Path) -> None:
         """Write a serialized BaseDataset to a JSON file."""
         serialize_json(folder / f"{self.name}.json", self.to_dict())
 
     @classmethod
-    def from_json(cls, file: Path) -> BaseDataset:
+    def from_json(cls, file: Path) -> Self:
         """Deserialize a BaseDataset from a JSON file.
 
         Parameters
@@ -262,8 +275,9 @@ class BaseDataset(Generic[TData, TFile], Event):
         data_duration: Timedelta | None = None,
         overlap: float = 0.0,
         name: str | None = None,
-    ) -> BaseDataset:
-        """Return a base BaseDataset object from a list of Files.
+        **kwargs,  # noqa: ANN003
+    ) -> Self:
+        """Return a base Dataset object from a list of Files.
 
         Parameters
         ----------
@@ -281,8 +295,9 @@ class BaseDataset(Generic[TData, TFile], Event):
             "timedelta_total": data objects of duration equal to data_duration will
             be created from the begin timestamp to the end timestamp.
             "timedelta_file": data objects of duration equal to data_duration will
-            be created from the beginning of the first file that the begin timestamp is into, until it would resume
-            in a data beginning between two files. Then, the next data object will be created from the
+            be created from the beginning of the first file that the begin timestamp
+            is into, until it would resume in a data beginning between two files.
+            Then, the next data object will be created from the
             beginning of the next original file and so on.
         data_duration: Timedelta | None
             Duration of the data objects.
@@ -293,17 +308,19 @@ class BaseDataset(Generic[TData, TFile], Event):
             Overlap percentage between consecutive data.
         name: str|None
             Name of the dataset.
+        kwargs:
+            Keyword arguments to pass to the cls.data_from_files() method.
 
         Returns
         -------
-        BaseDataset[TItem, TFile]:
-        The DataBase object.
+        Self:
+            The Dataset object.
 
         """
         if mode == "files":
-            data_base = [BaseData.from_files([f]) for f in files]
-            data_base = BaseData.remove_overlaps(data_base)
-            return cls(data=data_base, name=name)
+            data = [cls._data_from_files([f], **kwargs) for f in files]
+            data = BaseData.remove_overlaps(data)
+            return cls(data=data, name=name)
 
         if not begin:
             begin = min(file.begin for file in files)
@@ -311,35 +328,53 @@ class BaseDataset(Generic[TData, TFile], Event):
             end = max(file.end for file in files)
         if data_duration:
             data_base = (
-                cls._get_base_data_from_files_timedelta_total(
+                cls._get_data_from_files_timedelta_total(
                     begin=begin,
                     end=end,
                     data_duration=data_duration,
                     files=files,
                     overlap=overlap,
+                    **kwargs,
                 )
                 if mode == "timedelta_total"
-                else cls._get_base_data_from_files_timedelta_file(
+                else cls._get_data_from_files_timedelta_file(
                     begin=begin,
                     end=end,
                     data_duration=data_duration,
                     files=files,
                     overlap=overlap,
+                    **kwargs,
                 )
             )
         else:
-            data_base = [BaseData.from_files(files, begin=begin, end=end)]
+            data_base = [
+                cls._data_from_files(files=files, begin=begin, end=end, **kwargs),
+            ]
         return cls(data_base, name=name)
 
     @classmethod
-    def _get_base_data_from_files_timedelta_total(
+    @abstractmethod
+    def _data_from_files(
+        cls,
+        files: list[TFile],
+        begin: Timestamp | None = None,
+        end: Timestamp | None = None,
+        name: str | None = None,
+        **kwargs,  # noqa: ANN003
+    ) -> TData:
+        """Return a base Dataset object between two timestamps from a list of Files."""
+        ...
+
+    @classmethod
+    def _get_data_from_files_timedelta_total(
         cls,
         begin: Timestamp,
         end: Timestamp,
         data_duration: Timedelta,
         files: list[TFile],
         overlap: float = 0,
-    ) -> list[BaseData]:
+        **kwargs,  # noqa: ANN003
+    ) -> list[TData]:
         if not 0 <= overlap < 1:
             msg = f"Overlap ({overlap}) must be between 0 and 1."
             raise ValueError(msg)
@@ -366,24 +401,26 @@ class BaseDataset(Generic[TData, TFile], Event):
             ):
                 last_active_file_index += 1
             output.append(
-                BaseData.from_files(
+                cls._data_from_files(
                     files[active_file_index:last_active_file_index],
                     data_begin,
                     data_end,
+                    **kwargs,
                 ),
             )
 
         return output
 
     @classmethod
-    def _get_base_data_from_files_timedelta_file(
+    def _get_data_from_files_timedelta_file(
         cls,
         begin: Timestamp,
         end: Timestamp,
         data_duration: Timedelta,
         files: list[TFile],
         overlap: float = 0,
-    ) -> list[BaseData]:
+        **kwargs,
+    ) -> list[TData]:
         if not 0 <= overlap < 1:
             msg = f"Overlap ({overlap}) must be between 0 and 1."
             raise ValueError(msg)
@@ -416,7 +453,12 @@ class BaseDataset(Generic[TData, TFile], Event):
                 files_chunk.append(next_file)
 
             output.extend(
-                BaseData.from_files(files, data_begin, data_begin + data_duration)
+                cls._data_from_files(
+                    files,
+                    data_begin,
+                    data_begin + data_duration,
+                    **kwargs,
+                )
                 for data_begin in date_range(
                     file.begin,
                     files_chunk[-1].end,
@@ -429,11 +471,9 @@ class BaseDataset(Generic[TData, TFile], Event):
 
     @classmethod
     def from_folder(  # noqa: PLR0913
-        cls,
+        cls: type[Self],
         folder: Path,
         strptime_format: str | None,
-        file_class: type[TFile] = BaseFile,
-        supported_file_extensions: list[str] | None = None,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         timezone: str | pytz.timezone | None = None,
@@ -442,8 +482,9 @@ class BaseDataset(Generic[TData, TFile], Event):
         data_duration: Timedelta | None = None,
         first_file_begin: Timestamp | None = None,
         name: str | None = None,
-    ) -> BaseDataset:
-        """Return a BaseDataset from a folder containing the base files.
+        **kwargs,  # noqa: ANN003
+    ) -> Self:
+        """Return a Dataset from a folder containing the base files.
 
         Parameters
         ----------
@@ -455,10 +496,6 @@ class BaseDataset(Generic[TData, TFile], Event):
             If None, the first audio file of the folder will start
             at first_file_begin, and each following file will start
             at the end of the previous one.
-        file_class: type[Tfile]
-            Derived type of BaseFile used to instantiate the dataset.
-        supported_file_extensions: list[str]
-            List of supported file extensions for parsing TFiles.
         begin: Timestamp | None
             The begin of the dataset.
             Defaulted to the begin of the first file.
@@ -492,15 +529,15 @@ class BaseDataset(Generic[TData, TFile], Event):
             Will be ignored if striptime_format is specified.
         name: str|None
             Name of the dataset.
+        kwargs:
+            Keyword arguments to pass to the cls.from_files() method.
 
         Returns
         -------
-        Basedataset:
-            The base dataset.
+        Self:
+            The dataset.
 
         """
-        if supported_file_extensions is None:
-            supported_file_extensions = []
         valid_files = []
         rejected_files = []
         first_file_begin = first_file_begin or Timestamp("2020-01-01 00:00:00")
@@ -508,10 +545,8 @@ class BaseDataset(Generic[TData, TFile], Event):
             sorted(folder.iterdir()),
             disable=os.getenv("DISABLE_TQDM", "False").lower() in ("true", "1", "t"),
         ):
-            is_file_ok = _parse_file(
+            is_file_ok = cls._parse_file(
                 file=file,
-                file_class=file_class,
-                supported_file_extensions=supported_file_extensions,
                 strptime_format=strptime_format,
                 timezone=timezone,
                 begin_timestamp=first_file_begin,
@@ -528,9 +563,10 @@ class BaseDataset(Generic[TData, TFile], Event):
             )
 
         if not valid_files:
-            raise FileNotFoundError(f"No valid file found in {folder}.")
+            msg = f"No valid file found in {folder}"
+            raise FileNotFoundError(msg)
 
-        return BaseDataset.from_files(
+        return cls.from_files(
             files=valid_files,
             begin=begin,
             end=end,
@@ -538,29 +574,33 @@ class BaseDataset(Generic[TData, TFile], Event):
             overlap=overlap,
             data_duration=data_duration,
             name=name,
+            **kwargs,
         )
 
-
-def _parse_file(
-    file: Path,
-    file_class: type,
-    supported_file_extensions: list[str],
-    strptime_format: str,
-    timezone: str | pytz.timezone | None,
-    begin_timestamp: Timestamp,
-    valid_files: list[BaseFile],
-    rejected_files: list[Path],
-) -> bool:
-    if file.suffix.lower() not in supported_file_extensions:
-        return False
-    try:
-        if strptime_format is None:
-            f = file_class(file, begin=begin_timestamp, timezone=timezone)
+    @classmethod
+    def _parse_file(
+        cls: type[Self],
+        file: Path,
+        strptime_format: str,
+        timezone: str | pytz.timezone | None,
+        begin_timestamp: Timestamp,
+        valid_files: list[TFile],
+        rejected_files: list[Path],
+    ) -> bool:
+        if file.suffix.lower() not in cls.file_cls.supported_extensions:
+            return False
+        try:
+            if strptime_format is None:
+                f = cls.file_cls(file, begin=begin_timestamp, timezone=timezone)
+            else:
+                f = cls.file_cls(
+                    file,
+                    strptime_format=strptime_format,
+                    timezone=timezone,
+                )
+            valid_files.append(f)
+        except (ValueError, LibsndfileError):
+            rejected_files.append(file)
+            return False
         else:
-            f = file_class(file, strptime_format=strptime_format, timezone=timezone)
-        valid_files.append(f)
-    except (ValueError, LibsndfileError):
-        rejected_files.append(file)
-        return False
-    else:
-        return True
+            return True

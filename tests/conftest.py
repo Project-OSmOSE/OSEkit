@@ -21,8 +21,6 @@ from osekit.config import (
 )
 from osekit.core_api.audio_data import AudioData
 from osekit.core_api.audio_file import AudioFile
-from osekit.core_api.base_dataset import BaseDataset
-from osekit.core_api.base_file import BaseFile
 from osekit.utils.audio_utils import generate_sample_audio
 
 
@@ -170,28 +168,10 @@ def patch_afm_open(monkeypatch: pytest.MonkeyPatch) -> list[Path]:
 
 
 @pytest.fixture
-def base_dataset(tmp_path: Path) -> BaseDataset:
-    files = [tmp_path / f"file_{i}.txt" for i in range(5)]
-    for file in files:
-        file.touch()
-    timestamps = pd.date_range(
-        start=pd.Timestamp("2000-01-01 00:00:00"),
-        freq="1s",
-        periods=5,
-    )
-
-    bfs = [
-        BaseFile(path=file, begin=timestamp, end=timestamp + pd.Timedelta(seconds=1))
-        for file, timestamp in zip(files, timestamps, strict=False)
-    ]
-    return BaseDataset.from_files(files=bfs, mode="files")
-
-
-@pytest.fixture
 def patch_audio_data(monkeypatch: pytest.MonkeyPatch) -> None:
     original_init = AudioData.__init__
     original_get_raw_value = AudioData.get_raw_value
-    original_shape = AudioData.shape
+    original_length = AudioData.length
 
     def mocked_init(
         self: AudioData,
@@ -217,10 +197,10 @@ def patch_audio_data(monkeypatch: pytest.MonkeyPatch) -> None:
                     1,
                 )
 
-    def mocked_shape(self: AudioData) -> tuple[int, int]:
+    def mocked_length(self: AudioData) -> int:
         if hasattr(self, "mocked_value"):
-            return self.mocked_value.shape
-        return original_shape.fget(self)
+            return len(self.mocked_value)
+        return original_length.fget(self)
 
     def mocked_get_raw_value(self: AudioData) -> np.ndarray:
         if hasattr(self, "mocked_value"):
@@ -228,7 +208,7 @@ def patch_audio_data(monkeypatch: pytest.MonkeyPatch) -> None:
         return original_get_raw_value(self)
 
     monkeypatch.setattr(AudioData, "__init__", mocked_init)
-    monkeypatch.setattr(AudioData, "shape", property(mocked_shape))
+    monkeypatch.setattr(AudioData, "length", property(mocked_length))
     monkeypatch.setattr(
         AudioData,
         "get_raw_value",
