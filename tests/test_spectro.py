@@ -121,6 +121,18 @@ def test_spectro_data_db_ref(
     assert sd.db_ref == sd.audio_data.instrument.P_REF
 
 
+def test_empty_spectro_data_error() -> None:
+    sd = SpectroData(
+        begin=Timestamp("02-24-2009 00:00:00"),
+        end=Timestamp("02-24-2009 00:01:00"),
+    )
+    with pytest.raises(
+        ValueError,
+        match=r"SpectroData should have either items or audio_data.",
+    ):
+        sd.get_value()
+
+
 @pytest.mark.parametrize(
     ("audio_files", "date_begin", "sft"),
     [
