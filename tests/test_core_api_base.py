@@ -18,7 +18,7 @@ from osekit.core_api.event import Event
 
 
 class DummyFile(BaseFile):
-    supported_extensions: typing.ClassVar = [".wav"]
+    supported_extensions: typing.ClassVar = [""]
 
     def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray: ...
 
@@ -38,9 +38,9 @@ class DummyData(BaseData[DummyItem, DummyFile]):
         files: list[DummyFile],
         begin: Timestamp,
         end: Timestamp,
-        **kwargs,
+        **kwargs,  # noqa: ANN003
     ) -> Self:
-        return DummyData(files, begin, end, **kwargs)
+        return DummyData.from_files(files=files, begin=begin, end=end, **kwargs)
 
     @classmethod
     def _make_file(cls, path: Path, begin: Timestamp) -> DummyFile:
@@ -62,6 +62,7 @@ class DummyData(BaseData[DummyItem, DummyFile]):
         files: list[TFile],
         begin: Timestamp,
         end: Timestamp,
+        **kwargs,  # noqa: ANN003
     ) -> Self:
         return cls.from_files(
             files=files,
@@ -76,7 +77,7 @@ class DummyData(BaseData[DummyItem, DummyFile]):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         name: str | None = None,
-        **kwargs,
+        **kwargs,  # noqa: ANN003
     ) -> Self:
         return super().from_files(
             files=files,
@@ -498,14 +499,14 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
             None,
             None,
             None,
-            [Path(r"231201000000.wav")],
+            [Path(r"231201000000")],
             [
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:00"),
                         end=Timestamp("2023-12-01 00:00:01"),
                     ),
-                    [Path(r"231201000000.wav")],
+                    [Path(r"231201000000")],
                 ),
             ],
             id="one_file_default",
@@ -520,14 +521,14 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
             None,
             Timestamp("2023-12-01 00:00:00"),
             None,
-            [Path(r"bbjuni.wav")],
+            [Path(r"bbjuni")],
             [
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:00"),
                         end=Timestamp("2023-12-01 00:00:01"),
                     ),
-                    [Path(r"bbjuni.wav")],
+                    [Path(r"bbjuni")],
                 ),
             ],
             id="one_file_no_strptime",
@@ -542,21 +543,21 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
             None,
             Timestamp("2023-12-01 00:00:00"),
             None,
-            [Path(r"cool.wav"), Path(r"fun.wav")],
+            [Path(r"cool"), Path(r"fun")],
             [
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:00"),
                         end=Timestamp("2023-12-01 00:00:01"),
                     ),
-                    [Path(r"cool.wav")],
+                    [Path(r"cool")],
                 ),
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:01"),
                         end=Timestamp("2023-12-01 00:00:02"),
                     ),
-                    [Path(r"fun.wav")],
+                    [Path(r"fun")],
                 ),
             ],
             id="multiple_files_no_strptime_should_be_consecutive",
@@ -571,14 +572,14 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
             None,
             Timestamp("2023-12-01 00:00:00"),
             None,
-            [Path(r"cool.wav"), Path("boring.shenanigan")],
+            [Path(r"cool"), Path("boring.shenanigan")],
             [
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:00"),
                         end=Timestamp("2023-12-01 00:00:01"),
                     ),
-                    [Path(r"cool.wav")],
+                    [Path(r"cool")],
                 ),
             ],
             id="only_specified_formats_are_kept",
@@ -593,35 +594,35 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
             Timedelta(seconds=0.5),
             Timestamp("2023-12-01 00:00:00"),
             None,
-            [Path(r"cool.wav"), Path(r"fun.wav")],
+            [Path(r"cool"), Path(r"fun")],
             [
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:00"),
                         end=Timestamp("2023-12-01 00:00:00.5"),
                     ),
-                    [Path(r"cool.wav")],
+                    [Path(r"cool")],
                 ),
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:00.5"),
                         end=Timestamp("2023-12-01 00:00:01"),
                     ),
-                    [Path(r"cool.wav")],
+                    [Path(r"cool")],
                 ),
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:01"),
                         end=Timestamp("2023-12-01 00:00:01.5"),
                     ),
-                    [Path(r"fun.wav")],
+                    [Path(r"fun")],
                 ),
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:01.5"),
                         end=Timestamp("2023-12-01 00:00:02"),
                     ),
-                    [Path(r"fun.wav")],
+                    [Path(r"fun")],
                 ),
             ],
             id="timedelta_total",
@@ -636,35 +637,35 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
             Timedelta(seconds=1),
             Timestamp("2023-12-01 00:00:00"),
             None,
-            [Path(r"cool.wav"), Path(r"fun.wav")],
+            [Path(r"cool"), Path(r"fun")],
             [
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:00"),
                         end=Timestamp("2023-12-01 00:00:01"),
                     ),
-                    [Path(r"cool.wav")],
+                    [Path(r"cool")],
                 ),
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:00.5"),
                         end=Timestamp("2023-12-01 00:00:01.5"),
                     ),
-                    [Path(r"cool.wav"), Path(r"fun.wav")],
+                    [Path(r"cool"), Path(r"fun")],
                 ),
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:01"),
                         end=Timestamp("2023-12-01 00:00:02"),
                     ),
-                    [Path(r"fun.wav")],
+                    [Path(r"fun")],
                 ),
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:01.5"),
                         end=Timestamp("2023-12-01 00:00:02.5"),
                     ),
-                    [Path(r"fun.wav")],
+                    [Path(r"fun")],
                 ),
             ],
             id="timedelta_total_with_overlap",
@@ -679,21 +680,21 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
             Timedelta(seconds=0.5),
             Timestamp("2023-12-01 00:00:00"),
             None,
-            [Path(r"cool.wav"), Path(r"fun.wav")],
+            [Path(r"cool"), Path(r"fun")],
             [
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:00.5"),
                         end=Timestamp("2023-12-01 00:00:01"),
                     ),
-                    [Path(r"cool.wav")],
+                    [Path(r"cool")],
                 ),
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:01"),
                         end=Timestamp("2023-12-01 00:00:01.5"),
                     ),
-                    [Path(r"fun.wav")],
+                    [Path(r"fun")],
                 ),
             ],
             id="timedelta_total_between_timestamps",
@@ -708,21 +709,21 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
             Timedelta(seconds=0.5),
             None,
             None,
-            [Path(r"231201000000.wav"), Path(r"231201000001.wav")],
+            [Path(r"231201000000"), Path(r"231201000001")],
             [
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:00.5"),
                         end=Timestamp("2023-12-01 00:00:01"),
                     ),
-                    [Path(r"231201000000.wav")],
+                    [Path(r"231201000000")],
                 ),
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:01"),
                         end=Timestamp("2023-12-01 00:00:01.5"),
                     ),
-                    [Path(r"231201000001.wav")],
+                    [Path(r"231201000001")],
                 ),
             ],
             id="striptime_format",
@@ -737,21 +738,21 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
             Timedelta(seconds=0.5),
             None,
             None,
-            [Path(r"231201000000.wav"), Path(r"231201000001.wav")],
+            [Path(r"231201000000"), Path(r"231201000001")],
             [
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:00.5+01:00"),
                         end=Timestamp("2023-12-01 00:00:01+01:00"),
                     ),
-                    [Path(r"231201000000.wav")],
+                    [Path(r"231201000000")],
                 ),
                 (
                     Event(
                         begin=Timestamp("2023-12-01 00:00:01+01:00"),
                         end=Timestamp("2023-12-01 00:00:01.5+01:00"),
                     ),
-                    [Path(r"231201000001.wav")],
+                    [Path(r"231201000001")],
                 ),
             ],
             id="timezone_location",
@@ -766,21 +767,21 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
             Timedelta(seconds=0.5),
             None,
             None,
-            [Path(r"231201000000+0000.wav"), Path(r"231201000001+0000.wav")],
+            [Path(r"231201000000+0000"), Path(r"231201000001+0000")],
             [
                 (
                     Event(
                         begin=Timestamp("2023-12-01 01:00:00.5+01:00"),
                         end=Timestamp("2023-12-01 01:00:01+01:00"),
                     ),
-                    [Path(r"231201000000+0000.wav")],
+                    [Path(r"231201000000+0000")],
                 ),
                 (
                     Event(
                         begin=Timestamp("2023-12-01 01:00:01+01:00"),
                         end=Timestamp("2023-12-01 01:00:01.5+01:00"),
                     ),
-                    [Path(r"231201000001+0000.wav")],
+                    [Path(r"231201000001+0000")],
                 ),
             ],
             id="timezone_conversion",
@@ -2317,3 +2318,122 @@ def test_get_base_data_from_files(
                 if item.is_empty
                 else item.file.path.name == expected_filename
             )
+
+
+def test_dummydata_make_split_data() -> None:
+    dfs = [
+        DummyFile(
+            path=Path("foo"),
+            begin=Timestamp("2020-01-01 00:00:00"),
+            end=Timestamp("2020-01-01 00:01:00"),
+        ),
+        DummyFile(
+            path=Path("bar"),
+            begin=Timestamp("2020-01-01 00:01:00"),
+            end=Timestamp("2020-01-01 00:02:00"),
+        ),
+    ]
+    dd = DummyData.from_files(dfs)
+    split_dd = dd._make_split_data(
+        files=dfs,
+        begin=Timestamp("2020-01-01 00:00:30"),
+        end=Timestamp("2020-01-01 00:01:30"),
+        name="cool",
+    )
+    assert split_dd == DummyData.from_files(
+        files=dfs,
+        begin=Timestamp("2020-01-01 00:00:30"),
+        end=Timestamp("2020-01-01 00:01:30"),
+        name="cool",
+    )
+    assert np.array_equal(
+        dd.split(),
+        [
+            DummyData.from_files([dfs[0]]),
+            DummyData.from_files([dfs[1]]),
+        ],
+    )
+
+
+def test_dummydata_make_file() -> None:
+    dfs = [
+        DummyFile(
+            path=Path("foo"),
+            begin=Timestamp("2020-01-01 00:00:00"),
+            end=Timestamp("2020-01-01 00:0:01"),
+        ),
+        DummyFile(
+            path=Path("bar"),
+            begin=Timestamp("2020-01-01 00:01:00"),
+            end=Timestamp("2020-01-01 00:02:00"),
+        ),
+    ]
+    dd = DummyData.from_files(dfs)
+    assert dd._make_file(Path("foo"), begin=Timestamp("2020-01-01 00:00:00")) == dfs[0]
+
+
+def test_dummydata_from_base_dict() -> None:
+    dfs = [
+        DummyFile(
+            path=Path("foo"),
+            begin=Timestamp("2020-01-01 00:00:00"),
+            end=Timestamp("2020-01-01 00:0:01"),
+        ),
+        DummyFile(
+            path=Path("bar"),
+            begin=Timestamp("2020-01-01 00:02:00"),
+            end=Timestamp("2020-01-01 00:03:00"),
+        ),
+    ]
+    dd = DummyData.from_files(
+        files=dfs,
+        begin=Timestamp("2020-01-01 00:00:30"),
+        end=Timestamp("2020-01-01 00:02:30"),
+        name="cool",
+    )
+    dictionary = {}
+    assert (
+        dd._from_base_dict(
+            dictionary=dictionary,
+            files=dfs,
+            begin=dd.begin,
+            end=dd.end,
+            name="cool",
+        )
+        == dd
+    )
+
+
+def test_dummydataset_data_from_dict() -> None:
+    dfs = [
+        DummyFile(
+            path=Path("foo"),
+            begin=Timestamp("2020-01-01 00:00:00"),
+            end=Timestamp("2020-01-01 00:0:01"),
+        ),
+        DummyFile(
+            path=Path("bar"),
+            begin=Timestamp("2020-01-01 00:00:02"),
+            end=Timestamp("2020-01-01 00:00:03"),
+        ),
+    ]
+    dd1 = DummyData.from_files(
+        files=dfs,
+        begin=Timestamp("2020-01-01 00:00:00.5"),
+        end=Timestamp("2020-01-01 00:00:01.5"),
+        name="cool",
+    )
+    dd2 = DummyData.from_files(
+        files=dfs,
+        begin=Timestamp("2020-01-01 00:00:01.75"),
+        end=Timestamp("2020-01-01 00:00:02.25"),
+        name="fun",
+    )
+    dds = DummyDataset(data=[dd1, dd2])
+    dictionary = {"data": dd1.to_dict()}
+    assert (
+        dds._data_from_dict(
+            dictionary=dictionary,
+        )[0]
+        == dd1
+    )
