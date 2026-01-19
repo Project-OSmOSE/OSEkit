@@ -28,6 +28,7 @@ from osekit.core_api.ltas_dataset import LTASDataset
 from osekit.core_api.spectro_data import SpectroData
 from osekit.core_api.spectro_dataset import SpectroDataset
 from osekit.core_api.spectro_file import SpectroFile
+from osekit.core_api.spectro_item import SpectroItem
 from osekit.utils.audio_utils import Normalization, generate_sample_audio
 
 
@@ -1365,3 +1366,50 @@ def test_spectro_write_welch(
     assert savez_call["timestamps"] == f"{sd.begin}_{sd.end}"
     assert np.array_equal(savez_call["freq"], sd.fft.f)
     assert np.array_equal(savez_call["px"], mocked_welch)
+
+
+def test_spectro_get_value_from_items_errors(
+    patch_audio_data: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def mocked_read_metadata(self: SpectroFile, *args: list, **kwargs: dict) -> None:
+        sft = ShortTimeFFT(win=hamming(512), hop=128, fs=48_000)
+        self.sample_rate = sft.fs
+        self.mfft = sft.mfft
+        self.begin, self.end = (
+            Timestamp("09-18-1990 00:00:00"),
+            Timestamp("09-18-1990 00:01:00"),
+        )
+        shape = sft.p_num(int(self.duration.total_seconds() * sft.fs))
+        self.time = np.arange(shape) * self.duration.total_seconds() / shape
+        self.time_resolution = (self.end - self.begin) / len(self.time)
+        self.freq = sft.f
+        self.window = sft.win
+        self.hop = sft.hop
+        self.sx_dtype = complex
+        self.db_ref = 1.0
+        self.v_lim = (0.0, 120.0)
+
+    monkeypatch.setattr(SpectroFile, "_read_metadata", mocked_read_metadata)
+
+    sf1 = SpectroFile(path=r"foo.npz", begin=Timestamp("09-18-1990 00:00:00"))
+    sf2 = SpectroFile(path=r"bar.npz", begin=Timestamp("09-18-1990 00:00:00"))
+    sf3 = SpectroFile(path=r"baz.npz", begin=Timestamp("09-18-1990 00:00:00"))
+
+    sf2.freq /= 2
+    sf3.hop *= 2
+
+    si1, si2, si3 = (
+        SpectroItem(
+            file=sf,
+            begin=sf.begin,
+            end=sf.end,
+        )
+        for sf in (sf1, sf2, sf3)
+    )
+
+    with pytest.raises(ValueError, match=r"Items don't have the same frequency bins."):
+        SpectroData([si1, si2]).get_value()
+
+    with pytest.raises(ValueError, match=r"Items don't have the same time resolution."):
+        SpectroData([si1, si3]).get_value()
