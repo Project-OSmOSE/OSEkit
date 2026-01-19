@@ -168,7 +168,7 @@ def test_dataset_localization(
     expected_begins: list[Timestamp],
 ) -> None:
     for file in file_names:
-        (tmp_path / f"{file}.wav").touch()
+        (tmp_path / f"{file}").touch()
 
     dataset = DummyDataset.from_folder(
         tmp_path,
