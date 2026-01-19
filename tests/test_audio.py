@@ -1468,6 +1468,25 @@ def test_audio_dataset_from_folder_errors_warnings(
         assert all(f in caplog.text for f in corrupted_audio_files)
 
 
+def test_audio_dataset_instrument(patch_audio_data: None) -> None:
+    ad = [
+        AudioData(mocked_value=[1, 2, 3], instrument=Instrument(end_to_end_db=150.0)),
+        AudioData(mocked_value=[4, 5, 6], instrument=Instrument(end_to_end_db=150.0)),
+    ]
+
+    ads = AudioDataset(data=ad)
+
+    assert ads.instrument == ad[0].instrument
+    assert all(data.instrument == ads.instrument for data in ads.data)
+
+    inst2 = Instrument(end_to_end_db=100.0)
+
+    ads2 = AudioDataset(data=ad, instrument=inst2)
+
+    assert ads2.instrument == inst2
+    assert all(data.instrument == inst2 for data in ads2.data)
+
+
 @pytest.mark.parametrize(
     ("audio_files", "subtype", "link", "expected_audio_data"),
     [
