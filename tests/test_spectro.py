@@ -1348,6 +1348,28 @@ def test_spectro_dataset_folder_moves_files(
     assert move_calls[sfs[1]] == sds.folder
 
 
+def test_spectro_dataset_data_from_dict(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sd_from_dict_calls = {}
+
+    def patch_sd_from_dict(dictionary: dict, *args: list, **kwargs: dict) -> str:
+        for k, v in dictionary.items():
+            sd_from_dict_calls[k] = v
+            return k
+        return ""
+
+    monkeypatch.setattr(SpectroData, "from_dict", patch_sd_from_dict)
+
+    output = SpectroDataset._data_from_dict(
+        {"data1": {"cool": "fonz"}, "data2": {"top": "hype"}},
+    )
+
+    assert sd_from_dict_calls["cool"] == "fonz"
+    assert sd_from_dict_calls["top"] == "hype"
+    assert np.array_equal(output, ["cool", "top"])
+
+
 def test_spectro_multichannel_audio_file(
     monkeypatch: pytest.MonkeyPatch,
     patch_audio_data: pytest.MonkeyPatch,
