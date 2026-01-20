@@ -317,7 +317,7 @@ class Dataset:
             Analysis for which to generate an AudioDataset object.
         audio_dataset: AudioDataset|None
             If provided, the SpectroDataset will be initialized from this AudioDataset.
-             This can be used to edit the analysis (e.g. adding/removing data)
+            This can be used to edit the analysis (e.g. adding/removing data)
             before running it.
 
         Returns
@@ -326,7 +326,7 @@ class Dataset:
             The SpectroDataset that match the analysis parameters.
             This SpectroDataset can be used, for example, to have a peek at the
             analysis output before running it.
-            If Analysis.is_ltas is True, a LTASDataset is returned.
+            If ``Analysis.is_ltas`` is ``True``, a LTASDataset is returned.
 
         """
         if analysis.fft is None:
