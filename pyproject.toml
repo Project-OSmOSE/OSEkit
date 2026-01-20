@@ -29,6 +29,11 @@ classifiers = [
 [project.scripts]
 OSEkit = "OSmOSE:main"
 
+[project.optional-dependencies]
+mseed = [
+    "obspy",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

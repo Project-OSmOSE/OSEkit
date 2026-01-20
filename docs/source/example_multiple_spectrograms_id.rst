@@ -1,7 +1,7 @@
+.. _example_multiple_spectrograms_id:
+
 Computing multiple spectrograms (ID files)
 ==========================================
-
-.. _example_multiple_spectrograms_id:
 
 In this example, we want to export spectrograms drawn from the sample audio dataset with the following requirements:
 

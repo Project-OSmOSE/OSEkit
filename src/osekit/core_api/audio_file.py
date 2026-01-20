@@ -22,7 +22,7 @@ from osekit.core_api.base_file import BaseFile
 class AudioFile(BaseFile):
     """Audio file associated with timestamps."""
 
-    supported_extensions: typing.ClassVar = [".wav", ".flac", ".mp3"]
+    supported_extensions: typing.ClassVar = [".wav", ".flac", ".mp3", ".mseed"]
 
     def __init__(
         self,

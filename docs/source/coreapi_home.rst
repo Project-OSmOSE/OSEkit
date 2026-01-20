@@ -1,7 +1,7 @@
+.. _coreapi_home:
+
 Core API
 --------
-
-.. _coreapi_home:
 
 For an introduction to how **OSEkit** works, please refer to the :ref:`introduction section <coreapi_introduction>`.
 

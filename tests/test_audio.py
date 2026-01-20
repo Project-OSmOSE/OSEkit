@@ -1903,32 +1903,34 @@ def test_move_audio_file(
     old_path = str(af.path)
     af_name = af.path.name
 
+    sf_back = afm._soundfile
+
     # Moving file without opening it first
     af.move(destination_folder)
 
     assert (destination_folder / af_name).exists()
     assert not Path(old_path).exists()
-    assert afm.opened_file is None
+    assert sf_back._file is None
 
     # Accessing the file at the new path
     ad.get_value()
 
-    assert afm.opened_file is not None
-    assert afm.opened_file.name == str(af.path)
+    assert sf_back._file is not None
+    assert sf_back._file.name == str(af.path)
 
     # Moving it back after opening it in the afm
     # afm should close the file to allow the moving
     af.move(tmp_path)
 
-    assert afm.opened_file is None
+    assert sf_back._file is None
     assert not (destination_folder / af_name).exists()
     assert Path(old_path).exists()
 
     # Reading the file again
     ad.get_value()
 
-    assert afm.opened_file is not None
-    assert afm.opened_file.name == str(af.path)
+    assert sf_back._file is not None
+    assert sf_back._file.name == str(af.path)
 
 
 @pytest.mark.parametrize(

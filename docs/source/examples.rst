@@ -1,7 +1,7 @@
+.. _examples:
+
 🐳 Examples
 ===========
-
-.. _examples:
 
 This section gathers **OSEkit** jupyter notebooks that complete typical tasks.
 

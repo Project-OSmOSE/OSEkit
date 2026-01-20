@@ -14,11 +14,11 @@ import soundfile as sf
 from pandas import Timestamp
 
 from osekit import config
+from osekit.audio_backend.soundfile_backend import SoundFileBackend
 from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
 )
-from osekit.core_api import AudioFileManager
 from osekit.core_api.audio_data import AudioData
 from osekit.core_api.audio_file import AudioFile
 from osekit.utils.audio_utils import generate_sample_audio
@@ -157,13 +157,13 @@ def patch_afm_open(monkeypatch: pytest.MonkeyPatch) -> list[Path]:
     """Mock the AudioFileManager._open method in order to track the file openings."""
 
     opened_files = []
-    open_func = AudioFileManager._open
+    open_func = SoundFileBackend._open
 
-    def mock_open(self: AudioFileManager, path: Path) -> None:
+    def mock_open(self: SoundFileBackend, path: Path) -> None:
         opened_files.append(path)
         open_func(self, path)
 
-    monkeypatch.setattr(AudioFileManager, "_open", mock_open)
+    monkeypatch.setattr(SoundFileBackend, "_open", mock_open)
     return opened_files
 
 
