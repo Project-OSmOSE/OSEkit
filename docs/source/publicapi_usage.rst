@@ -173,8 +173,6 @@ The remaining parameters of the analysis (begin and end **Timestamps**, duration
 
 .. _editing_analysis:
 
-.. _editing_analysis:
-
 Checking/Editing the analysis
 """""""""""""""""""""""""""""
 
