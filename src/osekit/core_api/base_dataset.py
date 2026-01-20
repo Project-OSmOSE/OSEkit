@@ -93,7 +93,7 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
 
         This is used by the public API, for suffixing multiple core_api datasets
         that are created simultaneously and share the same namewith their specific type,
-         e.g. _audio or _spectro.
+        e.g. ``_audio`` or ``_spectro``.
         """
         return self._suffix
 
