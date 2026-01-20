@@ -259,8 +259,8 @@ class BaseData[TItem: BaseItem, TFile: BaseFile](Event, ABC):
         ----------
         nb_subdata: int
             Number of subdata in which to split the data.
-        **kwargs:
-            Keyword arguments that are passed to self.make_split_data().
+        kwargs:
+            Keyword arguments that are passed to ``self.make_split_data()``.
 
         Returns
         -------
