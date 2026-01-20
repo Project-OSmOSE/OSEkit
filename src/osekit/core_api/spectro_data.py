@@ -210,11 +210,14 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         Returns
         -------
         Literal["FS", "SPL_instrument", "SPL_parameter"]:
-            "FS": The values are expressed in dB FS.
-            "SPL_instrument": The values are expressed in dB SPL relative to the
-                linked AudioData instrument P_REF property.
-            "SPL_parameter": The values are expressed in dB SPL relative to the
-                self._db_ref field.
+
+            ``"FS"``: The values are expressed in dB FS.
+
+            ``"SPL_instrument"``: The values are expressed in dB SPL relative to the
+            linked ``AudioData.instrument.P_REF`` property.
+
+            ``"SPL_parameter"``: The values are expressed in dB SPL relative to the
+            ``self._db_ref`` field.
 
         """
         if self._db_ref is not None:
@@ -799,8 +802,9 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             Name of the exported files.
         kwargs
             Keyword arguments that are passed to the cls constructor.
+
             colormap: str
-                Colormap to use for plotting the spectrogram.
+            Colormap to use for plotting the spectrogram.
 
         Returns
         -------
