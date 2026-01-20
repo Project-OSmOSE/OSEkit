@@ -539,7 +539,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         name: str | None = None,
         **kwargs,  # noqa: ANN003
     ) -> AudioData:
-        """Return a, AudioData object from a list of AudioFiles.
+        """Return an AudioData object from a list of AudioFiles.
 
         Parameters
         ----------
@@ -555,13 +555,16 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             Name of the exported files.
         kwargs
             Keyword arguments that are passed to the cls constructor.
+
             sample_rate: int
-                The sample rate of the audio data.
+            The sample rate of the audio data.
+
             instrument: Instrument | None
-                Instrument that might be used to obtain acoustic pressure from
-                the wav audio data.
+            Instrument that might be used to obtain acoustic pressure from
+            the wav audio data.
+
             normalization: Normalization
-                The type of normalization to apply to the audio data.
+            The type of normalization to apply to the audio data.
 
         Returns
         -------
