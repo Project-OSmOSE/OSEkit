@@ -677,14 +677,17 @@ class Dataset:
             New name of the analysis to rename.
 
         """
+        if analysis_name == new_analysis_name:
+            return
         if analysis_name == "original":
             msg = "You can't rename the original dataset."
             raise ValueError(msg)
         if analysis_name not in self.datasets:
             msg = f"Unknown analysis {analysis_name}."
             raise ValueError(msg)
-        if analysis_name == new_analysis_name:
-            return
+        if new_analysis_name in self.datasets:
+            msg = f"{new_analysis_name} already exists."
+            raise ValueError(msg)
 
         keys_to_rename = {}
         for analysis_dataset in self.datasets.values():
@@ -739,8 +742,7 @@ class Dataset:
         """
         if dataset_name not in self.datasets:
             message = f"Dataset '{dataset_name}' not found."
-            self.logger.warning(message)
-            return None
+            raise ValueError(message)
         return self.datasets[dataset_name]["dataset"]
 
     def to_dict(self) -> dict:
