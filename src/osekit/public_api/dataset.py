@@ -1,7 +1,7 @@
 """Main class of the Public API.
 
-The Dataset correspond to a collection of audio,
-spectro and auxilary core_api datasets.
+The ``Dataset`` correspond to a collection of audio,
+spectro and auxilary ``core_api`` datasets.
 It has additionnal metadata that can be exported, e.g. to APLOSE.
 
 """
@@ -42,8 +42,8 @@ if TYPE_CHECKING:
 class Dataset:
     """Main class of the Public API.
 
-    The Dataset correspond to a collection of audio,
-    spectro and auxilary core_api datasets.
+    The ``Dataset`` correspond to a collection of audio,
+    spectro and auxilary ``core_api`` datasets.
     It has additionnal metadata that can be exported, e.g. to APLOSE.
 
     """
@@ -60,7 +60,7 @@ class Dataset:
         instrument: Instrument | None = None,
         first_file_begin: Timestamp | None = None,
     ) -> None:
-        """Initialize a Dataset.
+        """Initialize a ``Dataset``.
 
         Parameters
         ----------
@@ -69,8 +69,8 @@ class Dataset:
         strptime_format: str | None
             The strptime format used in the filenames.
             It should use valid strftime codes (https://strftime.org/).
-            If None, the first audio file of the folder will start
-            at first_file_begin, and each following file will start
+            If ``None``, the first audio file of the folder will start
+            at ``first_file_begin``, and each following file will start
             at the end of the previous one.
         gps_coordinates: str | list | tuple
             GPS coordinates of the location were audio files were recorded.
@@ -79,23 +79,23 @@ class Dataset:
         timezone: str | None
             Timezone in which the audio data will be located.
             If the audio file timestamps are parsed with a tz-aware strptime_format
-            (%z or %Z code), the AudioFiles will be converted from the parsed timezone
-            to the specified timezone.
+            (``%z`` or ``%Z`` code), the ``AudioFiles`` will be converted from
+            the parsed timezone to the specified timezone.
         datasets: dict | None
             Core API datasets that already belong to this dataset.
             Mainly used for deserialization.
         job_builder: Job_builder | None
-            If None, analyses from this Dataset will be run locally.
+            If ``None``, analyses from this ``Dataset`` will be run locally.
             Otherwise, PBS job files will be created and submitted when
             analyses are run.
-            See the osekit.job module for more info.
+            See the ``osekit.job`` module for more info.
         instrument: Instrument | None
             Instrument that might be used to obtain acoustic pressure from
-            the wav audio data.
-            See the osekit.core_api.instrument module for more info.
+            the ``wav`` audio data.
+            See the ``osekit.core_api.instrument`` module for more info.
         first_file_begin: Timestamp | None
             Timestamp of the first audio file being processed.
-            Will be ignored if striptime_format is specified.
+            Will be ignored if ``striptime_format`` is specified.
 
         """
         self.folder = folder
@@ -111,7 +111,7 @@ class Dataset:
 
     @property
     def origin_files(self) -> list[AudioFile] | None:
-        """Return the original audio files from which this Dataset has been built."""
+        """Return the original audio files from which this ``Dataset`` has been built."""
         return (
             None
             if self.origin_dataset is None
@@ -120,21 +120,21 @@ class Dataset:
 
     @property
     def origin_dataset(self) -> AudioDataset:
-        """Return the AudioDataset from which this Dataset has been built."""
+        """Return the ``AudioDataset`` from which this ``Dataset`` has been built."""
         return self.get_dataset("original")
 
     @property
     def analyses(self) -> list[str]:
-        """Return the list of the names of the analyses ran with this Dataset."""
+        """Return the list of the names of the analyses ran with this ``Dataset``."""
         return list({dataset["analysis"] for dataset in self.datasets.values()})
 
     def build(
         self,
     ) -> None:
-        """Build the Dataset.
+        """Build the ``Dataset``.
 
-        Building a dataset moves the original audio files to a specific folder
-        and creates metadata csv used by APLOSE.
+        Building a ``Dataset`` moves the original audio files to a specific folder
+        and creates serialized ``json`` files used by APLOSE.
 
         """
         self._create_logger()
@@ -183,17 +183,17 @@ class Dataset:
         *,
         move_files: bool = False,
     ) -> None:
-        """Build the dataset from the specified files.
+        """Build the ``Dataset`` from the specified files.
 
-        The files will be copied (or moved) to the dataset.folder folder.
+        The files will be copied (or moved) to the ``dataset.folder`` folder.
 
         Parameters
         ----------
         files: Iterable[PathLike|str]
             Files that are included in the dataset.
         move_files: bool
-            If set to True, the files will be moved (rather than copied) in the dataset
-            folder.
+            If set to ``True``, the files will be moved (rather than copied) in
+            the dataset folder.
 
         """
         self._create_logger()
@@ -239,10 +239,10 @@ class Dataset:
         self.logger.addHandler(file_handler)
 
     def reset(self) -> None:
-        """Reset the Dataset.
+        """Reset the ``Dataset``.
 
         Resetting a dataset will move back the original audio files and the content of
-        the "other" folder to the root folder.
+        the ``other`` folder to the root folder.
         WARNING: all other files and folders will be deleted.
         """
         afm.close()
@@ -265,21 +265,21 @@ class Dataset:
         self.logger = None
 
     def get_analysis_audiodataset(self, analysis: Analysis) -> AudioDataset:
-        """Return an AudioDataset created from the analysis parameters.
+        """Return an ``AudioDataset`` created from the analysis parameters.
 
         Parameters
         ----------
         analysis: Analysis
-            Analysis for which to generate an AudioDataset object.
+            ``Analysis`` for which to generate an ``AudioDataset`` object.
 
         Returns
         -------
         AudioDataset:
-            The AudioDataset that match the analysis parameters.
-            This AudioDataset can be used either to have a peek at the
+            The ``AudioDataset`` that match the analysis parameters.
+            This ``AudioDataset`` can be used either to have a peek at the
             analysis output, or to edit the analysis (adding/removing data)
             by editing it and passing it as a parameter to the
-            Dataset.run_analysis() method.
+            ``Dataset.run_analysis()`` method.
 
         """
         self.logger.info("Creating the audio data...")
@@ -309,24 +309,25 @@ class Dataset:
         analysis: Analysis,
         audio_dataset: AudioDataset | None = None,
     ) -> SpectroDataset | LTASDataset:
-        """Return a SpectroDataset (or LTASDataset) created from analysis parameters.
+        """Return a ``SpectroDataset`` (or ``LTASDataset``) created from analysis parameters.
 
         Parameters
         ----------
         analysis: Analysis
-            Analysis for which to generate an AudioDataset object.
+            ``Analysis`` for which to generate an ``AudioDataset`` object.
         audio_dataset: AudioDataset|None
-            If provided, the SpectroDataset will be initialized from this AudioDataset.
+            If provided, the ``SpectroDataset`` will be initialized from
+            this ``AudioDataset``.
             This can be used to edit the analysis (e.g. adding/removing data)
             before running it.
 
         Returns
         -------
         SpectroDataset | LTASDataset:
-            The SpectroDataset that match the analysis parameters.
-            This SpectroDataset can be used, for example, to have a peek at the
+            The ``SpectroDataset`` that match the analysis parameters.
+            This ``SpectroDataset`` can be used, for example, to have a peek at the
             analysis output before running it.
-            If ``Analysis.is_ltas`` is ``True``, a LTASDataset is returned.
+            If ``Analysis.is_ltas is True``, a ``LTASDataset`` is returned.
 
         """
         if analysis.fft is None:
@@ -365,28 +366,28 @@ class Dataset:
     ) -> None:
         """Create a new analysis dataset from the original audio files.
 
-        The analysis parameter sets which type(s) of core_api dataset(s) will be
-        created and added to the Dataset.datasets property, plus which output
-        files will be written to disk (reshaped audio files, npz spectra matrices,
-        png spectrograms...).
+        The analysis parameter sets which type(s) of ``core_api`` dataset(s) will be
+        created and added to the ``Dataset.datasets`` property, plus which output
+        files will be written to disk (reshaped audio files, ``npz`` spectra matrices,
+        ``png`` spectrograms...).
 
         Parameters
         ----------
         analysis: Analysis
-            Analysis to run.
+            ``Analysis`` to run.
             Contains the analysis type and required info.
-            See the public_api.Analysis.Analysis docstring for more info.
+            See the ``public_api.Analysis.Analysis`` docstring for more info.
         audio_dataset: AudioDataset
-            If provided, the analysis will be run on this AudioDataset.
-            Else, an AudioDataset will be created from the analysis parameters.
-            This can be used to edit the analysis AudioDataset (adding, removing,
-            renaming AudioData etc.)
+            If provided, the analysis will be run on this ``AudioDataset``.
+            Else, an ``AudioDataset`` will be created from the analysis parameters.
+            This can be used to edit the analysis ``AudioDataset`` (adding, removing,
+            renaming ``AudioData`` etc.)
         spectro_dataset: SpectroDataset
-            If provided, the spectral analysis will be run on this SpectroDataset.
-            Else, a SpectroDataset will be created from the audio_dataset if provided,
-            or from the analysis parameters.
-            This can be used to edit the analysis SpectroDataset (adding, removing,
-            renaming SpectroData etc.)
+            If provided, the spectral analysis will be run on this ``SpectroDataset``.
+            Else, a ``SpectroDataset`` will be created from the ``audio_dataset``
+            if provided, or from the analysis parameters.
+            This can be used to edit the analysis ``SpectroDataset`` (adding, removing,
+            renaming ``SpectroData`` etc.)
         nb_jobs: int
             Number of jobs to run in parallel.
 
@@ -465,50 +466,53 @@ class Dataset:
         analysis_type: AnalysisType,
         ads: AudioDataset | None = None,
         sds: SpectroDataset | LTASDataset | None = None,
-        link: bool = False,
         subtype: str | None = None,
         matrix_folder_name: str = "matrix",
         spectrogram_folder_name: str = "spectrogram",
         welch_folder_name: str = "welch",
         nb_jobs: int = 1,
         name: str = "OSEkit_analysis",
+        *,
+        link: bool = False,
     ) -> None:
         """Perform an analysis and write the results on disk.
 
         An analysis is defined as a manipulation of the original audio files:
-        reshaping the audio, exporting spectrograms or npz matrices (or a mix of
-        those three) are examples of analyses.
-        The tasks will be distributed to jobs if self.job_builder
-        is not None, else it will be distributed on self.job_builder.nb_jobs jobs.
+        reshaping the audio, exporting ``png`` spectrograms or ``npz`` matrices
+        (or a combination of those three) are examples of analyses.
+        The tasks will be distributed to jobs if ``self.job_builder``
+        is not ``None``, else it will be distributed on
+        ``self.job_builder.nb_jobs`` jobs.
 
         Parameters
         ----------
         spectrogram_folder_name:
-            The name of the folder in which the png spectrograms will be
-            exported (relative to sds.folder)
+            The name of the folder in which the ``png`` spectrograms will be
+            exported (relative to ``sds.folder``)
         matrix_folder_name:
-            The name of the folder in which the npz matrices will be
-            exported (relative to sds.folder)
+            The name of the folder in which the ``npz`` matrices will be
+            exported (relative to ``sds.folder``)
         welch_folder_name:
-            The name of the folder in which the npz welch files will be
-            exported (relative to sds.folder)
+            The name of the folder in which the ``npz`` welch files will be
+            exported (relative to ``sds.folder``)
         sds: SpectroDataset | LTASDataset
-            The SpectroDataset on which the data should be written.
+            The ``SpectroDataset`` on which the data should be written.
         analysis_type : AnalysisType
             Type of the analysis to be performed.
-            AudioDataset and SpectroDataset instances will be
+            ``AudioDataset`` and ``SpectroDataset`` instances will be
             created depending on the flags.
-            See osekit.public_api.analysis.AnalysisType docstring for more information.
+            See ``osekit.public_api.analysis.AnalysisType`` docstring
+            for more information.
         ads: AudioDataset
-            The AudioDataset on which the data should be written.
-        link: bool
-            If set to True, the ads data will be linked to the exported files.
+            The ``AudioDataset`` on which the data should be written.
         subtype: str | None
             The subtype of the audio files as provided by the soundfile module.
         nb_jobs: int
             The number of jobs to run in parallel.
         name: str
             The name of the analysis being performed.
+        link: bool
+            If ``True``, the ads data will be linked to the exported files.
 
         """
         # Import here to avoid circular imports since the script needs to import Dataset
@@ -624,8 +628,8 @@ class Dataset:
         """Delete an analysis dataset.
 
         WARNING: all the analysis output files will be deleted.
-        WARNING: removing linked datasets (e.g. an AudioDataset to which a SpectroDataset is
-        linked) might lead to errors.
+        WARNING: removing linked datasets (e.g. an ``AudioDataset`` to which a
+        ``SpectroDataset`` is linked) might lead to errors.
 
         Parameters
         ----------
@@ -674,9 +678,11 @@ class Dataset:
 
         """
         if analysis_name == "original":
-            raise ValueError("You can't rename the original dataset.")
+            msg = "You can't rename the original dataset."
+            raise ValueError(msg)
         if analysis_name not in self.datasets:
-            raise ValueError(f"Unknown analysis {analysis_name}.")
+            msg = f"Unknown analysis {analysis_name}."
+            raise ValueError(msg)
         if analysis_name == new_analysis_name:
             return
 
@@ -728,7 +734,7 @@ class Dataset:
         Returns
         -------
         type[DatasetChild]:
-            Analysis dataset from the dataset.datasets property.
+            Analysis dataset from the ``dataset.datasets`` property.
 
         """
         if dataset_name not in self.datasets:
@@ -812,17 +818,17 @@ class Dataset:
 
     @classmethod
     def from_json(cls, file: Path) -> Dataset:
-        """Deserialize a Dataset from a JSON file.
+        """Deserialize a ``Dataset`` from a ``json`` file.
 
         Parameters
         ----------
         file: Path
-            Path to the serialized JSON file representing the Dataset.
+            Path to the serialized ``json`` file representing the ``Dataset``.
 
         Returns
         -------
         Dataset
-            The deserialized BaseDataset.
+            The deserialized ``Dataset``.
 
         """
         instance = cls.from_dict(deserialize_json(file))
