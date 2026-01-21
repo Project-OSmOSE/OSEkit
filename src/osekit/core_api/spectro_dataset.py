@@ -1,7 +1,7 @@
-"""SpectroDataset is a collection of SpectroData objects.
+"""``SpectroDataset`` is a collection of ``SpectroData`` objects.
 
-SpectroDataset is a collection of SpectroData, with methods
-that simplify repeated operations on the spectro data.
+``SpectroDataset`` is a collection of ``SpectroData``, with methods
+that simplify repeated operations on the ``SpectroData``.
 """
 
 from __future__ import annotations
@@ -30,10 +30,10 @@ if TYPE_CHECKING:
 
 
 class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
-    """SpectroDataset is a collection of SpectroData objects.
+    """``SpectroDataset`` is a collection of ``SpectroData`` objects.
 
-    SpectroDataset is a collection of SpectroData, with methods
-    that simplify repeated operations on the spectro data.
+    ``SpectroDataset`` is a collection of ``SpectroData``, with methods
+    that simplify repeated operations on the ``SpectroData``.
 
     """
 
@@ -51,7 +51,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         scale: Scale | None = None,
         v_lim: tuple[float, float] | None | object = sentinel_value,
     ) -> None:
-        """Initialize a SpectroDataset."""
+        """Initialize a ``SpectroDataset``."""
         super().__init__(data=data, name=name, suffix=suffix, folder=folder)
         self.scale = scale
 
@@ -73,7 +73,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
     @property
     def colormap(self) -> str:
-        """Return the most frequent colormap of the spectro dataset."""
+        """Return the most frequent ``colormap`` of the spectro dataset."""
         return max(
             {d.colormap for d in self.data},
             key=[d.colormap for d in self.data].count,
@@ -86,7 +86,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
     @property
     def v_lim(self) -> tuple[float, float] | None:
-        """Return the most frequent v_lim of the spectro dataset."""
+        """Return the most frequent ``v_lim`` of the spectro dataset."""
         return max(
             {d.v_lim for d in self.data},
             key=[d.v_lim for d in self.data].count,
@@ -94,12 +94,12 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
     @v_lim.setter
     def v_lim(self, v_lim: tuple[float, float] | None) -> None:
-        """Set the spectrogram color scale limits (in dB).
+        """Set the spectrogram color scale limits (in ``dB``).
 
         Parameters
         ----------
         v_lim: tuple[float, float] | None
-            Limits (in dB) of the colormap used for plotting the spectrogram.
+            Limits (in ``dB``) of the colormap used for plotting the spectrogram.
 
         """
         for d in self.data:
@@ -135,16 +135,16 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         first: int = 0,
         last: int | None = None,
     ) -> None:
-        """Export all spectrogram data as png images in the specified folder.
+        """Export all spectrogram data as ``png`` images in the specified folder.
 
         Parameters
         ----------
         folder: Path
             Folder in which the spectrograms should be saved.
         first: int
-            Index of the first SpectroData object to export.
+            Index of the first ``SpectroData`` object to export.
         last: int|None
-            Index after the last SpectroData object to export.
+            Index after the last ``SpectroData`` object to export.
 
         """
         last = len(self.data) if last is None else last
@@ -165,7 +165,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         *,
         return_onesided: bool = True,
     ) -> tuple[SpectroData, np.ndarray]:
-        """Get the welch value of each SpectroData."""
+        """Get the welch value of each ``SpectroData``."""
         return sd, sd.get_welch(
             nperseg=nperseg,
             detrend=detrend,
@@ -185,24 +185,41 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         *,
         return_onesided: bool = True,
     ) -> DataFrame:
-        """Return the welch values of the SpectroDataset.
+        """Return the welch values of the ``SpectroDataset``.
 
-        Each SpectroData of the SpectroDataset represent one column of the welch values.
+        Each ``SpectroData`` of the ``SpectroDataset`` represent
+        one column of the welch values.
 
         Parameters
         ----------
         first: int
-            Index of the first SpectroData object to include in the welch.
+            Index of the first ``SpectroData`` object to include in the welch.
         last: int
-            Index after the last SpectroData object to include in the welch.
+            Index after the last ``SpectroData`` object to include in the welch.
         nperseg: int|None
-            Length of each segment. Defaults to None, but if window is str or tuple, is set to 256, and if window is array_like, is set to the length of the window.
+            Length of each segment. Defaults to ``None``, but if window is ``str`` or
+            ``tuple``, is set to ``256``, and if window is ``array_like``,
+            is set to the length of the window.
         detrend: str | callable | False
-            Specifies how to detrend each segment. If detrend is a string, it is passed as the type argument to the detrend function. If it is a function, it takes a segment and returns a detrended segment. If detrend is False, no detrending is done. Defaults to ‘constant’.
+            Specifies how to detrend each segment. If detrend is a ``str``,
+            it is passed as the type argument to the detrend function.
+            If it is a ``func``, it takes a segment and returns a detrended segment.
+            If detrend is ``False``, no detrending is done.
+            Defaults to ``'constant'``.
+        return_onesided: bool
+            If ``True``, return a one-sided spectrum for real data.
+            If ``False``, return a two-sided spectrum.
+            Defaults to ``True``, but for complex data,
+            a two-sided spectrum is always returned.
         scaling: Literal["density", "spectrum"]
-            Selects between computing the power spectral density (‘density’) where Pxx has units of V**2/Hz and computing the squared magnitude spectrum (‘spectrum’) where Pxx has units of V**2, if x is measured in V and fs is measured in Hz. Defaults to ‘density’
+            Selects between computing the power spectral density (``'density'``) where
+            ``Pxx`` has units of ``V**2/Hz`` and computing the squared magnitude
+            spectrum (``'spectrum'``) where ``Pxx`` has units of ``V**2``,
+            if ``x`` is measured in ``V`` and ``fs`` is measured in ``Hz``.
+            Defaults to ``'density'``.
         average: Literal["mean", "median"]
-            Method to use when averaging periodograms. Defaults to ‘mean’.
+            Method to use when averaging periodograms.
+            Defaults to ``'mean'``.
         return_onesided: bool
             If True, return a one-sided spectrum for real data. If False return a two-sided spectrum. Defaults to True, but for complex data, a two-sided spectrum is always returned.
 
@@ -240,24 +257,45 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         Parameters
         ----------
         folder: Path
-            The folder in which the NPZ file will be written.
+            The folder in which the ``npz`` file will be written.
         first: int
-            Index of the first SpectroData object to include in the welch.
+            Index of the first ``SpectroData`` object to include in the welch.
         last: int
-            Index after the last SpectroData object to include in the welch.
+            Index after the last ``SpectroData`` object to include in the welch.
         nperseg: int|None
-            Length of each segment. Defaults to None, but if window is str or tuple, is set to 256, and if window is array_like, is set to the length of the window.
+            Length of each segment.
+            Defaults to ``None``, but if window is ``str`` or
+            ``tuple``, is set to ``256``, and if window is ``array_like``,
+            is set to the length of the window.
         detrend: str | callable | False
-            Specifies how to detrend each segment. If detrend is a string, it is passed as the type argument to the detrend function. If it is a function, it takes a segment and returns a detrended segment. If detrend is False, no detrending is done. Defaults to ‘constant’.
-        scaling: Literal["density", "spectrum"]
-            Selects between computing the power spectral density (‘density’) where Pxx has units of V**2/Hz and computing the squared magnitude spectrum (‘spectrum’) where Pxx has units of V**2, if x is measured in V and fs is measured in Hz. Defaults to ‘density’
-        average: Literal["mean", "median"]
-            Method to use when averaging periodograms. Defaults to ‘mean’.
-        pxs: DataFrame | None
-            Welch values as returned by SpectroDataset.get_welch().
-            If provided, the computation will be skipped and the provided pxs values will be written to disk.
+            Specifies how to detrend each segment. If detrend is a ``str``,
+            it is passed as the type argument to the detrend function.
+            If it is a ``func``, it takes a segment and returns a detrended segment.
+            If detrend is ``False``, no detrending is done.
+            Defaults to ``'constant'``.
         return_onesided: bool
-            If True, return a one-sided spectrum for real data. If False return a two-sided spectrum. Defaults to True, but for complex data, a two-sided spectrum is always returned.
+            If ``True``, return a one-sided spectrum for real data.
+            If ``False``, return a two-sided spectrum.
+            Defaults to ``True``, but for complex data,
+            a two-sided spectrum is always returned.
+        scaling: Literal["density", "spectrum"]
+            Selects between computing the power spectral density (``'density'``) where
+            ``Pxx`` has units of ``V**2/Hz`` and computing the squared magnitude
+            spectrum (``'spectrum'``) where ``Pxx`` has units of ``V**2``,
+            if ``x`` is measured in ``V`` and ``fs`` is measured in ``Hz``.
+            Defaults to ``'density'``.
+        average: Literal["mean", "median"]
+            Method to use when averaging periodograms.
+            Defaults to ``'mean'``.
+        pxs: DataFrame | None
+            Welch values as returned by ``SpectroDataset.get_welch()``.
+            If provided, the computation will be skipped and the provided
+            pxs values will be written to disk.
+        return_onesided: bool
+            If ``True``, return a one-sided spectrum for real data.
+            If ``False`` return a two-sided spectrum.
+            Defaults to ``True``, but for complex data,
+            a two-sided spectrum is always returned.
 
         """
         folder.mkdir(parents=True, exist_ok=True, mode=DPDEFAULT)
@@ -304,22 +342,22 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         *,
         link: bool = False,
     ) -> None:
-        """Export both Sx matrices as npz files and spectrograms for each data.
+        """Export both Sx matrices as ``npz`` files and spectrograms for each data.
 
         Parameters
         ----------
         matrix_folder: Path
-            Path to the folder in which the Sx matrices npz files will be saved.
+            Path to the folder in which the Sx matrices ``npz`` files will be saved.
         spectrogram_folder: Path
-            Path to the folder in which the spectrograms png files will be saved.
+            Path to the folder in which the spectrograms ``png`` files will be saved.
         link: bool
-            If True, the SpectroData will be bound to the written npz file.
+            If ``True``, the ``SpectroData`` will be bound to the written ``npz`` file.
             Its items will be replaced with a single item, which will match the whole
-            new SpectroFile.
+            new ``SpectroFile``.
         first: int
-            Index of the first SpectroData object to export.
+            Index of the first ``SpectroData`` object to export.
         last: int|None
-            Index after the last SpectroData object to export.
+            Index after the last ``SpectroData`` object to export.
 
         """
         last = len(self.data) if last is None else last
@@ -338,16 +376,16 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         first: int = 0,
         last: int | None = None,
     ) -> None:
-        """Link the SpectroData of the SpectroDataset to the AudioData of the AudioDataset.
+        """Link the ``SpectroData`` of the ``SpectroDataset`` to the ``AudioData`` of the ``AudioDataset``.
 
         Parameters
         ----------
         audio_dataset: AudioDataset
-            The AudioDataset which data will be linked to the SpectroDataset data.
+            The ``AudioDataset`` which data will be linked to the ``SpectroDataset`` data.
         first: int
-            Index of the first SpectroData and AudioData to link.
+            Index of the first ``SpectroData`` and ``AudioData`` to link.
         last: int
-            Index of the last SpectroData and AudioData to link.
+            Index of the last ``SpectroData`` and ``AudioData`` to link.
 
         """
         if len(audio_dataset.data) != len(self.data):
@@ -369,11 +407,11 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             sd.link_audio_data(ad)
 
     def update_json_audio_data(self, first: int, last: int) -> None:
-        """Update the serialized JSON file with the spectro data from first to last.
+        """Update the serialized ``json`` file with the spectro data from first to last.
 
         The update is done while using the locked decorator.
-        That way, if a SpectroDataset is processed through multiple jobs,
-        each one can update the JSON file safely.
+        That way, if a ``SpectroDataset`` is processed through multiple jobs,
+        each one can update the ``json`` file safely.
 
         Parameters
         ----------
@@ -394,12 +432,12 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         update(first=first, last=last)
 
     def to_dict(self) -> dict:
-        """Serialize a SpectroDataset to a dictionary.
+        """Serialize a ``SpectroDataset`` to a dictionary.
 
         Returns
         -------
         dict:
-            The serialized dictionary representing the SpectroDataset.
+            The serialized dictionary representing the ``SpectroDataset``.
 
         """
         sft_dict = {}
@@ -439,17 +477,17 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
     @classmethod
     def from_dict(cls, dictionary: dict) -> SpectroDataset:
-        """Deserialize a SpectroDataset from a dictionary.
+        """Deserialize a ``SpectroDataset`` from a dictionary.
 
         Parameters
         ----------
         dictionary: dict
-            The serialized dictionary representing the SpectroDataset.
+            The serialized dictionary representing the ``SpectroDataset``.
 
         Returns
         -------
         SpectroDataset
-            The deserialized SpectroDataset.
+            The deserialized ``SpectroDataset``.
 
         """
         sfts = [
@@ -496,7 +534,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         name: str | None = None,
         **kwargs,  # noqa: ANN003
     ) -> Self:
-        """Return a SpectroDataset from a folder containing the spectro files.
+        """Return a ``SpectroDataset`` from a folder containing the spectro files.
 
         Parameters
         ----------
@@ -512,35 +550,37 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             Defaulted to the end of the last file.
         timezone: str | pytz.timezone | None
             The timezone in which the file should be localized.
-            If None, the file begin/end will be tz-naive.
+            If ``None``, the file begin/end will be tz-naive.
             If different from a timezone parsed from the filename, the timestamps'
             timezone will be converted from the parsed timezone
             to the specified timezone.
         mode: Literal["files", "timedelta_total", "timedelta_file"]
             Mode of creation of the dataset data from the original files.
-            "files": one data will be created for each file.
-            "timedelta_total": data objects of duration equal to data_duration will
-            be created from the begin timestamp to the end timestamp.
-            "timedelta_file": data objects of duration equal to data_duration will
-            be created from the beginning of the first file that the begin timestamp is into, until it would resume
-            in a data beginning between two files. Then, the next data object will be created from the
-            beginning of the next original file and so on.
+            ``"files"``: one data will be created for each file.
+            ``"timedelta_total"``: data objects of duration equal to ``data_duration``
+            will be created from the ``begin`` timestamp to the ``end`` timestamp.
+            ``"timedelta_file"``: data objects of duration equal to ``data_duration``
+            will be created from the beginning of the first file that the ``begin``
+            timestamp is into, until it would resume in a data beginning between
+            two files. Then, the next data object will be created from the beginning of
+            the next original file and so on.
         overlap: float
             Overlap percentage between consecutive data.
         data_duration: Timedelta | None
             Duration of the spectro data objects.
-            If mode is set to "files", this parameter has no effect.
-            If provided, spectro data will be evenly distributed between begin and end.
+            If mode is set to ``"files"``, this parameter has no effect.
+            If provided, spectro data will be evenly distributed between
+            ``begin`` and ``end``.
             Else, one data object will cover the whole time period.
         name: str|None
             Name of the dataset.
         kwargs:
-            None.
+            None
 
         Returns
         -------
         Spectrodataset:
-            The audio dataset.
+            The ``SpectroDataset`` instance.
 
         """
         return super().from_folder(
@@ -567,7 +607,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         data_duration: Timedelta | None = None,
         **kwargs,  # noqa: ANN003
     ) -> AudioDataset:
-        """Return an SpectroDataset object from a list of SpectroFiles.
+        """Return an ``SpectroDataset`` object from a list of ``SpectroFiles``.
 
         Parameters
         ----------
@@ -581,19 +621,21 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             Defaulted to the end of the last file.
         mode: Literal["files", "timedelta_total", "timedelta_file"]
             Mode of creation of the dataset data from the original files.
-            "files": one data will be created for each file.
-            "timedelta_total": data objects of duration equal to data_duration will
-            be created from the begin timestamp to the end timestamp.
-            "timedelta_file": data objects of duration equal to data_duration will
-            be created from the beginning of the first file that the begin timestamp is into, until it would resume
-            in a data beginning between two files. Then, the next data object will be created from the
-            beginning of the next original file and so on.
+            ``"files"``: one data will be created for each file.
+            ``"timedelta_total"``: data objects of duration equal to ``data_duration``
+            will be created from the ``begin`` timestamp to the ``end`` timestamp.
+            ``"timedelta_file"``: data objects of duration equal to ``data_duration``
+            will be created from the beginning of the first file that the ``begin``
+            timestamp is into, until it would resume in a data beginning between
+            two files. Then, the next data object will be created from the beginning of
+            the next original file and so on.
         overlap: float
             Overlap percentage between consecutive data.
         data_duration: Timedelta | None
-            Duration of the data objects.
-            If mode is set to "files", this parameter has no effect.
-            If provided, data will be evenly distributed between begin and end.
+            Duration of the spectro data objects.
+            If mode is set to ``"files"``, this parameter has no effect.
+            If provided, spectro data will be evenly distributed between
+            ``begin`` and ``end``.
             Else, one data object will cover the whole time period.
         sample_rate: float | None
             Sample rate of the audio data objects.
@@ -601,16 +643,16 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             Name of the dataset.
         instrument: Instrument | None
             Instrument that might be used to obtain acoustic pressure from
-            the wav audio data.
+            the ``wav`` audio data.
         normalization: Normalization
             The type of normalization to apply to the audio data.
         kwargs:
-            None.
+            None
 
         Returns
         -------
         SpectroDataset:
-        The SpectroDataset object.
+        The ``SpectroDataset`` object.
 
         """
         return super().from_files(
@@ -625,17 +667,17 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
     @classmethod
     def _data_from_dict(cls, dictionary: dict) -> list[SpectroData]:
-        """Return the list of SpectroData objects from the serialized dictionary.
+        """Return the list of ``SpectroData`` objects from the serialized dictionary.
 
         Parameters
         ----------
         dictionary: dict
-            Dictionary representing the serialized SpectroDataset.
+            Dictionary representing the serialized ``SpectroDataset``.
 
         Returns
         -------
         list[SpectroData]:
-            The list of deserialized SpectroData objects.
+            The list of deserialized ``SpectroData`` objects.
 
         """
         return [SpectroData.from_dict(dictionary=data) for data in dictionary.values()]
@@ -649,29 +691,29 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         name: str | None = None,
         **kwargs,  # noqa: ANN003
     ) -> SpectroData:
-        """Return a SpectroData object from a list of SpectroFiles.
+        """Return a ``SpectroData`` object from a list of ``SpectroFiles``.
 
-        The SpectroData starts at the begin and ends at end.
+        The ``SpectroData`` starts at ``begin`` and ends at ``end``.
 
         Parameters
         ----------
         files: list[SpectroFile]
-            List of SpectroFiles contained in the SpectroData.
+            List of ``SpectroFiles`` contained in the ``SpectroData``.
         begin: Timestamp | None
-            Begin of the SpectroData.
-            Defaulted to the begin of the first SpectroFile.
+            Begin of the ``SpectroData``.
+            Defaulted to the begin of the first ``SpectroFile``.
         end: Timestamp | None
-            End of the SpectroData.
-            Defaulted to the end of the last SpectroFile.
+            End of the ``SpectroData``.
+            Defaulted to the end of the last ``SpectroFile``.
         name: str|None
-            Name of the SpectroData.
+            Name of the ``SpectroData``.
         kwargs:
-            Keyword arguments to pass to the SpectroData.from_files() method.
+            Keyword arguments to pass to the ``SpectroData.from_files()`` method.
 
         Returns
         -------
         SpectroData:
-            The SpectroData object.
+            The ``SpectroData`` object.
 
         """
         return SpectroData.from_files(
@@ -692,9 +734,9 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         v_lim: tuple[float, float] | None = sentinel_value,
         scale: Scale | None = None,
     ) -> SpectroDataset:
-        """Return a SpectroDataset object from an AudioDataset object.
+        """Return a ``SpectroDataset`` object from an ``AudioDataset`` object.
 
-        The SpectroData is computed from the AudioData using the given fft.
+        The ``SpectroData`` is computed from the ``AudioData`` using ``fft``.
         """
         return cls(
             data=[
@@ -712,17 +754,17 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
     @classmethod
     def from_json(cls, file: Path) -> SpectroDataset:
-        """Deserialize a SpectroDataset from a JSON file.
+        """Deserialize a ``SpectroDataset`` from a ``json`` file.
 
         Parameters
         ----------
         file: Path
-            Path to the serialized JSON file representing the SpectroDataset.
+            Path to the serialized ``json`` representing the ``SpectroDataset``.
 
         Returns
         -------
         SpectroDataset
-            The deserialized SpectroDataset.
+            The deserialized ``SpectroDataset``.
 
         """
         # I have to redefine this method (without overriding it)
