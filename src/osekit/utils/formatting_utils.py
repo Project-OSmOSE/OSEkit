@@ -9,7 +9,7 @@ def aplose2raven(
     list_audio_begin_time: list[Timestamp],
     audio_durations: list[Timedelta],
 ) -> DataFrame:
-    r"""Format an APLOSE result DataFrame to a Raven result DataFrame.
+    r"""Format an APLOSE result ``DataFrame`` to a Raven result ``DataFrame``.
 
     The list of audio files and durations considered for the Raven campaign should be
     provided to account for the deviations between the advertised and actual
@@ -18,7 +18,7 @@ def aplose2raven(
     Parameters
     ----------
     aplose_result: Dataframe,
-        APLOSE formatted result DataFrame.
+        APLOSE formatted result ``DataFrame``.
 
     list_audio_begin_time: list[Timestamp]
         list of tz-aware timestamps from considered audio files begin time.
@@ -28,7 +28,7 @@ def aplose2raven(
 
     Returns
     -------
-    Raven formatted DataFrame.
+    Raven formatted ``DataFrame``.
 
     Example of use
     --------------
@@ -58,10 +58,11 @@ def aplose2raven(
     """
     # index of the corresponding audio file for each detection
     index_detection = (
-        np.searchsorted(list_audio_begin_time,
-                        aplose_result["start_datetime"],
-                        side="right"
-                        )
+        np.searchsorted(
+            list_audio_begin_time,
+            aplose_result["start_datetime"],
+            side="right",
+        )
         - 1
     )
 
@@ -85,10 +86,11 @@ def aplose2raven(
     # (Required to account for potential gaps/overlaps between files)
     adjustment_values = [Timedelta(0)]
     adjustment_values.extend(
-        [t1 - t2 for (t1, t2) in zip(audio_durations[:-1],
-        audio_begin_timegap, strict=False)
-                              ]
-                             )
+        [
+            t1 - t2
+            for (t1, t2) in zip(audio_durations[:-1], audio_begin_timegap, strict=False)
+        ],
+    )
 
     # Cumulative adjustment in seconds, to realign all detection timestamps consistently
     cumsum_adjust = list(np.cumsum(adjustment_values))
@@ -117,42 +119,50 @@ def aplose2raven(
         else:
             next_audio_begin_time_adjusted += audio_durations[ind]
 
-
-        if audio_begin_time_adjusted < detection_begin_time < next_audio_begin_time_adjusted:
-            correction_duration = (list_audio_begin_time[ind + 1] - detection_begin_time)
-            detection_begin_datetime_adjusted.append(detection_begin_time
-                                                     + cumsum_adjust[ind + 1]
-                                                     + correction_duration
-                                                     )
-            detection_end_datetime_adjusted.append(detection_end_time
-                                                  + cumsum_adjust[ind + 1]
-                                                   )
-        elif audio_begin_time_adjusted < detection_end_time < next_audio_begin_time_adjusted:
+        if (
+            audio_begin_time_adjusted
+            < detection_begin_time
+            < next_audio_begin_time_adjusted
+        ):
+            correction_duration = list_audio_begin_time[ind + 1] - detection_begin_time
             detection_begin_datetime_adjusted.append(
-                detection_begin_time + cumsum_adjust[ind]
+                detection_begin_time + cumsum_adjust[ind + 1] + correction_duration,
             )
-            correction_duration = ((detection_end_time-detection_begin_time) -
-                                   ((audio_begin_time + audio_durations[ind])
-                                    - detection_begin_time))
-            detection_end_datetime_adjusted.append(detection_end_time +
-                                                   cumsum_adjust[ind] -
-                                                   correction_duration)
+            detection_end_datetime_adjusted.append(
+                detection_end_time + cumsum_adjust[ind + 1],
+            )
+        elif (
+            audio_begin_time_adjusted
+            < detection_end_time
+            < next_audio_begin_time_adjusted
+        ):
+            detection_begin_datetime_adjusted.append(
+                detection_begin_time + cumsum_adjust[ind],
+            )
+            correction_duration = (detection_end_time - detection_begin_time) - (
+                (audio_begin_time + audio_durations[ind]) - detection_begin_time
+            )
+            detection_end_datetime_adjusted.append(
+                detection_end_time + cumsum_adjust[ind] - correction_duration
+            )
 
         else:
             # Else, apply normal Raven time correction
             detection_begin_datetime_adjusted.append(
-                detection_begin_time + cumsum_adjust[ind]
+                detection_begin_time + cumsum_adjust[ind],
             )
             detection_end_datetime_adjusted.append(
-                detection_end_time + cumsum_adjust[ind]
+                detection_end_time + cumsum_adjust[ind],
             )
 
     # Convert the datetimes to seconds from the start of first audio (raven format)
     begin_time_adjusted = [
-        (d - list_audio_begin_time[0]).total_seconds() for d in detection_begin_datetime_adjusted
+        (d - list_audio_begin_time[0]).total_seconds()
+        for d in detection_begin_datetime_adjusted
     ]
     end_time_adjusted = [
-        (d - list_audio_begin_time[0]).total_seconds() for d in detection_end_datetime_adjusted
+        (d - list_audio_begin_time[0]).total_seconds()
+        for d in detection_end_datetime_adjusted
     ]
 
     # Build corrected Raven selection table
