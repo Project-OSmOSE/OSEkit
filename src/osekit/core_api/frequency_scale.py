@@ -1,10 +1,10 @@
 """Custom frequency scales for plotting spectrograms.
 
-The custom scale is formed from a list of ScaleParts, which assign a
+The custom scale is formed from a list of ``ScaleParts``, which assign a
 frequency range to a range on the scale.
-Provided ScaleParts should cover the whole scale (from 0% to 100%).
+Provided ``ScaleParts`` should cover the whole scale (from 0% to 100%).
 
-Such Scale can then be passed to the SpectroData.plot() method for the
+Such Scale can then be passed to the ``SpectroData.plot()`` method for the
 spectrogram to be plotted on a custom frequency scale.
 
 """
@@ -25,12 +25,12 @@ class ScalePart:
 
     p_min: float
         Relative position of the bottom of the scale part on the full scale.
-        Must be in the interval [0.0, 1.0], where 0.0 is the bottom of the scale
-        and 1.0 is the top.
+        Must be in the interval ``[0.0, 1.0]``, where ``0.0`` is the bottom of the scale
+        and ``1.0`` is the top.
     p_max: float
         Relative position of the top of the scale part on the full scale.
-        Must be in the interval [0.0, 1.0], where 0.0 is the bottom of the scale
-        and 1.0 is the top.
+        Must be in the interval ``[0.0, 1.0]``, where ``0.0`` is the bottom of the scale
+        and ``1.0`` is the top.
     f_min: float
         Frequency corresponding to the bottom of the scale part.
     f_max: float
@@ -47,7 +47,7 @@ class ScalePart:
     scale_type: Literal["lin", "log"] = "lin"
 
     def __post_init__(self) -> None:
-        """Check if ScalePart values are correct."""
+        """Check if ``ScalePart`` values are correct."""
         err = []
         if not 0.0 <= self.p_min <= 1.0:
             err.append(f"p_min must be between 0 and 1, got {self.p_min}")
@@ -116,21 +116,21 @@ class ScalePart:
 class Scale:
     """Class that represent a custom frequency scale for plotting spectrograms.
 
-    The custom scale is formed from a list of ScaleParts, which assign a
+    The custom scale is formed from a list of ``ScaleParts``, which assign a
     frequency range to a range on the scale.
-    Provided ScaleParts should cover the whole scale (from 0% to 100%).
+    Provided ``ScaleParts`` should cover the whole scale (from ``0%`` to ``100%``).
 
-    Such Scale can then be passed to the SpectroData.plot() method for the
+    Such ``Scale`` can then be passed to the ``SpectroData.plot()`` method for the
     spectrogram to be plotted on a custom frequency scale.
 
     """
 
     def __init__(self, parts: list[ScalePart]) -> None:
-        """Initialize a Scale object."""
+        """Initialize a ``Scale`` object."""
         self.parts = sorted(parts, key=lambda p: (p.p_min, p.p_max))
 
     def map(self, original_scale_length: int) -> list[float]:
-        """Map a given scale to the custom scale defined by its ScaleParts.
+        """Map a given scale to the custom scale defined by its ``ScaleParts``.
 
         Parameters
         ----------
@@ -141,7 +141,7 @@ class Scale:
         -------
         list[float]
             Mapped frequency scale.
-            Each ScalePart from the Scale.parts attribute are concatenated
+            Each ``ScalePart`` from the ``Scale.parts`` attribute are concatenated
             to form the returned scale.
 
         """
@@ -217,12 +217,12 @@ class Scale:
         return sx_matrix[new_scale_indexes]
 
     def to_dict_value(self) -> list[tuple[float, float, float, float, str]]:
-        """Serialize a Scale to a dictionary entry."""
+        """Serialize a ``Scale`` to a dictionary entry."""
         return [part.to_dict_value() for part in self.parts]
 
     @classmethod
     def from_dict_value(cls, dict_value: list[list]) -> Scale:
-        """Deserialize a Scale from a dictionary entry."""
+        """Deserialize a ``Scale`` from a dictionary entry."""
         return cls([ScalePart(*scale) for scale in dict_value])
 
     def __eq__(self, other: any) -> bool:
