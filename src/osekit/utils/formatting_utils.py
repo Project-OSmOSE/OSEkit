@@ -143,7 +143,7 @@ def aplose2raven(
                 (audio_begin_time + audio_durations[ind]) - detection_begin_time
             )
             detection_end_datetime_adjusted.append(
-                detection_end_time + cumsum_adjust[ind] - correction_duration
+                detection_end_time + cumsum_adjust[ind] - correction_duration,
             )
 
         else:
