@@ -388,10 +388,6 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             Defaults to ``None``, but if window is ``str`` or ``tuple``,
             is set to ``256``, and if window is ``array_like``,
             is set to the length of the window.
-                nperseg: int|None
-            Length of each segment. Defaults to ``None``, but if window is ``str`` or
-            ``tuple``, is set to ``256``, and if window is ``array_like``,
-            is set to the length of the window.
         detrend: str | callable | False
             Specifies how to detrend each segment. If detrend is a ``str``,
             it is passed as the type argument to the detrend function.

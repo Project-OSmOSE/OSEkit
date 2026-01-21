@@ -13,8 +13,9 @@ The global logger can be replaced with a context manager:
 """
 
 import logging
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Any, Generator
+from typing import Any
 
 
 class LoggingContext:
