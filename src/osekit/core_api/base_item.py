@@ -81,4 +81,4 @@ class BaseItem[TFile: BaseFile](Event, ABC):
             return False
         if self.begin != other.begin:
             return False
-        return not self.end != other.end
+        return self.end == other.end
