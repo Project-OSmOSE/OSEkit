@@ -1745,7 +1745,7 @@ def test_split_data_normalization_pass(patch_audio_data: None) -> None:
     ad = AudioData()
     ad.mocked_value = [1, 2, 3]
     original_normalization_values = ad.get_normalization_values()
-    assert all(v for v in original_normalization_values.values())
+    assert all(original_normalization_values.values())
 
     assert all(
         part.normalization_values == original_normalization_values
