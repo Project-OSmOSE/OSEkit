@@ -263,8 +263,8 @@ class AudioData(BaseData[AudioItem, AudioFile]):
     def write(
         self,
         folder: Path,
-        subtype: str | None = None,
         *,
+        subtype: str | None = None,
         link: bool = False,
     ) -> None:
         """Write the audio data to file.
