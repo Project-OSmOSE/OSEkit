@@ -12,6 +12,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/Project-OSmOSE/OSEkit/badge.svg?branch=version-bump)](https://coveralls.io/github/Project-OSmOSE/OSEkit?branch=version-bump)
 ![license](https://img.shields.io/github/license/mashape/apistatus.svg)
 ![Open Source Love](https://img.shields.io/badge/open%20source-♡-lightgrey)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18337275.svg)](https://doi.org/10.5281/zenodo.18337275)
 ![Python 3.12](https://img.shields.io/pypi/pyversions/osekit)
 
 
