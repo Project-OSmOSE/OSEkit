@@ -12,7 +12,7 @@ from osekit.utils.timestamp_utils import (
     localize_timestamp,
     reformat_timestamp,
     strftime_osmose_format,
-    strptime_from_text,
+    strptime_from_text, normalize_datetime,
 )
 
 
@@ -30,6 +30,10 @@ from osekit.utils.timestamp_utils import (
         pytest.param("%y%m%d%H%M%S%", False, id="trailing_%_is_wrong_strftime_code"),
         pytest.param("%y%m%d%H%M%S%z", True, id="utc_offset"),
         pytest.param("%y%m%d%H%M%S_%Z", True, id="timezone_name"),
+        pytest.param("%y%-m%d%H%M%S", True, id="datetime_month_decimal_number"),
+        pytest.param("%y-%-m-%d", True, id="date_month_decimal_number"),
+        pytest.param("%y-%-m-%dT%H:%M:%S.%f", True, id="date2_month_decimal_number"),
+        pytest.param("%d-%-m-%Y", True, id="date3_month_decimal_number"),
     ],
 )
 def test_is_datetime_template_valid(datetime_template: str, expected: bool) -> None:
@@ -81,6 +85,11 @@ def test_is_datetime_template_valid(datetime_template: str, expected: bool) -> N
             "%y%m%d%Z",
             r"(\d{2})(0[1-9]|1[0-2])([0-2]\d|3[0-1])((?:[a-zA-Z]+)(?:[-/]\w+)*(?:[\+-]\d+)?)",
             id="timezone_name",
+        ),
+        pytest.param(
+            "%d/%-m%y",
+            r"([0-2]\d|3[0-1])/(1[0-2]|(?:(?<!\d)[1-9](?!\d)))(\d{2})",
+            id="decimal_month_date",
         ),
     ],
 )
@@ -238,6 +247,24 @@ def test_build_regex_from_datetime_template(
             ["%y%m%d%H%M%%S", "%y%m%d%H%M%S_%Z", "%H:%M:%S.%f%Y-%m-%d_%Z"],
             Timestamp("2023-04-05 14:49:06.123000", tz="UTC"),
             id="invalid_then_unmatching_then_matching",
+        ),
+        pytest.param(
+            "10-2-2022",
+            "%d-%-m-%Y",
+            Timestamp("2022-02-10"),
+            id="date_with_decimal_month",
+        ),
+        pytest.param(
+            "10-2-2022",
+            "%-d-%-m-%Y",
+            Timestamp("2022-02-10"),
+            id="date_with_decimal_month_and_day",
+        ),
+        pytest.param(
+            "1-1-2022T2:2:2.000000+0700",
+            "%-d-%-m-%YT%-H:%-M:%-S.%f%z",
+            Timestamp("2022-01-01T02:02:02.000000+0700"),
+            id="date_full_decimal",
         ),
     ],
 )
@@ -480,6 +507,12 @@ def test_strftime_osmose_format(timestamp: Timestamp, expected: str) -> None:
             "2024-10-17T10:14:11.000+0000",
             id="negative_zero_UTC_offset_timezone",
         ),
+        pytest.param(
+            "2024-1-17",
+            "%Y-%-m-%d",
+            "2024-01-17T00:00:00.000+0000",
+            id="decimal_month_date",
+        ),
     ],
 )
 def test_reformat_timestamp(
@@ -679,3 +712,86 @@ def test_last_window_end(
         )
         == expected
     )
+
+
+
+@pytest.mark.parametrize(
+    ("datetime", "template", "expected_keys", "expected_values"),
+    [
+
+        pytest.param(
+                ("5", "3", "2023"),
+                "%-m_%-d_%Y",
+                "%m_%d_%Y",
+                "05_03_2023",
+                id="single_digit_month_day"
+        ),
+        pytest.param(
+                ("05", "03", "2023"),
+                "%-m_%-d_%Y",
+                "%m_%d_%Y",
+                "05_03_2023",
+                id="already_zero_padded"
+        ),
+        pytest.param(
+                ("05", "30", "2023"),
+                "%m_%d_%Y",
+                "%m_%d_%Y",
+                "05_30_2023",
+                id="no_non_zero_padding"
+        ),
+        pytest.param(
+                ("5", "3"),
+                "%-m_%-d",
+                "%m_%d",
+                "05_03",
+                id="only_non_zero_padded"
+        ),
+        pytest.param(
+                ("9", "5", "30"),
+                "%-H_%-M_%S",
+                "%H_%M_%S",
+                "09_05_30",
+                id="hour_minute_second"
+        ),
+        pytest.param(
+                ("2023", "5", "30"),
+                "%Y_%-m_%d",
+                "%Y_%m_%d",
+                "2023_05_30",
+                id="mixed_padded_nonpadded"
+        ),
+        pytest.param(
+                ("1", "2", "3"),
+                "%-m_%-d_%-H",
+                "%m_%d_%H",
+                "01_02_03",
+                id="all_single_digits_need_padding"
+        ),
+        pytest.param(
+                ("12", "25", "2023"),
+                "%-m_%-d_%Y",
+                "%m_%d_%Y",
+                "12_25_2023",
+                id="double_digits_on_nonpadded"
+        ),
+        pytest.param(
+                ("5", "30", "23"),
+                "%-m_%d_%-y",
+                "%m_%d_%y",
+                "05_30_23",
+                id="different_format_specifiers"
+        ),
+        pytest.param(
+                ("1", "1", "1", "1"),
+                "%-m_%-d_%-H_%-M",
+                "%m_%d_%H_%M",
+                "01_01_01_01",
+                id="edge_case_all_ones"
+        ),
+    ],
+)
+def test_normalize_datetime_parametrized(datetime, template, expected_keys, expected_values):
+    result_keys, result_values = normalize_datetime(datetime, template)
+    assert result_keys == expected_keys
+    assert result_values == expected_values

@@ -16,16 +16,42 @@ _REGEX_BUILDER = {
     "%Y": r"([12]\d{3})",
     "%y": r"(\d{2})",
     "%m": r"(0[1-9]|1[0-2])",
+    "%-m": r"(1[0-2]|(?:(?<!\d)[1-9](?!\d)))",
     "%d": r"([0-2]\d|3[0-1])",
+    "%-d": r"(3[01]|[12][0-9]|(?:(?<!\d)[1-9](?!\d)))",
     "%H": r"([0-1]\d|2[0-4])",
+    "%-H": r"(2[0-3]|1[0-9]|(?:(?<!\d)[0-9](?!\d)))",
     "%I": r"(0[1-9]|1[0-2])",
+    "%-I": r"(1[0-2]|(?:(?<!\d)[1-9](?!\d)))",
     "%p": r"(AM|PM)",
     "%M": r"([0-5]\d)",
+    "%-M": r"([0-5][0-9]|(?:(?<!\d)[0-9](?!\d)))",
     "%S": r"([0-5]\d)",
+    "%-S": r"([0-5][0-9]|(?:(?<!\d)[0-9](?!\d)))",
     "%f": r"(\d{1,6})",
     "%Z": r"((?:[a-zA-Z]+)(?:[-/]\w+)*(?:[\+-]\d+)?)",
     "%z": r"([\+-]\d{2}:?\d{2})",
 }
+
+
+def normalize_datetime(datetime: tuple[str], template: str) -> tuple[str, str]:
+    """Convert a datetime and its template with non-zero padded parts."""
+    datetime_parts = [p for p in datetime]
+    template_parts = re.findall(r"%\-?[A-Za-z]", template)
+    dt_dict = dict(zip(template_parts, datetime_parts))
+
+    clean_dt_dict = {}
+    for key, value in dt_dict.items():
+        if "-" in key:
+            new_key = key.replace("-", "")
+            new_value = f"{int(value):02}"
+        else:
+            new_key = key
+            new_value = value
+
+        clean_dt_dict[new_key] = new_value
+
+    return "_".join(clean_dt_dict.keys()), "_".join(clean_dt_dict.values())
 
 
 def localize_timestamp(
@@ -167,13 +193,14 @@ def is_datetime_template_valid(datetime_template: str) -> bool:
 
     """
     strftime_identifiers = [key.lstrip("%") for key in _REGEX_BUILDER]
+    strftime_identifier_lengths = {len(id) for id in strftime_identifiers}
     percent_sign_indexes = (
         index for index, char in enumerate(datetime_template) if char == "%"
     )
     for index in percent_sign_indexes:
         if index == len(datetime_template) - 1:
             return False
-        if datetime_template[index + 1] not in strftime_identifiers:
+        if not any(datetime_template[index + 1: index + 1 + id_len] in strftime_identifiers for id_len in strftime_identifier_lengths):
             return False
     return True
 
@@ -209,10 +236,10 @@ def strptime_from_text(text: str, datetime_template: str | list[str]) -> Timesta
     Timestamp('2016-06-13 14:12:00+0500', tz='UTC+05:00')
 
     """  # noqa: E501
-    if type(datetime_template) is str:
+    if isinstance(datetime_template, str):
         datetime_template = [datetime_template]
 
-    valid_datetime_template = ""
+    valid_datetime_template = None
     regex_result = []
     msg = []
 
@@ -231,16 +258,15 @@ def strptime_from_text(text: str, datetime_template: str | list[str]) -> Timesta
         valid_datetime_template = template
         break
 
-    if not valid_datetime_template:
+    if valid_datetime_template is None:
         raise ValueError("\n".join(msg))
 
-    date_string = "_".join(regex_result[0])
-    cleaned_date_template = "_".join(
-        c + valid_datetime_template[i + 1]
-        for i, c in enumerate(valid_datetime_template)
-        if c == "%"
+    cleaned_date_template, cleaned_date_string = normalize_datetime(
+        datetime=regex_result[0],
+        template=valid_datetime_template
     )
-    return pd.to_datetime(date_string, format=cleaned_date_template)
+
+    return pd.to_datetime(cleaned_date_string, format=cleaned_date_template)
 
 
 def last_window_end(
