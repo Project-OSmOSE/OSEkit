@@ -218,7 +218,7 @@ def test_audio_file_read(
     stop: pd.Timestamp,
     expected: np.ndarray,
 ) -> None:
-    files, request = audio_files
+    files, _ = audio_files
     assert np.allclose(files[0].read(start, stop)[:, 0], expected, atol=1e-7)
 
 
@@ -448,7 +448,7 @@ def test_audio_item(
     stop: pd.Timestamp | None,
     expected: np.ndarray,
 ) -> None:
-    files, request = audio_files
+    files, _ = audio_files
     item = AudioItem(files[0], start, stop)
     assert np.array_equal(item.get_value()[:, 0], expected)
     assert item.shape == item.get_value().shape
@@ -710,7 +710,7 @@ def test_audio_resample_sample_count(
     sample_rate: int,
     expected_nb_samples: int,
 ) -> None:
-    audio_files, request = audio_files
+    audio_files, _ = audio_files
     data = AudioData.from_files(audio_files, begin=start, end=stop)
     data.sample_rate = sample_rate
     assert data.get_value().shape[0] == expected_nb_samples
