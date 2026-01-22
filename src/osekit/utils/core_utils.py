@@ -1,99 +1,19 @@
+"""Core utils used in OSEkit backend."""
+
 from __future__ import annotations
 
-import json
 import os
-import shutil
 import time
 from bisect import bisect
-from importlib.resources import as_file
 from importlib.util import find_spec
-from pathlib import Path
-from typing import NamedTuple
-
-try:
-    import tomllib
-except ModuleNotFoundError:
-    import tomli as tomllib
-
+from typing import TYPE_CHECKING
 
 from osekit.config import global_logging_context as glc
-from osekit.config import print_logger
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 _is_grp_supported = bool(find_spec("grp"))
-
-
-@glc.set_logger(print_logger)
-def display_folder_storage_info(dir_path: str) -> None:
-    """Print a detail of the current disk usage."""
-    usage = shutil.disk_usage(dir_path)
-
-    def str_usage(key: str, value: int) -> str:
-        return f"{f'{key} storage space:':<30}{f'{round(value / (1024**4), 1)} TB':>10}"
-
-    total = str_usage("Total", usage.total)
-    used = str_usage("Used", usage.used)
-    free = str_usage("Available", usage.free)
-    glc.logger.info("%s\n%s\n%s\n%s", total, used, f"{'-' * 30:^40}", free)
-
-
-def read_config(raw_config: str | dict | Path) -> NamedTuple:
-    """Read the given configuration file or dict and converts it to a namedtuple. Only TOML and JSON formats are accepted for now.
-
-    Parameter
-    ---------
-    raw_config : `str` or `Path` or `dict`
-        The path of the configuration file, or the dict object containing the configuration.
-
-    Returns
-    -------
-    config : `namedtuple`
-        The configuration as a `namedtuple` object.
-
-    Raises
-    ------
-    FileNotFoundError
-        Raised if the raw_config is a string that does not correspond to a valid path, or the raw_config file is not in TOML, JSON or YAML formats.
-    TypeError
-        Raised if the raw_config is anything else than a string, a PurePath or a dict.
-    NotImplementedError
-        Raised if the raw_config file is in YAML format
-
-    """
-    match raw_config:
-        case Path():
-            with as_file(raw_config) as input_config:
-                raw_config = input_config
-
-        case str():
-            if not Path(raw_config).is_file:
-                raise FileNotFoundError(
-                    f"The configuration file {raw_config} does not exist.",
-                )
-
-        case dict():
-            pass
-        case _:
-            raise TypeError(
-                "The raw_config must be either of type str, dict or Traversable.",
-            )
-
-    if not isinstance(raw_config, dict):
-        with open(raw_config, "rb") as input_config:
-            match Path(raw_config).suffix:
-                case ".toml":
-                    raw_config = tomllib.load(input_config)
-                case ".json":
-                    raw_config = json.load(input_config)
-                case ".yaml":
-                    raise NotImplementedError(
-                        "YAML support will eventually get there (unfortunately)",
-                    )
-                case _:
-                    raise FileNotFoundError(
-                        f"The provided configuration file extension ({Path(raw_config).suffix} is not a valid extension. Please use .toml or .json files.",
-                    )
-
-    return raw_config
 
 
 def chmod_if_needed(path: Path, mode: int) -> None:
@@ -146,7 +66,7 @@ def change_owner_group(path: Path, owner_group: str) -> None:
     glc.logger.debug("Setting osekit permission to the dataset..")
 
     try:
-        import grp
+        import grp  # noqa: PLC0415
 
         gid = grp.getgrnam(owner_group).gr_gid
     except KeyError as e:
