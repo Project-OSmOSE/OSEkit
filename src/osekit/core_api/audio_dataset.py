@@ -100,12 +100,13 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         for data in self.data:
             data.instrument = instrument
 
+    @staticmethod
     def _write_audio(
-        self,
         data: AudioData,
         folder: Path,
         subtype: str | None = None,
-        link: bool = False,  # noqa: FBT001,FBT002
+        *,
+        link: bool = False,
     ) -> AudioData:
         """Write audio data to disk."""
         data.write(folder=folder, subtype=subtype, link=link)
@@ -114,10 +115,11 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
     def write(
         self,
         folder: Path,
-        subtype: str | None = None,
-        link: bool = False,  # noqa: FBT001,FBT002
         first: int = 0,
         last: int | None = None,
+        *,
+        subtype: str | None = None,
+        link: bool = False,
     ) -> None:
         """Write all data objects in the specified folder.
 
@@ -125,6 +127,10 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         ----------
         folder: Path
             Folder in which to write the data.
+        first: int
+            Index of the first ``AudioData`` object to write.
+        last: int | None
+            Index after the last ``AudioData`` object to write.
         subtype: str | None
             Subtype as provided by the soundfile module.
             Defaulted as the default 16-bit PCM for WAV audio files.
@@ -132,10 +138,6 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             If ``True``, each ``AudioData`` will be bound to the corresponding written file.
             Their items will be replaced with a single item, which will match the whole
             new ``AudioFile``.
-        first: int
-            Index of the first ``AudioData`` object to write.
-        last: int | None
-            Index after the last ``AudioData`` object to write.
 
 
         """
