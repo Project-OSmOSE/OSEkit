@@ -111,7 +111,7 @@ def patch_filehandlers(
         return
 
     def disabled_filewrite(self: any, record: any) -> None:
-        pass
+        """Prevent the logger from actually writing files."""
 
     monkeypatch.setattr(logging.FileHandler, "emit", disabled_filewrite)
 
