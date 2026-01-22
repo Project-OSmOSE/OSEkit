@@ -11,7 +11,7 @@ There are many ways to contribute to this project, including:
 - **Referencing OSEkit** in your articles
 - **Participating** in the `OSEkit GitHub <https://github.com/Project-OSmOSE/OSEkit>`_ by:
     - **Reporting** difficulties you encounter when using the package in new `issues <https://github.com/Project-OSmOSE/OSEkit/issues>`_
-    - **Suggesting** functionalities that you think would be cool to have in **OSEkit** in new `issues <https://github.com/Project-OSmOSE/OSEkit/issues>`_
+    - **Suggesting** functionalities that would come in handy in **OSEkit** in new `issues <https://github.com/Project-OSmOSE/OSEkit/issues>`_
     - **Reviewing** existing `pull requests <https://github.com/Project-OSmOSE/OSEkit/pulls>`_
     - **Authoring** new `pull requests <https://github.com/Project-OSmOSE/OSEkit/pulls>`_ to:
         - **Add** new cool functionalities
