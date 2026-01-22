@@ -134,8 +134,8 @@ def test_base_file_with_no_begin_error() -> None:
     with pytest.raises(
         ValueError,
         match=r"Either begin or strptime_format must be specified",
-    ) as e:
-        assert DummyFile(path=r"foo") == e
+    ):
+        DummyFile(path=r"foo")
 
 
 @pytest.mark.parametrize(
