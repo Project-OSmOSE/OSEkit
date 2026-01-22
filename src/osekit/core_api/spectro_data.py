@@ -522,8 +522,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
     def write(
         self,
         folder: Path,
-        sx: np.ndarray | None = None,
         *,
+        sx: np.ndarray | None = None,
         link: bool = False,
     ) -> None:
         """Write the Spectro data to file.
