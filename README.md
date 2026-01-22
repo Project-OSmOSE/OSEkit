@@ -46,8 +46,27 @@ You request audio by time intervals and the package fetches from the raw files b
 
 All details to start using our toolkit and make the most out of it are given in our [documentation](https://project-osmose.github.io/OSEkit/).
 
-<br>
 
+This software is distributed under the MIT license.
+
+You are free to use, modify, and redistribute it, provided that you retain the copyright
+notices and license text, in accordance with the terms of this license.
+
+See the [LICENSE](./LICENSE) file for the full text.
+
+Some third-party libraries are used in this project. Details of their licenses are
+available in the repository [dependency graph](https://github.com/Project-OSmOSE/OSEkit/network/dependencies).
+
+This software must not be sold.
+
+If you use this software in scientific work, please cite it in accordance with the
+[CITATION](./CITATION.cff) file.
+
+This software is provided for research and teaching purposes. It is provided “as is,”
+without warranty. The authors and the institution cannot be held responsible for any
+damage resulting from its use.
+
+<br>
 
 <div align="center">
 
