@@ -9,6 +9,8 @@ There are many ways to contribute to this project, including:
 
 - **Starring** the `OSEkit GitHub page <https://github.com/Project-OSmOSE/OSEkit>`_ to show the world that you use it
 - **Referencing OSEkit** in your articles
+    (see *"Cite this repository"* in `the About section of the OSEkit GitHub page <https://github.com/Project-OSmOSE/OSEkit>`_)
+
 - **Participating** in the `OSEkit GitHub <https://github.com/Project-OSmOSE/OSEkit>`_ by:
     - **Reporting** difficulties you encounter when using the package in new `issues <https://github.com/Project-OSmOSE/OSEkit/issues>`_
     - **Suggesting** functionalities that would come in handy in **OSEkit** in new `issues <https://github.com/Project-OSmOSE/OSEkit/issues>`_
