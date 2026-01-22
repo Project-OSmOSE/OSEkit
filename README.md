@@ -36,6 +36,7 @@ It is primarily designed for working on underwater passive acoustics data, but c
 - Seamless, timestamp-based access across multiple files (e.g., pick a 3-minutes long segment spannign over two 1.5-minutes long files without manual file picking)
 - Preprocessing utilities: resampling, normalization...
 - Spectral analysis routines: compute power spectra, spectrograms, LTAS...
+- A high-level **API** designed to work with [APLOSE](https://github.com/Project-OSmOSE/APLOSE), our web-base spectrogram annotation tool
 
 **OSEkit** treats your audio dataset as a continuous timeline, whatever the raw files configuration.
 You request audio by time intervals and the package fetches from the raw files behind the scenes: no manual I/O juggling required.
