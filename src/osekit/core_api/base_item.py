@@ -1,4 +1,4 @@
-"""BaseItem: Base class for the Item objects.
+"""``BaseItem``: Base class for the Item objects.
 
 Items correspond to a portion of a File object.
 """
@@ -31,7 +31,7 @@ class BaseItem[TFile: BaseFile](Event, ABC):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
     ) -> None:
-        """Initialize an BaseItem from a File and begin/end timestamps.
+        """Initialize an ``BaseItem`` from a File and begin/end timestamps.
 
         Parameters
         ----------
@@ -60,7 +60,7 @@ class BaseItem[TFile: BaseFile](Event, ABC):
     def get_value(self) -> np.ndarray:
         """Get the values from the File between the begin and stop timestamps.
 
-        If the Item is empty, return a single 0.
+        If the Item is empty, return a single ``0.``.
         """
         return (
             np.zeros(1)
@@ -70,7 +70,7 @@ class BaseItem[TFile: BaseFile](Event, ABC):
 
     @property
     def is_empty(self) -> bool:
-        """Return True if no File is attached to this Item."""
+        """Return ``True`` if no File is attached to this Item."""
         return self.file is None
 
     def __eq__(self, other: BaseItem[TFile]) -> bool:

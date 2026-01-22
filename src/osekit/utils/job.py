@@ -1,28 +1,31 @@
 """The job module provides classes that run analyses on a remote server.
 
-If a JobBuilder is attached to a Public API Dataset, the analyses will be ran through
-jobs, with writting/submitting of PBS files.
+If a ``JobBuilder`` is attached to a Public API ``Dataset``,
+the analyses will run through jobs, with writting/submitting of ``pbs`` files.
 
 """
+
 from __future__ import annotations
 
 import subprocess
 from dataclasses import dataclass
 from enum import Enum
-from pathlib import Path
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from pandas import Timedelta
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class JobStatus(Enum):
     """Status of the job.
 
-    UNPREPARED: The job file hasn't been written yet.
-    PREPARED: The job file has been written but not submitted.
-    QUEUED: The job has been queued.
-    RUNNING: The job is currently running.
-    COMPLETED: The job has been completed.
+    ``UNPREPARED``: The job file hasn't been written yet.
+    ``PREPARED``: The job file has been written but not submitted.
+    ``QUEUED``: The job has been queued.
+    ``RUNNING``: The job is currently running.
+    ``COMPLETED``: The job has been completed.
 
     """
 
@@ -86,7 +89,7 @@ class Job:
         name: str
             Name of the job.
         output_folder: Path | None
-            Folder in which the output files (.out and .err) will be written.
+            Folder in which the output files (``.out`` and ``.err``) will be written.
 
         """
         config = JobConfig() if config is None else config
@@ -157,7 +160,7 @@ class Job:
 
     @property
     def walltime_str(self) -> str:
-        """String representation of the walltime."""
+        """String representation of the ``walltime``."""
         return str(self.walltime).split("days")[-1].strip()
 
     @walltime.setter
@@ -202,11 +205,11 @@ class Job:
     def status(self) -> JobStatus:
         """Status of the job.
 
-        UNPREPARED: The job file hasn't been written yet.
-        PREPARED: The job file has been written but not submitted.
-        QUEUED: The job has been queued.
-        RUNNING: The job is currently running.
-        COMPLETED: The job has been completed.
+        ``UNPREPARED``: The job file hasn't been written yet.
+        ``PREPARED``: The job file has been written but not submitted.
+        ``QUEUED``: The job has been queued.
+        ``RUNNING``: The job is currently running.
+        ``COMPLETED``: The job has been completed.
 
         """
         return self._status
@@ -226,7 +229,7 @@ class Job:
 
     @property
     def output_folder(self) -> Path | None:
-        """Folder in which the output files (.out and .err) will be written."""
+        """Folder in which the output files (``.out`` and ``.err``) will be written."""
         return self._output_folder
 
     @output_folder.setter
@@ -268,12 +271,12 @@ class Job:
         return " ".join(arg_list)
 
     def write_pbs(self, path: Path) -> None:
-        """Write a PBS file matching the job.
+        """Write a ``pbs`` file matching the job.
 
         Parameters
         ----------
         path: Path
-            Path of the PBS file to write.
+            Path of the ``pbs`` file to write.
 
         """
         preamble = "#!/bin/bash"
@@ -308,17 +311,20 @@ class Job:
         self.path = path
         self.progress()
 
-    def submit_pbs(self, dependency: Job | list[Job] | str | list[str] | None = None) -> None:
-        """Submit the PBS file of the job to a PBS queueing system.
+    def submit_pbs(
+        self,
+        dependency: Job | list[Job] | str | list[str] | None = None,
+    ) -> None:
+        """Submit the ``pbs`` file of the job to a ``pbs`` queueing system.
 
         Parameters
         ----------
         dependency: Job | list[Job] | str | None
             Job dependency. Can be:
-            - A Job instance: will wait for that job to complete successfully
-            - A list of Job instances: will wait for all jobs to complete successfully
-            - A string: job ID (e.g., "12345.datarmor") or dependency specification
-            - None: no dependency
+            - A ``Job`` instance: will wait for that job to complete successfully
+            - A ``list[Job]``: will wait for all jobs to complete successfully
+            - A ``str``: job ID (e.g., ``"12345.datarmor"``) or dependency specification
+            - ``None``: no dependency
 
         """
         if self.update_status() is not JobStatus.PREPARED:
@@ -353,19 +359,23 @@ class Job:
     @staticmethod
     def _validate_dependency_type(dependency_type: str) -> None:
         if dependency_type not in Job._VALID_DEPENDENCY_TYPES:
-            raise ValueError(
+            msg = (
                 f"Unsupported dependency type '{dependency_type}'. "
                 f"Expected one of {sorted(Job._VALID_DEPENDENCY_TYPES)}."
             )
+            raise ValueError(msg)
 
     @staticmethod
     def _validate_dependency(dependency: list[str] | list[Job]) -> list[str]:
         job_ids = [dep.job_id if isinstance(dep, Job) else dep for dep in dependency]
+        job_id_length = 7
         for job_id in job_ids:
-            if not job_id.isdigit() or len(job_id)!=7:
-                raise ValueError(
-                    f"Invalid job ID '{job_id}'. Job IDs must be 7 digits long."
+            if not job_id.isdigit() or len(job_id) != job_id_length:
+                msg = (
+                    f"Invalid job ID '{job_id}'. "
+                    f"Job IDs must be {job_id_length} digits long."
                 )
+                raise ValueError(msg)
         return job_ids
 
     @staticmethod
@@ -378,9 +388,9 @@ class Job:
         Parameters
         ----------
         dependency: Job | str
-            Job or job ID to depend on.
+            ``Job`` or job ID to depend on.
         dependency_type: str
-            Type of dependency (afterok, afterany, afternotok, after).
+            Type of dependency (``afterok``, ``afterany``, ``afternotok``, ``after``).
 
         Returns
         -------
@@ -402,12 +412,12 @@ class Job:
         Job._validate_dependency_type(dependency_type)
 
         if unsubmitted_job := next(
-                (
-                        j
-                        for j in dependency
-                        if isinstance(j, Job) and j.status.value < JobStatus.QUEUED.value
-                ),
-                None,
+            (
+                j
+                for j in dependency
+                if isinstance(j, Job) and j.status.value < JobStatus.QUEUED.value
+            ),
+            None,
         ):
             msg = f"Job '{unsubmitted_job.name}' has not been submitted yet."
             raise ValueError(msg)
@@ -481,14 +491,14 @@ class Job:
 
 
 class JobBuilder:
-    """Class that should be attached to a Public API Dataset for working with jobs.
+    """Class that should be attached to a Public API ``Dataset`` for working with jobs.
 
-    If a Dataset has a JobBuilder, it will use it to run analyses through jobs.
+    If a ``Dataset`` has a ``JobBuilder``, it will use it to run analyses through jobs.
 
     """
 
     def __init__(self, config: JobConfig = JobConfig) -> None:
-        """Initialize a JobBuilder instance.
+        """Initialize a ``JobBuilder`` instance.
 
         Parameters
         ----------
@@ -506,7 +516,7 @@ class JobBuilder:
         name: str = "osekit_analysis",
         output_folder: Path | None = None,
     ) -> None:
-        """Create a new job instance.
+        """Create a new ``Job`` instance.
 
         Parameters
         ----------
@@ -517,7 +527,7 @@ class JobBuilder:
         name: str
             Name of the job.
         output_folder: Path | None
-            Folder in which the output files (.out and .err) will be written.
+            Folder in which the output files (``.out`` and ``.err``) will be written.
 
         """
         job = Job(
@@ -531,15 +541,16 @@ class JobBuilder:
         self.jobs.append(job)
 
     def submit_pbs(
-        self, dependencies: dict[str, "Job | list[Job]"] | None = None
+        self,
+        dependencies: dict[str, Job | list[Job]] | None = None,
     ) -> None:
-        """Submit all prepared jobs to the PBS queueing system.
+        """Submit all prepared jobs to the ``pbs`` queueing system.
 
         Parameters
         ----------
         dependencies: dict[str, Job | list[Job]] | None
             Optional dictionary mapping job names to their dependencies.
-            Example: {"job2": job1, "job3": [job1, job2]}
+            Example: ``{"job2": job1, "job3": [job1, job2]}``
 
         """
         for job in self.jobs:

@@ -24,10 +24,10 @@ if TYPE_CHECKING:
 
 
 class AudioData(BaseData[AudioItem, AudioFile]):
-    """AudioData represent audio data scattered through different AudioFiles.
+    """``AudioData`` represent audio data scattered through different ``AudioFiles``.
 
-    The AudioData has a collection of AudioItem.
-    The data is accessed via an AudioItem object per AudioFile.
+    The ``AudioData`` has a collection of ``AudioItem``.
+    The data is accessed via an ``AudioItem`` object per ``AudioFile``.
     """
 
     item_cls = AudioItem
@@ -43,12 +43,12 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         normalization: Normalization = Normalization.RAW,
         normalization_values: dict | None = None,
     ) -> None:
-        """Initialize an AudioData from a list of AudioItems.
+        """Initialize an ``AudioData`` from a list of ``AudioItems``.
 
         Parameters
         ----------
         items: list[AudioItem]
-            List of the AudioItem constituting the AudioData.
+            List of the ``AudioItem`` constituting the ``AudioData``.
         sample_rate: int
             The sample rate of the audio data.
         begin: Timestamp | None
@@ -127,12 +127,12 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
     ) -> AudioItem:
-        """Make an AudioItem for a given AudioFile between begin and end timestamps.
+        """Make an ``AudioItem`` for a given ``AudioFile`` between begin and end timestamps.
 
         Parameters
         ----------
         file: AudioFile
-            AudioFile of the item.
+            ``AudioFile`` of the item.
         begin: Timestamp
             Begin of the item.
         end:
@@ -140,14 +140,14 @@ class AudioData(BaseData[AudioItem, AudioFile]):
 
         Returns
         -------
-        An AudioItem for the AudioFile file, between the begin and end timestamps.
+        An AudioItem for the ``AudioFile`` file, between the begin and end timestamps.
 
         """
         return AudioItem(file=file, begin=begin, end=end)
 
     @classmethod
     def _make_file(cls, path: Path, begin: Timestamp) -> AudioFile:
-        """Make an AudioFile from a path and a begin timestamp.
+        """Make an ``AudioFile`` from a path and a begin timestamp.
 
         Parameters
         ----------
@@ -159,7 +159,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         Returns
         -------
         AudioFile:
-        The audio file.
+        The ``AudioFile`` instance.
 
         """
         return AudioFile(path=path, begin=begin)
@@ -187,7 +187,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         return self.sample_rate == other.sample_rate and super().__eq__(other)
 
     def _set_sample_rate(self, sample_rate: int | None = None) -> None:
-        """Set the AudioFile sample rate.
+        """Set the ``AudioFile`` sample rate.
 
         If the sample_rate is specified, it is set.
         If it is not specified, it is set to the sampling rate of the
@@ -277,9 +277,9 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             Subtype as provided by the soundfile module.
             Defaulted as the default 16-bit PCM for WAV audio files.
         link: bool
-            If True, the AudioData will be bound to the written file.
+            If True, the ``AudioData`` will be bound to the written file.
             Its items will be replaced with a single item, which will match the whole
-            new AudioFile.
+            new ``AudioFile``.
 
         """
         super().create_directories(path=folder)
@@ -293,17 +293,17 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             self.link(folder=folder)
 
     def link(self, folder: Path) -> None:
-        """Link the AudioData to an AudioFile in the folder.
+        """Link the ``AudioData`` to an ``AudioFile`` in the folder.
 
-        The given folder should contain a file named "str(self).wav".
-        Linking is intended for AudioData objects that have already been written.
-        After linking, the AudioData will have a single item with the same
-        properties of the target AudioFile.
+        The given folder should contain a file named ``"str(self).wav"``.
+        Linking is intended for ``AudioData`` objects that have already been written.
+        After linking, the ``AudioData`` will have a single item with the same
+        properties of the target ``AudioFile``.
 
         Parameters
         ----------
         folder: Path
-            Folder in which is located the AudioFile to which the AudioData instance
+            Folder in which is located the ``AudioFile`` to which the ``AudioData`` instance
             should be linked.
 
         """
@@ -340,13 +340,13 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         pass_normalization: bool
             If True, the normalization values (mean, std, peak) will be computed
             from the original audio data and passed to the split chunks.
-            If the original AudioData is very long, this might lead to
+            If the original ``AudioData`` is very long, this might lead to
             a RAM saturation.
 
         Returns
         -------
         list[AudioData]
-            The list of AudioData subdata objects.
+            The list of ``AudioData`` subdata objects.
 
         """
         normalization_values = (
@@ -368,24 +368,24 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         end: Timestamp,
         **kwargs: tuple[float, float, float],
     ) -> AudioData:
-        """Return an AudioData object after an AudioData.split() call.
+        """Return an ``AudioData`` object after an ``AudioData.split()`` call.
 
         Parameters
         ----------
         files: list[AudioFile]
-            The AudioFiles of the original AudioData.
+            The ``AudioFiles`` of the original ``AudioData``.
         begin: Timestamp
-            The begin timestamp of the split AudioData.
+            The begin timestamp of the split ``AudioData``.
         end: Timestamp
-            The end timestamp of the split AudioData.
+            The end timestamp of the split ``AudioData``.
         kwargs:
             normalization_values: tuple[float, float, float]
-                Values used for normalizing the split AudioData.
+                Values used for normalizing the split ``AudioData``.
 
         Returns
         -------
         AudioData:
-            The AudioData instance.
+            The ``AudioData`` instance.
 
         """
         return AudioData.from_files(
@@ -405,24 +405,24 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         *,
         pass_normalization: bool = True,
     ) -> AudioData:
-        """Return a new AudioData from a subpart of this AudioData's data.
+        """Return a new ``AudioData`` from a subpart of this ``AudioData``'s data.
 
         Parameters
         ----------
         start_frame: int
-            First frame included in the new AudioData.
+            First frame included in the new ``AudioData``.
         stop_frame: int
-            First frame after the last frame included in the new AudioData.
+            First frame after the last frame included in the new ``AudioData``.
         pass_normalization: bool
-            If True, the normalization values (mean, std, peak) will be computed
+            If ``True``, the normalization values (mean, std, peak) will be computed
             from the original audio data and passed to the split chunks.
-            If the original AudioData is very long, this might lead to
+            If the original ``AudioData`` is very long, this might lead to
             a RAM saturation.
 
         Returns
         -------
         AudioData
-            A new AudioData which data is included between start_frame and stop_frame.
+            A new ``AudioData`` which data is included between start_frame and stop_frame.
 
         """
         if start_frame < 0:
@@ -458,12 +458,12 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         )
 
     def to_dict(self) -> dict:
-        """Serialize an AudioData to a dictionary.
+        """Serialize an ``AudioData`` to a dictionary.
 
         Returns
         -------
         dict:
-            The serialized dictionary representing the AudioData.
+            The serialized dictionary representing the ``AudioData``.
 
         """
         base_dict = super().to_dict()
@@ -491,17 +491,17 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         end: Timestamp,
         **kwargs,  # noqa: ANN003
     ) -> AudioData:
-        """Deserialize the AudioData-specific parts of a Data dictionary.
+        """Deserialize the ``AudioData``-specific parts of a Data dictionary.
 
-        This method is called within the BaseData.from_dict() method, which
+        This method is called within the ``BaseData.from_dict()`` method, which
         deserializes the base files, begin and end parameters.
 
         Parameters
         ----------
         dictionary: dict
-            The serialized dictionary representing the AudioData.
+            The serialized dictionary representing the ``AudioData``.
         files: list[AudioFile]
-            The list of deserialized AudioFiles.
+            The list of deserialized ``AudioFiles``.
         begin: Timestamp
             The deserialized begin timestamp.
         end: Timestamp
@@ -512,7 +512,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         Returns
         -------
         AudioData
-            The deserialized AudioData.
+            The deserialized ``AudioData``.
 
         """
         instrument = (
@@ -539,12 +539,12 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         name: str | None = None,
         **kwargs,  # noqa: ANN003
     ) -> AudioData:
-        """Return a, AudioData object from a list of AudioFiles.
+        """Return an ``AudioData`` object from a list of ``AudioFiles``.
 
         Parameters
         ----------
         files: list[AudioFile]
-            List of AudioFiles containing the data.
+            List of ``AudioFiles`` containing the data.
         begin: Timestamp | None
             Begin of the data object.
             Defaulted to the begin of the first file.
@@ -555,18 +555,21 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             Name of the exported files.
         kwargs
             Keyword arguments that are passed to the cls constructor.
+
             sample_rate: int
-                The sample rate of the audio data.
+            The sample rate of the audio data.
+
             instrument: Instrument | None
-                Instrument that might be used to obtain acoustic pressure from
-                the wav audio data.
+            Instrument that might be used to obtain acoustic pressure from
+            the wav audio data.
+
             normalization: Normalization
-                The type of normalization to apply to the audio data.
+            The type of normalization to apply to the audio data.
 
         Returns
         -------
         Self:
-        The AudioData object.
+        The ``AudioData`` object.
 
         """
         return super().from_files(

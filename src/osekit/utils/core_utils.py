@@ -1,99 +1,19 @@
+"""Core utils used in OSEkit backend."""
+
 from __future__ import annotations
 
-import json
 import os
-import shutil
 import time
 from bisect import bisect
-from importlib.resources import as_file
 from importlib.util import find_spec
-from pathlib import Path
-from typing import NamedTuple
-
-try:
-    import tomllib
-except ModuleNotFoundError:
-    import tomli as tomllib
-
+from typing import TYPE_CHECKING
 
 from osekit.config import global_logging_context as glc
-from osekit.config import print_logger
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 _is_grp_supported = bool(find_spec("grp"))
-
-
-@glc.set_logger(print_logger)
-def display_folder_storage_info(dir_path: str) -> None:
-    """Print a detail of the current disk usage."""
-    usage = shutil.disk_usage(dir_path)
-
-    def str_usage(key: str, value: int) -> str:
-        return f"{f'{key} storage space:':<30}{f'{round(value / (1024**4), 1)} TB':>10}"
-
-    total = str_usage("Total", usage.total)
-    used = str_usage("Used", usage.used)
-    free = str_usage("Available", usage.free)
-    glc.logger.info("%s\n%s\n%s\n%s", total, used, f"{'-' * 30:^40}", free)
-
-
-def read_config(raw_config: str | dict | Path) -> NamedTuple:
-    """Read the given configuration file or dict and converts it to a namedtuple. Only TOML and JSON formats are accepted for now.
-
-    Parameter
-    ---------
-    raw_config : `str` or `Path` or `dict`
-        The path of the configuration file, or the dict object containing the configuration.
-
-    Returns
-    -------
-    config : `namedtuple`
-        The configuration as a `namedtuple` object.
-
-    Raises
-    ------
-    FileNotFoundError
-        Raised if the raw_config is a string that does not correspond to a valid path, or the raw_config file is not in TOML, JSON or YAML formats.
-    TypeError
-        Raised if the raw_config is anything else than a string, a PurePath or a dict.
-    NotImplementedError
-        Raised if the raw_config file is in YAML format
-
-    """
-    match raw_config:
-        case Path():
-            with as_file(raw_config) as input_config:
-                raw_config = input_config
-
-        case str():
-            if not Path(raw_config).is_file:
-                raise FileNotFoundError(
-                    f"The configuration file {raw_config} does not exist.",
-                )
-
-        case dict():
-            pass
-        case _:
-            raise TypeError(
-                "The raw_config must be either of type str, dict or Traversable.",
-            )
-
-    if not isinstance(raw_config, dict):
-        with open(raw_config, "rb") as input_config:
-            match Path(raw_config).suffix:
-                case ".toml":
-                    raw_config = tomllib.load(input_config)
-                case ".json":
-                    raw_config = json.load(input_config)
-                case ".yaml":
-                    raise NotImplementedError(
-                        "YAML support will eventually get there (unfortunately)",
-                    )
-                case _:
-                    raise FileNotFoundError(
-                        f"The provided configuration file extension ({Path(raw_config).suffix} is not a valid extension. Please use .toml or .json files.",
-                    )
-
-    return raw_config
 
 
 def chmod_if_needed(path: Path, mode: int) -> None:
@@ -104,7 +24,7 @@ def chmod_if_needed(path: Path, mode: int) -> None:
     path: Path
         Path of the file or folder in which permission should be changed.
     mode: int
-        Permissions as used by os.chmod()
+        Permissions as used by ``os.chmod()``
 
     """
     if not _is_grp_supported:
@@ -133,7 +53,7 @@ def change_owner_group(path: Path, owner_group: str) -> None:
     owner_group:
         The new owner group.
         A warning is logged if the grp module is supported (Unix os) but
-        no owner_group is passed.
+        no ``owner_group`` is passed.
 
     """
     if not _is_grp_supported:
@@ -146,7 +66,7 @@ def change_owner_group(path: Path, owner_group: str) -> None:
     glc.logger.debug("Setting osekit permission to the dataset..")
 
     try:
-        import grp
+        import grp  # noqa: PLC0415
 
         gid = grp.getgrnam(owner_group).gr_gid
     except KeyError as e:
@@ -181,7 +101,7 @@ def file_indexes_per_batch(
 
     The number of files is equitably distributed among batches.
     Example: 10 files distributed among 4 batches will lead to
-    batches indexes [(0,3), (3,6), (6,8), (8,10)].
+    batches indexes ``[(0,3), (3,6), (6,8), (8,10)]``.
 
     Parameters
     ----------
@@ -220,7 +140,7 @@ def nb_files_per_batch(total_nb_files: int, nb_batches: int) -> list[int]:
 
     The number of files is equitably distributed among batches.
     Example: 10 files distributed among 4 batches will lead to
-    batches containing [3,3,2,2] files.
+    batches containing ``[3,3,2,2]`` files.
 
     Parameters
     ----------
@@ -254,8 +174,8 @@ def locked(lock_file: Path) -> callable:
     If the specified lock file already exists, the decorated function execution will be
     suspended until the lock file is removed.
 
-    The lock_file will then be created before the execution of the decorated function,
-    and removed once the function has been executed.
+    The ``lock_file`` will then be created before the execution of the
+    decorated function, and removed once the function has been executed.
 
     Parameters
     ----------

@@ -1,4 +1,4 @@
-"""BaseData: Base class for the Data objects.
+"""``BaseData``: Base class for the Data objects.
 
 Data corresponds to data scattered through different Files.
 The data is accessed via an Item object per File.
@@ -46,18 +46,18 @@ class BaseData[TItem: BaseItem, TFile: BaseFile](Event, ABC):
         end: Timestamp | None = None,
         name: str | None = None,
     ) -> None:
-        """Initialize a BaseData from a list of Items.
+        """Initialize a ``BaseData`` from a list of Items.
 
         Parameters
         ----------
         items: list[BaseItem] | None
             List of the Items constituting the Data.
-            Defaulted to an empty item ranging from begin to end.
+            Defaulted to an empty item ranging from ``begin`` to ``end``.
         begin: Timestamp | None
-            Only effective if items is None.
+            Only effective if ``items is None``.
             Set the begin of the empty data.
         end: Timestamp | None
-            Only effective if items is None.
+            Only effective if ``items is None``.
             Set the end of the empty data.
         name: str | None
             Name of the exported files.
@@ -152,22 +152,22 @@ class BaseData[TItem: BaseItem, TFile: BaseFile](Event, ABC):
         Linking is intended for data objects that have been written to disk.
         After linking the data to the written file, it will have a single
         item that matches the File properties.
-        The folder should contain a file named as str(self).extension.
+        The folder should contain a file named as ``str(self).extension``.
 
         Parameters
         ----------
         folder: Path
-            Folder in which is the file to which the BaseData instance should be linked.
+            Folder in which is the file to which the ``BaseData`` instance should be linked.
 
         """
 
     def to_dict(self) -> dict:
-        """Serialize a BaseData to a dictionary.
+        """Serialize a ``BaseData`` to a dictionary.
 
         Returns
         -------
         dict:
-            The serialized dictionary representing the BaseData.
+            The serialized dictionary representing the ``BaseData``.
 
         """
         return {
@@ -182,19 +182,19 @@ class BaseData[TItem: BaseItem, TFile: BaseFile](Event, ABC):
         dictionary: dict,
         **kwargs,  # noqa: ANN003
     ) -> BaseData:
-        """Deserialize a BaseData from a dictionary.
+        """Deserialize a ``BaseData`` from a dictionary.
 
         Parameters
         ----------
         dictionary: dict
-            The serialized dictionary representing the BaseData.
+            The serialized dictionary representing the ``BaseData``.
         kwargs:
-            Keyword arguments that are passed to cls.from_base_dict().
+            Keyword arguments that are passed to ``cls.from_base_dict()``.
 
         Returns
         -------
         AudioData
-            The deserialized BaseData.
+            The deserialized ``BaseData``.
 
         """
         files = [
@@ -259,13 +259,13 @@ class BaseData[TItem: BaseItem, TFile: BaseFile](Event, ABC):
         ----------
         nb_subdata: int
             Number of subdata in which to split the data.
-        **kwargs:
-            Keyword arguments that are passed to self.make_split_data().
+        kwargs:
+            Keyword arguments that are passed to ``self.make_split_data()``.
 
         Returns
         -------
         list[BaseData]
-            The list of BaseData subdata objects.
+            The list of ``BaseData`` subdata objects.
 
         """
         dates = date_range(self.begin, self.end, periods=nb_subdata + 1)
@@ -283,7 +283,7 @@ class BaseData[TItem: BaseItem, TFile: BaseFile](Event, ABC):
         end: Timestamp,
         **kwargs,  # noqa: ANN003
     ) -> Self:
-        """Make a Data object after a .split() call."""
+        """Make a Data object after a ``.split()`` call."""
         ...
 
     @classmethod
@@ -330,7 +330,7 @@ class BaseData[TItem: BaseItem, TFile: BaseFile](Event, ABC):
     ) -> list[TItem]:
         """Return a list of Items from a list of Files and timestamps.
 
-        The Items range from begin to end.
+        The Items range from ``begin`` to ``end``.
         They point to the files that match their timestamps.
 
         Parameters

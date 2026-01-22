@@ -1,4 +1,4 @@
-"""BaseDataset: Base class for the Dataset objects.
+"""``BaseDataset``: Base class for the Dataset objects.
 
 Datasets are collections of Data, with methods
 that simplify repeated operations on the data.
@@ -93,7 +93,7 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
 
         This is used by the public API, for suffixing multiple core_api datasets
         that are created simultaneously and share the same namewith their specific type,
-         e.g. _audio or _spectro.
+        e.g. ``_audio`` or ``_spectro``.
         """
         return self._suffix
 
@@ -103,7 +103,7 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
 
     @property
     def has_default_name(self) -> bool:
-        """Return True if the dataset has a default name, False if it has a given name."""
+        """Return ``True`` if the dataset has a default name, ``False`` if it has a given name."""
         return self._has_default_name
 
     @property
@@ -185,7 +185,7 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
         folder: Path
             Folder in which to write the data.
         link: bool
-            If True, the Data will be bound to the written file.
+            If ``True``, the Data will be bound to the written file.
             Its items will be replaced with a single item, which will match the whole
             new File.
         first: int
@@ -202,12 +202,12 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
             data.write(folder=folder, link=link)
 
     def to_dict(self) -> dict:
-        """Serialize a BaseDataset to a dictionary.
+        """Serialize a ``BaseDataset`` to a dictionary.
 
         Returns
         -------
         dict:
-            The serialized dictionary representing the BaseDataset.
+            The serialized dictionary representing the ``BaseDataset``.
 
         """
         return {
@@ -219,17 +219,17 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
 
     @classmethod
     def from_dict(cls, dictionary: dict) -> Self:
-        """Deserialize a BaseDataset from a dictionary.
+        """Deserialize a ``BaseDataset`` from a dictionary.
 
         Parameters
         ----------
         dictionary: dict
-            The serialized dictionary representing the BaseData.
+            The serialized dictionary representing the ``BaseDataset``.
 
         Returns
         -------
         AudioData
-            The deserialized BaseDataset.
+            The deserialized ``BaseDataset``.
 
         """
         data = cls._data_from_dict(dictionary["data"])
@@ -241,26 +241,26 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
     @classmethod
     @abstractmethod
     def _data_from_dict(cls, dictionary: dict) -> list[TData]:
-        """Return a list of Data from a serialized dictionnary."""
+        """Return a list of Data from a serialized dictionary."""
         ...
 
     def write_json(self, folder: Path) -> None:
-        """Write a serialized BaseDataset to a JSON file."""
+        """Write a serialized ``BaseDataset`` to a JSON file."""
         serialize_json(folder / f"{self.name}.json", self.to_dict())
 
     @classmethod
     def from_json(cls, file: Path) -> Self:
-        """Deserialize a BaseDataset from a JSON file.
+        """Deserialize a ``BaseDataset`` from a JSON file.
 
         Parameters
         ----------
         file: Path
-            Path to the serialized JSON file representing the BaseDataset.
+            Path to the serialized JSON file representing the ``BaseDataset``.
 
         Returns
         -------
         BaseDataset
-            The deserialized BaseDataset.
+            The deserialized ``BaseDataset``.
 
         """
         return cls.from_dict(deserialize_json(file))
@@ -277,7 +277,7 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
         name: str | None = None,
         **kwargs,  # noqa: ANN003
     ) -> Self:
-        """Return a base Dataset object from a list of Files.
+        """Return a Dataset object from a list of Files.
 
         Parameters
         ----------
@@ -291,25 +291,25 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
             Defaulted to the end of the last file.
         mode: Literal["files", "timedelta_total", "timedelta_file"]
             Mode of creation of the dataset data from the original files.
-            "files": one data will be created for each file.
-            "timedelta_total": data objects of duration equal to data_duration will
-            be created from the begin timestamp to the end timestamp.
-            "timedelta_file": data objects of duration equal to data_duration will
-            be created from the beginning of the first file that the begin timestamp
+            ``"files"``: one data will be created for each file.
+            ``"timedelta_total"``: data objects of duration equal to ``data_duration`` will
+            be created from the ``begin`` timestamp to the ``end`` timestamp.
+            ``"timedelta_file"``: data objects of duration equal to ``data_duration`` will
+            be created from the beginning of the first file that the ``begin`` timestamp
             is into, until it would resume in a data beginning between two files.
             Then, the next data object will be created from the
             beginning of the next original file and so on.
         data_duration: Timedelta | None
             Duration of the data objects.
-            If mode is set to "files", this parameter has no effect.
-            If provided, data will be evenly distributed between begin and end.
+            If mode is set to ``"files"``, this parameter has no effect.
+            If provided, data will be evenly distributed between ``begin`` and ``end``.
             Else, one data object will cover the whole time period.
         overlap: float
             Overlap percentage between consecutive data.
         name: str|None
             Name of the dataset.
         kwargs:
-            Keyword arguments to pass to the cls.data_from_files() method.
+            Keyword arguments to pass to the ``cls.data_from_files()`` method.
 
         Returns
         -------
@@ -494,7 +494,7 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
             The strptime format used in the filenames.
             It should use valid strftime codes (https://strftime.org/).
             If None, the first audio file of the folder will start
-            at first_file_begin, and each following file will start
+            at ``first_file_begin``, and each following file will start
             at the end of the previous one.
         begin: Timestamp | None
             The begin of the dataset.
@@ -510,27 +510,27 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
             to the specified timezone.
         mode: Literal["files", "timedelta_total", "timedelta_file"]
             Mode of creation of the dataset data from the original files.
-            "files": one data will be created for each file.
-            "timedelta_total": data objects of duration equal to data_duration will
-            be created from the begin timestamp to the end timestamp.
-            "timedelta_file": data objects of duration equal to data_duration will
-            be created from the beginning of the first file that the begin timestamp is into, until it would resume
+            ``"files"``: one data will be created for each file.
+            ``"timedelta_total"``: data objects of duration equal to ``data_duration`` will
+            be created from the ``begin`` timestamp to the ``end`` timestamp.
+            ``"timedelta_file"``: data objects of duration equal to ``data_duration`` will
+            be created from the beginning of the first file that the ``begin`` timestamp is into, until it would resume
             in a data beginning between two files. Then, the next data object will be created from the
             beginning of the next original file and so on.
         overlap: float
             Overlap percentage between consecutive data.
         data_duration: Timedelta | None
             Duration of the data objects.
-            If mode is set to "files", this parameter has no effect.
-            If provided, data will be evenly distributed between begin and end.
+            If mode is set to ``"files"``, this parameter has no effect.
+            If provided, data will be evenly distributed between ``begin`` and ``end``.
             Else, one object will cover the whole time period.
         first_file_begin: Timestamp | None
             Timestamp of the first audio file being processed.
-            Will be ignored if striptime_format is specified.
+            Will be ignored if ``striptime_format`` is specified.
         name: str|None
             Name of the dataset.
         kwargs:
-            Keyword arguments to pass to the cls.from_files() method.
+            Keyword arguments to pass to the ``cls.from_files()`` method.
 
         Returns
         -------

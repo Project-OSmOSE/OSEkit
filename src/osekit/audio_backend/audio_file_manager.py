@@ -80,7 +80,7 @@ class AudioFileManager:
         Returns
         -------
         np.ndarray:
-            A (channel * frames) array containing the audio data.
+            A ``(channel * frames)`` array containing the audio data.
 
         """
         _, frames, _ = self.info(path)
