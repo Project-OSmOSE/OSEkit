@@ -244,13 +244,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
     @v_lim.setter
     def v_lim(self, v_lim: tuple[float, float] | None) -> None:
-        v_lim = (
-            v_lim
-            if v_lim is not None
-            else (-120.0, 0.0)
-            if self.db_type == "FS"
-            else (0.0, 170.0)
-        )
+        if v_lim is None:
+            v_lim = (-120.0, 0.0) if self.db_type == "FS" else (0.0, 170.0)
         self._v_lim = v_lim
 
     def get_value(self) -> np.ndarray:
