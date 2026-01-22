@@ -1,7 +1,7 @@
 """Logging context used by util functions, settable using a context manager.
 
 The OSmOSE package instantiates a LoggingContext on initialize in the config module.
-Utils functions log records to this LoggingContext.logger logger.
+Utils functions log records to this ``LoggingContext.logger`` logger.
 The global logger can be replaced with a context manager:
 
 >>> from osekit.config import global_logging_context as glc
@@ -13,7 +13,9 @@ The global logger can be replaced with a context manager:
 """
 
 import logging
+from collections.abc import Generator
 from contextlib import contextmanager
+from typing import Any
 
 
 class LoggingContext:
@@ -27,14 +29,15 @@ class LoggingContext:
         self.logger = logging.root
 
     @contextmanager
-    def set_logger(self, logger: logging.Logger) -> None:
+    def set_logger(self, logger: logging.Logger) -> Generator[None, Any, None]:
         """Set a contextmanager for calling utils functions with a specific logger.
 
         Parameters
         ----------
         logger: logging.Logger
             The logger to use in the function called within this context.
-            The function called should import the LoggingContext instance used for creating the context.
+            The function called should import the ``LoggingContext``
+            instance used for creating the context.
 
         Examples
         --------

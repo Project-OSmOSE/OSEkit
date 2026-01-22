@@ -64,7 +64,7 @@ class Event:
         return f"{self.begin} - {self.end}"
 
     def overlaps(self, other: type[Event] | Event) -> bool:
-        """Return True if the other event shares time with the current event.
+        """Return ``True`` if the other event shares time with the current event.
 
         Parameters
         ----------
@@ -74,7 +74,8 @@ class Event:
         Returns
         -------
         bool:
-            True if the two events are overlapping, False otherwise.
+            ``True`` if the two events are overlapping, ``False`` otherwise.
+            Two events overlapping means that any timestamp is shared between the two events.
 
         Examples
         --------
@@ -90,13 +91,13 @@ class Event:
     def get_overlapping_events(self, events: list[TEvent]) -> list[TEvent]:
         """Return a list of events that overlap with the current event.
 
-        The events input list must be sorted by begin and end Timestamps.
+        The events input list must be sorted by ``begin`` and ``end`` Timestamps.
 
         Parameters
         ----------
         events: list[TEvent]
             The list of events to be filtered by overlap.
-            It must be sorted by begin and end Timestamps.
+            It must be sorted by ``begin`` and ``end`` Timestamps.
 
         Returns
         -------
@@ -179,11 +180,11 @@ class Event:
         cls,
         events: list[TEvent],
         filling_class: type[TEvent],
-        **kwargs: any,
+        **kwargs,  # noqa: ANN003
     ) -> list[TEvent]:
         """Return a list with empty events added in the gaps between items.
 
-        The created empty events are instantiated from the class filling_class.
+        The created empty events are instantiated from the ``filling_class`` class.
 
         Parameters
         ----------
@@ -191,7 +192,7 @@ class Event:
             List of events to fill.
         filling_class: type[TEvent]
             The class used for instantiating empty events in the gaps.
-        kwargs: any
+        kwargs
             Additional parameters to pass to the filling instance constructor.
 
         Returns

@@ -1,4 +1,4 @@
-"""SpectroItem corresponding to a portion of a SpectroFile object."""
+"""``SpectroItem`` corresponding to a portion of a ``SpectroFile`` object."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class SpectroItem(BaseItem[SpectroFile]):
-    """SpectroItem corresponding to a portion of a SpectroFile object."""
+    """``SpectroItem`` corresponding to a portion of a ``SpectroFile`` object."""
 
     def __init__(
         self,
@@ -23,25 +23,25 @@ class SpectroItem(BaseItem[SpectroFile]):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
     ) -> None:
-        """Initialize a SpectroItem from a SpectroFile and begin/end timestamps.
+        """Initialize a ``SpectroItem`` from a ``SpectroFile`` and timestamps.
 
         Parameters
         ----------
         file: osekit.data.spectro_file.SpectroFile
-            The SpectroFile in which this Item belongs.
+            The ``SpectroFile`` in which this Item belongs.
         begin: pandas.Timestamp (optional)
             The timestamp at which this item begins.
-            It is defaulted to the SpectroFile begin.
+            It is defaulted to the ``SpectroFile`` begin.
         end: pandas.Timestamp (optional)
             The timestamp at which this item ends.
-            It is defaulted to the SpectroFile end.
+            It is defaulted to the ``SpectroFile`` end.
 
         """
         super().__init__(file=file, begin=begin, end=end)
 
     @property
     def time_resolution(self) -> Timedelta:
-        """Time resolution of the associated SpectroFile."""
+        """Time resolution of the associated ``SpectroFile``."""
         return None if self.is_empty else self.file.time_resolution
 
     def get_value(
@@ -49,9 +49,9 @@ class SpectroItem(BaseItem[SpectroFile]):
         fft: ShortTimeFFT | None = None,
         sx_dtype: type[complex] = complex,
     ) -> np.ndarray:
-        """Get the values from the File between the begin and stop timestamps.
+        """Get the values from the File between the ``begin`` and ``stop`` timestamps.
 
-        If the Item is empty, return a single 0.
+        If the Item is empty, return a single ``0.``.
         """
         if not self.is_empty:
             sx = self.file.read(start=self.begin, stop=self.end)

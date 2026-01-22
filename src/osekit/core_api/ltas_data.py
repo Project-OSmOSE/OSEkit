@@ -1,18 +1,18 @@
 """LTASData is a special form of SpectroData.
 
-The Sx values from a LTASData object are computed recursively.
+The Sx values from a ``LTASData`` object are computed recursively.
 LTAS should be preferred in cases where the audio is really long.
-In that case, the corresponding number of time bins (scipy.ShortTimeFTT.p_nums) is
+In that case, the corresponding number of time bins (``scipy.ShortTimeFTT.p_nums``) is
 too long for the whole Sx matrix to be computed once.
 
 The LTAS are rather computed recursively. If the number of temporal bins is higher
-than a target p_num value, the audio is split in p_num parts.
+than a target ``p_num`` value, the audio is split in ``p_num`` parts.
 A separate sft is computed on each of these bits and averaged so that the end Sx
-presents p_num temporal windows.
+presents ``p_num`` temporal windows.
 
 This averaging is performed recursively:
-if the audio data is such that after a first split, the p_nums for each part
-still is higher than p_num, the parts are further split
+if the audio data is such that after a first split, the ``p_nums`` for each part
+still is higher than ``p_num``, the parts are further split
 and each part is replaced with an average of the stft performed within it.
 
 """
@@ -35,21 +35,21 @@ if TYPE_CHECKING:
 
 
 class LTASData(SpectroData):
-    """LTASData is a special form of SpectroData.
+    """``LTASData`` is a special form of ``SpectroData``.
 
-    The Sx values from a LTASData object are computed recursively.
+    The Sx values from a ``LTASData`` object are computed recursively.
     LTAS should be preferred in cases where the audio is really long.
-    In that case, the corresponding number of time bins (scipy.ShortTimeFTT.p_nums) is
+    In that case, the corresponding number of time bins (``scipy.ShortTimeFTT.p_nums``) is
     too long for the whole Sx matrix to be computed once.
 
     The LTAS are rather computed recursively. If the number of temporal bins is higher
-    than a target p_num value, the audio is split in p_num parts.
+    than a target ``p_num`` value, the audio is split in ``p_num`` parts.
     A separate sft is computed on each of these bits and averaged so that the end Sx
-    presents p_num temporal windows.
+    presents ``p_num`` temporal windows.
 
     This averaging is performed recursively:
-    if the audio data is such that after a first split, the p_nums for each part
-    still is higher than p_num, the parts are further split
+    if the audio data is such that after a first split, the ``p_nums`` for each part
+    still is higher than ``p_num``, the parts are further split
     and each part is replaced with an average of the stft performed within it.
 
     """
@@ -66,38 +66,38 @@ class LTASData(SpectroData):
         colormap: str | None = None,
         nb_time_bins: int = 1920,
     ) -> None:
-        """Initialize a SpectroData from a list of SpectroItems.
+        """Initialize a ``LTASData`` from a list of ``SpectroItems``.
 
         Parameters
         ----------
         items: list[SpectroItem]
-            List of the SpectroItem constituting the SpectroData.
+            List of the ``SpectroItem`` constituting the ``LTASData``.
         audio_data: AudioData
             The audio data from which to compute the spectrogram.
         begin: Timestamp | None
-            Only effective if items is None.
+            Only effective if items is ``None``.
             Set the begin of the empty data.
         end: Timestamp | None
-            Only effective if items is None.
+            Only effective if items is ``None``.
             Set the end of the empty data.
         fft: ShortTimeFFT
             The short time FFT used for computing the spectrogram.
         db_ref: float | None
             Reference value for computing sx values in decibel.
         v_lim: tuple[float,float]
-            Lower and upper limits (in dB) of the colormap used
+            Lower and upper limits (in ``dB``) of the colormap used
             for plotting the spectrogram.
         colormap: str
             Colormap to use for plotting the spectrogram.
         nb_time_bins: int
             The maximum number of time bins of the LTAS.
             Given the audio data and the fft parameters,
-            if the resulting spectrogram has a number of windows p_num
-            <= nb_time_bins, the LTAS is computed like a classic spectrogram.
-            Otherwise, the audio data is split in nb_time_bins equal-duration
+            if the resulting spectrogram has a number of windows ``p_num
+            <= nb_time_bins``, the LTAS is computed like a classic spectrogram.
+            Otherwise, the audio data is split in ``nb_time_bins`` equal-duration
             audio data, and each bin of the LTAS consist in an average of the
             fft values obtained on each of these bins. The audio is split recursively
-            until p_num <= nb_time_bins.
+            until ``p_num <= nb_time_bins``.
 
         """
         ltas_fft = LTASData.get_ltas_fft(fft)
@@ -119,7 +119,9 @@ class LTASData(SpectroData):
         """Shape of the LTAS data."""
         return self.fft.f_pts, self.nb_time_bins
 
-    def mean_value_part(self, sub_spectro: LTASData) -> np.ndarray:
+    @staticmethod
+    def mean_value_part(sub_spectro: LTASData) -> np.ndarray:
+        """Return the mean value of the LTAS part."""
         return np.mean(
             sub_spectro.get_value(depth=1),
             axis=1,
@@ -157,7 +159,7 @@ class LTASData(SpectroData):
         spectro_data: SpectroData,
         nb_time_bins: int,
     ) -> LTASData:
-        """Initialize a LTASData from a SpectroData.
+        """Initialize a ``LTASData`` from a ``SpectroData``.
 
         Parameters
         ----------
@@ -170,7 +172,7 @@ class LTASData(SpectroData):
         Returns
         -------
         LTASData:
-            The LTASData instance.
+            The ``LTASData`` instance.
 
         """
         items = spectro_data.items
@@ -202,27 +204,27 @@ class LTASData(SpectroData):
         colormap: str | None = None,
         nb_time_bins: int = 1920,
     ) -> SpectroData:
-        """Instantiate a SpectroData object from a AudioData object.
+        """Instantiate a ``SpectroData`` object from an ``AudioData`` object.
 
         Parameters
         ----------
         data: AudioData
-            Audio data from which the SpectroData should be computed.
+            Audio data from which the ``SpectroData`` should be computed.
         fft: ShortTimeFFT
-            The ShortTimeFFT used to compute the spectrogram.
+            The ``ShortTimeFFT`` used to compute the spectrogram.
         v_lim: tuple[float,float]
-            Lower and upper limits (in dB) of the colormap used
+            Lower and upper limits (in ``dB``) of the colormap used
             for plotting the spectrogram.
         colormap: str
             Colormap to use for plotting the spectrogram.
         nb_time_bins: int
             The maximum number of windows over which the audio will be split to perform
-            Defaulted to 1920.
+            Defaulted to ``1920``.
 
         Returns
         -------
         LTASData:
-            The SpectroData object.
+            The ``SpectroData`` object.
 
         """
         return cls(
@@ -236,23 +238,23 @@ class LTASData(SpectroData):
         )
 
     def to_dict(self, *, embed_sft: bool = True) -> dict:
-        """Serialize a LTASData to a dictionary.
+        """Serialize a ``LTASData`` to a dictionary.
 
         Parameters
         ----------
         embed_sft: bool
-            If True, the SFT parameters will be included in the dictionary.
-            In a case where multiple SpectroData that share a same SFT are serialized,
+            If ``True``, the SFT parameters will be included in the dictionary.
+            In a case where multiple ``LTASData`` that share a same SFT are serialized,
             SFT parameters shouldn't be included in the dictionary, as the window
             values might lead to large redundant data.
             Rather, the SFT parameters should be serialized in
-            a SpectroDataset dictionary so that it can be only stored once
-            for all SpectroData instances.
+            a ``LTASDataset`` dictionary so that it can be only stored once
+            for all ``LTASData`` instances.
 
         Returns
         -------
         dict:
-            The serialized dictionary representing the LTASData.
+            The serialized dictionary representing the ``LTASData``.
 
         """
         return super().to_dict(embed_sft=embed_sft) | {
@@ -261,20 +263,20 @@ class LTASData(SpectroData):
 
     @classmethod
     def from_dict(cls, dictionary: dict, sft: ShortTimeFFT | None = None) -> LTASData:
-        """Deserialize a LTASDataset from a dictionary.
+        """Deserialize a ``LTASData`` from a dictionary.
 
         Parameters
         ----------
         dictionary: dict
-            The serialized dictionary representing the AudioData.
+            The serialized dictionary representing the ``LTASData``.
         sft: ShortTimeFFT | None
-            The ShortTimeFFT used to compute the spectrogram.
+            The ``ShortTimeFFT`` used to compute the spectrogram.
             If not provided, the SFT parameters must be included in the dictionary.
 
         Returns
         -------
         LTASDataset
-            The deserialized LTASDataset.
+            The deserialized ``LTASData``.
 
         """
         return cls.from_spectro_data(
@@ -284,9 +286,9 @@ class LTASData(SpectroData):
 
     @staticmethod
     def get_ltas_fft(fft: ShortTimeFFT) -> ShortTimeFFT:
-        """Return a ShortTimeFFT object optimized for computing LTAS.
+        """Return a ``ShortTimeFFT`` object optimized for computing LTAS.
 
-        The overlap of the fft is forced set to 0, as the value of consecutive
+        The overlap of the fft is forced set to ``0.``, as the value of consecutive
         windows will in the end be averaged.
 
         Parameters

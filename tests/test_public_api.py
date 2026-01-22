@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import itertools
 from copy import deepcopy
 from pathlib import Path
 
@@ -14,9 +15,11 @@ from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
 )
 from osekit.core_api.audio_dataset import AudioDataset
+from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.event import Event
 from osekit.core_api.frequency_scale import Scale, ScalePart
 from osekit.core_api.instrument import Instrument
+from osekit.core_api.ltas_dataset import LTASDataset
 from osekit.core_api.spectro_dataset import SpectroDataset
 from osekit.public_api.analysis import Analysis, AnalysisType
 from osekit.public_api.dataset import Dataset
@@ -1063,6 +1066,21 @@ def test_get_analysis_spectrodataset(
     assert analysis_sds.fft is analysis.fft
     assert analysis_sds.scale is analysis.scale
 
+    # FFT should be provided for spectral analyses
+    with pytest.raises(
+        ValueError,
+        match=r"FFT parameter should be given if spectra outputs are selected.",
+    ):
+        dataset.get_analysis_spectrodataset(
+            analysis=Analysis(
+                analysis_type=AnalysisType.SPECTROGRAM,
+            ),
+        )
+
+    # analysis.nb_ltas_time_bins implies LTASDataset output
+    analysis.nb_ltas_time_bins = 200
+    assert type(dataset.get_analysis_spectrodataset(analysis=analysis)) is LTASDataset
+
 
 def test_edit_analysis_before_run(
     tmp_path: pytest.fixture,
@@ -1328,7 +1346,10 @@ def test_existing_analysis_warning(
     )
 
 
-def test_rename_analysis(tmp_path: pytest.fixture, audio_files: pytest.fixture) -> None:
+def test_rename_analysis(
+    tmp_path: Path,
+    audio_files: tuple[list[AudioFile], None],
+) -> None:
     dataset = Dataset(
         folder=tmp_path,
         strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
@@ -1350,33 +1371,58 @@ def test_rename_analysis(tmp_path: pytest.fixture, audio_files: pytest.fixture) 
 
     dataset.run_analysis(analysis)
 
-    dataset.rename_analysis(first_name, second_name)
+    names = (first_name, second_name, second_name)  # Tests both renaming and same name
+    for old, new in itertools.pairwise(names):
+        dataset.rename_analysis(old, new)
 
-    assert first_name not in dataset.analyses
-    assert second_name in dataset.analyses
+        if old != new:
+            assert old not in dataset.analyses
+            assert not (dataset.folder / "processed" / old).exists()
+            assert not (dataset.folder / "data" / "audio" / f"{old}_audio").exists()
+            assert not dataset.get_datasets_by_analysis(old)
 
-    assert len(dataset.get_datasets_by_analysis(second_name)) == 2
-    assert not dataset.get_datasets_by_analysis(first_name)
+        assert new in dataset.analyses
+        assert len(dataset.get_datasets_by_analysis(new)) == 2
 
-    assert not (dataset.folder / "data" / "audio" / f"{first_name}_audio").exists()
-    assert (dataset.folder / "data" / "audio" / f"{second_name}_audio").exists()
+        assert (dataset.folder / "data" / "audio" / f"{new}_audio").exists()
+        assert (dataset.folder / "processed" / new).exists()
 
-    assert not (dataset.folder / "processed" / first_name).exists()
-    assert (dataset.folder / "processed" / second_name).exists()
-
-    assert (
-        len(
-            Dataset.from_json(dataset.folder / "dataset.json").get_datasets_by_analysis(
-                second_name,
-            ),
+        assert (
+            len(
+                Dataset.from_json(
+                    dataset.folder / "dataset.json",
+                ).get_datasets_by_analysis(
+                    new,
+                ),
+            )
+            == 2
         )
-        == 2
-    )
+
+    # RENAME ERRORS
+    with pytest.raises(ValueError, match=r"You can't rename the original dataset."):
+        dataset.rename_analysis(
+            analysis_name="original",
+            new_analysis_name="vampire",
+        )
+
+    with pytest.raises(ValueError, match=r"original already exists."):
+        dataset.rename_analysis(
+            analysis_name=second_name,
+            new_analysis_name="original",
+        )
+
+    unknown_name = "white"
+    target_name = "sky"
+    with pytest.raises(ValueError, match=f"Unknown analysis {unknown_name}."):
+        dataset.rename_analysis(
+            analysis_name=unknown_name,
+            new_analysis_name=target_name,
+        )
 
 
 def test_spectro_analysis_with_existing_ads(
-    tmp_path: pytest.fixture,
-    audio_files: pytest.fixture,
+    tmp_path: Path,
+    audio_files: tuple[list[AudioFile], None],
 ) -> None:
     dataset = Dataset(
         folder=tmp_path,
@@ -1412,6 +1458,9 @@ def test_spectro_analysis_with_existing_ads(
         assert ad.begin == sd.begin
         assert ad.end == sd.end
         assert sd.audio_data == ad
+
+    with pytest.raises(ValueError, match=r"Dataset 'clafoutis' not found."):
+        dataset.get_dataset("clafoutis")
 
 
 def test_build_specific_files(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

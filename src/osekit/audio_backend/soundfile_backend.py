@@ -62,7 +62,7 @@ class SoundFileBackend:
         Returns
         -------
         np.ndarray:
-            A (channel * frames) array containing the audio data.
+            A ``(channel * frames)`` array containing the audio data.
 
         """
         self._switch(path)
