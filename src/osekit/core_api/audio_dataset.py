@@ -105,7 +105,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         data: AudioData,
         folder: Path,
         subtype: str | None = None,
-        link: bool = False,  # noqa: FBT001, FBT002,
+        link: bool = False,  # noqa: FBT001,FBT002
     ) -> AudioData:
         """Write audio data to disk."""
         data.write(folder=folder, subtype=subtype, link=link)
@@ -115,7 +115,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         self,
         folder: Path,
         subtype: str | None = None,
-        link: bool = False,  # noqa: FBT001, FBT002,
+        link: bool = False,  # noqa: FBT001,FBT002
         first: int = 0,
         last: int | None = None,
     ) -> None:
