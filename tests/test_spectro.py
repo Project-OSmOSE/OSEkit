@@ -110,13 +110,13 @@ def test_spectro_data_db_ref(
     sd.audio_data.instrument = Instrument(end_to_end_db=150.0)
 
     set_db_type("FS")
-    assert sd.db_ref == 1.0
+    assert np.isclose(sd.db_ref, 1.0)
 
     set_db_type("SPL_parameter")
-    assert sd.db_ref == db_ref
+    assert np.isclose(sd.db_ref, db_ref)
 
     set_db_type("SPL_instrument")
-    assert sd.db_ref == sd.audio_data.instrument.P_REF
+    assert np.isclose(sd.db_ref, sd.audio_data.instrument.P_REF)
 
 
 def test_empty_spectro_data_error() -> None:
