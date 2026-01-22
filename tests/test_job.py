@@ -155,9 +155,9 @@ def test_submit_pbs_without_write_raises() -> None:
     job = Job(Path("script.py"))
     with pytest.raises(
         ValueError,
-        match="Job should be written before being submitted.",
-    ) as e:
-        assert job.submit_pbs() == e
+        match=r"Job should be written before being submitted.",
+    ):
+        job.submit_pbs()
 
 
 def test_submit_pbs_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -207,8 +207,8 @@ def test_submit_pbs_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     )
 
     assert job.status == JobStatus.PREPARED
-    with pytest.raises(RuntimeError, match="Submission failed with exit code 5") as e:
-        assert job.submit_pbs() == e
+    with pytest.raises(RuntimeError, match="Submission failed with exit code 5"):
+        job.submit_pbs()
 
     assert job.status == JobStatus.PREPARED
 
@@ -273,8 +273,8 @@ def test_update_info_unknown_job_raises(monkeypatch: pytest.MonkeyPatch) -> None
         lambda *args, **kwargs: Dummy(),
     )
 
-    with pytest.raises(ValueError, match="Unknown Job Id 17112014") as e:
-        assert job.update_info() == e
+    with pytest.raises(ValueError, match="Unknown Job Id 17112014"):
+        job.update_info()
 
 
 def test_update_info_error(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -291,8 +291,8 @@ def test_update_info_error(monkeypatch: pytest.MonkeyPatch) -> None:
         lambda *args, **kwargs: Dummy(),
     )
 
-    with pytest.raises(RuntimeError, match="Qstat failed with exit code 5") as e:
-        assert job.update_info() == e
+    with pytest.raises(RuntimeError, match="Qstat failed with exit code 5"):
+        job.update_info()
 
 
 def test_update_status(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -565,7 +565,6 @@ def test_job_builder_submit(monkeypatch: pytest.MonkeyPatch) -> None:
         ),
     ],
 )
-
 def test_build_dependency_string_with_string_input(
     dependency: list[str] | list[Job],
     ids: list[str] | None,
@@ -623,7 +622,6 @@ def test_submit_pbs_adds_dependency_flag(tmp_path, monkeypatch):
         ),
     ],
 )
-
 def test_build_dependency_string_with_different_types(
     dependency_type: str,
     expected: type[Exception],

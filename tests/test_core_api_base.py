@@ -29,7 +29,7 @@ class DummyItem(BaseItem[DummyFile]): ...
 class DummyData(BaseData[DummyItem, DummyFile]):
     item_cls = DummyItem
 
-    def write(self, folder: Path, link: bool = False) -> None: ...
+    def write(self, folder: Path, *, link: bool = False) -> None: ...
 
     def link(self, folder: Path) -> None: ...
 
@@ -503,21 +503,18 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
     with pytest.raises(
         ValueError,
         match=rf"Overlap \({overlap}\) must be between 0 and 1.",
-    ) as e:
-        assert (
-            DummyDataset.from_files(
-                [
-                    DummyFile(
-                        path=Path("foo"),
-                        begin=Timestamp("2016-02-05 00:00:00"),
-                        end=Timestamp("2016-02-05 00:10:00"),
-                    ),
-                ],
-                data_duration=Timedelta(seconds=1),
-                mode=mode,
-                overlap=overlap,
-            )
-            == e
+    ):
+        DummyDataset.from_files(
+            [
+                DummyFile(
+                    path=Path("foo"),
+                    begin=Timestamp("2016-02-05 00:00:00"),
+                    end=Timestamp("2016-02-05 00:10:00"),
+                ),
+            ],
+            data_duration=Timedelta(seconds=1),
+            mode=mode,
+            overlap=overlap,
         )
 
 
