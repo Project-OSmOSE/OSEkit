@@ -616,7 +616,6 @@ class Dataset:
             return
         if type(dataset) is SpectroDataset | LTASDataset:
             self._sort_spectro_dataset(dataset)
-            return
 
     def _sort_audio_dataset(self, dataset: AudioDataset) -> None:
         dataset.move_files(self._get_audio_dataset_subpath(dataset))
