@@ -44,15 +44,15 @@ validate the code that is being pushed to our repo.
 This action validates code that:
     * Has been formatted thanks to the `Ruff formatter <https://docs.astral.sh/ruff/formatter/>`_
     * Passes all the tests of the `pytest test suite <https://github.com/Project-OSmOSE/OSEkit/tree/main/tests>`_
-    * Does not reduces the `coverage <https://coveralls.io/github/Project-OSmOSE/OSEkit?branch=version-bump>`_
+    * Does not reduce the `coverage <https://coveralls.io/github/Project-OSmOSE/OSEkit?branch=version-bump>`_
       of the pytest test suite
 
-Here what you should do if any of these three checks isn't validated anymore:
+Here's what you should do if any of these three checks isn't validated anymore:
 
 😔 The code isn't properly formatted according to Ruff
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Simply run the ruff formatter in your repo (e.g. with ``uv`` if you used it to sync the project):
+Run the ruff formatter in your repo (e.g. with ``uv`` if you used it to sync the project):
 
 .. code-block:: bash
 
