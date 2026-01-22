@@ -29,29 +29,29 @@ def write_analysis(
     *,
     link: bool = True,
 ) -> None:
-    """Write SpectroDataset output files to disk.
+    """Write ``SpectroDataset`` output files to disk.
 
     Parameters
     ----------
     analysis_type: AnalysisType
-        Flags that should be use to specify the type of analysis to run.
-        See Analysis.AnalysisType docstring for more info.
+        Flags that should be used to specify the type of analysis to run.
+        See ``Analysis.AnalysisType`` docstring for more info.
     subtype: str | None
         Subtype of the written audio files as provided by the soundfile module.
-        Defaulted as the default 16-bit PCM for WAV audio files.
-        This parameter has no effect if Analysis.AUDIO is not in analysis.
+        Defaulted as the default ``16-bit PCM`` for ``wav`` audio files.
+        This parameter has no effect if ``Analysis.AUDIO`` is not in analysis.
     ads: AudioDataset
-        The AudioDataset of which the data should be written.
+        The ``AudioDataset`` of which the data should be written.
     sds: SpectroDataset
-        The SpectroDataset of which the data should be written.
+        The ``SpectroDataset`` of which the data should be written.
     matrix_folder_path: Path
-        The folder in which the matrix npz files should be written.
+        The folder in which the matrix ``npz`` files should be written.
     spectrogram_folder_path: Path
-        The folder in which the spectrogram png files should be written.
+        The folder in which the spectrogram ``png`` files should be written.
     welch_folder_path: Path
-        The folder in which the welch npz files should be written.
+        The folder in which the welch ``npz`` files should be written.
     link: bool
-        If set to True, the ads data will be linked to the exported files.
+        If ``True``, the ads data will be linked to the exported files.
     first: int
         Index of the first data object to write.
     last: int|None

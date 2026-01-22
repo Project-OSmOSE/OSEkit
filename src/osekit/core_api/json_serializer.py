@@ -81,7 +81,7 @@ def set_path_reference(
     root_path: Path,
     reference: Literal["absolute", "relative"],
 ) -> None:
-    """Recursively set all paths either relative to root_path or absolute from root_path.
+    """Recursively set all paths either relative to ``root_path`` or absolute from ``root_path``.
 
     Parameters
     ----------
@@ -93,8 +93,10 @@ def set_path_reference(
          - From which the absolute files should be expressed as relative
     reference: Literal["absolute","relative"]
         How to express the file names:
-        "absolute": Files names are converted from relative to root_path to absolute.
-        "relative": Files names are converted from absolute to relative to root_path.
+        ``"absolute"``: Files names are converted from
+        relative to ``root_path`` to absolute.
+        ``"relative"``: Files names are converted from
+        absolute to relative to ``root_path``.
 
     """
     for key, value in serialized_dict.items():

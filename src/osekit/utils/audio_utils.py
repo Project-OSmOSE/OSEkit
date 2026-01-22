@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import enum
-from typing import Literal
+from typing import Literal, Self
 
 import numpy as np
 import soxr
@@ -31,14 +31,14 @@ def generate_sample_audio(
     nb_samples: int
         Number of samples per audio data.
     series_type: Literal["repeat", "increase", "sine"] (Optional)
-        "repeat": audio data contain the same linear values from min to max.
-        "increase": audio data contain increasing values from min to max.
-        "sine": audio data contain sine waves with a peak value of max_value.
-        "noise": audio data contains white gaussian noise (mean=0., std=1.)
-        Defaults to "repeat".
+        ``"repeat"``: audio data contain the same linear values from ``min`` to ``max``.
+        ``"increase"``: audio data contain increasing values from ``min`` to ``max``.
+        ``"sine"``: audio data contain sine waves with a peak value of ``max_value``.
+        ``"noise"``: audio data contains white gaussian noise (``mean=0.``, ``std=1.``)
+        Defaults to ``"repeat"``.
     sine_frequency: float (Optional)
         Frequency of the sine waves.
-        Has no effect if series_type is not "sine".
+        Has no effect if ``series_type != "sine"``.
     min_value: float
         Minimum value of the audio data.
     max_value: float
@@ -90,7 +90,7 @@ def generate_sample_audio(
 
 
 def resample(data: np.ndarray, origin_sr: float, target_sr: float) -> np.ndarray:
-    """Resample the audio data using soxr.
+    """Resample the audio data using ``soxr``.
 
     Parameters
     ----------
@@ -121,19 +121,22 @@ def normalize_raw(values: np.ndarray) -> np.ndarray:
 
 
 def normalize_dc_reject(
-    values: np.ndarray, dc_component: float | None = None
+    values: np.ndarray,
+    dc_component: float | None = None,
 ) -> np.ndarray:
     """Reject the DC component of the audio data."""
     return values - (values.mean() if dc_component is None else dc_component)
 
 
 def normalize_peak(values: np.ndarray, peak: float | None = None) -> np.ndarray:
-    """Return values normalized so that the peak value is 1.0."""
+    """Return values normalized so that the peak value is ``1.0``."""
     return values / (max(abs(values)) if peak is None else peak)
 
 
 def normalize_zscore(
-    values: np.ndarray, mean: float | None = None, std: float | None = None
+    values: np.ndarray,
+    mean: float | None = None,
+    std: float | None = None,
 ) -> np.ndarray:
     """Return normalized zscore from the audio data."""
     mean = values.mean() if mean is None else mean
@@ -142,23 +145,42 @@ def normalize_zscore(
 
 
 class NormalizationValider(enum.EnumMeta):
-    """
-    Metaclass used for validating the normalization flag,
-    as only REJECT_DC can be combined with (exactly) one other normalization.
+    """Metaclass used for validating the normalization flag.
+
+    This is used because only ``REJECT_DC`` can be combined with (exactly)
+    one other normalization.
+
     """
 
-    def __call__(cls, *args, **kwargs):
+    def __call__(cls, *args, **kwargs) -> Self:  # noqa: ANN002, ANN003
+        """Overwrite the call dunder."""
         instance = super().__call__(*args, **kwargs)
 
         mask = instance.value & ~Normalization.DC_REJECT.value
         if mask & (mask - 1):
-            message = "Combined normalizations can only be DC_REJECT combined with exactly one other normalization type."
+            message = (
+                "Combined normalizations can only be DC_REJECT combined "
+                "with exactly one other normalization type."
+            )
             raise ValueError(message)
 
         return instance
 
 
 class Normalization(enum.Flag, metaclass=NormalizationValider):
+    """Normalization to apply to the audio data.
+
+    ``RAW``: No normalization is done.
+
+    ``DC_REJECT``: Reject the DC component of the audio data.
+
+    ``PEAK``: Divide the data by the absolute peak so that the peak value is ``1.0``.
+
+    ``ZSCORE``: Normalize the data to a z-score with a mean of ``0.0`` and a
+    std of ``1.0``.
+
+    """
+
     RAW = enum.auto()
     DC_REJECT = enum.auto()
     PEAK = enum.auto()

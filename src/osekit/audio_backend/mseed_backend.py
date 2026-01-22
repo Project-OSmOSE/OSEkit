@@ -8,7 +8,7 @@ def _require_obspy() -> None:
         import obspy  # noqa: PLC0415, F401
     except ImportError as e:
         msg = "MSEED support requires the optional dependency 'obspy' "
-        "Install with: pip install osekit[mseed]. "
+        "Install with: ``pip install osekit[mseed]``. "
         "If you're on windows and don't use conda, may the force be with you."
         raise ImportError(msg) from e
 
@@ -73,11 +73,11 @@ class MSeedBackend:
         Returns
         -------
         np.ndarray:
-            A (channel * frames) array containing the MSEED data.
+            A ``(channel * frames)`` array containing the MSEED data.
 
         """
         _require_obspy()
-        import obspy  # type: ignore[import-not-found]
+        import obspy  # type: ignore[import-not-found]  # noqa: PLC0415
 
         file_content = obspy.read(path)
 

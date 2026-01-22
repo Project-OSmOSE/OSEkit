@@ -1,4 +1,4 @@
-"""BaseFile: Base class for the File objects.
+"""``BaseFile``: Base class for the File objects.
 
 A File object associates file-written data to timestamps.
 """
@@ -49,7 +49,7 @@ class BaseFile(Event, ABC):
         """Initialize a File object with a path and timestamps.
 
         The begin timestamp can either be provided as a parameter
-        or parsed from the filename according to the provided strptime_format.
+        or parsed from the filename according to the provided ``strptime_format``.
 
         Parameters
         ----------
@@ -57,18 +57,18 @@ class BaseFile(Event, ABC):
             Full path to the file.
         begin: pandas.Timestamp | None
             Timestamp corresponding to the first data point in the file.
-            If it is not provided, strptime_format is mandatory.
-            If both begin and strptime_format are provided,
-            begin will overrule the timestamp embedded in the filename.
+            If it is not provided, ``strptime_format`` is mandatory.
+            If both ``begin`` and ``strptime_format`` are provided,
+            ``begin`` will overrule the timestamp embedded in the filename.
         end: pandas.Timestamp | None
-            (Optional) Timestamp after the last data point in the file.
+            (Optional) timestamp after the last data point in the file.
         strptime_format: str | None
             The strptime format used in the text.
             It should use valid strftime codes (https://strftime.org/).
-            Example: '%y%m%d_%H:%M:%S'.
+            Example: ``'%y%m%d_%H:%M:%S'``.
         timezone: str | pytz.timezone | None
             The timezone in which the file should be localized.
-            If None, the file begin/end will be tz-naive.
+            If ``None``, the file begin/end will be tz-naive.
             If different from a timezone parsed from the filename, the timestamps'
             timezone will be converted from the parsed timezone
             to the specified timezone.
@@ -97,7 +97,7 @@ class BaseFile(Event, ABC):
 
     @abstractmethod
     def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray:
-        """Return the data that is between start and stop from the file.
+        """Return the data that is between ``start`` and ``stop`` from the file.
 
         This is an abstract method and should be overridden with actual implementations.
 
@@ -110,18 +110,18 @@ class BaseFile(Event, ABC):
 
         Returns
         -------
-        The data between start and stop.
+        The data between ``start`` and ``stop``.
 
         """
         ...
 
     def to_dict(self) -> dict:
-        """Serialize a BaseFile to a dictionary.
+        """Serialize a File to a dictionary.
 
         Returns
         -------
         dict:
-            The serialized dictionary representing the BaseFile.
+            The serialized dictionary representing the File.
 
         """
         return {
@@ -132,17 +132,17 @@ class BaseFile(Event, ABC):
 
     @classmethod
     def from_dict(cls: type[Self], serialized: dict) -> type[Self]:
-        """Return a BaseFile object from a dictionary.
+        """Return a File object from a dictionary.
 
         Parameters
         ----------
         serialized: dict
-            The serialized dictionary representing the BaseFile.
+            The serialized dictionary representing the File.
 
         Returns
         -------
         BaseFile:
-            The deserialized BaseFile object.
+            The deserialized File object.
 
         """
         path = serialized["path"]

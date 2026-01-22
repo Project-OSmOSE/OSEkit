@@ -1,7 +1,7 @@
-"""LTASDataset is a collection of LTASData objects.
+"""``LTASDataset`` is a collection of ``LTASData`` objects.
 
-LTASDataset is a collection of LTASData, with methods
-that simplify repeated operations on the LTAS data.
+``LTASDataset`` is a collection of ``LTASData``, with methods
+that simplify repeated operations on the ``LTASData``.
 """
 
 from __future__ import annotations
@@ -20,10 +20,10 @@ if TYPE_CHECKING:
 
 
 class LTASDataset(SpectroDataset):
-    """LTASDataset is a collection of LTASData objects.
+    """``LTASDataset`` is a collection of ``LTASData`` objects.
 
-    LTASDataset is a collection of LTASData, with methods
-    that simplify repeated operations on the LTAS data.
+    ``LTASDataset`` is a collection of ``LTASData``, with methods
+    that simplify repeated operations on the ``LTASData``.
 
     """
 
@@ -40,7 +40,7 @@ class LTASDataset(SpectroDataset):
         scale: Scale | None = None,
         v_lim: tuple[float, float] | None | object = sentinel_value,
     ) -> None:
-        """Initialize a LTASDataset."""
+        """Initialize a ``LTASDataset``."""
         super().__init__(
             data=data,
             name=name,
@@ -64,7 +64,7 @@ class LTASDataset(SpectroDataset):
         sds: SpectroDataset,
         nb_time_bins: int | None = None,
     ) -> SpectroDataset:
-        """Instantiate a LTAS Dataset from a SpectroDataset."""
+        """Instantiate a ``LTASDataset`` from a ``SpectroDataset``."""
         return cls(
             [
                 LTASData.from_spectro_data(sd, nb_time_bins=nb_time_bins)
@@ -88,9 +88,9 @@ class LTASDataset(SpectroDataset):
         scale: Scale | None = None,
         nb_time_bins: int | None = None,
     ) -> SpectroDataset:
-        """Return a SpectroDataset object from an AudioDataset object.
+        """Return a ``LTASDataset`` object from an ``AudioDataset`` object.
 
-        The SpectroData is computed from the AudioData using the given fft.
+        The ``LTASData`` is computed from the ``AudioData`` using the given fft.
         """
         return cls.from_spectro_dataset(
             super().from_audio_dataset(

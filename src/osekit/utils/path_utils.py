@@ -15,7 +15,7 @@ def move_tree(
 ) -> None:
     """Move all content from a source folder to a destination folder.
 
-    Paths given in excluded_files will not be affected.
+    Paths given in ``excluded_files`` will not be affected.
 
     Parameters
     ----------
@@ -27,9 +27,9 @@ def move_tree(
         Paths that won't be affected by the moving.
         These paths refer to files/folders directly within the source folder.
         If a path point to a folder, all of its content will be left untouched.
-        If a nested file like source/foo/bar is included without including foo (which
-        is directly within the source folder), all the content of foo (including bar)
-        will be moved regardless.
+        If a nested file like ``source/foo/bar`` is included without
+        including ``foo`` (which is directly within the ``source`` folder),
+        all the content of ``foo`` (including ``bar``) will be moved regardless.
 
     """
     if excluded_paths is None:
@@ -46,7 +46,7 @@ def move_tree(
 
 
 def is_absolute(path: PathLike | str) -> bool:
-    """Check if a path is a absolute path in any OS format."""
+    """Check if a path is an absolute path in any OS format."""
     for formatted_path in (PureWindowsPath(path), PurePosixPath(path), Path(path)):
         if formatted_path.is_absolute():
             return True

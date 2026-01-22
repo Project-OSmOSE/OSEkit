@@ -104,7 +104,7 @@ def chmod_if_needed(path: Path, mode: int) -> None:
     path: Path
         Path of the file or folder in which permission should be changed.
     mode: int
-        Permissions as used by os.chmod()
+        Permissions as used by ``os.chmod()``
 
     """
     if not _is_grp_supported:
@@ -133,7 +133,7 @@ def change_owner_group(path: Path, owner_group: str) -> None:
     owner_group:
         The new owner group.
         A warning is logged if the grp module is supported (Unix os) but
-        no owner_group is passed.
+        no ``owner_group`` is passed.
 
     """
     if not _is_grp_supported:
@@ -146,7 +146,7 @@ def change_owner_group(path: Path, owner_group: str) -> None:
     glc.logger.debug("Setting osekit permission to the dataset..")
 
     try:
-        import grp
+        import grp  # noqa: PLC0415
 
         gid = grp.getgrnam(owner_group).gr_gid
     except KeyError as e:
@@ -181,7 +181,7 @@ def file_indexes_per_batch(
 
     The number of files is equitably distributed among batches.
     Example: 10 files distributed among 4 batches will lead to
-    batches indexes [(0,3), (3,6), (6,8), (8,10)].
+    batches indexes ``[(0,3), (3,6), (6,8), (8,10)]``.
 
     Parameters
     ----------
@@ -220,7 +220,7 @@ def nb_files_per_batch(total_nb_files: int, nb_batches: int) -> list[int]:
 
     The number of files is equitably distributed among batches.
     Example: 10 files distributed among 4 batches will lead to
-    batches containing [3,3,2,2] files.
+    batches containing ``[3,3,2,2]`` files.
 
     Parameters
     ----------
@@ -254,8 +254,8 @@ def locked(lock_file: Path) -> callable:
     If the specified lock file already exists, the decorated function execution will be
     suspended until the lock file is removed.
 
-    The lock_file will then be created before the execution of the decorated function,
-    and removed once the function has been executed.
+    The ``lock_file`` will then be created before the execution of the
+    decorated function, and removed once the function has been executed.
 
     Parameters
     ----------

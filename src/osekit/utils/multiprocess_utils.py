@@ -13,13 +13,13 @@ from osekit import config
 def multiprocess(
     func: callable,
     enumerable: list,
-    bypass_multiprocessing: bool = False,
     *args: Any,
+    bypass_multiprocessing: bool = False,
     **kwargs: Any,
 ) -> list[Any]:
     """Run a given callable function on an enumerable.
 
-    The function is run through osekit.config.nb_processes threads.
+    The function is run through ``osekit.config.nb_processes`` threads.
 
     Parameters
     ----------
@@ -28,7 +28,7 @@ def multiprocess(
     enumerable: list
         The list of input to the function.
     bypass_multiprocessing: bool
-        If True, multiprocessing will be bypassed whatever the config value.
+        If ``True``, multiprocessing will be bypassed whatever the config value.
     args:
         Additional positional arguments to pass to the function.
     kwargs:

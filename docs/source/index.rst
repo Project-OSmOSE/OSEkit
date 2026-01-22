@@ -24,6 +24,12 @@ Instructions on how to install OSEkit.
 
 Instructions on how to use **OSEkit**.
 
+====================
+
+:ref:`Contributing <contributing>`
+----------------------------------
+
+Instructions on how to contribute to **OSEkit**.
 
 ====================
 
@@ -33,5 +39,6 @@ Instructions on how to use **OSEkit**.
 
    installation
    usage
+   contributing
    examples
    api
