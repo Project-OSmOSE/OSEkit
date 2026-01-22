@@ -349,13 +349,12 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             The list of ``AudioData`` subdata objects.
 
         """
-        normalization_values = (
-            None
-            if not pass_normalization
-            else self.normalization_values
-            if any(self.normalization_values.values())
-            else self.get_normalization_values()
-        )
+        if not pass_normalization:
+            normalization_values = None
+        elif any(self.normalization_values.values()):
+            normalization_values = self.normalization_values
+        else:
+            normalization_values = self.get_normalization_values()
         return super().split(
             nb_subdata=nb_subdata,
             normalization_values=normalization_values,
@@ -440,13 +439,12 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             if stop_frame == -1
             else self.begin + Timedelta(seconds=stop_frame / self.sample_rate)
         )
-        normalization_values = (
-            None
-            if not pass_normalization
-            else self.normalization_values
-            if any(self.normalization_values.values())
-            else self.get_normalization_values()
-        )
+        if not pass_normalization:
+            normalization_values = None
+        elif any(self.normalization_values.values()):
+            normalization_values = self.normalization_values
+        else:
+            normalization_values = self.get_normalization_values()
         return AudioData.from_files(
             list(self.files),
             start_timestamp,
