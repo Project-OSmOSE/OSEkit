@@ -787,11 +787,53 @@ def test_last_window_end(
                 "%-m_%-d_%-H_%-M",
                 "%m_%d_%H_%M",
                 "01_01_01_01",
-                id="edge_case_all_ones"
+                id="edge_case_all_ones",
+        ),
+        pytest.param(
+            ("05", "03", "2023"),
+            "%-m_%-d_%Y",
+            "%m_%d_%Y",
+            "05_03_2023",
+            id="non_zero_format_with_already_padded_values",
         ),
     ],
 )
-def test_normalize_datetime_parametrized(datetime, template, expected_keys, expected_values):
+def test_normalize_datetime(datetime, template, expected_keys, expected_values):
     result_keys, result_values = normalize_datetime(datetime, template)
     assert result_keys == expected_keys
     assert result_values == expected_values
+
+
+@pytest.mark.parametrize(
+    ("datetime", "template", "expected"),
+    [
+        pytest.param(
+            ("5", "3", "1998"),
+            "%m_%-m_%Y",
+            pytest.raises(ValueError),
+            id="duplicate_format_specifiers_padded_and_nonpadded"
+        ),
+        pytest.param(
+            ("5", "3"),
+            "%-m_%-d_%Y",
+            pytest.raises(ValueError),
+            id="mismatched_datetime_template_length_more_specifiers"
+        ),
+        pytest.param(
+            ("5", "3", "2023"),
+            "%-m_%-d",
+            pytest.raises(ValueError),
+            id="mismatched_datetime_template_length_more_values"
+        ),
+        pytest.param(
+            ("abc", "3", "2023"),
+            "%-m_%-d_%Y",
+            pytest.raises(ValueError),
+            id="non_numeric_datetime_value"
+        ),
+    ],
+)
+def test_normalize_datetime_errors(datetime, template, expected):
+    """Test that function handles error cases appropriately."""
+    with expected as e:
+        assert normalize_datetime(datetime, template) == e

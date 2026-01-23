@@ -35,10 +35,41 @@ _REGEX_BUILDER = {
 
 
 def normalize_datetime(datetime: tuple[str], template: str) -> tuple[str, str]:
-    """Convert a datetime and its template with non-zero padded parts."""
-    datetime_parts = [p for p in datetime]
-    template_parts = re.findall(r"%\-?[A-Za-z]", template)
-    dt_dict = dict(zip(template_parts, datetime_parts))
+    """Convert a datetime and its template with non-zero padded parts.
+
+    Parameters
+    ----------
+    datetime : tuple[str]
+        A tuple of datetime component strings (e.g., ('2024', '1', '15')).
+    template : str
+        A datetime template string with format specifiers (e.g., '%Y_%-m_%d').
+        Format specifiers starting with '%-' indicate non-zero-padded values
+        that will be converted to zero-padded format.
+
+    Returns
+    -------
+    tuple[str, str]
+        A tuple containing:
+        - A normalized template string with all format specifiers zero-padded
+          (e.g., '%Y_%m_%d')
+        - A normalized datetime string with all values zero-padded
+          (e.g., '2024_01_15')
+
+    Examples
+    --------
+    >>> normalize_datetime(('2024', '1', '15'), '%Y_%-m_%d')
+    ('%Y_%m_%d', '2024_01_15')
+
+    >>> normalize_datetime(('2024', '3', '5'), '%Y_%-m_%-d')
+    ('%Y_%m_%d', '2024_03_05')
+    """
+    datetime_parts = list(datetime)
+    template_parts = re.findall(r"%-?[A-Za-z]", template)
+    dt_dict = dict(zip(template_parts, datetime_parts, strict=True))
+
+    if sum(1 for _ in {k.lstrip("%-") for k in dt_dict.keys()}) < len(dt_dict):
+        msg = "Format specifiers in template must be unique."
+        raise ValueError(msg)
 
     clean_dt_dict = {}
     for key, value in dt_dict.items():
