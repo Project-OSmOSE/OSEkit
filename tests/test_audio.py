@@ -218,7 +218,7 @@ def test_audio_file_read(
     stop: pd.Timestamp,
     expected: np.ndarray,
 ) -> None:
-    files, request = audio_files
+    files, _ = audio_files
     assert np.allclose(files[0].read(start, stop)[:, 0], expected, atol=1e-7)
 
 
@@ -448,7 +448,7 @@ def test_audio_item(
     stop: pd.Timestamp | None,
     expected: np.ndarray,
 ) -> None:
-    files, request = audio_files
+    files, _ = audio_files
     item = AudioItem(files[0], start, stop)
     assert np.array_equal(item.get_value()[:, 0], expected)
     assert item.shape == item.get_value().shape
@@ -710,7 +710,7 @@ def test_audio_resample_sample_count(
     sample_rate: int,
     expected_nb_samples: int,
 ) -> None:
-    audio_files, request = audio_files
+    audio_files, _ = audio_files
     data = AudioData.from_files(audio_files, begin=start, end=stop)
     data.sample_rate = sample_rate
     assert data.get_value().shape[0] == expected_nb_samples
@@ -1745,7 +1745,7 @@ def test_split_data_normalization_pass(patch_audio_data: None) -> None:
     ad = AudioData()
     ad.mocked_value = [1, 2, 3]
     original_normalization_values = ad.get_normalization_values()
-    assert all(v for v in original_normalization_values.values())
+    assert all(original_normalization_values.values())
 
     assert all(
         part.normalization_values == original_normalization_values
@@ -1867,10 +1867,10 @@ def test_split_frames_errors(patch_audio_data: None) -> None:
         "Start_frame must be greater than or equal to 0.",
         "Stop_frame must be lower than the length of the data.",
     ]
-    with pytest.raises(ValueError, match=error_msgs[0]) as e:
-        assert ad.split_frames(start_frame=-1, stop_frame=2) == e
-    with pytest.raises(ValueError, match=error_msgs[1]) as e:
-        assert ad.split_frames(start_frame=0, stop_frame=100) == e
+    with pytest.raises(ValueError, match=error_msgs[0]):
+        ad.split_frames(start_frame=-1, stop_frame=2)
+    with pytest.raises(ValueError, match=error_msgs[1]):
+        ad.split_frames(start_frame=0, stop_frame=100)
 
 
 @pytest.mark.parametrize(

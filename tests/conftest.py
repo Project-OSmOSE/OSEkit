@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from collections.abc import Generator
+import typing
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -45,7 +45,7 @@ def audio_files(
         series_type = request.param.get("series_type", "repeat")
         sine_frequency = request.param.get("sine_frequency", 1000.0)
         magnitude = request.param.get("magnitude", 1.0)
-        format = request.param.get("format", "wav")
+        audio_format = request.param.get("format", "wav")
     else:
         sample_rate = 48_000
         duration = 1.0
@@ -54,9 +54,9 @@ def audio_files(
         series_type = "repeat"
         sine_frequency = 1000.0
         magnitude = 1.0
-        format = "wav"
+        audio_format = "wav"
 
-    nb_samples = int(round(duration * sample_rate))
+    nb_samples = round(duration * sample_rate)
     data = generate_sample_audio(
         nb_files=nb_files,
         nb_samples=nb_samples,
@@ -88,14 +88,14 @@ def audio_files(
     for index, begin_time in enumerate(file_begin_timestamps):
         time_str = begin_time.strftime(format=datetime_format)
         idx = 0
-        while (file := tmp_path / f"audio_{time_str}_{idx}.{format}").exists():
+        while (file := tmp_path / f"audio_{time_str}_{idx}.{audio_format}").exists():
             idx += 1
         files.append(file)
         kwargs = {
             "file": file,
             "data": data[index],
             "samplerate": sample_rate,
-            "subtype": "DOUBLE" if format.lower() == "wav" else "PCM_24",
+            "subtype": "DOUBLE" if audio_format.lower() == "wav" else "PCM_24",
         }
         sf.write(**kwargs)
     output = [AudioFile(path=f, strptime_format=datetime_format) for f in files]
@@ -111,7 +111,7 @@ def patch_filehandlers(
         return
 
     def disabled_filewrite(self: any, record: any) -> None:
-        pass
+        """Prevent the logger from actually writing files."""
 
     monkeypatch.setattr(logging.FileHandler, "emit", disabled_filewrite)
 
@@ -217,7 +217,7 @@ def patch_audio_data(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture(autouse=True)
-def restore_config() -> Generator:
+def restore_config() -> typing.Generator:
     resample_quality_settings = {**config.resample_quality_settings}
     multiprocessing = {**config.multiprocessing}
     yield

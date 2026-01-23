@@ -616,7 +616,6 @@ class Dataset:
             return
         if type(dataset) is SpectroDataset | LTASDataset:
             self._sort_spectro_dataset(dataset)
-            return
 
     def _sort_audio_dataset(self, dataset: AudioDataset) -> None:
         dataset.move_files(self._get_audio_dataset_subpath(dataset))
@@ -789,15 +788,12 @@ class Dataset:
         """
         datasets = {}
         for name, dataset in dictionary["datasets"].items():
-            dataset_class = (
-                AudioDataset
-                if dataset["class"] == "AudioDataset"
-                else SpectroDataset
-                if dataset["class"] == "SpectroDataset"
-                else LTASDataset
-                if dataset["class"] == "LTASDataset"
-                else BaseDataset
-            )
+            dataset_class = {
+                "AudioDataset": AudioDataset,
+                "SpectroDataset": SpectroDataset,
+                "LTASDataset": LTASDataset,
+            }[dataset["class"]]
+
             datasets[name] = {
                 "class": dataset["class"],
                 "analysis": dataset["analysis"],

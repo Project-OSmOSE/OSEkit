@@ -204,11 +204,8 @@ def test_inconsistent_mseed_sample_rate_error(tmp_path: Path) -> None:
     with pytest.raises(
         ValueError,
         match=r"Inconsistent sampling rates in MSEED file.",
-    ) as e:
-        assert (
-            AudioFile(filename, strptime_format=TIMESTAMP_FORMATS_EXPORTED_FILES[1])
-            == e
-        )
+    ):
+        AudioFile(filename, strptime_format=TIMESTAMP_FORMATS_EXPORTED_FILES[1])
 
 
 def test_missing_dependency(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -232,5 +229,5 @@ def test_missing_dependency(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
     with pytest.raises(
         ImportError,
         match="MSEED support requires the optional dependency 'obspy'",
-    ) as e:
-        assert AudioFile(dummy_file, begin=Timestamp("2020-01-01 00:00:00")) == e
+    ):
+        AudioFile(dummy_file, begin=Timestamp("2020-01-01 00:00:00"))

@@ -41,14 +41,14 @@ def multiprocess(
 
     """
     if bypass_multiprocessing or not config.multiprocessing["is_active"]:
-        return list(
+        return [
             func(element, *args, **kwargs)
             for element in tqdm(
                 enumerable,
                 disable=os.getenv("DISABLE_TQDM", "False").lower()
                 in ("true", "1", "t"),
             )
-        )
+        ]
 
     partial_func = partial(func, *args, **kwargs)
 
