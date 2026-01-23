@@ -626,13 +626,10 @@ def test_serialization(
 def test_spectral_analysis_error_if_no_provided_fft(analysis_type: Analysis) -> None:
     with pytest.raises(
         ValueError,
-        match="FFT parameter should be given if spectra outputs are selected.",
-    ) as e:
-        assert (
-            Analysis(
-                analysis_type=AnalysisType.SPECTROGRAM,
-            )
-            == e
+        match=r"FFT parameter should be given if spectra outputs are selected.",
+    ):
+        Analysis(
+            analysis_type=AnalysisType.SPECTROGRAM,
         )
 
 
@@ -1318,7 +1315,7 @@ def test_existing_analysis_warning(
         ),
     )
 
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(ValueError, match="my_analysis already exists"):
         dataset.run_analysis(
             Analysis(
                 analysis_type=AnalysisType.SPECTROGRAM,
@@ -1328,8 +1325,6 @@ def test_existing_analysis_warning(
                 fft=ShortTimeFFT(hamming(1024), hop=1024, fs=24_000),
             ),
         )
-
-        assert "my_analysis already exists" in str(excinfo.value)
 
     dataset.delete_analysis("my_analysis")
 
