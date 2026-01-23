@@ -1,4 +1,4 @@
-"""AudioItem corresponding to a portion of an AudioFile object."""
+"""``AudioItem`` corresponding to a portion of an ``AudioFile`` object."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class AudioItem(BaseItem[AudioFile]):
-    """AudioItem corresponding to a portion of an AudioFile object."""
+    """``AudioItem`` corresponding to a portion of an ``AudioFile`` object."""
 
     def __init__(
         self,
@@ -22,30 +22,30 @@ class AudioItem(BaseItem[AudioFile]):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
     ) -> None:
-        """Initialize an AudioItem from an AudioFile and begin/end timestamps.
+        """Initialize an ``AudioItem`` from an ``AudioFile`` and begin/end timestamps.
 
         Parameters
         ----------
         file: osekit.data.audio_file.AudioFile
-            The AudioFile in which this Item belongs.
+            The ``AudioFile`` in which this Item belongs.
         begin: pandas.Timestamp (optional)
             The timestamp at which this item begins.
-            It is defaulted to the AudioFile begin.
+            It is defaulted to ``file.begin``.
         end: pandas.Timestamp (optional)
             The timestamp at which this item ends.
-            It is defaulted to the AudioFile end.
+            It is defaulted to ``file.end``.
 
         """
         super().__init__(file=file, begin=begin, end=end)
 
     @property
     def sample_rate(self) -> float:
-        """Sample rate of the associated AudioFile."""
+        """Sample rate of the associated ``AudioFile``."""
         return None if self.is_empty else self.file.sample_rate
 
     @property
     def nb_channels(self) -> int:
-        """Number of channels in the associated AudioFile."""
+        """Number of channels in the associated ``AudioFile``."""
         return 1 if self.is_empty else self.file.channels
 
     @property
@@ -57,9 +57,9 @@ class AudioItem(BaseItem[AudioFile]):
         return end_sample - start_sample, self.nb_channels
 
     def get_value(self) -> np.ndarray:
-        """Get the values from the File between the begin and stop timestamps.
+        """Get the values from the File between the ``begin`` and ``stop`` timestamps.
 
-        If the Item is empty, return a single 0.
+        If the Item is empty, return a single ``0.`` per channel.
         """
         if self.is_empty:
             return np.zeros((1, self.nb_channels))

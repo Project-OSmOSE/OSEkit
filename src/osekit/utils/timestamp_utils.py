@@ -133,7 +133,7 @@ def reformat_timestamp(
     Returns
     -------
     str:
-        The formatted timestamp string in the osekit %Y-%m-%dT%H:%M:%S.%f%z format.
+        The formatted timestamp string in the osekit ``%Y-%m-%dT%H:%M:%S.%f%z`` format.
 
     """
     timestamp = strptime_from_text(
@@ -155,8 +155,8 @@ def strftime_osmose_format(date: pd.Timestamp) -> str:
     Returns
     -------
     str:
-        The Timestamp in osekit's %Y-%m-%dT%H:%M:%S.%f%z format.
-        %f is limited to a millisecond precision.
+        The Timestamp in osekit's ``%Y-%m-%dT%H:%M:%S.%f%z`` format.
+        ``%f`` is limited to a millisecond precision.
 
     Examples
     --------
@@ -213,7 +213,8 @@ def is_datetime_template_valid(datetime_template: str) -> bool:
     Returns
     -------
     bool:
-    True if datetime_template only uses supported strftime codes, False otherwise.
+    ``True`` if ``datetime_template`` only uses supported strftime codes,
+    ``False`` otherwise.
 
     Examples
     --------
@@ -242,18 +243,18 @@ def strptime_from_text(text: str, datetime_template: str | list[str]) -> Timesta
     Parameters
     ----------
     text: str
-        The text in which the timestamp should be extracted, ex '2016_06_13_14:12.txt'.
+        The text in which the timestamp should be extracted, ex ``'2016_06_13_14:12.txt'``.
     datetime_template: str | list[str]
          The datetime template used in the text.
          It should use valid strftime codes (https://strftime.org/).
-         Example: '%y%m%d_%H:%M:%S'.
-         If datetime_template is a list of strings, the datetime will be parsed from
+         Example: ``'%y%m%d_%H:%M:%S'``.
+         If ``datetime_template`` is a list of strings, the datetime will be parsed from
          the first template of the list that matches the input text.
 
     Returns
     -------
     pandas.Timestamp:
-        The timestamp extracted from the text according to datetime_template
+        The timestamp extracted from the text according to ``datetime_template``
 
     Examples
     --------

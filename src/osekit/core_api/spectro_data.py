@@ -1,7 +1,11 @@
-"""SpectroData represent spectrogram data retrieved from SpectroFiles.
+"""``SpectroData`` represent spectrogram data retrieved from ``SpectroFiles``.
 
-The SpectroData has a collection of SpectroItem.
-The data is accessed via a SpectroItem object per SpectroFile.
+The ``SpectroData`` has a collection of ``SpectroItem``.
+The data is accessed via a ``SpectroItem`` object per ``SpectroFile``.
+
+Alternatively, the ``SpectroData`` value can be computed from an
+``AudioData``, thanks to a given ``ShortTimeFFT`` instance.
+
 """
 
 from __future__ import annotations
@@ -33,10 +37,13 @@ if TYPE_CHECKING:
 
 
 class SpectroData(BaseData[SpectroItem, SpectroFile]):
-    """SpectroData represent Spectro data scattered through different SpectroFiles.
+    """``SpectroData`` represent spectrogram data retrieved from ``SpectroFiles``.
 
-    The SpectroData has a collection of SpectroItem.
-    The data is accessed via a SpectroItem object per SpectroFile.
+    The ``SpectroData`` has a collection of ``SpectroItem``.
+    The data is accessed via a ``SpectroItem`` object per ``SpectroFile``.
+
+    Alternatively, the ``SpectroData`` value can be computed from an
+    ``AudioData``, thanks to a given ``ShortTimeFFT`` instance.
     """
 
     item_cls = SpectroItem
@@ -53,19 +60,22 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         v_lim: tuple[float, float] | None = None,
         colormap: str | None = None,
     ) -> None:
-        """Initialize a SpectroData from a list of SpectroItems.
+        """Initialize a ``SpectroData``.
+
+        The ``SpectroData`` can be initialized either from a list of ``SpectroItems``
+        or from an ``AudioData`` and a given ``ShortTimeFFT`` instance.
 
         Parameters
         ----------
         items: list[SpectroItem]
-            List of the SpectroItem constituting the SpectroData.
+            List of the ``SpectroItem`` constituting the ``SpectroData``.
         audio_data: AudioData
-            The audio data from which to compute the spectrogram.
+            The ``AudioData`` from which to compute the spectrogram.
         begin: Timestamp | None
-            Only effective if items is None.
+            Only effective if items is ``None``.
             Set the begin of the empty data.
         end: Timestamp | None
-            Only effective if items is None.
+            Only effective if items is ``None``.
             Set the end of the empty data.
         name: str | None
             Name of the exported files.
@@ -74,7 +84,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         db_ref: float | None
             Reference value for computing sx values in decibel.
         v_lim: tuple[float,float]
-            Lower and upper limits (in dB) of the colormap used
+            Lower and upper limits (in ``dB``) of the colormap used
             for plotting the spectrogram.
         colormap: str
             Colormap to use for plotting the spectrogram.
@@ -92,7 +102,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
     @staticmethod
     def get_default_ax() -> plt.Axes:
-        """Return a default-formatted Axes on a new figure.
+        """Return a default-formatted ``Axes`` on a new figure.
 
         The default osekit spectrograms are plotted on wide, borderless spectrograms.
         This method set the default figure and axes parameters.
@@ -100,7 +110,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         Returns
         -------
         plt.Axes:
-            The default Axes on a new figure.
+            The default ``Axes`` on a new figure.
 
         """
         # Legacy OSEkit behaviour.
@@ -157,7 +167,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
     @property
     def shape(self) -> tuple[int, ...]:
-        """Shape of the Spectro data."""
+        """Shape of the ``SpectroData``."""
         return self.fft.f_pts, self.fft.p_num(
             int(self.fft.fs * self.duration.total_seconds()),
         )
@@ -170,10 +180,11 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
     @property
     def sx_dtype(self) -> type[complex]:
-        """Data type used to represent the sx values. Should either be float or complex.
+        """Data type used to represent the sx values.
 
-        If complex, the phase info will be included in the computed spectrum.
-        If float, only the absolute value of the spectrum will be kept.
+        Should either be ``float`` or ``complex``.
+        If ``complex``, the phase info will be included in the computed spectrum.
+        If ``float``, only the absolute value of the spectrum will be kept.
 
         """
         return self._sx_dtype
@@ -189,8 +200,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
     def db_ref(self) -> float:
         """Reference value for computing sx values in decibel.
 
-        If no reference is specified (self._db_ref is None), the
-        sx db values will be given in dB FS.
+        If no reference is specified (``self._db_ref is None``), the
+        sx db values will be given in ``dB FS``.
         """
         db_type = self.db_type
         if db_type == "SPL_parameter":
@@ -205,16 +216,19 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
     @property
     def db_type(self) -> Literal["FS", "SPL_instrument", "SPL_parameter"]:
-        """Return whether the spectrogram dB values are in dB FS or dB SPL.
+        """Return whether the spectrogram ``dB`` values are in ``dB FS`` or ``dB SPL``.
 
         Returns
         -------
         Literal["FS", "SPL_instrument", "SPL_parameter"]:
-            "FS": The values are expressed in dB FS.
-            "SPL_instrument": The values are expressed in dB SPL relative to the
-                linked AudioData instrument P_REF property.
-            "SPL_parameter": The values are expressed in dB SPL relative to the
-                self._db_ref field.
+
+            ``"FS"``: The values are expressed in ``dB FS``.
+
+            ``"SPL_instrument"``: The values are expressed in ``dB SPL`` relative to the
+            linked ``AudioData.instrument.P_REF`` property.
+
+            ``"SPL_parameter"``: The values are expressed in ``dB SPL`` relative to the
+            ``self._db_ref`` field.
 
         """
         if self._db_ref is not None:
@@ -225,7 +239,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
     @property
     def v_lim(self) -> tuple[float, float]:
-        """Limits (in dB) of the colormap used for plotting the spectrogram."""
+        """Limits (in ``dB``) of the colormap used for plotting the spectrogram."""
         return self._v_lim
 
     @v_lim.setter
@@ -287,29 +301,43 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         *,
         return_onesided: bool = True,
     ) -> np.ndarray:
-        """Estimate power spectral density of the SpectroData using Welch's method.
+        """Estimate power spectral density of the ``SpectroData`` using Welch's method.
 
-        This method uses the scipy.signal.welch function.
+        This method uses the ``scipy.signal.welch()`` function.
         The window, sample rate, overlap and mfft are taken from the
-        SpectroData.fft property.
+        ``SpectroData.fft`` property.
 
         Parameters
         ----------
         nperseg: int|None
-            Length of each segment. Defaults to None, but if window is str or tuple, is set to 256, and if window is array_like, is set to the length of the window.
+            Length of each segment. Defaults to ``None``, but if window is ``str`` or
+            ``tuple``, is set to ``256``, and if window is ``array_like``,
+            is set to the length of the window.
         detrend: str | callable | False
-            Specifies how to detrend each segment. If detrend is a string, it is passed as the type argument to the detrend function. If it is a function, it takes a segment and returns a detrended segment. If detrend is False, no detrending is done. Defaults to ‘constant’.
+            Specifies how to detrend each segment. If detrend is a ``str``,
+            it is passed as the type argument to the detrend function.
+            If it is a ``func``, it takes a segment and returns a detrended segment.
+            If detrend is ``False``, no detrending is done.
+            Defaults to ``'constant'``.
         return_onesided: bool
-            If True, return a one-sided spectrum for real data. If False return a two-sided spectrum. Defaults to True, but for complex data, a two-sided spectrum is always returned.
+            If ``True``, return a one-sided spectrum for real data.
+            If ``False``, return a two-sided spectrum.
+            Defaults to ``True``, but for complex data,
+            a two-sided spectrum is always returned.
         scaling: Literal["density", "spectrum"]
-            Selects between computing the power spectral density (‘density’) where Pxx has units of V**2/Hz and computing the squared magnitude spectrum (‘spectrum’) where Pxx has units of V**2, if x is measured in V and fs is measured in Hz. Defaults to ‘density’
+            Selects between computing the power spectral density (``'density'``) where
+            ``Pxx`` has units of ``V**2/Hz`` and computing the squared magnitude
+            spectrum (``'spectrum'``) where ``Pxx`` has units of ``V**2``,
+            if ``x`` is measured in ``V`` and ``fs`` is measured in ``Hz``.
+            Defaults to ``'density'``.
         average: Literal["mean", "median"]
-            Method to use when averaging periodograms. Defaults to ‘mean’.
+            Method to use when averaging periodograms.
+            Defaults to ``'mean'``.
 
         Returns
         -------
         np.ndarray
-            Power spectral density or power spectrum of the SpectroData.
+            Power spectral density or power spectrum of the ``SpectroData``.
 
         """
         window = self.fft.win
@@ -347,24 +375,39 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         *,
         return_onesided: bool = True,
     ) -> None:
-        """Write the psd (welch) of the SpectroData to a npz file.
+        """Write the psd (welch) of the ``SpectroData`` to a ``npz`` file.
 
         Parameters
         ----------
         folder: pathlib.Path
             Folder in which to write the Spectro file.
         px: np.ndarray | None
-            Welch px values. Will be computed if not provided.
+            Welch ``px`` values. Will be computed if not provided.
         nperseg: int|None
-            Length of each segment. Defaults to None, but if window is str or tuple, is set to 256, and if window is array_like, is set to the length of the window.
+            Length of each segment.
+            Defaults to ``None``, but if window is ``str`` or ``tuple``,
+            is set to ``256``, and if window is ``array_like``,
+            is set to the length of the window.
         detrend: str | callable | False
-            Specifies how to detrend each segment. If detrend is a string, it is passed as the type argument to the detrend function. If it is a function, it takes a segment and returns a detrended segment. If detrend is False, no detrending is done. Defaults to ‘constant’.
+            Specifies how to detrend each segment. If detrend is a ``str``,
+            it is passed as the type argument to the detrend function.
+            If it is a ``func``, it takes a segment and returns a detrended segment.
+            If detrend is ``False``, no detrending is done.
+            Defaults to ``'constant'``.
         return_onesided: bool
-            If True, return a one-sided spectrum for real data. If False return a two-sided spectrum. Defaults to True, but for complex data, a two-sided spectrum is always returned.
+            If ``True``, return a one-sided spectrum for real data.
+            If ``False``, return a two-sided spectrum.
+            Defaults to ``True``, but for complex data,
+            a two-sided spectrum is always returned.
         scaling: Literal["density", "spectrum"]
-            Selects between computing the power spectral density (‘density’) where Pxx has units of V**2/Hz and computing the squared magnitude spectrum (‘spectrum’) where Pxx has units of V**2, if x is measured in V and fs is measured in Hz. Defaults to ‘density’
+            Selects between computing the power spectral density (``'density'``) where
+            ``Pxx`` has units of ``V**2/Hz`` and computing the squared magnitude
+            spectrum (``'spectrum'``) where ``Pxx`` has units of ``V**2``,
+            if ``x`` is measured in ``V`` and ``fs`` is measured in ``Hz``.
+            Defaults to ``'density'``.
         average: Literal["mean", "median"]
-            Method to use when averaging periodograms. Defaults to ‘mean’.
+            Method to use when averaging periodograms.
+            Defaults to ``'mean'``.
 
         """
         super().create_directories(path=folder)
@@ -394,15 +437,15 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         sx: np.ndarray | None = None,
         scale: Scale | None = None,
     ) -> None:
-        """Plot the spectrogram on a specific Axes.
+        """Plot the spectrogram on a specific ``Axes``.
 
         Parameters
         ----------
         ax: plt.axes | None
-            Axes on which the spectrogram should be plotted.
-            Defaulted as the SpectroData.get_default_ax Axes.
+            ``Axes`` on which the spectrogram should be plotted.
+            Defaulted to ``SpectroData.get_default_ax()``.
         sx: np.ndarray | None
-            Spectrogram sx values. Will be computed if not provided.
+            Spectrogram ``sx`` values. Will be computed if ``None``.
         scale: osekit.core_api.frequecy_scale.Scale
             Custom frequency scale to use for plotting the spectrogram.
 
@@ -430,11 +473,11 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         )
 
     def to_db(self, sx: np.ndarray) -> np.ndarray:
-        """Convert the sx values to dB.
+        """Convert the ``sx`` values to ``dB``.
 
-        If the linked audio data has an Instrument parameter, the values are
-        converted to dB SPL (re Instrument.P_REF).
-        Otherwise, the values are converted to dB FS.
+        If the ``self.audio_data.instrument is not None``, the values are
+        converted to ``dB SPL`` (re ``self.audio_data.instrument.P_REF``).
+        Otherwise, the values are converted to ``dB FS``.
 
         Parameters
         ----------
@@ -460,7 +503,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         sx: np.ndarray | None = None,
         scale: Scale | None = None,
     ) -> None:
-        """Export the spectrogram as a png image.
+        """Export the spectrogram as a ``png`` image.
 
         Parameters
         ----------
@@ -468,9 +511,9 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             Folder in which the spectrogram should be saved.
         ax: plt.Axes | None
             Axes on which the spectrogram should be plotted.
-            Defaulted as the SpectroData.get_default_ax Axes.
+            Defaulted to ``SpectroData.get_default_ax()``.
         sx: np.ndarray | None
-            Spectrogram sx values. Will be computed if not provided.
+            Spectrogram ``sx`` values. Will be computed if ``None``.
         scale: osekit.core_api.frequecy_scale.Scale
             Custom frequency scale to use for plotting the spectrogram.
 
@@ -495,11 +538,11 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         folder: pathlib.Path
             Folder in which to write the Spectro file.
         sx: np.ndarray | None
-            Spectrogram sx values. Will be computed if not provided.
+            Spectrogram ``sx`` values. Will be computed if ``None``.
         link: bool
-            If True, the SpectroData will be bound to the written npz file.
+            If ``True``, the ``SpectroData`` will be bound to the written ``npz`` file.
             Its items will be replaced with a single item, which will match the whole
-            new SpectroFile.
+            new ``SpectroFile``.
 
         """
         super().create_directories(path=folder)
@@ -530,18 +573,18 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             self.link(folder=folder)
 
     def link(self, folder: Path) -> None:
-        """Link the SpectroData to a SpectroFile in the folder.
+        """Link the ``SpectroData`` to a ``SpectroFile`` in the folder.
 
-        The given folder should contain a file named "str(self).npz".
-        Linking is intended for SpectroData objects that have already been
+        The given folder should contain a file named ``"str(self).npz"``.
+        Linking is intended for ``SpectroData`` objects that have already been
         written to disk.
-        After linking, the SpectroData will have a single item with the same
-        properties of the target SpectroFile.
+        After linking, the ``SpectroData`` will have a single item with the same
+        properties of the target ``SpectroFile``.
 
         Parameters
         ----------
         folder: Path
-            Folder in which is located the SpectroFile to which the SpectroData
+            Folder in which is located the ``SpectroFile`` to which the ``SpectroData``
             instance should be linked.
 
         """
@@ -552,12 +595,12 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         self.items = SpectroData.from_files([file]).items
 
     def link_audio_data(self, audio_data: AudioData) -> None:
-        """Link the SpectroData to a given AudioData.
+        """Link the ``SpectroData`` to a given ``AudioData``.
 
         Parameters
         ----------
         audio_data: AudioData
-            The AudioData to which this SpectroData will be linked.
+            The ``AudioData`` to which this ``SpectroData`` will be linked.
 
         """
         if self.begin != audio_data.begin:
@@ -588,7 +631,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         Returns
         -------
         list[SpectroData]
-            The list of SpectroData subdata objects.
+            The list of ``SpectroData`` subdata objects.
 
         """
         split_frames = list(
@@ -640,9 +683,9 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
     def get_overlapped_bins(cls, sd1: SpectroData, sd2: SpectroData) -> np.ndarray:
         """Compute the bins that overflow between the two spectro data.
 
-        The idea is that if there is a SpectroData sd2 that follows sd1,
-        sd1.get_value() will return the bins up to the first overlapping bin,
-        and sd2 will return the bins from the first overlapping bin.
+        The idea is that if there is a ``SpectroData`` ``sd2`` that follows ``sd1``,
+        ``sd1.get_value()`` will return the bins up to the first overlapping bin,
+        and ``sd2`` will return the bins from the first overlapping bin.
 
         Signal processing guys might want to burn my house to the ground for it,
         but it seems to effectively resolve the issue we have with visible junction
@@ -651,16 +694,16 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         Parameters
         ----------
         sd1: SpectroData
-            The spectro data that ends before sd2.
+            The spectro data that ends before ``sd2``.
         sd2: SpectroData
-            The spectro data that starts after sd1.
+            The spectro data that starts after ``sd1``.
 
         Returns
         -------
         np.ndarray:
             The overlapped bins.
-            If there are p bins, sd1 and sd2 values should be concatenated as:
-            np.hstack(sd1[:,:-p], result, sd2[:,p:])
+            If there are ``p`` bins, ``sd1`` and ``sd2`` values should be concatenated as:
+            ``np.hstack(sd1[:,:-p], result, sd2[:,p:])``
 
         """
         fft = sd1.fft
@@ -680,7 +723,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
     @classmethod
     def _make_file(cls, path: Path, begin: Timestamp) -> SpectroFile:
-        """Make a SpectroFile from a path and a begin timestamp.
+        """Make a ``SpectroFile`` from a ``path`` and a ``begin`` timestamp.
 
         Parameters
         ----------
@@ -692,7 +735,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         Returns
         -------
         SpectroFile:
-        The spectro file.
+        The ``SpectroFile`` instance.
 
         """
         return SpectroFile(path=path, begin=begin)
@@ -704,12 +747,12 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
     ) -> SpectroItem:
-        """Make a SpectroItem for a given SpectroFile between begin and end timestamps.
+        """Make a ``SpectroItem`` for a given ``SpectroFile`` between ``begin`` and ``end`` timestamps.
 
         Parameters
         ----------
         file: SpectroFile
-            SpectroFile of the item.
+            ``SpectroFile`` of the item.
         begin: Timestamp
             Begin of the item.
         end:
@@ -717,7 +760,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         Returns
         -------
-        A SpectroItem for the SpectroFile file, between the begin and end timestamps.
+        A ``SpectroItem`` for the ``SpectroFile``,
+        between the ``begin`` and ``end`` timestamps.
 
         """
         return SpectroItem(
@@ -735,28 +779,28 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         end: Timestamp,
         **kwargs,  # noqa: ANN003
     ) -> SpectroData:
-        """Deserialize the SpectroData-specific parts of a Data dictionary.
+        """Deserialize the ``SpectroData``-specific parts of a Data dictionary.
 
-        This method is called within the BaseData.from_dict() method, which
-        deserializes the base files, begin and end parameters.
+        This method is called within the ``BaseData.from_dict()`` method, which
+        deserializes the base ``files``, ``begin`` and ``end`` parameters.
 
         Parameters
         ----------
         dictionary: dict
-            The serialized dictionary representing the SpectroData.
+            The serialized dictionary representing the ``SpectroData``.
         files: list[SpectroFile]
-            The list of deserialized SpectroFiles.
+            The list of deserialized ``SpectroFiles``.
         begin: Timestamp
             The deserialized begin timestamp.
         end: Timestamp
             The deserialized end timestamp.
         kwargs:
-            None.
+            None
 
         Returns
         -------
         SpectroData
-            The deserialized SpectroData.
+            The deserialized ``SpectroData``.
 
         """
         return cls.from_files(
@@ -781,14 +825,14 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         name: str | None = None,
-        **kwargs,
+        **kwargs,  # noqa: ANN003
     ) -> SpectroData:
-        """Return a SpectroData object from a list of SpectroFiles.
+        """Return a ``SpectroData`` object from a list of ``SpectroFiles``.
 
         Parameters
         ----------
         files: list[SpectroFile]
-            List of SpectroFiles containing the data.
+            List of ``SpectroFiles`` containing the data.
         begin: Timestamp | None
             Begin of the data object.
             Defaulted to the begin of the first file.
@@ -798,14 +842,15 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         name: str | None
             Name of the exported files.
         kwargs
-            Keyword arguments that are passed to the cls constructor.
+            Keyword arguments that are passed to the ``cls`` constructor.
+
             colormap: str
-                Colormap to use for plotting the spectrogram.
+            Colormap to use for plotting the spectrogram.
 
         Returns
         -------
         SpectroData:
-            The SpectroData object.
+            The ``SpectroData`` instance.
 
         """
         fft = files[0].get_fft()
@@ -833,16 +878,16 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         v_lim: tuple[float, float] | None = None,
         colormap: str | None = None,
     ) -> SpectroData:
-        """Instantiate a SpectroData object from a AudioData object.
+        """Instantiate a ``SpectroData`` object from a ``AudioData`` object.
 
         Parameters
         ----------
         data: AudioData
-            Audio data from which the SpectroData should be computed.
+            ``AudioData`` from which the ``SpectroData`` should be computed.
         fft: ShortTimeFFT
-            The ShortTimeFFT used to compute the spectrogram.
+            The ``ShortTimeFFT`` used to compute the spectrogram.
         v_lim: tuple[float,float]
-            Lower and upper limits (in dB) of the colormap used
+            Lower and upper limits (in ``dB``) of the colormap used
             for plotting the spectrogram.
         colormap: str
             Colormap to use for plotting the spectrogram.
@@ -850,7 +895,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         Returns
         -------
         SpectroData:
-            The SpectroData object.
+            The ``SpectroData`` object.
 
         """
         return cls(
@@ -863,23 +908,23 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         )
 
     def to_dict(self, *, embed_sft: bool = True) -> dict:
-        """Serialize a SpectroData to a dictionary.
+        """Serialize a ``SpectroData`` to a dictionary.
 
         Parameters
         ----------
         embed_sft: bool
-            If True, the SFT parameters will be included in the dictionary.
-            In a case where multiple SpectroData that share a same SFT are serialized,
-            SFT parameters shouldn't be included in the dictionary, as the window
-            values might lead to large redundant data.
+            If ``True``, the SFT parameters will be included in the dictionary.
+            In a case where multiple ``SpectroData`` that
+            share a same SFT are serialized, SFT parameters shouldn't be included
+            in the dictionary, as the window values might lead to large redundant data.
             Rather, the SFT parameters should be serialized in
-            a SpectroDataset dictionary so that it can be only stored once
-            for all SpectroData instances.
+            a ``SpectroDataset`` dictionary so that it can be only stored once
+            for all ``SpectroData`` instances.
 
         Returns
         -------
         dict:
-            The serialized dictionary representing the SpectroData.
+            The serialized dictionary representing the ``SpectroData``.
 
 
         """
@@ -915,20 +960,20 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         dictionary: dict,
         sft: ShortTimeFFT | None = None,
     ) -> Self:
-        """Deserialize a SpectroData from a dictionary.
+        """Deserialize a ``SpectroData`` from a dictionary.
 
         Parameters
         ----------
         dictionary: dict
-            The serialized dictionary representing the AudioData.
+            The serialized dictionary representing the ``AudioData``.
         sft: ShortTimeFFT | None
-            The ShortTimeFFT used to compute the spectrogram.
+            The ``ShortTimeFFT`` used to compute the spectrogram.
             If not provided, the SFT parameters must be included in the dictionary.
 
         Returns
         -------
         SpectroData
-            The deserialized SpectroData.
+            The deserialized ``SpectroData``.
 
         """
         if dictionary["audio_data"] is None:

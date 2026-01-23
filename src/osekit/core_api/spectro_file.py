@@ -1,7 +1,7 @@
 """Spectro file associated with timestamps.
 
-Spectro files are npz files with Time and Sxx arrays.
-Metadata (time_resolution) are stored as separate arrays.
+Spectro files are ``npz`` files with ``Time`` and ``Sxx`` arrays.
+Metadata (``time_resolution``) are stored as separate arrays.
 """
 
 from __future__ import annotations
@@ -24,8 +24,8 @@ if TYPE_CHECKING:
 class SpectroFile(BaseFile):
     """Spectro file associated with timestamps.
 
-    Spectro files are npz files with Time and Sxx arrays.
-    Metadata (time_resolution) are stored as separate arrays.
+    Spectro files are ``npz`` files with ``Time`` and ``Sxx`` arrays.
+    Metadata (``time_resolution``) are stored as separate arrays.
     """
 
     supported_extensions: typing.ClassVar = [".npz"]
@@ -37,10 +37,10 @@ class SpectroFile(BaseFile):
         strptime_format: str | list[str] | None = None,
         timezone: str | pytz.timezone | None = None,
     ) -> None:
-        """Initialize a SpectroFile object with a path and a begin timestamp.
+        """Initialize a ``SpectroFile`` object from a ``path`` and begin timestamp.
 
         The begin timestamp can either be provided as a parameter
-         or parsed from the filename according to the provided strptime_format.
+        or parsed from the filename according to the provided ``strptime_format``.
 
         Parameters
         ----------
@@ -48,16 +48,16 @@ class SpectroFile(BaseFile):
             Full path to the file.
         begin: pandas.Timestamp | None
             Timestamp corresponding to the first data bin in the file.
-            If it is not provided, strptime_format is mandatory.
-            If both begin and strptime_format are provided,
-            begin will overrule the timestamp embedded in the filename.
+            If it is not provided, ``strptime_format`` is mandatory.
+            If both ``begin`` and ``strptime_format`` are provided,
+            ``begin`` will overrule the timestamp embedded in the filename.
         strptime_format: str | None
             The strptime format used in the text.
             It should use valid strftime codes (https://strftime.org/).
-            Example: '%y%m%d_%H:%M:%S'.
+            Example: ``'%y%m%d_%H:%M:%S'``.
         timezone: str | pytz.timezone | None
             The timezone in which the file should be localized.
-            If None, the file begin/end will be tz-naive.
+            If ``None``, the file begin/end will be tz-naive.
             If different from a timezone parsed from the filename, the timestamps'
             timezone will be converted from the parsed timezone
             to the specified timezone.
@@ -103,9 +103,9 @@ class SpectroFile(BaseFile):
         self.v_lim = v_lim
 
     def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray:
-        """Return the spectro data between start and stop from the file.
+        """Return the spectro data between ``start`` and ``stop`` from the file.
 
-        The data is a 2D array representing the sxx values of the spectrogram.
+        The data is a 2D array representing the ``sxx`` values of the spectrogram.
 
         Parameters
         ----------
@@ -117,7 +117,7 @@ class SpectroFile(BaseFile):
         Returns
         -------
         numpy.ndarray:
-            The spectrogram data between start and stop.
+            The spectrogram data between ``start`` and ``stop``.
 
         """
         with np.load(self.path) as data:
@@ -152,13 +152,13 @@ class SpectroFile(BaseFile):
             return data["sx"][:, start_bin:stop_bin]
 
     def get_fft(self) -> ShortTimeFFT:
-        """Return the ShortTimeFFT used for computing the spectrogram.
+        """Return the ``ShortTimeFFT`` used for computing the spectrogram.
 
         Returns
         -------
         ShortTimeFFT:
-            The ShortTimeFFT used for computing the spectrogram.
-            It is instantiated back from the parameters stored in the npz file.
+            The ``ShortTimeFFT`` used for computing the spectrogram.
+            It is instantiated back from the parameters stored in the ``npz`` file.
 
         """
         return ShortTimeFFT(

@@ -1,6 +1,6 @@
-"""AudioDataset is a collection of AudioData objects.
+"""``AudioDataset`` is a collection of ``AudioData`` objects.
 
-AudioDataset is a collection of AudioData, with methods
+``AudioDataset`` is a collection of ``AudioData``, with methods
 that simplify repeated operations on the audio data.
 """
 
@@ -26,9 +26,9 @@ if TYPE_CHECKING:
 
 
 class AudioDataset(BaseDataset[AudioData, AudioFile]):
-    """AudioDataset is a collection of AudioData objects.
+    """``AudioDataset`` is a collection of ``AudioData`` objects.
 
-    AudioDataset is a collection of AudioData, with methods
+    ``AudioDataset`` is a collection of ``AudioData``, with methods
     that simplify repeated operations on the audio data.
 
     """
@@ -43,7 +43,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         folder: Path | None = None,
         instrument: Instrument | None = None,
     ) -> None:
-        """Initialize an AudioDataset."""
+        """Initialize an ``AudioDataset``."""
         if (
             len(
                 sample_rates := {
@@ -52,7 +52,8 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             )
             != 1
         ):
-            logging.warning("Audio dataset contains different sample rates.")
+            msg = "Audio dataset contains different sample rates."
+            logging.warning(msg)
         else:
             for empty_data in (data for data in data if data.sample_rate is None):
                 empty_data.sample_rate = min(sample_rates)
@@ -128,13 +129,13 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             Subtype as provided by the soundfile module.
             Defaulted as the default 16-bit PCM for WAV audio files.
         link: bool
-            If True, each AudioData will be bound to the corresponding written file.
+            If ``True``, each ``AudioData`` will be bound to the corresponding written file.
             Their items will be replaced with a single item, which will match the whole
-            new AudioFile.
+            new ``AudioFile``.
         first: int
-            Index of the first AudioData object to write.
+            Index of the first ``AudioData`` object to write.
         last: int | None
-            Index after the last AudioData object to write.
+            Index after the last ``AudioData`` object to write.
 
 
         """
@@ -149,17 +150,17 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
 
     @classmethod
     def _data_from_dict(cls, dictionary: dict) -> list[AudioData]:
-        """Return the list of AudioData objects from the serialized dictionary.
+        """Return the list of ``AudioData`` objects from the serialized dictionary.
 
         Parameters
         ----------
         dictionary: dict
-            Dictionary representing the serialized AudioDataset.
+            Dictionary representing the serialized ``AudioDataset``.
 
         Returns
         -------
         list[AudioData]:
-            The list of deserialized AudioData objects.
+            The list of deserialized ``AudioData`` objects.
 
         """
         return [AudioData.from_dict(data) for data in dictionary.values()]
@@ -181,7 +182,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         normalization: Normalization = Normalization.RAW,
         **kwargs,  # noqa: ANN003
     ) -> Self:
-        """Return an AudioDataset from a folder containing the audio files.
+        """Return an ``AudioDataset`` from a folder containing the audio files.
 
         Parameters
         ----------
@@ -190,8 +191,8 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         strptime_format: str | None
             The strptime format used in the filenames.
             It should use valid strftime codes (https://strftime.org/).
-            If None, the first audio file of the folder will start
-            at first_file_begin, and each following file will start
+            If ``None``, the first audio file of the folder will start
+            at ``first_file_begin``, and each following file will start
             at the end of the previous one.
         begin: Timestamp | None
             The begin of the audio dataset.
@@ -201,24 +202,26 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             Defaulted to the end of the last file.
         timezone: str | pytz.timezone | None
             The timezone in which the file should be localized.
-            If None, the file begin/end will be tz-naive.
+            If ``None``, the file begin/end will be tz-naive.
             If different from a timezone parsed from the filename, the timestamps'
             timezone will be converted from the parsed timezone
             to the specified timezone.
         mode: Literal["files", "timedelta_total", "timedelta_file"]
             Mode of creation of the dataset data from the original files.
-            "files": one data will be created for each file.
-            "timedelta_total": data objects of duration equal to data_duration will
-            be created from the begin timestamp to the end timestamp.
-            "timedelta_file": data objects of duration equal to data_duration will
-            be created from the beginning of the first file that the begin timestamp is into, until it would resume
-            in a data beginning between two files. Then, the next data object will be created from the
+            ``"files"``: one data will be created for each file.
+            ``"timedelta_total"``: data objects of duration equal to ``data_duration``
+            will be created from the begin timestamp to the end timestamp.
+            ``"timedelta_file"``: data objects of duration equal to ``data_duration``
+            will be created from the beginning of the first file that the begin
+            timestamp is into, until it would resume in a data beginning between
+            two files.
+            Then, the next data object will be created from the
             beginning of the next original file and so on.
         overlap: float
             Overlap percentage between consecutive data.
         data_duration: Timedelta | None
             Duration of the audio data objects.
-            If mode is set to "files", this parameter has no effect.
+            If mode is set to ``"files"``, this parameter has no effect.
             If provided, audio data will be evenly distributed between begin and end.
             Else, one data object will cover the whole time period.
         sample_rate: float | None
@@ -231,7 +234,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         normalization: Normalization
             The type of normalization to apply to the audio data.
         kwargs: any
-            Keyword arguments passed to the BaseDataset.from_folder classmethod.
+            Keyword arguments passed to the ``BaseDataset.from_folder()`` classmethod.
 
         Returns
         -------
@@ -275,26 +278,28 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         files: list[AudioFile]
             The list of files contained in the Dataset.
         begin: Timestamp | None
-            Begin of the first data object.
+            The begin of the audio dataset.
             Defaulted to the begin of the first file.
         end: Timestamp | None
-            End of the last data object.
+            The end of the audio dataset.
             Defaulted to the end of the last file.
         mode: Literal["files", "timedelta_total", "timedelta_file"]
             Mode of creation of the dataset data from the original files.
-            "files": one data will be created for each file.
-            "timedelta_total": data objects of duration equal to data_duration will
-            be created from the begin timestamp to the end timestamp.
-            "timedelta_file": data objects of duration equal to data_duration will
-            be created from the beginning of the first file that the begin timestamp is into, until it would resume
-            in a data beginning between two files. Then, the next data object will be created from the
+            ``"files"``: one data will be created for each file.
+            ``"timedelta_total"``: data objects of duration equal to ``data_duration``
+            will be created from the begin timestamp to the end timestamp.
+            ``"timedelta_file"``: data objects of duration equal to ``data_duration``
+            will be created from the beginning of the first file that the begin
+            timestamp is into, until it would resume in a data beginning between
+            two files.
+            Then, the next data object will be created from the
             beginning of the next original file and so on.
         overlap: float
             Overlap percentage between consecutive data.
         data_duration: Timedelta | None
-            Duration of the data objects.
-            If mode is set to "files", this parameter has no effect.
-            If provided, data will be evenly distributed between begin and end.
+            Duration of the audio data objects.
+            If mode is set to ``"files"``, this parameter has no effect.
+            If provided, audio data will be evenly distributed between begin and end.
             Else, one data object will cover the whole time period.
         sample_rate: float | None
             Sample rate of the audio data objects.
@@ -309,7 +314,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         Returns
         -------
         AudioDataset:
-        The AudioDataset object.
+        The ``AudioDataset`` object.
 
         """
         return super().from_files(
@@ -334,29 +339,29 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         name: str | None = None,
         **kwargs,  # noqa: ANN003
     ) -> AudioData:
-        """Return an AudioData object from a list of AudioFiles.
+        """Return an ``AudioData`` object from a list of ``AudioFiles``.
 
-        The AudioData starts at the begin and ends at end.
+        The ``AudioData`` starts at the begin and ends at end.
 
         Parameters
         ----------
         files: list[AudioFile]
-            List of AudioFiles contained in the AudioData.
+            List of ``AudioFiles`` contained in the ``AudioData``.
         begin: Timestamp | None
-            Begin of the AudioData.
-            Defaulted to the begin of the first AudioFile.
+            Begin of the ``AudioData``.
+            Defaulted to the begin of the first ``AudioFile``.
         end: Timestamp | None
-            End of the AudioData.
-            Defaulted to the end of the last AudioFile.
+            End of the ``AudioData``.
+            Defaulted to the end of the last ``AudioFile``.
         name: str|None
-            Name of the AudioData.
+            Name of the ``AudioData``.
         kwargs:
-            Keyword arguments to pass to the AudioData.from_files() method.
+            Keyword arguments to pass to the ``AudioData.from_files()`` method.
 
         Returns
         -------
         AudioData:
-            The AudioData object.
+            The ``AudioData`` object.
 
         """
         return AudioData.from_files(
@@ -369,17 +374,17 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
 
     @classmethod
     def from_json(cls, file: Path) -> Self:
-        """Deserialize an AudioDataset from a JSON file.
+        """Deserialize an ``AudioDataset`` from a JSON file.
 
         Parameters
         ----------
         file: Path
-            Path to the serialized JSON file representing the AudioDataset.
+            Path to the serialized JSON file representing the ``AudioDataset``.
 
         Returns
         -------
         AudioDataset
-            The deserialized AudioDataset.
+            The deserialized ``AudioDataset``.
 
         """
         # I have to redefine this method (without overriding it)
