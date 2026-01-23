@@ -493,7 +493,7 @@ def test_spectrogram_sx_dtype(
     target_dtype: type[complex],
     expected_value_dtype: type[complex],
 ) -> None:
-    audio_files, request = audio_files
+    audio_files, _ = audio_files
     ad = AudioData.from_files(audio_files)
     sft = ShortTimeFFT(hamming(128), 128, 1_024)
     sd = SpectroData.from_audio_data(ad, sft)
@@ -699,7 +699,7 @@ def test_link_audio_data(
     ad2_sr: float,
     expected_exception: type[Exception],
 ) -> None:
-    audio_files, request = audio_files
+    audio_files, _ = audio_files
 
     ad1 = AudioData.from_files(audio_files, begin=ad1.begin, end=ad1.end)
     ad1.sample_rate = ad1_sr
@@ -871,19 +871,19 @@ def test_link_audio_dataset(
     )  # Adding one data to the destination ads
     with pytest.raises(
         ValueError,
-        match="The audio dataset doesn't contain the same number of data as the "
+        match=r"The audio dataset doesn't contain the same number of data as the "
         "spectro dataset.",
-    ) as exc_info:
-        assert sds.link_audio_dataset(ads_err) == exc_info
+    ):
+        sds.link_audio_dataset(ads_err)
 
     # linking should fail if any of the data can't be linked
     ads_err = AudioDataset(ads1.data)
     ads1.data[-1].sample_rate = ads2_sample_rate * 0.5
     with pytest.raises(
         ValueError,
-        match="The sample rate of the audio data doesn't match.",
+        match=r"The sample rate of the audio data doesn't match.",
     ):
-        assert sds.link_audio_dataset(ads_err) == exc_info
+        sds.link_audio_dataset(ads_err)
 
 
 @pytest.mark.parametrize(
@@ -1081,8 +1081,8 @@ def test_ltas(audio_files: tuple[list[AudioFile], None], tmp_path: Path) -> None
 def test_ltas_dataset(patch_audio_data: None) -> None:
     ads = AudioDataset(
         [
-            AudioData(mocked_value=list(0 for _ in range(48_000))),
-            AudioData(mocked_value=list(0 for _ in range(48_000))),
+            AudioData(mocked_value=[0] * 48_000),
+            AudioData(mocked_value=[0] * 48_000),
         ],
     )
 
