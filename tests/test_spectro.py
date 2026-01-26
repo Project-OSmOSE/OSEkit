@@ -1520,7 +1520,7 @@ def test_spectro_get_value_from_items_errors(
         SpectroData([si1, si3]).get_value()
 
 
-def test_spectro_populated_duration_ratio(
+def test_spectro_populated_duration(
     patch_audio_data: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
