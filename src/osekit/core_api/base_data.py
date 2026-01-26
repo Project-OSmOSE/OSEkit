@@ -132,7 +132,12 @@ class BaseData[TItem: BaseItem, TFile: BaseFile](Event, ABC):
     @property
     def populated_duration(self) -> Timedelta:
         """Total duration of the non-empty parts of the data."""
-        return Timedelta(sum(item.duration for item in self.items if not item.is_empty))
+        return Timedelta(
+            sum(
+                (item.duration for item in self.items if not item.is_empty),
+                start=Timedelta(0),
+            ),
+        )
 
     @property
     def populated_ratio(self) -> float:
