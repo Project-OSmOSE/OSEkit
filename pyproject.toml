@@ -3,6 +3,7 @@ name = "osekit"
 version = "0.4.3"
 description = "OSEkit"
 readme = "README.md"
+license = "MIT"
 authors = [
     { name = "OSmOSE team", email = "osmose@ensta-bretagne.fr" }
 ]

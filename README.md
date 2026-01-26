@@ -12,6 +12,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/Project-OSmOSE/OSEkit/badge.svg?branch=version-bump)](https://coveralls.io/github/Project-OSmOSE/OSEkit?branch=version-bump)
 ![license](https://img.shields.io/github/license/mashape/apistatus.svg)
 ![Open Source Love](https://img.shields.io/badge/open%20source-♡-lightgrey)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18337275.svg)](https://doi.org/10.5281/zenodo.18337275)
 ![Python 3.12](https://img.shields.io/pypi/pyversions/osekit)
 
 
@@ -35,6 +36,7 @@ It is primarily designed for working on underwater passive acoustics data, but c
 - Seamless, timestamp-based access across multiple files (e.g., pick a 3-minutes long segment spannign over two 1.5-minutes long files without manual file picking)
 - Preprocessing utilities: resampling, normalization...
 - Spectral analysis routines: compute power spectra, spectrograms, LTAS...
+- A high-level **API** designed to work with [APLOSE](https://github.com/Project-OSmOSE/APLOSE), our web-base spectrogram annotation tool
 
 **OSEkit** treats your audio dataset as a continuous timeline, whatever the raw files configuration.
 You request audio by time intervals and the package fetches from the raw files behind the scenes: no manual I/O juggling required.
@@ -45,8 +47,27 @@ You request audio by time intervals and the package fetches from the raw files b
 
 All details to start using our toolkit and make the most out of it are given in our [documentation](https://project-osmose.github.io/OSEkit/).
 
-<br>
 
+This software is distributed under the MIT license.
+
+You are free to use, modify, and redistribute it, provided that you retain the copyright
+notices and license text, in accordance with the terms of this license.
+
+See the [LICENSE](./LICENSE) file for the full text.
+
+Some third-party libraries are used in this project. Details of their licenses are
+available in the repository [dependency graph](https://github.com/Project-OSmOSE/OSEkit/network/dependencies).
+
+This software must not be sold.
+
+If you use this software in scientific work, please cite it in accordance with the
+[CITATION](./CITATION.cff) file.
+
+This software is provided for research and teaching purposes. It is provided “as is,”
+without warranty. The authors and the institution cannot be held responsible for any
+damage resulting from its use.
+
+<br>
 
 <div align="center">
 
