@@ -355,8 +355,8 @@ def test_locked(tmp_path: pytest.fixture, monkeypatch: pytest.MonkeyPatch) -> No
 
     # time.sleep should be called if lock file exists
     lock_file.touch()
-    with pytest.raises(PermissionError, match="Lock file present.") as e:
-        assert edit_file("") == e
+    with pytest.raises(PermissionError, match=r"Lock file present."):
+        assert edit_file("")
 
 
 @pytest.mark.parametrize(

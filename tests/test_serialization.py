@@ -259,7 +259,7 @@ def test_audio_dataset_serialization(
     normalization: Normalization,
     name: str | None,
 ) -> None:
-    audio_files, request = audio_files
+    audio_files, _ = audio_files
     begin = min(af.begin for af in audio_files)
 
     strptime_format = (
@@ -831,7 +831,7 @@ def test_spectro_dataset_serialization(
     frequency_scale: Scale | None,
     name: str | None,
 ) -> None:
-    audio_files, request = audio_files
+    audio_files, _ = audio_files
     begin = min(af.begin for af in audio_files)
 
     strptime_format = (
