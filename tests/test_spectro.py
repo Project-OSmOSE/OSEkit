@@ -12,7 +12,6 @@ from matplotlib.dates import num2date
 from pandas import Timedelta, Timestamp
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming
-from test_core_api_base import DummyFile
 
 from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
@@ -32,6 +31,7 @@ from osekit.core_api.spectro_dataset import SpectroDataset
 from osekit.core_api.spectro_file import SpectroFile
 from osekit.core_api.spectro_item import SpectroItem
 from osekit.utils.audio_utils import Normalization, generate_sample_audio
+from tests.helpers.dummy import DummyFile
 
 
 @pytest.mark.parametrize(
