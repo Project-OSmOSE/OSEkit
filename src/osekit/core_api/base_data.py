@@ -134,6 +134,11 @@ class BaseData[TItem: BaseItem, TFile: BaseFile](Event, ABC):
         """Total duration of the non-empty parts of the data."""
         return Timedelta(sum(item.duration for item in self.items if not item.is_empty))
 
+    @property
+    def populated_ratio(self) -> float:
+        """Percentage of the non-empty parts of the data."""
+        return self.populated_duration / self.duration
+
     def get_value(self) -> np.ndarray:
         """Get the concatenated values from all Items."""
         return np.concatenate([item.get_value() for item in self.items])
