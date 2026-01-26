@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib.dates import date2num
+from pandas import Timedelta
 from scipy.signal import ShortTimeFFT, welch
 
 from osekit.config import (
@@ -31,7 +32,7 @@ from osekit.core_api.spectro_item import SpectroItem
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from pandas import Timedelta, Timestamp
+    from pandas import Timestamp
 
     from osekit.core_api.frequency_scale import Scale
 

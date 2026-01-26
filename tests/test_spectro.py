@@ -1561,3 +1561,11 @@ def test_spectro_populated_duration(
         ).populated_duration
         == ad_sentinel
     )
+
+    # SD With no files or audio data return 0.
+    sd = SpectroData.from_audio_data(
+        data=AudioData(mocked_value=[0, 1, 2]),
+        fft=sft,
+    )
+    sd.audio_data = None
+    assert sd.populated_duration == Timedelta(0.0)
