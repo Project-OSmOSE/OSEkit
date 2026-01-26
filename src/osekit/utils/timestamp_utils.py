@@ -40,10 +40,10 @@ def normalize_datetime(datetime: tuple[str], template: str) -> tuple[str, str]:
     Parameters
     ----------
     datetime : tuple[str]
-        A tuple of datetime component strings (e.g., ('2024', '1', '15')).
+        A tuple of datetime component strings (e.g., ``('2024', '1', '15')``).
     template : str
-        A datetime template string with format specifiers (e.g., '%Y_%-m_%d').
-        Format specifiers starting with '%-' indicate non-zero-padded values
+        A datetime template string with format specifiers (e.g., ``'%Y_%-m_%d'``).
+        Format specifiers starting with ``'%-'`` indicate non-zero-padded values
         that will be converted to zero-padded format.
 
     Returns
@@ -51,9 +51,9 @@ def normalize_datetime(datetime: tuple[str], template: str) -> tuple[str, str]:
     tuple[str, str]
         A tuple containing:
         - A normalized template string with all format specifiers zero-padded
-          (e.g., '%Y_%m_%d')
+          (e.g., ``'%Y_%m_%d'``)
         - A normalized datetime string with all values zero-padded
-          (e.g., '2024_01_15')
+          (e.g., ``'2024_01_15'``)
 
     Examples
     --------
@@ -63,9 +63,8 @@ def normalize_datetime(datetime: tuple[str], template: str) -> tuple[str, str]:
     >>> normalize_datetime(('2024', '3', '5'), '%Y_%-m_%-d')
     ('%Y_%m_%d', '2024_03_05')
     """
-    datetime_parts = list(datetime)
     template_parts = re.findall(r"%-?[A-Za-z]", template)
-    dt_dict = dict(zip(template_parts, datetime_parts, strict=True))
+    dt_dict = dict(zip(template_parts, datetime, strict=True))
 
     if sum(1 for _ in {k.lstrip("%-") for k in dt_dict.keys()}) < len(dt_dict):
         msg = "Format specifiers in template must be unique."
@@ -225,7 +224,7 @@ def is_datetime_template_valid(datetime_template: str) -> bool:
 
     """
     strftime_identifiers = [key.lstrip("%") for key in _REGEX_BUILDER]
-    strftime_identifier_lengths = {len(id) for id in strftime_identifiers}
+    strftime_identifier_lengths = {len(strftime_id) for strftime_id in strftime_identifiers}
     percent_sign_indexes = (
         index for index, char in enumerate(datetime_template) if char == "%"
     )

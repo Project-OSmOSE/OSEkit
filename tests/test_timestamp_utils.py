@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from typing import ContextManager
 
 import pytest
 from pandas import Timedelta, Timestamp
@@ -798,7 +799,12 @@ def test_last_window_end(
         ),
     ],
 )
-def test_normalize_datetime(datetime, template, expected_keys, expected_values):
+def test_normalize_datetime(
+    datetime: tuple[str],
+    template: str,
+    expected_keys: str,
+    expected_values: str,
+) -> None:
     result_keys, result_values = normalize_datetime(datetime, template)
     assert result_keys == expected_keys
     assert result_values == expected_values
@@ -810,30 +816,45 @@ def test_normalize_datetime(datetime, template, expected_keys, expected_values):
         pytest.param(
             ("5", "3", "1998"),
             "%m_%-m_%Y",
-            pytest.raises(ValueError),
-            id="duplicate_format_specifiers_padded_and_nonpadded"
+            pytest.raises(
+                ValueError, match="Format specifiers in template must be unique."
+            ),
+            id="duplicate_format_specifiers_padded_and_nonpadded",
         ),
         pytest.param(
             ("5", "3"),
             "%-m_%-d_%Y",
-            pytest.raises(ValueError),
-            id="mismatched_datetime_template_length_more_specifiers"
+            pytest.raises(
+                ValueError,
+                match=r"zip\(\) argument",
+            ),
+            id="mismatched_datetime_template_length_more_specifiers",
         ),
         pytest.param(
             ("5", "3", "2023"),
             "%-m_%-d",
-            pytest.raises(ValueError),
-            id="mismatched_datetime_template_length_more_values"
+            pytest.raises(
+                ValueError,
+                match=r"zip\(\) argument",
+            ),
+            id="mismatched_datetime_template_length_more_values",
         ),
         pytest.param(
             ("abc", "3", "2023"),
             "%-m_%-d_%Y",
-            pytest.raises(ValueError),
-            id="non_numeric_datetime_value"
+            pytest.raises(
+                ValueError,
+                match=r"invalid literal for int\(\) with base 10: 'abc'",
+            ),
+            id="non_numeric_datetime_value",
         ),
     ],
 )
-def test_normalize_datetime_errors(datetime, template, expected):
+def test_normalize_datetime_errors(
+    datetime: tuple[str],
+    template: str,
+    expected: ContextManager[Exception],
+) -> None:
     """Test that function handles error cases appropriately."""
-    with expected as e:
-        assert normalize_datetime(datetime, template) == e
+    with expected:
+        normalize_datetime(datetime, template)
