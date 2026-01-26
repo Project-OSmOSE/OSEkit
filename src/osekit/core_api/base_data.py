@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Self, TypeVar
 
 import numpy as np
-from pandas import Timestamp, date_range
+from pandas import Timedelta, Timestamp, date_range
 
 from osekit.config import (
     DPDEFAULT,
@@ -128,6 +128,11 @@ class BaseData[TItem: BaseItem, TFile: BaseFile](Event, ABC):
         self.items = [item for item in self.items if item.begin < value]
         for item in self.items:
             item.end = min(item.end, value)
+
+    @property
+    def populated_duration(self) -> Timedelta:
+        """Total duration of the non-empty parts of the data."""
+        return Timedelta(sum(item.duration for item in self.items if not item.is_empty))
 
     def get_value(self) -> np.ndarray:
         """Get the concatenated values from all Items."""

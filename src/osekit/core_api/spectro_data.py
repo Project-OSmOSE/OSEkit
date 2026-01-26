@@ -31,7 +31,7 @@ from osekit.core_api.spectro_item import SpectroItem
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from pandas import Timestamp
+    from pandas import Timedelta, Timestamp
 
     from osekit.core_api.frequency_scale import Scale
 
@@ -247,6 +247,19 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         if v_lim is None:
             v_lim = (-120.0, 0.0) if self.db_type == "FS" else (0.0, 170.0)
         self._v_lim = v_lim
+
+    @property
+    def populated_duration(self) -> Timedelta:
+        """Override BaseData.populated_duration.
+
+        If the SpectroData has no associated file, it will return the
+        populated duration of the associated AudioData.
+        """
+        if self.files:
+            return super().populated_duration
+        if not self.audio_data:
+            return Timedelta(0)
+        return self.audio_data.populated_duration
 
     def get_value(self) -> np.ndarray:
         """Return the Sx matrix of the spectrogram.
