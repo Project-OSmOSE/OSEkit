@@ -142,7 +142,7 @@ def normalize_zscore(
     """Return normalized zscore from the audio data."""
     mean = values.mean() if mean is None else mean
     std = values.std() if std is None else std
-    return (values - mean) / std
+    return (values - mean) / (std if std else 1)
 
 
 class NormalizationValider(enum.EnumMeta):
