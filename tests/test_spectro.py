@@ -12,6 +12,7 @@ from matplotlib.dates import num2date
 from pandas import Timedelta, Timestamp
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming
+from test_core_api_base import DummyFile
 
 from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
@@ -20,6 +21,7 @@ from osekit.config import (
 from osekit.core_api.audio_data import AudioData
 from osekit.core_api.audio_dataset import AudioDataset
 from osekit.core_api.audio_file import AudioFile
+from osekit.core_api.base_data import BaseData
 from osekit.core_api.event import Event
 from osekit.core_api.frequency_scale import Scale, ScalePart
 from osekit.core_api.instrument import Instrument
@@ -1516,3 +1518,46 @@ def test_spectro_get_value_from_items_errors(
 
     with pytest.raises(ValueError, match=r"Items don't have the same time resolution."):
         SpectroData([si1, si3]).get_value()
+
+
+def test_spectro_populated_duration_ratio(
+    patch_audio_data: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ad_sentinel = object()
+    bd_sentinel = object()
+
+    monkeypatch.setattr(
+        AudioData,
+        "populated_duration",
+        property(lambda _: ad_sentinel),
+    )
+    monkeypatch.setattr(BaseData, "populated_duration", property(lambda _: bd_sentinel))
+
+    sft = ShortTimeFFT(hamming(512), hop=128, fs=48_000)
+
+    # SD with file(s) should return the file population
+    monkeypatch.setattr(
+        SpectroData,
+        "files",
+        property(
+            lambda _: [DummyFile(path="foo", begin=Timestamp("2009-02-24 00:00:00"))],
+        ),
+    )
+    assert (
+        SpectroData.from_audio_data(
+            data=AudioData(mocked_value=[0, 1, 2]),
+            fft=sft,
+        ).populated_duration
+        == bd_sentinel
+    )
+
+    # SD without files should return the file population
+    monkeypatch.setattr(SpectroData, "files", property(lambda _: None))
+    assert (
+        SpectroData.from_audio_data(
+            data=AudioData(mocked_value=[0, 1, 2]),
+            fft=sft,
+        ).populated_duration
+        == ad_sentinel
+    )
