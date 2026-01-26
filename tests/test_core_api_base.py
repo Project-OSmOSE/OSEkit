@@ -2481,3 +2481,110 @@ def test_dummydataset_data_from_dict() -> None:
         )[0]
         == dd1
     )
+
+
+@pytest.mark.parametrize(
+    ("files", "begin", "end", "expected_pop_duration", "expected_pop_ratio"),
+    [
+        pytest.param(
+            [
+                DummyFile(
+                    path=Path("foo"),
+                    begin=Timestamp("2009-02-24 00:00:00"),
+                ),
+            ],
+            Timestamp("2009-02-24 00:00:00"),
+            Timestamp("2009-02-24 00:00:01"),
+            Timedelta(seconds=1),
+            1.0,
+            id="one-full-file",
+        ),
+        pytest.param(
+            [
+                DummyFile(
+                    path=Path("foo"),
+                    begin=Timestamp("2009-02-24 00:00:00"),
+                ),
+            ],
+            Timestamp("2009-02-24 00:00:00.4"),
+            Timestamp("2009-02-24 00:00:00.6"),
+            Timedelta(seconds=0.2),
+            1.0,
+            id="one-full-file-part",
+        ),
+        pytest.param(
+            [
+                DummyFile(
+                    path=Path("foo"),
+                    begin=Timestamp("2009-02-24 00:00:00"),
+                ),
+            ],
+            Timestamp("2009-02-24 00:00:00.5"),
+            Timestamp("2009-02-24 00:00:01.5"),
+            Timedelta(seconds=0.5),
+            0.5,
+            id="one-file-part-with-empty-item",
+        ),
+        pytest.param(
+            [
+                DummyFile(
+                    path=Path("foo"),
+                    begin=Timestamp("2009-02-24 00:00:00"),
+                ),
+                DummyFile(
+                    path=Path("bar"),
+                    begin=Timestamp("2009-02-24 00:00:01"),
+                ),
+            ],
+            Timestamp("2009-02-24 00:00:00"),
+            Timestamp("2009-02-24 00:00:02"),
+            Timedelta(seconds=2),
+            1,
+            id="two-full-consecutive-files",
+        ),
+        pytest.param(
+            [
+                DummyFile(
+                    path=Path("foo"),
+                    begin=Timestamp("2009-02-24 00:00:00"),
+                ),
+                DummyFile(
+                    path=Path("bar"),
+                    begin=Timestamp("2009-02-24 00:00:02"),
+                ),
+            ],
+            Timestamp("2009-02-24 00:00:00"),
+            Timestamp("2009-02-24 00:00:03"),
+            Timedelta(seconds=2),
+            2 / 3,
+            id="two-full-files-with-empty-gap",
+        ),
+        pytest.param(
+            [
+                DummyFile(
+                    path=Path("foo"),
+                    begin=Timestamp("2009-02-24 00:00:02"),
+                ),
+                DummyFile(
+                    path=Path("bar"),
+                    begin=Timestamp("2009-02-24 00:00:04"),
+                ),
+            ],
+            Timestamp("2009-02-24 00:00:00"),
+            Timestamp("2009-02-24 00:00:10"),
+            Timedelta(seconds=2),
+            2 / 10,
+            id="empty-items-before-and-after-files",
+        ),
+    ],
+)
+def test_populated_duration_and_ratio(
+    files: list[DummyFile],
+    begin: Timestamp,
+    end: Timestamp,
+    expected_pop_duration: Timedelta,
+    expected_pop_ratio: float,
+) -> None:
+    dummy_data = DummyData.from_files(files=files, begin=begin, end=end)
+    assert dummy_data.populated_duration == expected_pop_duration
+    assert np.isclose(dummy_data.populated_ratio, expected_pop_ratio)
