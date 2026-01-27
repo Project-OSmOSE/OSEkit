@@ -130,7 +130,8 @@ def normalize_dc_reject(
 
 def normalize_peak(values: np.ndarray, peak: float | None = None) -> np.ndarray:
     """Return values normalized so that the peak value is ``1.0``."""
-    return values / (max(abs(values)) if peak is None else peak)
+    divisor = max(abs(values)) if peak is None else peak
+    return values / (divisor if divisor else 1)
 
 
 def normalize_zscore(
@@ -141,7 +142,7 @@ def normalize_zscore(
     """Return normalized zscore from the audio data."""
     mean = values.mean() if mean is None else mean
     std = values.std() if std is None else std
-    return (values - mean) / std
+    return (values - mean) / (std if std else 1)
 
 
 class NormalizationValider(enum.EnumMeta):

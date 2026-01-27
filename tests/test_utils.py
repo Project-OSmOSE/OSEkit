@@ -519,6 +519,24 @@ def test_combined_normalization(
             np.array([-1.0, 0.0, 1.0]),
             id="dc_reject_and_peak",
         ),
+        pytest.param(
+            np.array([0.0, 0.0, 0.0]),
+            Normalization.PEAK,
+            np.array([0.0, 0.0, 0.0]),
+            id="peak_with_zero_values_shouldnt_raise",
+        ),
+        pytest.param(
+            np.array([0.5, 0.5, 0.5]),
+            Normalization.DC_REJECT | Normalization.PEAK,
+            np.array([0.0, 0.0, 0.0]),
+            id="peak_with_zero_values_after_dc_reject_shouldnt_raise",
+        ),
+        pytest.param(
+            np.array([0.5, 0.5, 0.5]),
+            Normalization.ZSCORE,
+            np.array([0.0, 0.0, 0.0]),
+            id="zscore_with_zero_std_shouldnt_raise",
+        ),
     ],
 )
 def test_normalization(
