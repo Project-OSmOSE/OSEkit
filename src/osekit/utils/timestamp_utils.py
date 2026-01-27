@@ -4,28 +4,88 @@ from __future__ import annotations  # Backwards compatibility with Python < 3.10
 
 import math
 import re
+from typing import TYPE_CHECKING
 
-import pandas as pd
-import pytz
-from pandas import Timedelta, Timestamp
+from pandas import Timedelta, Timestamp, to_datetime
 
 from osekit.config import TIMESTAMP_FORMAT_AUDIO_FILE
 from osekit.config import global_logging_context as glc
+
+if TYPE_CHECKING:
+    import pytz
+
 
 _REGEX_BUILDER = {
     "%Y": r"([12]\d{3})",
     "%y": r"(\d{2})",
     "%m": r"(0[1-9]|1[0-2])",
+    "%-m": r"(1[0-2]|(?:(?<!\d)[1-9](?!\d)))",
     "%d": r"([0-2]\d|3[0-1])",
+    "%-d": r"(3[01]|[12][0-9]|(?:(?<!\d)[1-9](?!\d)))",
     "%H": r"([0-1]\d|2[0-4])",
+    "%-H": r"(2[0-3]|1[0-9]|(?:(?<!\d)[0-9](?!\d)))",
     "%I": r"(0[1-9]|1[0-2])",
+    "%-I": r"(1[0-2]|(?:(?<!\d)[1-9](?!\d)))",
     "%p": r"(AM|PM)",
     "%M": r"([0-5]\d)",
+    "%-M": r"([0-5][0-9]|(?:(?<!\d)[0-9](?!\d)))",
     "%S": r"([0-5]\d)",
+    "%-S": r"([0-5][0-9]|(?:(?<!\d)[0-9](?!\d)))",
     "%f": r"(\d{1,6})",
     "%Z": r"((?:[a-zA-Z]+)(?:[-/]\w+)*(?:[\+-]\d+)?)",
     "%z": r"([\+-]\d{2}:?\d{2})",
 }
+
+
+def normalize_datetime(datetime: tuple[str], template: str) -> tuple[str, str]:
+    """Convert a datetime and its template with non-zero padded parts.
+
+    Parameters
+    ----------
+    datetime : tuple[str]
+        A tuple of datetime component strings (e.g., ``('2024', '1', '15')``).
+    template : str
+        A datetime template string with format specifiers (e.g., ``'%Y_%-m_%d'``).
+        Format specifiers starting with ``'%-'`` indicate non-zero-padded values
+        that will be converted to zero-padded format.
+
+    Returns
+    -------
+    tuple[str, str]
+        A tuple containing:
+        - A normalized template string with all format specifiers zero-padded
+          (e.g., ``'%Y_%m_%d'``)
+        - A normalized datetime string with all values zero-padded
+          (e.g., ``'2024_01_15'``)
+
+    Examples
+    --------
+    >>> normalize_datetime(('2024', '1', '15'), '%Y_%-m_%d')
+    ('%Y_%m_%d', '2024_01_15')
+
+    >>> normalize_datetime(('2024', '3', '5'), '%Y_%-m_%-d')
+    ('%Y_%m_%d', '2024_03_05')
+
+    """
+    template_parts = re.findall(r"%-?[A-Za-z]", template)
+    dt_dict = dict(zip(template_parts, datetime, strict=True))
+
+    if sum(1 for _ in {k.lstrip("%-") for k in dt_dict}) < len(dt_dict):
+        msg = "Format specifiers in template must be unique."
+        raise ValueError(msg)
+
+    clean_dt_dict = {}
+    for key, value in dt_dict.items():
+        if "-" in key:
+            new_key = key.replace("-", "")
+            new_value = f"{int(value):02}"
+        else:
+            new_key = key
+            new_value = value
+
+        clean_dt_dict[new_key] = new_value
+
+    return "_".join(clean_dt_dict.keys()), "_".join(clean_dt_dict.values())
 
 
 def localize_timestamp(
@@ -86,7 +146,7 @@ def reformat_timestamp(
     return strftime_osmose_format(timestamp)
 
 
-def strftime_osmose_format(date: pd.Timestamp) -> str:
+def strftime_osmose_format(date: Timestamp) -> str:
     """Format a Timestamp to the osekit format.
 
     Parameters
@@ -168,13 +228,19 @@ def is_datetime_template_valid(datetime_template: str) -> bool:
 
     """
     strftime_identifiers = [key.lstrip("%") for key in _REGEX_BUILDER]
+    strftime_identifier_lengths = {
+        len(strftime_id) for strftime_id in strftime_identifiers
+    }
     percent_sign_indexes = (
         index for index, char in enumerate(datetime_template) if char == "%"
     )
     for index in percent_sign_indexes:
         if index == len(datetime_template) - 1:
             return False
-        if datetime_template[index + 1] not in strftime_identifiers:
+        if not any(
+                datetime_template[index + 1: index + 1 + id_len] in strftime_identifiers
+                for id_len in strftime_identifier_lengths
+        ):
             return False
     return True
 
@@ -210,10 +276,10 @@ def strptime_from_text(text: str, datetime_template: str | list[str]) -> Timesta
     Timestamp('2016-06-13 14:12:00+0500', tz='UTC+05:00')
 
     """  # noqa: E501
-    if type(datetime_template) is str:
+    if isinstance(datetime_template, str):
         datetime_template = [datetime_template]
 
-    valid_datetime_template = ""
+    valid_datetime_template = None
     regex_result = []
     msg = []
 
@@ -232,16 +298,15 @@ def strptime_from_text(text: str, datetime_template: str | list[str]) -> Timesta
         valid_datetime_template = template
         break
 
-    if not valid_datetime_template:
+    if valid_datetime_template is None:
         raise ValueError("\n".join(msg))
 
-    date_string = "_".join(regex_result[0])
-    cleaned_date_template = "_".join(
-        c + valid_datetime_template[i + 1]
-        for i, c in enumerate(valid_datetime_template)
-        if c == "%"
+    cleaned_date_template, cleaned_date_string = normalize_datetime(
+        datetime=regex_result[0],
+        template=valid_datetime_template,
     )
-    return pd.to_datetime(date_string, format=cleaned_date_template)
+
+    return to_datetime(cleaned_date_string, format=cleaned_date_template)
 
 
 def last_window_end(
@@ -250,7 +315,11 @@ def last_window_end(
     window_duration: Timedelta,
     window_hop: Timedelta,
 ) -> Timestamp:
-    """Compute the end Timestamp of the last window for a sliding window starting from begin to end."""
+    """Compute the timestamp of the end of the last window.
+
+    The last window is defined as the last window that starts before the end
+    timestamp parameter.
+    """
     max_hops = math.ceil((end - begin).total_seconds() / window_hop.total_seconds()) - 1
     last_window_start = begin + window_hop * max_hops
     return last_window_start + window_duration
