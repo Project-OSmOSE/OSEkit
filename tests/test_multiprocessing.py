@@ -1,3 +1,5 @@
+import typing
+
 import pytest
 
 import osekit.utils.multiprocess_utils as mpu
@@ -5,16 +7,16 @@ from osekit import config
 
 
 class MockedPool:
-    def __init__(self, processes: int):
+    def __init__(self, processes: int) -> None:
         self.processes = processes
 
-    def __enter__(self):
+    def __enter__(self) -> typing.Self:
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Override exit dunder."""
 
-    def imap(self, func: callable, iterable: list):
+    def imap(self, func: callable, iterable: list) -> typing.Generator:
         for element in iterable:
             yield func(element)
 

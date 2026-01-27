@@ -1,6 +1,7 @@
 import importlib
 import logging
 import os
+import typing
 from pathlib import Path
 
 import pytest
@@ -75,11 +76,18 @@ def temp_user_logging_config(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
-def set_user_config_env(temp_user_logging_config: Path) -> None:
+def set_user_config_env(temp_user_logging_config: Path) -> typing.Generator:
     """Set the OSMOSE_USER_CONFIG environment variable to the pytest tmp_file directory.
-    This will be read by osekit during import to find the simulated user logging_config.yaml
-    During setup, the logging module is reloaded to clear all configs, then the osekit module is reloaded with a OSMOSE_USER_CONFIG environment key locating the mocked user config file.
-    During teardown, both modules are reloaded again with the OSMOSE_USER_CONFIG key being reset, to clear the moked user config.
+
+    This will be read by osekit during import to find the simulated
+    user logging_config.yaml.
+
+    During setup, the logging module is reloaded to clear all configs,
+    then the osekit module is reloaded with a OSMOSE_USER_CONFIG environment key
+    locating the mocked user config file.
+
+    During teardown, both modules are reloaded again with the OSMOSE_USER_CONFIG key
+    being reset, to clear the moked user config.
 
     Parameters
     ----------
@@ -160,7 +168,8 @@ def test_logging_context(caplog: pytest.fixture) -> None:
 
 
 def test_public_api_dataset_logger(
-    audio_files: pytest.fixture, tmp_path: pytest.fixture
+    audio_files: pytest.fixture,
+    tmp_path: pytest.fixture,
 ) -> None:
     dataset = Dataset(
         folder=tmp_path,

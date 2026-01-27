@@ -99,8 +99,8 @@ def test_error_logged_if_no_chmod_permission(
 
     monkeypatch.setattr(Path, "chmod", lambda path, mode: raise_permission_error())
 
-    with caplog.at_level(logging.WARNING), pytest.raises(PermissionError) as e:
-        assert chmod_if_needed(path=tmp_path, mode=0o775) == e
+    with caplog.at_level(logging.WARNING), pytest.raises(PermissionError):
+        chmod_if_needed(path=tmp_path, mode=0o775)
 
     assert f"You do not have the permission to write to {tmp_path}" in caplog.text
 
@@ -151,8 +151,8 @@ def test_change_owner_group_keyerror_is_logged(
     patch_grp_module.groups = ["ensta", "gosmose", "other"]
     patch_grp_module.active_group = {"gid": 1}
 
-    with pytest.raises(KeyError) as e, caplog.at_level(logging.ERROR):
-        assert change_owner_group(path=tmp_path, owner_group="non_existing_group") == e
+    with pytest.raises(KeyError), caplog.at_level(logging.ERROR):
+        change_owner_group(path=tmp_path, owner_group="non_existing_group")
 
     assert "Group non_existing_group does not exist." in caplog.text
     assert patch_grp_module.groups[patch_grp_module.active_group["gid"]] == "gosmose"
@@ -179,8 +179,8 @@ def test_change_owner_group_permission_error_is_logged(
 
     monkeypatch.setattr(os, "chown", chmod_permission_error, raising=False)
 
-    with pytest.raises(PermissionError) as e, caplog.at_level(logging.ERROR):
-        assert change_owner_group(path=tmp_path, owner_group=new_group) == e
+    with pytest.raises(PermissionError), caplog.at_level(logging.ERROR):
+        change_owner_group(path=tmp_path, owner_group=new_group)
 
     assert (
         f"You do not have the permission to change the owner of {tmp_path}."

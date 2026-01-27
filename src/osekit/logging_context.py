@@ -13,9 +13,8 @@ The global logger can be replaced with a context manager:
 """
 
 import logging
-from collections.abc import Generator
+import typing
 from contextlib import contextmanager
-from typing import Any
 
 
 class LoggingContext:
@@ -29,7 +28,7 @@ class LoggingContext:
         self.logger = logging.root
 
     @contextmanager
-    def set_logger(self, logger: logging.Logger) -> Generator[None, Any, None]:
+    def set_logger(self, logger: logging.Logger) -> typing.Generator:
         """Set a contextmanager for calling utils functions with a specific logger.
 
         Parameters

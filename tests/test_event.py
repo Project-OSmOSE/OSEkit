@@ -432,8 +432,8 @@ def test_event_begin_end_updates(
     ],
 )
 def test_event_errors(begin: Timestamp, end: Timestamp) -> None:
-    with pytest.raises(ValueError, match="`end`.*must be greater than `begin`.*") as e:
-        assert Event(begin=begin, end=end) == e
+    with pytest.raises(ValueError, match=r"`end`.*must be greater than `begin`.*"):
+        Event(begin=begin, end=end)
 
 
 def test_repr() -> None:
