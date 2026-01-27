@@ -2488,3 +2488,69 @@ def test_populated_duration_and_ratio(
     dummy_data = DummyData.from_files(files=files, begin=begin, end=end)
     assert dummy_data.populated_duration == expected_pop_duration
     assert np.isclose(dummy_data.populated_ratio, expected_pop_ratio)
+
+
+@pytest.mark.parametrize(
+    ("data_populated_ratios", "threshold", "expected_kept_data_idx"),
+    [
+        pytest.param(
+            [1.0],
+            0.0,
+            [0],
+            id="one_kept_data",
+        ),
+        pytest.param(
+            [0.0],
+            1.0,
+            [],
+            id="one_rejected_data",
+        ),
+        pytest.param(
+            [0.0, 1.0],
+            0.5,
+            [1],
+            id="one_kept_one_rejected",
+        ),
+        pytest.param(
+            [1.0, 1.0, 0.8, 0.6, 0.7],
+            0.65,
+            [0, 1, 2, 4],
+            id="all_kept_but_one",
+        ),
+        pytest.param(
+            [0.49, 0.5, 0.51],
+            0.5,
+            [2],
+            id="threshold_is_exclusive",
+        ),
+    ],
+)
+def test_dataset_remove_empty_data(
+    monkeypatch: pytest.MonkeyPatch,
+    data_populated_ratios: list[float],
+    threshold: float,
+    expected_kept_data_idx: list[int],
+) -> None:
+    monkeypatch.setattr(
+        DummyData,
+        "populated_ratio",
+        property(lambda d: d._populated_ratio),
+    )
+
+    data = []
+    for ratio in data_populated_ratios:
+        d = DummyData.from_files(
+            [DummyFile(path=Path(r"bruit"), begin=Timestamp("2021-04-02 00:00:00"))],
+        )
+        d._populated_ratio = ratio
+        data.append(d)
+
+    expected_kept_data = [
+        d for idx, d in enumerate(data) if idx in expected_kept_data_idx
+    ]
+
+    ds = DummyDataset(data)
+
+    ds.remove_empty_data(threshold=threshold)
+
+    assert np.array_equal(ds.data, expected_kept_data)
