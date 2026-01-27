@@ -25,14 +25,14 @@ There are many ways to contribute to this project, including:
 
 Contributions to the **OSEkit** codebase are done with **GitHub**.
 
-If you're new to this tool, we recommand taking a look at some resources to get you started,
+If you're new to this tool, we recommend taking a look at some resources to get you started,
 such as the `Introduction to Github interactive course <https://github.com/skills/introduction-to-github>`_.
 
 If you want to dig in **OSEkit**'s code to do anything you'd like (adding functionalities, fixing bugs, working on the documentation...),
 you'll have to submit a new **pull request**.
 
 There are lots of great tutorials out there that'll guide you in the process of submitting a pull request.
-We recommand you follow one of those, e.g. `DigitalOcean's How To Create a Pull Request on GitHub <https://www.digitalocean.com/community/tutorials/how-to-create-a-pull-request-on-github>`_.
+We recommend you follow one of those, e.g. `DigitalOcean's How To Create a Pull Request on GitHub <https://www.digitalocean.com/community/tutorials/how-to-create-a-pull-request-on-github>`_.
 
 We use `uv <https://docs.astral.sh/uv/>`_ to manage the project, and suggest that you install the project
 following the instructions in the :ref:`Install from git <from-git>` section of the documentation.
