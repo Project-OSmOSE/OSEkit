@@ -4,13 +4,16 @@ from __future__ import annotations  # Backwards compatibility with Python < 3.10
 
 import math
 import re
+from typing import TYPE_CHECKING
 
-import pandas as pd
-import pytz
-from pandas import Timedelta, Timestamp
+from pandas import Timedelta, Timestamp, to_datetime
 
 from osekit.config import TIMESTAMP_FORMAT_AUDIO_FILE
 from osekit.config import global_logging_context as glc
+
+if TYPE_CHECKING:
+    import pytz
+
 
 _REGEX_BUILDER = {
     "%Y": r"([12]\d{3})",
@@ -62,11 +65,12 @@ def normalize_datetime(datetime: tuple[str], template: str) -> tuple[str, str]:
 
     >>> normalize_datetime(('2024', '3', '5'), '%Y_%-m_%-d')
     ('%Y_%m_%d', '2024_03_05')
+
     """
     template_parts = re.findall(r"%-?[A-Za-z]", template)
     dt_dict = dict(zip(template_parts, datetime, strict=True))
 
-    if sum(1 for _ in {k.lstrip("%-") for k in dt_dict.keys()}) < len(dt_dict):
+    if sum(1 for _ in {k.lstrip("%-") for k in dt_dict}) < len(dt_dict):
         msg = "Format specifiers in template must be unique."
         raise ValueError(msg)
 
@@ -142,7 +146,7 @@ def reformat_timestamp(
     return strftime_osmose_format(timestamp)
 
 
-def strftime_osmose_format(date: pd.Timestamp) -> str:
+def strftime_osmose_format(date: Timestamp) -> str:
     """Format a Timestamp to the osekit format.
 
     Parameters
@@ -224,14 +228,19 @@ def is_datetime_template_valid(datetime_template: str) -> bool:
 
     """
     strftime_identifiers = [key.lstrip("%") for key in _REGEX_BUILDER]
-    strftime_identifier_lengths = {len(strftime_id) for strftime_id in strftime_identifiers}
+    strftime_identifier_lengths = {
+        len(strftime_id) for strftime_id in strftime_identifiers
+    }
     percent_sign_indexes = (
         index for index, char in enumerate(datetime_template) if char == "%"
     )
     for index in percent_sign_indexes:
         if index == len(datetime_template) - 1:
             return False
-        if not any(datetime_template[index + 1: index + 1 + id_len] in strftime_identifiers for id_len in strftime_identifier_lengths):
+        if not any(
+                datetime_template[index + 1: index + 1 + id_len] in strftime_identifiers
+                for id_len in strftime_identifier_lengths
+        ):
             return False
     return True
 
@@ -294,10 +303,10 @@ def strptime_from_text(text: str, datetime_template: str | list[str]) -> Timesta
 
     cleaned_date_template, cleaned_date_string = normalize_datetime(
         datetime=regex_result[0],
-        template=valid_datetime_template
+        template=valid_datetime_template,
     )
 
-    return pd.to_datetime(cleaned_date_string, format=cleaned_date_template)
+    return to_datetime(cleaned_date_string, format=cleaned_date_template)
 
 
 def last_window_end(
@@ -306,7 +315,7 @@ def last_window_end(
     window_duration: Timedelta,
     window_hop: Timedelta,
 ) -> Timestamp:
-    """Compute the end Timestamp of the last window for a sliding window starting from begin to end."""
+    """Compute the end Timestamp of the last sliding window from begin to end."""
     max_hops = math.ceil((end - begin).total_seconds() / window_hop.total_seconds()) - 1
     last_window_start = begin + window_hop * max_hops
     return last_window_start + window_duration
