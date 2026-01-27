@@ -315,7 +315,11 @@ def last_window_end(
     window_duration: Timedelta,
     window_hop: Timedelta,
 ) -> Timestamp:
-    """Compute the end Timestamp of the last sliding window from begin to end."""
+    """Compute the timestamp of the end of the last window.
+
+    The last window is defined as the last window that starts before the end
+    timestamp parameter.
+    """
     max_hops = math.ceil((end - begin).total_seconds() / window_hop.total_seconds()) - 1
     last_window_start = begin + window_hop * max_hops
     return last_window_start + window_duration
