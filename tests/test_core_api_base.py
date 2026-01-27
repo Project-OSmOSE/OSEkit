@@ -2554,3 +2554,13 @@ def test_dataset_remove_empty_data(
     ds.remove_empty_data(threshold=threshold)
 
     assert np.array_equal(ds.data, expected_kept_data)
+
+
+def test_dataset_remove_empty_data_threshold_errors() -> None:
+    ds = DummyDataset(data=[])
+
+    with pytest.raises(ValueError, match=r"Threshold should be between 0 and 1."):
+        ds.remove_empty_data(threshold=-0.5)
+
+    with pytest.raises(ValueError, match=r"Threshold should be between 0 and 1."):
+        ds.remove_empty_data(threshold=1.5)
