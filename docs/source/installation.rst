@@ -80,6 +80,6 @@ Follow the same instructions as in the :ref:`From Git <from-git>` section above,
 .. warning::
 
     Installing ObsPy on Windows might be a stairway to hell.
-    If installation fails, we recommand either:
+    If installation fails, we recommend either:
     * Using Linux or `WSL <https://learn.microsoft.com/en-us/windows/wsl/install/>`_
     * Converting MiniSEED files to WAV/FLAC prior to processing
