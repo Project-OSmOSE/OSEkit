@@ -27,6 +27,7 @@ autoclass_content = "both"
 html_theme = "sphinx_book_theme"
 html_logo = "../logo/osekit_small.png"
 html_title = "OSEKit"
+html_favicon = "_static/favicon.ico"
 
 html_theme_options = {
     "repository_url": "https://github.com/Project-OSmOSE/OSEkit",
