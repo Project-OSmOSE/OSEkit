@@ -858,6 +858,108 @@ def test_link_audio_data(
             nullcontext(),
             id="fewer_spectro_data_should_be_ok",
         ),
+        pytest.param(
+            [
+                (
+                    Timestamp("1994-02-27 00:00:00"),
+                    Timestamp("1994-02-27 00:00:01"),
+                    100.0,
+                ),
+                (
+                    Timestamp("1994-02-27 00:00:02"),
+                    Timestamp("1994-02-27 00:00:03"),
+                    100.0,
+                ),
+            ],
+            [
+                (
+                    Timestamp("1994-02-27 00:00:01"),
+                    Timestamp("1994-02-27 00:00:02"),
+                    100.0,
+                ),
+            ],
+            None,
+            None,
+            [],
+            pytest.raises(
+                ValueError,
+                match=rf"No AudioData found for SpectroData "
+                rf"{
+                    Timestamp('1994-02-27 00:00:01').strftime(
+                        TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
+                    )
+                }",
+            ),
+            id="not_found_spectrodata_should_raise",
+        ),
+        pytest.param(
+            [
+                (
+                    Timestamp("1994-02-27 00:00:00"),
+                    Timestamp("1994-02-27 00:00:01"),
+                    100.0,
+                ),
+                (
+                    Timestamp("1994-02-27 00:00:01"),
+                    Timestamp("1994-02-27 00:00:03"),
+                    100.0,
+                ),
+            ],
+            [
+                (
+                    Timestamp("1994-02-27 00:00:01"),
+                    Timestamp("1994-02-27 00:00:02"),
+                    100.0,
+                ),
+            ],
+            None,
+            None,
+            [],
+            pytest.raises(
+                ValueError,
+                match=rf"No AudioData found for SpectroData "
+                rf"{
+                    Timestamp('1994-02-27 00:00:01').strftime(
+                        TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
+                    )
+                }",
+            ),
+            id="found_begin_but_not_end_should_raise",
+        ),
+        pytest.param(
+            [
+                (
+                    Timestamp("1994-02-27 00:00:00"),
+                    Timestamp("1994-02-27 00:00:01"),
+                    100.0,
+                ),
+                (
+                    Timestamp("1994-02-27 00:00:01"),
+                    Timestamp("1994-02-27 00:00:02"),
+                    100.0,
+                ),
+            ],
+            [
+                (
+                    Timestamp("1994-02-27 00:00:00"),
+                    Timestamp("1994-02-27 00:00:02"),
+                    100.0,
+                ),
+            ],
+            None,
+            None,
+            [],
+            pytest.raises(
+                ValueError,
+                match=rf"No AudioData found for SpectroData "
+                rf"{
+                    Timestamp('1994-02-27 00:00:00').strftime(
+                        TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
+                    )
+                }",
+            ),
+            id="found_end_but_not_begin_should_raise",
+        ),
     ],
 )
 def test_link_audio_dataset(
