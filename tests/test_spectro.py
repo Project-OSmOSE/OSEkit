@@ -960,6 +960,32 @@ def test_link_audio_data(
             ),
             id="found_end_but_not_begin_should_raise",
         ),
+        pytest.param(
+            [
+                (
+                    Timestamp("1994-02-27 00:00:00"),
+                    Timestamp("1994-02-27 00:00:01"),
+                    100.0,
+                ),
+            ],
+            [
+                (
+                    Timestamp("1994-02-27 00:00:00"),
+                    Timestamp("1994-02-27 00:00:01"),
+                    100.0,
+                ),
+                (
+                    Timestamp("1994-02-27 00:00:01"),
+                    Timestamp("1994-02-27 00:00:02"),
+                    100.0,
+                ),
+            ],
+            None,
+            1,  # Excludes the sd that doesn't have an ad counterpart in ads
+            [0],
+            nullcontext(),
+            id="missing_audiodata_counterparts_of_excluded_spectrodata_shouldnt_raise",
+        ),
     ],
 )
 def test_link_audio_dataset(
