@@ -376,7 +376,14 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         first: int = 0,
         last: int | None = None,
     ) -> None:
-        """Link the ``SpectroData`` of the ``SpectroDataset`` to the ``AudioData`` of the ``AudioDataset``.
+        """Link the ``SpectroDataset`` to the ``AudioDataset``.
+
+        The ``SpectroData`` of the ``SpectroDataset`` will be linked to
+        the ``AudioData`` of the ``AudioDataset``.
+
+        There should be in the ``AudioDataset`` an ``AudioData`` that
+        have the same ``begin`` and ``end`` than each of the ``SpectroData``
+        of the ``SpectroDataset``.
 
         Parameters
         ----------
