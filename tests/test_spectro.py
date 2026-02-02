@@ -732,6 +732,7 @@ def test_link_audio_data(
         "spectro_data_params",
         "start_index",
         "stop_index",
+        "expected_relinked_data_idxs",
         "expected_exception",
     ),
     [
@@ -762,8 +763,100 @@ def test_link_audio_data(
             ],
             None,
             None,
+            [0, 1],
             nullcontext(),
             id="default_indexes_is_full_dataset",
+        ),
+        pytest.param(
+            [
+                (
+                    Timestamp("1994-02-27 00:00:00"),
+                    Timestamp("1994-02-27 00:00:01"),
+                    100.0,
+                ),
+                (
+                    Timestamp("1994-02-27 00:00:01"),
+                    Timestamp("1994-02-27 00:00:02"),
+                    100.0,
+                ),
+                (
+                    Timestamp("1994-02-27 00:00:02"),
+                    Timestamp("1994-02-27 00:00:03"),
+                    100.0,
+                ),
+            ],
+            [
+                (
+                    Timestamp("1994-02-27 00:00:00"),
+                    Timestamp("1994-02-27 00:00:01"),
+                    100.0,
+                ),
+                (
+                    Timestamp("1994-02-27 00:00:01"),
+                    Timestamp("1994-02-27 00:00:02"),
+                    100.0,
+                ),
+                (
+                    Timestamp("1994-02-27 00:00:02"),
+                    Timestamp("1994-02-27 00:00:03"),
+                    100.0,
+                ),
+            ],
+            1,
+            2,
+            [1],
+            nullcontext(),
+            id="link_a_part_of_the_data",
+        ),
+        pytest.param(
+            [
+                (
+                    Timestamp("1994-02-27 00:00:00"),
+                    Timestamp("1994-02-27 00:00:01"),
+                    100.0,
+                ),
+            ],
+            [
+                (
+                    Timestamp("1994-02-27 00:00:00"),
+                    Timestamp("1994-02-27 00:00:01"),
+                    150.0,
+                ),
+            ],
+            None,
+            None,
+            [],
+            pytest.raises(
+                ValueError,
+                match=r"The sample rate of the audio data doesn't match.",
+            ),
+            id="different_sample_rate",
+        ),
+        pytest.param(
+            [
+                (
+                    Timestamp("1994-02-27 00:00:00"),
+                    Timestamp("1994-02-27 00:00:01"),
+                    100.0,
+                ),
+                (
+                    Timestamp("1994-02-27 00:00:01"),
+                    Timestamp("1994-02-27 00:00:02"),
+                    100.0,
+                ),
+            ],
+            [
+                (
+                    Timestamp("1994-02-27 00:00:01"),
+                    Timestamp("1994-02-27 00:00:02"),
+                    100.0,
+                ),
+            ],
+            None,
+            None,
+            [0],
+            nullcontext(),
+            id="fewer_spectro_data_should_be_ok",
         ),
     ],
 )
@@ -777,6 +870,7 @@ def test_link_audio_dataset(
     ],  # begin, end, sample_rate
     start_index: int,
     stop_index: int,
+    expected_relinked_data_idxs: list[int],
     expected_exception: contextlib.AbstractContextManager,
 ) -> None:
     ads_origin = AudioDataset(
@@ -784,8 +878,8 @@ def test_link_audio_dataset(
             AudioData(
                 begin=sd_params[0],
                 end=sd_params[1],
-                mocked_value=[1.0]
-                * round((sd_params[1] - sd_params[0]).total_seconds() * sd_params[2]),
+                sample_rate=sd_params[2],
+                mocked_value=[1.0],
             )
             for sd_params in spectro_data_params
         ],
@@ -796,8 +890,8 @@ def test_link_audio_dataset(
             AudioData(
                 begin=ad_params[0],
                 end=ad_params[1],
-                mocked_value=[1.0]
-                * round((ad_params[1] - ad_params[0]).total_seconds() * ad_params[2]),
+                sample_rate=ad_params[2],
+                mocked_value=[1.0],
             )
             for ad_params in audio_data_params
         ],
@@ -821,10 +915,7 @@ def test_link_audio_dataset(
             last=stop_index,
         )
 
-    first_linked = 0 if start_index is None else start_index
-    last_linked = len(sds.data) if stop_index is None else stop_index
-
-    relinked_sd = sds.data[first_linked:last_linked]
+    relinked_sd = [sds.data[idx] for idx in expected_relinked_data_idxs]
     not_relinked_sd = [sd for sd in sds.data if sd not in relinked_sd]
 
     assert all(id(sd.audio_data) in origin_ids for sd in not_relinked_sd)

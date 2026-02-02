@@ -395,23 +395,16 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             Index of the last ``SpectroData`` and ``AudioData`` to link.
 
         """
-        if len(audio_dataset.data) != len(self.data):
-            msg = (
-                "The audio dataset doesn't contain the same number of data"
-                " as the spectro dataset."
-            )
-            raise ValueError(msg)
-
         last = len(self.data) if last is None else last
 
-        for sd, ad in list(
-            zip(
-                sorted(self.data, key=lambda d: (d.begin, d.end)),
-                sorted(audio_dataset.data, key=lambda d: (d.begin, d.end)),
-                strict=False,
-            ),
-        )[first:last]:
-            sd.link_audio_data(ad)
+        ad_dict = {(ad.begin, ad.end): ad for ad in audio_dataset.data}
+
+        for sd in self.data[first:last]:
+            key = (sd.begin, sd.end)
+            if key not in ad_dict:
+                msg = f"No AudioData found for SpectroData {sd}"
+                raise ValueError(msg)
+            sd.link_audio_data(ad_dict[key])
 
     def update_json_audio_data(self, first: int, last: int) -> None:
         """Update the serialized ``json`` file with the spectro data from first to last.
