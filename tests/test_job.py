@@ -4,6 +4,7 @@ import subprocess
 from contextlib import nullcontext
 from pathlib import Path
 
+import numpy as np
 import pytest
 from pandas import Timedelta
 
@@ -180,11 +181,22 @@ def test_submit_pbs_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
         lambda *args, **kwargs: Dummy(),
     )
 
+    updated_jobs = []
+
+    def mock_update_status(self: Job) -> JobStatus:
+        updated_jobs.append(job)
+        return JobStatus.PREPARED
+
+    monkeypatch.setattr(Job, "update_status", mock_update_status)
+
     assert job.status == JobStatus.PREPARED
     job.submit_pbs()
 
     assert job.job_id == "35173"
-    assert job.status == JobStatus.QUEUED
+    assert np.array_equal(
+        updated_jobs,
+        [job] * 2,
+    )  # Call before and after submitting the job
 
 
 def test_submit_pbs_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -581,7 +593,10 @@ def test_build_dependency_string_with_string_input(
         assert Job._build_dependency_string(dependency) == e
 
 
-def test_submit_pbs_adds_dependency_flag(tmp_path, monkeypatch):
+def test_submit_pbs_adds_dependency_flag(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     script = tmp_path / "script.py"
     script.write_text("")
     job = Job(script, name="crazy_diamond", output_folder=tmp_path)
@@ -593,11 +608,12 @@ def test_submit_pbs_adds_dependency_flag(tmp_path, monkeypatch):
         stdout = "1234567.server\n"
         stderr = ""
 
-    def fake_run(cmd, *args, **kwargs):
+    def fake_run(cmd: list[str], *args: None, **kwargs: None) -> Dummy:
         captured_cmd["cmd"] = cmd
         return Dummy()
 
     monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr(Job, "update_status", lambda _: JobStatus.PREPARED)
 
     job.submit_pbs(dependency="1234567")
 
