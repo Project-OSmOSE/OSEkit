@@ -352,7 +352,7 @@ class Job:
             raise RuntimeError(msg) from e
 
         self.job_id = request.stdout.split(".", maxsplit=1)[0].strip()
-        self.progress()
+        self.update_status()
 
     _VALID_DEPENDENCY_TYPES = {"afterok", "afterany", "afternotok", "after"}
 
