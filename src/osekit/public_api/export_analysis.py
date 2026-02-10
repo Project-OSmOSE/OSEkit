@@ -13,6 +13,7 @@ from osekit.core_api.audio_dataset import AudioDataset
 from osekit.core_api.spectro_dataset import SpectroDataset
 from osekit.public_api.analysis import AnalysisType
 from osekit.public_api.dataset import Dataset
+from osekit.utils.core_utils import deserialize_spectro_or_ltas_dataset
 
 
 def write_analysis(
@@ -314,7 +315,7 @@ def main() -> None:
         else None
     )
     sds = (
-        SpectroDataset.from_json(Path(args.sds_json))
+        deserialize_spectro_or_ltas_dataset(path=Path(args.sds_json))
         if args.sds_json.lower() != "none"
         else None
     )
