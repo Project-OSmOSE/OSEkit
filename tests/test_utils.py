@@ -3,12 +3,15 @@ from __future__ import annotations
 import time
 from contextlib import nullcontext
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 import pytest
 from pandas import Timedelta
 
+from osekit.core_api.ltas_dataset import LTASDataset
+from osekit.core_api.spectro_dataset import SpectroDataset
 from osekit.utils.audio_utils import Normalization, normalize
 from osekit.utils.core_utils import (
     file_indexes_per_batch,
@@ -16,8 +19,12 @@ from osekit.utils.core_utils import (
     locked,
     nb_files_per_batch,
 )
+from osekit.utils.deserialization import deserialize_spectro_or_ltas_dataset
 from osekit.utils.formatting_utils import aplose2raven
 from osekit.utils.path_utils import is_absolute, move_tree
+
+if TYPE_CHECKING:
+    from _pytest.monkeypatch import MonkeyPatch
 
 
 @pytest.fixture
@@ -546,3 +553,24 @@ def test_normalization(
 ) -> None:
     normalized = normalize(values=values, normalization=normalization)
     assert np.array_equal(normalized, expected)
+
+
+def test_deserialize_spectro_or_ltas_dataset(monkeypatch: MonkeyPatch) -> None:
+    def sds_deserialization(*args, **kwargs) -> str:  # noqa: ANN002, ANN003
+        return "SpectroDataset"
+
+    def ltasds_deserialization(*args, **kwargs) -> str:  # noqa: ANN002, ANN003
+        return "LTASDataset"
+
+    monkeypatch.setattr(SpectroDataset, "from_json", sds_deserialization)
+    monkeypatch.setattr(LTASDataset, "from_json", ltasds_deserialization)
+
+    assert deserialize_spectro_or_ltas_dataset(path=Path()) == "LTASDataset"
+
+    def raise_key_error(*args, **kwargs) -> None:  # noqa: ANN002, ANN003
+        msg = "'nb_time_bins'"
+        raise KeyError(msg)
+
+    monkeypatch.setattr(LTASDataset, "from_json", raise_key_error)
+
+    assert deserialize_spectro_or_ltas_dataset(path=Path()) == "SpectroDataset"
