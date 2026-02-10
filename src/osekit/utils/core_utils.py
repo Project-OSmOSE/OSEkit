@@ -9,8 +9,6 @@ from importlib.util import find_spec
 from typing import TYPE_CHECKING
 
 from osekit.config import global_logging_context as glc
-from osekit.core_api.ltas_dataset import LTASDataset
-from osekit.core_api.spectro_dataset import SpectroDataset
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -230,24 +228,3 @@ def get_closest_value_index(target: float, values: list[float]) -> int:
         (closest_lower_index, closest_upper_index),
         key=lambda i: abs(values[i] - target),
     )
-
-
-def deserialize_spectro_or_ltas_dataset(path: Path) -> SpectroDataset | LTASDataset:
-    """Return a ``LTASDataset`` or a ``SpectroDataset`` from the specified json file.
-
-    Parameters
-    ----------
-    path: Path
-        Path to the json file.
-
-    Returns
-    -------
-    SpectroDataset | LTASDataset
-        The deserialized ``LTASDataset`` if ``nb_time_bins`` is set to an integer, else
-        the deserialized ``SpectroDataset``.
-
-    """
-    try:
-        return LTASDataset.from_json(file=path)
-    except KeyError:
-        return SpectroDataset.from_json(file=path)
