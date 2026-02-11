@@ -184,15 +184,27 @@ class Analysis:
 
     @property
     def sample_rate(self) -> float | None:
-        """Return the sample rate of the analysis data."""
+        """Return the sample rate of the analysis."""
         return self._sample_rate
 
     @sample_rate.setter
     def sample_rate(self, value: float | None) -> None:
-        """Set the sample rate of the analysis data."""
+        """Set the sample rate of the analysis."""
         if self.fft is not None and value is not None:
             self.fft.fs = value
         self._sample_rate = value
+
+    @property
+    def fft(self) -> ShortTimeFFT | None:
+        """Return the FFT used in the analysis."""
+        return self._fft
+
+    @fft.setter
+    def fft(self, value: ShortTimeFFT | None) -> None:
+        """Set the FFT used in the analysis."""
+        if hasattr(self, "_sample_rate"):
+            self._validate_sample_rate(sample_rate=self.sample_rate, fft=value)
+        self._fft = value
 
     @staticmethod
     def _validate_sample_rate(
