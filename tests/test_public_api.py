@@ -681,6 +681,46 @@ def test_analysis_is_spectro(analysis: Analysis, expected: bool) -> None:
     assert analysis.is_spectro is expected
 
 
+def test_analysis_constructor_rejects_mismatched_fs() -> None:
+    with pytest.raises(
+        ValueError,
+        match="does not match",
+    ):
+        Analysis(
+            analysis_type=AnalysisType.SPECTROGRAM,
+            sample_rate=32_000,
+            fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
+        )
+
+
+def test_analysis_rejects_setting_fft_with_wrong_fs() -> None:
+    analysis = Analysis(
+        analysis_type=AnalysisType.SPECTROGRAM,
+        sample_rate=48_000,
+        fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="does not match",
+    ):
+        analysis.fft = ShortTimeFFT(hamming(1024), 1024, 32_000)
+
+
+def test_analysis_sample_rate_propagates_to_fft() -> None:
+    analysis = Analysis(
+        analysis_type=AnalysisType.SPECTROGRAM,
+        sample_rate=48_000,
+        fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
+    )
+
+    new_samplerate = 32_000
+    analysis.sample_rate = new_samplerate
+
+    assert analysis.sample_rate == new_samplerate
+    assert analysis.fft.fs == new_samplerate
+
+
 @pytest.mark.parametrize(
     ("audio_files", "instrument", "analysis", "expected_data"),
     [
