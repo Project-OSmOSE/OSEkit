@@ -217,7 +217,9 @@ class Analysis:
             return
         if fft.fs == sample_rate:
             return
-        msg = rf"The sample rate of the analysis ({sample_rate} Hz) \
-        does not match the sampling frequency of the \
-        fft ({fft.fs} Hz)"
+        msg = (
+            rf"The sample rate of the analysis ({sample_rate} Hz) "
+            rf"does not match the sampling frequency of the "
+            rf"fft ({fft.fs} Hz)"
+        )
         raise ValueError(msg)
