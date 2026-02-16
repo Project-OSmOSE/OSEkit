@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Generator
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -65,9 +66,10 @@ class AudioItem(BaseItem[AudioFile]):
             return np.zeros((1, self.nb_channels))
         return super().get_value()
 
-    def stream(self, chunk_size: int) -> np.ndarray:
+    def stream(self, chunk_size: int) -> Generator[np.ndarray, None, None]:
         start_frame, stop_frame = self.file.frames_indexes(
-            start=self.begin, stop=self.end
+            start=self.begin,
+            stop=self.end,
         )
 
         remaining = stop_frame - start_frame
@@ -75,4 +77,6 @@ class AudioItem(BaseItem[AudioFile]):
         self.file.seek(frame=start_frame)
 
         while remaining > 0:
-            pass
+            frames_to_read = min(chunk_size, remaining)
+            yield self.file.stream(chunk_size=frames_to_read)
+            remaining -= frames_to_read

@@ -105,3 +105,6 @@ class AudioFileManager:
 
     def seek(self, path: Path, frame: int) -> None:
         self._backend(path=path).seek(path=path, frame=frame)
+
+    def stream(self, path: Path, chunk_size: int) -> np.ndarray:
+        self._backend(path=path).stream(path=path, chunk_size=chunk_size)

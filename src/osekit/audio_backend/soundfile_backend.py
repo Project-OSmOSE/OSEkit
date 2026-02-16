@@ -72,6 +72,10 @@ class SoundFileBackend:
         self._switch(path=path)
         self._file.seek(frame)
 
+    def stream(self, path: PathLike, chunk_size: int) -> np.ndarray:
+        self._switch(path=path)
+        return self._file.read(frames=chunk_size)
+
     def _close(self) -> None:
         if self._file is None:
             return

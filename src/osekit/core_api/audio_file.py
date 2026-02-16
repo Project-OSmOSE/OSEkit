@@ -135,3 +135,6 @@ class AudioFile(BaseFile):
 
     def seek(self, frame: int) -> None:
         afm.seek(path=self.path, frame=frame)
+
+    def stream(self, chunk_size: int) -> np.ndarray:
+        return afm.stream(path=self.path, chunk_size=chunk_size)

@@ -86,3 +86,6 @@ class MSeedBackend:
 
     def seek(self, path: PathLike, frame: int) -> None:
         pass
+
+    def stream(self, path: PathLike, chunk_size: int) -> np.ndarray:
+        pass
