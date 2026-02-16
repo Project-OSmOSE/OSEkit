@@ -102,3 +102,6 @@ class AudioFileManager:
             raise ValueError(msg)
 
         return self._backend(path).read(path=path, start=start, stop=stop)
+
+    def seek(self, path: Path, frame: int) -> None:
+        self._backend(path=path).seek(path=path, frame=frame)

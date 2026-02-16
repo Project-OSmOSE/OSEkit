@@ -65,9 +65,12 @@ class SoundFileBackend:
             A ``(channel * frames)`` array containing the audio data.
 
         """
-        self._switch(path)
-        self._file.seek(start)
+        self.seek(path=path, frame=start)
         return self._file.read(stop - start)
+
+    def seek(self, path: PathLike, frame: int) -> None:
+        self._switch(path=path)
+        self._file.seek(frame)
 
     def _close(self) -> None:
         if self._file is None:

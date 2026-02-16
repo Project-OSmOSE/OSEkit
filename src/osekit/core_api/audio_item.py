@@ -64,3 +64,15 @@ class AudioItem(BaseItem[AudioFile]):
         if self.is_empty:
             return np.zeros((1, self.nb_channels))
         return super().get_value()
+
+    def stream(self, chunk_size: int) -> np.ndarray:
+        start_frame, stop_frame = self.file.frames_indexes(
+            start=self.begin, stop=self.end
+        )
+
+        remaining = stop_frame - start_frame
+
+        self.file.seek(frame=start_frame)
+
+        while remaining > 0:
+            pass

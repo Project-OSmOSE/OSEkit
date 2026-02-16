@@ -83,3 +83,6 @@ class MSeedBackend:
 
         data = np.concatenate([trace.data for trace in file_content])
         return data[start:stop]
+
+    def seek(self, path: PathLike, frame: int) -> None:
+        pass

@@ -132,3 +132,6 @@ class AudioFile(BaseFile):
         """
         afm.close()
         super().move(folder)
+
+    def seek(self, frame: int) -> None:
+        afm.seek(path=self.path, frame=frame)
