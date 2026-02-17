@@ -6,13 +6,16 @@ The data is accessed via an AudioItem object per AudioFile.
 
 from __future__ import annotations
 
+from collections.abc import Generator
 from math import ceil
 from typing import TYPE_CHECKING, Self
 
 import numpy as np
 import soundfile as sf
+import soxr
 from pandas import Timedelta, Timestamp
 
+from osekit.config import resample_quality_settings
 from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.audio_item import AudioItem
 from osekit.core_api.base_data import BaseData
@@ -216,6 +219,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             The value of the audio data.
 
         """
+        return np.vstack(list(self.stream()))
         data = np.empty(shape=self.shape)
         idx = 0
         for item in self.items:
@@ -224,6 +228,58 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             data[idx : idx + len(item_data)] = item_data
             idx += len(item_data)
         return data
+
+    def stream(self, chunk_size: int = 8192) -> Generator[np.ndarray, None, None]:
+        resampler = None
+        input_sr = None
+        produced_samples = 0
+        total_samples = self.length
+
+        for item in self.items:
+            if item.is_empty:
+                silence_length = round(item.duration.total_seconds() * self.sample_rate)
+                yield item.get_value().repeat(
+                    silence_length,
+                    axis=0,
+                )
+                produced_samples += silence_length
+                continue
+
+            if (resampler is None) or (input_sr != item.sample_rate):
+                input_sr = item.sample_rate
+                quality = resample_quality_settings[
+                    "downsample" if input_sr > self.sample_rate else "upsample"
+                ]
+                resampler = soxr.ResampleStream(
+                    in_rate=input_sr,
+                    out_rate=self.sample_rate,
+                    num_channels=self.nb_channels,
+                    quality=quality,
+                    dtype=np.float64,
+                )
+
+            for chunk in item.stream(chunk_size=chunk_size):
+                y = chunk
+                if item.sample_rate != self.sample_rate:
+                    y = resampler.resample_chunk(x=chunk)
+
+                remaining = total_samples - produced_samples
+                y = y[:remaining]
+                produced_samples += len(y)
+
+                yield y
+
+                if produced_samples >= total_samples:
+                    return
+
+        if resampler is None:
+            return
+
+        flush = resampler.resample_chunk(np.array([]), last=True)
+        if len(flush) and (remaining := (total_samples - produced_samples)):
+            if flush.ndim == 1:
+                flush = flush[:, None]
+            yield flush[:remaining]
 
     def get_value(self) -> np.ndarray:
         """Return the value of the audio data.

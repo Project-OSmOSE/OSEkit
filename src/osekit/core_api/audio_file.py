@@ -89,11 +89,8 @@ class AudioFile(BaseFile):
         """
         start_sample, stop_sample = self.frames_indexes(start, stop)
         data = afm.read(self.path, start=start_sample, stop=stop_sample)
-        if len(data.shape) == 1:
-            return data.reshape(
-                data.shape[0],
-                1,
-            )  # 2D array to match the format of multichannel audio
+        if data.ndim == 1:
+            return data[:, None]  # 2D array to match the format of multichannel audio
         return data
 
     def frames_indexes(self, start: Timestamp, stop: Timestamp) -> tuple[int, int]:
@@ -137,4 +134,7 @@ class AudioFile(BaseFile):
         afm.seek(path=self.path, frame=frame)
 
     def stream(self, chunk_size: int) -> np.ndarray:
-        return afm.stream(path=self.path, chunk_size=chunk_size)
+        data = afm.stream(path=self.path, chunk_size=chunk_size)
+        if data.ndim == 1:
+            return data[:, None]  # 2D array to match the format of multichannel audio
+        return data
