@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+from contextlib import nullcontext, AbstractContextManager
 from copy import deepcopy
 from pathlib import Path
 
@@ -679,6 +680,93 @@ def test_spectral_analysis_error_if_no_provided_fft(analysis_type: Analysis) -> 
 )
 def test_analysis_is_spectro(analysis: Analysis, expected: bool) -> None:
     assert analysis.is_spectro is expected
+
+
+def test_analysis_constructor_rejects_mismatched_fs() -> None:
+    with pytest.raises(
+        ValueError,
+        match="does not match",
+    ):
+        Analysis(
+            analysis_type=AnalysisType.SPECTROGRAM,
+            sample_rate=32_000,
+            fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
+        )
+
+
+def test_analysis_rejects_setting_fft_with_wrong_fs() -> None:
+    analysis = Analysis(
+        analysis_type=AnalysisType.SPECTROGRAM,
+        sample_rate=48_000,
+        fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="does not match",
+    ):
+        analysis.fft = ShortTimeFFT(hamming(1024), 1024, 32_000)
+
+
+def test_analysis_sample_rate_propagates_to_fft() -> None:
+    analysis = Analysis(
+        analysis_type=AnalysisType.SPECTROGRAM,
+        sample_rate=48_000,
+        fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
+    )
+
+    new_samplerate = 32_000
+    analysis.sample_rate = new_samplerate
+
+    assert analysis.sample_rate == new_samplerate
+    assert analysis.fft.fs == new_samplerate
+
+
+@pytest.mark.parametrize(
+    ("sample_rate", "fft", "expected"),
+    [
+        pytest.param(
+            None,
+            None,
+            nullcontext(),
+            id="no_sample_rate_nor_fft_shouldnt_raise",
+        ),
+        pytest.param(
+            None,
+            ShortTimeFFT(hamming(1024), 1024, 48_000),
+            nullcontext(),
+            id="no_sample_rate_shouldnt_raise",
+        ),
+        pytest.param(
+            48_000,
+            None,
+            nullcontext(),
+            id="no_fft_shouldnt_raise",
+        ),
+        pytest.param(
+            48_000,
+            ShortTimeFFT(hamming(1024), 1024, 48_000),
+            nullcontext(),
+            id="matching_sample_rate_and_fft_shouldnt_raise",
+        ),
+        pytest.param(
+            32_000,
+            ShortTimeFFT(hamming(1024), 1024, 48_000),
+            pytest.raises(ValueError, match="does not match"),
+            id="mismatching_sample_rate_and_fft_raises",
+        ),
+    ],
+)
+def test_analysis_validate_sample_rate(
+    sample_rate: float | None,
+    fft: ShortTimeFFT | None,
+    expected: AbstractContextManager,
+) -> None:
+    with expected:
+        Analysis(AnalysisType.AUDIO)._validate_sample_rate(
+            sample_rate=sample_rate,
+            fft=fft,
+        )
 
 
 @pytest.mark.parametrize(

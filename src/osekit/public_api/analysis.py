@@ -148,17 +148,19 @@ class Analysis:
             representing the maximum number of averaged time bins.
 
         """
+        self._validate_sample_rate(sample_rate=sample_rate, fft=fft)
+
         self.analysis_type = analysis_type
         self.begin = begin
         self.end = end
         self.data_duration = data_duration
         self.mode = mode
         self.overlap = overlap
+        self.fft = fft
         self.sample_rate = sample_rate
         self.name = name
         self.normalization = normalization
         self.subtype = subtype
-        self.fft = fft
         self.v_lim = v_lim
         self.colormap = colormap
         self.scale = scale
@@ -179,3 +181,45 @@ class Analysis:
                 AnalysisType.WELCH,
             )
         )
+
+    @property
+    def sample_rate(self) -> float | None:
+        """Return the sample rate of the analysis."""
+        return self._sample_rate
+
+    @sample_rate.setter
+    def sample_rate(self, value: float | None) -> None:
+        """Set the sample rate of the analysis."""
+        if self.fft is not None and value is not None:
+            self.fft.fs = value
+        self._sample_rate = value
+
+    @property
+    def fft(self) -> ShortTimeFFT | None:
+        """Return the FFT used in the analysis."""
+        return self._fft
+
+    @fft.setter
+    def fft(self, value: ShortTimeFFT | None) -> None:
+        """Set the FFT used in the analysis."""
+        if hasattr(self, "_sample_rate"):
+            self._validate_sample_rate(sample_rate=self.sample_rate, fft=value)
+        self._fft = value
+
+    @staticmethod
+    def _validate_sample_rate(
+        sample_rate: float | None,
+        fft: ShortTimeFFT | None,
+    ) -> None:
+        if sample_rate is None:
+            return
+        if fft is None:
+            return
+        if fft.fs == sample_rate:
+            return
+        msg = (
+            rf"The sample rate of the analysis ({sample_rate} Hz) "
+            rf"does not match the sampling frequency of the "
+            rf"fft ({fft.fs} Hz)"
+        )
+        raise ValueError(msg)
