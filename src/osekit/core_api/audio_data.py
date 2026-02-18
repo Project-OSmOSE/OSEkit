@@ -20,7 +20,7 @@ from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.audio_item import AudioItem
 from osekit.core_api.base_data import BaseData
 from osekit.core_api.instrument import Instrument
-from osekit.utils.audio_utils import Normalization, normalize, resample
+from osekit.utils.audio_utils import Normalization, normalize
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -220,16 +220,22 @@ class AudioData(BaseData[AudioItem, AudioFile]):
 
         """
         return np.vstack(list(self.stream()))
-        data = np.empty(shape=self.shape)
-        idx = 0
-        for item in self.items:
-            item_data = self._get_item_value(item)
-            item_data = item_data[: min(item_data.shape[0], data.shape[0] - idx)]
-            data[idx : idx + len(item_data)] = item_data
-            idx += len(item_data)
-        return data
 
     def stream(self, chunk_size: int = 8192) -> Generator[np.ndarray, None, None]:
+        """Stream the audio data in chunks.
+
+        Parameters
+        ----------
+        chunk_size: int
+            Size of the chunks of audio yielded by the generator.
+
+        Returns
+        -------
+        Generator[np.ndarray, None, None]:
+            Generated ``np.ndarray`` of dimensions (``chunk_size``*``self.nb_channels``)
+            of the streamed audio data.
+
+        """
         resampler = None
         input_sr = None
         produced_samples = 0
@@ -368,18 +374,6 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             begin=self.begin,
         )
         self.items = AudioData.from_files([file]).items
-
-    def _get_item_value(self, item: AudioItem) -> np.ndarray:
-        """Return the resampled (if needed) data from the audio item."""
-        item_data = item.get_value()
-        if item.is_empty:
-            return item_data.repeat(
-                round(item.duration.total_seconds() * self.sample_rate),
-                axis=0,
-            )
-        if item.sample_rate != self.sample_rate:
-            return resample(item_data, item.sample_rate, self.sample_rate)
-        return item_data
 
     def split(
         self,
