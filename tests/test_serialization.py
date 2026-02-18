@@ -18,7 +18,11 @@ from osekit.core_api.audio_dataset import AudioDataset
 from osekit.core_api.audio_file import AudioFile
 from osekit.core_api.frequency_scale import Scale, ScalePart
 from osekit.core_api.instrument import Instrument
-from osekit.core_api.json_serializer import relative_to_absolute, set_path_reference
+from osekit.core_api.json_serializer import (
+    absolute_to_relative,
+    relative_to_absolute,
+    set_path_reference,
+)
 from osekit.core_api.spectro_data import SpectroData
 from osekit.core_api.spectro_dataset import SpectroDataset
 from osekit.core_api.spectro_file import SpectroFile
@@ -996,6 +1000,72 @@ def test_spectro_dataset_serialization(
 def test_relative_to_absolute(target: str, root: str, expected: str) -> None:
     path: Path = relative_to_absolute(target_path=target, root_path=root)
     assert path.resolve() == Path(PureWindowsPath(expected)).resolve()
+
+
+def can_symlink(tmp_path: Path) -> bool:
+    try:
+        test_link = tmp_path / "link_test"
+        test_link.symlink_to(tmp_path)
+        test_link.unlink()
+    except OSError:
+        return False
+    return True
+
+
+@pytest.mark.parametrize(
+    ("target", "use_alias"),
+    [
+        pytest.param(
+            ".",
+            False,
+            id="same_path",
+        ),
+        pytest.param(
+            "../",
+            False,
+            id="parent",
+        ),
+        pytest.param(
+            "../milkkisses/serpentskirt",
+            False,
+            id="folder_in_parent",
+        ),
+        pytest.param(
+            "milkkisses/serpentskirt",
+            False,
+            id="folder_in_child",
+        ),
+        pytest.param(
+            "serpentskirt",
+            True,
+            id="drive_alias",
+        ),
+    ],
+)
+def test_absolute_ro_relative(
+    tmp_path: Path,
+    target: str,
+    use_alias: bool,
+) -> None:
+    if use_alias and not can_symlink(tmp_path):
+        pytest.skip("Symlink not permitted on this system.")
+
+    real_root = tmp_path / "cocteau"
+    real_root.mkdir(parents=True, exist_ok=True)
+
+    if use_alias:
+        alias_root = tmp_path / "twins"
+        alias_root.symlink_to(real_root)
+        root = alias_root
+    else:
+        root = real_root
+
+    expected = Path(target)
+
+    target = (real_root / target).resolve()
+    result = absolute_to_relative(target_path=target, root_path=root)
+
+    assert result == expected
 
 
 def test_relative_paths_serialization(tmp_path: Path) -> None:
