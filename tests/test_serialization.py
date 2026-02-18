@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path, PureWindowsPath
 
 import numpy as np
@@ -1003,6 +1002,16 @@ def test_relative_to_absolute(target: str, root: str, expected: str) -> None:
     assert path.resolve() == Path(PureWindowsPath(expected)).resolve()
 
 
+def can_symlink(tmp_path: Path) -> bool:
+    try:
+        test_link = tmp_path / "link_test"
+        test_link.symlink_to(tmp_path)
+        test_link.unlink()
+    except OSError:
+        return False
+    return True
+
+
 @pytest.mark.parametrize(
     ("target", "use_alias"),
     [
@@ -1030,10 +1039,6 @@ def test_relative_to_absolute(target: str, root: str, expected: str) -> None:
             "serpentskirt",
             True,
             id="drive_alias",
-            marks=pytest.mark.skipif(
-                os.name == "nt",
-                reason="Symlinks require admin or developer mode on Windows",
-            ),
         ),
     ],
 )
@@ -1042,6 +1047,9 @@ def test_absolute_ro_relative(
     target: str,
     use_alias: bool,
 ) -> None:
+    if use_alias and not can_symlink(tmp_path):
+        pytest.skip("Symlink not permitted on this system.")
+
     real_root = tmp_path / "cocteau"
     real_root.mkdir(parents=True, exist_ok=True)
 
