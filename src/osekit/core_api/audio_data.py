@@ -221,6 +221,19 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         """
         return np.vstack(list(self.stream()))
 
+    @staticmethod
+    def _flush(
+        resampler: soxr.ResampleStream,
+        remaining_samples: int,
+    ) -> np.ndarray:
+        flush = resampler.resample_chunk(np.array([]), last=True)
+        if len(flush) == 0:
+            return np.array([])
+        if not remaining_samples:
+            return np.array([])
+        flush = flush[:remaining_samples]
+        return flush[:, None] if flush.ndim == 1 else flush
+
     def stream(self, chunk_size: int = 8192) -> Generator[np.ndarray, None, None]:
         """Stream the audio data in chunks.
 
@@ -252,6 +265,13 @@ class AudioData(BaseData[AudioItem, AudioFile]):
                 continue
 
             if (resampler is None) or (input_sr != item.sample_rate):
+                if resampler:
+                    flush = self._flush(
+                        resampler=resampler,
+                        remaining_samples=total_samples - produced_samples,
+                    )
+                    yield flush
+                    produced_samples += len(flush[0])
                 input_sr = item.sample_rate
                 quality = resample_quality_settings[
                     "downsample" if input_sr > self.sample_rate else "upsample"
@@ -281,11 +301,10 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         if resampler is None:
             return
 
-        flush = resampler.resample_chunk(np.array([]), last=True)
-        if len(flush) and (remaining := (total_samples - produced_samples)):
-            if flush.ndim == 1:
-                flush = flush[:, None]
-            yield flush[:remaining]
+        yield self._flush(
+            resampler=resampler,
+            remaining_samples=total_samples - produced_samples,
+        )
 
     def get_value(self) -> np.ndarray:
         """Return the value of the audio data.
