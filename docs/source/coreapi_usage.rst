@@ -294,7 +294,7 @@ field:
 .. code-block:: python
 
     # Filtering the ads data to remove data without audio (e.g. between files)
-    ads.data = [ad for ad in ads.data if not ad.is_empty]
+    ads.remove_empty_data(threshold=0.)
 
     # Resampling/Exporting only the first audio data
     ad = ads.data[0]

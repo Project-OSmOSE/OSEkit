@@ -186,7 +186,7 @@ The returned ``AudioDataset`` can be edited at will and passed as a parameter la
     ads = dataset.get_analysis_audiodataset(analysis=analysis)
 
     # Filtering out the AudioData that are not linked to any audio file:
-    ads.data = [ad for ad in ads.data if not ad.is_empty]
+    ads.remove_empty_data(threshold=0.)
 
 The returned ``SpectroDataset`` can be used e.g. to plot sample spectrograms prior to the analysis:
 
