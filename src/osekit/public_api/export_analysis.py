@@ -6,13 +6,17 @@ import argparse
 import logging
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from osekit import config, setup_logging
 from osekit.config import global_logging_context as glc
 from osekit.core_api.audio_dataset import AudioDataset
-from osekit.core_api.spectro_dataset import SpectroDataset
 from osekit.public_api.analysis import AnalysisType
 from osekit.public_api.dataset import Dataset
+from osekit.utils.deserialization import deserialize_spectro_or_ltas_dataset
+
+if TYPE_CHECKING:
+    from osekit.core_api.spectro_dataset import SpectroDataset
 
 
 def write_analysis(
@@ -314,7 +318,7 @@ def main() -> None:
         else None
     )
     sds = (
-        SpectroDataset.from_json(Path(args.sds_json))
+        deserialize_spectro_or_ltas_dataset(path=Path(args.sds_json))
         if args.sds_json.lower() != "none"
         else None
     )
