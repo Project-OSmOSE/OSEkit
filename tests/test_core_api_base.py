@@ -1,115 +1,15 @@
 from __future__ import annotations
 
-import typing
 from pathlib import Path
-from typing import Literal, Self
+from typing import Literal
 
 import numpy as np
-import pandas as pd
 import pytest
-from pandas import Timedelta, Timestamp
+from pandas import Timedelta, Timestamp, date_range
 
 from osekit.config import TIMESTAMP_FORMATS_EXPORTED_FILES
-from osekit.core_api.base_data import BaseData, TFile
-from osekit.core_api.base_dataset import BaseDataset, TData
-from osekit.core_api.base_file import BaseFile
-from osekit.core_api.base_item import BaseItem
 from osekit.core_api.event import Event
-
-
-class DummyFile(BaseFile):
-    supported_extensions: typing.ClassVar = [""]
-
-    def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray: ...
-
-
-class DummyItem(BaseItem[DummyFile]): ...
-
-
-class DummyData(BaseData[DummyItem, DummyFile]):
-    item_cls = DummyItem
-
-    def write(self, folder: Path, *, link: bool = False) -> None: ...
-
-    def link(self, folder: Path) -> None: ...
-
-    def _make_split_data(
-        self,
-        files: list[DummyFile],
-        begin: Timestamp,
-        end: Timestamp,
-        **kwargs,  # noqa: ANN003
-    ) -> Self:
-        return DummyData.from_files(files=files, begin=begin, end=end, **kwargs)
-
-    @classmethod
-    def _make_file(cls, path: Path, begin: Timestamp) -> DummyFile:
-        return DummyFile(path=path, begin=begin)
-
-    @classmethod
-    def _make_item(
-        cls,
-        file: TFile | None = None,
-        begin: Timestamp | None = None,
-        end: Timestamp | None = None,
-    ) -> DummyItem:
-        return DummyItem(file=file, begin=begin, end=end)
-
-    @classmethod
-    def _from_base_dict(
-        cls,
-        dictionary: dict,
-        files: list[TFile],
-        begin: Timestamp,
-        end: Timestamp,
-        **kwargs,  # noqa: ANN003
-    ) -> Self:
-        return cls.from_files(
-            files=files,
-            begin=begin,
-            end=end,
-        )
-
-    @classmethod
-    def from_files(
-        cls,
-        files: list[DummyFile],
-        begin: Timestamp | None = None,
-        end: Timestamp | None = None,
-        name: str | None = None,
-        **kwargs,  # noqa: ANN003
-    ) -> Self:
-        return super().from_files(
-            files=files,
-            begin=begin,
-            end=end,
-            name=name,
-            **kwargs,
-        )
-
-
-class DummyDataset(BaseDataset[DummyData, DummyFile]):
-    @classmethod
-    def _data_from_dict(cls, dictionary: dict) -> list[TData]:
-        return [DummyData.from_dict(data) for data in dictionary.values()]
-
-    @classmethod
-    def _data_from_files(
-        cls,
-        files: list[DummyFile],
-        begin: Timestamp | None = None,
-        end: Timestamp | None = None,
-        name: str | None = None,
-        **kwargs,
-    ) -> TData:
-        return DummyData.from_files(
-            files=files,
-            begin=begin,
-            end=end,
-            name=name,
-        )
-
-    file_cls = DummyFile
+from tests.helpers.dummy import DummyData, DummyDataset, DummyFile
 
 
 @pytest.fixture
@@ -117,14 +17,14 @@ def dummy_dataset(tmp_path: Path) -> DummyDataset:
     files = [tmp_path / f"file_{i}.txt" for i in range(5)]
     for file in files:
         file.touch()
-    timestamps = pd.date_range(
-        start=pd.Timestamp("2000-01-01 00:00:00"),
+    timestamps = date_range(
+        start=Timestamp("2000-01-01 00:00:00"),
         freq="1s",
         periods=5,
     )
 
     dfs = [
-        DummyFile(path=file, begin=timestamp, end=timestamp + pd.Timedelta(seconds=1))
+        DummyFile(path=file, begin=timestamp, end=timestamp + Timedelta(seconds=1))
         for file, timestamp in zip(files, timestamps, strict=False)
     ]
     return DummyDataset.from_files(files=dfs, mode="files")
@@ -1122,7 +1022,7 @@ def test_dataset_move(
     ],
 )
 def test_base_dataset_file_mode(
-    tmp_path: pytest.fixture,
+    tmp_path: Path,
     files: list[DummyFile],
     mode: Literal["files", "timedelta_total"],
     data_duration: Timedelta | None,
@@ -1291,7 +1191,7 @@ def test_base_dataset_file_mode(
     ],
 )
 def test_base_data_boundaries(
-    monkeypatch: pytest.fixture,
+    monkeypatch: pytest.MonkeyPatch,
     files: list[DummyFile],
     begin: Timestamp,
     end: Timestamp,
@@ -2481,3 +2381,189 @@ def test_dummydataset_data_from_dict() -> None:
         )[0]
         == dd1
     )
+
+
+@pytest.mark.parametrize(
+    ("files", "begin", "end", "expected_pop_duration", "expected_pop_ratio"),
+    [
+        pytest.param(
+            [
+                DummyFile(
+                    path=Path("foo"),
+                    begin=Timestamp("2009-02-24 00:00:00"),
+                ),
+            ],
+            Timestamp("2009-02-24 00:00:00"),
+            Timestamp("2009-02-24 00:00:01"),
+            Timedelta(seconds=1),
+            1.0,
+            id="one-full-file",
+        ),
+        pytest.param(
+            [
+                DummyFile(
+                    path=Path("foo"),
+                    begin=Timestamp("2009-02-24 00:00:00"),
+                ),
+            ],
+            Timestamp("2009-02-24 00:00:00.4"),
+            Timestamp("2009-02-24 00:00:00.6"),
+            Timedelta(seconds=0.2),
+            1.0,
+            id="one-full-file-part",
+        ),
+        pytest.param(
+            [
+                DummyFile(
+                    path=Path("foo"),
+                    begin=Timestamp("2009-02-24 00:00:00"),
+                ),
+            ],
+            Timestamp("2009-02-24 00:00:00.5"),
+            Timestamp("2009-02-24 00:00:01.5"),
+            Timedelta(seconds=0.5),
+            0.5,
+            id="one-file-part-with-empty-item",
+        ),
+        pytest.param(
+            [
+                DummyFile(
+                    path=Path("foo"),
+                    begin=Timestamp("2009-02-24 00:00:00"),
+                ),
+                DummyFile(
+                    path=Path("bar"),
+                    begin=Timestamp("2009-02-24 00:00:01"),
+                ),
+            ],
+            Timestamp("2009-02-24 00:00:00"),
+            Timestamp("2009-02-24 00:00:02"),
+            Timedelta(seconds=2),
+            1,
+            id="two-full-consecutive-files",
+        ),
+        pytest.param(
+            [
+                DummyFile(
+                    path=Path("foo"),
+                    begin=Timestamp("2009-02-24 00:00:00"),
+                ),
+                DummyFile(
+                    path=Path("bar"),
+                    begin=Timestamp("2009-02-24 00:00:02"),
+                ),
+            ],
+            Timestamp("2009-02-24 00:00:00"),
+            Timestamp("2009-02-24 00:00:03"),
+            Timedelta(seconds=2),
+            2 / 3,
+            id="two-full-files-with-empty-gap",
+        ),
+        pytest.param(
+            [
+                DummyFile(
+                    path=Path("foo"),
+                    begin=Timestamp("2009-02-24 00:00:02"),
+                ),
+                DummyFile(
+                    path=Path("bar"),
+                    begin=Timestamp("2009-02-24 00:00:04"),
+                ),
+            ],
+            Timestamp("2009-02-24 00:00:00"),
+            Timestamp("2009-02-24 00:00:10"),
+            Timedelta(seconds=2),
+            2 / 10,
+            id="empty-items-before-and-after-files",
+        ),
+    ],
+)
+def test_populated_duration_and_ratio(
+    files: list[DummyFile],
+    begin: Timestamp,
+    end: Timestamp,
+    expected_pop_duration: Timedelta,
+    expected_pop_ratio: float,
+) -> None:
+    dummy_data = DummyData.from_files(files=files, begin=begin, end=end)
+    assert dummy_data.populated_duration == expected_pop_duration
+    assert np.isclose(dummy_data.populated_ratio, expected_pop_ratio)
+
+
+@pytest.mark.parametrize(
+    ("data_populated_ratios", "threshold", "expected_kept_data_idx"),
+    [
+        pytest.param(
+            [1.0],
+            0.0,
+            [0],
+            id="one_kept_data",
+        ),
+        pytest.param(
+            [0.0],
+            1.0,
+            [],
+            id="one_rejected_data",
+        ),
+        pytest.param(
+            [0.0, 1.0],
+            0.5,
+            [1],
+            id="one_kept_one_rejected",
+        ),
+        pytest.param(
+            [1.0, 1.0, 0.8, 0.6, 0.7],
+            0.65,
+            [0, 1, 2, 4],
+            id="all_kept_but_one",
+        ),
+        pytest.param(
+            [0.49, 0.5, 0.51],
+            0.5,
+            [2],
+            id="threshold_is_exclusive",
+        ),
+    ],
+)
+def test_dataset_remove_empty_data(
+    monkeypatch: pytest.MonkeyPatch,
+    data_populated_ratios: list[float],
+    threshold: float,
+    expected_kept_data_idx: list[int],
+) -> None:
+    monkeypatch.setattr(
+        DummyData,
+        "populated_ratio",
+        property(lambda d: d._populated_ratio),
+    )
+
+    data = []
+    for ratio in data_populated_ratios:
+        d = DummyData.from_files(
+            [DummyFile(path=Path(r"bruit"), begin=Timestamp("2021-04-02 00:00:00"))],
+        )
+        d._populated_ratio = ratio
+        data.append(d)
+
+    expected_kept_data = [
+        d for idx, d in enumerate(data) if idx in expected_kept_data_idx
+    ]
+    expected_removed_data = [
+        d for idx, d in enumerate(data) if idx not in expected_kept_data_idx
+    ]
+
+    ds = DummyDataset(data)
+    removed_data = ds.remove_empty_data(threshold=threshold)
+
+    assert np.array_equal(ds.data, expected_kept_data)
+    assert np.array_equal(removed_data, expected_removed_data)
+
+
+def test_dataset_remove_empty_data_threshold_errors() -> None:
+    ds = DummyDataset(data=[])
+
+    with pytest.raises(ValueError, match=r"Threshold should be between 0 and 1."):
+        ds.remove_empty_data(threshold=-0.5)
+
+    with pytest.raises(ValueError, match=r"Threshold should be between 0 and 1."):
+        ds.remove_empty_data(threshold=1.5)
