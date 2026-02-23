@@ -27,7 +27,9 @@ def absolute_to_relative(
         Target path expressed relative to the root path.
 
     """
-    target_path, root_path = map(Path, (target_path, root_path))
+    target_path, root_path = (
+        path.resolve() for path in map(Path, (target_path, root_path))
+    )
     return Path(os.path.relpath(path=target_path, start=root_path))
 
 

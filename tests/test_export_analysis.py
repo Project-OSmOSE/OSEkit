@@ -8,7 +8,6 @@ import pytest
 
 from osekit import config
 from osekit.core_api.audio_dataset import AudioDataset
-from osekit.core_api.spectro_dataset import SpectroDataset
 from osekit.public_api import export_analysis
 from osekit.public_api.export_analysis import create_parser
 from osekit.utils.job import Job
@@ -164,7 +163,11 @@ def test_main_script(monkeypatch: pytest.MonkeyPatch, script_arguments: dict) ->
         calls["sds_json"] = path
         return path
 
-    monkeypatch.setattr(SpectroDataset, "from_json", mock_sds_json)
+    monkeypatch.setattr(
+        export_analysis,
+        "deserialize_spectro_or_ltas_dataset",
+        mock_sds_json,
+    )
 
     def mock_write_analysis(*args: list, **kwargs: dict) -> None:
         for k, v in kwargs.items():
