@@ -19,6 +19,7 @@ class MSeedBackend:
     def __init__(self) -> None:
         """Initialize the MSEED backend."""
         _require_obspy()
+        self.seeked_frame = 0
 
     def close(self) -> None:
         """Close the currently opened file. No use in MSEED files."""
@@ -83,3 +84,37 @@ class MSeedBackend:
 
         data = np.concatenate([trace.data for trace in file_content])
         return data[start:stop]
+
+    def seek(self, path: PathLike, frame: int) -> None:
+        """Set the seeked_frame of the backend.
+
+        Streamed data will be streamed from this frame.
+
+        Parameters
+        ----------
+        path: PathLike | str
+            No effect.
+        frame: int
+            Frame to seek.
+
+        """
+        self.seeked_frame = frame
+
+    def stream(self, path: PathLike, chunk_size: int) -> np.ndarray:
+        """Stream the content of the MSEED file from the seeked frame.
+
+        Parameters
+        ----------
+        path: PathLike
+            Path to the mseed file.
+        chunk_size: int
+            Number of frames to stream.
+
+        Returns
+        -------
+        np.ndarray:
+            Streamed data of length ``chunk_size`` from ``self.seeked_frame``.
+        """
+        return self.read(
+            path=path, start=self.seeked_frame, stop=self.seeked_frame + chunk_size
+        )

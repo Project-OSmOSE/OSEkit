@@ -222,6 +222,34 @@ def test_audio_file_read(
     assert np.allclose(files[0].read(start, stop)[:, 0], expected, atol=1e-7)
 
 
+@pytest.mark.parametrize(
+    ("mocked_data", "expected_shape"),
+    [
+        pytest.param(np.array([0, 1, 2, 3]), (4, 1), id="1d-to-2d"),
+        pytest.param(np.array([[0, 1], [2, 3], [4, 5], [6, 7]]), (4, 2), id="2d-to-2d"),
+    ],
+)
+def test_audio_file_stream_is_always_2d(
+    monkeypatch: pytest.MonkeyPatch,
+    mocked_data: np.ndarray,
+    expected_shape: tuple,
+) -> None:
+    def mocked_stream(*args: None, **kwargs: None) -> np.ndarray:
+        return mocked_data
+
+    monkeypatch.setattr("osekit.core_api.audio_file.afm.stream", mocked_stream)
+
+    def mocked_init(self: AudioFile, *args: None, **kwargs: None) -> None:
+        self.path = Path()
+        self.begin = Timestamp("1996-04-15 00:00:00")
+
+    monkeypatch.setattr(AudioFile, "__init__", mocked_init)
+
+    af = AudioFile()
+
+    assert af.stream(1024).shape == expected_shape
+
+
 def test_multichannel_audio_file_read(monkeypatch: pytest.MonkeyPatch) -> None:
     full_file = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3], [4, 4, 4], [5, 5, 5]])
 
@@ -714,6 +742,27 @@ def test_audio_resample_sample_count(
     data = AudioData.from_files(audio_files, begin=start, end=stop)
     data.sample_rate = sample_rate
     assert data.get_value().shape[0] == expected_nb_samples
+
+
+def test_audio_resample_different_samplerates(tmp_path: Path) -> None:
+    fs1 = 20
+    fs2 = 10
+    d1 = 1
+    d2 = 1
+    s1 = np.linspace(-1.0, 0.0, fs1 * d1)
+    s2 = np.linspace(0.0, 1.0, fs2 * d2)
+
+    p1 = tmp_path / "s1.wav"
+    p2 = tmp_path / "s2.wav"
+
+    sf.write(file=p1, data=s1, samplerate=fs1)
+    sf.write(file=p2, data=s2, samplerate=fs2)
+
+    af1 = AudioFile(path=p1, begin=Timestamp("2020-01-01 00:00:00"))
+    af2 = AudioFile(path=p2, begin=Timestamp("2020-01-01 00:00:01"))
+
+    ad = AudioData.from_files(files=[af1, af2], sample_rate=10)
+    assert ad.get_value().shape == (20, 1)
 
 
 @pytest.mark.parametrize(
