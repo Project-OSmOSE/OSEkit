@@ -2548,12 +2548,15 @@ def test_dataset_remove_empty_data(
     expected_kept_data = [
         d for idx, d in enumerate(data) if idx in expected_kept_data_idx
     ]
+    expected_removed_data = [
+        d for idx, d in enumerate(data) if idx not in expected_kept_data_idx
+    ]
 
     ds = DummyDataset(data)
-
-    ds.remove_empty_data(threshold=threshold)
+    removed_data = ds.remove_empty_data(threshold=threshold)
 
     assert np.array_equal(ds.data, expected_kept_data)
+    assert np.array_equal(removed_data, expected_removed_data)
 
 
 def test_dataset_remove_empty_data_threshold_errors() -> None:
