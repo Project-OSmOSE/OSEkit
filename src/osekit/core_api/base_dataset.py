@@ -170,7 +170,7 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
         ]
         return max(set(data_durations), key=data_durations.count)
 
-    def remove_empty_data(self, threshold: float = 0.0) -> None:
+    def remove_empty_data(self, threshold: float = 0.0) -> list[TData]:
         """Remove data that has less than ``threshold`` % of non-empty duration.
 
         Parameters
@@ -180,11 +180,22 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
             data should be removed.
             Must be in the ``[0.,1.]`` interval.
 
+        Returns
+        -------
+        list[TData]:
+            The removed Data objects.
+
         """
         if not 0.0 <= threshold <= 1.0:
             msg = f"Threshold should be between 0 and 1. Got {threshold}"
             raise ValueError(msg)
-        self.data = [data for data in self.data if data.populated_ratio > threshold]
+
+        kept, removed = [], []
+        for data in self.data:
+            (kept if data.populated_ratio > threshold else removed).append(data)
+
+        self.data = kept
+        return removed
 
     def write(
         self,
