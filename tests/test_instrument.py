@@ -315,7 +315,7 @@ def test_instrument_level_spectrum(
     # scatters around sine_frequency
     level_tolerance = 8
 
-    equalized_sx = sd.to_db(sd.get_value())
+    equalized_sx = sd._to_db(sd.get_value())
     computed_level = equalized_sx[bin_idx, :].mean()
 
     # For the full chain, the expected level is:
@@ -337,7 +337,7 @@ def test_instrument_level_spectrum(
         ],
     )
 
-    equalized_sx_npz = sd_npz.to_db(sd_npz.get_value())
+    equalized_sx_npz = sd_npz._to_db(sd_npz.get_value())
     computed_level_npz = equalized_sx_npz[bin_idx, :].mean()
 
     assert abs(computed_level_npz - expected_level) < level_tolerance
@@ -360,7 +360,7 @@ def test_instrument_level_spectrum(
     )
 
     sd2 = SpectroData.from_audio_data(ad2, sft)
-    equalized_sx2 = sd2.to_db(sd2.get_value())
+    equalized_sx2 = sd2._to_db(sd2.get_value())
     computed_level_sx2 = equalized_sx2[bin_idx, :].mean()
 
     assert abs(computed_level_sx2 - expected_level) < level_tolerance

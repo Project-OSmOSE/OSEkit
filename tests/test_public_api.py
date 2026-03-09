@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import itertools
-from contextlib import nullcontext, AbstractContextManager
+from contextlib import AbstractContextManager, nullcontext
 from copy import deepcopy
 from pathlib import Path
 
@@ -581,7 +581,7 @@ def test_serialization(
         )[0]
         sd = dataset.get_dataset(analysis.name).data[0]
         level_tolerance = 8
-        equalized_sx = sd.to_db(sd.get_value())
+        equalized_sx = sd._to_db(sd.get_value())
         computed_level = equalized_sx[bin_idx, :].mean()
         assert abs(computed_level - expected_level) < level_tolerance
 
@@ -602,8 +602,8 @@ def test_serialization(
             )
         if t_o is SpectroDataset:
             assert np.array_equal(
-                d_o.data[0].to_db(d_o.data[0].get_value()),
-                d_d.data[0].to_db(d_d.data[0].get_value()),
+                d_o.data[0]._to_db(d_o.data[0].get_value()),
+                d_d.data[0]._to_db(d_d.data[0].get_value()),
             )
 
 

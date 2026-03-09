@@ -632,8 +632,8 @@ def test_spectro_data_serialization(
     )
 
     assert np.allclose(
-        sd.to_db(sd.get_value()),
-        sd2.to_db(sd2.get_value()),
+        sd._to_db(sd.get_value()),
+        sd2._to_db(sd2.get_value()),
     )
 
     assert sd.db_ref == sd2.db_ref
@@ -659,8 +659,8 @@ def test_spectro_data_serialization(
     )
 
     assert np.array_equal(
-        sd.to_db(sd.get_value()),
-        sd2.to_db(sd2.get_value()),
+        sd._to_db(sd.get_value()),
+        sd2._to_db(sd2.get_value()),
     )
 
     assert sd.db_ref == sd2.db_ref
@@ -882,7 +882,7 @@ def test_spectro_dataset_serialization(
         sd.db_ref == sd2.db_ref for sd, sd2 in zip(sds.data, sds2.data, strict=False)
     )
     assert all(
-        np.array_equal(sd.to_db(sd.get_value()), sd2.to_db(sd2.get_value()))
+        np.array_equal(sd._to_db(sd.get_value()), sd2._to_db(sd2.get_value()))
         for sd, sd2 in zip(sds.data, sds2.data, strict=False)
     )
 
@@ -909,7 +909,7 @@ def test_spectro_dataset_serialization(
         sd.db_ref == sd3.db_ref for sd, sd3 in zip(sds.data, sds3.data, strict=False)
     )
     assert all(
-        np.array_equal(sd.to_db(sd.get_value()), sd3.to_db(sd3.get_value()))
+        np.array_equal(sd._to_db(sd.get_value()), sd3._to_db(sd3.get_value()))
         for sd, sd3 in zip(sds.data, sds3.data, strict=False)
     )
     assert sds.begin == sds3.begin
