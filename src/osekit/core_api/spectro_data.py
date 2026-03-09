@@ -462,7 +462,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         ax = ax if ax is not None else SpectroData.get_default_ax()
         sx = self.get_value() if sx is None else sx
 
-        sx = self.to_db(sx)
+        sx = self._to_db(sx)
 
         time = pd.date_range(start=self.begin, end=self.end, periods=sx.shape[1])
         freq = self.fft.f
@@ -481,7 +481,30 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             extent=(date2num(time[0]), date2num(time[-1]), freq[0], freq[-1]),
         )
 
-    def to_db(self, sx: np.ndarray) -> np.ndarray:
+    def get_db_value(self, sx: np.ndarray | None = None) -> np.ndarray:
+        """Return the ``Sx`` matrix of the spectrogram expressed in ``dB``.
+
+        If the ``self.audio_data.instrument is not None``, the values are
+        converted to ``dB SPL`` (re ``self.audio_data.instrument.P_REF``).
+        Otherwise, the values are converted to ``dB FS``.
+
+        Parameters
+        ----------
+        sx: np.ndarray
+            Sx values of the spectrum.
+            If not provided, sx values will be fetched thanks to the
+            ``SpectroData.get_value()`` method.
+
+        Returns
+        -------
+        np.ndarray
+            Sx values in decibel.
+
+        """
+        sx = sx if sx is not None else self.get_value()
+        return self._to_db(sx=sx)
+
+    def _to_db(self, sx: np.ndarray) -> np.ndarray:
         """Convert the ``sx`` values to ``dB``.
 
         If the ``self.audio_data.instrument is not None``, the values are

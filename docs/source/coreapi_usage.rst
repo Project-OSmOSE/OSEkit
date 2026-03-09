@@ -335,7 +335,7 @@ The ``SpectroData`` object can be used to compute the spectrum matrices of the `
 
 The :attr:`osekit.core_api.spectro_data.SpectroData.sx_dtype` property can be set to either ``complex`` (default) or ``float`` to return either the spectrum matrices as complex numbers or absolute values, respectively.
 
-The spectrum matrices can be converted to decibels thanks to the :meth:`osekit.core_api.spectro_data.SpectroData.to_db` method.
+The spectrum matrices can be converted to decibels thanks to the :meth:`osekit.core_api.spectro_data.SpectroData.get_db_value` method.
 This method will convert the matrix values either to dB SPL (re ``Instrument.P_REF``) if an :ref:`Instrument <instrument_calibration>` was provided to the ``AudioData`` or to dB FS otherwise.
 
 The spectrum matrices can then be exported to npz files thanks to the :meth:`osekit.core_api.spectro_data.SpectroData.write` method.
@@ -344,8 +344,7 @@ The spectrum matrices can then be exported to npz files thanks to the :meth:`ose
 
     sd = SpectroData.from_audio_data(data=ad, fft=sft)
 
-    sx = sd.get_value()
-    sx_db = sd.to_db(sx)
+    sx_db = sd.get_db_value() # Use sd.get_value() if you want the complex spectrum
 
     # If sx has already been computed, you can pass it as a parameter to avoid re-computing it.
     # Otherwise, it will just be computed from scratch.
