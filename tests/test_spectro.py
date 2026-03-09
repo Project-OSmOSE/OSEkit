@@ -1735,3 +1735,36 @@ def test_spectro_populated_duration(
     )
     sd.audio_data = None
     assert sd.populated_duration == Timedelta(0.0)
+
+
+def test_spectro_get_db_value(
+    patch_audio_data: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    get_value_calls = []
+
+    def mock_get_value(self, *args, **kwargs) -> np.ndarray:
+        get_value_calls.append(self)
+        return np.array([1, 2, 3])
+
+    def mock_to_db(self: SpectroData | None, sx: np.ndarray) -> np.ndarray:
+        return sx * 10
+
+    monkeypatch.setattr(SpectroData, "get_value", mock_get_value)
+    monkeypatch.setattr(SpectroData, "_to_db", mock_to_db)
+
+    sd = SpectroData.from_audio_data(
+        data=AudioData(mocked_value=[0, 1, 2]),
+        fft=ShortTimeFFT(hamming(512), hop=128, fs=48_000),
+    )
+
+    # Passing the Sx should not call get_value()
+    vs = np.array([1, 2, 3, 4, 5])
+    sx_db = sd.get_db_value(sx=vs)
+    assert len(get_value_calls) == 0
+    assert np.array_equal(sx_db, mock_to_db(None, sx=vs))
+
+    # Not passing the Sx should call get_value()
+    sx_db = sd.get_db_value()
+    assert len(get_value_calls) == 1
+    assert get_value_calls[0] == sd
+    assert np.array_equal(sx_db, mock_to_db(None, sx=sd.get_value()))
