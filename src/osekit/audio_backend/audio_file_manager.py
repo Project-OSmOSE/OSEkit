@@ -102,3 +102,9 @@ class AudioFileManager:
             raise ValueError(msg)
 
         return self._backend(path).read(path=path, start=start, stop=stop)
+
+    def seek(self, path: Path, frame: int) -> None:
+        self._backend(path=path).seek(path=path, frame=frame)
+
+    def stream(self, path: Path, chunk_size: int) -> np.ndarray:
+        return self._backend(path=path).stream(path=path, chunk_size=chunk_size)
