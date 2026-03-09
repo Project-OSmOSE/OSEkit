@@ -492,6 +492,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         ----------
         sx: np.ndarray
             Sx values of the spectrum.
+            If not provided, sx values will be fetched thanks to the
+            ``SpectroData.get_value()`` method.
 
         Returns
         -------
