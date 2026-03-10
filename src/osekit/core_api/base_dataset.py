@@ -222,6 +222,7 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
 
         """
         last = len(self.data) if last is None else last
+        self._check_duplicate_data_names(first_idx=first, last_idx=last)
         for data in tqdm(
             self.data[first:last],
             disable=os.getenv("DISABLE_TQDM", "False").lower() in ("true", "1", "t"),
