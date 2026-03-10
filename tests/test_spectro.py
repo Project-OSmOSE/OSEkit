@@ -1383,12 +1383,17 @@ def test_garbage_collection_after_save_spectrogram(
 
     assert collect_calls[0] == 2  # noqa: PLR2004
 
-    sds = SpectroDataset([sd] * 5)
+    sds = SpectroDataset(sd.split(5))
     sds.save_spectrogram(tmp_path / "output")
 
     assert collect_calls[0] == 7  # noqa: PLR2004
 
-    ltass = LTASDataset([ltas] * 5)
+    ltass = LTASDataset(
+        [
+            LTASData.from_spectro_data(sd, nb_time_bins=ltas.nb_time_bins)
+            for sd in ltas.split(5)
+        ],
+    )
     ltass.save_spectrogram(tmp_path / "output")
 
     assert collect_calls[0] == 12  # noqa: PLR2004
@@ -1738,7 +1743,8 @@ def test_spectro_populated_duration(
 
 
 def test_spectro_get_db_value(
-    patch_audio_data: None, monkeypatch: pytest.MonkeyPatch
+    patch_audio_data: None,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     get_value_calls = []
 
