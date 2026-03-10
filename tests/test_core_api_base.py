@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import AbstractContextManager, nullcontext
 from pathlib import Path
 from typing import Literal
 
@@ -2567,3 +2568,70 @@ def test_dataset_remove_empty_data_threshold_errors() -> None:
 
     with pytest.raises(ValueError, match=r"Threshold should be between 0 and 1."):
         ds.remove_empty_data(threshold=1.5)
+
+
+@pytest.mark.parametrize(
+    (
+        "data_names",
+        "expected_error_names_dict",
+        "expected_error_names_export",
+        "first",
+        "last",
+    ),
+    [
+        pytest.param(
+            ["ken", "kesey", "sometimes"],
+            nullcontext(),
+            nullcontext(),
+            None,
+            None,
+            id="no_duplicates_shouldnt_raise",
+        ),
+        pytest.param(
+            ["ken", "ken", "kesey"],
+            pytest.raises(ValueError, match="ken"),
+            pytest.raises(ValueError, match="ken"),
+            None,
+            None,
+            id="duplicates_should_raise",
+        ),
+        pytest.param(
+            ["ken", "ken", "kesey", "sometimes"],
+            pytest.raises(ValueError, match="ken"),
+            nullcontext(),
+            1,
+            None,
+            id="duplicates_not_included_in_write_shouldnt_raise_begin",
+        ),
+        pytest.param(
+            ["ken", "kesey", "sometimes", "ken"],
+            pytest.raises(ValueError, match="ken"),
+            nullcontext(),
+            None,
+            3,
+            id="duplicates_not_included_in_write_shouldnt_raise_end",
+        ),
+    ],
+)
+def test_duplicate_data_error(
+    data_names: list[str],
+    expected_error_names_dict: AbstractContextManager,
+    expected_error_names_export: AbstractContextManager,
+    first: int | None,
+    last: int | None,
+) -> None:
+    ds = DummyDataset(
+        [
+            DummyData.from_files(
+                [DummyFile("foo", begin=Timestamp("1997-01-28 00:00:00"))],
+                name=name,
+            )
+            for name in data_names
+        ],
+    )
+
+    with expected_error_names_dict:
+        ds.to_dict()
+
+    with expected_error_names_export:
+        ds.write(Path(r"bar"), first=first, last=last)
