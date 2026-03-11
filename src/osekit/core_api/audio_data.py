@@ -179,11 +179,12 @@ class AudioData(BaseData[AudioItem, AudioFile]):
 
         """
         values = np.array(self.get_raw_value())
-        return {
+        self.normalization_values = {
             "mean": values.mean(),
             "peak": values.max(),
             "std": values.std(),
         }
+        return self.normalization_values
 
     def __eq__(self, other: AudioData) -> bool:
         """Override __eq__."""
