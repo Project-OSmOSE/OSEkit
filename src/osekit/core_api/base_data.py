@@ -267,7 +267,7 @@ class BaseData[TItem: BaseItem, TFile: BaseFile](Event, ABC):
         self,
         nb_subdata: int = 2,
         **kwargs,  # noqa: ANN003
-    ) -> list[BaseData]:
+    ) -> list[Self]:
         """Split the data object in the specified number of subdata.
 
         Parameters
@@ -279,8 +279,8 @@ class BaseData[TItem: BaseItem, TFile: BaseFile](Event, ABC):
 
         Returns
         -------
-        list[BaseData]
-            The list of ``BaseData`` subdata objects.
+        list[Self]
+            The list of ``Data`` subdata objects.
 
         """
         dates = date_range(self.begin, self.end, periods=nb_subdata + 1)
