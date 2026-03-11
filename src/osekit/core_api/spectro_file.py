@@ -10,7 +10,7 @@ import typing
 from typing import TYPE_CHECKING
 
 import numpy as np
-from pandas import Timedelta, Timestamp
+from pandas import Timestamp
 from scipy.signal import ShortTimeFFT
 
 from osekit.core_api.base_file import BaseFile
@@ -123,31 +123,11 @@ class SpectroFile(BaseFile):
         with np.load(self.path) as data:
             time = data["time"]
 
-            start_bin = (
-                next(
-                    (
-                        idx
-                        for idx, t in enumerate(time)
-                        if self.begin + Timedelta(seconds=t) > start
-                    ),
-                    1,
-                )
-                - 1
-            )
-            start_bin = max(start_bin, 0)
+            start_seconds = (start - self.begin).total_seconds()
+            stop_seconds = (stop - self.begin).total_seconds()
 
-            stop_bin = (
-                next(
-                    (
-                        idx
-                        for idx, t in list(enumerate(time))[::-1]
-                        if self.begin + Timedelta(seconds=t) < stop
-                    ),
-                    len(time) - 2,
-                )
-                + 1
-            )
-            stop_bin = min(stop_bin, time.shape[0])
+            start_bin = np.searchsorted(time, start_seconds, side="left")
+            stop_bin = np.searchsorted(time, stop_seconds, side="left")
 
             return data["sx"][:, start_bin:stop_bin]
 

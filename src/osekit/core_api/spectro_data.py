@@ -666,6 +666,9 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             The list of ``SpectroData`` subdata objects.
 
         """
+        if not self.is_empty:
+            return super().split(nb_subdata=nb_subdata, **kwargs)
+
         split_frames = list(
             np.linspace(0, self.audio_data.length, nb_subdata + 1, dtype=int),
         )
@@ -848,7 +851,16 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         begin: Timestamp,
         end: Timestamp,
         **kwargs,  # noqa: ANN003
-    ) -> SpectroData: ...
+    ) -> SpectroData:
+        return SpectroData.from_files(
+            files=files,
+            begin=begin,
+            end=end,
+            fft=self.fft,
+            v_lim=self.v_lim,
+            colormap=self.colormap,
+            **kwargs,
+        )
 
     @classmethod
     def from_files(
@@ -885,17 +897,21 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             The ``SpectroData`` instance.
 
         """
-        fft = files[0].get_fft()
+        if "fft" not in kwargs:
+            kwargs["fft"] = files[0].get_fft()
+        if "v_lim" not in kwargs:
+            kwargs["v_lim"] = (
+                next((f.v_lim for f in files if f.v_lim is not None), None)
+                if "v_lim" not in kwargs
+                else kwargs["v_lim"]
+            )
         db_ref = next((f.db_ref for f in files if f.db_ref is not None), None)
-        v_lim = next((f.v_lim for f in files if f.v_lim is not None), None)
         instance = super().from_files(
             files=files,  # This way, this static error doesn't appear to the user
             begin=begin,
             end=end,
             name=name,
-            fft=fft,
             db_ref=db_ref,
-            v_lim=v_lim,
             **kwargs,
         )
         if not any(file.sx_dtype is complex for file in files):
