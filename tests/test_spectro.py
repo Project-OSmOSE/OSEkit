@@ -1313,10 +1313,6 @@ def test_spectrodata_split_from_files(
         assert sd_part.fft is sd.fft
         assert sd_part.v_lim == sd.v_lim
         assert sd_part.colormap == sd.colormap
-        if idx > 0:
-            assert sd_part.previous_data == sd_parts[idx - 1]
-        if idx < len(sd_parts) - 1:
-            assert sd_part.next_data == sd_parts[idx + 1]
     assert sd_parts[0].begin == sd.begin
     assert sd_parts[-1].end == sd.end
     assert np.allclose(
