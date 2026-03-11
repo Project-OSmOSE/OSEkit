@@ -421,7 +421,10 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         """
         if not pass_normalization:
             normalization_values = None
-        elif any(self.normalization_values.values()):
+        elif any(
+            normalization is not None
+            for normalization in self.normalization_values.values()
+        ):
             normalization_values = self.normalization_values
         else:
             normalization_values = self.get_normalization_values()
@@ -511,7 +514,10 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         )
         if not pass_normalization:
             normalization_values = None
-        elif any(self.normalization_values.values()):
+        elif any(
+            normalization is not None
+            for normalization in self.normalization_values.values()
+        ):
             normalization_values = self.normalization_values
         else:
             normalization_values = self.get_normalization_values()
