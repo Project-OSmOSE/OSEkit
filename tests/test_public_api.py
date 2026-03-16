@@ -584,6 +584,12 @@ def test_serialization(
 
     deserialized = Dataset.from_json(tmp_path / "dataset.json")
 
+    # analysis dataset deserialization is only done on request
+    assert all(
+        isinstance(analysis_dataset["dataset"], Path)
+        for analysis_dataset in deserialized.datasets.values()
+    )
+
     for (t_o, d_o), (t_d, d_d) in zip(
         sorted(dataset.datasets.items(), key=lambda d: d[0]),
         sorted(deserialized.datasets.items(), key=lambda d: d[0]),
