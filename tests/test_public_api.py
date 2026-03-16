@@ -289,10 +289,7 @@ def test_dataset_build(
 
     # The dataset.json file in root folder should allow for deserializing the dataset
     dataset2 = Dataset.from_json(tmp_path / "dataset.json")
-    assert (
-        dataset2.datasets["original"]["dataset"]
-        == dataset.datasets["original"]["dataset"]
-    )
+    assert dataset2.origin_dataset == dataset.datasets["original"]["dataset"]
 
     # Resetting the dataset should put back all original files back
     dataset.reset()

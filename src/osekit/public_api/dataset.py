@@ -121,7 +121,7 @@ class Dataset:
     @property
     def origin_dataset(self) -> AudioDataset:
         """Return the ``AudioDataset`` from which this ``Dataset`` has been built."""
-        return self.get_dataset("original")
+        return self.deserialize_analysis_dataset("original")
 
     @property
     def analyses(self) -> list[str]:
@@ -660,9 +660,9 @@ class Dataset:
 
         """
         return [
-            dataset["dataset"]
-            for dataset in self.datasets.values()
-            if dataset["analysis"] == analysis_name
+            self.deserialize_analysis_dataset(analyis_dataset_name=dataset_name)
+            for dataset_name, dataset_values in self.datasets.items()
+            if dataset_values["analysis"] == analysis_name
         ]
 
     def rename_analysis(self, analysis_name: str, new_analysis_name: str) -> None:
@@ -742,7 +742,7 @@ class Dataset:
         if dataset_name not in self.datasets:
             message = f"Dataset '{dataset_name}' not found."
             raise ValueError(message)
-        return self.datasets[dataset_name]["dataset"]
+        return self.deserialize_analysis_dataset(analyis_dataset_name=dataset_name)
 
     def to_dict(self) -> dict:
         """Serialize a dataset to a dictionary.
@@ -758,7 +758,9 @@ class Dataset:
                 name: {
                     "class": dataset["class"],
                     "analysis": dataset["analysis"],
-                    "json": str(dataset["dataset"].folder / f"{name}.json"),
+                    "json": str(dataset["dataset"])
+                    if isinstance(dataset["dataset"], Path)
+                    else str(dataset["dataset"].folder / f"{name}.json"),
                 }
                 for name, dataset in self.datasets.items()
             },
@@ -788,16 +790,10 @@ class Dataset:
         """
         datasets = {}
         for name, dataset in dictionary["datasets"].items():
-            dataset_class = {
-                "AudioDataset": AudioDataset,
-                "SpectroDataset": SpectroDataset,
-                "LTASDataset": LTASDataset,
-            }[dataset["class"]]
-
             datasets[name] = {
                 "class": dataset["class"],
                 "analysis": dataset["analysis"],
-                "dataset": dataset_class.from_json(Path(dataset["json"])),
+                "dataset": Path(dataset["json"]),
             }
         return cls(
             folder=Path(),
@@ -833,6 +829,23 @@ class Dataset:
         instance.folder = file.parent
         instance._create_logger()  # noqa: SLF001
         return instance
+
+    def deserialize_analysis_dataset(
+        self,
+        analyis_dataset_name: str,
+    ) -> type[DatasetChild]:
+        analysis_dataset = self.datasets[analyis_dataset_name]
+        dataset_classes = {
+            "AudioDataset": AudioDataset,
+            "SpectroDataset": SpectroDataset,
+            "LTASDataset": LTASDataset,
+        }
+        if isinstance(analysis_dataset["dataset"], Path):
+            analysis_dataset_class = dataset_classes[analysis_dataset["class"]]
+            analysis_dataset["dataset"] = analysis_dataset_class.from_json(
+                analysis_dataset["dataset"],
+            )
+        return analysis_dataset["dataset"]
 
 
 DatasetChild = TypeVar("DatasetChild", bound=BaseDataset)
