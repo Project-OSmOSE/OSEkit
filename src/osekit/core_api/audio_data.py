@@ -228,9 +228,9 @@ class AudioData(BaseData[AudioItem, AudioFile]):
     ) -> np.ndarray:
         flush = resampler.resample_chunk(np.array([]), last=True)
         if len(flush) == 0:
-            return np.array([])
+            return np.array([])[:, None]
         if not remaining_samples:
-            return np.array([])
+            return np.array([])[:, None]
         flush = flush[:remaining_samples]
         return flush[:, None] if flush.ndim == 1 else flush
 
