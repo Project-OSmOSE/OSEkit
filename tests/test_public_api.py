@@ -1615,3 +1615,91 @@ def test_build_specific_files(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -
     assert np.array_equal(base_folder, [p3, p4])
     assert np.array_equal(dest_folder, [p1, p2])
     assert np.array_equal(built_files, [p1, p2])
+
+
+def test_deserialize_analysis_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
+    ds = Dataset(
+        folder=Path("grizzly"),
+        strptime_format="bear",
+    )
+
+    dummy_ads = AudioDataset([])
+    dummy_sds = SpectroDataset([])
+    dummy_ltasds = LTASDataset([])
+
+    ds.datasets |= {
+        "original": {
+            "class": "AudioDataset",
+            "analysis": "original",
+            "dataset": Path("original.json"),
+        },
+        "spectro": {
+            "class": "SpectroDataset",
+            "analysis": "spectro",
+            "dataset": Path("spectro.json"),
+        },
+        "ltas": {
+            "class": "LTASDataset",
+            "analysis": "ltas",
+            "dataset": Path("ltas.json"),
+        },
+    }
+
+    json_calls = [0]
+
+    def mock_from_json(
+        mock_instance: AudioDataset | SpectroDataset | LTASDataset,
+    ) -> AudioDataset | SpectroDataset | LTASDataset:
+        json_calls[0] += 1
+        return mock_instance
+
+    monkeypatch.setattr(AudioDataset, "from_json", lambda _: mock_from_json(dummy_ads))
+    monkeypatch.setattr(
+        SpectroDataset,
+        "from_json",
+        lambda _: mock_from_json(dummy_sds),
+    )
+    monkeypatch.setattr(
+        LTASDataset,
+        "from_json",
+        lambda _: mock_from_json(dummy_ltasds),
+    )
+
+    assert isinstance(ds.datasets["original"]["dataset"], Path)
+
+    # Getting the dataset should deserialize it
+    _ = ds.get_dataset("original")
+    assert json_calls[0] == 1
+
+    # The deserialized dataset should be stored
+    assert isinstance(ds.datasets["original"]["dataset"], AudioDataset)
+
+    # Getting the dataset again should use the cached dataset
+    _ = ds.get_dataset("original")
+    assert json_calls[0] == 1
+
+    assert isinstance(ds.datasets["spectro"]["dataset"], Path)
+
+    # Getting the dataset should deserialize it
+    _ = ds.get_dataset("spectro")
+    assert json_calls[0] == 2
+
+    # The deserialized dataset should be stored
+    assert isinstance(ds.datasets["spectro"]["dataset"], SpectroDataset)
+
+    # Getting the dataset again should use the cached dataset
+    _ = ds.get_dataset("spectro")
+    assert json_calls[0] == 2
+
+    assert isinstance(ds.datasets["ltas"]["dataset"], Path)
+
+    # Getting the dataset should deserialize it
+    _ = ds.get_dataset("ltas")
+    assert json_calls[0] == 3
+
+    # The deserialized dataset should be stored
+    assert isinstance(ds.datasets["ltas"]["dataset"], LTASDataset)
+
+    # Getting the dataset again should use the cached dataset
+    _ = ds.get_dataset("ltas")
+    assert json_calls[0] == 3
