@@ -1888,13 +1888,6 @@ def test_duplicate_data_check(monkeypatch: pytest.monkeypatch) -> None:
     ) -> None:
         check_calls[0] += 1
 
-    def mock_get_values(
-        *args,  # noqa: ANN002
-        **kwargs,  # noqa: ANN003
-    ) -> np.ndarray:
-        return np.empty(1, 1)
-
-    monkeypatch.setattr(SpectroData, "get_value", mock_get_values)
     monkeypatch.setattr(
         SpectroDataset,
         "_check_duplicate_data_names",
