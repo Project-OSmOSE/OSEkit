@@ -834,6 +834,22 @@ class Dataset:
         self,
         analyis_dataset_name: str,
     ) -> type[DatasetChild]:
+        """Deserialize an analysis dataset from its json file.
+
+        The self.datasets property will be updated so that it stores the deserialized
+        dataset rather than the json file so that it is deserialized only once.
+
+        Parameters
+        ----------
+        analyis_dataset_name: str
+            Name of the analysis dataset.
+
+        Returns
+        -------
+        type[DatasetChild]:
+            The deserialized analysis dataset.
+
+        """
         analysis_dataset = self.datasets[analyis_dataset_name]
         dataset_classes = {
             "AudioDataset": AudioDataset,
