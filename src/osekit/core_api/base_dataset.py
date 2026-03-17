@@ -222,6 +222,7 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
 
         """
         last = len(self.data) if last is None else last
+        self._check_duplicate_data_names(first_idx=first, last_idx=last)
         for data in tqdm(
             self.data[first:last],
             disable=os.getenv("DISABLE_TQDM", "False").lower() in ("true", "1", "t"),
@@ -237,6 +238,7 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
             The serialized dictionary representing the ``BaseDataset``.
 
         """
+        self._check_duplicate_data_names()
         return {
             "data": {str(d): d.to_dict() for d in self.data},
             "name": self._name,
@@ -631,3 +633,38 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
             return False
         else:
             return True
+
+    def _check_duplicate_data_names(
+        self,
+        first_idx: int = 0,
+        last_idx: int | None = None,
+    ) -> None:
+        """Raise an error if the dataset contains duplicate data names.
+
+        This method is called when the dataset is converted to a dictionary
+        (since the data names are dictionary keys) or when the data of the
+        dataset is exported.
+
+        Parameters
+        ----------
+        first_idx: int
+            Index of the first data to consider (in case of a partial export)
+        last_idx: int|None
+            Index of the last data to consider (in case of a partial export)
+            If None, data will be considered up to the last one.
+
+        """
+        last_idx = last_idx if last_idx is not None else len(self.data)
+        data_names = [data.name for data in self.data[first_idx:last_idx]]
+        unique_names = set(data_names)
+        duplicated_data_names = {
+            str(name) for name in unique_names if data_names.count(name) > 1
+        }
+        if duplicated_data_names:
+            msg = (
+                f"Duplicate data names found in the {self} {self.__class__.__name__}.\n"
+                f"Consider renaming the following data which names appear "
+                f"more than once to avoid errors or missing exports:\n"
+                f"{'\n'.join(duplicated_data_names)}"
+            )
+            raise ValueError(msg)
