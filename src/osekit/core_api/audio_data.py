@@ -179,11 +179,12 @@ class AudioData(BaseData[AudioItem, AudioFile]):
 
         """
         values = np.array(self.get_raw_value())
-        return {
+        self.normalization_values = {
             "mean": values.mean(),
             "peak": values.max(),
             "std": values.std(),
         }
+        return self.normalization_values
 
     def __eq__(self, other: AudioData) -> bool:
         """Override __eq__."""
@@ -228,9 +229,9 @@ class AudioData(BaseData[AudioItem, AudioFile]):
     ) -> np.ndarray:
         flush = resampler.resample_chunk(np.array([]), last=True)
         if len(flush) == 0:
-            return np.array([])
+            return np.array([])[:, None]
         if not remaining_samples:
-            return np.array([])
+            return np.array([])[:, None]
         flush = flush[:remaining_samples]
         return flush[:, None] if flush.ndim == 1 else flush
 
@@ -420,7 +421,10 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         """
         if not pass_normalization:
             normalization_values = None
-        elif any(self.normalization_values.values()):
+        elif any(
+            normalization is not None
+            for normalization in self.normalization_values.values()
+        ):
             normalization_values = self.normalization_values
         else:
             normalization_values = self.get_normalization_values()
@@ -510,7 +514,10 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         )
         if not pass_normalization:
             normalization_values = None
-        elif any(self.normalization_values.values()):
+        elif any(
+            normalization is not None
+            for normalization in self.normalization_values.values()
+        ):
             normalization_values = self.normalization_values
         else:
             normalization_values = self.get_normalization_values()
