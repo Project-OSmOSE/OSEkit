@@ -13,14 +13,14 @@ Public API
 ^^^^^^^^^^
 
 Running Public API Analyses through PBS jobs only requires adding a :class:`osekit.utils.job.JobBuilder`
-instance to the :attr:`osekit.public.dataset.Dataset.job_builder` attribute:
+instance to the :attr:`osekit.public.project.Project.job_builder` attribute:
 
 .. code-block:: python
 
     from osekit.utils.job import JobConfig, JobBuilder
-    from osekit.public.dataset import Dataset
+    from osekit.public.project import Project
 
-    dataset = Dataset(...) # See the Dataset documentation
+    project = Project(...) # See the Project documentation
 
     job_config = JobConfig(
         nb_nodes=1, # Number of nodes on which the job runs

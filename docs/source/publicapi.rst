@@ -6,6 +6,6 @@ Public
 .. toctree::
    :maxdepth: 1
 
-   dataset
+   project
    analysis
    export_analysis

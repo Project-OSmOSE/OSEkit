@@ -40,7 +40,7 @@ if TYPE_CHECKING:
     from osekit.utils.job import JobBuilder
 
 
-class Dataset:
+class Project:
     """Main class of the Public API.
 
     The ``Project`` is the class that stores the original audio dataset,
@@ -62,7 +62,7 @@ class Dataset:
         instrument: Instrument | None = None,
         first_file_begin: Timestamp | None = None,
     ) -> None:
-        """Initialize a ``Dataset``.
+        """Initialize a ``Project``.
 
         Parameters
         ----------
@@ -87,7 +87,7 @@ class Dataset:
             Core API datasets that already belong to this dataset.
             Mainly used for deserialization.
         job_builder: Job_builder | None
-            If ``None``, analyses from this ``Dataset`` will be run locally.
+            If ``None``, analyses from this ``Project`` will be run locally.
             Otherwise, PBS job files will be created and submitted when
             analyses are run.
             See the ``osekit.job`` module for more info.
@@ -113,7 +113,7 @@ class Dataset:
 
     @property
     def origin_files(self) -> list[AudioFile] | None:
-        """Return the original audio files from which this ``Dataset`` has been built."""
+        """Return the original audio files from which this ``Project`` has been built."""
         return (
             None
             if self.origin_dataset is None
@@ -122,20 +122,20 @@ class Dataset:
 
     @property
     def origin_dataset(self) -> AudioDataset:
-        """Return the ``AudioDataset`` from which this ``Dataset`` has been built."""
+        """Return the ``AudioDataset`` from which this ``Project`` has been built."""
         return self.deserialize_analysis_dataset("original")
 
     @property
     def analyses(self) -> list[str]:
-        """Return the list of the names of the analyses ran with this ``Dataset``."""
+        """Return the list of the names of the analyses ran with this ``Project``."""
         return list({dataset["analysis"] for dataset in self.datasets.values()})
 
     def build(
         self,
     ) -> None:
-        """Build the ``Dataset``.
+        """Build the ``Project``.
 
-        Building a ``Dataset`` moves the original audio files to a specific folder
+        Building a ``Project`` moves the original audio files to a specific folder
         and creates serialized ``json`` files used by APLOSE.
 
         """
@@ -185,7 +185,7 @@ class Dataset:
         *,
         move_files: bool = False,
     ) -> None:
-        """Build the ``Dataset`` from the specified files.
+        """Build the ``Project`` from the specified files.
 
         The files will be copied (or moved) to the ``dataset.folder`` folder.
 
@@ -241,7 +241,7 @@ class Dataset:
         self.logger.addHandler(file_handler)
 
     def reset(self) -> None:
-        """Reset the ``Dataset``.
+        """Reset the ``Project``.
 
         Resetting a dataset will move back the original audio files and the content of
         the ``other`` folder to the root folder.
@@ -281,7 +281,7 @@ class Dataset:
             This ``AudioDataset`` can be used either to have a peek at the
             analysis output, or to edit the analysis (adding/removing data)
             by editing it and passing it as a parameter to the
-            ``Dataset.run_analysis()`` method.
+            ``Project.run_analysis()`` method.
 
         """
         self.logger.info("Creating the audio data...")
@@ -369,7 +369,7 @@ class Dataset:
         """Create a new analysis dataset from the original audio files.
 
         The analysis parameter sets which type(s) of ``core`` dataset(s) will be
-        created and added to the ``Dataset.datasets`` property, plus which output
+        created and added to the ``Project.datasets`` property, plus which output
         files will be written to disk (reshaped audio files, ``npz`` spectra matrices,
         ``png`` spectrograms...).
 
@@ -398,7 +398,7 @@ class Dataset:
             message = (
                 f"Analysis {analysis.name} already exists."
                 f"Please choose a different name,"
-                f"or delete it with the Dataset.delete_analysis() method."
+                f"or delete it with the Project.delete_analysis() method."
             )
             raise ValueError(message)
 
@@ -517,7 +517,7 @@ class Dataset:
             If ``True``, the ads data will be linked to the exported files.
 
         """
-        # Import here to avoid circular imports since the script needs to import Dataset
+        # Import here to avoid circular imports since the script needs to import Project
         from osekit.public import export_analysis  # noqa: PLC0415
 
         matrix_folder_path, spectrogram_folder_path, welch_folder_path = (
@@ -776,7 +776,7 @@ class Dataset:
         }
 
     @classmethod
-    def from_dict(cls, dictionary: dict) -> Dataset:
+    def from_dict(cls, dictionary: dict) -> Project:
         """Deserialize a dataset from a dictionary.
 
         Parameters
@@ -786,7 +786,7 @@ class Dataset:
 
         Returns
         -------
-        Dataset
+        Project
             The deserialized dataset.
 
         """
@@ -808,23 +808,23 @@ class Dataset:
         )
 
     def write_json(self, folder: Path | None = None) -> None:
-        """Write a serialized Dataset to a JSON file."""
+        """Write a serialized Project to a JSON file."""
         folder = folder if folder is not None else self.folder
         serialize_json(folder / "dataset.json", self.to_dict())
 
     @classmethod
-    def from_json(cls, file: Path) -> Dataset:
-        """Deserialize a ``Dataset`` from a ``json`` file.
+    def from_json(cls, file: Path) -> Project:
+        """Deserialize a ``Project`` from a ``json`` file.
 
         Parameters
         ----------
         file: Path
-            Path to the serialized ``json`` file representing the ``Dataset``.
+            Path to the serialized ``json`` file representing the ``Project``.
 
         Returns
         -------
-        Dataset
-            The deserialized ``Dataset``.
+        Project
+            The deserialized ``Project``.
 
         """
         instance = cls.from_dict(deserialize_json(file))

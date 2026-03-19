@@ -12,7 +12,7 @@ from osekit import config, setup_logging
 from osekit.config import global_logging_context as glc
 from osekit.core.audio_dataset import AudioDataset
 from osekit.public.analysis import AnalysisType
-from osekit.public.dataset import Dataset
+from osekit.public.project import Project
 from osekit.utils.deserialization import deserialize_spectro_or_ltas_dataset
 
 if TYPE_CHECKING:
@@ -276,7 +276,7 @@ def create_parser() -> argparse.ArgumentParser:
         "--dataset-json-path",
         "-p",
         required=False,
-        help="The path to the Dataset JSON file of which to use the logger.",
+        help="The path to the Project JSON file of which to use the logger.",
         type=str,
         default=None,
     )
@@ -309,7 +309,7 @@ def main() -> None:
     logger = (
         logging.getLogger()
         if (args.dataset_json_path is None or args.dataset_json_path.lower() == "none")
-        else Dataset.from_json(Path(args.dataset_json_path)).logger
+        else Project.from_json(Path(args.dataset_json_path)).logger
     )
 
     ads = (

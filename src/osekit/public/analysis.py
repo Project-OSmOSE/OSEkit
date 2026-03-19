@@ -55,7 +55,7 @@ class Analysis:
 
     Analysis instances are passed to the public API dataset, which runs the analysis.
     The ``Analysis`` object contains all info on the analysis to be done: the type(s) of
-    core dataset(s) that will be created and added to the ``Dataset.datasets``
+    core dataset(s) that will be created and added to the ``Project.datasets``
     property and which output files will be written to disk
     (reshaped audio files, ``npz`` spectra matrices, ``png`` spectrograms...) depend
     on the ``analysis_type`` parameter.
