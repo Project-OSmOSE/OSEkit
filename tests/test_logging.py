@@ -10,7 +10,7 @@ import yaml
 from osekit import setup_logging
 from osekit.config import TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
 from osekit.logging_context import LoggingContext
-from osekit.public_api.dataset import Dataset
+from osekit.public.dataset import Dataset
 
 
 @pytest.fixture
@@ -167,7 +167,7 @@ def test_logging_context(caplog: pytest.fixture) -> None:
     assert caplog.records[2].message == "From default logger again"
 
 
-def test_public_api_dataset_logger(
+def test_public_dataset_logger(
     audio_files: pytest.fixture,
     tmp_path: pytest.fixture,
 ) -> None:

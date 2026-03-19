@@ -13,19 +13,19 @@ from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
     TIMESTAMP_FORMATS_EXPORTED_FILES,
 )
-from osekit.core_api.audio_data import AudioData
-from osekit.core_api.audio_dataset import AudioDataset
-from osekit.core_api.audio_file import AudioFile
-from osekit.core_api.frequency_scale import Scale, ScalePart
-from osekit.core_api.instrument import Instrument
-from osekit.core_api.json_serializer import (
+from osekit.core.audio_data import AudioData
+from osekit.core.audio_dataset import AudioDataset
+from osekit.core.audio_file import AudioFile
+from osekit.core.frequency_scale import Scale, ScalePart
+from osekit.core.instrument import Instrument
+from osekit.core.json_serializer import (
     absolute_to_relative,
     relative_to_absolute,
     set_path_reference,
 )
-from osekit.core_api.spectro_data import SpectroData
-from osekit.core_api.spectro_dataset import SpectroDataset
-from osekit.core_api.spectro_file import SpectroFile
+from osekit.core.spectro_data import SpectroData
+from osekit.core.spectro_dataset import SpectroDataset
+from osekit.core.spectro_file import SpectroFile
 from osekit.utils.audio_utils import Normalization
 
 

@@ -3,5 +3,5 @@
 Instrument
 ----------
 
-.. autoclass:: osekit.core_api.instrument.Instrument
+.. autoclass:: osekit.core.instrument.Instrument
    :members:

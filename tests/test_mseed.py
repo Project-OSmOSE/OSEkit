@@ -8,8 +8,8 @@ import pytest
 from pandas import Timestamp
 
 from osekit.config import TIMESTAMP_FORMATS_EXPORTED_FILES
-from osekit.core_api.audio_data import AudioData
-from osekit.core_api.audio_file import AudioFile
+from osekit.core.audio_data import AudioData
+from osekit.core.audio_file import AudioFile
 
 obspy = pytest.importorskip("obspy")
 

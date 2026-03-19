@@ -6,7 +6,7 @@ Analysis
 Analysis
 ========
 
-.. autoclass:: osekit.public_api.analysis.Analysis
+.. autoclass:: osekit.public.analysis.Analysis
    :members:
 
 .. _analysis_Type:
@@ -14,5 +14,5 @@ Analysis
 AnalysisType
 ============
 
-.. autoclass:: osekit.public_api.analysis.AnalysisType
+.. autoclass:: osekit.public.analysis.AnalysisType
    :members:

@@ -7,9 +7,9 @@ from pathlib import Path
 import pytest
 
 from osekit import config
-from osekit.core_api.audio_dataset import AudioDataset
-from osekit.public_api import export_analysis
-from osekit.public_api.export_analysis import create_parser
+from osekit.core.audio_dataset import AudioDataset
+from osekit.public import export_analysis
+from osekit.public.export_analysis import create_parser
 from osekit.utils.job import Job
 
 

@@ -1,7 +1,7 @@
 .. _coreapi:
 
-Core API
-----------
+Core
+----
 
 .. toctree::
    :maxdepth: 1

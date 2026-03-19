@@ -3,5 +3,5 @@
 AudioData
 ---------
 
-.. autoclass:: osekit.core_api.audio_data.AudioData
+.. autoclass:: osekit.core.audio_data.AudioData
    :members:

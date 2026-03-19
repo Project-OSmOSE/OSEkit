@@ -26,7 +26,7 @@ from pathlib import Path
 
 from pandas import Timedelta
 
-from osekit.core_api.event import Event
+from osekit.core.event import Event
 from osekit.utils.timestamp_utils import strptime_from_text
 
 

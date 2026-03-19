@@ -17,13 +17,13 @@ from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
     resample_quality_settings,
 )
-from osekit.core_api import AudioFileManager
-from osekit.core_api import audio_file_manager as afm
-from osekit.core_api.audio_data import AudioData
-from osekit.core_api.audio_dataset import AudioDataset
-from osekit.core_api.audio_file import AudioFile
-from osekit.core_api.audio_item import AudioItem
-from osekit.core_api.instrument import Instrument
+from osekit.core import AudioFileManager
+from osekit.core import audio_file_manager as afm
+from osekit.core.audio_data import AudioData
+from osekit.core.audio_dataset import AudioDataset
+from osekit.core.audio_file import AudioFile
+from osekit.core.audio_item import AudioItem
+from osekit.core.instrument import Instrument
 from osekit.utils import audio_utils
 from osekit.utils.audio_utils import Normalization, generate_sample_audio, normalize
 
@@ -237,7 +237,7 @@ def test_audio_file_stream_is_always_2d(
     def mocked_stream(*args: None, **kwargs: None) -> np.ndarray:
         return mocked_data
 
-    monkeypatch.setattr("osekit.core_api.audio_file.afm.stream", mocked_stream)
+    monkeypatch.setattr("osekit.core.audio_file.afm.stream", mocked_stream)
 
     def mocked_init(self: AudioFile, *args: None, **kwargs: None) -> None:
         self.path = Path()

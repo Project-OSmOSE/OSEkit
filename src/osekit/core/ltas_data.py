@@ -24,14 +24,14 @@ from typing import TYPE_CHECKING
 import numpy as np
 from scipy.signal import ShortTimeFFT
 
-from osekit.core_api.spectro_data import SpectroData
+from osekit.core.spectro_data import SpectroData
 from osekit.utils.multiprocess_utils import multiprocess
 
 if TYPE_CHECKING:
     from pandas import Timestamp
 
-    from osekit.core_api.audio_data import AudioData
-    from osekit.core_api.spectro_item import SpectroItem
+    from osekit.core.audio_data import AudioData
+    from osekit.core.spectro_item import SpectroItem
 
 
 class LTASData(SpectroData):

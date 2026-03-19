@@ -9,7 +9,7 @@ import pytest
 from pandas import Timedelta, Timestamp, date_range
 
 from osekit.config import TIMESTAMP_FORMATS_EXPORTED_FILES
-from osekit.core_api.event import Event
+from osekit.core.event import Event
 from tests.helpers.dummy import DummyData, DummyDataset, DummyFile
 
 

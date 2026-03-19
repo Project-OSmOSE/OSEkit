@@ -3,5 +3,5 @@
 Dataset
 -------
 
-.. autoclass:: osekit.public_api.dataset.Dataset
+.. autoclass:: osekit.public.dataset.Dataset
    :members:

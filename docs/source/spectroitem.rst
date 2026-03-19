@@ -3,5 +3,5 @@
 SpectroItem
 -----------
 
-.. autoclass:: osekit.core_api.spectro_item.SpectroItem
+.. autoclass:: osekit.core.spectro_item.SpectroItem
    :members:

@@ -7,7 +7,7 @@ This API provides tools for working on large sets of audio data.
 
 Basically, the whole point of **OSEkit**'s Public API is to export large amounts of spectrograms and/or reshaped audio files with no consideration of the original format of the audio files.
 
-The :class:`osekit.public_api.dataset.Dataset` class is the cornerstone of **OSEkit**'s Public API.
+The :class:`osekit.public.dataset.Dataset` class is the cornerstone of **OSEkit**'s Public API.
 
 .. _build:
 
@@ -31,11 +31,11 @@ For example, this folder containing 4 audio files plus some extra files:
 Only the folder path and strptime format are required to initialize the ``Dataset``.
 
 Extra parameters allow for e.g. localizing the files in a specific timezone or accounting for the measurement chain to link the raw wav data to the measured acoustic presure.
-The complete list of extra parameters is provided in the :class:`osekit.public_api.dataset.Dataset` documentation.
+The complete list of extra parameters is provided in the :class:`osekit.public.dataset.Dataset` documentation.
 
 .. code-block:: python
 
-    from osekit.public_api.dataset import Dataset
+    from osekit.public.dataset import Dataset
     from pathlib import Path
 
     dataset = Dataset(
@@ -49,7 +49,7 @@ and each next valid audio file will be considered as starting directly after the
 
 .. code-block:: python
 
-    from osekit.public_api.dataset import Dataset
+    from osekit.public.dataset import Dataset
     from pathlib import Path
 
     dataset = Dataset(
@@ -58,7 +58,7 @@ and each next valid audio file will be considered as starting directly after the
         first_file_begin=Timestamp("2020-01-01 00:00:00") # Will mark the start of your audio files
     )
 
-Once this is done, the ``Dataset`` can be built using the :meth:`osekit.public_api.dataset.Dataset.build` method.
+Once this is done, the ``Dataset`` can be built using the :meth:`osekit.public.dataset.Dataset.build` method.
 
 .. code-block:: python
 
@@ -83,8 +83,8 @@ The folder is now organized in the following fashion:
     └── bar.txt
     dataset.json
 
-The **original audio files** have been turned into a :class:`osekit.core_api.audio_dataset.AudioDataset`.
-In this ``AudioDataset``, one :class:`osekit.core_api.audio_data.AudioData` has been created per original audio file.
+The **original audio files** have been turned into a :class:`osekit.core.audio_dataset.AudioDataset`.
+In this ``AudioDataset``, one :class:`osekit.core.audio_data.AudioData` has been created per original audio file.
 Additionally, both this Core API ``Audiodataset`` and the Public API ``Dataset`` have been serialized
 into the ``original.json`` and ``dataset.json`` files, respectively.
 
@@ -93,7 +93,7 @@ Building a dataset from specific files
 
 It is possible to pass a specific collection of files to build within the dataset.
 
-This is done thanks to the :meth:`osekit.public_api.dataset.Dataset.build_from_files` method.
+This is done thanks to the :meth:`osekit.public.dataset.Dataset.build_from_files` method.
 The collection of files passed as the ``files`` parameter will be either moved or copied (depending on
 the ``move_files`` parameter) within ``Dataset.folder`` before the build is done. If ``Dataset.folder`` does
 not exist, it will be created before the files are moved:
@@ -101,7 +101,7 @@ not exist, it will be created before the files are moved:
 .. code-block:: python
 
     from pathlib import Path
-    from osekit.public_api.dataset import Dataset
+    from osekit.public.dataset import Dataset
 
     # Pick the files you want to include to the dataset
     files = (
@@ -124,18 +124,18 @@ not exist, it will be created before the files are moved:
 Running an ``Analysis``
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-In **OSEkit**, **Analyses** are run with the :meth:`osekit.public_api.dataset.Dataset.run_analysis` method to process and export spectrogram images, spectrum matrices and audio files from original audio files.
+In **OSEkit**, **Analyses** are run with the :meth:`osekit.public.dataset.Dataset.run_analysis` method to process and export spectrogram images, spectrum matrices and audio files from original audio files.
 
 .. note::
 
     **OSEkit** makes it easy to **reshape** the original audio: it is not bound to the original files, and can freely be reshaped in audio data of **any duration and sample rate**.
 
-The analysis parameters are described by a :class:`osekit.public_api.analysis.Analysis` instance passed as a parameter to this method.
+The analysis parameters are described by a :class:`osekit.public.analysis.Analysis` instance passed as a parameter to this method.
 
 Analysis Type
 """""""""""""
 
-The ``analysis_type`` parameter passed to the initializer is a :class:`osekit.public_api.analysis.AnalysisType` instance that defines the analysis output(s):
+The ``analysis_type`` parameter passed to the initializer is a :class:`osekit.public.analysis.AnalysisType` instance that defines the analysis output(s):
 
 .. list-table:: Analysis Types
    :widths: 40 60
@@ -158,14 +158,14 @@ For example, if an analysis aims at exporting both the reshaped audio files and 
 
 .. code-block:: python
 
-    from osekit.public_api.analysis import AnalysisType
+    from osekit.public.analysis import AnalysisType
     analysis_type = AnalysisType.AUDIO | AnalysisType.SPECTROGRAM
 
 
 Analysis Parameters
 """""""""""""""""""
 
-The remaining parameters of the analysis (begin and end **Timestamps**, duration and sample rate of the reshaped data...) are described in the :class:`osekit.public_api.analysis.Analysis` initializer docstring.
+The remaining parameters of the analysis (begin and end **Timestamps**, duration and sample rate of the reshaped data...) are described in the :class:`osekit.public.analysis.Analysis` initializer docstring.
 
 .. note::
 
@@ -176,8 +176,8 @@ The remaining parameters of the analysis (begin and end **Timestamps**, duration
 Checking/Editing the analysis
 """""""""""""""""""""""""""""
 
-If you want to take a peek at what the analysis output will be before actually running it, the :meth:`osekit.public_api.dataset.Dataset.get_analysis_audiodataset` and :meth:`osekit.public_api.dataset.Dataset.get_analysis_spectrodataset` methods
-return a :class:`osekit.core_api.audio_dataset.AudioDataset` and a :class:`osekit.core_api.spectro_dataset.SpectroDataset` instance, respectively.
+If you want to take a peek at what the analysis output will be before actually running it, the :meth:`osekit.public.dataset.Dataset.get_analysis_audiodataset` and :meth:`osekit.public.dataset.Dataset.get_analysis_spectrodataset` methods
+return a :class:`osekit.core.audio_dataset.AudioDataset` and a :class:`osekit.core.spectro_dataset.SpectroDataset` instance, respectively.
 
 The returned ``AudioDataset`` can be edited at will and passed as a parameter later on when the analysis is run:
 
@@ -204,7 +204,7 @@ The returned ``SpectroDataset`` can be used e.g. to plot sample spectrograms pri
 Running the analysis
 """"""""""""""""""""
 
-To run the ``Analysis``, simply execute the :meth:`osekit.public_api.dataset.Dataset.run_analysis` method:
+To run the ``Analysis``, simply execute the :meth:`osekit.public.dataset.Dataset.run_analysis` method:
 
 .. code-block:: python
 
@@ -237,7 +237,7 @@ The corresponding ``Analysis`` is the following:
 
 .. code-block:: python
 
-    from osekit.public_api.analysis import Analysis, AnalysisType
+    from osekit.public.analysis import Analysis, AnalysisType
     from pandas import Timedelta
 
     analysis = Analysis(
@@ -254,7 +254,7 @@ The corresponding ``Analysis`` is the following:
 Output 1
 """"""""
 
-Once the analysis is run, a :class:`osekit.core_api.audio_dataset.AudioDataset` instance named ``cool_reshape`` has been created and added to the dataset's :attr:`osekit.public_api.dataset.Dataset.datasets` field.
+Once the analysis is run, a :class:`osekit.core.audio_dataset.AudioDataset` instance named ``cool_reshape`` has been created and added to the dataset's :attr:`osekit.public.dataset.Dataset.datasets` field.
 
 The dataset folder now looks like this:
 
@@ -330,7 +330,7 @@ Then we are all set for running the analysis:
 
 .. code-block:: python
 
-    from osekit.public_api.analysis import Analysis, AnalysisType
+    from osekit.public.analysis import Analysis, AnalysisType
     from pandas import Timedelta
 
     analysis = Analysis(
@@ -349,10 +349,10 @@ Then we are all set for running the analysis:
 Output 2
 """"""""
 
-Since the analysis contains both ``AnalysisType.AUDIO`` and spectral analysis types, two core API datasets were created and added to the dataset's :attr:`osekit.public_api.dataset.Dataset.datasets` field:
+Since the analysis contains both ``AnalysisType.AUDIO`` and spectral analysis types, two core API datasets were created and added to the dataset's :attr:`osekit.public.dataset.Dataset.datasets` field:
 
-* A :class:`osekit.core_api.audio_dataset.AudioDataset` named ``full_analysis_audio`` (with the *_audio* suffix)
-* A :class:`osekit.core_api.spectro_dataset.SpectroDataset` named ``full_analysis``
+* A :class:`osekit.core.audio_dataset.AudioDataset` named ``full_analysis_audio`` (with the *_audio* suffix)
+* A :class:`osekit.core.spectro_dataset.SpectroDataset` named ``full_analysis``
 
 The dataset folder now looks like this (the output from the first example was removed for convenience):
 
@@ -401,18 +401,18 @@ The dataset folder now looks like this (the output from the first example was re
 
 As in :ref:`the output of example 1 <output_1>`, a ``full_analysis_audio`` folder was created, containing the reshaped audio files.
 
-Additionally, the fresh ``processed`` folder contains the output spectrograms and NPZ matrices, along with the ``full_analysis.json`` serialized :class:`osekit.core_api.spectro_dataset.SpectroDataset`.
+Additionally, the fresh ``processed`` folder contains the output spectrograms and NPZ matrices, along with the ``full_analysis.json`` serialized :class:`osekit.core.spectro_dataset.SpectroDataset`.
 
 
 Recovering a ``Dataset``
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-The ``dataset.json`` file in the root dataset folder can be used to deserialize a :class:`osekit.public_api.dataset.Dataset` object thanks to the :meth:`osekit.public_api.dataset.Dataset.from_json` method:
+The ``dataset.json`` file in the root dataset folder can be used to deserialize a :class:`osekit.public.dataset.Dataset` object thanks to the :meth:`osekit.public.dataset.Dataset.from_json` method:
 
 .. code-block:: python
 
     from pathlib import Path
-    from osekit.public_api.dataset import Dataset
+    from osekit.public.dataset import Dataset
 
     json_file = Path(r"../dataset.json")
     dataset = Dataset.from_json(json_file) # That's it!
@@ -425,5 +425,5 @@ Resetting a ``Dataset``
 
     Calling this method is irreversible
 
-The :meth:`osekit.public_api.dataset.Dataset.reset` method **resets the dataset's folder** to its initial state.
+The :meth:`osekit.public.dataset.Dataset.reset` method **resets the dataset's folder** to its initial state.
 All exported analyses ans json files will be removed, and the folder will be back to its state :ref:`before building the dataset <build>`.

@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from pandas import Timedelta, Timestamp
     from scipy.signal import ShortTimeFFT
 
-    from osekit.core_api.frequency_scale import Scale
+    from osekit.core.frequency_scale import Scale
 
 
 class AnalysisType(Flag):
@@ -55,7 +55,7 @@ class Analysis:
 
     Analysis instances are passed to the public API dataset, which runs the analysis.
     The ``Analysis`` object contains all info on the analysis to be done: the type(s) of
-    core_api dataset(s) that will be created and added to the ``Dataset.datasets``
+    core dataset(s) that will be created and added to the ``Dataset.datasets``
     property and which output files will be written to disk
     (reshaped audio files, ``npz`` spectra matrices, ``png`` spectrograms...) depend
     on the ``analysis_type`` parameter.
@@ -139,7 +139,7 @@ class Analysis:
         colormap: str | None
             Colormap to use for plotting the spectrogram.
             Has no effect if ``Analysis.SPECTROGRAM`` is not in analysis.
-        scale: osekit.core_api.frequecy_scale.Scale
+        scale: osekit.core.frequecy_scale.Scale
             Custom frequency scale to use for plotting the spectrogram.
             Has no effect if ``Analysis.SPECTROGRAM`` is not in analysis.
         nb_ltas_time_bins: int | None

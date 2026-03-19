@@ -1,7 +1,7 @@
 """Main class of the Public API.
 
 The ``Dataset`` correspond to a collection of audio,
-spectro and auxilary ``core_api`` datasets.
+spectro and auxilary ``core`` datasets.
 It has additionnal metadata that can be exported, e.g. to APLOSE.
 
 """
@@ -15,14 +15,14 @@ from typing import TYPE_CHECKING, TypeVar
 
 from osekit import config
 from osekit.config import DPDEFAULT, resample_quality_settings
-from osekit.core_api import audio_file_manager as afm
-from osekit.core_api.audio_dataset import AudioDataset
-from osekit.core_api.base_dataset import BaseDataset
-from osekit.core_api.instrument import Instrument
-from osekit.core_api.json_serializer import deserialize_json, serialize_json
-from osekit.core_api.ltas_dataset import LTASDataset
-from osekit.core_api.spectro_dataset import SpectroDataset
-from osekit.public_api.analysis import Analysis, AnalysisType
+from osekit.core import audio_file_manager as afm
+from osekit.core.audio_dataset import AudioDataset
+from osekit.core.base_dataset import BaseDataset
+from osekit.core.instrument import Instrument
+from osekit.core.json_serializer import deserialize_json, serialize_json
+from osekit.core.ltas_dataset import LTASDataset
+from osekit.core.spectro_dataset import SpectroDataset
+from osekit.public.analysis import Analysis, AnalysisType
 from osekit.utils.core_utils import (
     file_indexes_per_batch,
     get_umask,
@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 
     from pandas import Timestamp
 
-    from osekit.core_api.audio_file import AudioFile
+    from osekit.core.audio_file import AudioFile
     from osekit.utils.job import JobBuilder
 
 
@@ -43,7 +43,7 @@ class Dataset:
     """Main class of the Public API.
 
     The ``Dataset`` correspond to a collection of audio,
-    spectro and auxilary ``core_api`` datasets.
+    spectro and auxilary ``core`` datasets.
     It has additionnal metadata that can be exported, e.g. to APLOSE.
 
     """
@@ -92,7 +92,7 @@ class Dataset:
         instrument: Instrument | None
             Instrument that might be used to obtain acoustic pressure from
             the ``wav`` audio data.
-            See the ``osekit.core_api.instrument`` module for more info.
+            See the ``osekit.core.instrument`` module for more info.
         first_file_begin: Timestamp | None
             Timestamp of the first audio file being processed.
             Will be ignored if ``striptime_format`` is specified.
@@ -366,7 +366,7 @@ class Dataset:
     ) -> None:
         """Create a new analysis dataset from the original audio files.
 
-        The analysis parameter sets which type(s) of ``core_api`` dataset(s) will be
+        The analysis parameter sets which type(s) of ``core`` dataset(s) will be
         created and added to the ``Dataset.datasets`` property, plus which output
         files will be written to disk (reshaped audio files, ``npz`` spectra matrices,
         ``png`` spectrograms...).
@@ -376,7 +376,7 @@ class Dataset:
         analysis: Analysis
             ``Analysis`` to run.
             Contains the analysis type and required info.
-            See the ``public_api.Analysis.Analysis`` docstring for more info.
+            See the ``public.Analysis.Analysis`` docstring for more info.
         audio_dataset: AudioDataset
             If provided, the analysis will be run on this ``AudioDataset``.
             Else, an ``AudioDataset`` will be created from the analysis parameters.
@@ -501,7 +501,7 @@ class Dataset:
             Type of the analysis to be performed.
             ``AudioDataset`` and ``SpectroDataset`` instances will be
             created depending on the flags.
-            See ``osekit.public_api.analysis.AnalysisType`` docstring
+            See ``osekit.public.analysis.AnalysisType`` docstring
             for more information.
         ads: AudioDataset
             The ``AudioDataset`` on which the data should be written.
@@ -516,7 +516,7 @@ class Dataset:
 
         """
         # Import here to avoid circular imports since the script needs to import Dataset
-        from osekit.public_api import export_analysis  # noqa: PLC0415
+        from osekit.public import export_analysis  # noqa: PLC0415
 
         matrix_folder_path, spectrogram_folder_path, welch_folder_path = (
             (

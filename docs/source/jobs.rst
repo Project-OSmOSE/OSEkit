@@ -13,12 +13,12 @@ Public API
 ^^^^^^^^^^
 
 Running Public API Analyses through PBS jobs only requires adding a :class:`osekit.utils.job.JobBuilder`
-instance to the :attr:`osekit.public_api.dataset.Dataset.job_builder` attribute:
+instance to the :attr:`osekit.public.dataset.Dataset.job_builder` attribute:
 
 .. code-block:: python
 
     from osekit.utils.job import JobConfig, JobBuilder
-    from osekit.public_api.dataset import Dataset
+    from osekit.public.dataset import Dataset
 
     dataset = Dataset(...) # See the Dataset documentation
 
@@ -48,19 +48,19 @@ Core API
 Exporting Core API datasets with jobs is doable by explicitly instantiating a :class:`osekit.utils.job.Job` object.
 
 The export parameters are specified in the ``script_args`` parameter of the ``Job`` constructor,
-and follow the console arguments of the :mod:`osekit.public_api.export_analysis` script.
+and follow the console arguments of the :mod:`osekit.public.export_analysis` script.
 
 .. code-block:: python
 
     import os
 
-    from osekit.core_api.spectro_dataset import SpectroDataset
-    from osekit.core_api.audio_dataset import AudioDataset
+    from osekit.core.spectro_dataset import SpectroDataset
+    from osekit.core.audio_dataset import AudioDataset
     from osekit.utils.job import JobConfig, Job
 
     # Some Public API imports are required
-    from osekit.public_api.analysis import AnalysisType
-    from osekit.public_api import export_analysis
+    from osekit.public.analysis import AnalysisType
+    from osekit.public import export_analysis
 
     ads = AudioDataset(...) # See the AudioDataset doc
     sds = SpectroDataset(...) # See the SpectroDataset doc

@@ -3,5 +3,5 @@
 BaseFile
 --------
 
-.. autoclass:: osekit.core_api.base_file.BaseFile
+.. autoclass:: osekit.core.base_file.BaseFile
    :members:

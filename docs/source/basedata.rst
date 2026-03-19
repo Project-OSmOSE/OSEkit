@@ -3,5 +3,5 @@
 BaseData
 --------
 
-.. autoclass:: osekit.core_api.base_data.BaseData
+.. autoclass:: osekit.core.base_data.BaseData
    :members:

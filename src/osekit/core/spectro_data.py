@@ -24,17 +24,17 @@ from scipy.signal import ShortTimeFFT, welch
 from osekit.config import (
     TIMESTAMP_FORMATS_EXPORTED_FILES,
 )
-from osekit.core_api.audio_data import AudioData
-from osekit.core_api.base_data import BaseData, TFile
-from osekit.core_api.spectro_file import SpectroFile
-from osekit.core_api.spectro_item import SpectroItem
+from osekit.core.audio_data import AudioData
+from osekit.core.base_data import BaseData, TFile
+from osekit.core.spectro_file import SpectroFile
+from osekit.core.spectro_item import SpectroItem
 
 if TYPE_CHECKING:
     from pathlib import Path
 
     from pandas import Timestamp
 
-    from osekit.core_api.frequency_scale import Scale
+    from osekit.core.frequency_scale import Scale
 
 
 class SpectroData(BaseData[SpectroItem, SpectroFile]):
@@ -455,7 +455,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             Defaulted to ``SpectroData.get_default_ax()``.
         sx: np.ndarray | None
             Spectrogram ``sx`` values. Will be computed if ``None``.
-        scale: osekit.core_api.frequecy_scale.Scale
+        scale: osekit.core.frequecy_scale.Scale
             Custom frequency scale to use for plotting the spectrogram.
 
         """
@@ -546,7 +546,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             Defaulted to ``SpectroData.get_default_ax()``.
         sx: np.ndarray | None
             Spectrogram ``sx`` values. Will be computed if ``None``.
-        scale: osekit.core_api.frequecy_scale.Scale
+        scale: osekit.core.frequecy_scale.Scale
             Custom frequency scale to use for plotting the spectrogram.
 
         """

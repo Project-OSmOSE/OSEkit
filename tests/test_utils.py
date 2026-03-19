@@ -10,8 +10,8 @@ import pandas as pd
 import pytest
 from pandas import Timedelta
 
-from osekit.core_api.ltas_dataset import LTASDataset
-from osekit.core_api.spectro_dataset import SpectroDataset
+from osekit.core.ltas_dataset import LTASDataset
+from osekit.core.spectro_dataset import SpectroDataset
 from osekit.utils.audio_utils import Normalization, normalize
 from osekit.utils.core_utils import (
     file_indexes_per_batch,

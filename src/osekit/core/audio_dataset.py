@@ -9,10 +9,10 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Literal, Self
 
-from osekit.core_api.audio_data import AudioData
-from osekit.core_api.audio_file import AudioFile
-from osekit.core_api.base_dataset import BaseDataset
-from osekit.core_api.json_serializer import deserialize_json
+from osekit.core.audio_data import AudioData
+from osekit.core.audio_file import AudioFile
+from osekit.core.base_dataset import BaseDataset
+from osekit.core.json_serializer import deserialize_json
 from osekit.utils.audio_utils import Normalization
 from osekit.utils.multiprocess_utils import multiprocess
 
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     import pytz
     from pandas import Timedelta, Timestamp
 
-    from osekit.core_api.instrument import Instrument
+    from osekit.core.instrument import Instrument
 
 
 class AudioDataset(BaseDataset[AudioData, AudioFile]):

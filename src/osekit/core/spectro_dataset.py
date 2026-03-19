@@ -14,11 +14,11 @@ from pandas import DataFrame
 from scipy.signal import ShortTimeFFT
 
 from osekit.config import DPDEFAULT
-from osekit.core_api.base_dataset import BaseDataset, TFile
-from osekit.core_api.frequency_scale import Scale
-from osekit.core_api.json_serializer import deserialize_json
-from osekit.core_api.spectro_data import SpectroData
-from osekit.core_api.spectro_file import SpectroFile
+from osekit.core.base_dataset import BaseDataset, TFile
+from osekit.core.frequency_scale import Scale
+from osekit.core.json_serializer import deserialize_json
+from osekit.core.spectro_data import SpectroData
+from osekit.core.spectro_file import SpectroFile
 from osekit.utils.core_utils import locked
 from osekit.utils.multiprocess_utils import multiprocess
 
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     import pytz
     from pandas import Timedelta, Timestamp
 
-    from osekit.core_api.audio_dataset import AudioDataset
+    from osekit.core.audio_dataset import AudioDataset
 
 
 class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):

@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING, TypeVar
 
 import numpy as np
 
-from osekit.core_api.base_file import BaseFile
-from osekit.core_api.event import Event
+from osekit.core.base_file import BaseFile
+from osekit.core.event import Event
 
 if TYPE_CHECKING:
     from pandas import Timestamp

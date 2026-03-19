@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from osekit.core_api.ltas_dataset import LTASDataset
-from osekit.core_api.spectro_dataset import SpectroDataset
+from osekit.core.ltas_dataset import LTASDataset
+from osekit.core.spectro_dataset import SpectroDataset
 
 
 def deserialize_spectro_or_ltas_dataset(path: Path) -> SpectroDataset | LTASDataset:

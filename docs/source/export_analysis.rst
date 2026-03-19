@@ -3,5 +3,5 @@
 Export Analysis
 ---------------
 
-.. automodule:: osekit.public_api.export_analysis
+.. automodule:: osekit.public.export_analysis
    :members:

@@ -15,15 +15,15 @@ from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
 )
-from osekit.core_api.audio_dataset import AudioDataset
-from osekit.core_api.audio_file import AudioFile
-from osekit.core_api.event import Event
-from osekit.core_api.frequency_scale import Scale, ScalePart
-from osekit.core_api.instrument import Instrument
-from osekit.core_api.ltas_dataset import LTASDataset
-from osekit.core_api.spectro_dataset import SpectroDataset
-from osekit.public_api.analysis import Analysis, AnalysisType
-from osekit.public_api.dataset import Dataset
+from osekit.core.audio_dataset import AudioDataset
+from osekit.core.audio_file import AudioFile
+from osekit.core.event import Event
+from osekit.core.frequency_scale import Scale, ScalePart
+from osekit.core.instrument import Instrument
+from osekit.core.ltas_dataset import LTASDataset
+from osekit.core.spectro_dataset import SpectroDataset
+from osekit.public.analysis import Analysis, AnalysisType
+from osekit.public.dataset import Dataset
 from osekit.utils.audio_utils import Normalization
 
 

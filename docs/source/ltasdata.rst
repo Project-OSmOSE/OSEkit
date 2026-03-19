@@ -3,5 +3,5 @@
 LTASData
 -----------
 
-.. autoclass:: osekit.core_api.ltas_data.LTASData
+.. autoclass:: osekit.core.ltas_data.LTASData
    :members:
