@@ -1,7 +1,7 @@
 Working with jobs
 -----------------
 
-**OSEkit** can be set to send analyses instructions to be computed on a remote server
+**OSEkit** can be set to send transform instructions to be computed on a remote server
 through the PBS queuing system.
 
 This feature has mainly be thought for the Public API, but it can nonetheless be used for

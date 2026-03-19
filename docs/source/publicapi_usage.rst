@@ -426,4 +426,4 @@ Resetting a ``Project``
     Calling this method is irreversible
 
 The :meth:`osekit.public.project.Project.reset` method **resets the project's folder** to its initial state.
-All exported analyses ans json files will be removed, and the folder will be back to its state :ref:`before building the project <build>`.
+All exported outputs ans json files will be removed, and the folder will be back to its state :ref:`before building the project <build>`.

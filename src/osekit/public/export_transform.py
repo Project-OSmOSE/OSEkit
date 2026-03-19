@@ -1,4 +1,4 @@
-"""Module that provides scripts for running public API analyses."""
+"""Module that provides scripts for running public API transforms."""
 
 from __future__ import annotations
 
@@ -129,7 +129,9 @@ def write_transform_output(
 
 def create_parser() -> argparse.ArgumentParser:
     """Create the argument parser."""
-    parser = argparse.ArgumentParser(description="Export audio/spectro datasets.")
+    parser = argparse.ArgumentParser(
+        description="Export audio/spectro datasets.",
+    )
 
     parser.add_argument(
         "--transform",

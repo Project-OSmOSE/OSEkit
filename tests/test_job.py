@@ -171,7 +171,7 @@ def test_submit_pbs_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
 
     class Dummy:
         def __init__(self) -> None:
-            """Dummy subprocess.run output."""
+            """Dummy subprocess.run."""
             self.stdout = "35173.server\n"
             self.stderr = ""
 
@@ -209,7 +209,7 @@ def test_submit_pbs_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
 
     class Dummy:
         def __init__(self) -> None:
-            """Dummy subprocess.run output."""
+            """Dummy subprocess.run."""
             raise subprocess.CalledProcessError(5, "err")
 
     monkeypatch.setattr(

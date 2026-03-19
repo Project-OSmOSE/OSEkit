@@ -1,7 +1,7 @@
-"""The job module provides classes that run analyses on a remote server.
+"""The job module provides classes that run transforms on a remote server.
 
 If a ``JobBuilder`` is attached to a Public API ``Project``,
-the analyses will run through jobs, with writting/submitting of ``pbs`` files.
+the transforms will run through jobs, with writting/submitting of ``pbs`` files.
 
 """
 
@@ -493,7 +493,7 @@ class Job:
 class JobBuilder:
     """Class that should be attached to a Public API ``Project`` for working with jobs.
 
-    If a ``Project`` has a ``JobBuilder``, it will use it to run analyses through jobs.
+    If a ``Project`` has a ``JobBuilder``, it will use it to run transforms through jobs.
 
     """
 

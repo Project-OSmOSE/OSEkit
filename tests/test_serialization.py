@@ -978,13 +978,13 @@ def test_spectro_dataset_serialization(
             id="absolute_windows_path_to_windows_root_takes_first_common_folder",
         ),
         pytest.param(
-            "C:/user/datasets/audio/transform/audio/audio/audio.wav",
+            "C:/user/output_datasets/audio/transform/audio/audio/audio.wav",
             "C:/root/to/my_datasets/audio/some/stuff",
             "C:/root/to/my_datasets/audio/transform/audio/audio/audio.wav",
             id="absolute_windows_path_to_windows_root_with_repeated_folders",
         ),
         pytest.param(
-            "C:/user/datasets/audio/transform/audio/audio/audio.wav",
+            "C:/user/output_datasets/audio/transform/audio/audio/audio.wav",
             "/root/to/my_datasets/audio/some/stuff",
             "/root/to/my_datasets/audio/transform/audio/audio/audio.wav",
             id="absolute_windows_path_to_posix_root_with_repeated_folders",
