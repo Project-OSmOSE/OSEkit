@@ -322,10 +322,10 @@ def main() -> None:
 
     subtype = None if args.subtype.lower() == "none" else args.subtype
 
-    analysis_type = OutputType(args.analysis)
+    output_type = OutputType(args.transform)
 
     write_transform_output(
-        output_type=analysis_type,
+        output_type=output_type,
         ads=ads,
         sds=sds,
         subtype=subtype,

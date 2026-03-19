@@ -53,7 +53,7 @@ def test_argument_defaults() -> None:
         ],
     )
 
-    assert args.analysis == 1
+    assert args.transform == 1
     assert args.ads_json is None
     assert args.sds_json is None
     assert args.subtype is None
@@ -102,7 +102,7 @@ def test_specified_arguments(script_arguments: dict) -> None:
 
     args = parser.parse_args(shlex.split(parsed_str))
 
-    assert args.analysis == script_arguments["transform"]
+    assert args.transform == script_arguments["transform"]
     assert args.ads_json == script_arguments["ads-json"]
     assert args.sds_json == script_arguments["sds-json"]
     assert args.subtype == script_arguments["subtype"]
@@ -124,7 +124,7 @@ def test_specified_arguments(script_arguments: dict) -> None:
 def test_main_script(monkeypatch: pytest.MonkeyPatch, script_arguments: dict) -> None:
     class MockedArgs:
         def __init__(self, *args: list, **kwargs: dict) -> None:
-            self.analysis = script_arguments["transform"]
+            self.transform = script_arguments["transform"]
             self.ads_json = script_arguments["ads-json"]
             self.sds_json = script_arguments["sds-json"]
             self.subtype = script_arguments["subtype"]
@@ -169,11 +169,15 @@ def test_main_script(monkeypatch: pytest.MonkeyPatch, script_arguments: dict) ->
         mock_sds_json,
     )
 
-    def mock_write_analysis(*args: list, **kwargs: dict) -> None:
+    def mock_write_transform_output(*args: list, **kwargs: dict) -> None:
         for k, v in kwargs.items():
             calls[k] = v  # noqa: PERF403
 
-    monkeypatch.setattr(export_transform, "write_analysis", mock_write_analysis)
+    monkeypatch.setattr(
+        export_transform,
+        "write_transform_output",
+        mock_write_transform_output,
+    )
 
     export_transform.main()
 
