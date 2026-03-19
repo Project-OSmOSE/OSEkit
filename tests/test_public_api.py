@@ -22,8 +22,8 @@ from osekit.core.frequency_scale import Scale, ScalePart
 from osekit.core.instrument import Instrument
 from osekit.core.ltas_dataset import LTASDataset
 from osekit.core.spectro_dataset import SpectroDataset
-from osekit.public.analysis import Analysis, AnalysisType
 from osekit.public.project import Project
+from osekit.public.transform import OutputType, Transform
 from osekit.utils.audio_utils import Normalization
 
 
@@ -299,7 +299,7 @@ def test_project_build(
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "analysis"),
+    ("audio_files", "transform"),
     [
         pytest.param(
             {
@@ -308,8 +308,8 @@ def test_project_build(
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name=None,
                 begin=None,
                 end=None,
@@ -326,8 +326,8 @@ def test_project_build(
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name="cool",
                 begin=None,
                 end=None,
@@ -344,8 +344,8 @@ def test_project_build(
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name=None,
                 begin=Timestamp("2024-01-01 12:00:02"),
                 end=Timestamp("2024-01-01 12:00:04"),
@@ -362,8 +362,8 @@ def test_project_build(
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name=None,
                 begin=None,
                 end=None,
@@ -380,8 +380,8 @@ def test_project_build(
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name=None,
                 begin=None,
                 end=None,
@@ -398,8 +398,8 @@ def test_project_build(
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name="fun",
                 begin=Timestamp("2024-01-01 12:00:01"),
                 end=Timestamp("2024-01-01 12:00:04"),
@@ -415,15 +415,15 @@ def test_project_build(
 def test_reshape(
     tmp_path: pytest.fixture,
     audio_files: pytest.fixture,
-    analysis: Analysis,
+    analysis: Transform,
 ) -> None:
     project = Project(
         folder=tmp_path,
         strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
     )
     project.build()
-    project.run_analysis(
-        analysis=analysis,
+    project.run(
+        transform=analysis,
     )
 
     expected_ads = AudioDataset.from_files(
@@ -480,7 +480,7 @@ def test_reshape(
     (
         "audio_files",
         "instrument",
-        "analysis",
+        "transform",
         "expected_level",
     ),
     [
@@ -495,8 +495,8 @@ def test_reshape(
                 "magnitude": 0.1,
             },
             Instrument(end_to_end_db=150),
-            Analysis(
-                analysis_type=AnalysisType.AUDIO | AnalysisType.SPECTROGRAM,
+            Transform(
+                output_type=OutputType.AUDIO | OutputType.SPECTROGRAM,
                 name="pingu",
                 begin=Timestamp("2024-01-01 12:00:00"),
                 end=Timestamp("2024-01-01 12:00:01"),
@@ -524,10 +524,10 @@ def test_reshape(
                 "magnitude": 0.1,
             },
             Instrument(end_to_end_db=150),
-            Analysis(
-                analysis_type=AnalysisType.AUDIO
-                | AnalysisType.MATRIX
-                | AnalysisType.SPECTROGRAM,
+            Transform(
+                output_type=OutputType.AUDIO
+                | OutputType.MATRIX
+                | OutputType.SPECTROGRAM,
                 name="pingu",
                 begin=Timestamp("2024-01-01 12:00:00"),
                 end=Timestamp("2024-01-01 12:00:01"),
@@ -551,7 +551,7 @@ def test_serialization(
     tmp_path: pytest.fixture,
     audio_files: pytest.fixture,
     instrument: Instrument | None,
-    analysis: Analysis,
+    analysis: Transform,
     expected_level: float | None,
 ) -> None:
     project = Project(
@@ -560,15 +560,15 @@ def test_serialization(
         instrument=instrument,
     )
     project.build()
-    project.run_analysis(
-        analysis=analysis,
+    project.run(
+        transform=analysis,
     )
     _, request = audio_files
     sine_frequency = request.param["sine_frequency"]
 
     assert analysis.name in project.datasets
 
-    if AnalysisType.AUDIO in analysis.analysis_type and analysis.is_spectro:
+    if OutputType.AUDIO in analysis.analysis_type and analysis.is_spectro:
         assert f"{analysis.name}_audio" in project.datasets
 
     if analysis.is_spectro:
@@ -584,7 +584,7 @@ def test_serialization(
 
     deserialized = Project.from_json(tmp_path / "dataset.json")
 
-    # analysis dataset deserialization is only done on request
+    # transform dataset deserialization is only done on request
     assert all(
         isinstance(analysis_dataset["dataset"], Path)
         for analysis_dataset in deserialized.datasets.values()
@@ -595,7 +595,7 @@ def test_serialization(
         sorted(deserialized.datasets.items(), key=lambda d: d[0]),
         strict=False,
     ):
-        # Same analysis dataset type
+        # Same transform dataset type
         assert t_o == t_d
 
         if t_o is AudioDataset:
@@ -611,69 +611,69 @@ def test_serialization(
 
 
 @pytest.mark.parametrize(
-    "analysis_type",
+    "output_type",
     [
         pytest.param(
-            AnalysisType.SPECTROGRAM,
+            OutputType.SPECTROGRAM,
             id="spectro_only",
         ),
         pytest.param(
-            AnalysisType.SPECTROGRAM,
+            OutputType.SPECTROGRAM,
             id="matrix_only",
         ),
         pytest.param(
-            AnalysisType.SPECTROGRAM,
+            OutputType.SPECTROGRAM,
             id="both_spectral_flags",
         ),
     ],
 )
-def test_spectral_analysis_error_if_no_provided_fft(analysis_type: Analysis) -> None:
+def test_spectral_analysis_error_if_no_provided_fft(analysis_type: Transform) -> None:
     with pytest.raises(
         ValueError,
         match=r"FFT parameter should be given if spectra outputs are selected.",
     ):
-        Analysis(
-            analysis_type=AnalysisType.SPECTROGRAM,
+        Transform(
+            output_type=OutputType.SPECTROGRAM,
         )
 
 
 @pytest.mark.parametrize(
-    ("analysis", "expected"),
+    ("transform", "expected"),
     [
         pytest.param(
-            Analysis(analysis_type=AnalysisType.AUDIO),
+            Transform(output_type=OutputType.AUDIO),
             False,
             id="audio_only",
         ),
         pytest.param(
-            Analysis(
-                analysis_type=AnalysisType.SPECTROGRAM,
+            Transform(
+                output_type=OutputType.SPECTROGRAM,
                 fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
             ),
             True,
             id="spectro_only",
         ),
         pytest.param(
-            Analysis(
-                analysis_type=AnalysisType.MATRIX,
+            Transform(
+                output_type=OutputType.MATRIX,
                 fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
             ),
             True,
             id="matrix_only",
         ),
         pytest.param(
-            Analysis(
-                analysis_type=AnalysisType.MATRIX | AnalysisType.SPECTROGRAM,
+            Transform(
+                output_type=OutputType.MATRIX | OutputType.SPECTROGRAM,
                 fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
             ),
             True,
             id="matrix_and_spectro",
         ),
         pytest.param(
-            Analysis(
-                analysis_type=AnalysisType.MATRIX
-                | AnalysisType.SPECTROGRAM
-                | AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.MATRIX
+                | OutputType.SPECTROGRAM
+                | OutputType.AUDIO,
                 fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
             ),
             True,
@@ -681,7 +681,7 @@ def test_spectral_analysis_error_if_no_provided_fft(analysis_type: Analysis) -> 
         ),
     ],
 )
-def test_analysis_is_spectro(analysis: Analysis, expected: bool) -> None:
+def test_analysis_is_spectro(analysis: Transform, expected: bool) -> None:
     assert analysis.is_spectro is expected
 
 
@@ -690,16 +690,16 @@ def test_analysis_constructor_rejects_mismatched_fs() -> None:
         ValueError,
         match="does not match",
     ):
-        Analysis(
-            analysis_type=AnalysisType.SPECTROGRAM,
+        Transform(
+            output_type=OutputType.SPECTROGRAM,
             sample_rate=32_000,
             fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
         )
 
 
 def test_analysis_rejects_setting_fft_with_wrong_fs() -> None:
-    analysis = Analysis(
-        analysis_type=AnalysisType.SPECTROGRAM,
+    analysis = Transform(
+        output_type=OutputType.SPECTROGRAM,
         sample_rate=48_000,
         fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
     )
@@ -712,8 +712,8 @@ def test_analysis_rejects_setting_fft_with_wrong_fs() -> None:
 
 
 def test_analysis_sample_rate_propagates_to_fft() -> None:
-    analysis = Analysis(
-        analysis_type=AnalysisType.SPECTROGRAM,
+    analysis = Transform(
+        output_type=OutputType.SPECTROGRAM,
         sample_rate=48_000,
         fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
     )
@@ -766,14 +766,14 @@ def test_analysis_validate_sample_rate(
     expected: AbstractContextManager,
 ) -> None:
     with expected:
-        Analysis(AnalysisType.AUDIO)._validate_sample_rate(
+        Transform(OutputType.AUDIO)._validate_sample_rate(
             sample_rate=sample_rate,
             fft=fft,
         )
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "instrument", "analysis", "expected_data"),
+    ("audio_files", "instrument", "transform", "expected_data"),
     [
         pytest.param(
             {
@@ -783,8 +783,8 @@ def test_analysis_validate_sample_rate(
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             None,
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name=None,
                 begin=None,
                 end=None,
@@ -808,8 +808,8 @@ def test_analysis_validate_sample_rate(
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             Instrument(end_to_end_db=150),
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name=None,
                 begin=None,
                 end=None,
@@ -833,8 +833,8 @@ def test_analysis_validate_sample_rate(
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             None,
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name=None,
                 begin=None,
                 end=None,
@@ -874,8 +874,8 @@ def test_analysis_validate_sample_rate(
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             None,
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name=None,
                 begin=None,
                 end=None,
@@ -899,8 +899,8 @@ def test_analysis_validate_sample_rate(
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             None,
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name="cool",
                 begin=None,
                 end=None,
@@ -924,8 +924,8 @@ def test_analysis_validate_sample_rate(
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             None,
-            Analysis(
-                analysis_type=AnalysisType.SPECTROGRAM,
+            Transform(
+                output_type=OutputType.SPECTROGRAM,
                 name="cool",
                 begin=None,
                 end=None,
@@ -950,8 +950,8 @@ def test_analysis_validate_sample_rate(
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             None,
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name=None,
                 begin=Timestamp("2024-01-01 12:00:02"),
                 end=Timestamp("2024-01-01 12:00:04"),
@@ -979,8 +979,8 @@ def test_analysis_validate_sample_rate(
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             Instrument(end_to_end_db=150),
-            Analysis(
-                analysis_type=AnalysisType.SPECTROGRAM,
+            Transform(
+                output_type=OutputType.SPECTROGRAM,
                 name="cool",
                 begin=Timestamp("2024-01-01 12:00:02"),
                 end=Timestamp("2024-01-01 12:00:04"),
@@ -1009,8 +1009,8 @@ def test_analysis_validate_sample_rate(
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             None,
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name=None,
                 begin=None,
                 end=None,
@@ -1034,7 +1034,7 @@ def test_get_analysis_audiodataset(
     tmp_path: pytest.fixture,
     audio_files: pytest.fixture,
     instrument: Instrument | None,
-    analysis: Analysis,
+    analysis: Transform,
     expected_data: list[Event],
 ) -> None:
     project = Project(
@@ -1044,7 +1044,7 @@ def test_get_analysis_audiodataset(
     )
     project.build()
 
-    analysis_ds = project.get_analysis_audiodataset(analysis=analysis)
+    analysis_ds = project.prepare_audio(transform=analysis)
 
     assert all(
         ad.begin == e.begin and ad.end == e.end
@@ -1071,7 +1071,7 @@ def test_get_analysis_audiodataset(
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "instrument", "analysis", "expected_data"),
+    ("audio_files", "instrument", "transform", "expected_data"),
     [
         pytest.param(
             {
@@ -1081,8 +1081,8 @@ def test_get_analysis_audiodataset(
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             Instrument(end_to_end_db=150),
-            Analysis(
-                analysis_type=AnalysisType.SPECTROGRAM,
+            Transform(
+                output_type=OutputType.SPECTROGRAM,
                 name="cool",
                 begin=Timestamp("2024-01-01 12:00:02"),
                 end=Timestamp("2024-01-01 12:00:04"),
@@ -1116,7 +1116,7 @@ def test_get_analysis_spectrodataset(
     tmp_path: pytest.fixture,
     audio_files: pytest.fixture,
     instrument: Instrument | None,
-    analysis: Analysis,
+    analysis: Transform,
     expected_data: list[Event],
 ) -> None:
     project = Project(
@@ -1126,7 +1126,7 @@ def test_get_analysis_spectrodataset(
     )
     project.build()
 
-    analysis_sds = project.get_analysis_spectrodataset(analysis=analysis)
+    analysis_sds = project.prepare_spectro(transform=analysis)
 
     assert all(
         ad.begin == e.begin and ad.end == e.end
@@ -1157,15 +1157,15 @@ def test_get_analysis_spectrodataset(
         ValueError,
         match=r"FFT parameter should be given if spectra outputs are selected.",
     ):
-        project.get_analysis_spectrodataset(
-            analysis=Analysis(
-                analysis_type=AnalysisType.SPECTROGRAM,
+        project.prepare_spectro(
+            transform=Transform(
+                output_type=OutputType.SPECTROGRAM,
             ),
         )
 
-    # analysis.nb_ltas_time_bins implies LTASDataset output
+    # transform.nb_ltas_time_bins implies LTASDataset output
     analysis.nb_ltas_time_bins = 200
-    assert type(project.get_analysis_spectrodataset(analysis=analysis)) is LTASDataset
+    assert type(project.prepare_spectro(transform=analysis)) is LTASDataset
 
 
 def test_edit_analysis_before_run(
@@ -1180,15 +1180,15 @@ def test_edit_analysis_before_run(
 
     project.build()
 
-    analysis = Analysis(
-        analysis_type=AnalysisType.AUDIO | AnalysisType.SPECTROGRAM,
+    analysis = Transform(
+        output_type=OutputType.AUDIO | OutputType.SPECTROGRAM,
         data_duration=project.origin_dataset.duration / 2,
         name="original_analysis",
         sample_rate=24_000,
         fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
     )
 
-    ads = project.get_analysis_audiodataset(analysis=analysis)
+    ads = project.prepare_audio(transform=analysis)
 
     new_sr = 12_000
     new_name = "new_analysis"
@@ -1205,7 +1205,7 @@ def test_edit_analysis_before_run(
     ads.data = new_data
     ads.normalization = new_normalization
 
-    project.run_analysis(analysis, audio_dataset=ads)
+    project.run(analysis, audio_dataset=ads)
 
     # New ads name
     assert (project.folder / "data" / "audio" / ads.name).exists()
@@ -1246,24 +1246,24 @@ def test_delete_analysis_dataset(
 
     project.build()
 
-    analysis_1 = Analysis(
-        analysis_type=AnalysisType.AUDIO | AnalysisType.SPECTROGRAM,
+    analysis_1 = Transform(
+        output_type=OutputType.AUDIO | OutputType.SPECTROGRAM,
         data_duration=project.origin_dataset.duration / 2,
         name="analysis_1",
         sample_rate=24_000,
         fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
     )
 
-    analysis_2 = Analysis(
-        analysis_type=AnalysisType.AUDIO | AnalysisType.SPECTROGRAM,
+    analysis_2 = Transform(
+        output_type=OutputType.AUDIO | OutputType.SPECTROGRAM,
         data_duration=project.origin_dataset.duration / 2,
         name="analysis_2",
         sample_rate=20_000,
         fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=20_000),
     )
 
-    project.run_analysis(analysis_1)
-    project.run_analysis(analysis_2)
+    project.run(analysis_1)
+    project.run(analysis_2)
 
     ds1 = project.get_dataset(analysis_1.name)
     ds2 = project.get_dataset(analysis_2.name)
@@ -1294,8 +1294,8 @@ def test_delete_analysis_dataset(
     "analysis_to_delete",
     [
         pytest.param(
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 data_duration=Timedelta(seconds=1),
                 name="analysis_to_delete",
                 sample_rate=24_000,
@@ -1304,8 +1304,8 @@ def test_delete_analysis_dataset(
             id="audio_only",
         ),
         pytest.param(
-            Analysis(
-                analysis_type=AnalysisType.SPECTROGRAM,
+            Transform(
+                output_type=OutputType.SPECTROGRAM,
                 data_duration=Timedelta(seconds=1),
                 name="analysis_to_delete",
                 sample_rate=24_000,
@@ -1314,8 +1314,8 @@ def test_delete_analysis_dataset(
             id="spectro_only",
         ),
         pytest.param(
-            Analysis(
-                analysis_type=AnalysisType.AUDIO | AnalysisType.SPECTROGRAM,
+            Transform(
+                output_type=OutputType.AUDIO | OutputType.SPECTROGRAM,
                 data_duration=Timedelta(seconds=1),
                 name="analysis_to_delete",
                 sample_rate=24_000,
@@ -1328,7 +1328,7 @@ def test_delete_analysis_dataset(
 def test_delete_analysis(
     tmp_path: pytest.fixture,
     audio_files: pytest.fixture,
-    analysis_to_delete: Analysis,
+    analysis_to_delete: Transform,
 ) -> None:
     project = Project(
         folder=tmp_path,
@@ -1337,20 +1337,18 @@ def test_delete_analysis(
 
     project.build()
 
-    # Add another analysis to check that it is not affected by the deletion
+    # Add another transform to check that it is not affected by the deletion
 
-    analysis_to_keep = Analysis(
-        analysis_type=AnalysisType.AUDIO
-        | AnalysisType.SPECTROGRAM
-        | AnalysisType.MATRIX,
+    analysis_to_keep = Transform(
+        output_type=OutputType.AUDIO | OutputType.SPECTROGRAM | OutputType.MATRIX,
         data_duration=project.origin_dataset.duration / 2,
         name="analysis_to_keep",
         sample_rate=24_000,
         fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
     )
 
-    project.run_analysis(analysis_to_keep)
-    project.run_analysis(analysis_to_delete)
+    project.run(analysis_to_keep)
+    project.run(analysis_to_delete)
 
     assert all(
         analysis in project.analyses
@@ -1395,9 +1393,9 @@ def test_existing_analysis_warning(
 
     project.build()
 
-    project.run_analysis(
-        Analysis(
-            analysis_type=AnalysisType.AUDIO,
+    project.run(
+        Transform(
+            output_type=OutputType.AUDIO,
             data_duration=project.origin_dataset.duration / 2,
             name="my_analysis",
             sample_rate=24_000,
@@ -1405,9 +1403,9 @@ def test_existing_analysis_warning(
     )
 
     with pytest.raises(ValueError, match="my_analysis already exists"):
-        project.run_analysis(
-            Analysis(
-                analysis_type=AnalysisType.SPECTROGRAM,
+        project.run(
+            Transform(
+                output_type=OutputType.SPECTROGRAM,
                 data_duration=project.origin_dataset.duration / 2,
                 name="my_analysis",
                 sample_rate=24_000,
@@ -1417,9 +1415,9 @@ def test_existing_analysis_warning(
 
     project.delete_analysis("my_analysis")
 
-    project.run_analysis(
-        Analysis(
-            analysis_type=AnalysisType.SPECTROGRAM,
+    project.run(
+        Transform(
+            output_type=OutputType.SPECTROGRAM,
             data_duration=project.origin_dataset.duration / 2,
             name="my_analysis",
             sample_rate=24_000,
@@ -1441,17 +1439,15 @@ def test_rename_analysis(
 
     first_name, second_name = "fontaines", "dc"
 
-    analysis = Analysis(
-        analysis_type=AnalysisType.AUDIO
-        | AnalysisType.SPECTROGRAM
-        | AnalysisType.MATRIX,
+    analysis = Transform(
+        output_type=OutputType.AUDIO | OutputType.SPECTROGRAM | OutputType.MATRIX,
         data_duration=project.origin_dataset.duration / 2,
         name=first_name,
         sample_rate=24_000,
         fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
     )
 
-    project.run_analysis(analysis)
+    project.run(analysis)
 
     names = (first_name, second_name, second_name)  # Tests both renaming and same name
     for old, new in itertools.pairwise(names):
@@ -1495,7 +1491,7 @@ def test_rename_analysis(
 
     unknown_name = "white"
     target_name = "sky"
-    with pytest.raises(ValueError, match=f"Unknown analysis {unknown_name}."):
+    with pytest.raises(ValueError, match=f"Unknown transform {unknown_name}."):
         project.rename_analysis(
             analysis_name=unknown_name,
             new_analysis_name=target_name,
@@ -1513,22 +1509,22 @@ def test_spectro_analysis_with_existing_ads(
 
     project.build()
 
-    analysis = Analysis(
-        analysis_type=AnalysisType.AUDIO,
+    analysis = Transform(
+        output_type=OutputType.AUDIO,
         data_duration=project.origin_dataset.duration / 2,
         name="audio",
         sample_rate=24_000,
     )
 
-    project.run_analysis(analysis)
+    project.run(analysis)
 
-    analysis_2 = Analysis(
-        AnalysisType.SPECTROGRAM,
+    analysis_2 = Transform(
+        OutputType.SPECTROGRAM,
         name="spectro",
         fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
     )
 
-    project.run_analysis(analysis_2, audio_dataset=project.get_dataset("audio"))
+    project.run(analysis_2, audio_dataset=project.get_dataset("audio"))
 
     ads = project.get_dataset("audio")
     sds = project.get_dataset("spectro")
@@ -1628,17 +1624,17 @@ def test_deserialize_analysis_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
     project.datasets |= {
         "original": {
             "class": "AudioDataset",
-            "analysis": "original",
+            "transform": "original",
             "dataset": Path("original.json"),
         },
         "spectro": {
             "class": "SpectroDataset",
-            "analysis": "spectro",
+            "transform": "spectro",
             "dataset": Path("spectro.json"),
         },
         "ltas": {
             "class": "LTASDataset",
-            "analysis": "ltas",
+            "transform": "ltas",
             "dataset": Path("ltas.json"),
         },
     }

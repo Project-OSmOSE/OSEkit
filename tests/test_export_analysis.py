@@ -8,8 +8,8 @@ import pytest
 
 from osekit import config
 from osekit.core.audio_dataset import AudioDataset
-from osekit.public import export_analysis
-from osekit.public.export_analysis import create_parser
+from osekit.public import export_transform
+from osekit.public.export_transform import create_parser
 from osekit.utils.job import Job
 
 
@@ -19,7 +19,7 @@ def test_parser_factory() -> None:
     assert parser.description
 
     expected_args = {
-        "--analysis",
+        "--transform",
         "--ads-json",
         "--sds-json",
         "--subtype",
@@ -48,7 +48,7 @@ def test_argument_defaults() -> None:
     parser = create_parser()
     args = parser.parse_args(
         [
-            "--analysis",
+            "--transform",
             "1",
         ],
     )
@@ -75,7 +75,7 @@ def test_argument_defaults() -> None:
 @pytest.fixture
 def script_arguments() -> dict:
     return {
-        "analysis": 2,
+        "transform": 2,
         "ads-json": r"path/to/ads.json",
         "sds-json": r"path/to/ads.json",
         "subtype": "FLOAT",
@@ -102,7 +102,7 @@ def test_specified_arguments(script_arguments: dict) -> None:
 
     args = parser.parse_args(shlex.split(parsed_str))
 
-    assert args.analysis == script_arguments["analysis"]
+    assert args.analysis == script_arguments["transform"]
     assert args.ads_json == script_arguments["ads-json"]
     assert args.sds_json == script_arguments["sds-json"]
     assert args.subtype == script_arguments["subtype"]
@@ -124,7 +124,7 @@ def test_specified_arguments(script_arguments: dict) -> None:
 def test_main_script(monkeypatch: pytest.MonkeyPatch, script_arguments: dict) -> None:
     class MockedArgs:
         def __init__(self, *args: list, **kwargs: dict) -> None:
-            self.analysis = script_arguments["analysis"]
+            self.analysis = script_arguments["transform"]
             self.ads_json = script_arguments["ads-json"]
             self.sds_json = script_arguments["sds-json"]
             self.subtype = script_arguments["subtype"]
@@ -164,7 +164,7 @@ def test_main_script(monkeypatch: pytest.MonkeyPatch, script_arguments: dict) ->
         return path
 
     monkeypatch.setattr(
-        export_analysis,
+        export_transform,
         "deserialize_spectro_or_ltas_dataset",
         mock_sds_json,
     )
@@ -173,9 +173,9 @@ def test_main_script(monkeypatch: pytest.MonkeyPatch, script_arguments: dict) ->
         for k, v in kwargs.items():
             calls[k] = v  # noqa: PERF403
 
-    monkeypatch.setattr(export_analysis, "write_analysis", mock_write_analysis)
+    monkeypatch.setattr(export_transform, "write_analysis", mock_write_analysis)
 
-    export_analysis.main()
+    export_transform.main()
 
     assert (
         os.environ["DISABLE_TQDM"].lower() in ("true", "1", "t")
@@ -194,7 +194,7 @@ def test_main_script(monkeypatch: pytest.MonkeyPatch, script_arguments: dict) ->
     assert calls["sds_json"] == Path(script_arguments["sds-json"])
 
     # write_analysis
-    assert calls["analysis_type"].value == script_arguments["analysis"]
+    assert calls["output_type"].value == script_arguments["transform"]
     assert calls["ads"] == Path(script_arguments["ads-json"])
     assert calls["sds"] == Path(script_arguments["sds-json"])
     assert calls["subtype"] == script_arguments["subtype"]

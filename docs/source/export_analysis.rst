@@ -1,7 +1,7 @@
 .. _export_analysis:
 
-Export Analysis
+Export Transform
 ---------------
 
-.. automodule:: osekit.public.export_analysis
+.. automodule:: osekit.public.export
    :members:

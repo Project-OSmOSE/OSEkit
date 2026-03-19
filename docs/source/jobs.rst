@@ -36,10 +36,10 @@ instance to the :attr:`osekit.public.project.Project.job_builder` attribute:
     )
 
     # Now the dataset has a non-None job_builder attribute,
-    # running an analysis will write a PBS file in the logs directory
+    # running a transform will write a PBS file in the logs directory
     # and submit it to the requested queue.
 
-    dataset.run_analysis(...) # See the Analysis documentation
+    dataset.run(...) # See the Transform documentation
 
 
 Core API
@@ -48,7 +48,7 @@ Core API
 Exporting Core API datasets with jobs is doable by explicitly instantiating a :class:`osekit.utils.job.Job` object.
 
 The export parameters are specified in the ``script_args`` parameter of the ``Job`` constructor,
-and follow the console arguments of the :mod:`osekit.public.export_analysis` script.
+and follow the console arguments of the :mod:`osekit.public.export` script.
 
 .. code-block:: python
 
@@ -59,8 +59,8 @@ and follow the console arguments of the :mod:`osekit.public.export_analysis` scr
     from osekit.utils.job import JobConfig, Job
 
     # Some Public API imports are required
-    from osekit.public.analysis import AnalysisType
-    from osekit.public import export_analysis
+    from osekit.public.transform import OutputType
+    from osekit.public import export
 
     ads = AudioDataset(...) # See the AudioDataset doc
     sds = SpectroDataset(...) # See the SpectroDataset doc
@@ -77,7 +77,7 @@ and follow the console arguments of the :mod:`osekit.public.export_analysis` scr
     # Export specifications
     # All parameters are listed in this example, but all parameters other than analysis have default values
     args = {
-        "analysis": (AnalysisType.AUDIO|AnalysisType.SPECTROGRAM).value,
+        "analysis": (OutputType.AUDIO|OutputType.SPECTROGRAM).value,
         "ads-json": ads.foler/"output"/f"{ads.name}.json",
         "sds-json": sds.foler/"output"/f"{sds.name}.json",
         "subtype": "FLOAT",
@@ -106,7 +106,7 @@ and follow the console arguments of the :mod:`osekit.public.export_analysis` scr
     )
 
     job = Job(
-        script_path = Path(export_analysis.__file__),
+        script_path = Path(export.__file__),
         script_args=args,
         config=job_config,
         name="test_job_core",

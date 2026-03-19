@@ -11,16 +11,16 @@ from typing import TYPE_CHECKING
 from osekit import config, setup_logging
 from osekit.config import global_logging_context as glc
 from osekit.core.audio_dataset import AudioDataset
-from osekit.public.analysis import AnalysisType
 from osekit.public.project import Project
+from osekit.public.transform import OutputType
 from osekit.utils.deserialization import deserialize_spectro_or_ltas_dataset
 
 if TYPE_CHECKING:
     from osekit.core.spectro_dataset import SpectroDataset
 
 
-def write_analysis(
-    analysis_type: AnalysisType,
+def write_transform_output(
+    output_type: OutputType,
     ads: AudioDataset | None,
     sds: SpectroDataset | None,
     subtype: str | None = None,
@@ -37,13 +37,13 @@ def write_analysis(
 
     Parameters
     ----------
-    analysis_type: AnalysisType
-        Flags that should be used to specify the type of analysis to run.
-        See ``Analysis.AnalysisType`` docstring for more info.
+    output_type: OutputType
+        Flags that should be used to specify the type of transform to run.
+        See ``Transform.OutputType`` docstring for more info.
     subtype: str | None
         Subtype of the written audio files as provided by the soundfile module.
         Defaulted as the default ``16-bit PCM`` for ``wav`` audio files.
-        This parameter has no effect if ``Analysis.AUDIO`` is not in analysis.
+        This parameter has no effect if ``Transform.AUDIO`` is not in transform.
     ads: AudioDataset
         The ``AudioDataset`` of which the data should be written.
     sds: SpectroDataset
@@ -61,14 +61,14 @@ def write_analysis(
     last: int|None
         Index after the last data object to write.
     logger: logging.Logger | None
-        Logger to use to log the analysis steps.
+        Logger to use to log the transform steps.
 
     """
     logger = glc.logger if logger is None else logger
 
-    logger.info("Running analysis...")
+    logger.info("Running transform...")
 
-    if AnalysisType.AUDIO in analysis_type:
+    if OutputType.AUDIO in output_type:
         logger.info("Writing audio files...")
         ads.write(
             folder=ads.folder,
@@ -80,20 +80,17 @@ def write_analysis(
         ads.write_json(ads.folder)
 
     if (
-        AnalysisType.MATRIX not in analysis_type
-        and AnalysisType.SPECTROGRAM not in analysis_type
-        and AnalysisType.WELCH not in analysis_type
+        OutputType.MATRIX not in output_type
+        and OutputType.SPECTROGRAM not in output_type
+        and OutputType.WELCH not in output_type
     ):
         return
 
     # Avoid re-computing the reshaped audio
-    if AnalysisType.AUDIO in analysis_type:
+    if OutputType.AUDIO in output_type:
         sds.link_audio_dataset(ads, first=first, last=last)
 
-    if (
-        AnalysisType.MATRIX in analysis_type
-        and AnalysisType.SPECTROGRAM in analysis_type
-    ):
+    if OutputType.MATRIX in output_type and OutputType.SPECTROGRAM in output_type:
         logger.info("Computing and writing spectrum matrices and spectrograms...")
         sds.save_all(
             matrix_folder=matrix_folder_path,
@@ -102,14 +99,14 @@ def write_analysis(
             first=first,
             last=last,
         )
-    elif AnalysisType.SPECTROGRAM in analysis_type:
+    elif OutputType.SPECTROGRAM in output_type:
         logger.info("Computing and writing spectrograms...")
         sds.save_spectrogram(
             folder=spectrogram_folder_path,
             first=first,
             last=last,
         )
-    elif AnalysisType.MATRIX in analysis_type:
+    elif OutputType.MATRIX in output_type:
         logger.info("Computing and writing spectrum matrices...")
         sds.write(
             folder=matrix_folder_path,
@@ -117,7 +114,7 @@ def write_analysis(
             first=first,
             last=last,
         )
-    if AnalysisType.WELCH in analysis_type:
+    if OutputType.WELCH in output_type:
         logger.info("Computing and writing welches...")
         sds.write_welch(
             folder=welch_folder_path,
@@ -127,7 +124,7 @@ def write_analysis(
 
     # Update the sds from the JSON in case it has already been modified in another job
     sds.update_json_audio_data(first=first, last=last)
-    logger.info("Analysis done!")
+    logger.info("Transform done!")
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -135,10 +132,10 @@ def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Export audio/spectro datasets.")
 
     parser.add_argument(
-        "--analysis",
+        "--transform",
         "-a",
         required=True,
-        help="Flags representing which files to export. See AnalysisType doc for more info.",
+        help="Flags representing which files to export. See OutputType doc for more info.",
         type=int,
     )
 
@@ -261,7 +258,7 @@ def create_parser() -> argparse.ArgumentParser:
         required=False,
         action=argparse.BooleanOptionalAction,
         default=False,
-        help="Call osekit.setup_logging() before running the analysis.",
+        help="Call osekit.setup_logging() before running the transform.",
     )
 
     parser.add_argument(
@@ -285,7 +282,7 @@ def create_parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
-    """Export an analysis."""
+    """Export a transform."""
     args = create_parser().parse_args()
 
     os.environ["DISABLE_TQDM"] = str(args.tqdm_disable)
@@ -325,10 +322,10 @@ def main() -> None:
 
     subtype = None if args.subtype.lower() == "none" else args.subtype
 
-    analysis_type = AnalysisType(args.analysis)
+    analysis_type = OutputType(args.analysis)
 
-    write_analysis(
-        analysis_type=analysis_type,
+    write_transform_output(
+        output_type=analysis_type,
         ads=ads,
         sds=sds,
         subtype=subtype,

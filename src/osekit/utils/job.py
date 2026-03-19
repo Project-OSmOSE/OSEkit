@@ -66,14 +66,14 @@ class JobConfig:
 
 
 class Job:
-    """Job that concerns a specific analysis."""
+    """Job that concerns a specific transform."""
 
     def __init__(
         self,
         script_path: Path,
         script_args: dict | None = None,
         config: JobConfig | None = None,
-        name: str = "osekit_analysis",
+        name: str = "osekit_transform",
         output_folder: Path | None = None,
     ) -> None:
         """Initialize a Job.
@@ -513,7 +513,7 @@ class JobBuilder:
         self,
         script_path: Path,
         script_args: dict | None = None,
-        name: str = "osekit_analysis",
+        name: str = "osekit_transform",
         output_folder: Path | None = None,
     ) -> None:
         """Create a new ``Job`` instance.

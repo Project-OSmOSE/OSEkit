@@ -108,13 +108,13 @@ def file_indexes_per_batch(
     total_nb_files: int
         Number of files processed by ball batches
     nb_batches: int
-        Number of batches in the analysis
+        Number of batches in the transform
 
     Returns
     -------
     list[tuple[int,int]]:
     A list of tuples representing the start and stop index of files processed by each
-    batch in the analysis.
+    batch in the transform.
 
     Examples
     --------
@@ -136,7 +136,7 @@ def file_indexes_per_batch(
 
 
 def nb_files_per_batch(total_nb_files: int, nb_batches: int) -> list[int]:
-    """Compute the number of files processed by each batch in the analysis.
+    """Compute the number of files processed by each batch in the transform.
 
     The number of files is equitably distributed among batches.
     Example: 10 files distributed among 4 batches will lead to
@@ -147,12 +147,12 @@ def nb_files_per_batch(total_nb_files: int, nb_batches: int) -> list[int]:
     total_nb_files: int
         Number of files processed by ball batches
     nb_batches: int
-        Number of batches in the analysis
+        Number of batches in the transform
 
     Returns
     -------
     list(int):
-    A list representing the number of files processed by each batch in the analysis.
+    A list representing the number of files processed by each batch in the transform.
 
     Examples
     --------

@@ -23,7 +23,8 @@ from osekit.core.instrument import Instrument
 from osekit.core.json_serializer import deserialize_json, serialize_json
 from osekit.core.ltas_dataset import LTASDataset
 from osekit.core.spectro_dataset import SpectroDataset
-from osekit.public.analysis import Analysis, AnalysisType
+from osekit.public import export_transform
+from osekit.public.transform import OutputType, Transform
 from osekit.utils.core_utils import (
     file_indexes_per_batch,
     get_umask,
@@ -128,7 +129,7 @@ class Project:
     @property
     def analyses(self) -> list[str]:
         """Return the list of the names of the analyses ran with this ``Project``."""
-        return list({dataset["analysis"] for dataset in self.datasets.values()})
+        return list({dataset["transform"] for dataset in self.datasets.values()})
 
     def build(
         self,
@@ -156,7 +157,7 @@ class Project:
 
         self.datasets[ads.name] = {
             "class": type(ads).__name__,
-            "analysis": "original",
+            "transform": "original",
             "dataset": ads,
         }
 
@@ -266,171 +267,171 @@ class Project:
         self.datasets = {}
         self.logger = None
 
-    def get_analysis_audiodataset(self, analysis: Analysis) -> AudioDataset:
-        """Return an ``AudioDataset`` created from the analysis parameters.
+    def prepare_audio(self, transform: Transform) -> AudioDataset:
+        """Return an ``AudioDataset`` created from the transform parameters.
 
         Parameters
         ----------
-        analysis: Analysis
+        transform: Transform
             ``Analysis`` for which to generate an ``AudioDataset`` object.
 
         Returns
         -------
         AudioDataset:
-            The ``AudioDataset`` that match the analysis parameters.
+            The ``AudioDataset`` that match the transform parameters.
             This ``AudioDataset`` can be used either to have a peek at the
-            analysis output, or to edit the analysis (adding/removing data)
+            transform output, or to edit the transform (adding/removing data)
             by editing it and passing it as a parameter to the
-            ``Project.run_analysis()`` method.
+            ``Project.run()`` method.
 
         """
         self.logger.info("Creating the audio data...")
 
         ads = AudioDataset.from_files(
             files=list(self.origin_files),
-            begin=analysis.begin,
-            end=analysis.end,
-            data_duration=analysis.data_duration,
-            mode=analysis.mode,
-            overlap=analysis.overlap,
-            normalization=analysis.normalization,
-            name=analysis.name,
+            begin=transform.begin,
+            end=transform.end,
+            data_duration=transform.data_duration,
+            mode=transform.mode,
+            overlap=transform.overlap,
+            normalization=transform.normalization,
+            name=transform.name,
             instrument=self.instrument,
         )
 
-        if analysis.sample_rate is not None:
-            ads.sample_rate = analysis.sample_rate
+        if transform.sample_rate is not None:
+            ads.sample_rate = transform.sample_rate
 
-        if analysis.is_spectro:
+        if transform.is_spectro:
             ads.suffix = "audio"
 
         return ads
 
-    def get_analysis_spectrodataset(
+    def prepare_spectro(
         self,
-        analysis: Analysis,
+        transform: Transform,
         audio_dataset: AudioDataset | None = None,
     ) -> SpectroDataset | LTASDataset:
-        """Return a ``SpectroDataset`` (or ``LTASDataset``) created from analysis parameters.
+        """Return a ``SpectroDataset`` (or ``LTASDataset``) created from transform parameters.
 
         Parameters
         ----------
-        analysis: Analysis
+        transform: Transform
             ``Analysis`` for which to generate an ``AudioDataset`` object.
         audio_dataset: AudioDataset|None
             If provided, the ``SpectroDataset`` will be initialized from
             this ``AudioDataset``.
-            This can be used to edit the analysis (e.g. adding/removing data)
+            This can be used to edit the transform (e.g. adding/removing data)
             before running it.
 
         Returns
         -------
         SpectroDataset | LTASDataset:
-            The ``SpectroDataset`` that match the analysis parameters.
+            The ``SpectroDataset`` that match the transform parameters.
             This ``SpectroDataset`` can be used, for example, to have a peek at the
-            analysis output before running it.
-            If ``Analysis.is_ltas is True``, a ``LTASDataset`` is returned.
+            transform output before running it.
+            If ``Transform.is_ltas is True``, a ``LTASDataset`` is returned.
 
         """
-        if analysis.fft is None:
+        if transform.fft is None:
             msg = "FFT parameter should be given if spectra outputs are selected."
             raise ValueError(msg)
 
         ads = (
-            self.get_analysis_audiodataset(analysis=analysis)
+            self.prepare_audio(transform=transform)
             if audio_dataset is None
             else audio_dataset
         )
 
         sds = SpectroDataset.from_audio_dataset(
             audio_dataset=ads,
-            fft=analysis.fft,
-            name=analysis.name,
-            v_lim=analysis.v_lim,
-            colormap=analysis.colormap,
-            scale=analysis.scale,
+            fft=transform.fft,
+            name=transform.name,
+            v_lim=transform.v_lim,
+            colormap=transform.colormap,
+            scale=transform.scale,
         )
 
-        if analysis.nb_ltas_time_bins is not None:
+        if transform.nb_ltas_time_bins is not None:
             sds = LTASDataset.from_spectro_dataset(
                 sds=sds,
-                nb_time_bins=analysis.nb_ltas_time_bins,
+                nb_time_bins=transform.nb_ltas_time_bins,
             )
 
         return sds
 
-    def run_analysis(
+    def run(
         self,
-        analysis: Analysis,
+        transform: Transform,
         audio_dataset: AudioDataset | None = None,
         spectro_dataset: SpectroDataset | None = None,
         nb_jobs: int = 1,
     ) -> None:
-        """Create a new analysis dataset from the original audio files.
+        """Create a new transform dataset from the original audio files.
 
-        The analysis parameter sets which type(s) of ``core`` dataset(s) will be
+        The transform parameter sets which type(s) of ``core`` dataset(s) will be
         created and added to the ``Project.datasets`` property, plus which output
         files will be written to disk (reshaped audio files, ``npz`` spectra matrices,
         ``png`` spectrograms...).
 
         Parameters
         ----------
-        analysis: Analysis
-            ``Analysis`` to run.
-            Contains the analysis type and required info.
-            See the ``public.Analysis.Analysis`` docstring for more info.
+        transform: Transform
+            ``Transform`` to run.
+            Contains the transform type and required info.
+            See the ``public.transform.Transform`` docstring for more info.
         audio_dataset: AudioDataset
-            If provided, the analysis will be run on this ``AudioDataset``.
-            Else, an ``AudioDataset`` will be created from the analysis parameters.
-            This can be used to edit the analysis ``AudioDataset`` (adding, removing,
+            If provided, the transform will be run on this ``AudioDataset``.
+            Else, an ``AudioDataset`` will be created from the transform parameters.
+            This can be used to edit the transform ``AudioDataset`` (adding, removing,
             renaming ``AudioData`` etc.)
         spectro_dataset: SpectroDataset
-            If provided, the spectral analysis will be run on this ``SpectroDataset``.
+            If provided, the spectral transform will be run on this ``SpectroDataset``.
             Else, a ``SpectroDataset`` will be created from the ``audio_dataset``
-            if provided, or from the analysis parameters.
-            This can be used to edit the analysis ``SpectroDataset`` (adding, removing,
+            if provided, or from the transform parameters.
+            This can be used to edit the transform ``SpectroDataset`` (adding, removing,
             renaming ``SpectroData`` etc.)
         nb_jobs: int
             Number of jobs to run in parallel.
 
         """
-        if analysis.name in self.analyses:
+        if transform.name in self.analyses:
             message = (
-                f"Analysis {analysis.name} already exists."
+                f"Transform {transform.name} already exists."
                 f"Please choose a different name,"
                 f"or delete it with the Project.delete_analysis() method."
             )
             raise ValueError(message)
 
         ads = (
-            self.get_analysis_audiodataset(analysis=analysis)
+            self.prepare_audio(transform=transform)
             if audio_dataset is None
             else audio_dataset
         )
 
-        if AnalysisType.AUDIO in analysis.analysis_type:
-            self._add_audio_dataset(ads=ads, analysis_name=analysis.name)
+        if OutputType.AUDIO in transform.analysis_type:
+            self._add_audio_dataset(ads=ads, analysis_name=transform.name)
 
         sds = None
-        if analysis.is_spectro:
+        if transform.is_spectro:
             sds = (
-                self.get_analysis_spectrodataset(
-                    analysis=analysis,
+                self.prepare_spectro(
+                    transform=transform,
                     audio_dataset=ads,
                 )
                 if spectro_dataset is None
                 else spectro_dataset
             )
-            self._add_spectro_dataset(sds=sds, analysis_name=analysis.name)
+            self._add_spectro_dataset(sds=sds, analysis_name=transform.name)
 
-        self.export_analysis(
-            analysis_type=analysis.analysis_type,
+        self.export(
+            output_type=transform.analysis_type,
             ads=ads,
             sds=sds,
             link=True,
-            subtype=analysis.subtype,
+            subtype=transform.subtype,
             nb_jobs=nb_jobs,
-            name=analysis.name,
+            name=transform.name,
         )
 
         self.write_json()
@@ -443,7 +444,7 @@ class Project:
         ads.folder = self._get_audio_dataset_subpath(ads=ads)
         self.datasets[ads.name] = {
             "class": type(ads).__name__,
-            "analysis": analysis_name,
+            "transform": analysis_name,
             "dataset": ads,
         }
         ads.write_json(ads.folder)
@@ -463,9 +464,9 @@ class Project:
             )
         )
 
-    def export_analysis(
+    def export(
         self,
-        analysis_type: AnalysisType,
+        output_type: OutputType,
         ads: AudioDataset | None = None,
         sds: SpectroDataset | LTASDataset | None = None,
         subtype: str | None = None,
@@ -477,9 +478,9 @@ class Project:
         *,
         link: bool = False,
     ) -> None:
-        """Perform an analysis and write the results on disk.
+        """Perform a transform and write the results on disk.
 
-        An analysis is defined as a manipulation of the original audio files:
+        An transform is defined as a manipulation of the original audio files:
         reshaping the audio, exporting ``png`` spectrograms or ``npz`` matrices
         (or a combination of those three) are examples of analyses.
         The tasks will be distributed to jobs if ``self.job_builder``
@@ -499,11 +500,11 @@ class Project:
             exported (relative to ``sds.folder``)
         sds: SpectroDataset | LTASDataset
             The ``SpectroDataset`` on which the data should be written.
-        analysis_type : AnalysisType
-            Type of the analysis to be performed.
+        output_type : OutputType
+            Type of the transform to be performed.
             ``AudioDataset`` and ``SpectroDataset`` instances will be
             created depending on the flags.
-            See ``osekit.public.analysis.AnalysisType`` docstring
+            See ``osekit.public.transform.OutputType`` docstring
             for more information.
         ads: AudioDataset
             The ``AudioDataset`` on which the data should be written.
@@ -512,13 +513,12 @@ class Project:
         nb_jobs: int
             The number of jobs to run in parallel.
         name: str
-            The name of the analysis being performed.
+            The name of the transform being performed.
         link: bool
             If ``True``, the ads data will be linked to the exported files.
 
         """
         # Import here to avoid circular imports since the script needs to import Project
-        from osekit.public import export_analysis  # noqa: PLC0415
 
         matrix_folder_path, spectrogram_folder_path, welch_folder_path = (
             (
@@ -534,8 +534,8 @@ class Project:
         )
 
         if self.job_builder is None:
-            export_analysis.write_analysis(
-                analysis_type=analysis_type,
+            export_transform.write_transform_output(
+                output_type=output_type,
                 ads=ads,
                 sds=sds,
                 link=link,
@@ -554,16 +554,16 @@ class Project:
 
         ads_json = (
             ads.folder / f"{ads.name}.json"
-            if AnalysisType.AUDIO in analysis_type
+            if OutputType.AUDIO in output_type
             else "None"
         )
         sds_json = sds.folder / f"{sds.name}.json" if sds is not None else "None"
 
         for index, (start, stop) in enumerate(batch_indexes):
             self.job_builder.create_job(
-                script_path=Path(export_analysis.__file__),
+                script_path=Path(export_transform.__file__),
                 script_args={
-                    "analysis": analysis_type.value,
+                    "transform": output_type.value,
                     "ads-json": ads_json,
                     "sds-json": sds_json,
                     "subtype": subtype,
@@ -594,7 +594,7 @@ class Project:
         self.datasets[sds.name] = {
             "class": type(sds).__name__,
             "dataset": sds,
-            "analysis": analysis_name,
+            "transform": analysis_name,
         }
         sds.write_json(sds.folder)
 
@@ -626,9 +626,9 @@ class Project:
         raise NotImplementedError
 
     def _delete_dataset(self, dataset_name: str) -> None:
-        """Delete an analysis dataset.
+        """Delete a transform dataset.
 
-        WARNING: all the analysis output files will be deleted.
+        WARNING: all the transform output files will be deleted.
         WARNING: removing linked datasets (e.g. an ``AudioDataset`` to which a
         ``SpectroDataset`` is linked) might lead to errors.
 
@@ -648,34 +648,34 @@ class Project:
         self.write_json()
 
     def get_datasets_by_analysis(self, analysis_name: str) -> list[type[DatasetChild]]:
-        """Get all output datasets from a given analysis.
+        """Get all output datasets from a given transform.
 
         Parameters
         ----------
         analysis_name: str
-            Name of the analysis of which to get the output datasets.
+            Name of the transform of which to get the output datasets.
 
         Returns
         -------
         list[type[DatasetChild]]
-        List of the analysis output datasets.
+        List of the transform output datasets.
 
         """
         return [
             self.deserialize_analysis_dataset(analyis_dataset_name=dataset_name)
             for dataset_name, dataset_values in self.datasets.items()
-            if dataset_values["analysis"] == analysis_name
+            if dataset_values["transform"] == analysis_name
         ]
 
     def rename_analysis(self, analysis_name: str, new_analysis_name: str) -> None:
-        """Rename an already ran analysis.
+        """Rename an already ran transform.
 
         Parameters
         ----------
         analysis_name: str
-            Name of the analysis to rename.
+            Name of the transform to rename.
         new_analysis_name: str
-            New name of the analysis to rename.
+            New name of the transform to rename.
 
         """
         if analysis_name == new_analysis_name:
@@ -684,7 +684,7 @@ class Project:
             msg = "You can't rename the original dataset."
             raise ValueError(msg)
         if analysis_name not in self.datasets:
-            msg = f"Unknown analysis {analysis_name}."
+            msg = f"Unknown transform {analysis_name}."
             raise ValueError(msg)
         if new_analysis_name in self.datasets:
             msg = f"{new_analysis_name} already exists."
@@ -692,8 +692,8 @@ class Project:
 
         keys_to_rename = {}
         for analysis_dataset in self.datasets.values():
-            if analysis_dataset["analysis"] == analysis_name:
-                analysis_dataset["analysis"] = new_analysis_name
+            if analysis_dataset["transform"] == analysis_name:
+                analysis_dataset["transform"] = new_analysis_name
                 ds = analysis_dataset["dataset"]
                 old_name, new_name = (
                     ds.name,
@@ -719,26 +719,26 @@ class Project:
         self.write_json()
 
     def delete_analysis(self, analysis_name: str) -> None:
-        """Delete all output datasets from an analysis.
+        """Delete all output datasets from a transform.
 
-        WARNING: all the analysis output files will be deleted.
+        WARNING: all the transform output files will be deleted.
 
         """
         for dataset_to_delete in self.get_datasets_by_analysis(analysis_name):
             self._delete_dataset(dataset_to_delete.name)
 
     def get_dataset(self, dataset_name: str) -> type[DatasetChild] | None:
-        """Get an analysis dataset from its name.
+        """Get a transform dataset from its name.
 
         Parameters
         ----------
         dataset_name: str
-            Name of the analysis dataset.
+            Name of the transform dataset.
 
         Returns
         -------
         type[DatasetChild]:
-            Analysis dataset from the ``dataset.datasets`` property.
+            Transform dataset from the ``dataset.datasets`` property.
 
         """
         if dataset_name not in self.datasets:
@@ -759,7 +759,7 @@ class Project:
             "datasets": {
                 name: {
                     "class": dataset["class"],
-                    "analysis": dataset["analysis"],
+                    "transform": dataset["transform"],
                     "json": str(dataset["dataset"])
                     if isinstance(dataset["dataset"], Path)
                     else str(dataset["dataset"].folder / f"{name}.json"),
@@ -794,7 +794,7 @@ class Project:
         for name, dataset in dictionary["datasets"].items():
             datasets[name] = {
                 "class": dataset["class"],
-                "analysis": dataset["analysis"],
+                "transform": dataset["transform"],
                 "dataset": Path(dataset["json"]),
             }
         return cls(
@@ -836,7 +836,7 @@ class Project:
         self,
         analyis_dataset_name: str,
     ) -> type[DatasetChild]:
-        """Deserialize an analysis dataset from its json file.
+        """Deserialize a transform dataset from its json file.
 
         The self.datasets property will be updated so that it stores the deserialized
         dataset rather than the json file so that it is deserialized only once.
@@ -844,12 +844,12 @@ class Project:
         Parameters
         ----------
         analyis_dataset_name: str
-            Name of the analysis dataset.
+            Name of the transform dataset.
 
         Returns
         -------
         type[DatasetChild]:
-            The deserialized analysis dataset.
+            The deserialized transform dataset.
 
         """
         analysis_dataset = self.datasets[analyis_dataset_name]

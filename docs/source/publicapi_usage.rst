@@ -121,69 +121,69 @@ not exist, it will be created before the files are moved:
         move_files=False, # Copy files rather than moving them
     )
 
-Running an ``Analysis``
+Running an ``Transform``
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-In **OSEkit**, **Analyses** are run with the :meth:`osekit.public.project.Project.run_analysis` method to process and export spectrogram images, spectrum matrices and audio files from original audio files.
+In **OSEkit**, **Analyses** are run with the :meth:`osekit.public.project.Project.run` method to process and export spectrogram images, spectrum matrices and audio files from original audio files.
 
 .. note::
 
     **OSEkit** makes it easy to **reshape** the original audio: it is not bound to the original files, and can freely be reshaped in audio data of **any duration and sample rate**.
 
-The analysis parameters are described by a :class:`osekit.public.analysis.Analysis` instance passed as a parameter to this method.
+The analysis parameters are described by a :class:`osekit.public.transform.Transform` instance passed as a parameter to this method.
 
-Analysis Type
+Transform Type
 """""""""""""
 
-The ``analysis_type`` parameter passed to the initializer is a :class:`osekit.public.analysis.AnalysisType` instance that defines the analysis output(s):
+The ``analysis_type`` parameter passed to the initializer is a :class:`osekit.public.transform.OutputType` instance that defines the analysis output(s):
 
-.. list-table:: Analysis Types
+.. list-table:: Transform Types
    :widths: 40 60
    :header-rows: 1
 
    * - Flag
      - Output
-   * - ``AnalysisType.AUDIO``
+   * - ``OutputType.AUDIO``
      - Reshaped audio files
-   * - ``AnalysisType.MATRIX``
+   * - ``OutputType.MATRIX``
      - `STFT <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.ShortTimeFFT.stft.html#scipy.signal.ShortTimeFFT.stft>`_ NPZ matrix files
-   * - ``AnalysisType.WELCH``
+   * - ``OutputType.WELCH``
      - `Welch <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.welch.html>`_ NPZ files
-   * - ``AnalysisType.SPECTROGRAM``
+   * - ``OutputType.SPECTROGRAM``
      - PNG spectrogram images
 
 Multiple outputs can be selected thanks to a logical or ``|`` separator.
 
-For example, if an analysis aims at exporting both the reshaped audio files and the corresponding spectrograms:
+For example, if a transform aims at exporting both the reshaped audio files and the corresponding spectrograms:
 
 .. code-block:: python
 
-    from osekit.public.analysis import AnalysisType
-    analysis_type = AnalysisType.AUDIO | AnalysisType.SPECTROGRAM
+    from osekit.public.transform import OutputType
+    analysis_type = OutputType.AUDIO | OutputType.SPECTROGRAM
 
 
-Analysis Parameters
+Transform Parameters
 """""""""""""""""""
 
-The remaining parameters of the analysis (begin and end **Timestamps**, duration and sample rate of the reshaped data...) are described in the :class:`osekit.public.analysis.Analysis` initializer docstring.
+The remaining parameters of the analysis (begin and end **Timestamps**, duration and sample rate of the reshaped data...) are described in the :class:`osekit.public.transform.Transform` initializer docstring.
 
 .. note::
 
-   If the ``Analysis`` contains spectral computations (either ``AnalysisType.MATRIX``, ``AnalysisType.SPECTROGRAM`` or ``AnalysisType.WELCH`` is in ``analysis_type``), a `scipy ShortTimeFFT instance <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.ShortTimeFFT.html#scipy.signal.ShortTimeFFT>`_ should be passed to the ``Analysis`` initializer.
+   If the ``Transform`` contains spectral computations (either ``OutputType.MATRIX``, ``OutputType.SPECTROGRAM`` or ``OutputType.WELCH`` is in ``analysis_type``), a `scipy ShortTimeFFT instance <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.ShortTimeFFT.html#scipy.signal.ShortTimeFFT>`_ should be passed to the ``Transform`` initializer.
 
 .. _editing_analysis:
 
 Checking/Editing the analysis
 """""""""""""""""""""""""""""
 
-If you want to take a peek at what the analysis output will be before actually running it, the :meth:`osekit.public.project.Project.get_analysis_audiodataset` and :meth:`osekit.public.project.Project.get_analysis_spectrodataset` methods
+If you want to take a peek at what the analysis output will be before actually running it, the :meth:`osekit.public.project.Project.prepare_audio` and :meth:`osekit.public.project.Project.prepare_spectro` methods
 return a :class:`osekit.core.audio_dataset.AudioDataset` and a :class:`osekit.core.spectro_dataset.SpectroDataset` instance, respectively.
 
 The returned ``AudioDataset`` can be edited at will and passed as a parameter later on when the analysis is run:
 
 .. code-block:: python
 
-    ads = project.get_analysis_audiodataset(analysis=analysis)
+    ads = project.prepare_audio(analysis=analysis)
 
     # Filtering out the AudioData that are not linked to any audio file:
     ads.remove_empty_data(threshold=0.)
@@ -194,7 +194,7 @@ The returned ``SpectroDataset`` can be used e.g. to plot sample spectrograms pri
 
     import matplotlib.pyplot as plt
 
-    sds = project.get_analysis_spectrodataset(analysis=analysis, audio_dataset=ads) # audio_dataset is optional: here, the sds will match the edited ads (with no empty data)
+    sds = project.prepare_spectro(analysis=analysis, audio_dataset=ads) # audio_dataset is optional: here, the sds will match the edited ads (with no empty data)
 
     # Computing/plotting the 100th SpectroData from the analysis
     sds.data[100].plot()
@@ -204,50 +204,50 @@ The returned ``SpectroDataset`` can be used e.g. to plot sample spectrograms pri
 Running the analysis
 """"""""""""""""""""
 
-To run the ``Analysis``, simply execute the :meth:`osekit.public.project.Project.run_analysis` method:
+To run the ``Transform``, simply execute the :meth:`osekit.public.project.Project.run` method:
 
 .. code-block:: python
 
-    project.run_analysis(analysis=analysis) # And that's it!
+    project.run(analysis=analysis) # And that's it!
 
 If you edited the analysis ``AudioDataset`` as explained in the :ref:`Checking/Editing the analysis <editing_analysis>` section, you can specify the edited ``AudioDataset`` on which the analysis will be run:
 
 .. code-block:: python
 
-    project.run_analysis(analysis=analysis, audio_dataset=ads)
+    project.run(analysis=analysis, audio_dataset=ads)
 
 
 .. note::
 
-    Any ``AnalysisType.Spectrogram`` can be computed as a :ref:`Long Term Average Spectrum <ltas>` by setting the ``nb_ltas_time_bins`` parameter to an integer value.
+    Any ``OutputType.Spectrogram`` can be computed as a :ref:`Long Term Average Spectrum <ltas>` by setting the ``nb_ltas_time_bins`` parameter to an integer value.
 
     When the field is at the default ``None`` value, spectrograms are computed regularly:
 
     .. code-block:: python
 
         # limit spectrograms to 3000 averaged time bins:
-        project.run_analysis(analysis=analysis, audio_dataset=ads, nb_ltas_time_bins=3000)
+        project.run(analysis=analysis, audio_dataset=ads, nb_ltas_time_bins=3000)
 
 Simple Example: Reshaping audio
 """""""""""""""""""""""""""""""
 
 Regardless of the format(s) of the original audio files (as always in **OSEkit**), let's say we just want to resample our original audio data at ``48 kHz`` and export it as ``10 s``-long audio files.
 
-The corresponding ``Analysis`` is the following:
+The corresponding ``Transform`` is the following:
 
 .. code-block:: python
 
-    from osekit.public.analysis import Analysis, AnalysisType
+    from osekit.public.transform import Transform, OutputType
     from pandas import Timedelta
 
-    analysis = Analysis(
-        analysis_type = AnalysisType.AUDIO, # We just want to export the reshaped audio files
+    analysis = Transform(
+        analysis_type = OutputType.AUDIO, # We just want to export the reshaped audio files
         data_duration=Timedelta("10s"), # Duration of the new audio files
         sample_rate=48_000, # Sample rate of the new audio files
         name="cool_reshape", # You can name the analysis, or keep the default name.
     )
 
-    project.run_analysis(analysis=analysis) # And that's it!
+    project.run(analysis=analysis) # And that's it!
 
 .. _output_1:
 
@@ -330,11 +330,11 @@ Then we are all set for running the analysis:
 
 .. code-block:: python
 
-    from osekit.public.analysis import Analysis, AnalysisType
+    from osekit.public.transform import Transform, OutputType
     from pandas import Timedelta
 
-    analysis = Analysis(
-        analysis_type = AnalysisType.AUDIO | AnalysisType.MATRIX | AnalysisType.WELCH | AnalysisType.SPECTROGRAM, # Full analysis : audio files, spectrum matrices and spectrograms will be exported.
+    analysis = Transform(
+        analysis_type = OutputType.AUDIO | OutputType.MATRIX | OutputType.WELCH | OutputType.SPECTROGRAM, # Full analysis : audio files, spectrum matrices and spectrograms will be exported.
         begin=project.origin_dataset.begin + Timedelta(minutes=30), # 30m after the begin of the original dataset
         end=project.origin_dataset.begin + Timedelta(hours=1.5), # 1h30 after the begin of the original dataset
         data_duration=Timedelta("10s"), # Duration of the output data
@@ -344,12 +344,12 @@ Then we are all set for running the analysis:
         fft=sft, # The FFT parameters
     )
 
-    project.run_analysis(analysis=analysis) # And that's it!
+    project.run(analysis=analysis) # And that's it!
 
 Output 2
 """"""""
 
-Since the analysis contains both ``AnalysisType.AUDIO`` and spectral analysis types, two core API datasets were created and added to the project's :attr:`osekit.public.project.Project.datasets` field:
+Since the analysis contains both ``OutputType.AUDIO`` and spectral analysis types, two core API datasets were created and added to the project's :attr:`osekit.public.project.Project.datasets` field:
 
 * A :class:`osekit.core.audio_dataset.AudioDataset` named ``full_analysis_audio`` (with the *_audio* suffix)
 * A :class:`osekit.core.spectro_dataset.SpectroDataset` named ``full_analysis``
