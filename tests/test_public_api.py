@@ -7,6 +7,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from osekit.public.dataset import Dataset
 from pandas import Timedelta, Timestamp
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming
@@ -23,7 +24,6 @@ from osekit.core.instrument import Instrument
 from osekit.core.ltas_dataset import LTASDataset
 from osekit.core.spectro_dataset import SpectroDataset
 from osekit.public.analysis import Analysis, AnalysisType
-from osekit.public.dataset import Dataset
 from osekit.utils.audio_utils import Normalization
 
 

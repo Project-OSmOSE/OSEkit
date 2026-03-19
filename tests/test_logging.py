@@ -6,11 +6,11 @@ from pathlib import Path
 
 import pytest
 import yaml
+from osekit.public.dataset import Dataset
 
 from osekit import setup_logging
 from osekit.config import TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
 from osekit.logging_context import LoggingContext
-from osekit.public.dataset import Dataset
 
 
 @pytest.fixture

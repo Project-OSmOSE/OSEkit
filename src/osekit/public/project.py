@@ -1,7 +1,8 @@
 """Main class of the Public API.
 
-The ``Dataset`` correspond to a collection of audio,
-spectro and auxilary ``core`` datasets.
+The ``Project`` is the class that stores the original audio dataset,
+and from which transforms are ran on this dataset to generate spectro
+datasets, reshaped audio datasets, etc.
 It has additionnal metadata that can be exported, e.g. to APLOSE.
 
 """
@@ -42,8 +43,9 @@ if TYPE_CHECKING:
 class Dataset:
     """Main class of the Public API.
 
-    The ``Dataset`` correspond to a collection of audio,
-    spectro and auxilary ``core`` datasets.
+    The ``Project`` is the class that stores the original audio dataset,
+    and from which transforms are ran on this dataset to generate spectro
+    datasets, reshaped audio datasets, etc.
     It has additionnal metadata that can be exported, e.g. to APLOSE.
 
     """
