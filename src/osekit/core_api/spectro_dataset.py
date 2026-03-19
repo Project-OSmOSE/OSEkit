@@ -148,6 +148,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
         """
         last = len(self.data) if last is None else last
+        self._check_duplicate_data_names(first_idx=first, last_idx=last)
         multiprocess(
             self._save_spectrogram,
             self.data[first:last],
@@ -361,6 +362,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
         """
         last = len(self.data) if last is None else last
+        self._check_duplicate_data_names(first_idx=first, last_idx=last)
         self.data[first:last] = multiprocess(
             func=self._save_all_,
             enumerable=self.data[first:last],

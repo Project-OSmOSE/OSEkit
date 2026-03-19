@@ -1486,12 +1486,17 @@ def test_garbage_collection_after_save_spectrogram(
 
     assert collect_calls[0] == 2  # noqa: PLR2004
 
-    sds = SpectroDataset([sd] * 5)
+    sds = SpectroDataset(sd.split(5))
     sds.save_spectrogram(tmp_path / "output")
 
     assert collect_calls[0] == 7  # noqa: PLR2004
 
-    ltass = LTASDataset([ltas] * 5)
+    ltass = LTASDataset(
+        [
+            LTASData.from_spectro_data(sd, nb_time_bins=ltas.nb_time_bins)
+            for sd in ltas.split(5)
+        ],
+    )
     ltass.save_spectrogram(tmp_path / "output")
 
     assert collect_calls[0] == 12  # noqa: PLR2004
@@ -1872,3 +1877,29 @@ def test_spectro_get_db_value(
     assert len(get_value_calls) == 1
     assert get_value_calls[0] == sd
     assert np.array_equal(sx_db, mock_to_db(None, sx=sd.get_value()))
+
+
+def test_duplicate_data_check(monkeypatch: pytest.monkeypatch) -> None:
+    check_calls = [0]
+
+    def mock_check_duplicate_data_names(
+        *args,  # noqa: ANN002
+        **kwargs,  # noqa: ANN003
+    ) -> None:
+        check_calls[0] += 1
+
+    monkeypatch.setattr(
+        SpectroDataset,
+        "_check_duplicate_data_names",
+        mock_check_duplicate_data_names,
+    )
+
+    sds = SpectroDataset([])
+
+    sds.save_spectrogram(folder=Path("bantam"))
+
+    assert check_calls[0] == 1
+
+    sds.save_all(matrix_folder=Path("bantam"), spectrogram_folder=Path("lyons"))
+
+    assert check_calls[0] == 2  # noqa: PLR2004
