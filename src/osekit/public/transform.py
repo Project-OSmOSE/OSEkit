@@ -39,13 +39,13 @@ class OutputType(Flag):
     True
     >>> OutputType.SPECTROGRAM in export
     True
-    >>> OutputType.MATRIX in export
+    >>> OutputType.SPECTRUM in export
     False
 
     """
 
     AUDIO = auto()
-    MATRIX = auto()
+    SPECTRUM = auto()
     SPECTROGRAM = auto()
     WELCH = auto()
 
@@ -129,9 +129,9 @@ class Transform:
             This parameter has no effect if ``Transform.AUDIO`` is not in transform.
         fft: ShortTimeFFT | None
             FFT to use for computing the spectra.
-            This parameter is mandatory if either ``Transform.MATRIX``
+            This parameter is mandatory if either ``Transform.SPECTRUM``
             or ``Transform.SPECTROGRAM`` is in transform.
-            This parameter has no effect if neither ``Transform.MATRIX``
+            This parameter has no effect if neither ``Transform.SPECTRUM``
             nor ``Transform.SPECTROGRAM`` is in the transform.
         v_lim: tuple[float, float] | None
             Limits (in ``dB``) of the colormap used for plotting the spectrogram.
@@ -176,7 +176,7 @@ class Transform:
         return any(
             flag in self.analysis_type
             for flag in (
-                OutputType.MATRIX,
+                OutputType.SPECTRUM,
                 OutputType.SPECTROGRAM,
                 OutputType.WELCH,
             )

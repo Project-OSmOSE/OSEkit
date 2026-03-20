@@ -80,7 +80,7 @@ def write_transform_output(
         ads.write_json(ads.folder)
 
     if (
-        OutputType.MATRIX not in output_type
+        OutputType.SPECTRUM not in output_type
         and OutputType.SPECTROGRAM not in output_type
         and OutputType.WELCH not in output_type
     ):
@@ -90,7 +90,7 @@ def write_transform_output(
     if OutputType.AUDIO in output_type:
         sds.link_audio_dataset(ads, first=first, last=last)
 
-    if OutputType.MATRIX in output_type and OutputType.SPECTROGRAM in output_type:
+    if OutputType.SPECTRUM in output_type and OutputType.SPECTROGRAM in output_type:
         logger.info("Computing and writing spectrum matrices and spectrograms...")
         sds.save_all(
             matrix_folder=matrix_folder_path,
@@ -106,7 +106,7 @@ def write_transform_output(
             first=first,
             last=last,
         )
-    elif OutputType.MATRIX in output_type:
+    elif OutputType.SPECTRUM in output_type:
         logger.info("Computing and writing spectrum matrices...")
         sds.write(
             folder=matrix_folder_path,

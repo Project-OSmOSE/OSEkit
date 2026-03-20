@@ -527,7 +527,7 @@ def test_reshape(
             Instrument(end_to_end_db=150),
             Transform(
                 output_type=OutputType.AUDIO
-                | OutputType.MATRIX
+                | OutputType.SPECTRUM
                 | OutputType.SPECTROGRAM,
                 name="pingu",
                 begin=Timestamp("2024-01-01 12:00:00"),
@@ -656,7 +656,7 @@ def test_spectral_transform_error_if_no_provided_fft(output_type: OutputType) ->
         ),
         pytest.param(
             Transform(
-                output_type=OutputType.MATRIX,
+                output_type=OutputType.SPECTRUM,
                 fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
             ),
             True,
@@ -664,7 +664,7 @@ def test_spectral_transform_error_if_no_provided_fft(output_type: OutputType) ->
         ),
         pytest.param(
             Transform(
-                output_type=OutputType.MATRIX | OutputType.SPECTROGRAM,
+                output_type=OutputType.SPECTRUM | OutputType.SPECTROGRAM,
                 fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
             ),
             True,
@@ -672,7 +672,7 @@ def test_spectral_transform_error_if_no_provided_fft(output_type: OutputType) ->
         ),
         pytest.param(
             Transform(
-                output_type=OutputType.MATRIX
+                output_type=OutputType.SPECTRUM
                 | OutputType.SPECTROGRAM
                 | OutputType.AUDIO,
                 fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
@@ -1342,7 +1342,7 @@ def test_delete_output(
     # Add another transform to check that it is not affected by the deletion
 
     transform_to_keep = Transform(
-        output_type=OutputType.AUDIO | OutputType.SPECTROGRAM | OutputType.MATRIX,
+        output_type=OutputType.AUDIO | OutputType.SPECTROGRAM | OutputType.SPECTRUM,
         data_duration=project.origin_dataset.duration / 2,
         name="transform_to_keep",
         sample_rate=24_000,
@@ -1448,7 +1448,7 @@ def test_rename_transform(
     first_name, second_name = "fontaines", "dc"
 
     transform = Transform(
-        output_type=OutputType.AUDIO | OutputType.SPECTROGRAM | OutputType.MATRIX,
+        output_type=OutputType.AUDIO | OutputType.SPECTROGRAM | OutputType.SPECTRUM,
         data_duration=project.origin_dataset.duration / 2,
         name=first_name,
         sample_rate=24_000,
