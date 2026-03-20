@@ -122,7 +122,7 @@ not exist, it will be created before the files are moved:
     )
 
 Running an ``Transform``
-^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 In **OSEkit**, **Analyses** are run with the :meth:`osekit.public.project.Project.run` method to process and export spectrogram images, spectrum matrices and audio files from original audio files.
 
@@ -133,7 +133,7 @@ In **OSEkit**, **Analyses** are run with the :meth:`osekit.public.project.Projec
 The transform parameters are described by a :class:`osekit.public.transform.Transform` instance passed as a parameter to this method.
 
 Transform Type
-"""""""""""""
+""""""""""""""
 
 The ``output_type`` parameter passed to the initializer is a :class:`osekit.public.transform.OutputType` instance that defines the transform output(s):
 
@@ -163,7 +163,7 @@ For example, if a transform aims at exporting both the reshaped audio files and 
 
 
 Transform Parameters
-"""""""""""""""""""
+""""""""""""""""""""
 
 The remaining parameters of the transform (begin and end **Timestamps**, duration and sample rate of the reshaped data...) are described in the :class:`osekit.public.transform.Transform` initializer docstring.
 
