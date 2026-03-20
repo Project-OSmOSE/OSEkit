@@ -1,10 +1,10 @@
 Transform
---------
+---------
 
 .. _transform:
 
 Transform
-========
+=========
 
 .. autoclass:: osekit.public.transform.Transform
    :members:
@@ -12,7 +12,7 @@ Transform
 .. _output_Type:
 
 OutputType
-============
+==========
 
 .. autoclass:: osekit.public.transform.OutputType
    :members:
