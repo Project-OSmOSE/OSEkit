@@ -19,7 +19,7 @@ def test_parser_factory() -> None:
     assert parser.description
 
     expected_args = {
-        "--transform",
+        "--output-type",
         "--ads-json",
         "--sds-json",
         "--subtype",
@@ -48,12 +48,12 @@ def test_argument_defaults() -> None:
     parser = create_parser()
     args = parser.parse_args(
         [
-            "--transform",
+            "--output-type",
             "1",
         ],
     )
 
-    assert args.transform == 1
+    assert args.output_type == 1
     assert args.ads_json is None
     assert args.sds_json is None
     assert args.subtype is None
@@ -75,7 +75,7 @@ def test_argument_defaults() -> None:
 @pytest.fixture
 def script_arguments() -> dict:
     return {
-        "transform": 2,
+        "output-type": 2,
         "ads-json": r"path/to/ads.json",
         "sds-json": r"path/to/ads.json",
         "subtype": "FLOAT",
@@ -102,7 +102,7 @@ def test_specified_arguments(script_arguments: dict) -> None:
 
     args = parser.parse_args(shlex.split(parsed_str))
 
-    assert args.transform == script_arguments["transform"]
+    assert args.output_type == script_arguments["output-type"]
     assert args.ads_json == script_arguments["ads-json"]
     assert args.sds_json == script_arguments["sds-json"]
     assert args.subtype == script_arguments["subtype"]
@@ -124,7 +124,7 @@ def test_specified_arguments(script_arguments: dict) -> None:
 def test_main_script(monkeypatch: pytest.MonkeyPatch, script_arguments: dict) -> None:
     class MockedArgs:
         def __init__(self, *args: list, **kwargs: dict) -> None:
-            self.transform = script_arguments["transform"]
+            self.output_type = script_arguments["output-type"]
             self.ads_json = script_arguments["ads-json"]
             self.sds_json = script_arguments["sds-json"]
             self.subtype = script_arguments["subtype"]
@@ -198,7 +198,7 @@ def test_main_script(monkeypatch: pytest.MonkeyPatch, script_arguments: dict) ->
     assert calls["sds_json"] == Path(script_arguments["sds-json"])
 
     # write_transform
-    assert calls["output_type"].value == script_arguments["transform"]
+    assert calls["output_type"].value == script_arguments["output-type"]
     assert calls["ads"] == Path(script_arguments["ads-json"])
     assert calls["sds"] == Path(script_arguments["sds-json"])
     assert calls["subtype"] == script_arguments["subtype"]
