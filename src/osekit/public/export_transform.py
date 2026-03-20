@@ -134,8 +134,8 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        "--transform",
-        "-a",
+        "--output-type",
+        "-o",
         required=True,
         help="Flags representing which files to export. See OutputType doc for more info.",
         type=int,
@@ -324,7 +324,7 @@ def main() -> None:
 
     subtype = None if args.subtype.lower() == "none" else args.subtype
 
-    output_type = OutputType(args.transform)
+    output_type = OutputType(args.output_type)
 
     write_transform_output(
         output_type=output_type,

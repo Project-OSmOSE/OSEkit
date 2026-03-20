@@ -75,9 +75,9 @@ and follow the console arguments of the :mod:`osekit.public.export` script.
     sds.write_json(sds.folder/"output")
 
     # Export specifications
-    # All parameters are listed in this example, but all parameters other than analysis have default values
+    # All parameters are listed in this example, but all parameters other than transform have default values
     args = {
-        "analysis": (OutputType.AUDIO|OutputType.SPECTROGRAM).value,
+        "output_type": (OutputType.AUDIO|OutputType.SPECTROGRAM).value,
         "ads-json": ads.foler/"output"/f"{ads.name}.json",
         "sds-json": sds.foler/"output"/f"{sds.name}.json",
         "subtype": "FLOAT",

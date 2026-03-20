@@ -569,7 +569,7 @@ def test_serialization(
 
     assert transform.name in project.output_datasets
 
-    if OutputType.AUDIO in transform.analysis_type and transform.is_spectro:
+    if OutputType.AUDIO in transform.output_type and transform.is_spectro:
         assert f"{transform.name}_audio" in project.output_datasets
 
     if transform.is_spectro:
@@ -941,7 +941,7 @@ def test_transform_validate_sample_rate(
                     end=Timestamp("2024-01-01 12:00:05"),
                 ),
             ],
-            id="named_ads_in_spectro_analysis",
+            id="named_ads_in_spectro_transform",
         ),
         pytest.param(
             {
@@ -1045,30 +1045,30 @@ def test_prepare_audio(
     )
     project.build()
 
-    analysis_ds = project.prepare_audio(transform=transform)
+    transform_ds = project.prepare_audio(transform=transform)
 
     assert all(
         ad.begin == e.begin and ad.end == e.end
         for ad, e in zip(
-            sorted(analysis_ds.data, key=lambda e: e.begin),
+            sorted(transform_ds.data, key=lambda e: e.begin),
             sorted(expected_data, key=lambda e: e.begin),
             strict=True,
         )
     )
 
     if transform.name is not None:
-        assert str(analysis_ds) == transform.name + (
+        assert str(transform_ds) == transform.name + (
             "_audio" if transform.is_spectro else ""
         )
     assert (
-        analysis_ds.sample_rate == project.origin_dataset.sample_rate
+        transform_ds.sample_rate == project.origin_dataset.sample_rate
         if transform.sample_rate is None
         else transform.sample_rate
     )
 
-    assert analysis_ds.instrument is project.instrument
+    assert transform_ds.instrument is project.instrument
 
-    assert analysis_ds.normalization == transform.normalization
+    assert transform_ds.normalization == transform.normalization
 
 
 @pytest.mark.parametrize(
@@ -1108,7 +1108,7 @@ def test_prepare_audio(
                     end=Timestamp("2024-01-01 12:00:04"),
                 ),
             ],
-            id="full_analysis",
+            id="full_transform",
         ),
     ],
     indirect=["audio_files"],
@@ -1127,31 +1127,31 @@ def test_prepare_spectro(
     )
     project.build()
 
-    analysis_sds = project.prepare_spectro(transform=transform)
+    transform_sds = project.prepare_spectro(transform=transform)
 
     assert all(
         ad.begin == e.begin and ad.end == e.end
         for ad, e in zip(
-            sorted(analysis_sds.data, key=lambda e: e.begin),
+            sorted(transform_sds.data, key=lambda e: e.begin),
             sorted(expected_data, key=lambda e: e.begin),
             strict=True,
         )
     )
 
     if transform.name is not None:
-        assert str(analysis_sds) == transform.name
+        assert str(transform_sds) == transform.name
 
     assert (
-        analysis_sds.data[0].audio_data.sample_rate
+        transform_sds.data[0].audio_data.sample_rate
         == project.origin_dataset.sample_rate
         if transform.sample_rate is None
         else transform.sample_rate
     )
 
-    assert analysis_sds.data[0].audio_data.instrument is project.instrument
+    assert transform_sds.data[0].audio_data.instrument is project.instrument
 
-    assert analysis_sds.fft is transform.fft
-    assert analysis_sds.scale is transform.scale
+    assert transform_sds.fft is transform.fft
+    assert transform_sds.scale is transform.scale
 
     # FFT should be provided for spectral outputs
     with pytest.raises(
@@ -1169,7 +1169,7 @@ def test_prepare_spectro(
     assert type(project.prepare_spectro(transform=transform)) is LTASDataset
 
 
-def test_edit_analysis_before_run(
+def test_edit_transform_before_run(
     tmp_path: pytest.fixture,
     audio_files: pytest.fixture,
 ) -> None:
@@ -1184,7 +1184,7 @@ def test_edit_analysis_before_run(
     transform = Transform(
         output_type=OutputType.AUDIO | OutputType.SPECTROGRAM,
         data_duration=project.origin_dataset.duration / 2,
-        name="original_analysis",
+        name="original_transform",
         sample_rate=24_000,
         fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
     )
@@ -1192,7 +1192,7 @@ def test_edit_analysis_before_run(
     ads = project.prepare_audio(transform=transform)
 
     new_sr = 12_000
-    new_name = "new_analysis"
+    new_name = "new_transform"
     new_instrument = Instrument(end_to_end_db=100)
     new_data = ads.data[::2]
     new_normalization = Normalization.ZSCORE
@@ -1214,27 +1214,27 @@ def test_edit_analysis_before_run(
     # New sds name
     assert (project.folder / "processed" / ads.base_name).exists()
 
-    analysis_ads = AudioDataset.from_json(
+    output_ads = AudioDataset.from_json(
         project.get_output_dataset(f"{new_name}_audio").folder
         / f"{new_name}_audio.json",
     )
-    analysis_sds = SpectroDataset.from_json(
+    output_sds = SpectroDataset.from_json(
         project.get_output_dataset(new_name).folder / f"{new_name}.json",
     )
 
     # Only filtered data have been written
-    assert len(analysis_ads.data) == len(new_data)
-    assert len(analysis_sds.data) == len(new_data)
+    assert len(output_ads.data) == len(new_data)
+    assert len(output_sds.data) == len(new_data)
 
     # Analyses have the edited sr
-    assert analysis_ads.sample_rate == new_sr
-    assert analysis_sds.fft.fs == new_sr
+    assert output_ads.sample_rate == new_sr
+    assert output_sds.fft.fs == new_sr
 
     # Analyses have the edited normalization
-    assert analysis_ads.normalization == new_normalization
+    assert output_ads.normalization == new_normalization
 
     # Instrument has been edited
-    assert analysis_ads.instrument.end_to_end_db == new_instrument.end_to_end_db
+    assert output_ads.instrument.end_to_end_db == new_instrument.end_to_end_db
 
 
 def test_delete_output_dataset(
@@ -1248,33 +1248,33 @@ def test_delete_output_dataset(
 
     project.build()
 
-    analysis_1 = Transform(
+    transform_1 = Transform(
         output_type=OutputType.AUDIO | OutputType.SPECTROGRAM,
         data_duration=project.origin_dataset.duration / 2,
-        name="analysis_1",
+        name="transform_1",
         sample_rate=24_000,
         fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
     )
 
-    analysis_2 = Transform(
+    transform_2 = Transform(
         output_type=OutputType.AUDIO | OutputType.SPECTROGRAM,
         data_duration=project.origin_dataset.duration / 2,
-        name="analysis_2",
+        name="transform_2",
         sample_rate=20_000,
         fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=20_000),
     )
 
-    project.run(analysis_1)
-    project.run(analysis_2)
+    project.run(transform_1)
+    project.run(transform_2)
 
-    ds1 = project.get_output_dataset(analysis_1.name)
-    ds2 = project.get_output_dataset(analysis_2.name)
-    ds3 = project.get_output_dataset(f"{analysis_1.name}_audio")
-    ds4 = project.get_output_dataset(f"{analysis_2.name}_audio")
+    ds1 = project.get_output_dataset(transform_1.name)
+    ds2 = project.get_output_dataset(transform_2.name)
+    ds3 = project.get_output_dataset(f"{transform_1.name}_audio")
+    ds4 = project.get_output_dataset(f"{transform_2.name}_audio")
 
     # Tests Project.get_output_dataset_by_transform_name
-    assert project.get_output_dataset_by_transform_name("analysis_1") == [ds3, ds1]
-    assert project.get_output_dataset_by_transform_name("analysis_2") == [ds4, ds2]
+    assert project.get_output_dataset_by_transform_name("transform_1") == [ds3, ds1]
+    assert project.get_output_dataset_by_transform_name("transform_2") == [ds4, ds2]
 
     datasets = [ds1, ds2, ds3, ds4]
 
@@ -1405,29 +1405,29 @@ def test_existing_output_warning(
         Transform(
             output_type=OutputType.AUDIO,
             data_duration=project.origin_dataset.duration / 2,
-            name="my_analysis",
+            name="my_transform",
             sample_rate=24_000,
         ),
     )
 
-    with pytest.raises(ValueError, match="my_analysis already exists"):
+    with pytest.raises(ValueError, match="my_transform already exists"):
         project.run(
             Transform(
                 output_type=OutputType.SPECTROGRAM,
                 data_duration=project.origin_dataset.duration / 2,
-                name="my_analysis",
+                name="my_transform",
                 sample_rate=24_000,
                 fft=ShortTimeFFT(hamming(1024), hop=1024, fs=24_000),
             ),
         )
 
-    project.delete_output("my_analysis")
+    project.delete_output("my_transform")
 
     project.run(
         Transform(
             output_type=OutputType.SPECTROGRAM,
             data_duration=project.origin_dataset.duration / 2,
-            name="my_analysis",
+            name="my_transform",
             sample_rate=24_000,
             fft=ShortTimeFFT(hamming(1024), hop=1024, fs=24_000),
         ),
@@ -1526,13 +1526,13 @@ def test_spectro_transform_with_existing_ads(
 
     project.run(transform)
 
-    analysis_2 = Transform(
+    transform_2 = Transform(
         OutputType.SPECTROGRAM,
         name="spectro",
         fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
     )
 
-    project.run(analysis_2, audio_dataset=project.get_output_dataset("audio"))
+    project.run(transform_2, audio_dataset=project.get_output_dataset("audio"))
 
     ads = project.get_output_dataset("audio")
     sds = project.get_output_dataset("spectro")

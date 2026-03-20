@@ -197,7 +197,7 @@ def test_main_script(monkeypatch: pytest.MonkeyPatch, script_arguments: dict) ->
     assert calls["ads_json"] == Path(script_arguments["ads-json"])
     assert calls["sds_json"] == Path(script_arguments["sds-json"])
 
-    # write_analysis
+    # write_transform
     assert calls["output_type"].value == script_arguments["transform"]
     assert calls["ads"] == Path(script_arguments["ads-json"])
     assert calls["sds"] == Path(script_arguments["sds-json"])

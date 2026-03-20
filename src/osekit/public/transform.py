@@ -20,7 +20,7 @@ class OutputType(Flag):
         to disk.
         The new ``AudioDataset`` will be linked to the reshaped audio files rather
         than to the original files.
-    ``MATRIX``:
+    ``SPECTRUM``:
         Will write the ``npz`` ``SpectroFiles`` to disk and link the ``SpectroDataset``
         to these files.
     ``SPECTROGRAM``:
@@ -150,7 +150,7 @@ class Transform:
         """
         self._validate_sample_rate(sample_rate=sample_rate, fft=fft)
 
-        self.analysis_type = output_type
+        self.output_type = output_type
         self.begin = begin
         self.end = end
         self.data_duration = data_duration
@@ -174,7 +174,7 @@ class Transform:
     def is_spectro(self) -> bool:
         """Return ``True`` if the transform contains spectral computations, ``False`` otherwise."""
         return any(
-            flag in self.analysis_type
+            flag in self.output_type
             for flag in (
                 OutputType.SPECTRUM,
                 OutputType.SPECTROGRAM,

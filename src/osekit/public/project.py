@@ -272,7 +272,7 @@ class Project:
         Parameters
         ----------
         transform: Transform
-            ``Analysis`` for which to generate an ``AudioDataset`` object.
+            ``Transform`` for which to generate an ``AudioDataset`` object.
 
         Returns
         -------
@@ -316,7 +316,7 @@ class Project:
         Parameters
         ----------
         transform: Transform
-            ``Analysis`` for which to generate an ``AudioDataset`` object.
+            ``Transform`` for which to generate an ``AudioDataset`` object.
         audio_dataset: AudioDataset|None
             If provided, the ``SpectroDataset`` will be initialized from
             this ``AudioDataset``.
@@ -408,8 +408,8 @@ class Project:
             else audio_dataset
         )
 
-        if OutputType.AUDIO in transform.analysis_type:
-            self._add_audio_dataset(ads=ads, analysis_name=transform.name)
+        if OutputType.AUDIO in transform.output_type:
+            self._add_audio_dataset(ads=ads, transform_name=transform.name)
 
         sds = None
         if transform.is_spectro:
@@ -421,10 +421,10 @@ class Project:
                 if spectro_dataset is None
                 else spectro_dataset
             )
-            self._add_spectro_dataset(sds=sds, analysis_name=transform.name)
+            self._add_spectro_dataset(sds=sds, transform_name=transform.name)
 
         self.export(
-            output_type=transform.analysis_type,
+            output_type=transform.output_type,
             ads=ads,
             sds=sds,
             link=True,
@@ -438,12 +438,12 @@ class Project:
     def _add_audio_dataset(
         self,
         ads: AudioDataset,
-        analysis_name: str,
+        transform_name: str,
     ) -> None:
         ads.folder = self._get_audio_dataset_subpath(ads=ads)
         self.output_datasets[ads.name] = {
             "class": type(ads).__name__,
-            "transform": analysis_name,
+            "transform": transform_name,
             "dataset": ads,
         }
         ads.write_json(ads.folder)
@@ -473,7 +473,7 @@ class Project:
         spectrogram_folder_name: str = "spectrogram",
         welch_folder_name: str = "welch",
         nb_jobs: int = 1,
-        name: str = "OSEkit_analysis",
+        name: str = "OSEkit_transform",
         *,
         link: bool = False,
     ) -> None:
@@ -563,7 +563,7 @@ class Project:
             self.job_builder.create_job(
                 script_path=Path(export_transform.__file__),
                 script_args={
-                    "transform": output_type.value,
+                    "output-type": output_type.value,
                     "ads-json": ads_json,
                     "sds-json": sds_json,
                     "subtype": subtype,
@@ -588,13 +588,13 @@ class Project:
     def _add_spectro_dataset(
         self,
         sds: SpectroDataset | LTASDataset,
-        analysis_name: str,
+        transform_name: str,
     ) -> None:
         sds.folder = self._get_spectro_dataset_subpath(sds=sds)
         self.output_datasets[sds.name] = {
             "class": type(sds).__name__,
             "dataset": sds,
-            "transform": analysis_name,
+            "transform": transform_name,
         }
         sds.write_json(sds.folder)
 
