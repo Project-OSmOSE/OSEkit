@@ -1,7 +1,7 @@
 """Main class of the Public API.
 
 The ``Project`` is the class that stores the original audio dataset,
-and from which transforms are ran on this dataset to generate spectro
+and from which transforms are ran from this dataset to generate spectro
 datasets, reshaped audio datasets, etc.
 It has additional metadata that can be exported, e.g. to APLOSE.
 
@@ -44,7 +44,7 @@ class Project:
     """Main class of the Public API.
 
     The ``Project`` is the class that stores the original audio dataset,
-    and from which transforms are ran on this dataset to generate spectro
+    and from which transforms are ran from this dataset to generate spectro
     datasets, reshaped audio datasets, etc.
     It has additionnal metadata that can be exported, e.g. to APLOSE.
 
@@ -141,7 +141,7 @@ class Project:
         """
         self._create_logger()
 
-        self.logger.info("Building the dataset...")
+        self.logger.info("Building the project...")
 
         self.logger.info("Analyzing original audio files...")
         ads = AudioDataset.from_folder(
@@ -160,7 +160,7 @@ class Project:
             "dataset": ads,
         }
 
-        self.logger.info("Organizing dataset folder...")
+        self.logger.info("Organizing project folder...")
         afm.close()
         move_tree(
             source=self.folder,
@@ -187,20 +187,20 @@ class Project:
     ) -> None:
         """Build the ``Project`` from the specified files.
 
-        The files will be copied (or moved) to the ``dataset.folder`` folder.
+        The files will be copied (or moved) to the ``project.folder`` folder.
 
         Parameters
         ----------
         files: Iterable[PathLike|str]
-            Files that are included in the dataset.
+            Files that are included in the project.
         move_files: bool
             If set to ``True``, the files will be moved (rather than copied) in
-            the dataset folder.
+            the project folder.
 
         """
         self._create_logger()
 
-        msg = f"{'Moving' if move_files else 'Copying'} files to the dataset folder."
+        msg = f"{'Moving' if move_files else 'Copying'} files to the project folder."
         self.logger.info(msg)
 
         if not self.folder.exists():
@@ -218,10 +218,10 @@ class Project:
     def _create_logger(self) -> None:
         if self.logger:
             return
-        if not logging.getLogger("dataset").handlers:
+        if not logging.getLogger("project").handlers:
             message = (
                 "Logging has not been configured. "
-                "The dataset will use the root logger. "
+                "The project will use the root logger. "
                 "Use osekit.setup_logging() if wanted."
             )
             logging.warning(message)
@@ -231,10 +231,10 @@ class Project:
         logs_directory = self.folder / "log"
         if not logs_directory.exists():
             logs_directory.mkdir(mode=DPDEFAULT, parents=True)
-        self.logger = logging.getLogger("dataset").getChild(self.folder.name)
+        self.logger = logging.getLogger("project").getChild(self.folder.name)
         file_handler = logging.FileHandler(logs_directory / "logs.log", mode="w")
         file_handler.setFormatter(
-            logging.getLogger("dataset").handlers[0].formatter,
+            logging.getLogger("project").handlers[0].formatter,
         )
         self.logger.setLevel(logging.DEBUG)
         file_handler.setLevel(logging.DEBUG)
@@ -243,7 +243,7 @@ class Project:
     def reset(self) -> None:
         """Reset the ``Project``.
 
-        Resetting a dataset will move back the original audio files and the content of
+        Resetting a project will move back the original audio files and the content of
         the ``other`` folder to the root folder.
         WARNING: all other files and folders will be deleted.
         """
@@ -758,12 +758,12 @@ class Project:
         return self.deserialize_output_dataset(output_dataset_name=dataset_name)
 
     def to_dict(self) -> dict:
-        """Serialize a dataset to a dictionary.
+        """Serialize a project to a dictionary.
 
         Returns
         -------
         dict:
-            The serialized dictionary representing the dataset.
+            The serialized dictionary representing the project.
 
         """
         return {
@@ -788,17 +788,17 @@ class Project:
 
     @classmethod
     def from_dict(cls, dictionary: dict) -> Project:
-        """Deserialize a dataset from a dictionary.
+        """Deserialize a project from a dictionary.
 
         Parameters
         ----------
         dictionary: dict
-            The serialized dictionary representing the dataset.
+            The serialized dictionary representing the project.
 
         Returns
         -------
         Project
-            The deserialized dataset.
+            The deserialized project.
 
         """
         datasets = {}

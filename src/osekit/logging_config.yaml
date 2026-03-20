@@ -1,7 +1,7 @@
 version: 1
 
 loggers:
-  dataset:
+  project:
     level: DEBUG
     handlers: [consoleHandler, globalFileHandler]
     propagate: no

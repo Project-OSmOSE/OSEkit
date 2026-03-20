@@ -227,7 +227,7 @@ def test_project_build(
         if request.param["date_begin"].tzinfo is None
         else str(request.param["date_begin"])
     )
-    dataset_timezone = (
+    project_timezone = (
         None
         if expected_audio_events[0].begin.tzinfo is None
         else str(expected_audio_events[0].begin.tzinfo)
@@ -249,14 +249,14 @@ def test_project_build(
         tmp_path,
         strptime_format=files_timestamp_format,
         mode="files",
-        timezone=dataset_timezone,
+        timezone=project_timezone,
         name="original",
     )
 
     project = Project(
         folder=tmp_path,
         strptime_format=files_timestamp_format,
-        timezone=dataset_timezone,
+        timezone=project_timezone,
     )
 
     project.build()
@@ -273,7 +273,7 @@ def test_project_build(
         folder=tmp_path / "data" / "audio" / "original",
         strptime_format=files_timestamp_format,
         mode="files",
-        timezone=dataset_timezone,
+        timezone=project_timezone,
     )
 
     # The original dataset should be added to the public Project's output_datasets:
@@ -292,7 +292,7 @@ def test_project_build(
     project2 = Project.from_json(tmp_path / "dataset.json")
     assert project2.origin_dataset == project.output_datasets["original"]["dataset"]
 
-    # Resetting the dataset should put back all original files back
+    # Resetting the project should put back all original files back
     project.reset()
     assert sorted(str(file) for file in tmp_path.rglob("*")) == sorted(
         str(file) for file in files_before_build
@@ -824,7 +824,7 @@ def test_transform_validate_sample_rate(
                     end=Timestamp("2024-01-01 12:00:05"),
                 ),
             ],
-            id="ads_has_dataset_instrument",
+            id="ads_has_project_instrument",
         ),
         pytest.param(
             {

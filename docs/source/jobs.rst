@@ -31,7 +31,7 @@ instance to the :attr:`osekit.public.project.Project.job_builder` attribute:
         queue="omp" # Queue in which the job will be submitted
     )
 
-    dataset.job_builder = JobBuilder(
+    project.job_builder = JobBuilder(
         config=job_config,
     )
 
@@ -39,7 +39,7 @@ instance to the :attr:`osekit.public.project.Project.job_builder` attribute:
     # running a transform will write a PBS file in the logs directory
     # and submit it to the requested queue.
 
-    dataset.run(...) # See the Transform documentation
+    project.run(...) # See the Transform documentation
 
 
 Core API

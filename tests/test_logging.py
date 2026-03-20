@@ -117,7 +117,7 @@ def test_user_logging_config(
     assert (
         len(logging.getLogger("test_user_logger").handlers) > 0
     )  # This is a tweaky way of checking if the test_user_logger logger has already been created
-    assert len(logging.getLogger("dataset").handlers) == 0
+    assert len(logging.getLogger("project").handlers) == 0
 
     with caplog.at_level(logging.DEBUG, logger="test_user_logger"):
         logging.getLogger("test_user_logger").debug("User debug log")
@@ -132,7 +132,7 @@ def test_default_logging_config(
     tmp_path: Path,
 ) -> None:
     assert (
-        len(logging.getLogger("dataset").handlers) > 0
+        len(logging.getLogger("project").handlers) > 0
     )  # This is a tweaky way of checking if the test_user_logger logger has already been created
     assert len(logging.getLogger("test_user_logger").handlers) == 0
 
@@ -167,7 +167,7 @@ def test_logging_context(caplog: pytest.fixture) -> None:
     assert caplog.records[2].message == "From default logger again"
 
 
-def test_public_dataset_logger(
+def test_project_logger(
     audio_files: pytest.fixture,
     tmp_path: pytest.fixture,
 ) -> None:
@@ -181,8 +181,8 @@ def test_public_dataset_logger(
     assert project.logger == logging.getLogger()
     project.reset()
 
-    # With setting the logging up, the PublicAPI should log to the dataset's logger
+    # With setting the logging up, the PublicAPI should log to the project's logger
     setup_logging()
     project.build()
     assert project.logger != logging.getLogger()
-    assert project.logger.parent == logging.getLogger("dataset")
+    assert project.logger.parent == logging.getLogger("project")

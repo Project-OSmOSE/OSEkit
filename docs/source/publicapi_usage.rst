@@ -39,7 +39,7 @@ The complete list of extra parameters is provided in the :class:`osekit.public.p
     from pathlib import Path
 
     project = Project(
-        folder=Path(r"...\dataset_folder"),
+        folder=Path(r"...\project_folder"),
         strptime_format="%y%m%d%H%M%S" # Must match the strptime format of your audio files
     )
 
@@ -53,7 +53,7 @@ and each next valid audio file will be considered as starting directly after the
     from pathlib import Path
 
     project = Project(
-        folder=Path(r"...\dataset_folder"),
+        folder=Path(r"...\project_folder"),
         strptime_format=None # Must match the strptime format of your audio files,
         first_file_begin=Timestamp("2020-01-01 00:00:00") # Will mark the start of your audio files
     )
@@ -194,7 +194,7 @@ The returned ``SpectroDataset`` can be used e.g. to plot sample spectrograms pri
 
     import matplotlib.pyplot as plt
 
-    sds = project.prepare_spectro(transform=tra,sfprù, audio_dataset=ads) # audio_dataset is optional: here, the sds will match the edited ads (with no empty data)
+    sds = project.prepare_spectro(transform=transform, audio_dataset=ads) # audio_dataset is optional: here, the sds will match the edited ads (with no empty data)
 
     # Computing/plotting the 100th SpectroData from the transform
     sds.data[100].plot()
