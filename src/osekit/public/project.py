@@ -578,7 +578,7 @@ class Project:
                     "multiprocessing": config.multiprocessing["is_active"],
                     "nb-processes": config.multiprocessing["nb_processes"],
                     "use-logging-setup": True,
-                    "dataset-json-path": self.folder / "dataset.json",
+                    "dataset-json-path": self.folder / "project.json",
                 },
                 name=name + (f"_{index}" if len(batch_indexes) > 1 else ""),
                 output_folder=self.folder / "log",
@@ -821,7 +821,7 @@ class Project:
     def write_json(self, folder: Path | None = None) -> None:
         """Write a serialized Project to a JSON file."""
         folder = folder if folder is not None else self.folder
-        serialize_json(folder / "dataset.json", self.to_dict())
+        serialize_json(folder / "project.json", self.to_dict())
 
     @classmethod
     def from_json(cls, file: Path) -> Project:

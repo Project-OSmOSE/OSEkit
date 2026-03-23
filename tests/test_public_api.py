@@ -287,8 +287,8 @@ def test_project_build(
     # Other files should be moved to an "other" folder
     assert all((tmp_path / "other" / file).exists() for file in other_files)
 
-    # The dataset.json file in root folder should allow for deserializing the dataset
-    project2 = Project.from_json(tmp_path / "dataset.json")
+    # The project.json file in root folder should allow for deserializing the dataset
+    project2 = Project.from_json(tmp_path / "project.json")
     assert project2.origin_dataset == project.outputs["original"]["dataset"]
 
     # Resetting the project should put back all original files back
@@ -582,7 +582,7 @@ def test_serialization(
         computed_level = equalized_sx[bin_idx, :].mean()
         assert abs(computed_level - expected_level) < level_tolerance
 
-    deserialized = Project.from_json(tmp_path / "dataset.json")
+    deserialized = Project.from_json(tmp_path / "project.json")
 
     # transform dataset deserialization is only done on request
     assert all(
@@ -1286,7 +1286,7 @@ def test_delete_output_dataset(
         assert not ds.folder.exists()
 
         # The JSON should be updated
-        new_project = Project.from_json(project.folder / "dataset.json")
+        new_project = Project.from_json(project.folder / "project.json")
         assert ds.name not in new_project.outputs.keys()
 
 
@@ -1369,7 +1369,7 @@ def test_delete_output(
     assert transform_to_keep.name in project.transforms
     assert transform_to_delete.name not in project.transforms
 
-    deserialized_project = Project.from_json(project.folder / "dataset.json")
+    deserialized_project = Project.from_json(project.folder / "project.json")
 
     for proj in (project, deserialized_project):
         datasets_to_keep = proj.get_output_by_transform_name(
@@ -1472,7 +1472,7 @@ def test_rename_transform(
         assert (
             len(
                 Project.from_json(
-                    project.folder / "dataset.json",
+                    project.folder / "project.json",
                 ).get_output_by_transform_name(
                     new,
                 ),

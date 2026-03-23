@@ -81,12 +81,12 @@ The folder is now organized in the following fashion:
     │   ├── bar.zip
     │   └── 7181.wav
     └── bar.txt
-    dataset.json
+    project.json
 
 The **original audio files** have been turned into a :class:`osekit.core.audio_dataset.AudioDataset`.
 In this ``AudioDataset``, one :class:`osekit.core.audio_data.AudioData` has been created per original audio file.
 Additionally, both this Core API ``Audiodataset`` and the Public API ``Project`` have been serialized
-into the ``original.json`` and ``dataset.json`` files, respectively.
+into the ``original.json`` and ``project.json`` files, respectively.
 
 Building a project from specific files
 """"""""""""""""""""""""""""""""""""""
@@ -280,13 +280,13 @@ The project folder now looks like this:
     ├── foo
     │   └── bar.zip
     └── bar.txt
-    dataset.json
+    project.json
 
 The ``cool_reshape`` folder has been created, containing the freshly created ``10 s``-long, ``48 kHz``-sampled audio files.
 
 .. note::
 
-    The ``cool_reshape`` folder also contains a ``cool_reshape.json`` serialized version of the ``cool_reshape`` ``AudioDataset``, which will be used for deserializing the ``dataset.json`` file in the project folder root.
+    The ``cool_reshape`` folder also contains a ``cool_reshape.json`` serialized version of the ``cool_reshape`` ``AudioDataset``, which will be used for deserializing the ``project.json`` file in the project folder root.
 
 Example: full transform
 """""""""""""""""""""""
@@ -397,7 +397,7 @@ The project folder now looks like this (the output from the first example was re
     ├── foo
     │   └── bar.zip
     └── bar.txt
-    dataset.json
+    project.json
 
 As in :ref:`the output of example 1 <output_1>`, a ``full_transform_audio`` folder was created, containing the reshaped audio files.
 
@@ -407,14 +407,14 @@ Additionally, the fresh ``processed`` folder contains the output spectrograms an
 Recovering a ``Project``
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-The ``dataset.json`` file in the root project folder can be used to deserialize a :class:`osekit.public.project.Project` object thanks to the :meth:`osekit.public.project.Project.from_json` method:
+The ``project.json`` file in the root project folder can be used to deserialize a :class:`osekit.public.project.Project` object thanks to the :meth:`osekit.public.project.Project.from_json` method:
 
 .. code-block:: python
 
     from pathlib import Path
     from osekit.public.project import Project
 
-    json_file = Path(r"../dataset.json")
+    json_file = Path(r"../project.json")
     project = Project.from_json(json_file) # That's it!
 
 

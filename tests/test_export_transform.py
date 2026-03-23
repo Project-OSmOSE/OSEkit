@@ -91,7 +91,7 @@ def script_arguments() -> dict:
         "multiprocessing": True,
         "nb-processes": "3",  # String because it might be "None"
         "use-logging-setup": True,
-        "dataset-json-path": r"path/to/dataset.json",
+        "dataset-json-path": r"path/to/project.json",
     }
 
 
