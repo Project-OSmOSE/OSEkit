@@ -16,7 +16,7 @@ class OutputType(Flag):
     """Enum of flags that should be used to specify the type of transform to run.
 
     ``AUDIO``:
-        Will add an ``AudioDataset`` to the output_datasets and write the reshaped audio files
+        Will add an ``AudioDataset`` to the outputs and write the reshaped audio files
         to disk.
         The new ``AudioDataset`` will be linked to the reshaped audio files rather
         than to the original files.
@@ -55,7 +55,7 @@ class Transform:
 
     Transform instances are passed to the public API project, which runs the transform.
     The ``Transform`` object contains all info on the transform to be done: the type(s) of
-    core dataset(s) that will be created and added to the ``Project.output_datasets``
+    core dataset(s) that will be created and added to the ``Project.outputs``
     property and which output files will be written to disk
     (reshaped audio files, ``npz`` spectra matrices, ``png`` spectrograms...) depend
     on the ``output_type`` parameter.

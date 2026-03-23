@@ -276,13 +276,12 @@ def test_project_build(
         timezone=project_timezone,
     )
 
-    # The original dataset should be added to the public Project's output_datasets:
-    assert moved_original_dataset == project.output_datasets["original"]["dataset"]
+    # The original dataset should be added to the public Project's output datasets:
+    assert moved_original_dataset == project.outputs["original"]["dataset"]
 
     # Check original audio data
     assert [
-        Event(d.begin, d.end)
-        for d in project.output_datasets["original"]["dataset"].data
+        Event(d.begin, d.end) for d in project.outputs["original"]["dataset"].data
     ] == expected_audio_events
 
     # Other files should be moved to an "other" folder
@@ -290,7 +289,7 @@ def test_project_build(
 
     # The dataset.json file in root folder should allow for deserializing the dataset
     project2 = Project.from_json(tmp_path / "dataset.json")
-    assert project2.origin_dataset == project.output_datasets["original"]["dataset"]
+    assert project2.origin_dataset == project.outputs["original"]["dataset"]
 
     # Resetting the project should put back all original files back
     project.reset()
@@ -443,8 +442,8 @@ def test_reshape(
         else f"{expected_ads.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED)}"
     )
 
-    # The new dataset should be added to the output_datasets property
-    assert expected_ads_name in project.output_datasets
+    # The new dataset should be added to the outputs property
+    assert expected_ads_name in project.outputs
     ads = project.get_output(expected_ads_name)
     assert ads is not None
     assert type(ads) is AudioDataset
@@ -567,10 +566,10 @@ def test_serialization(
     _, request = audio_files
     sine_frequency = request.param["sine_frequency"]
 
-    assert transform.name in project.output_datasets
+    assert transform.name in project.outputs
 
     if OutputType.AUDIO in transform.output_type and transform.is_spectro:
-        assert f"{transform.name}_audio" in project.output_datasets
+        assert f"{transform.name}_audio" in project.outputs
 
     if transform.is_spectro:
         bin_idx = min(
@@ -588,12 +587,12 @@ def test_serialization(
     # transform dataset deserialization is only done on request
     assert all(
         isinstance(output_dataset["dataset"], Path)
-        for output_dataset in deserialized.output_datasets.values()
+        for output_dataset in deserialized.outputs.values()
     )
 
     for (t_o, d_o), (t_d, d_d) in zip(
-        sorted(project.output_datasets.items(), key=lambda d: d[0]),
-        sorted(deserialized.output_datasets.items(), key=lambda d: d[0]),
+        sorted(project.outputs.items(), key=lambda d: d[0]),
+        sorted(deserialized.outputs.items(), key=lambda d: d[0]),
         strict=False,
     ):
         # Same transform dataset type
@@ -1271,24 +1270,24 @@ def test_delete_output_dataset(
     ds3 = project.get_output(f"{transform_1.name}_audio")
     ds4 = project.get_output(f"{transform_2.name}_audio")
 
-    # Tests Project.get_output_dataset_by_transform_name
-    assert project.get_output_dataset_by_transform_name("transform_1") == [ds3, ds1]
-    assert project.get_output_dataset_by_transform_name("transform_2") == [ds4, ds2]
+    # Tests Project.get_output_by_transform_name
+    assert project.get_output_by_transform_name("transform_1") == [ds3, ds1]
+    assert project.get_output_by_transform_name("transform_2") == [ds4, ds2]
 
     datasets = [ds1, ds2, ds3, ds4]
 
     for i, ds in enumerate(datasets):
-        assert ds.name in project.output_datasets.keys()
+        assert ds.name in project.outputs.keys()
         assert ds.folder.exists()
 
         project._delete_output(str(ds.name))
 
-        assert ds.name not in project.output_datasets.keys()
+        assert ds.name not in project.outputs.keys()
         assert not ds.folder.exists()
 
         # The JSON should be updated
         new_project = Project.from_json(project.folder / "dataset.json")
-        assert ds.name not in new_project.output_datasets.keys()
+        assert ds.name not in new_project.outputs.keys()
 
 
 @pytest.mark.parametrize(
@@ -1356,10 +1355,10 @@ def test_delete_output(
         for transform in (transform_to_keep.name, transform_to_delete.name)
     )
 
-    datasets_to_keep = project.get_output_dataset_by_transform_name(
+    datasets_to_keep = project.get_output_by_transform_name(
         transform_to_keep.name,
     )
-    datasets_to_delete = project.get_output_dataset_by_transform_name(
+    datasets_to_delete = project.get_output_by_transform_name(
         transform_to_delete.name,
     )
 
@@ -1373,20 +1372,18 @@ def test_delete_output(
     deserialized_project = Project.from_json(project.folder / "dataset.json")
 
     for proj in (project, deserialized_project):
-        datasets_to_keep = proj.get_output_dataset_by_transform_name(
+        datasets_to_keep = proj.get_output_by_transform_name(
             transform_to_keep.name,
         )
-        datasets_to_delete = proj.get_output_dataset_by_transform_name(
+        datasets_to_delete = proj.get_output_by_transform_name(
             transform_to_delete.name,
         )
 
         assert all(ds.folder.exists() for ds in datasets_to_keep)
         assert not any(ds.folder.exists() for ds in datasets_to_delete)
 
-        assert all(ds.name in proj.output_datasets.keys() for ds in datasets_to_keep)
-        assert not any(
-            ds.name in proj.output_datasets.keys() for ds in datasets_to_delete
-        )
+        assert all(ds.name in proj.outputs.keys() for ds in datasets_to_keep)
+        assert not any(ds.name in proj.outputs.keys() for ds in datasets_to_delete)
 
 
 def test_existing_output_warning(
@@ -1464,10 +1461,10 @@ def test_rename_transform(
             assert old not in project.transforms
             assert not (project.folder / "processed" / old).exists()
             assert not (project.folder / "data" / "audio" / f"{old}_audio").exists()
-            assert not project.get_output_dataset_by_transform_name(old)
+            assert not project.get_output_by_transform_name(old)
 
         assert new in project.transforms
-        assert len(project.get_output_dataset_by_transform_name(new)) == 2
+        assert len(project.get_output_by_transform_name(new)) == 2
 
         assert (project.folder / "data" / "audio" / f"{new}_audio").exists()
         assert (project.folder / "processed" / new).exists()
@@ -1476,7 +1473,7 @@ def test_rename_transform(
             len(
                 Project.from_json(
                     project.folder / "dataset.json",
-                ).get_output_dataset_by_transform_name(
+                ).get_output_by_transform_name(
                     new,
                 ),
             )
@@ -1628,7 +1625,7 @@ def test_deserialize_output_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
     dummy_sds = SpectroDataset([])
     dummy_ltasds = LTASDataset([])
 
-    project.output_datasets |= {
+    project.outputs |= {
         "original": {
             "class": "AudioDataset",
             "transform": "original",
@@ -1666,40 +1663,40 @@ def test_deserialize_output_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         lambda _: mock_from_json(dummy_ltasds),
     )
 
-    assert isinstance(project.output_datasets["original"]["dataset"], Path)
+    assert isinstance(project.outputs["original"]["dataset"], Path)
 
     # Getting the dataset should deserialize it
     _ = project.get_output("original")
     assert json_calls[0] == 1
 
     # The deserialized dataset should be stored
-    assert isinstance(project.output_datasets["original"]["dataset"], AudioDataset)
+    assert isinstance(project.outputs["original"]["dataset"], AudioDataset)
 
     # Getting the dataset again should use the cached dataset
     _ = project.get_output("original")
     assert json_calls[0] == 1
 
-    assert isinstance(project.output_datasets["spectro"]["dataset"], Path)
+    assert isinstance(project.outputs["spectro"]["dataset"], Path)
 
     # Getting the dataset should deserialize it
     _ = project.get_output("spectro")
     assert json_calls[0] == 2
 
     # The deserialized dataset should be stored
-    assert isinstance(project.output_datasets["spectro"]["dataset"], SpectroDataset)
+    assert isinstance(project.outputs["spectro"]["dataset"], SpectroDataset)
 
     # Getting the dataset again should use the cached dataset
     _ = project.get_output("spectro")
     assert json_calls[0] == 2
 
-    assert isinstance(project.output_datasets["ltas"]["dataset"], Path)
+    assert isinstance(project.outputs["ltas"]["dataset"], Path)
 
     # Getting the dataset should deserialize it
     _ = project.get_output("ltas")
     assert json_calls[0] == 3
 
     # The deserialized dataset should be stored
-    assert isinstance(project.output_datasets["ltas"]["dataset"], LTASDataset)
+    assert isinstance(project.outputs["ltas"]["dataset"], LTASDataset)
 
     # Getting the dataset again should use the cached dataset
     _ = project.get_output("ltas")

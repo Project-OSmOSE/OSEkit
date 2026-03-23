@@ -254,7 +254,7 @@ The corresponding ``Transform`` is the following:
 Output 1
 """"""""
 
-Once the transform is run, a :class:`osekit.core.audio_dataset.AudioDataset` instance named ``cool_reshape`` has been created and added to the project's :attr:`osekit.public.project.Project.output_datasets` field.
+Once the transform is run, a :class:`osekit.core.audio_dataset.AudioDataset` instance named ``cool_reshape`` has been created and added to the project's :attr:`osekit.public.project.Project.outputs` field.
 
 The project folder now looks like this:
 

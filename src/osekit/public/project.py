@@ -57,7 +57,7 @@ class Project:
         gps_coordinates: str | list | tuple = (0, 0),
         depth: float = 0.0,
         timezone: str | None = None,
-        output_datasets: dict | None = None,
+        outputs: dict | None = None,
         job_builder: JobBuilder | None = None,
         instrument: Instrument | None = None,
         first_file_begin: Timestamp | None = None,
@@ -83,7 +83,7 @@ class Project:
             If the audio file timestamps are parsed with a tz-aware strptime_format
             (``%z`` or ``%Z`` code), the ``AudioFiles`` will be converted from
             the parsed timezone to the specified timezone.
-        output_datasets: dict | None
+        outputs: dict | None
             Core API Datasets that have been exported in this project.
             Mainly used for deserialization.
         job_builder: Job_builder | None
@@ -105,7 +105,7 @@ class Project:
         self.gps_coordinates = gps_coordinates
         self.depth = depth
         self.timezone = timezone
-        self.output_datasets = output_datasets if output_datasets is not None else {}
+        self.outputs = outputs if outputs is not None else {}
         self.job_builder = job_builder
         self.instrument = instrument
         self.first_file_begin = first_file_begin
@@ -123,12 +123,12 @@ class Project:
     @property
     def origin_dataset(self) -> AudioDataset:
         """Return the ``AudioDataset`` from which this ``Project`` has been built."""
-        return self.deserialize_output_dataset("original")
+        return self.deserialize_output("original")
 
     @property
     def transforms(self) -> list[str]:
         """Return the list of the names of the transforms ran with this ``Project``."""
-        return list({dataset["transform"] for dataset in self.output_datasets.values()})
+        return list({dataset["transform"] for dataset in self.outputs.values()})
 
     def build(
         self,
@@ -154,7 +154,7 @@ class Project:
             instrument=self.instrument,
         )
 
-        self.output_datasets[ads.name] = {
+        self.outputs[ads.name] = {
             "class": type(ads).__name__,
             "transform": "original",
             "dataset": ads,
@@ -263,7 +263,7 @@ class Project:
             else:
                 file.unlink()
 
-        self.output_datasets = {}
+        self.outputs = {}
         self.logger = None
 
     def prepare_audio(self, transform: Transform) -> AudioDataset:
@@ -369,7 +369,7 @@ class Project:
         """Create a new transform dataset from the original audio files.
 
         The transform parameter sets which type(s) of ``core`` dataset(s) will be
-        created and added to the ``Project.output_datasets`` property, plus which output
+        created and added to the ``Project.outputs`` property, plus which output
         files will be written to disk (reshaped audio files, ``npz`` spectra matrices,
         ``png`` spectrograms...).
 
@@ -441,7 +441,7 @@ class Project:
         transform_name: str,
     ) -> None:
         ads.folder = self._get_audio_dataset_subpath(ads=ads)
-        self.output_datasets[ads.name] = {
+        self.outputs[ads.name] = {
             "class": type(ads).__name__,
             "transform": transform_name,
             "dataset": ads,
@@ -591,7 +591,7 @@ class Project:
         transform_name: str,
     ) -> None:
         sds.folder = self._get_spectro_dataset_subpath(sds=sds)
-        self.output_datasets[sds.name] = {
+        self.outputs[sds.name] = {
             "class": type(sds).__name__,
             "dataset": sds,
             "transform": transform_name,
@@ -629,7 +629,7 @@ class Project:
         """Delete a transform dataset.
 
         WARNING: all the transform output files will be deleted.
-        WARNING: removing linked output_datasets (e.g. an ``AudioDataset`` to which a
+        WARNING: removing linked output datasets (e.g. an ``AudioDataset`` to which a
         ``SpectroDataset`` is linked) might lead to errors.
 
         Parameters
@@ -638,35 +638,35 @@ class Project:
             Name of the dataset to remove.
 
         """
-        dataset_to_remove = self.get_output(output_dataset_name)
-        if dataset_to_remove is None:
+        output_to_remove = self.get_output(output_dataset_name)
+        if output_to_remove is None:
             return
-        self.output_datasets.pop(dataset_to_remove.name)
+        self.outputs.pop(output_to_remove.name)
 
         afm.close()
-        shutil.rmtree(str(dataset_to_remove.folder))
+        shutil.rmtree(str(output_to_remove.folder))
         self.write_json()
 
-    def get_output_dataset_by_transform_name(
+    def get_output_by_transform_name(
         self,
         transform_name: str,
     ) -> list[type[DatasetChild]]:
-        """Get all output output_datasets from a given transform.
+        """Get all output output datasets from a given transform.
 
         Parameters
         ----------
         transform_name: str
-            Name of the transform of which to get the output_datasets.
+            Name of the transform of which to get the output datasets.
 
         Returns
         -------
         list[type[DatasetChild]]
-        List of the output_datasets.
+        List of the output datasets.
 
         """
         return [
-            self.deserialize_output_dataset(output_dataset_name=dataset_name)
-            for dataset_name, dataset_values in self.output_datasets.items()
+            self.deserialize_output(output_name=dataset_name)
+            for dataset_name, dataset_values in self.outputs.items()
             if dataset_values["transform"] == transform_name
         ]
 
@@ -686,15 +686,15 @@ class Project:
         if output_name == "original":
             msg = "You can't rename the original dataset."
             raise ValueError(msg)
-        if output_name not in self.output_datasets:
+        if output_name not in self.outputs:
             msg = f"Unknown output {output_name}."
             raise ValueError(msg)
-        if new_output_name in self.output_datasets:
+        if new_output_name in self.outputs:
             msg = f"{new_output_name} already exists."
             raise ValueError(msg)
 
         keys_to_rename = {}
-        for output_dataset in self.output_datasets.values():
+        for output_dataset in self.outputs.values():
             if output_dataset["transform"] == output_name:
                 output_dataset["transform"] = new_output_name
                 ds = output_dataset["dataset"]
@@ -717,12 +717,12 @@ class Project:
                 ds.write_json(ds.folder)
 
         for old_name, new_name in keys_to_rename.items():
-            self.output_datasets[new_name] = self.output_datasets.pop(old_name)
+            self.outputs[new_name] = self.outputs.pop(old_name)
 
         self.write_json()
 
     def delete_output(self, output_name: str) -> None:
-        """Delete all output_datasets from a given ran transform name.
+        """Delete all output datasets from a given ran transform name.
 
         WARNING: all the output files will be deleted.
 
@@ -733,7 +733,7 @@ class Project:
             Name of the transform whose output to delete.
 
         """
-        for dataset_to_delete in self.get_output_dataset_by_transform_name(
+        for dataset_to_delete in self.get_output_by_transform_name(
             output_name,
         ):
             self._delete_output(dataset_to_delete.name)
@@ -749,13 +749,13 @@ class Project:
         Returns
         -------
         type[DatasetChild]:
-            Output dataset from the ``project.output_datasets`` property.
+            Output dataset from the ``project.outputs`` property.
 
         """
-        if output_name not in self.output_datasets:
+        if output_name not in self.outputs:
             message = f"Dataset '{output_name}' not found."
             raise ValueError(message)
-        return self.deserialize_output_dataset(output_dataset_name=output_name)
+        return self.deserialize_output(output_name=output_name)
 
     def to_dict(self) -> dict:
         """Serialize a project to a dictionary.
@@ -767,7 +767,7 @@ class Project:
 
         """
         return {
-            "output_datasets": {
+            "outputs": {
                 name: {
                     "class": dataset["class"],
                     "transform": dataset["transform"],
@@ -775,7 +775,7 @@ class Project:
                     if isinstance(dataset["dataset"], Path)
                     else str(dataset["dataset"].folder / f"{name}.json"),
                 }
-                for name, dataset in self.output_datasets.items()
+                for name, dataset in self.outputs.items()
             },
             "instrument": (
                 None if self.instrument is None else self.instrument.to_dict()
@@ -801,9 +801,9 @@ class Project:
             The deserialized project.
 
         """
-        datasets = {}
-        for name, dataset in dictionary["output_datasets"].items():
-            datasets[name] = {
+        outputs = {}
+        for name, dataset in dictionary["outputs"].items():
+            outputs[name] = {
                 "class": dataset["class"],
                 "transform": dataset["transform"],
                 "dataset": Path(dataset["json"]),
@@ -815,7 +815,7 @@ class Project:
             gps_coordinates=dictionary["gps_coordinates"],
             depth=dictionary["depth"],
             timezone=dictionary["timezone"],
-            output_datasets=datasets,
+            outputs=outputs,
         )
 
     def write_json(self, folder: Path | None = None) -> None:
@@ -843,18 +843,18 @@ class Project:
         instance._create_logger()  # noqa: SLF001
         return instance
 
-    def deserialize_output_dataset(
+    def deserialize_output(
         self,
-        output_dataset_name: str,
+        output_name: str,
     ) -> type[DatasetChild]:
         """Deserialize an output dataset from its json file.
 
-        The self.output_datasets property will be updated so that it stores the deserialized
+        The self.outputs property will be updated so that it stores the deserialized
         dataset rather than the json file so that it is deserialized only once.
 
         Parameters
         ----------
-        output_dataset_name: str
+        output_name: str
             Name of the output dataset.
 
         Returns
@@ -863,7 +863,7 @@ class Project:
             The deserialized output dataset.
 
         """
-        output_dataset = self.output_datasets[output_dataset_name]
+        output_dataset = self.outputs[output_name]
         dataset_classes = {
             "AudioDataset": AudioDataset,
             "SpectroDataset": SpectroDataset,
