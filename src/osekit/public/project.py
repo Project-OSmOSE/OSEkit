@@ -469,7 +469,7 @@ class Project:
         ads: AudioDataset | None = None,
         sds: SpectroDataset | LTASDataset | None = None,
         subtype: str | None = None,
-        matrix_folder_name: str = "matrix",
+        spectrum_folder_name: str = "spectrum",
         spectrogram_folder_name: str = "spectrogram",
         welch_folder_name: str = "welch",
         nb_jobs: int = 1,
@@ -491,7 +491,7 @@ class Project:
         spectrogram_folder_name:
             The name of the folder in which the ``png`` spectrograms will be
             exported (relative to ``sds.folder``)
-        matrix_folder_name:
+        spectrum_folder_name:
             The name of the folder in which the ``npz`` matrices will be
             exported (relative to ``sds.folder``)
         welch_folder_name:
@@ -520,11 +520,11 @@ class Project:
         # Import here to avoid circular imports since the script needs to import Project
         from osekit.public import export_transform  # noqa: PLC0415
 
-        matrix_folder_path, spectrogram_folder_path, welch_folder_path = (
+        spectrum_folder_path, spectrogram_folder_path, welch_folder_path = (
             (
                 sds.folder / name
                 for name in (
-                    matrix_folder_name,
+                    spectrum_folder_name,
                     spectrogram_folder_name,
                     welch_folder_name,
                 )
@@ -540,7 +540,7 @@ class Project:
                 sds=sds,
                 link=link,
                 subtype=subtype,
-                matrix_folder_path=matrix_folder_path,
+                spectrum_folder_path=spectrum_folder_path,
                 spectrogram_folder_path=spectrogram_folder_path,
                 welch_folder_path=welch_folder_path,
                 logger=self.logger,
@@ -567,7 +567,7 @@ class Project:
                     "ads-json": ads_json,
                     "sds-json": sds_json,
                     "subtype": subtype,
-                    "matrix-folder-path": matrix_folder_path,
+                    "spectrum-folder-path": spectrum_folder_path,
                     "spectrogram-folder-path": spectrogram_folder_path,
                     "welch-folder-path": welch_folder_path,
                     "first": start,

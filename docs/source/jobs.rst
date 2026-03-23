@@ -81,7 +81,7 @@ and follow the console arguments of the :mod:`osekit.public.export` script.
         "ads-json": ads.foler/"output"/f"{ads.name}.json",
         "sds-json": sds.foler/"output"/f"{sds.name}.json",
         "subtype": "FLOAT",
-        "matrix-folder-path": "None", # Folder in which npz matrices are exported
+        "spectrum-folder-path": "None", # Folder in which npz matrices are exported
         "spectrogram-folder-path": sds.folder/"output", # Folder in which png spectrograms are exported
         "welch-folder-path": "None",  # Folder in which npz welch matrices are exported
         "first": 0, # First data of the dataset to be exported

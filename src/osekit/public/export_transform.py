@@ -24,7 +24,7 @@ def write_transform_output(
     ads: AudioDataset | None,
     sds: SpectroDataset | None,
     subtype: str | None = None,
-    matrix_folder_path: Path | None = None,
+    spectrum_folder_path: Path | None = None,
     spectrogram_folder_path: Path | None = None,
     welch_folder_path: Path | None = None,
     first: int = 0,
@@ -48,7 +48,7 @@ def write_transform_output(
         The ``AudioDataset`` of which the data should be written.
     sds: SpectroDataset
         The ``SpectroDataset`` of which the data should be written.
-    matrix_folder_path: Path
+    spectrum_folder_path: Path
         The folder in which the matrix ``npz`` files should be written.
     spectrogram_folder_path: Path
         The folder in which the spectrogram ``png`` files should be written.
@@ -93,7 +93,7 @@ def write_transform_output(
     if OutputType.SPECTRUM in output_type and OutputType.SPECTROGRAM in output_type:
         logger.info("Computing and writing spectrum matrices and spectrograms...")
         sds.save_all(
-            matrix_folder=matrix_folder_path,
+            matrix_folder=spectrum_folder_path,
             spectrogram_folder=spectrogram_folder_path,
             link=link,
             first=first,
@@ -109,7 +109,7 @@ def write_transform_output(
     elif OutputType.SPECTRUM in output_type:
         logger.info("Computing and writing spectrum matrices...")
         sds.write(
-            folder=matrix_folder_path,
+            folder=spectrum_folder_path,
             link=link,
             first=first,
             last=last,
@@ -169,7 +169,7 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        "--matrix-folder-path",
+        "--spectrum-folder-path",
         "-mf",
         required=False,
         help="The path of the folder in which the npz matrix files are written.",
@@ -331,7 +331,7 @@ def main() -> None:
         ads=ads,
         sds=sds,
         subtype=subtype,
-        matrix_folder_path=Path(args.matrix_folder_path),
+        spectrum_folder_path=Path(args.matrix_folder_path),
         spectrogram_folder_path=Path(args.spectrogram_folder_path),
         welch_folder_path=Path(args.welch_folder_path),
         first=args.first,
