@@ -738,12 +738,12 @@ class Project:
         ):
             self._delete_output(dataset_to_delete.name)
 
-    def get_output(self, dataset_name: str) -> type[DatasetChild] | None:
+    def get_output(self, output_name: str) -> type[DatasetChild] | None:
         """Get an output dataset from its name.
 
         Parameters
         ----------
-        dataset_name: str
+        output_name: str
             Name of the output dataset.
 
         Returns
@@ -752,10 +752,10 @@ class Project:
             Output dataset from the ``project.output_datasets`` property.
 
         """
-        if dataset_name not in self.output_datasets:
-            message = f"Dataset '{dataset_name}' not found."
+        if output_name not in self.output_datasets:
+            message = f"Dataset '{output_name}' not found."
             raise ValueError(message)
-        return self.deserialize_output_dataset(output_dataset_name=dataset_name)
+        return self.deserialize_output_dataset(output_dataset_name=output_name)
 
     def to_dict(self) -> dict:
         """Serialize a project to a dictionary.
