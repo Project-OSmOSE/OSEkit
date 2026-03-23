@@ -250,7 +250,7 @@ class Project:
         afm.close()
 
         files_to_remove = list(self.folder.iterdir())
-        self.get_output_dataset("original").move_files(self.folder)
+        self.get_output("original").move_files(self.folder)
 
         if self.folder / "other" in files_to_remove:
             move_tree(self.folder / "other", self.folder)
@@ -638,7 +638,7 @@ class Project:
             Name of the dataset to remove.
 
         """
-        dataset_to_remove = self.get_output_dataset(output_dataset_name)
+        dataset_to_remove = self.get_output(output_dataset_name)
         if dataset_to_remove is None:
             return
         self.output_datasets.pop(dataset_to_remove.name)
@@ -738,7 +738,7 @@ class Project:
         ):
             self._delete_output(dataset_to_delete.name)
 
-    def get_output_dataset(self, dataset_name: str) -> type[DatasetChild] | None:
+    def get_output(self, dataset_name: str) -> type[DatasetChild] | None:
         """Get an output dataset from its name.
 
         Parameters

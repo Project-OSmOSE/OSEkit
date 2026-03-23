@@ -445,7 +445,7 @@ def test_reshape(
 
     # The new dataset should be added to the output_datasets property
     assert expected_ads_name in project.output_datasets
-    ads = project.get_output_dataset(expected_ads_name)
+    ads = project.get_output(expected_ads_name)
     assert ads is not None
     assert type(ads) is AudioDataset
 
@@ -577,7 +577,7 @@ def test_serialization(
             enumerate(transform.fft.f),
             key=lambda t: abs(t[1] - sine_frequency),
         )[0]
-        sd = project.get_output_dataset(transform.name).data[0]
+        sd = project.get_output(transform.name).data[0]
         level_tolerance = 8
         equalized_sx = sd._to_db(sd.get_value())
         computed_level = equalized_sx[bin_idx, :].mean()
@@ -1215,11 +1215,10 @@ def test_edit_transform_before_run(
     assert (project.folder / "processed" / ads.base_name).exists()
 
     output_ads = AudioDataset.from_json(
-        project.get_output_dataset(f"{new_name}_audio").folder
-        / f"{new_name}_audio.json",
+        project.get_output(f"{new_name}_audio").folder / f"{new_name}_audio.json",
     )
     output_sds = SpectroDataset.from_json(
-        project.get_output_dataset(new_name).folder / f"{new_name}.json",
+        project.get_output(new_name).folder / f"{new_name}.json",
     )
 
     # Only filtered data have been written
@@ -1267,10 +1266,10 @@ def test_delete_output_dataset(
     project.run(transform_1)
     project.run(transform_2)
 
-    ds1 = project.get_output_dataset(transform_1.name)
-    ds2 = project.get_output_dataset(transform_2.name)
-    ds3 = project.get_output_dataset(f"{transform_1.name}_audio")
-    ds4 = project.get_output_dataset(f"{transform_2.name}_audio")
+    ds1 = project.get_output(transform_1.name)
+    ds2 = project.get_output(transform_2.name)
+    ds3 = project.get_output(f"{transform_1.name}_audio")
+    ds4 = project.get_output(f"{transform_2.name}_audio")
 
     # Tests Project.get_output_dataset_by_transform_name
     assert project.get_output_dataset_by_transform_name("transform_1") == [ds3, ds1]
@@ -1532,10 +1531,10 @@ def test_spectro_transform_with_existing_ads(
         fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
     )
 
-    project.run(transform_2, audio_dataset=project.get_output_dataset("audio"))
+    project.run(transform_2, audio_dataset=project.get_output("audio"))
 
-    ads = project.get_output_dataset("audio")
-    sds = project.get_output_dataset("spectro")
+    ads = project.get_output("audio")
+    sds = project.get_output("spectro")
 
     assert type(ads) is AudioDataset
     assert type(sds) is SpectroDataset
@@ -1546,7 +1545,7 @@ def test_spectro_transform_with_existing_ads(
         assert sd.audio_data == ad
 
     with pytest.raises(ValueError, match=r"Dataset 'clafoutis' not found."):
-        project.get_output_dataset("clafoutis")
+        project.get_output("clafoutis")
 
 
 def test_build_specific_files(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -1670,38 +1669,38 @@ def test_deserialize_output_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
     assert isinstance(project.output_datasets["original"]["dataset"], Path)
 
     # Getting the dataset should deserialize it
-    _ = project.get_output_dataset("original")
+    _ = project.get_output("original")
     assert json_calls[0] == 1
 
     # The deserialized dataset should be stored
     assert isinstance(project.output_datasets["original"]["dataset"], AudioDataset)
 
     # Getting the dataset again should use the cached dataset
-    _ = project.get_output_dataset("original")
+    _ = project.get_output("original")
     assert json_calls[0] == 1
 
     assert isinstance(project.output_datasets["spectro"]["dataset"], Path)
 
     # Getting the dataset should deserialize it
-    _ = project.get_output_dataset("spectro")
+    _ = project.get_output("spectro")
     assert json_calls[0] == 2
 
     # The deserialized dataset should be stored
     assert isinstance(project.output_datasets["spectro"]["dataset"], SpectroDataset)
 
     # Getting the dataset again should use the cached dataset
-    _ = project.get_output_dataset("spectro")
+    _ = project.get_output("spectro")
     assert json_calls[0] == 2
 
     assert isinstance(project.output_datasets["ltas"]["dataset"], Path)
 
     # Getting the dataset should deserialize it
-    _ = project.get_output_dataset("ltas")
+    _ = project.get_output("ltas")
     assert json_calls[0] == 3
 
     # The deserialized dataset should be stored
     assert isinstance(project.output_datasets["ltas"]["dataset"], LTASDataset)
 
     # Getting the dataset again should use the cached dataset
-    _ = project.get_output_dataset("ltas")
+    _ = project.get_output("ltas")
     assert json_calls[0] == 3
