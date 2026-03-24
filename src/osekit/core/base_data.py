@@ -20,10 +20,10 @@ from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMATS_EXPORTED_FILES,
 )
-from osekit.core_api.base_file import BaseFile
-from osekit.core_api.base_item import BaseItem
-from osekit.core_api.event import Event
-from osekit.utils.timestamp_utils import strptime_from_text
+from osekit.core.base_file import BaseFile
+from osekit.core.base_item import BaseItem
+from osekit.core.event import Event
+from osekit.utils.timestamp import strptime_from_text
 
 TItem = TypeVar("TItem", bound=BaseItem)
 TFile = TypeVar("TFile", bound=BaseFile)

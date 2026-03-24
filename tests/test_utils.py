@@ -10,18 +10,18 @@ import pandas as pd
 import pytest
 from pandas import Timedelta
 
-from osekit.core_api.ltas_dataset import LTASDataset
-from osekit.core_api.spectro_dataset import SpectroDataset
-from osekit.utils.audio_utils import Normalization, normalize
-from osekit.utils.core_utils import (
+from osekit.core.ltas_dataset import LTASDataset
+from osekit.core.spectro_dataset import SpectroDataset
+from osekit.utils.audio import Normalization, normalize
+from osekit.utils.core import (
     file_indexes_per_batch,
     get_closest_value_index,
     locked,
     nb_files_per_batch,
 )
 from osekit.utils.deserialization import deserialize_spectro_or_ltas_dataset
-from osekit.utils.formatting_utils import aplose2raven
-from osekit.utils.path_utils import is_absolute, move_tree
+from osekit.utils.formatting import aplose2raven
+from osekit.utils.path import is_absolute, move_tree
 
 if TYPE_CHECKING:
     from _pytest.monkeypatch import MonkeyPatch

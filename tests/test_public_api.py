@@ -15,16 +15,16 @@ from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
 )
-from osekit.core_api.audio_dataset import AudioDataset
-from osekit.core_api.audio_file import AudioFile
-from osekit.core_api.event import Event
-from osekit.core_api.frequency_scale import Scale, ScalePart
-from osekit.core_api.instrument import Instrument
-from osekit.core_api.ltas_dataset import LTASDataset
-from osekit.core_api.spectro_dataset import SpectroDataset
-from osekit.public_api.analysis import Analysis, AnalysisType
-from osekit.public_api.dataset import Dataset
-from osekit.utils.audio_utils import Normalization
+from osekit.core.audio_dataset import AudioDataset
+from osekit.core.audio_file import AudioFile
+from osekit.core.event import Event
+from osekit.core.frequency_scale import Scale, ScalePart
+from osekit.core.instrument import Instrument
+from osekit.core.ltas_dataset import LTASDataset
+from osekit.core.spectro_dataset import SpectroDataset
+from osekit.public.project import Project
+from osekit.public.transform import OutputType, Transform
+from osekit.utils.audio import Normalization
 
 
 @pytest.mark.parametrize(
@@ -215,7 +215,7 @@ from osekit.utils.audio_utils import Normalization
     ],
     indirect=["audio_files"],
 )
-def test_dataset_build(
+def test_project_build(
     tmp_path: pytest.fixture,
     audio_files: pytest.fixture,
     other_files: list[str],
@@ -227,7 +227,7 @@ def test_dataset_build(
         if request.param["date_begin"].tzinfo is None
         else str(request.param["date_begin"])
     )
-    dataset_timezone = (
+    project_timezone = (
         None
         if expected_audio_events[0].begin.tzinfo is None
         else str(expected_audio_events[0].begin.tzinfo)
@@ -249,17 +249,17 @@ def test_dataset_build(
         tmp_path,
         strptime_format=files_timestamp_format,
         mode="files",
-        timezone=dataset_timezone,
+        timezone=project_timezone,
         name="original",
     )
 
-    dataset = Dataset(
+    project = Project(
         folder=tmp_path,
         strptime_format=files_timestamp_format,
-        timezone=dataset_timezone,
+        timezone=project_timezone,
     )
 
-    dataset.build()
+    project.build()
 
     assert not any(file.exists() for file in files_before_build)
 
@@ -273,33 +273,33 @@ def test_dataset_build(
         folder=tmp_path / "data" / "audio" / "original",
         strptime_format=files_timestamp_format,
         mode="files",
-        timezone=dataset_timezone,
+        timezone=project_timezone,
     )
 
-    # The original dataset should be added to the public Dataset's datasets:
-    assert moved_original_dataset == dataset.datasets["original"]["dataset"]
+    # The original dataset should be added to the public Project's output datasets:
+    assert moved_original_dataset == project.outputs["original"]["dataset"]
 
     # Check original audio data
     assert [
-        Event(d.begin, d.end) for d in dataset.datasets["original"]["dataset"].data
+        Event(d.begin, d.end) for d in project.outputs["original"]["dataset"].data
     ] == expected_audio_events
 
     # Other files should be moved to an "other" folder
     assert all((tmp_path / "other" / file).exists() for file in other_files)
 
-    # The dataset.json file in root folder should allow for deserializing the dataset
-    dataset2 = Dataset.from_json(tmp_path / "dataset.json")
-    assert dataset2.origin_dataset == dataset.datasets["original"]["dataset"]
+    # The project.json file in root folder should allow for deserializing the dataset
+    project2 = Project.from_json(tmp_path / "project.json")
+    assert project2.origin_dataset == project.outputs["original"]["dataset"]
 
-    # Resetting the dataset should put back all original files back
-    dataset.reset()
+    # Resetting the project should put back all original files back
+    project.reset()
     assert sorted(str(file) for file in tmp_path.rglob("*")) == sorted(
         str(file) for file in files_before_build
     )
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "analysis"),
+    ("audio_files", "transform"),
     [
         pytest.param(
             {
@@ -308,8 +308,8 @@ def test_dataset_build(
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name=None,
                 begin=None,
                 end=None,
@@ -326,8 +326,8 @@ def test_dataset_build(
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name="cool",
                 begin=None,
                 end=None,
@@ -344,8 +344,8 @@ def test_dataset_build(
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name=None,
                 begin=Timestamp("2024-01-01 12:00:02"),
                 end=Timestamp("2024-01-01 12:00:04"),
@@ -362,8 +362,8 @@ def test_dataset_build(
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name=None,
                 begin=None,
                 end=None,
@@ -380,8 +380,8 @@ def test_dataset_build(
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name=None,
                 begin=None,
                 end=None,
@@ -398,8 +398,8 @@ def test_dataset_build(
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name="fun",
                 begin=Timestamp("2024-01-01 12:00:01"),
                 end=Timestamp("2024-01-01 12:00:04"),
@@ -415,36 +415,36 @@ def test_dataset_build(
 def test_reshape(
     tmp_path: pytest.fixture,
     audio_files: pytest.fixture,
-    analysis: Analysis,
+    transform: Transform,
 ) -> None:
-    dataset = Dataset(
+    project = Project(
         folder=tmp_path,
         strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
     )
-    dataset.build()
-    dataset.run_analysis(
-        analysis=analysis,
+    project.build()
+    project.run(
+        transform=transform,
     )
 
     expected_ads = AudioDataset.from_files(
-        list(dataset.origin_dataset.files),
-        begin=analysis.begin,
-        end=analysis.end,
-        data_duration=analysis.data_duration,
-        name=analysis.name,
+        list(project.origin_dataset.files),
+        begin=transform.begin,
+        end=transform.end,
+        data_duration=transform.data_duration,
+        name=transform.name,
     )
-    if analysis.sample_rate is not None:
-        expected_ads.sample_rate = analysis.sample_rate
+    if transform.sample_rate is not None:
+        expected_ads.sample_rate = transform.sample_rate
 
     expected_ads_name = (
-        analysis.name
-        if analysis.name
+        transform.name
+        if transform.name
         else f"{expected_ads.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED)}"
     )
 
-    # The new dataset should be added to the datasets property
-    assert expected_ads_name in dataset.datasets
-    ads = dataset.get_dataset(expected_ads_name)
+    # The new dataset should be added to the outputs property
+    assert expected_ads_name in project.outputs
+    ads = project.get_output(expected_ads_name)
     assert ads is not None
     assert type(ads) is AudioDataset
 
@@ -460,14 +460,14 @@ def test_reshape(
 
     # ads folder should match the ads name
     ads_folder_name = (
-        analysis.name
-        if analysis.name
+        transform.name
+        if transform.name
         else f"{round(ads.data_duration.total_seconds())}_{ads.sample_rate}"
     )
     assert ads.folder.name == ads_folder_name
 
     # ads should be linked to the new files instead of the originals
-    assert all(file not in dataset.origin_files for file in ads.files)
+    assert all(file not in project.origin_files for file in ads.files)
 
     # ads should be deserializable from the exported JSON file
     json_file = ads.folder / f"{expected_ads_name}.json"
@@ -480,7 +480,7 @@ def test_reshape(
     (
         "audio_files",
         "instrument",
-        "analysis",
+        "transform",
         "expected_level",
     ),
     [
@@ -495,8 +495,8 @@ def test_reshape(
                 "magnitude": 0.1,
             },
             Instrument(end_to_end_db=150),
-            Analysis(
-                analysis_type=AnalysisType.AUDIO | AnalysisType.SPECTROGRAM,
+            Transform(
+                output_type=OutputType.AUDIO | OutputType.SPECTROGRAM,
                 name="pingu",
                 begin=Timestamp("2024-01-01 12:00:00"),
                 end=Timestamp("2024-01-01 12:00:01"),
@@ -524,10 +524,10 @@ def test_reshape(
                 "magnitude": 0.1,
             },
             Instrument(end_to_end_db=150),
-            Analysis(
-                analysis_type=AnalysisType.AUDIO
-                | AnalysisType.MATRIX
-                | AnalysisType.SPECTROGRAM,
+            Transform(
+                output_type=OutputType.AUDIO
+                | OutputType.SPECTRUM
+                | OutputType.SPECTROGRAM,
                 name="pingu",
                 begin=Timestamp("2024-01-01 12:00:00"),
                 end=Timestamp("2024-01-01 12:00:01"),
@@ -551,51 +551,51 @@ def test_serialization(
     tmp_path: pytest.fixture,
     audio_files: pytest.fixture,
     instrument: Instrument | None,
-    analysis: Analysis,
+    transform: Transform,
     expected_level: float | None,
 ) -> None:
-    dataset = Dataset(
+    project = Project(
         folder=tmp_path,
         strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
         instrument=instrument,
     )
-    dataset.build()
-    dataset.run_analysis(
-        analysis=analysis,
+    project.build()
+    project.run(
+        transform=transform,
     )
     _, request = audio_files
     sine_frequency = request.param["sine_frequency"]
 
-    assert analysis.name in dataset.datasets
+    assert transform.name in project.outputs
 
-    if AnalysisType.AUDIO in analysis.analysis_type and analysis.is_spectro:
-        assert f"{analysis.name}_audio" in dataset.datasets
+    if OutputType.AUDIO in transform.output_type and transform.is_spectro:
+        assert f"{transform.name}_audio" in project.outputs
 
-    if analysis.is_spectro:
+    if transform.is_spectro:
         bin_idx = min(
-            enumerate(analysis.fft.f),
+            enumerate(transform.fft.f),
             key=lambda t: abs(t[1] - sine_frequency),
         )[0]
-        sd = dataset.get_dataset(analysis.name).data[0]
+        sd = project.get_output(transform.name).data[0]
         level_tolerance = 8
         equalized_sx = sd._to_db(sd.get_value())
         computed_level = equalized_sx[bin_idx, :].mean()
         assert abs(computed_level - expected_level) < level_tolerance
 
-    deserialized = Dataset.from_json(tmp_path / "dataset.json")
+    deserialized = Project.from_json(tmp_path / "project.json")
 
-    # analysis dataset deserialization is only done on request
+    # transform dataset deserialization is only done on request
     assert all(
-        isinstance(analysis_dataset["dataset"], Path)
-        for analysis_dataset in deserialized.datasets.values()
+        isinstance(output_dataset["dataset"], Path)
+        for output_dataset in deserialized.outputs.values()
     )
 
     for (t_o, d_o), (t_d, d_d) in zip(
-        sorted(dataset.datasets.items(), key=lambda d: d[0]),
-        sorted(deserialized.datasets.items(), key=lambda d: d[0]),
+        sorted(project.outputs.items(), key=lambda d: d[0]),
+        sorted(deserialized.outputs.items(), key=lambda d: d[0]),
         strict=False,
     ):
-        # Same analysis dataset type
+        # Same transform dataset type
         assert t_o == t_d
 
         if t_o is AudioDataset:
@@ -611,69 +611,69 @@ def test_serialization(
 
 
 @pytest.mark.parametrize(
-    "analysis_type",
+    "output_type",
     [
         pytest.param(
-            AnalysisType.SPECTROGRAM,
+            OutputType.SPECTROGRAM,
             id="spectro_only",
         ),
         pytest.param(
-            AnalysisType.SPECTROGRAM,
-            id="matrix_only",
+            OutputType.SPECTROGRAM,
+            id="spectrum_only",
         ),
         pytest.param(
-            AnalysisType.SPECTROGRAM,
+            OutputType.SPECTROGRAM,
             id="both_spectral_flags",
         ),
     ],
 )
-def test_spectral_analysis_error_if_no_provided_fft(analysis_type: Analysis) -> None:
+def test_spectral_transform_error_if_no_provided_fft(output_type: OutputType) -> None:
     with pytest.raises(
         ValueError,
         match=r"FFT parameter should be given if spectra outputs are selected.",
     ):
-        Analysis(
-            analysis_type=AnalysisType.SPECTROGRAM,
+        Transform(
+            output_type=OutputType.SPECTROGRAM,
         )
 
 
 @pytest.mark.parametrize(
-    ("analysis", "expected"),
+    ("transform", "expected"),
     [
         pytest.param(
-            Analysis(analysis_type=AnalysisType.AUDIO),
+            Transform(output_type=OutputType.AUDIO),
             False,
             id="audio_only",
         ),
         pytest.param(
-            Analysis(
-                analysis_type=AnalysisType.SPECTROGRAM,
+            Transform(
+                output_type=OutputType.SPECTROGRAM,
                 fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
             ),
             True,
             id="spectro_only",
         ),
         pytest.param(
-            Analysis(
-                analysis_type=AnalysisType.MATRIX,
+            Transform(
+                output_type=OutputType.SPECTRUM,
                 fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
             ),
             True,
-            id="matrix_only",
+            id="spectrum_only",
         ),
         pytest.param(
-            Analysis(
-                analysis_type=AnalysisType.MATRIX | AnalysisType.SPECTROGRAM,
+            Transform(
+                output_type=OutputType.SPECTRUM | OutputType.SPECTROGRAM,
                 fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
             ),
             True,
-            id="matrix_and_spectro",
+            id="spectrum_and_spectro",
         ),
         pytest.param(
-            Analysis(
-                analysis_type=AnalysisType.MATRIX
-                | AnalysisType.SPECTROGRAM
-                | AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.SPECTRUM
+                | OutputType.SPECTROGRAM
+                | OutputType.AUDIO,
                 fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
             ),
             True,
@@ -681,25 +681,25 @@ def test_spectral_analysis_error_if_no_provided_fft(analysis_type: Analysis) -> 
         ),
     ],
 )
-def test_analysis_is_spectro(analysis: Analysis, expected: bool) -> None:
-    assert analysis.is_spectro is expected
+def test_transform_is_spectro(transform: Transform, expected: bool) -> None:
+    assert transform.is_spectro is expected
 
 
-def test_analysis_constructor_rejects_mismatched_fs() -> None:
+def test_transform_constructor_rejects_mismatched_fs() -> None:
     with pytest.raises(
         ValueError,
         match="does not match",
     ):
-        Analysis(
-            analysis_type=AnalysisType.SPECTROGRAM,
+        Transform(
+            output_type=OutputType.SPECTROGRAM,
             sample_rate=32_000,
             fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
         )
 
 
-def test_analysis_rejects_setting_fft_with_wrong_fs() -> None:
-    analysis = Analysis(
-        analysis_type=AnalysisType.SPECTROGRAM,
+def test_transform_rejects_setting_fft_with_wrong_fs() -> None:
+    transform = Transform(
+        output_type=OutputType.SPECTROGRAM,
         sample_rate=48_000,
         fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
     )
@@ -708,21 +708,21 @@ def test_analysis_rejects_setting_fft_with_wrong_fs() -> None:
         ValueError,
         match="does not match",
     ):
-        analysis.fft = ShortTimeFFT(hamming(1024), 1024, 32_000)
+        transform.fft = ShortTimeFFT(hamming(1024), 1024, 32_000)
 
 
-def test_analysis_sample_rate_propagates_to_fft() -> None:
-    analysis = Analysis(
-        analysis_type=AnalysisType.SPECTROGRAM,
+def test_transform_sample_rate_propagates_to_fft() -> None:
+    transform = Transform(
+        output_type=OutputType.SPECTROGRAM,
         sample_rate=48_000,
         fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
     )
 
     new_samplerate = 32_000
-    analysis.sample_rate = new_samplerate
+    transform.sample_rate = new_samplerate
 
-    assert analysis.sample_rate == new_samplerate
-    assert analysis.fft.fs == new_samplerate
+    assert transform.sample_rate == new_samplerate
+    assert transform.fft.fs == new_samplerate
 
 
 @pytest.mark.parametrize(
@@ -760,20 +760,20 @@ def test_analysis_sample_rate_propagates_to_fft() -> None:
         ),
     ],
 )
-def test_analysis_validate_sample_rate(
+def test_transform_validate_sample_rate(
     sample_rate: float | None,
     fft: ShortTimeFFT | None,
     expected: AbstractContextManager,
 ) -> None:
     with expected:
-        Analysis(AnalysisType.AUDIO)._validate_sample_rate(
+        Transform(OutputType.AUDIO)._validate_sample_rate(
             sample_rate=sample_rate,
             fft=fft,
         )
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "instrument", "analysis", "expected_data"),
+    ("audio_files", "instrument", "transform", "expected_data"),
     [
         pytest.param(
             {
@@ -783,8 +783,8 @@ def test_analysis_validate_sample_rate(
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             None,
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name=None,
                 begin=None,
                 end=None,
@@ -808,8 +808,8 @@ def test_analysis_validate_sample_rate(
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             Instrument(end_to_end_db=150),
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name=None,
                 begin=None,
                 end=None,
@@ -823,7 +823,7 @@ def test_analysis_validate_sample_rate(
                     end=Timestamp("2024-01-01 12:00:05"),
                 ),
             ],
-            id="ads_has_dataset_instrument",
+            id="ads_has_project_instrument",
         ),
         pytest.param(
             {
@@ -833,8 +833,8 @@ def test_analysis_validate_sample_rate(
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             None,
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name=None,
                 begin=None,
                 end=None,
@@ -874,8 +874,8 @@ def test_analysis_validate_sample_rate(
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             None,
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name=None,
                 begin=None,
                 end=None,
@@ -899,8 +899,8 @@ def test_analysis_validate_sample_rate(
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             None,
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name="cool",
                 begin=None,
                 end=None,
@@ -924,8 +924,8 @@ def test_analysis_validate_sample_rate(
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             None,
-            Analysis(
-                analysis_type=AnalysisType.SPECTROGRAM,
+            Transform(
+                output_type=OutputType.SPECTROGRAM,
                 name="cool",
                 begin=None,
                 end=None,
@@ -940,7 +940,7 @@ def test_analysis_validate_sample_rate(
                     end=Timestamp("2024-01-01 12:00:05"),
                 ),
             ],
-            id="named_ads_in_spectro_analysis",
+            id="named_ads_in_spectro_transform",
         ),
         pytest.param(
             {
@@ -950,8 +950,8 @@ def test_analysis_validate_sample_rate(
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             None,
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name=None,
                 begin=Timestamp("2024-01-01 12:00:02"),
                 end=Timestamp("2024-01-01 12:00:04"),
@@ -979,8 +979,8 @@ def test_analysis_validate_sample_rate(
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             Instrument(end_to_end_db=150),
-            Analysis(
-                analysis_type=AnalysisType.SPECTROGRAM,
+            Transform(
+                output_type=OutputType.SPECTROGRAM,
                 name="cool",
                 begin=Timestamp("2024-01-01 12:00:02"),
                 end=Timestamp("2024-01-01 12:00:04"),
@@ -1009,8 +1009,8 @@ def test_analysis_validate_sample_rate(
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             None,
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 name=None,
                 begin=None,
                 end=None,
@@ -1030,48 +1030,48 @@ def test_analysis_validate_sample_rate(
     ],
     indirect=["audio_files"],
 )
-def test_get_analysis_audiodataset(
+def test_prepare_audio(
     tmp_path: pytest.fixture,
     audio_files: pytest.fixture,
     instrument: Instrument | None,
-    analysis: Analysis,
+    transform: Transform,
     expected_data: list[Event],
 ) -> None:
-    dataset = Dataset(
+    project = Project(
         folder=tmp_path,
         strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
         instrument=instrument,
     )
-    dataset.build()
+    project.build()
 
-    analysis_ds = dataset.get_analysis_audiodataset(analysis=analysis)
+    transform_ds = project.prepare_audio(transform=transform)
 
     assert all(
         ad.begin == e.begin and ad.end == e.end
         for ad, e in zip(
-            sorted(analysis_ds.data, key=lambda e: e.begin),
+            sorted(transform_ds.data, key=lambda e: e.begin),
             sorted(expected_data, key=lambda e: e.begin),
             strict=True,
         )
     )
 
-    if analysis.name is not None:
-        assert str(analysis_ds) == analysis.name + (
-            "_audio" if analysis.is_spectro else ""
+    if transform.name is not None:
+        assert str(transform_ds) == transform.name + (
+            "_audio" if transform.is_spectro else ""
         )
     assert (
-        analysis_ds.sample_rate == dataset.origin_dataset.sample_rate
-        if analysis.sample_rate is None
-        else analysis.sample_rate
+        transform_ds.sample_rate == project.origin_dataset.sample_rate
+        if transform.sample_rate is None
+        else transform.sample_rate
     )
 
-    assert analysis_ds.instrument is dataset.instrument
+    assert transform_ds.instrument is project.instrument
 
-    assert analysis_ds.normalization == analysis.normalization
+    assert transform_ds.normalization == transform.normalization
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "instrument", "analysis", "expected_data"),
+    ("audio_files", "instrument", "transform", "expected_data"),
     [
         pytest.param(
             {
@@ -1081,8 +1081,8 @@ def test_get_analysis_audiodataset(
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             Instrument(end_to_end_db=150),
-            Analysis(
-                analysis_type=AnalysisType.SPECTROGRAM,
+            Transform(
+                output_type=OutputType.SPECTROGRAM,
                 name="cool",
                 begin=Timestamp("2024-01-01 12:00:02"),
                 end=Timestamp("2024-01-01 12:00:04"),
@@ -1107,217 +1107,217 @@ def test_get_analysis_audiodataset(
                     end=Timestamp("2024-01-01 12:00:04"),
                 ),
             ],
-            id="full_analysis",
+            id="full_transform",
         ),
     ],
     indirect=["audio_files"],
 )
-def test_get_analysis_spectrodataset(
+def test_prepare_spectro(
     tmp_path: pytest.fixture,
     audio_files: pytest.fixture,
     instrument: Instrument | None,
-    analysis: Analysis,
+    transform: Transform,
     expected_data: list[Event],
 ) -> None:
-    dataset = Dataset(
+    project = Project(
         folder=tmp_path,
         strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
         instrument=instrument,
     )
-    dataset.build()
+    project.build()
 
-    analysis_sds = dataset.get_analysis_spectrodataset(analysis=analysis)
+    transform_sds = project.prepare_spectro(transform=transform)
 
     assert all(
         ad.begin == e.begin and ad.end == e.end
         for ad, e in zip(
-            sorted(analysis_sds.data, key=lambda e: e.begin),
+            sorted(transform_sds.data, key=lambda e: e.begin),
             sorted(expected_data, key=lambda e: e.begin),
             strict=True,
         )
     )
 
-    if analysis.name is not None:
-        assert str(analysis_sds) == analysis.name
+    if transform.name is not None:
+        assert str(transform_sds) == transform.name
 
     assert (
-        analysis_sds.data[0].audio_data.sample_rate
-        == dataset.origin_dataset.sample_rate
-        if analysis.sample_rate is None
-        else analysis.sample_rate
+        transform_sds.data[0].audio_data.sample_rate
+        == project.origin_dataset.sample_rate
+        if transform.sample_rate is None
+        else transform.sample_rate
     )
 
-    assert analysis_sds.data[0].audio_data.instrument is dataset.instrument
+    assert transform_sds.data[0].audio_data.instrument is project.instrument
 
-    assert analysis_sds.fft is analysis.fft
-    assert analysis_sds.scale is analysis.scale
+    assert transform_sds.fft is transform.fft
+    assert transform_sds.scale is transform.scale
 
-    # FFT should be provided for spectral analyses
+    # FFT should be provided for spectral outputs
     with pytest.raises(
         ValueError,
         match=r"FFT parameter should be given if spectra outputs are selected.",
     ):
-        dataset.get_analysis_spectrodataset(
-            analysis=Analysis(
-                analysis_type=AnalysisType.SPECTROGRAM,
+        project.prepare_spectro(
+            transform=Transform(
+                output_type=OutputType.SPECTROGRAM,
             ),
         )
 
-    # analysis.nb_ltas_time_bins implies LTASDataset output
-    analysis.nb_ltas_time_bins = 200
-    assert type(dataset.get_analysis_spectrodataset(analysis=analysis)) is LTASDataset
+    # transform.nb_ltas_time_bins implies LTASDataset output
+    transform.nb_ltas_time_bins = 200
+    assert type(project.prepare_spectro(transform=transform)) is LTASDataset
 
 
-def test_edit_analysis_before_run(
+def test_edit_transform_before_run(
     tmp_path: pytest.fixture,
     audio_files: pytest.fixture,
 ) -> None:
-    dataset = Dataset(
+    project = Project(
         folder=tmp_path,
         strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
         instrument=Instrument(end_to_end_db=150),
     )
 
-    dataset.build()
+    project.build()
 
-    analysis = Analysis(
-        analysis_type=AnalysisType.AUDIO | AnalysisType.SPECTROGRAM,
-        data_duration=dataset.origin_dataset.duration / 2,
-        name="original_analysis",
+    transform = Transform(
+        output_type=OutputType.AUDIO | OutputType.SPECTROGRAM,
+        data_duration=project.origin_dataset.duration / 2,
+        name="original_transform",
         sample_rate=24_000,
         fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
     )
 
-    ads = dataset.get_analysis_audiodataset(analysis=analysis)
+    ads = project.prepare_audio(transform=transform)
 
     new_sr = 12_000
-    new_name = "new_analysis"
+    new_name = "new_transform"
     new_instrument = Instrument(end_to_end_db=100)
     new_data = ads.data[::2]
     new_normalization = Normalization.ZSCORE
 
     ads.sample_rate = new_sr
-    analysis.sample_rate = new_sr
-    analysis.fft.fs = new_sr
+    transform.sample_rate = new_sr
+    transform.fft.fs = new_sr
     ads.name = new_name
-    analysis.name = new_name
+    transform.name = new_name
     ads.instrument = new_instrument
     ads.data = new_data
     ads.normalization = new_normalization
 
-    dataset.run_analysis(analysis, audio_dataset=ads)
+    project.run(transform, audio_dataset=ads)
 
     # New ads name
-    assert (dataset.folder / "data" / "audio" / ads.name).exists()
+    assert (project.folder / "data" / "audio" / ads.name).exists()
 
     # New sds name
-    assert (dataset.folder / "processed" / ads.base_name).exists()
+    assert (project.folder / "processed" / ads.base_name).exists()
 
-    analysis_ads = AudioDataset.from_json(
-        dataset.get_dataset(f"{new_name}_audio").folder / f"{new_name}_audio.json",
+    output_ads = AudioDataset.from_json(
+        project.get_output(f"{new_name}_audio").folder / f"{new_name}_audio.json",
     )
-    analysis_sds = SpectroDataset.from_json(
-        dataset.get_dataset(new_name).folder / f"{new_name}.json",
+    output_sds = SpectroDataset.from_json(
+        project.get_output(new_name).folder / f"{new_name}.json",
     )
 
     # Only filtered data have been written
-    assert len(analysis_ads.data) == len(new_data)
-    assert len(analysis_sds.data) == len(new_data)
+    assert len(output_ads.data) == len(new_data)
+    assert len(output_sds.data) == len(new_data)
 
     # Analyses have the edited sr
-    assert analysis_ads.sample_rate == new_sr
-    assert analysis_sds.fft.fs == new_sr
+    assert output_ads.sample_rate == new_sr
+    assert output_sds.fft.fs == new_sr
 
     # Analyses have the edited normalization
-    assert analysis_ads.normalization == new_normalization
+    assert output_ads.normalization == new_normalization
 
     # Instrument has been edited
-    assert analysis_ads.instrument.end_to_end_db == new_instrument.end_to_end_db
+    assert output_ads.instrument.end_to_end_db == new_instrument.end_to_end_db
 
 
-def test_delete_analysis_dataset(
+def test_delete_output_dataset(
     tmp_path: pytest.fixture,
     audio_files: pytest.fixture,
 ) -> None:
-    dataset = Dataset(
+    project = Project(
         folder=tmp_path,
         strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
     )
 
-    dataset.build()
+    project.build()
 
-    analysis_1 = Analysis(
-        analysis_type=AnalysisType.AUDIO | AnalysisType.SPECTROGRAM,
-        data_duration=dataset.origin_dataset.duration / 2,
-        name="analysis_1",
+    transform_1 = Transform(
+        output_type=OutputType.AUDIO | OutputType.SPECTROGRAM,
+        data_duration=project.origin_dataset.duration / 2,
+        name="transform_1",
         sample_rate=24_000,
         fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
     )
 
-    analysis_2 = Analysis(
-        analysis_type=AnalysisType.AUDIO | AnalysisType.SPECTROGRAM,
-        data_duration=dataset.origin_dataset.duration / 2,
-        name="analysis_2",
+    transform_2 = Transform(
+        output_type=OutputType.AUDIO | OutputType.SPECTROGRAM,
+        data_duration=project.origin_dataset.duration / 2,
+        name="transform_2",
         sample_rate=20_000,
         fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=20_000),
     )
 
-    dataset.run_analysis(analysis_1)
-    dataset.run_analysis(analysis_2)
+    project.run(transform_1)
+    project.run(transform_2)
 
-    ds1 = dataset.get_dataset(analysis_1.name)
-    ds2 = dataset.get_dataset(analysis_2.name)
-    ds3 = dataset.get_dataset(f"{analysis_1.name}_audio")
-    ds4 = dataset.get_dataset(f"{analysis_2.name}_audio")
+    ds1 = project.get_output(transform_1.name)
+    ds2 = project.get_output(transform_2.name)
+    ds3 = project.get_output(f"{transform_1.name}_audio")
+    ds4 = project.get_output(f"{transform_2.name}_audio")
 
-    # Tests Dataset.get_datasets_by_analysis
-    assert dataset.get_datasets_by_analysis("analysis_1") == [ds3, ds1]
-    assert dataset.get_datasets_by_analysis("analysis_2") == [ds4, ds2]
+    # Tests Project.get_output_by_transform_name
+    assert project.get_output_by_transform_name("transform_1") == [ds3, ds1]
+    assert project.get_output_by_transform_name("transform_2") == [ds4, ds2]
 
     datasets = [ds1, ds2, ds3, ds4]
 
     for i, ds in enumerate(datasets):
-        assert ds.name in dataset.datasets.keys()
+        assert ds.name in project.outputs.keys()
         assert ds.folder.exists()
 
-        dataset._delete_dataset(str(ds.name))
+        project._delete_output(str(ds.name))
 
-        assert ds.name not in dataset.datasets.keys()
+        assert ds.name not in project.outputs.keys()
         assert not ds.folder.exists()
 
         # The JSON should be updated
-        new_dataset = Dataset.from_json(dataset.folder / "dataset.json")
-        assert ds.name not in new_dataset.datasets.keys()
+        new_project = Project.from_json(project.folder / "project.json")
+        assert ds.name not in new_project.outputs.keys()
 
 
 @pytest.mark.parametrize(
-    "analysis_to_delete",
+    "transform_to_delete",
     [
         pytest.param(
-            Analysis(
-                analysis_type=AnalysisType.AUDIO,
+            Transform(
+                output_type=OutputType.AUDIO,
                 data_duration=Timedelta(seconds=1),
-                name="analysis_to_delete",
+                name="transform_to_delete",
                 sample_rate=24_000,
                 fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
             ),
             id="audio_only",
         ),
         pytest.param(
-            Analysis(
-                analysis_type=AnalysisType.SPECTROGRAM,
+            Transform(
+                output_type=OutputType.SPECTROGRAM,
                 data_duration=Timedelta(seconds=1),
-                name="analysis_to_delete",
+                name="transform_to_delete",
                 sample_rate=24_000,
                 fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
             ),
             id="spectro_only",
         ),
         pytest.param(
-            Analysis(
-                analysis_type=AnalysisType.AUDIO | AnalysisType.SPECTROGRAM,
+            Transform(
+                output_type=OutputType.AUDIO | OutputType.SPECTROGRAM,
                 data_duration=Timedelta(seconds=1),
-                name="analysis_to_delete",
+                name="transform_to_delete",
                 sample_rate=24_000,
                 fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
             ),
@@ -1325,157 +1325,155 @@ def test_delete_analysis_dataset(
         ),
     ],
 )
-def test_delete_analysis(
-    tmp_path: pytest.fixture,
+def test_delete_output(
+    tmp_path: Path,
     audio_files: pytest.fixture,
-    analysis_to_delete: Analysis,
+    transform_to_delete: Transform,
 ) -> None:
-    dataset = Dataset(
+    project = Project(
         folder=tmp_path,
         strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
     )
 
-    dataset.build()
+    project.build()
 
-    # Add another analysis to check that it is not affected by the deletion
+    # Add another transform to check that it is not affected by the deletion
 
-    analysis_to_keep = Analysis(
-        analysis_type=AnalysisType.AUDIO
-        | AnalysisType.SPECTROGRAM
-        | AnalysisType.MATRIX,
-        data_duration=dataset.origin_dataset.duration / 2,
-        name="analysis_to_keep",
+    transform_to_keep = Transform(
+        output_type=OutputType.AUDIO | OutputType.SPECTROGRAM | OutputType.SPECTRUM,
+        data_duration=project.origin_dataset.duration / 2,
+        name="transform_to_keep",
         sample_rate=24_000,
         fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
     )
 
-    dataset.run_analysis(analysis_to_keep)
-    dataset.run_analysis(analysis_to_delete)
+    project.run(transform_to_keep)
+    project.run(transform_to_delete)
 
     assert all(
-        analysis in dataset.analyses
-        for analysis in (analysis_to_keep.name, analysis_to_delete.name)
+        transform in project.transforms
+        for transform in (transform_to_keep.name, transform_to_delete.name)
     )
 
-    datasets_to_keep = dataset.get_datasets_by_analysis(analysis_to_keep.name)
-    datasets_to_delete = dataset.get_datasets_by_analysis(analysis_to_delete.name)
+    datasets_to_keep = project.get_output_by_transform_name(
+        transform_to_keep.name,
+    )
+    datasets_to_delete = project.get_output_by_transform_name(
+        transform_to_delete.name,
+    )
 
     assert all(ds.folder.exists() for ds in (datasets_to_keep + datasets_to_delete))
 
-    dataset.delete_analysis(analysis_to_delete.name)
+    project.delete_output(transform_to_delete.name)
 
-    assert analysis_to_keep.name in dataset.analyses
-    assert analysis_to_delete.name not in dataset.analyses
+    assert transform_to_keep.name in project.transforms
+    assert transform_to_delete.name not in project.transforms
 
-    deserialized_dataset = Dataset.from_json(dataset.folder / "dataset.json")
+    deserialized_project = Project.from_json(project.folder / "project.json")
 
-    for public_dataset in (dataset, deserialized_dataset):
-        datasets_to_keep = public_dataset.get_datasets_by_analysis(
-            analysis_to_keep.name,
+    for proj in (project, deserialized_project):
+        datasets_to_keep = proj.get_output_by_transform_name(
+            transform_to_keep.name,
         )
-        datasets_to_delete = public_dataset.get_datasets_by_analysis(
-            analysis_to_delete.name,
+        datasets_to_delete = proj.get_output_by_transform_name(
+            transform_to_delete.name,
         )
 
         assert all(ds.folder.exists() for ds in datasets_to_keep)
         assert not any(ds.folder.exists() for ds in datasets_to_delete)
 
-        assert all(ds.name in public_dataset.datasets.keys() for ds in datasets_to_keep)
-        assert not any(
-            ds.name in public_dataset.datasets.keys() for ds in datasets_to_delete
-        )
+        assert all(ds.name in proj.outputs.keys() for ds in datasets_to_keep)
+        assert not any(ds.name in proj.outputs.keys() for ds in datasets_to_delete)
 
 
-def test_existing_analysis_warning(
+def test_existing_output_warning(
     tmp_path: pytest.fixture,
     audio_files: pytest.fixture,
 ) -> None:
-    dataset = Dataset(
+    project = Project(
         folder=tmp_path,
         strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
     )
 
-    dataset.build()
+    project.build()
 
-    dataset.run_analysis(
-        Analysis(
-            analysis_type=AnalysisType.AUDIO,
-            data_duration=dataset.origin_dataset.duration / 2,
-            name="my_analysis",
+    project.run(
+        Transform(
+            output_type=OutputType.AUDIO,
+            data_duration=project.origin_dataset.duration / 2,
+            name="my_transform",
             sample_rate=24_000,
         ),
     )
 
-    with pytest.raises(ValueError, match="my_analysis already exists"):
-        dataset.run_analysis(
-            Analysis(
-                analysis_type=AnalysisType.SPECTROGRAM,
-                data_duration=dataset.origin_dataset.duration / 2,
-                name="my_analysis",
+    with pytest.raises(ValueError, match="my_transform already exists"):
+        project.run(
+            Transform(
+                output_type=OutputType.SPECTROGRAM,
+                data_duration=project.origin_dataset.duration / 2,
+                name="my_transform",
                 sample_rate=24_000,
                 fft=ShortTimeFFT(hamming(1024), hop=1024, fs=24_000),
             ),
         )
 
-    dataset.delete_analysis("my_analysis")
+    project.delete_output("my_transform")
 
-    dataset.run_analysis(
-        Analysis(
-            analysis_type=AnalysisType.SPECTROGRAM,
-            data_duration=dataset.origin_dataset.duration / 2,
-            name="my_analysis",
+    project.run(
+        Transform(
+            output_type=OutputType.SPECTROGRAM,
+            data_duration=project.origin_dataset.duration / 2,
+            name="my_transform",
             sample_rate=24_000,
             fft=ShortTimeFFT(hamming(1024), hop=1024, fs=24_000),
         ),
     )
 
 
-def test_rename_analysis(
+def test_rename_transform(
     tmp_path: Path,
     audio_files: tuple[list[AudioFile], None],
 ) -> None:
-    dataset = Dataset(
+    project = Project(
         folder=tmp_path,
         strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
     )
 
-    dataset.build()
+    project.build()
 
     first_name, second_name = "fontaines", "dc"
 
-    analysis = Analysis(
-        analysis_type=AnalysisType.AUDIO
-        | AnalysisType.SPECTROGRAM
-        | AnalysisType.MATRIX,
-        data_duration=dataset.origin_dataset.duration / 2,
+    transform = Transform(
+        output_type=OutputType.AUDIO | OutputType.SPECTROGRAM | OutputType.SPECTRUM,
+        data_duration=project.origin_dataset.duration / 2,
         name=first_name,
         sample_rate=24_000,
         fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
     )
 
-    dataset.run_analysis(analysis)
+    project.run(transform)
 
     names = (first_name, second_name, second_name)  # Tests both renaming and same name
     for old, new in itertools.pairwise(names):
-        dataset.rename_analysis(old, new)
+        project.rename_output(old, new)
 
         if old != new:
-            assert old not in dataset.analyses
-            assert not (dataset.folder / "processed" / old).exists()
-            assert not (dataset.folder / "data" / "audio" / f"{old}_audio").exists()
-            assert not dataset.get_datasets_by_analysis(old)
+            assert old not in project.transforms
+            assert not (project.folder / "processed" / old).exists()
+            assert not (project.folder / "data" / "audio" / f"{old}_audio").exists()
+            assert not project.get_output_by_transform_name(old)
 
-        assert new in dataset.analyses
-        assert len(dataset.get_datasets_by_analysis(new)) == 2
+        assert new in project.transforms
+        assert len(project.get_output_by_transform_name(new)) == 2
 
-        assert (dataset.folder / "data" / "audio" / f"{new}_audio").exists()
-        assert (dataset.folder / "processed" / new).exists()
+        assert (project.folder / "data" / "audio" / f"{new}_audio").exists()
+        assert (project.folder / "processed" / new).exists()
 
         assert (
             len(
-                Dataset.from_json(
-                    dataset.folder / "dataset.json",
-                ).get_datasets_by_analysis(
+                Project.from_json(
+                    project.folder / "project.json",
+                ).get_output_by_transform_name(
                     new,
                 ),
             )
@@ -1484,56 +1482,56 @@ def test_rename_analysis(
 
     # RENAME ERRORS
     with pytest.raises(ValueError, match=r"You can't rename the original dataset."):
-        dataset.rename_analysis(
-            analysis_name="original",
-            new_analysis_name="vampire",
+        project.rename_output(
+            output_name="original",
+            new_output_name="vampire",
         )
 
     with pytest.raises(ValueError, match=r"original already exists."):
-        dataset.rename_analysis(
-            analysis_name=second_name,
-            new_analysis_name="original",
+        project.rename_output(
+            output_name=second_name,
+            new_output_name="original",
         )
 
     unknown_name = "white"
     target_name = "sky"
-    with pytest.raises(ValueError, match=f"Unknown analysis {unknown_name}."):
-        dataset.rename_analysis(
-            analysis_name=unknown_name,
-            new_analysis_name=target_name,
+    with pytest.raises(ValueError, match=f"Unknown output {unknown_name}."):
+        project.rename_output(
+            output_name=unknown_name,
+            new_output_name=target_name,
         )
 
 
-def test_spectro_analysis_with_existing_ads(
+def test_spectro_transform_with_existing_ads(
     tmp_path: Path,
     audio_files: tuple[list[AudioFile], None],
 ) -> None:
-    dataset = Dataset(
+    project = Project(
         folder=tmp_path,
         strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
     )
 
-    dataset.build()
+    project.build()
 
-    analysis = Analysis(
-        analysis_type=AnalysisType.AUDIO,
-        data_duration=dataset.origin_dataset.duration / 2,
+    transform = Transform(
+        output_type=OutputType.AUDIO,
+        data_duration=project.origin_dataset.duration / 2,
         name="audio",
         sample_rate=24_000,
     )
 
-    dataset.run_analysis(analysis)
+    project.run(transform)
 
-    analysis_2 = Analysis(
-        AnalysisType.SPECTROGRAM,
+    transform_2 = Transform(
+        OutputType.SPECTROGRAM,
         name="spectro",
         fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
     )
 
-    dataset.run_analysis(analysis_2, audio_dataset=dataset.get_dataset("audio"))
+    project.run(transform_2, audio_dataset=project.get_output("audio"))
 
-    ads = dataset.get_dataset("audio")
-    sds = dataset.get_dataset("spectro")
+    ads = project.get_output("audio")
+    sds = project.get_output("spectro")
 
     assert type(ads) is AudioDataset
     assert type(sds) is SpectroDataset
@@ -1544,7 +1542,7 @@ def test_spectro_analysis_with_existing_ads(
         assert sd.audio_data == ad
 
     with pytest.raises(ValueError, match=r"Dataset 'clafoutis' not found."):
-        dataset.get_dataset("clafoutis")
+        project.get_output("clafoutis")
 
 
 def test_build_specific_files(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -1558,17 +1556,17 @@ def test_build_specific_files(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -
     base_folder = [p1, p2, p3, p4]
     dest_folder = []
 
-    dataset = Dataset(
+    project = Project(
         folder=tmp_path / "non_existing_folder",
         strptime_format="%y%m%d%H%M%S",
     )
 
     def mock_copyfile(file: Path, destination: Path) -> None:
-        assert destination.parent == dataset.folder
+        assert destination.parent == project.folder
         dest_folder.append(file)
 
     def mock_replace(self: Path, destination: Path) -> None:
-        assert destination.parent == dataset.folder
+        assert destination.parent == project.folder
         base_folder.remove(self)
         dest_folder.append(self)
 
@@ -1580,7 +1578,7 @@ def test_build_specific_files(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -
 
     monkeypatch.setattr("shutil.copyfile", mock_copyfile)
     monkeypatch.setattr(Path, "replace", mock_replace)
-    monkeypatch.setattr(Dataset, "build", build_mock)
+    monkeypatch.setattr(Project, "build", build_mock)
 
     mkdir_calls = []
 
@@ -1589,14 +1587,14 @@ def test_build_specific_files(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -
 
     monkeypatch.setattr(Path, "mkdir", mkdir_mock)
 
-    assert dataset.folder not in mkdir_calls
+    assert project.folder not in mkdir_calls
 
     # Build from files COPY MODE
-    dataset.build_from_files(
+    project.build_from_files(
         (p1, p2),
     )
 
-    assert dataset.folder in mkdir_calls
+    assert project.folder in mkdir_calls
 
     assert np.array_equal(base_folder, [p1, p2, p3, p4])
     assert np.array_equal(dest_folder, [p1, p2])
@@ -1607,7 +1605,7 @@ def test_build_specific_files(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -
     dest_folder = []
     built_files = []
 
-    dataset.build_from_files(
+    project.build_from_files(
         (p1, p2),
         move_files=True,
     )
@@ -1617,8 +1615,8 @@ def test_build_specific_files(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -
     assert np.array_equal(built_files, [p1, p2])
 
 
-def test_deserialize_analysis_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
-    ds = Dataset(
+def test_deserialize_output_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
+    project = Project(
         folder=Path("grizzly"),
         strptime_format="bear",
     )
@@ -1627,20 +1625,20 @@ def test_deserialize_analysis_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
     dummy_sds = SpectroDataset([])
     dummy_ltasds = LTASDataset([])
 
-    ds.datasets |= {
+    project.outputs |= {
         "original": {
             "class": "AudioDataset",
-            "analysis": "original",
+            "transform": "original",
             "dataset": Path("original.json"),
         },
         "spectro": {
             "class": "SpectroDataset",
-            "analysis": "spectro",
+            "transform": "spectro",
             "dataset": Path("spectro.json"),
         },
         "ltas": {
             "class": "LTASDataset",
-            "analysis": "ltas",
+            "transform": "ltas",
             "dataset": Path("ltas.json"),
         },
     }
@@ -1665,41 +1663,41 @@ def test_deserialize_analysis_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         lambda _: mock_from_json(dummy_ltasds),
     )
 
-    assert isinstance(ds.datasets["original"]["dataset"], Path)
+    assert isinstance(project.outputs["original"]["dataset"], Path)
 
     # Getting the dataset should deserialize it
-    _ = ds.get_dataset("original")
+    _ = project.get_output("original")
     assert json_calls[0] == 1
 
     # The deserialized dataset should be stored
-    assert isinstance(ds.datasets["original"]["dataset"], AudioDataset)
+    assert isinstance(project.outputs["original"]["dataset"], AudioDataset)
 
     # Getting the dataset again should use the cached dataset
-    _ = ds.get_dataset("original")
+    _ = project.get_output("original")
     assert json_calls[0] == 1
 
-    assert isinstance(ds.datasets["spectro"]["dataset"], Path)
+    assert isinstance(project.outputs["spectro"]["dataset"], Path)
 
     # Getting the dataset should deserialize it
-    _ = ds.get_dataset("spectro")
+    _ = project.get_output("spectro")
     assert json_calls[0] == 2
 
     # The deserialized dataset should be stored
-    assert isinstance(ds.datasets["spectro"]["dataset"], SpectroDataset)
+    assert isinstance(project.outputs["spectro"]["dataset"], SpectroDataset)
 
     # Getting the dataset again should use the cached dataset
-    _ = ds.get_dataset("spectro")
+    _ = project.get_output("spectro")
     assert json_calls[0] == 2
 
-    assert isinstance(ds.datasets["ltas"]["dataset"], Path)
+    assert isinstance(project.outputs["ltas"]["dataset"], Path)
 
     # Getting the dataset should deserialize it
-    _ = ds.get_dataset("ltas")
+    _ = project.get_output("ltas")
     assert json_calls[0] == 3
 
     # The deserialized dataset should be stored
-    assert isinstance(ds.datasets["ltas"]["dataset"], LTASDataset)
+    assert isinstance(project.outputs["ltas"]["dataset"], LTASDataset)
 
     # Getting the dataset again should use the cached dataset
-    _ = ds.get_dataset("ltas")
+    _ = project.get_output("ltas")
     assert json_calls[0] == 3

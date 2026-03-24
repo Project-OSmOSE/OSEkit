@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from osekit.core_api.base_item import BaseItem
-from osekit.core_api.spectro_file import SpectroFile
+from osekit.core.base_item import BaseItem
+from osekit.core.spectro_file import SpectroFile
 
 if TYPE_CHECKING:
     from pandas import Timedelta, Timestamp

@@ -13,20 +13,20 @@ from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
     TIMESTAMP_FORMATS_EXPORTED_FILES,
 )
-from osekit.core_api.audio_data import AudioData
-from osekit.core_api.audio_dataset import AudioDataset
-from osekit.core_api.audio_file import AudioFile
-from osekit.core_api.frequency_scale import Scale, ScalePart
-from osekit.core_api.instrument import Instrument
-from osekit.core_api.json_serializer import (
+from osekit.core.audio_data import AudioData
+from osekit.core.audio_dataset import AudioDataset
+from osekit.core.audio_file import AudioFile
+from osekit.core.frequency_scale import Scale, ScalePart
+from osekit.core.instrument import Instrument
+from osekit.core.json_serializer import (
     absolute_to_relative,
     relative_to_absolute,
     set_path_reference,
 )
-from osekit.core_api.spectro_data import SpectroData
-from osekit.core_api.spectro_dataset import SpectroDataset
-from osekit.core_api.spectro_file import SpectroFile
-from osekit.utils.audio_utils import Normalization
+from osekit.core.spectro_data import SpectroData
+from osekit.core.spectro_dataset import SpectroDataset
+from osekit.core.spectro_file import SpectroFile
+from osekit.utils.audio import Normalization
 
 
 @pytest.mark.parametrize(
@@ -939,8 +939,8 @@ def test_spectro_dataset_serialization(
     'C:\\absolute\\root\\relative\\target'
     >>> str(PureWindowsPath(relative_to_absolute(target_path=r'D:\absolute\\path\root\target', root_path=r'C:\absolute\root')))
     'C:\\absolute\\path\\root\\target'
-    >>> str(PurePosixPath(relative_to_absolute(target_path=r'C:/user/cool/data/audio/fun.wav', root_path=r'/home/dataset/cool/processed/stuff')))
-    '/home/dataset/cool/data/audio/fun.wav'
+    >>> str(PurePosixPath(relative_to_absolute(target_path=r'C:/user/cool/data/audio/fun.wav', root_path=r'/home/project/cool/processed/stuff')))
+    '/home/project/cool/data/audio/fun.wav'
 """
 
 
@@ -978,21 +978,21 @@ def test_spectro_dataset_serialization(
             id="absolute_windows_path_to_windows_root_takes_first_common_folder",
         ),
         pytest.param(
-            "C:/user/datasets/audio/analysis/audio/audio/audio.wav",
+            "C:/user/outputs/audio/transform/audio/audio/audio.wav",
             "C:/root/to/my_datasets/audio/some/stuff",
-            "C:/root/to/my_datasets/audio/analysis/audio/audio/audio.wav",
+            "C:/root/to/my_datasets/audio/transform/audio/audio/audio.wav",
             id="absolute_windows_path_to_windows_root_with_repeated_folders",
         ),
         pytest.param(
-            "C:/user/datasets/audio/analysis/audio/audio/audio.wav",
+            "C:/user/outputs/audio/transform/audio/audio/audio.wav",
             "/root/to/my_datasets/audio/some/stuff",
-            "/root/to/my_datasets/audio/analysis/audio/audio/audio.wav",
+            "/root/to/my_datasets/audio/transform/audio/audio/audio.wav",
             id="absolute_windows_path_to_posix_root_with_repeated_folders",
         ),
         pytest.param(
-            "audio/analysis/audio/audio/audio.wav",
+            "audio/transform/audio/audio/audio.wav",
             "/root/to/my_datasets/audio/some/stuff",
-            "/root/to/my_datasets/audio/some/stuff/audio/analysis/audio/audio/audio.wav",
+            "/root/to/my_datasets/audio/some/stuff/audio/transform/audio/audio/audio.wav",
             id="relative_path_to_posix_root_with_repeated_folders",
         ),
     ],

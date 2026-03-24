@@ -5,7 +5,7 @@ import os
 from pathlib import Path, PurePosixPath, PureWindowsPath  # noqa: F401
 from typing import Literal
 
-from osekit.utils.path_utils import is_absolute
+from osekit.utils.path import is_absolute
 
 
 def absolute_to_relative(
@@ -57,8 +57,8 @@ def relative_to_absolute(
     'C:\\absolute\\root\\relative\\target'
     >>> str(PureWindowsPath(relative_to_absolute(target_path=r'D:\absolute\path\root\target', root_path=r'C:\absolute\root')))
     'C:\\absolute\\path\\root\\target'
-    >>> str(PurePosixPath(relative_to_absolute(target_path=r'C:/user/cool/data/audio/fun.wav', root_path=r'/home/dataset/cool/processed/stuff')))
-    '/home/dataset/cool/data/audio/fun.wav'
+    >>> str(PurePosixPath(relative_to_absolute(target_path=r'C:/user/cool/data/audio/fun.wav', root_path=r'/home/project/cool/processed/stuff')))
+    '/home/project/cool/data/audio/fun.wav'
 
     """
     target_path, root_path = map(PureWindowsPath, (target_path, root_path))

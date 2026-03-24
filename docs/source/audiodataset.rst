@@ -3,5 +3,5 @@
 AudioDataset
 ------------
 
-.. autoclass:: osekit.core_api.audio_dataset.AudioDataset
+.. autoclass:: osekit.core.audio_dataset.AudioDataset
    :members:

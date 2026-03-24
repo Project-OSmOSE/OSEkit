@@ -5,7 +5,7 @@ from contextlib import nullcontext
 import pytest
 from pandas import Timestamp
 
-from osekit.core_api.event import Event
+from osekit.core.event import Event
 
 
 @pytest.mark.parametrize(

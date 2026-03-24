@@ -3,5 +3,5 @@
 BaseDataset
 -----------
 
-.. autoclass:: osekit.core_api.base_dataset.BaseDataset
+.. autoclass:: osekit.core.base_dataset.BaseDataset
    :members:

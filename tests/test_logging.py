@@ -10,7 +10,7 @@ import yaml
 from osekit import setup_logging
 from osekit.config import TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
 from osekit.logging_context import LoggingContext
-from osekit.public_api.dataset import Dataset
+from osekit.public.project import Project
 
 
 @pytest.fixture
@@ -117,7 +117,7 @@ def test_user_logging_config(
     assert (
         len(logging.getLogger("test_user_logger").handlers) > 0
     )  # This is a tweaky way of checking if the test_user_logger logger has already been created
-    assert len(logging.getLogger("dataset").handlers) == 0
+    assert len(logging.getLogger("project").handlers) == 0
 
     with caplog.at_level(logging.DEBUG, logger="test_user_logger"):
         logging.getLogger("test_user_logger").debug("User debug log")
@@ -132,7 +132,7 @@ def test_default_logging_config(
     tmp_path: Path,
 ) -> None:
     assert (
-        len(logging.getLogger("dataset").handlers) > 0
+        len(logging.getLogger("project").handlers) > 0
     )  # This is a tweaky way of checking if the test_user_logger logger has already been created
     assert len(logging.getLogger("test_user_logger").handlers) == 0
 
@@ -167,22 +167,22 @@ def test_logging_context(caplog: pytest.fixture) -> None:
     assert caplog.records[2].message == "From default logger again"
 
 
-def test_public_api_dataset_logger(
+def test_project_logger(
     audio_files: pytest.fixture,
     tmp_path: pytest.fixture,
 ) -> None:
-    dataset = Dataset(
+    project = Project(
         folder=tmp_path,
         strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
     )
 
     # Without setting the logging up, the PublicAPI should log directly to the root logger
-    dataset.build()
-    assert dataset.logger == logging.getLogger()
-    dataset.reset()
+    project.build()
+    assert project.logger == logging.getLogger()
+    project.reset()
 
-    # With setting the logging up, the PublicAPI should log to the dataset's logger
+    # With setting the logging up, the PublicAPI should log to the project's logger
     setup_logging()
-    dataset.build()
-    assert dataset.logger != logging.getLogger()
-    assert dataset.logger.parent == logging.getLogger("dataset")
+    project.build()
+    assert project.logger != logging.getLogger()
+    assert project.logger.parent == logging.getLogger("project")

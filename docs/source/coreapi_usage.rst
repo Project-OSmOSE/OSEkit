@@ -6,13 +6,13 @@ Usage
 Audio File
 ^^^^^^^^^^
 
-To turn an audio file into an **OSEkit** ``AudioFile`` (represented by the :class:`osekit.core_api.audio_file.AudioFile` class), all you need is the path to the file and a begin timestamp.
+To turn an audio file into an **OSEkit** ``AudioFile`` (represented by the :class:`osekit.core.audio_file.AudioFile` class), all you need is the path to the file and a begin timestamp.
 
 Such begin timestamp can either be specified (as a :class:`pandas.Timestamp` instance), or parsed from the audio file name by specifing the `strptime format <https://strftime.org/>`_:
 
 .. code-block:: python
 
-    from osekit.core_api.audio_file import AudioFile
+    from osekit.core.audio_file import AudioFile
     from pathlib import Path
 
     af = AudioFile(
@@ -26,18 +26,18 @@ Audio Data
 Design
 """"""
 
-The :class:`osekit.core_api.audio_data.AudioData` class represent a chunk of audio taken between two specific timestamps from one or more `AudioFile` instances.
+The :class:`osekit.core.audio_data.AudioData` class represent a chunk of audio taken between two specific timestamps from one or more `AudioFile` instances.
 
 This class offers means of easily resample the data and access it on-demand (with an optimized I/O workflow to minimize the file openings/closings).
 
-To create an ``AudioData`` from ``AudioFiles``, use the :meth:`osekit.core_api.audio_data.AudioData.from_files` class method.
+To create an ``AudioData`` from ``AudioFiles``, use the :meth:`osekit.core.audio_data.AudioData.from_files` class method.
 
 Example for an ``AudioData`` representing the first 2 seconds of the ``foo/7189.230405154906.wav`` audio file:
 
 .. code-block:: python
 
     from pandas import Timestamp, Timedelta
-    from osekit.core_api.audio_data import AudioData
+    from osekit.core.audio_data import AudioData
 
     ad = AudioData.from_files(
     files=[af],
@@ -104,16 +104,16 @@ Item 4
 Reading data
 """"""""""""
 
-The :meth:`osekit.core_api.audio_data.AudioData.get_value` method returns a `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ that contains the wav values of the audio data.
+The :meth:`osekit.core.audio_data.AudioData.get_value` method returns a `numpy.ndarray <https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html>`_ that contains the wav values of the audio data.
 
-The data is fetched seamlessly on-demand from the audio file(s). The opening/closing of the audio files is optimized thanks to a :class:`osekit.core_api.audio_file_manager.AudioFileManager` instance.
+The data is fetched seamlessly on-demand from the audio file(s). The opening/closing of the audio files is optimized thanks to a :class:`osekit.core.audio_file_manager.AudioFileManager` instance.
 
 Eventual time gap between audio items are filled with ``0.`` values.
 
 Normalization
 """""""""""""
 
-The fetched audio data can be normalized according to the presets given by the :class:`osekit.utils.audio_utils.Normalization` flag:
+The fetched audio data can be normalized according to the presets given by the :class:`osekit.utils.audio.Normalization` flag:
 
 .. list-table:: Normalization presets
    :widths: 10 10
@@ -130,13 +130,13 @@ The fetched audio data can be normalized according to the presets given by the :
    * - ``Normalization.ZSCORE``
      - :math:`\frac{ x-\overline{x} }{\sigma (x)}`
 
-To normalize the data, simply set the :attr:`osekit.core_api.audio_data.AudioData.normalization` property to the
+To normalize the data, simply set the :attr:`osekit.core.audio_data.AudioData.normalization` property to the
 requested normalization flag:
 
 .. code-block:: python
 
-    from osekit.core_api.audio_data.AudioData import AudioData
-    from osekit.utils.audio_utils.normalization import Normalization
+    from osekit.core.audio_data.AudioData import AudioData
+    from osekit.utils.audio.normalization import Normalization
 
     ad = AudioData(...)
     ad.normalization = Normalization.ZSCORE # Note: normalization also is a parameter of the AudioData initializer
@@ -149,7 +149,7 @@ requested normalization flag:
 
     .. code-block:: python
 
-        from osekit.utils.audio_utils.normalization import Normalization
+        from osekit.utils.audio.normalization import Normalization
 
         dc_peak = Normalization.DC_REJECT | Normalization.PEAK
 
@@ -159,7 +159,7 @@ requested normalization flag:
 
     .. code-block:: python
 
-        from osekit.utils.audio_utils.normalization import Normalization
+        from osekit.utils.audio.normalization import Normalization
 
         incorrect_normalization = Normalization.RAW | Normalization.PEAK
         incorrect_normalization = Normalization.DC_REJECT | Normalization.RAW | Normalization.PEAK
@@ -169,16 +169,16 @@ requested normalization flag:
 Calibration
 """""""""""
 
-The :class:`osekit.core_api.instrument.Instrument` class can be used to provide calibration info to your audio data.
+The :class:`osekit.core.instrument.Instrument` class can be used to provide calibration info to your audio data.
 This can be used to convert raw WAV data to the recorded acoustic pressure.
 
-An ``Instrument`` instance can be attached to an ``AudioData``. Then, the :meth:`osekit.core_api.audio_data.AudioData.get_value_calibrated` method
+An ``Instrument`` instance can be attached to an ``AudioData``. Then, the :meth:`osekit.core.audio_data.AudioData.get_value_calibrated` method
 allows for retrieving the data in the shape of the recorded acoustic pressure.
 
 .. code-block:: python
 
-    from osekit.core_api.audio_data import AudioData
-    from osekit.core_api.instrument import Instrument
+    from osekit.core.audio_data import AudioData
+    from osekit.core.instrument import Instrument
     import numpy as np
 
     instrument = Instrument(end_to_end_db = 150) # The raw 1. WAV value equals 150 dB SPL re 1 uPa
@@ -191,13 +191,13 @@ allows for retrieving the data in the shape of the recorded acoustic pressure.
 Resampling
 """"""""""
 
-``AudioData`` can be resampled just by modifying the :attr:`osekit.core_api.audio_data.AudioData.sample_rate` field.
+``AudioData`` can be resampled just by modifying the :attr:`osekit.core.audio_data.AudioData.sample_rate` field.
 
 Modifying the sample rate will not access the data, but the data will be resampled on the fly when it is requested:
 
 .. code-block:: python
 
-    from osekit.core_api.audio_data import AudioData
+    from osekit.core.audio_data import AudioData
 
     ad = AudioData(...)
     ad.sample_rate = 48_000 # Resample the signal at 48 kHz. Nothing happens yet
@@ -207,7 +207,7 @@ Modifying the sample rate will not access the data, but the data will be resampl
 Audio Dataset
 ^^^^^^^^^^^^^
 
-The :class:`osekit.core_api.audio_dataset.AudioDataset` class enables the instantiation and manipulation of large amounts of
+The :class:`osekit.core.audio_dataset.AudioDataset` class enables the instantiation and manipulation of large amounts of
 ``AudioData`` objects with simple operations.
 
 Instantiation
@@ -216,14 +216,14 @@ Instantiation
 The constructor of the ``AudioDataset`` class accepts a list of ``AudioData`` as parameter.
 
 But this is not the only way to create an audio dataset.
-The :meth:`osekit.core_api.audio_dataset.AudioDataset.from_folder` class method allows to easily instantiate
+The :meth:`osekit.core.audio_dataset.AudioDataset.from_folder` class method allows to easily instantiate
 an ``AudioDataset`` from a given folder containing audio files:
 
 .. code-block:: python
 
     from pathlib import Path
-    from osekit.core_api.audio_dataset import AudioDataset
-    from osekit.core_api.instrument import Instrument
+    from osekit.core.audio_dataset import AudioDataset
+    from osekit.core.instrument import Instrument
     from pandas import Timestamp, Timedelta
 
     folder = Path(r"...")
@@ -241,7 +241,7 @@ an ``AudioDataset`` from a given folder containing audio files:
 The resulting ``AudioDataset`` will contain 10s-long ``AudioData`` ranging from ``2009-01-06 12:00:00`` to ``2009-01-06 14:00:00``.
 
 This is the default behaviour, but other ways of computing the ``AudioData`` time locations are available through the
-:meth:`osekit.core_api.audio_dataset.AudioDataset.from_folder` ``mode`` parameter (see the API documentation for more info).
+:meth:`osekit.core.audio_dataset.AudioDataset.from_folder` ``mode`` parameter (see the API documentation for more info).
 
 You don't have to worry about the shape of the original audio files: audio data will be fetched seamlessly in the corresponding
 file(s) whenever you need it.
@@ -258,8 +258,8 @@ Each next valid audio file will be considered to start immediately after the end
 .. code-block:: python
 
     from pathlib import Path
-    from osekit.core_api.audio_dataset import AudioDataset
-    from osekit.core_api.instrument import Instrument
+    from osekit.core.audio_dataset import AudioDataset
+    from osekit.core.instrument import Instrument
     from pandas import Timestamp, Timedelta
 
     folder = Path(r"...")
@@ -288,7 +288,7 @@ If one wanted to resample these 10s-long audio data and export them as wav files
     ads.sample_rate = 48_000 # The sample rate of all AudioData will be edited
     ads.write(folder / "output") # All audio data will be exported to wav files in that folder
 
-All the ``AudioData`` constituting the ``AudioDataset`` are accessible through the :attr:`osekit.core_api.audio_dataset.AudioDataset.data`
+All the ``AudioData`` constituting the ``AudioDataset`` are accessible through the :attr:`osekit.core.audio_dataset.AudioDataset.data`
 field:
 
 .. code-block:: python
@@ -305,14 +305,14 @@ field:
 Spectro Data
 ^^^^^^^^^^^^
 
-The :class:`osekit.core_api.spectro_data.SpectroData` class allows to perform spectral computations and to plot spectrograms from ``AudioData`` objects.
+The :class:`osekit.core.spectro_data.SpectroData` class allows to perform spectral computations and to plot spectrograms from ``AudioData`` objects.
 
 The most straightforward way to instantiate a ``SpectroData`` is from an ``AudioData`` and a `scipy.signal.ShortTimeFFT <https://docs.scipy.org/doc//scipy/reference/generated/scipy.signal.ShortTimeFFT.html>`_ instance:
 
 .. code-block:: python
 
-    from osekit.core_api.audio_data import AudioData
-    from osekit.core_api.spectro_data import SpectroData
+    from osekit.core.audio_data import AudioData
+    from osekit.core.spectro_data import SpectroData
     from scipy.signal import ShortTimeFFT
     from scipy.signal.windows import hamming
 
@@ -331,14 +331,14 @@ Once again, no audio has yet been fetched: everything happens only on-demand.
 NPZ matrices
 """"""""""""
 
-The ``SpectroData`` object can be used to compute the spectrum matrices of the ``AudioData`` with the :meth:`osekit.core_api.spectro_data.SpectroData.get_value` method.
+The ``SpectroData`` object can be used to compute the spectrum matrices of the ``AudioData`` with the :meth:`osekit.core.spectro_data.SpectroData.get_value` method.
 
-The :attr:`osekit.core_api.spectro_data.SpectroData.sx_dtype` property can be set to either ``complex`` (default) or ``float`` to return either the spectrum matrices as complex numbers or absolute values, respectively.
+The :attr:`osekit.core.spectro_data.SpectroData.sx_dtype` property can be set to either ``complex`` (default) or ``float`` to return either the spectrum matrices as complex numbers or absolute values, respectively.
 
-The spectrum matrices can be converted to decibels thanks to the :meth:`osekit.core_api.spectro_data.SpectroData.get_db_value` method.
-This method will convert the matrix values either to dB SPL (re ``Instrument.P_REF``) if an :ref:`Instrument <instrument_calibration>` was provided to the ``AudioData`` or to dB FS otherwise.
+The spectrum matrices can be converted to decibels thanks to the :meth:`osekit.core.spectro_data.SpectroData.get_db_value` method.
+This method will convert the spectrum values either to dB SPL (re ``Instrument.P_REF``) if an :ref:`Instrument <instrument_calibration>` was provided to the ``AudioData`` or to dB FS otherwise.
 
-The spectrum matrices can then be exported to npz files thanks to the :meth:`osekit.core_api.spectro_data.SpectroData.write` method.
+The spectrum matrices can then be exported to npz files thanks to the :meth:`osekit.core.spectro_data.SpectroData.write` method.
 
 .. code-block:: python
 
@@ -354,14 +354,14 @@ The spectrum matrices can then be exported to npz files thanks to the :meth:`ose
 Plot and export
 """""""""""""""
 
-Spectrograms can be plotted from the ``SpectroData`` objects thanks to the :meth:`osekit.core_api.spectro_data.SpectroData.plot` method.
+Spectrograms can be plotted from the ``SpectroData`` objects thanks to the :meth:`osekit.core.spectro_data.SpectroData.plot` method.
 
 OSEkit uses `pyplot <https://matplotlib.org/stable/tutorials/pyplot.html>`_ for plotting spectrograms. A pyplot `Axes <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.html#matplotlib.axes.Axes>`_
 can be provided to the ``SpectroData.plot()`` method to specify an Axes in which to plot the spectrogram:
 
 .. code-block:: python
 
-    from osekit.core_api.spectro_data import SpectroData
+    from osekit.core.spectro_data import SpectroData
     import matplotlib.pyplot as plt
 
     sd = SpectroData(...) # See SpectroData documentation
@@ -376,14 +376,14 @@ can be provided to the ``SpectroData.plot()`` method to specify an Axes in which
 Custom frequency scales
 """""""""""""""""""""""
 
-The y-axis of the spectrograms can be parametrized thanks to the :class:`osekit.core_api.frequency_scale.Scale` class.
+The y-axis of the spectrograms can be parametrized thanks to the :class:`osekit.core.frequency_scale.Scale` class.
 
-The custom ``Scale`` is made of ``ScalePart`` (:class:`osekit.core_api.frequency_scale.ScalePart`). Each ``ScalePart``
+The custom ``Scale`` is made of ``ScalePart`` (:class:`osekit.core.frequency_scale.ScalePart`). Each ``ScalePart``
 correspond to a given frequency range on a given area of the y-axis:
 
 .. code-block:: python
 
-    from osekit.core_api.frequency_scale import Scale, ScalePart
+    from osekit.core.frequency_scale import Scale, ScalePart
 
     scale = Scale(
         [
@@ -423,7 +423,7 @@ The resulting figure presents the full-scale spectrogram at the top (from 0 to 7
 LTAS Data
 ^^^^^^^^^
 
-OSEkit provides the :class:`osekit.core_api.ltas_data.LTASData` class for computing and plotting LTAS (**L**\ ong-\ **T**\ erm **A**\ verage **S**\ pectrum).
+OSEkit provides the :class:`osekit.core.ltas_data.LTASData` class for computing and plotting LTAS (**L**\ ong-\ **T**\ erm **A**\ verage **S**\ pectrum).
 
 LTAS are suitable when a spectrum is computed over a very long time and that the spectrum matrix time dimension reach a really high value.
 In that case, time bins can be averaged to form a LTAS, which time resolution is lower than that of the original spectrum.
@@ -434,7 +434,7 @@ The visualization below depicts the process: the LTAS is computed with a target 
 Yellow rectangles depict the audio data (the x-axis being the time axis), and the number in the lower right
 corner depicts the number of time bins in the spectrum matrix for this audio data.
 The audio is recursively split in ``n_bins`` parts (it is split in 3 in the
-representation instead of 3000 for clarity purposes) until the number of time bins in the matrix gets below ``n_bins``.
+representation instead of 3000 for clarity purposes) until the number of time bins in the spectrum gets below ``n_bins``.
 Then, these spectrum parts are computed (hatched rectangles) and averaged across the time axis (filled rectangles).
 
 .. image:: _static/ltas/ltas.gif
@@ -453,4 +453,4 @@ should be provided:
     ltas.plot()
     plt.show()
 
-A ``SpectroData`` object can be turned into a ``LTASData`` thanks to the :meth:`osekit.core_api.ltas_data.LTASData.from_spectro_data` method.
+A ``SpectroData`` object can be turned into a ``LTASData`` thanks to the :meth:`osekit.core.ltas_data.LTASData.from_spectro_data` method.

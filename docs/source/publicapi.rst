@@ -1,11 +1,11 @@
 .. _publicapi:
 
-Public API
-----------
+Public
+------
 
 .. toctree::
    :maxdepth: 1
 
-   dataset
-   analysis
-   export_analysis
+   project
+   transform
+   export_transform

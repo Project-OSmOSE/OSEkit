@@ -238,8 +238,8 @@ def is_datetime_template_valid(datetime_template: str) -> bool:
         if index == len(datetime_template) - 1:
             return False
         if not any(
-                datetime_template[index + 1: index + 1 + id_len] in strftime_identifiers
-                for id_len in strftime_identifier_lengths
+            datetime_template[index + 1 : index + 1 + id_len] in strftime_identifiers
+            for id_len in strftime_identifier_lengths
         ):
             return False
     return True

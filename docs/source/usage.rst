@@ -4,7 +4,7 @@
 ========
 
 In **OSEkit**, data is manipulated as **events** (which means something that has absolute **begin** and **end** timestamps).
-All data classes from the API inherit from the :class:`osekit.core_api.event.Event` class, allowing for easy timestamp-based manipulations of different types of data.
+All data classes from the API inherit from the :class:`osekit.core.event.Event` class, allowing for easy timestamp-based manipulations of different types of data.
 
 The package combines two APIs:
 

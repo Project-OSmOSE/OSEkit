@@ -3,24 +3,24 @@ from __future__ import annotations
 from enum import Flag, auto
 from typing import TYPE_CHECKING, Literal
 
-from osekit.utils.audio_utils import Normalization
+from osekit.utils.audio import Normalization
 
 if TYPE_CHECKING:
     from pandas import Timedelta, Timestamp
     from scipy.signal import ShortTimeFFT
 
-    from osekit.core_api.frequency_scale import Scale
+    from osekit.core.frequency_scale import Scale
 
 
-class AnalysisType(Flag):
-    """Enum of flags that should be used to specify the type of analysis to run.
+class OutputType(Flag):
+    """Enum of flags that should be used to specify the type of transform to run.
 
     ``AUDIO``:
-        Will add an ``AudioDataset`` to the datasets and write the reshaped audio files
+        Will add an ``AudioDataset`` to the outputs and write the reshaped audio files
         to disk.
         The new ``AudioDataset`` will be linked to the reshaped audio files rather
         than to the original files.
-    ``MATRIX``:
+    ``SPECTRUM``:
         Will write the ``npz`` ``SpectroFiles`` to disk and link the ``SpectroDataset``
         to these files.
     ``SPECTROGRAM``:
@@ -29,43 +29,43 @@ class AnalysisType(Flag):
         Will write the ``npz`` welches to disk.
 
     Multiple flags can be enabled thanks to the logical or ``|`` operator:
-    ``AnalysisType.AUDIO | AnalysisType.SPECTROGRAM`` will export both audio files and
+    ``OutputType.AUDIO | OutputType.SPECTROGRAM`` will export both audio files and
     spectrogram images.
 
     >>> # Exporting both the reshaped audio and the spectrograms
     >>> # (without the npz matrices):
-    >>> export = AnalysisType.AUDIO | AnalysisType.SPECTROGRAM
-    >>> AnalysisType.AUDIO in export
+    >>> export = OutputType.AUDIO | OutputType.SPECTROGRAM
+    >>> OutputType.AUDIO in export
     True
-    >>> AnalysisType.SPECTROGRAM in export
+    >>> OutputType.SPECTROGRAM in export
     True
-    >>> AnalysisType.MATRIX in export
+    >>> OutputType.SPECTRUM in export
     False
 
     """
 
     AUDIO = auto()
-    MATRIX = auto()
+    SPECTRUM = auto()
     SPECTROGRAM = auto()
     WELCH = auto()
 
 
-class Analysis:
-    """Class that contains all parameter of an analysis.
+class Transform:
+    """Class that contains all parameter of a transform.
 
-    Analysis instances are passed to the public API dataset, which runs the analysis.
-    The ``Analysis`` object contains all info on the analysis to be done: the type(s) of
-    core_api dataset(s) that will be created and added to the ``Dataset.datasets``
+    Transform instances are passed to the public API project, which runs the transform.
+    The ``Transform`` object contains all info on the transform to be done: the type(s) of
+    core dataset(s) that will be created and added to the ``Project.outputs``
     property and which output files will be written to disk
     (reshaped audio files, ``npz`` spectra matrices, ``png`` spectrograms...) depend
-    on the ``analysis_type`` parameter.
-    The ``Analysis`` instance also contains the technical parameters of the analyses
+    on the ``output_type`` parameter.
+    The ``Transform`` instance also contains the technical parameters of the transforms
     (begin/end times, sft, sample rate...).
     """
 
     def __init__(
         self,
-        analysis_type: AnalysisType,
+        output_type: OutputType,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         data_duration: Timedelta | None = None,
@@ -81,21 +81,21 @@ class Analysis:
         scale: Scale | None = None,
         nb_ltas_time_bins: int | None = None,
     ) -> None:
-        """Initialize an ``Analysis`` object.
+        """Initialize an ``Transform`` object.
 
         Parameters
         ----------
-        analysis_type: AnalysisType
-            The type of analysis to run.
-            See ``AnalysisType`` docstring for more info.
+        output_type: OutputType
+            The type of transform to run.
+            See ``OutputType`` docstring for more info.
         begin: Timestamp | None
-            The begin of the analysis dataset.
+            The begin of the transform dataset.
             Defaulted to the begin of the original dataset.
         end: Timestamp | None
-            The end of the analysis dataset.
+            The end of the transform dataset.
             Defaulted to the end of the original dataset.
         data_duration: Timedelta | None
-            Duration of the data within the analysis dataset.
+            Duration of the data within the transform dataset.
             If provided, audio data will be evenly distributed between
             ``begin`` and ``end``.
             Else, one data object will cover the whole time period.
@@ -113,35 +113,35 @@ class Analysis:
         overlap: float
             Overlap percentage between consecutive data.
         sample_rate: float | None
-            Sample rate of the new analysis data.
+            Sample rate of the new transform data.
             Audio data will be resampled if provided, else the sample rate
             will be set to the one of the original dataset.
         normalization: Normalization
             The type of normalization to apply to the audio data.
         name: str | None
-            Name of the analysis dataset.
-            Defaulted as the begin timestamp of the analysis dataset.
-            If both audio and spectro analyses are selected, the audio
-            analysis dataset name will be suffixed with ``"_audio"``.
+            Name of the transform dataset.
+            Defaulted as the begin timestamp of the transform dataset.
+            If both audio and spectro outputs are selected, the audio
+            transform dataset name will be suffixed with ``"_audio"``.
         subtype: str | None
             Subtype of the written audio files as provided by the soundfile module.
             Defaulted as the default ``16-bit PCM`` for ``wav`` audio files.
-            This parameter has no effect if ``Analysis.AUDIO`` is not in analysis.
+            This parameter has no effect if ``Transform.AUDIO`` is not in transform.
         fft: ShortTimeFFT | None
             FFT to use for computing the spectra.
-            This parameter is mandatory if either ``Analysis.MATRIX``
-            or ``Analysis.SPECTROGRAM`` is in analysis.
-            This parameter has no effect if neither ``Analysis.MATRIX``
-            nor ``Analysis.SPECTROGRAM`` is in the analysis.
+            This parameter is mandatory if either ``Transform.SPECTRUM``
+            or ``Transform.SPECTROGRAM`` is in transform.
+            This parameter has no effect if neither ``Transform.SPECTRUM``
+            nor ``Transform.SPECTROGRAM`` is in the transform.
         v_lim: tuple[float, float] | None
             Limits (in ``dB``) of the colormap used for plotting the spectrogram.
-            Has no effect if ``Analysis.SPECTROGRAM`` is not in analysis.
+            Has no effect if ``Transform.SPECTROGRAM`` is not in transform.
         colormap: str | None
             Colormap to use for plotting the spectrogram.
-            Has no effect if ``Analysis.SPECTROGRAM`` is not in analysis.
-        scale: osekit.core_api.frequecy_scale.Scale
+            Has no effect if ``Transform.SPECTROGRAM`` is not in transform.
+        scale: osekit.core.frequecy_scale.Scale
             Custom frequency scale to use for plotting the spectrogram.
-            Has no effect if ``Analysis.SPECTROGRAM`` is not in analysis.
+            Has no effect if ``Transform.SPECTROGRAM`` is not in transform.
         nb_ltas_time_bins: int | None
             If ``None``, the spectrogram will be computed regularly.
             If specified, the spectrogram will be computed as LTAS, with the value
@@ -150,7 +150,7 @@ class Analysis:
         """
         self._validate_sample_rate(sample_rate=sample_rate, fft=fft)
 
-        self.analysis_type = analysis_type
+        self.output_type = output_type
         self.begin = begin
         self.end = end
         self.data_duration = data_duration
@@ -172,36 +172,36 @@ class Analysis:
 
     @property
     def is_spectro(self) -> bool:
-        """Return ``True`` if the analysis contains spectral computations, ``False`` otherwise."""
+        """Return ``True`` if the transform contains spectral computations, ``False`` otherwise."""
         return any(
-            flag in self.analysis_type
+            flag in self.output_type
             for flag in (
-                AnalysisType.MATRIX,
-                AnalysisType.SPECTROGRAM,
-                AnalysisType.WELCH,
+                OutputType.SPECTRUM,
+                OutputType.SPECTROGRAM,
+                OutputType.WELCH,
             )
         )
 
     @property
     def sample_rate(self) -> float | None:
-        """Return the sample rate of the analysis."""
+        """Return the sample rate of the transform."""
         return self._sample_rate
 
     @sample_rate.setter
     def sample_rate(self, value: float | None) -> None:
-        """Set the sample rate of the analysis."""
+        """Set the sample rate of the transform."""
         if self.fft is not None and value is not None:
             self.fft.fs = value
         self._sample_rate = value
 
     @property
     def fft(self) -> ShortTimeFFT | None:
-        """Return the FFT used in the analysis."""
+        """Return the FFT used in the transform."""
         return self._fft
 
     @fft.setter
     def fft(self, value: ShortTimeFFT | None) -> None:
-        """Set the FFT used in the analysis."""
+        """Set the FFT used in the transform."""
         if hasattr(self, "_sample_rate"):
             self._validate_sample_rate(sample_rate=self.sample_rate, fft=value)
         self._fft = value
@@ -218,7 +218,7 @@ class Analysis:
         if fft.fs == sample_rate:
             return
         msg = (
-            rf"The sample rate of the analysis ({sample_rate} Hz) "
+            rf"The sample rate of the transform ({sample_rate} Hz) "
             rf"does not match the sampling frequency of the "
             rf"fft ({fft.fs} Hz)"
         )

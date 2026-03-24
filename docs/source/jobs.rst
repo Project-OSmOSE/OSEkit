@@ -1,7 +1,7 @@
 Working with jobs
 -----------------
 
-**OSEkit** can be set to send analyses instructions to be computed on a remote server
+**OSEkit** can be set to send transform instructions to be computed on a remote server
 through the PBS queuing system.
 
 This feature has mainly be thought for the Public API, but it can nonetheless be used for
@@ -13,14 +13,14 @@ Public API
 ^^^^^^^^^^
 
 Running Public API Analyses through PBS jobs only requires adding a :class:`osekit.utils.job.JobBuilder`
-instance to the :attr:`osekit.public_api.dataset.Dataset.job_builder` attribute:
+instance to the :attr:`osekit.public.project.Project.job_builder` attribute:
 
 .. code-block:: python
 
     from osekit.utils.job import JobConfig, JobBuilder
-    from osekit.public_api.dataset import Dataset
+    from osekit.public.project import Project
 
-    dataset = Dataset(...) # See the Dataset documentation
+    project = Project(...) # See the Project documentation
 
     job_config = JobConfig(
         nb_nodes=1, # Number of nodes on which the job runs
@@ -31,15 +31,15 @@ instance to the :attr:`osekit.public_api.dataset.Dataset.job_builder` attribute:
         queue="omp" # Queue in which the job will be submitted
     )
 
-    dataset.job_builder = JobBuilder(
+    project.job_builder = JobBuilder(
         config=job_config,
     )
 
     # Now the dataset has a non-None job_builder attribute,
-    # running an analysis will write a PBS file in the logs directory
+    # running a transform will write a PBS file in the logs directory
     # and submit it to the requested queue.
 
-    dataset.run_analysis(...) # See the Analysis documentation
+    project.run(...) # See the Transform documentation
 
 
 Core API
@@ -48,19 +48,19 @@ Core API
 Exporting Core API datasets with jobs is doable by explicitly instantiating a :class:`osekit.utils.job.Job` object.
 
 The export parameters are specified in the ``script_args`` parameter of the ``Job`` constructor,
-and follow the console arguments of the :mod:`osekit.public_api.export_analysis` script.
+and follow the console arguments of the :mod:`osekit.public.export` script.
 
 .. code-block:: python
 
     import os
 
-    from osekit.core_api.spectro_dataset import SpectroDataset
-    from osekit.core_api.audio_dataset import AudioDataset
+    from osekit.core.spectro_dataset import SpectroDataset
+    from osekit.core.audio_dataset import AudioDataset
     from osekit.utils.job import JobConfig, Job
 
     # Some Public API imports are required
-    from osekit.public_api.analysis import AnalysisType
-    from osekit.public_api import export_analysis
+    from osekit.public.transform import OutputType
+    from osekit.public import export
 
     ads = AudioDataset(...) # See the AudioDataset doc
     sds = SpectroDataset(...) # See the SpectroDataset doc
@@ -75,13 +75,13 @@ and follow the console arguments of the :mod:`osekit.public_api.export_analysis`
     sds.write_json(sds.folder/"output")
 
     # Export specifications
-    # All parameters are listed in this example, but all parameters other than analysis have default values
+    # All parameters are listed in this example, but all parameters other than transform have default values
     args = {
-        "analysis": (AnalysisType.AUDIO|AnalysisType.SPECTROGRAM).value,
+        "output_type": (OutputType.AUDIO|OutputType.SPECTROGRAM).value,
         "ads-json": ads.foler/"output"/f"{ads.name}.json",
         "sds-json": sds.foler/"output"/f"{sds.name}.json",
         "subtype": "FLOAT",
-        "matrix-folder-path": "None", # Folder in which npz matrices are exported
+        "spectrum-folder-path": "None", # Folder in which npz matrices are exported
         "spectrogram-folder-path": sds.folder/"output", # Folder in which png spectrograms are exported
         "welch-folder-path": "None",  # Folder in which npz welch matrices are exported
         "first": 0, # First data of the dataset to be exported
@@ -106,7 +106,7 @@ and follow the console arguments of the :mod:`osekit.public_api.export_analysis`
     )
 
     job = Job(
-        script_path = Path(export_analysis.__file__),
+        script_path = Path(export.__file__),
         script_args=args,
         config=job_config,
         name="test_job_core",

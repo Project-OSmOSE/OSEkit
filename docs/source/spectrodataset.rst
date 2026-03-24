@@ -3,5 +3,5 @@
 SpectroDataset
 --------------
 
-.. autoclass:: osekit.core_api.spectro_dataset.SpectroDataset
+.. autoclass:: osekit.core.spectro_dataset.SpectroDataset
    :members:

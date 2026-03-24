@@ -11,12 +11,12 @@ from typing import TYPE_CHECKING
 
 from scipy.signal import ShortTimeFFT
 
-from osekit.core_api.frequency_scale import Scale
-from osekit.core_api.ltas_data import LTASData
-from osekit.core_api.spectro_dataset import SpectroDataset
+from osekit.core.frequency_scale import Scale
+from osekit.core.ltas_data import LTASData
+from osekit.core.spectro_dataset import SpectroDataset
 
 if TYPE_CHECKING:
-    from osekit.core_api.audio_dataset import AudioDataset
+    from osekit.core.audio_dataset import AudioDataset
 
 
 class LTASDataset(SpectroDataset):

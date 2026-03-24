@@ -19,9 +19,9 @@ from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
 )
-from osekit.core_api.audio_data import AudioData
-from osekit.core_api.audio_file import AudioFile
-from osekit.utils.audio_utils import generate_sample_audio
+from osekit.core.audio_data import AudioData
+from osekit.core.audio_file import AudioFile
+from osekit.utils.audio import generate_sample_audio
 
 
 @pytest.fixture

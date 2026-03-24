@@ -7,10 +7,10 @@ import numpy as np
 import pytest
 
 from osekit.audio_backend.audio_file_manager import AudioFileManager
-from osekit.utils.audio_utils import generate_sample_audio
+from osekit.utils.audio import generate_sample_audio
 
 if TYPE_CHECKING:
-    from osekit.core_api.audio_file import AudioFile
+    from osekit.core.audio_file import AudioFile
 
 
 @pytest.mark.parametrize(

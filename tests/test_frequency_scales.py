@@ -3,7 +3,7 @@ import contextlib
 import numpy as np
 import pytest
 
-from osekit.core_api.frequency_scale import Scale, ScalePart
+from osekit.core.frequency_scale import Scale, ScalePart
 
 
 @pytest.mark.parametrize(

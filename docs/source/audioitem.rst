@@ -3,5 +3,5 @@
 AudioItem
 ---------
 
-.. autoclass:: osekit.core_api.audio_item.AudioItem
+.. autoclass:: osekit.core.audio_item.AudioItem
    :members:

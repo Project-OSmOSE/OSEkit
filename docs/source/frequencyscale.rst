@@ -3,8 +3,8 @@
 Custom Frequency Scale
 ----------------------
 
-.. autoclass:: osekit.core_api.frequency_scale.Scale
+.. autoclass:: osekit.core.frequency_scale.Scale
    :members:
 
-.. autoclass:: osekit.core_api.frequency_scale.ScalePart
+.. autoclass:: osekit.core.frequency_scale.ScalePart
    :members:

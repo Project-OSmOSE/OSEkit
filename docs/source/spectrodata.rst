@@ -3,5 +3,5 @@
 SpectroData
 -----------
 
-.. autoclass:: osekit.core_api.spectro_data.SpectroData
+.. autoclass:: osekit.core.spectro_data.SpectroData
    :members:

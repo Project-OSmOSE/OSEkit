@@ -1,7 +1,7 @@
-"""The job module provides classes that run analyses on a remote server.
+"""The job module provides classes that run transforms on a remote server.
 
-If a ``JobBuilder`` is attached to a Public API ``Dataset``,
-the analyses will run through jobs, with writting/submitting of ``pbs`` files.
+If a ``JobBuilder`` is attached to a Public API ``Project``,
+the transforms will run through jobs, with writting/submitting of ``pbs`` files.
 
 """
 
@@ -66,14 +66,14 @@ class JobConfig:
 
 
 class Job:
-    """Job that concerns a specific analysis."""
+    """Job that concerns a specific transform."""
 
     def __init__(
         self,
         script_path: Path,
         script_args: dict | None = None,
         config: JobConfig | None = None,
-        name: str = "osekit_analysis",
+        name: str = "osekit_transform",
         output_folder: Path | None = None,
     ) -> None:
         """Initialize a Job.
@@ -491,9 +491,9 @@ class Job:
 
 
 class JobBuilder:
-    """Class that should be attached to a Public API ``Dataset`` for working with jobs.
+    """Class that should be attached to a Public API ``Project`` for working with jobs.
 
-    If a ``Dataset`` has a ``JobBuilder``, it will use it to run analyses through jobs.
+    If a ``Project`` has a ``JobBuilder``, it will use it to run transforms through jobs.
 
     """
 
@@ -513,7 +513,7 @@ class JobBuilder:
         self,
         script_path: Path,
         script_args: dict | None = None,
-        name: str = "osekit_analysis",
+        name: str = "osekit_transform",
         output_folder: Path | None = None,
     ) -> None:
         """Create a new ``Job`` instance.

@@ -14,19 +14,19 @@ from pandas import DataFrame
 from scipy.signal import ShortTimeFFT
 
 from osekit.config import DPDEFAULT
-from osekit.core_api.base_dataset import BaseDataset, TFile
-from osekit.core_api.frequency_scale import Scale
-from osekit.core_api.json_serializer import deserialize_json
-from osekit.core_api.spectro_data import SpectroData
-from osekit.core_api.spectro_file import SpectroFile
-from osekit.utils.core_utils import locked
-from osekit.utils.multiprocess_utils import multiprocess
+from osekit.core.base_dataset import BaseDataset, TFile
+from osekit.core.frequency_scale import Scale
+from osekit.core.json_serializer import deserialize_json
+from osekit.core.spectro_data import SpectroData
+from osekit.core.spectro_file import SpectroFile
+from osekit.utils.core import locked
+from osekit.utils.multiprocess import multiprocess
 
 if TYPE_CHECKING:
     import pytz
     from pandas import Timedelta, Timestamp
 
-    from osekit.core_api.audio_dataset import AudioDataset
+    from osekit.core.audio_dataset import AudioDataset
 
 
 class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
@@ -323,20 +323,20 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
     def _save_all_(
         self,
         data: SpectroData,
-        matrix_folder: Path,
+        spectrum_folder: Path,
         spectrogram_folder: Path,
         *,
         link: bool,
     ) -> SpectroData:
-        """Save the data matrix and spectrogram to disk."""
+        """Save the data spectrum and spectrogram to disk."""
         sx = data.get_value()
-        data.write(folder=matrix_folder, sx=sx, link=link)
+        data.write(folder=spectrum_folder, sx=sx, link=link)
         data.save_spectrogram(folder=spectrogram_folder, sx=sx, scale=self.scale)
         return data
 
     def save_all(
         self,
-        matrix_folder: Path,
+        spectrum_folder: Path,
         spectrogram_folder: Path,
         first: int = 0,
         last: int | None = None,
@@ -347,7 +347,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
 
         Parameters
         ----------
-        matrix_folder: Path
+        spectrum_folder: Path
             Path to the folder in which the Sx matrices ``npz`` files will be saved.
         spectrogram_folder: Path
             Path to the folder in which the spectrograms ``png`` files will be saved.
@@ -367,7 +367,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             func=self._save_all_,
             enumerable=self.data[first:last],
             bypass_multiprocessing=type(self)._bypass_multiprocessing_on_dataset,
-            matrix_folder=matrix_folder,
+            spectrum_folder=spectrum_folder,
             spectrogram_folder=spectrogram_folder,
             link=link,
         )

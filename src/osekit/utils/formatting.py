@@ -34,8 +34,8 @@ def aplose2raven(
     --------------
     >>> from pathlib import Path
     >>> from pandas import read_csv
-    >>> from osekit.core_api.audio_dataset import AudioDataset
-    >>> from osekit.utils.formatting_utils import aplose2raven
+    >>> from osekit.core.audio_dataset import AudioDataset
+    >>> from osekit.utils.formatting import aplose2raven
 
     >>> dataset_folder = Path(r"path\to\audio\folder")
     >>> dataset = AudioDataset.from_folder(dataset_folder,

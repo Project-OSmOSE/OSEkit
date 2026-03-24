@@ -3,5 +3,5 @@
 SpectroFile
 -----------
 
-.. autoclass:: osekit.core_api.spectro_file.SpectroFile
+.. autoclass:: osekit.core.spectro_file.SpectroFile
    :members:

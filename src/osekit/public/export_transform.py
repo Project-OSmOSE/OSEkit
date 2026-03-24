@@ -1,4 +1,4 @@
-"""Module that provides scripts for running public API analyses."""
+"""Module that provides scripts for running public API transforms."""
 
 from __future__ import annotations
 
@@ -10,21 +10,21 @@ from typing import TYPE_CHECKING
 
 from osekit import config, setup_logging
 from osekit.config import global_logging_context as glc
-from osekit.core_api.audio_dataset import AudioDataset
-from osekit.public_api.analysis import AnalysisType
-from osekit.public_api.dataset import Dataset
+from osekit.core.audio_dataset import AudioDataset
+from osekit.public.project import Project
+from osekit.public.transform import OutputType
 from osekit.utils.deserialization import deserialize_spectro_or_ltas_dataset
 
 if TYPE_CHECKING:
-    from osekit.core_api.spectro_dataset import SpectroDataset
+    from osekit.core.spectro_dataset import SpectroDataset
 
 
-def write_analysis(
-    analysis_type: AnalysisType,
+def write_transform_output(
+    output_type: OutputType,
     ads: AudioDataset | None,
     sds: SpectroDataset | None,
     subtype: str | None = None,
-    matrix_folder_path: Path | None = None,
+    spectrum_folder_path: Path | None = None,
     spectrogram_folder_path: Path | None = None,
     welch_folder_path: Path | None = None,
     first: int = 0,
@@ -37,19 +37,19 @@ def write_analysis(
 
     Parameters
     ----------
-    analysis_type: AnalysisType
-        Flags that should be used to specify the type of analysis to run.
-        See ``Analysis.AnalysisType`` docstring for more info.
+    output_type: OutputType
+        Flags that should be used to specify the type of transform to run.
+        See ``Transform.OutputType`` docstring for more info.
     subtype: str | None
         Subtype of the written audio files as provided by the soundfile module.
         Defaulted as the default ``16-bit PCM`` for ``wav`` audio files.
-        This parameter has no effect if ``Analysis.AUDIO`` is not in analysis.
+        This parameter has no effect if ``Transform.AUDIO`` is not in transform.
     ads: AudioDataset
         The ``AudioDataset`` of which the data should be written.
     sds: SpectroDataset
         The ``SpectroDataset`` of which the data should be written.
-    matrix_folder_path: Path
-        The folder in which the matrix ``npz`` files should be written.
+    spectrum_folder_path: Path
+        The folder in which the ``npz`` spectrum files should be written.
     spectrogram_folder_path: Path
         The folder in which the spectrogram ``png`` files should be written.
     welch_folder_path: Path
@@ -61,14 +61,14 @@ def write_analysis(
     last: int|None
         Index after the last data object to write.
     logger: logging.Logger | None
-        Logger to use to log the analysis steps.
+        Logger to use to log the transform steps.
 
     """
     logger = glc.logger if logger is None else logger
 
-    logger.info("Running analysis...")
+    logger.info("Running transform...")
 
-    if AnalysisType.AUDIO in analysis_type:
+    if OutputType.AUDIO in output_type:
         logger.info("Writing audio files...")
         ads.write(
             folder=ads.folder,
@@ -80,44 +80,41 @@ def write_analysis(
         ads.write_json(ads.folder)
 
     if (
-        AnalysisType.MATRIX not in analysis_type
-        and AnalysisType.SPECTROGRAM not in analysis_type
-        and AnalysisType.WELCH not in analysis_type
+        OutputType.SPECTRUM not in output_type
+        and OutputType.SPECTROGRAM not in output_type
+        and OutputType.WELCH not in output_type
     ):
         return
 
     # Avoid re-computing the reshaped audio
-    if AnalysisType.AUDIO in analysis_type:
+    if OutputType.AUDIO in output_type:
         sds.link_audio_dataset(ads, first=first, last=last)
 
-    if (
-        AnalysisType.MATRIX in analysis_type
-        and AnalysisType.SPECTROGRAM in analysis_type
-    ):
+    if OutputType.SPECTRUM in output_type and OutputType.SPECTROGRAM in output_type:
         logger.info("Computing and writing spectrum matrices and spectrograms...")
         sds.save_all(
-            matrix_folder=matrix_folder_path,
+            spectrum_folder=spectrum_folder_path,
             spectrogram_folder=spectrogram_folder_path,
             link=link,
             first=first,
             last=last,
         )
-    elif AnalysisType.SPECTROGRAM in analysis_type:
+    elif OutputType.SPECTROGRAM in output_type:
         logger.info("Computing and writing spectrograms...")
         sds.save_spectrogram(
             folder=spectrogram_folder_path,
             first=first,
             last=last,
         )
-    elif AnalysisType.MATRIX in analysis_type:
+    elif OutputType.SPECTRUM in output_type:
         logger.info("Computing and writing spectrum matrices...")
         sds.write(
-            folder=matrix_folder_path,
+            folder=spectrum_folder_path,
             link=link,
             first=first,
             last=last,
         )
-    if AnalysisType.WELCH in analysis_type:
+    if OutputType.WELCH in output_type:
         logger.info("Computing and writing welches...")
         sds.write_welch(
             folder=welch_folder_path,
@@ -127,18 +124,20 @@ def write_analysis(
 
     # Update the sds from the JSON in case it has already been modified in another job
     sds.update_json_audio_data(first=first, last=last)
-    logger.info("Analysis done!")
+    logger.info("Transform done!")
 
 
 def create_parser() -> argparse.ArgumentParser:
     """Create the argument parser."""
-    parser = argparse.ArgumentParser(description="Export audio/spectro datasets.")
+    parser = argparse.ArgumentParser(
+        description="Export audio/spectro datasets.",
+    )
 
     parser.add_argument(
-        "--analysis",
-        "-a",
+        "--output-type",
+        "-o",
         required=True,
-        help="Flags representing which files to export. See AnalysisType doc for more info.",
+        help="Flags representing which files to export. See OutputType doc for more info.",
         type=int,
     )
 
@@ -170,10 +169,10 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        "--matrix-folder-path",
+        "--spectrum-folder-path",
         "-mf",
         required=False,
-        help="The path of the folder in which the npz matrix files are written.",
+        help="The path of the folder in which the npz spectrum files are written.",
         type=str,
         default=None,
     )
@@ -261,7 +260,7 @@ def create_parser() -> argparse.ArgumentParser:
         required=False,
         action=argparse.BooleanOptionalAction,
         default=False,
-        help="Call osekit.setup_logging() before running the analysis.",
+        help="Call osekit.setup_logging() before running the transform.",
     )
 
     parser.add_argument(
@@ -276,7 +275,7 @@ def create_parser() -> argparse.ArgumentParser:
         "--dataset-json-path",
         "-p",
         required=False,
-        help="The path to the Dataset JSON file of which to use the logger.",
+        help="The path to the Project JSON file of which to use the logger.",
         type=str,
         default=None,
     )
@@ -285,7 +284,7 @@ def create_parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
-    """Export an analysis."""
+    """Export a transform."""
     args = create_parser().parse_args()
 
     os.environ["DISABLE_TQDM"] = str(args.tqdm_disable)
@@ -309,7 +308,7 @@ def main() -> None:
     logger = (
         logging.getLogger()
         if (args.dataset_json_path is None or args.dataset_json_path.lower() == "none")
-        else Dataset.from_json(Path(args.dataset_json_path)).logger
+        else Project.from_json(Path(args.dataset_json_path)).logger
     )
 
     ads = (
@@ -325,14 +324,14 @@ def main() -> None:
 
     subtype = None if args.subtype.lower() == "none" else args.subtype
 
-    analysis_type = AnalysisType(args.analysis)
+    output_type = OutputType(args.output_type)
 
-    write_analysis(
-        analysis_type=analysis_type,
+    write_transform_output(
+        output_type=output_type,
         ads=ads,
         sds=sds,
         subtype=subtype,
-        matrix_folder_path=Path(args.matrix_folder_path),
+        spectrum_folder_path=Path(args.spectrum_folder_path),
         spectrogram_folder_path=Path(args.spectrogram_folder_path),
         welch_folder_path=Path(args.welch_folder_path),
         first=args.first,

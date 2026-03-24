@@ -15,8 +15,8 @@ from math import floor
 
 from pandas import Timedelta, Timestamp
 
-from osekit.core_api import audio_file_manager as afm
-from osekit.core_api.base_file import BaseFile
+from osekit.core import audio_file_manager as afm
+from osekit.core.base_file import BaseFile
 
 
 class AudioFile(BaseFile):

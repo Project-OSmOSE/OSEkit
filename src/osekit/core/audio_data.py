@@ -16,11 +16,11 @@ import soxr
 from pandas import Timedelta, Timestamp
 
 from osekit.config import resample_quality_settings
-from osekit.core_api.audio_file import AudioFile
-from osekit.core_api.audio_item import AudioItem
-from osekit.core_api.base_data import BaseData
-from osekit.core_api.instrument import Instrument
-from osekit.utils.audio_utils import Normalization, normalize
+from osekit.core.audio_file import AudioFile
+from osekit.core.audio_item import AudioItem
+from osekit.core.base_data import BaseData
+from osekit.core.instrument import Instrument
+from osekit.utils.audio import Normalization, normalize
 
 if TYPE_CHECKING:
     from pathlib import Path

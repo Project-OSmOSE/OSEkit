@@ -6,11 +6,11 @@ from pandas import Timestamp
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming
 
-from osekit.core_api.audio_data import AudioData
-from osekit.core_api.audio_dataset import AudioDataset
-from osekit.core_api.instrument import Instrument
-from osekit.core_api.spectro_data import SpectroData
-from osekit.core_api.spectro_dataset import SpectroDataset
+from osekit.core.audio_data import AudioData
+from osekit.core.audio_dataset import AudioDataset
+from osekit.core.instrument import Instrument
+from osekit.core.spectro_data import SpectroData
+from osekit.core.spectro_dataset import SpectroDataset
 
 
 @pytest.mark.parametrize(

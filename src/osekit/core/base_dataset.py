@@ -18,11 +18,11 @@ from tqdm import tqdm
 
 from osekit.config import TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED
 from osekit.config import global_logging_context as glc
-from osekit.core_api.base_data import BaseData
-from osekit.core_api.base_file import BaseFile
-from osekit.core_api.event import Event
-from osekit.core_api.json_serializer import deserialize_json, serialize_json
-from osekit.utils.timestamp_utils import last_window_end
+from osekit.core.base_data import BaseData
+from osekit.core.base_file import BaseFile
+from osekit.core.event import Event
+from osekit.core.json_serializer import deserialize_json, serialize_json
+from osekit.utils.timestamp import last_window_end
 
 if TYPE_CHECKING:
     import pytz
@@ -91,7 +91,7 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
     def suffix(self) -> str:
         """Suffix that is applied to the name of the ads.
 
-        This is used by the public API, for suffixing multiple core_api datasets
+        This is used by the public API, for suffixing multiple core datasets
         that are created simultaneously and share the same namewith their specific type,
         e.g. ``_audio`` or ``_spectro``.
         """

@@ -7,9 +7,9 @@ from pathlib import Path
 import pytest
 
 from osekit import config
-from osekit.core_api.audio_dataset import AudioDataset
-from osekit.public_api import export_analysis
-from osekit.public_api.export_analysis import create_parser
+from osekit.core.audio_dataset import AudioDataset
+from osekit.public import export_transform
+from osekit.public.export_transform import create_parser
 from osekit.utils.job import Job
 
 
@@ -19,11 +19,11 @@ def test_parser_factory() -> None:
     assert parser.description
 
     expected_args = {
-        "--analysis",
+        "--output-type",
         "--ads-json",
         "--sds-json",
         "--subtype",
-        "--matrix-folder-path",
+        "--spectrum-folder-path",
         "--spectrogram-folder-path",
         "--welch-folder-path",
         "--first",
@@ -48,16 +48,16 @@ def test_argument_defaults() -> None:
     parser = create_parser()
     args = parser.parse_args(
         [
-            "--analysis",
+            "--output-type",
             "1",
         ],
     )
 
-    assert args.analysis == 1
+    assert args.output_type == 1
     assert args.ads_json is None
     assert args.sds_json is None
     assert args.subtype is None
-    assert args.matrix_folder_path is None
+    assert args.spectrum_folder_path is None
     assert args.spectrogram_folder_path is None
     assert args.welch_folder_path is None
     assert args.first == 0
@@ -75,11 +75,11 @@ def test_argument_defaults() -> None:
 @pytest.fixture
 def script_arguments() -> dict:
     return {
-        "analysis": 2,
+        "output-type": 2,
         "ads-json": r"path/to/ads.json",
         "sds-json": r"path/to/ads.json",
         "subtype": "FLOAT",
-        "matrix-folder-path": r"out/matrix",
+        "spectrum-folder-path": r"out/spectrum",
         "spectrogram-folder-path": r"out/spectro",
         "welch-folder-path": r"out/welch",
         "first": 10,
@@ -91,7 +91,7 @@ def script_arguments() -> dict:
         "multiprocessing": True,
         "nb-processes": "3",  # String because it might be "None"
         "use-logging-setup": True,
-        "dataset-json-path": r"path/to/dataset.json",
+        "dataset-json-path": r"path/to/project.json",
     }
 
 
@@ -102,11 +102,11 @@ def test_specified_arguments(script_arguments: dict) -> None:
 
     args = parser.parse_args(shlex.split(parsed_str))
 
-    assert args.analysis == script_arguments["analysis"]
+    assert args.output_type == script_arguments["output-type"]
     assert args.ads_json == script_arguments["ads-json"]
     assert args.sds_json == script_arguments["sds-json"]
     assert args.subtype == script_arguments["subtype"]
-    assert args.matrix_folder_path == script_arguments["matrix-folder-path"]
+    assert args.spectrum_folder_path == script_arguments["spectrum-folder-path"]
     assert args.spectrogram_folder_path == script_arguments["spectrogram-folder-path"]
     assert args.welch_folder_path == script_arguments["welch-folder-path"]
     assert args.first == script_arguments["first"]
@@ -124,11 +124,11 @@ def test_specified_arguments(script_arguments: dict) -> None:
 def test_main_script(monkeypatch: pytest.MonkeyPatch, script_arguments: dict) -> None:
     class MockedArgs:
         def __init__(self, *args: list, **kwargs: dict) -> None:
-            self.analysis = script_arguments["analysis"]
+            self.output_type = script_arguments["output-type"]
             self.ads_json = script_arguments["ads-json"]
             self.sds_json = script_arguments["sds-json"]
             self.subtype = script_arguments["subtype"]
-            self.matrix_folder_path = script_arguments["matrix-folder-path"]
+            self.spectrum_folder_path = script_arguments["spectrum-folder-path"]
             self.spectrogram_folder_path = script_arguments["spectrogram-folder-path"]
             self.welch_folder_path = script_arguments["welch-folder-path"]
             self.first = script_arguments["first"]
@@ -164,18 +164,22 @@ def test_main_script(monkeypatch: pytest.MonkeyPatch, script_arguments: dict) ->
         return path
 
     monkeypatch.setattr(
-        export_analysis,
+        export_transform,
         "deserialize_spectro_or_ltas_dataset",
         mock_sds_json,
     )
 
-    def mock_write_analysis(*args: list, **kwargs: dict) -> None:
+    def mock_write_transform_output(*args: list, **kwargs: dict) -> None:
         for k, v in kwargs.items():
             calls[k] = v  # noqa: PERF403
 
-    monkeypatch.setattr(export_analysis, "write_analysis", mock_write_analysis)
+    monkeypatch.setattr(
+        export_transform,
+        "write_transform_output",
+        mock_write_transform_output,
+    )
 
-    export_analysis.main()
+    export_transform.main()
 
     assert (
         os.environ["DISABLE_TQDM"].lower() in ("true", "1", "t")
@@ -193,12 +197,14 @@ def test_main_script(monkeypatch: pytest.MonkeyPatch, script_arguments: dict) ->
     assert calls["ads_json"] == Path(script_arguments["ads-json"])
     assert calls["sds_json"] == Path(script_arguments["sds-json"])
 
-    # write_analysis
-    assert calls["analysis_type"].value == script_arguments["analysis"]
+    # write_transform
+    assert calls["output_type"].value == script_arguments["output-type"]
     assert calls["ads"] == Path(script_arguments["ads-json"])
     assert calls["sds"] == Path(script_arguments["sds-json"])
     assert calls["subtype"] == script_arguments["subtype"]
-    assert calls["matrix_folder_path"] == Path(script_arguments["matrix-folder-path"])
+    assert calls["spectrum_folder_path"] == Path(
+        script_arguments["spectrum-folder-path"],
+    )
     assert calls["spectrogram_folder_path"] == Path(
         script_arguments["spectrogram-folder-path"],
     )

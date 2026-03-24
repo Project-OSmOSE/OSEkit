@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from osekit.core_api.audio_file import AudioFile
-from osekit.core_api.base_item import BaseItem
+from osekit.core.audio_file import AudioFile
+from osekit.core.base_item import BaseItem
 
 if TYPE_CHECKING:
     from pandas import Timestamp

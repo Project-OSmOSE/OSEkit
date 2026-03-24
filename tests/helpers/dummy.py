@@ -5,10 +5,10 @@ from typing import Self
 import numpy as np
 from pandas import Timestamp
 
-from osekit.core_api.base_data import BaseData, TFile
-from osekit.core_api.base_dataset import BaseDataset, TData
-from osekit.core_api.base_file import BaseFile
-from osekit.core_api.base_item import BaseItem
+from osekit.core.base_data import BaseData, TFile
+from osekit.core.base_dataset import BaseDataset, TData
+from osekit.core.base_file import BaseFile
+from osekit.core.base_item import BaseItem
 
 
 class DummyFile(BaseFile):

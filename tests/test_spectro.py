@@ -18,20 +18,20 @@ from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
     TIMESTAMP_FORMATS_EXPORTED_FILES,
 )
-from osekit.core_api.audio_data import AudioData
-from osekit.core_api.audio_dataset import AudioDataset
-from osekit.core_api.audio_file import AudioFile
-from osekit.core_api.base_data import BaseData
-from osekit.core_api.event import Event
-from osekit.core_api.frequency_scale import Scale, ScalePart
-from osekit.core_api.instrument import Instrument
-from osekit.core_api.ltas_data import LTASData
-from osekit.core_api.ltas_dataset import LTASDataset
-from osekit.core_api.spectro_data import SpectroData
-from osekit.core_api.spectro_dataset import SpectroDataset
-from osekit.core_api.spectro_file import SpectroFile
-from osekit.core_api.spectro_item import SpectroItem
-from osekit.utils.audio_utils import Normalization, generate_sample_audio
+from osekit.core.audio_data import AudioData
+from osekit.core.audio_dataset import AudioDataset
+from osekit.core.audio_file import AudioFile
+from osekit.core.base_data import BaseData
+from osekit.core.event import Event
+from osekit.core.frequency_scale import Scale, ScalePart
+from osekit.core.instrument import Instrument
+from osekit.core.ltas_data import LTASData
+from osekit.core.ltas_dataset import LTASDataset
+from osekit.core.spectro_data import SpectroData
+from osekit.core.spectro_dataset import SpectroDataset
+from osekit.core.spectro_file import SpectroFile
+from osekit.core.spectro_item import SpectroItem
+from osekit.utils.audio import Normalization, generate_sample_audio
 from tests.helpers.dummy import DummyFile
 
 
@@ -1900,6 +1900,6 @@ def test_duplicate_data_check(monkeypatch: pytest.monkeypatch) -> None:
 
     assert check_calls[0] == 1
 
-    sds.save_all(matrix_folder=Path("bantam"), spectrogram_folder=Path("lyons"))
+    sds.save_all(spectrum_folder=Path("bantam"), spectrogram_folder=Path("lyons"))
 
     assert check_calls[0] == 2  # noqa: PLR2004
