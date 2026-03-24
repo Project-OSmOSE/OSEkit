@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Flag, auto
 from typing import TYPE_CHECKING, Literal
 
-from osekit.utils.audio_utils import Normalization
+from osekit.utils.audio import Normalization
 
 if TYPE_CHECKING:
     from pandas import Timedelta, Timestamp

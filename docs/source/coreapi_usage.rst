@@ -113,7 +113,7 @@ Eventual time gap between audio items are filled with ``0.`` values.
 Normalization
 """""""""""""
 
-The fetched audio data can be normalized according to the presets given by the :class:`osekit.utils.audio_utils.Normalization` flag:
+The fetched audio data can be normalized according to the presets given by the :class:`osekit.utils.audio.Normalization` flag:
 
 .. list-table:: Normalization presets
    :widths: 10 10
@@ -136,7 +136,7 @@ requested normalization flag:
 .. code-block:: python
 
     from osekit.core.audio_data.AudioData import AudioData
-    from osekit.utils.audio_utils.normalization import Normalization
+    from osekit.utils.audio.normalization import Normalization
 
     ad = AudioData(...)
     ad.normalization = Normalization.ZSCORE # Note: normalization also is a parameter of the AudioData initializer
@@ -149,7 +149,7 @@ requested normalization flag:
 
     .. code-block:: python
 
-        from osekit.utils.audio_utils.normalization import Normalization
+        from osekit.utils.audio.normalization import Normalization
 
         dc_peak = Normalization.DC_REJECT | Normalization.PEAK
 
@@ -159,7 +159,7 @@ requested normalization flag:
 
     .. code-block:: python
 
-        from osekit.utils.audio_utils.normalization import Normalization
+        from osekit.utils.audio.normalization import Normalization
 
         incorrect_normalization = Normalization.RAW | Normalization.PEAK
         incorrect_normalization = Normalization.DC_REJECT | Normalization.RAW | Normalization.PEAK
@@ -336,7 +336,7 @@ The ``SpectroData`` object can be used to compute the spectrum matrices of the `
 The :attr:`osekit.core.spectro_data.SpectroData.sx_dtype` property can be set to either ``complex`` (default) or ``float`` to return either the spectrum matrices as complex numbers or absolute values, respectively.
 
 The spectrum matrices can be converted to decibels thanks to the :meth:`osekit.core.spectro_data.SpectroData.get_db_value` method.
-This method will convert the matrix values either to dB SPL (re ``Instrument.P_REF``) if an :ref:`Instrument <instrument_calibration>` was provided to the ``AudioData`` or to dB FS otherwise.
+This method will convert the spectrum values either to dB SPL (re ``Instrument.P_REF``) if an :ref:`Instrument <instrument_calibration>` was provided to the ``AudioData`` or to dB FS otherwise.
 
 The spectrum matrices can then be exported to npz files thanks to the :meth:`osekit.core.spectro_data.SpectroData.write` method.
 
@@ -434,7 +434,7 @@ The visualization below depicts the process: the LTAS is computed with a target 
 Yellow rectangles depict the audio data (the x-axis being the time axis), and the number in the lower right
 corner depicts the number of time bins in the spectrum matrix for this audio data.
 The audio is recursively split in ``n_bins`` parts (it is split in 3 in the
-representation instead of 3000 for clarity purposes) until the number of time bins in the matrix gets below ``n_bins``.
+representation instead of 3000 for clarity purposes) until the number of time bins in the spectrum gets below ``n_bins``.
 Then, these spectrum parts are computed (hatched rectangles) and averaged across the time axis (filled rectangles).
 
 .. image:: _static/ltas/ltas.gif

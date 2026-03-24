@@ -24,7 +24,7 @@ from osekit.core.ltas_dataset import LTASDataset
 from osekit.core.spectro_dataset import SpectroDataset
 from osekit.public.project import Project
 from osekit.public.transform import OutputType, Transform
-from osekit.utils.audio_utils import Normalization
+from osekit.utils.audio import Normalization
 
 
 @pytest.mark.parametrize(
@@ -619,7 +619,7 @@ def test_serialization(
         ),
         pytest.param(
             OutputType.SPECTROGRAM,
-            id="matrix_only",
+            id="spectrum_only",
         ),
         pytest.param(
             OutputType.SPECTROGRAM,
@@ -659,7 +659,7 @@ def test_spectral_transform_error_if_no_provided_fft(output_type: OutputType) ->
                 fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
             ),
             True,
-            id="matrix_only",
+            id="spectrum_only",
         ),
         pytest.param(
             Transform(
@@ -667,7 +667,7 @@ def test_spectral_transform_error_if_no_provided_fft(output_type: OutputType) ->
                 fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
             ),
             True,
-            id="matrix_and_spectro",
+            id="spectrum_and_spectro",
         ),
         pytest.param(
             Transform(

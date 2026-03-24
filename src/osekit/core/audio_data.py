@@ -20,7 +20,7 @@ from osekit.core.audio_file import AudioFile
 from osekit.core.audio_item import AudioItem
 from osekit.core.base_data import BaseData
 from osekit.core.instrument import Instrument
-from osekit.utils.audio_utils import Normalization, normalize
+from osekit.utils.audio import Normalization, normalize
 
 if TYPE_CHECKING:
     from pathlib import Path

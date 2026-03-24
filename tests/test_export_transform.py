@@ -57,7 +57,7 @@ def test_argument_defaults() -> None:
     assert args.ads_json is None
     assert args.sds_json is None
     assert args.subtype is None
-    assert args.matrix_folder_path is None
+    assert args.spectrum_folder_path is None
     assert args.spectrogram_folder_path is None
     assert args.welch_folder_path is None
     assert args.first == 0
@@ -79,7 +79,7 @@ def script_arguments() -> dict:
         "ads-json": r"path/to/ads.json",
         "sds-json": r"path/to/ads.json",
         "subtype": "FLOAT",
-        "spectrum-folder-path": r"out/matrix",
+        "spectrum-folder-path": r"out/spectrum",
         "spectrogram-folder-path": r"out/spectro",
         "welch-folder-path": r"out/welch",
         "first": 10,
@@ -106,7 +106,7 @@ def test_specified_arguments(script_arguments: dict) -> None:
     assert args.ads_json == script_arguments["ads-json"]
     assert args.sds_json == script_arguments["sds-json"]
     assert args.subtype == script_arguments["subtype"]
-    assert args.matrix_folder_path == script_arguments["spectrum-folder-path"]
+    assert args.spectrum_folder_path == script_arguments["spectrum-folder-path"]
     assert args.spectrogram_folder_path == script_arguments["spectrogram-folder-path"]
     assert args.welch_folder_path == script_arguments["welch-folder-path"]
     assert args.first == script_arguments["first"]
@@ -128,7 +128,7 @@ def test_main_script(monkeypatch: pytest.MonkeyPatch, script_arguments: dict) ->
             self.ads_json = script_arguments["ads-json"]
             self.sds_json = script_arguments["sds-json"]
             self.subtype = script_arguments["subtype"]
-            self.matrix_folder_path = script_arguments["spectrum-folder-path"]
+            self.spectrum_folder_path = script_arguments["spectrum-folder-path"]
             self.spectrogram_folder_path = script_arguments["spectrogram-folder-path"]
             self.welch_folder_path = script_arguments["welch-folder-path"]
             self.first = script_arguments["first"]
@@ -203,7 +203,7 @@ def test_main_script(monkeypatch: pytest.MonkeyPatch, script_arguments: dict) ->
     assert calls["sds"] == Path(script_arguments["sds-json"])
     assert calls["subtype"] == script_arguments["subtype"]
     assert calls["spectrum_folder_path"] == Path(
-        script_arguments["spectrum-folder-path"]
+        script_arguments["spectrum-folder-path"],
     )
     assert calls["spectrogram_folder_path"] == Path(
         script_arguments["spectrogram-folder-path"],

@@ -5,7 +5,7 @@ import os
 from pathlib import Path, PurePosixPath, PureWindowsPath  # noqa: F401
 from typing import Literal
 
-from osekit.utils.path_utils import is_absolute
+from osekit.utils.path import is_absolute
 
 
 def absolute_to_relative(

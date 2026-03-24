@@ -23,7 +23,7 @@ from osekit.config import (
 from osekit.core.base_file import BaseFile
 from osekit.core.base_item import BaseItem
 from osekit.core.event import Event
-from osekit.utils.timestamp_utils import strptime_from_text
+from osekit.utils.timestamp import strptime_from_text
 
 TItem = TypeVar("TItem", bound=BaseItem)
 TFile = TypeVar("TFile", bound=BaseFile)

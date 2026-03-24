@@ -21,7 +21,7 @@ from osekit.config import (
 )
 from osekit.core.audio_data import AudioData
 from osekit.core.audio_file import AudioFile
-from osekit.utils.audio_utils import generate_sample_audio
+from osekit.utils.audio import generate_sample_audio
 
 
 @pytest.fixture

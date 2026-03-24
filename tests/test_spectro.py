@@ -31,7 +31,7 @@ from osekit.core.spectro_data import SpectroData
 from osekit.core.spectro_dataset import SpectroDataset
 from osekit.core.spectro_file import SpectroFile
 from osekit.core.spectro_item import SpectroItem
-from osekit.utils.audio_utils import Normalization, generate_sample_audio
+from osekit.utils.audio import Normalization, generate_sample_audio
 from tests.helpers.dummy import DummyFile
 
 
@@ -1900,6 +1900,6 @@ def test_duplicate_data_check(monkeypatch: pytest.monkeypatch) -> None:
 
     assert check_calls[0] == 1
 
-    sds.save_all(matrix_folder=Path("bantam"), spectrogram_folder=Path("lyons"))
+    sds.save_all(spectrum_folder=Path("bantam"), spectrogram_folder=Path("lyons"))
 
     assert check_calls[0] == 2  # noqa: PLR2004

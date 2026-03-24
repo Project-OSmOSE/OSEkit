@@ -3,5 +3,5 @@
 Normalization
 -------------
 
-.. autoclass:: osekit.utils.audio_utils.Normalization
+.. autoclass:: osekit.utils.audio.Normalization
    :members:

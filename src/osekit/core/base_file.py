@@ -13,7 +13,7 @@ from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMATS_EXPORTED_FILES,
 )
-from osekit.utils.timestamp_utils import localize_timestamp
+from osekit.utils.timestamp import localize_timestamp
 
 if TYPE_CHECKING:
     from os import PathLike
@@ -27,7 +27,7 @@ from pathlib import Path
 from pandas import Timedelta
 
 from osekit.core.event import Event
-from osekit.utils.timestamp_utils import strptime_from_text
+from osekit.utils.timestamp import strptime_from_text
 
 
 class BaseFile(Event, ABC):

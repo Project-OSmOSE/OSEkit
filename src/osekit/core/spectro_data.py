@@ -263,9 +263,9 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         return self.audio_data.populated_duration
 
     def get_value(self) -> np.ndarray:
-        """Return the Sx matrix of the spectrogram.
+        """Return the Sx spectrum of the spectrogram.
 
-        The Sx matrix contains the absolute square of the STFT.
+        The Sx spectrum contains the absolute square of the STFT.
         """
         if not all(item.is_empty for item in self.items):
             return self._get_value_from_items(self.items)
@@ -482,7 +482,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         )
 
     def get_db_value(self, sx: np.ndarray | None = None) -> np.ndarray:
-        """Return the ``Sx`` matrix of the spectrogram expressed in ``dB``.
+        """Return the ``Sx`` spectrum of the spectrogram expressed in ``dB``.
 
         If the ``self.audio_data.instrument is not None``, the values are
         converted to ``dB SPL`` (re ``self.audio_data.instrument.P_REF``).

@@ -16,7 +16,7 @@ from typing import Literal
 
 import numpy as np
 
-from osekit.utils.core_utils import get_closest_value_index
+from osekit.utils.core import get_closest_value_index
 
 
 @dataclass(frozen=True)

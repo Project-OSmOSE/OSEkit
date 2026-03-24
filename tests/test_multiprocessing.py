@@ -2,7 +2,7 @@ import typing
 
 import pytest
 
-import osekit.utils.multiprocess_utils as mpu
+import osekit.utils.multiprocess as mpu
 from osekit import config
 
 

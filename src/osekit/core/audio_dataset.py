@@ -13,8 +13,8 @@ from osekit.core.audio_data import AudioData
 from osekit.core.audio_file import AudioFile
 from osekit.core.base_dataset import BaseDataset
 from osekit.core.json_serializer import deserialize_json
-from osekit.utils.audio_utils import Normalization
-from osekit.utils.multiprocess_utils import multiprocess
+from osekit.utils.audio import Normalization
+from osekit.utils.multiprocess import multiprocess
 
 if TYPE_CHECKING:
     from pathlib import Path

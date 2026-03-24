@@ -146,7 +146,7 @@ The ``output_type`` parameter passed to the initializer is a :class:`osekit.publ
    * - ``OutputType.AUDIO``
      - Reshaped audio files
    * - ``OutputType.SPECTRUM``
-     - `STFT <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.ShortTimeFFT.stft.html#scipy.signal.ShortTimeFFT.stft>`_ NPZ matrix files
+     - `STFT <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.ShortTimeFFT.stft.html#scipy.signal.ShortTimeFFT.stft>`_ NPZ spectrum files
    * - ``OutputType.WELCH``
      - `Welch <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.welch.html>`_ NPZ files
    * - ``OutputType.SPECTROGRAM``
@@ -383,7 +383,7 @@ The project folder now looks like this (the output from the first example was re
         │   ├── ...
         │   ├── 2023_04_05_17_18_46_000000.png
         │   └── 2023_04_05_17_18_56_000000.png
-        ├── matrix
+        ├── spectrum
         │   ├── 2023_04_05_16_19_06_000000.npz
         │   ├── 2023_04_05_16_19_16_000000.npz
         │   ├── 2023_04_05_16_19_26_000000.npz

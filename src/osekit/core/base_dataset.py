@@ -22,7 +22,7 @@ from osekit.core.base_data import BaseData
 from osekit.core.base_file import BaseFile
 from osekit.core.event import Event
 from osekit.core.json_serializer import deserialize_json, serialize_json
-from osekit.utils.timestamp_utils import last_window_end
+from osekit.utils.timestamp import last_window_end
 
 if TYPE_CHECKING:
     import pytz

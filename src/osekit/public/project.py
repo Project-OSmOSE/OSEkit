@@ -24,11 +24,11 @@ from osekit.core.json_serializer import deserialize_json, serialize_json
 from osekit.core.ltas_dataset import LTASDataset
 from osekit.core.spectro_dataset import SpectroDataset
 from osekit.public.transform import OutputType, Transform
-from osekit.utils.core_utils import (
+from osekit.utils.core import (
     file_indexes_per_batch,
     get_umask,
 )
-from osekit.utils.path_utils import move_tree
+from osekit.utils.path import move_tree
 
 if TYPE_CHECKING:
     from collections.abc import Iterable

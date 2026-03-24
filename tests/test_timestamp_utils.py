@@ -6,14 +6,15 @@ from typing import ContextManager
 import pytest
 from pandas import Timedelta, Timestamp
 
-from osekit.utils.timestamp_utils import (
+from osekit.utils.timestamp import (
     build_regex_from_datetime_template,
     is_datetime_template_valid,
     last_window_end,
     localize_timestamp,
+    normalize_datetime,
     reformat_timestamp,
     strftime_osmose_format,
-    strptime_from_text, normalize_datetime,
+    strptime_from_text,
 )
 
 
@@ -715,80 +716,78 @@ def test_last_window_end(
     )
 
 
-
 @pytest.mark.parametrize(
     ("datetime", "template", "expected_keys", "expected_values"),
     [
-
         pytest.param(
-                ("5", "3", "2023"),
-                "%-m_%-d_%Y",
-                "%m_%d_%Y",
-                "05_03_2023",
-                id="single_digit_month_day"
+            ("5", "3", "2023"),
+            "%-m_%-d_%Y",
+            "%m_%d_%Y",
+            "05_03_2023",
+            id="single_digit_month_day",
         ),
         pytest.param(
-                ("05", "03", "2023"),
-                "%-m_%-d_%Y",
-                "%m_%d_%Y",
-                "05_03_2023",
-                id="already_zero_padded"
+            ("05", "03", "2023"),
+            "%-m_%-d_%Y",
+            "%m_%d_%Y",
+            "05_03_2023",
+            id="already_zero_padded",
         ),
         pytest.param(
-                ("05", "30", "2023"),
-                "%m_%d_%Y",
-                "%m_%d_%Y",
-                "05_30_2023",
-                id="no_non_zero_padding"
+            ("05", "30", "2023"),
+            "%m_%d_%Y",
+            "%m_%d_%Y",
+            "05_30_2023",
+            id="no_non_zero_padding",
         ),
         pytest.param(
-                ("5", "3"),
-                "%-m_%-d",
-                "%m_%d",
-                "05_03",
-                id="only_non_zero_padded"
+            ("5", "3"),
+            "%-m_%-d",
+            "%m_%d",
+            "05_03",
+            id="only_non_zero_padded",
         ),
         pytest.param(
-                ("9", "5", "30"),
-                "%-H_%-M_%S",
-                "%H_%M_%S",
-                "09_05_30",
-                id="hour_minute_second"
+            ("9", "5", "30"),
+            "%-H_%-M_%S",
+            "%H_%M_%S",
+            "09_05_30",
+            id="hour_minute_second",
         ),
         pytest.param(
-                ("2023", "5", "30"),
-                "%Y_%-m_%d",
-                "%Y_%m_%d",
-                "2023_05_30",
-                id="mixed_padded_nonpadded"
+            ("2023", "5", "30"),
+            "%Y_%-m_%d",
+            "%Y_%m_%d",
+            "2023_05_30",
+            id="mixed_padded_nonpadded",
         ),
         pytest.param(
-                ("1", "2", "3"),
-                "%-m_%-d_%-H",
-                "%m_%d_%H",
-                "01_02_03",
-                id="all_single_digits_need_padding"
+            ("1", "2", "3"),
+            "%-m_%-d_%-H",
+            "%m_%d_%H",
+            "01_02_03",
+            id="all_single_digits_need_padding",
         ),
         pytest.param(
-                ("12", "25", "2023"),
-                "%-m_%-d_%Y",
-                "%m_%d_%Y",
-                "12_25_2023",
-                id="double_digits_on_nonpadded"
+            ("12", "25", "2023"),
+            "%-m_%-d_%Y",
+            "%m_%d_%Y",
+            "12_25_2023",
+            id="double_digits_on_nonpadded",
         ),
         pytest.param(
-                ("5", "30", "23"),
-                "%-m_%d_%-y",
-                "%m_%d_%y",
-                "05_30_23",
-                id="different_format_specifiers"
+            ("5", "30", "23"),
+            "%-m_%d_%-y",
+            "%m_%d_%y",
+            "05_30_23",
+            id="different_format_specifiers",
         ),
         pytest.param(
-                ("1", "1", "1", "1"),
-                "%-m_%-d_%-H_%-M",
-                "%m_%d_%H_%M",
-                "01_01_01_01",
-                id="edge_case_all_ones",
+            ("1", "1", "1", "1"),
+            "%-m_%-d_%-H_%-M",
+            "%m_%d_%H_%M",
+            "01_01_01_01",
+            id="edge_case_all_ones",
         ),
         pytest.param(
             ("05", "03", "2023"),
@@ -817,7 +816,8 @@ def test_normalize_datetime(
             ("5", "3", "1998"),
             "%m_%-m_%Y",
             pytest.raises(
-                ValueError, match="Format specifiers in template must be unique."
+                ValueError,
+                match="Format specifiers in template must be unique.",
             ),
             id="duplicate_format_specifiers_padded_and_nonpadded",
         ),

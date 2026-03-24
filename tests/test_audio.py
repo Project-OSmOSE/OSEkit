@@ -24,8 +24,8 @@ from osekit.core.audio_dataset import AudioDataset
 from osekit.core.audio_file import AudioFile
 from osekit.core.audio_item import AudioItem
 from osekit.core.instrument import Instrument
-from osekit.utils import audio_utils
-from osekit.utils.audio_utils import Normalization, generate_sample_audio, normalize
+from osekit.utils import audio
+from osekit.utils.audio import Normalization, generate_sample_audio, normalize
 
 
 def test_patch_audio_data(patch_audio_data: None) -> None:
@@ -849,7 +849,7 @@ def test_audio_resample_quality(
             else osekit.config.resample_quality_settings["downsample"]
         )
 
-    monkeypatch.setattr(audio_utils, "resample", resample_mkptch)
+    monkeypatch.setattr(audio, "resample", resample_mkptch)
 
     ad = AudioData.from_files([af])
 
@@ -857,7 +857,7 @@ def test_audio_resample_quality(
         ratio * ad.sample_rate for ratio in (0.5, 1.5)
     )
 
-    assert audio_utils.resample(
+    assert audio.resample(
         ad.get_value(),
         ad.sample_rate,
         downsampling_frequency,
@@ -866,7 +866,7 @@ def test_audio_resample_quality(
         if downsampling_quality is not None
         else downsampling_default
     )
-    assert audio_utils.resample(
+    assert audio.resample(
         ad.get_value(),
         ad.sample_rate,
         upsampling_frequency,

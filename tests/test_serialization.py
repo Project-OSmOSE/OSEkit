@@ -26,7 +26,7 @@ from osekit.core.json_serializer import (
 from osekit.core.spectro_data import SpectroData
 from osekit.core.spectro_dataset import SpectroDataset
 from osekit.core.spectro_file import SpectroFile
-from osekit.utils.audio_utils import Normalization
+from osekit.utils.audio import Normalization
 
 
 @pytest.mark.parametrize(
