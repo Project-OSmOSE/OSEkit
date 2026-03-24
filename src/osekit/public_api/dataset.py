@@ -394,8 +394,8 @@ class Dataset:
         """
         if analysis.name in self.analyses:
             message = (
-                f"Analysis {analysis.name} already exists."
-                f"Please choose a different name,"
+                f"Analysis {analysis.name} already exists. "
+                f"Please choose a different name, "
                 f"or delete it with the Dataset.delete_analysis() method."
             )
             raise ValueError(message)
