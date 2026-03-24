@@ -78,7 +78,7 @@ def change_owner_group(path: Path, owner_group: str) -> None:
         os.chown(path, -1, gid)
     except PermissionError as e:
         message = (
-            f"You do not have the permission to change the owner of {path}."
+            f"You do not have the permission to change the owner of {path}. "
             f"The group owner has not been changed "
             f"from {path.group()} to {owner_group}."
         )
