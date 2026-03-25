@@ -645,3 +645,37 @@ def test_build_dependency_string_with_different_types(
     """Test building dependency strings with different dependency types."""
     with expected as e:
         assert Job._build_dependency_string("1234567", dependency_type) == e
+
+
+@pytest.mark.parametrize(
+    "walltime",
+    [
+        pytest.param(
+            "01:00:00",
+            id="hours_only_str",
+        ),
+        pytest.param(
+            "01:24:32",
+            id="hours_minutes_seconds_str",
+        ),
+        pytest.param(
+            "30:12:10",
+            id="more_than_a_day_str",
+        ),
+        pytest.param(
+            Timedelta(hours=1, minutes=0, seconds=0),
+            id="hours_only_timedelta",
+        ),
+        pytest.param(
+            Timedelta(hours=1, minutes=24, seconds=32),
+            id="hours_minutes_seconds_timedelta",
+        ),
+        pytest.param(
+            Timedelta(hours=30, minutes=12, seconds=10),
+            id="more_than_a_day_timedelta",
+        ),
+    ],
+)
+def test_job_walltime(walltime: str | Timedelta) -> None:
+    job = Job(Path(), config=JobConfig(walltime=walltime))
+    assert Timedelta(job.walltime_str) == Timedelta(walltime)
