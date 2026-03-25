@@ -161,7 +161,10 @@ class Job:
     @property
     def walltime_str(self) -> str:
         """String representation of the ``walltime``."""
-        return str(self.walltime).split("days")[-1].strip()
+        total_seconds = self.walltime.total_seconds()
+        hours, remainder = divmod(total_seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        return ":".join(f"{t:02}" for t in map(int, (hours, minutes, seconds)))
 
     @walltime.setter
     def walltime(self, walltime: str | Timedelta) -> None:
