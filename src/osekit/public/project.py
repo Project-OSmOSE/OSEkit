@@ -396,9 +396,13 @@ class Project:
         """
         if transform.name in self.transforms:
             message = (
-                f"Transform {transform.name} already exists. "
-                f"Please choose a different name, "
-                f"or delete it with the Project.delete_output() method."
+                f"A transform with the name {transform.name} has already been run. "
+                f"Please do either one of the following:"
+                f"\n\t- Choose a different name for the current transform,"
+                f"\n\t- Rename the previously run transform with the "
+                f"``Project.rename_transform_with_outputs()`` method,"
+                f"\n\t- Delete the previously run transform with the "
+                f"``Project.delete_transform_with_outputs()`` method."
             )
             raise ValueError(message)
 
@@ -671,7 +675,9 @@ class Project:
         ]
 
     def rename_transform_with_outputs(
-        self, transform_name: str, new_transform_name: str
+        self,
+        transform_name: str,
+        new_transform_name: str,
     ) -> None:
         """Rename an already run transform.
 
