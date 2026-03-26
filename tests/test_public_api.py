@@ -1364,7 +1364,7 @@ def test_delete_output(
 
     assert all(ds.folder.exists() for ds in (datasets_to_keep + datasets_to_delete))
 
-    project.delete_output(transform_to_delete.name)
+    project.delete_transform_with_outputs(transform_to_delete.name)
 
     assert transform_to_keep.name in project.transforms
     assert transform_to_delete.name not in project.transforms
@@ -1417,7 +1417,7 @@ def test_existing_output_warning(
             ),
         )
 
-    project.delete_output("my_transform")
+    project.delete_transform_with_outputs("my_transform")
 
     project.run(
         Transform(

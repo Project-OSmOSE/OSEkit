@@ -732,20 +732,20 @@ class Project:
 
         self.write_json()
 
-    def delete_output(self, output_name: str) -> None:
-        """Delete all output datasets from a given ran transform name.
+    def delete_transform_with_outputs(self, transform_name: str) -> None:
+        """Delete all output datasets from a given run transform name.
 
         WARNING: all the output files will be deleted.
 
 
         Parameters
         ----------
-        output_name: str
+        transform_name: str
             Name of the transform whose output to delete.
 
         """
         for dataset_to_delete in self.get_output_by_transform_name(
-            output_name,
+            transform_name,
         ):
             self._delete_output(dataset_to_delete.name)
 
