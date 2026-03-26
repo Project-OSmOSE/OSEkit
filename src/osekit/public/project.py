@@ -670,39 +670,44 @@ class Project:
             if dataset_values["transform"] == transform_name
         ]
 
-    def rename_output(self, output_name: str, new_output_name: str) -> None:
-        """Rename an already ran transform.
+    def rename_transform_with_outputs(
+        self, transform_name: str, new_transform_name: str
+    ) -> None:
+        """Rename an already run transform.
+
+        All outputs of the transform will be renamed as if the tranform
+        had been originally ran with the ``new_transform_name`` name.
 
         Parameters
         ----------
-        output_name: str
+        transform_name: str
             Name of the transform to rename.
-        new_output_name: str
+        new_transform_name: str
             New name of the transform to rename.
 
         """
-        if output_name == new_output_name:
+        if transform_name == new_transform_name:
             return
-        if output_name == "original":
+        if transform_name == "original":
             msg = "You can't rename the original dataset."
             raise ValueError(msg)
-        if output_name not in self.outputs:
-            msg = f"Unknown output {output_name}."
+        if transform_name not in self.outputs:
+            msg = f"Unknown output {transform_name}."
             raise ValueError(msg)
-        if new_output_name in self.outputs:
-            msg = f"{new_output_name} already exists."
+        if new_transform_name in self.outputs:
+            msg = f"{new_transform_name} already exists."
             raise ValueError(msg)
 
         keys_to_rename = {}
         for output_dataset in self.outputs.values():
-            if output_dataset["transform"] == output_name:
-                output_dataset["transform"] = new_output_name
+            if output_dataset["transform"] == transform_name:
+                output_dataset["transform"] = new_transform_name
                 ds = output_dataset["dataset"]
                 old_name, new_name = (
                     ds.name,
-                    new_output_name + (f"_{ds.suffix}" if ds.suffix else ""),
+                    new_transform_name + (f"_{ds.suffix}" if ds.suffix else ""),
                 )
-                ds.base_name = new_output_name
+                ds.base_name = new_transform_name
                 old_folder = ds.folder
                 new_folder = ds.folder.parent / new_name
                 keys_to_rename[old_name] = new_name
