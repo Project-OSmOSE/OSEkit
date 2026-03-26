@@ -272,7 +272,8 @@ class AudioData(BaseData[AudioItem, AudioFile]):
                         remaining_samples=total_samples - produced_samples,
                     )
                     yield flush
-                    produced_samples += len(flush[0])
+                    if flush.size > 0:
+                        produced_samples += len(flush[0])
                 input_sr = item.sample_rate
                 quality = resample_quality_settings[
                     "downsample" if input_sr > self.sample_rate else "upsample"

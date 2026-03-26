@@ -2141,4 +2141,5 @@ def test_resampling_from_different_origin_frequencies(tmp_path: Path) -> None:
         sample_rate=12_000,
     )
 
-    ad.get_value()
+    vs = ad.get_value()
+    assert vs.size == int(ad.duration.total_seconds()) * ad.sample_rate
