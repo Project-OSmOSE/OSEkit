@@ -2120,3 +2120,25 @@ def test_audio_data_equality(
 
     # AudioDataset equality should account for sample rate
     assert ads1 != ads2
+
+
+def test_resampling_from_different_origin_frequencies(tmp_path: Path) -> None:
+    sf.write(
+        tmp_path / "a1.wav",
+        data=[0.5] * 48_000,
+        samplerate=48_000,
+    )
+    sf.write(
+        tmp_path / "a2.wav",
+        data=[0.5] * 48_000,
+        samplerate=24_000,
+    )
+    af1 = AudioFile(tmp_path / "a1.wav", begin=Timestamp("2024-01-01 12:00:00"))
+    af2 = AudioFile(tmp_path / "a2.wav", begin=Timestamp("2024-01-01 12:00:01"))
+
+    ad = AudioData.from_files(
+        [af1, af2],
+        sample_rate=12_000,
+    )
+
+    ad.get_value()
