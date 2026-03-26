@@ -396,10 +396,9 @@ class Project:
         """
         if transform.name in self.transforms:
             message = (
-                f"Output {transform.name} already exists. "
-                f"Please choose a different transform name, "
-                f"or delete the existing output with the "
-                f"Project.delete_output() method."
+                f"Transform {transform.name} already exists. "
+                f"Please choose a different name, "
+                f"or delete it with the Project.delete_output() method."
             )
             raise ValueError(message)
 
