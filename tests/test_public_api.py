@@ -1364,7 +1364,7 @@ def test_delete_output(
 
     assert all(ds.folder.exists() for ds in (datasets_to_keep + datasets_to_delete))
 
-    project.delete_output(transform_to_delete.name)
+    project.delete_transform_with_outputs(transform_to_delete.name)
 
     assert transform_to_keep.name in project.transforms
     assert transform_to_delete.name not in project.transforms
@@ -1406,7 +1406,10 @@ def test_existing_output_warning(
         ),
     )
 
-    with pytest.raises(ValueError, match="my_transform already exists"):
+    with pytest.raises(
+        ValueError,
+        match="A transform with the name my_transform has already been run",
+    ):
         project.run(
             Transform(
                 output_type=OutputType.SPECTROGRAM,
@@ -1417,7 +1420,7 @@ def test_existing_output_warning(
             ),
         )
 
-    project.delete_output("my_transform")
+    project.delete_transform_with_outputs("my_transform")
 
     project.run(
         Transform(
@@ -1455,7 +1458,7 @@ def test_rename_transform(
 
     names = (first_name, second_name, second_name)  # Tests both renaming and same name
     for old, new in itertools.pairwise(names):
-        project.rename_output(old, new)
+        project.rename_transform_with_outputs(old, new)
 
         if old != new:
             assert old not in project.transforms
@@ -1482,23 +1485,23 @@ def test_rename_transform(
 
     # RENAME ERRORS
     with pytest.raises(ValueError, match=r"You can't rename the original dataset."):
-        project.rename_output(
-            output_name="original",
-            new_output_name="vampire",
+        project.rename_transform_with_outputs(
+            transform_name="original",
+            new_transform_name="vampire",
         )
 
     with pytest.raises(ValueError, match=r"original already exists."):
-        project.rename_output(
-            output_name=second_name,
-            new_output_name="original",
+        project.rename_transform_with_outputs(
+            transform_name=second_name,
+            new_transform_name="original",
         )
 
     unknown_name = "white"
     target_name = "sky"
     with pytest.raises(ValueError, match=f"Unknown output {unknown_name}."):
-        project.rename_output(
-            output_name=unknown_name,
-            new_output_name=target_name,
+        project.rename_transform_with_outputs(
+            transform_name=unknown_name,
+            new_transform_name=target_name,
         )
 
 
