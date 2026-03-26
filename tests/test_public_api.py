@@ -1406,7 +1406,10 @@ def test_existing_output_warning(
         ),
     )
 
-    with pytest.raises(ValueError, match="my_transform already exists"):
+    with pytest.raises(
+        ValueError,
+        match="A transform with the name my_transform has already been run",
+    ):
         project.run(
             Transform(
                 output_type=OutputType.SPECTROGRAM,
