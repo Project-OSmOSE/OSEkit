@@ -22,7 +22,7 @@ dependencies = [
     "tqdm>=4.67.1",
 ]
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 5 - Production/Stable",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
 ]
