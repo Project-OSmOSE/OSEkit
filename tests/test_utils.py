@@ -326,7 +326,7 @@ def test_file_indexes_per_batch(
     )
 
 
-def test_locked(tmp_path: pytest.fixture, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_locked(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     file = tmp_path / "file.txt"
     lock_file = tmp_path / "lock.lock"
 
@@ -351,7 +351,7 @@ def test_locked(tmp_path: pytest.fixture, monkeypatch: pytest.MonkeyPatch) -> No
     with file.open("r") as f:
         assert "yoyoyo" in f.read()
 
-    def sleep_patch(*args: any, **kwargs: any) -> None:
+    def sleep_patch(*args: None, **kwargs: None) -> None:
         msg = "Lock file present."
         raise PermissionError(msg)
 
@@ -363,7 +363,7 @@ def test_locked(tmp_path: pytest.fixture, monkeypatch: pytest.MonkeyPatch) -> No
     # time.sleep should be called if lock file exists
     lock_file.touch()
     with pytest.raises(PermissionError, match=r"Lock file present."):
-        assert edit_file("")
+        edit_file("")
 
 
 @pytest.mark.parametrize(
