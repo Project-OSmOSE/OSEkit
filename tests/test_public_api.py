@@ -1169,8 +1169,8 @@ def test_prepare_spectro(
 
 
 def test_edit_transform_before_run(
-    tmp_path: pytest.fixture,
-    audio_files: pytest.fixture,
+    tmp_path: Path,
+    audio_files: None,
 ) -> None:
     project = Project(
         folder=tmp_path,
@@ -1181,10 +1181,11 @@ def test_edit_transform_before_run(
     project.build()
 
     transform = Transform(
-        output_type=OutputType.AUDIO | OutputType.SPECTROGRAM,
+        output_type=OutputType.AUDIO | OutputType.SPECTRUM | OutputType.SPECTROGRAM,
         data_duration=project.origin_dataset.duration / 2,
         name="original_transform",
         sample_rate=24_000,
+        v_lim=(0.0, 120.0),
         fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
     )
 
@@ -1205,7 +1206,14 @@ def test_edit_transform_before_run(
     ads.data = new_data
     ads.normalization = new_normalization
 
-    project.run(transform, audio_dataset=ads)
+    # Spectro edits
+    new_v_lim = (50.0, 100.0)
+    sds = project.prepare_spectro(transform=transform, audio_dataset=ads)
+    sds.v_lim = new_v_lim
+    for idx, sd in enumerate(sds.data):
+        sd.name = str(idx)
+
+    project.run(transform, audio_dataset=ads, spectro_dataset=sds)
 
     # New ads name
     assert (project.folder / "data" / "audio" / ads.name).exists()
@@ -1233,6 +1241,10 @@ def test_edit_transform_before_run(
 
     # Instrument has been edited
     assert output_ads.instrument.end_to_end_db == new_instrument.end_to_end_db
+
+    # Spectro data have been edited
+    assert output_sds.v_lim == new_v_lim
+    assert all(sd.name == str(i) for i, sd in enumerate(output_sds.data))
 
 
 def test_delete_output_dataset(
