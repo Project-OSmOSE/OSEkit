@@ -618,11 +618,11 @@ def test_serialization(
             id="spectro_only",
         ),
         pytest.param(
-            OutputType.SPECTROGRAM,
+            OutputType.SPECTRUM,
             id="spectrum_only",
         ),
         pytest.param(
-            OutputType.SPECTROGRAM,
+            OutputType.SPECTRUM | OutputType.SPECTROGRAM,
             id="both_spectral_flags",
         ),
     ],
