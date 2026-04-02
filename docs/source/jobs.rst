@@ -25,6 +25,7 @@ instance to the :attr:`osekit.public.project.Project.job_builder` attribute:
     job_config = JobConfig(
         nb_nodes=1, # Number of nodes on which the job runs
         ncpus=28, # Number of total cores used per node
+        ngpus=1, # Number of total GPU used per node
         mem="60gb", # Maximum amount of physical memory used by the job
         walltime=Timedelta(hours=5), # Maximum amount of real itime during which the job can be running
         venv_name=os.environ["CONDA_DEFAULT_ENV"], # Works only for conda venvs
