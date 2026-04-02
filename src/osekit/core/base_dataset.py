@@ -130,6 +130,15 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
             else next(iter(file.path.parent for file in self.files), None)
         )
 
+    @property
+    def data(self) -> list[TData]:
+        """List of Data contained in this Dataset."""
+        return sorted(self._data, key=lambda d: d.begin)
+
+    @data.setter
+    def data(self, data: list[TData]) -> None:
+        self._data = data
+
     @folder.setter
     def folder(self, folder: Path) -> None:
         """Set the folder in which the dataset files might be written.
