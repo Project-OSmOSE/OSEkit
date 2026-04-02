@@ -161,18 +161,17 @@ class BaseData[TItem: BaseItem, TFile: BaseFile](Event, ABC):
         """Abstract method for writing data to file."""
 
     @abstractmethod
-    def link(self, folder: Path) -> None:
-        """Abstract method for linking data to a file in a given folder.
+    def link(self, file: Path) -> None:
+        """Abstract method for linking data to a file in a given file.
 
         Linking is intended for data objects that have been written to disk.
         After linking the data to the written file, it will have a single
-        item that matches the File properties.
-        The folder should contain a file named as ``str(self).extension``.
+        item that matches the ``File`` properties.
 
         Parameters
         ----------
-        folder: Path
-            Folder in which is the file to which the ``BaseData`` instance should be linked.
+        file: Path
+            File to which the ``BaseData`` instance should be linked.
 
         """
 

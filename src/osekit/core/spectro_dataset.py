@@ -504,18 +504,19 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             )
             for name, sft in dictionary["sft"].items()
         ]
-        sd = [
-            cls.data_cls.from_dict(
+        sds = []
+        for name, params in dictionary["data"].items():
+            sd = cls.data_cls.from_dict(
                 params,
                 sft=next(sft for sft, linked_data in sfts if name in linked_data),
             )
-            for name, params in dictionary["data"].items()
-        ]
+            sd.name = name
+            sds.append(sd)
         scale = dictionary["scale"]
         if dictionary["scale"] is not None:
             scale = Scale.from_dict_value(scale)
         return cls(
-            data=sd,
+            data=sds,
             name=dictionary["name"],
             suffix=dictionary["suffix"],
             folder=Path(dictionary["folder"]),
