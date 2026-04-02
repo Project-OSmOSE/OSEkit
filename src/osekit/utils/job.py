@@ -297,14 +297,14 @@ class Job:
         """
         preamble = "#!/bin/bash"
 
-        select_parts = [
-            f"select={self.nb_nodes}",
-            f"ncpus={self.ncpus}",
-            f"mem={self.mem}",
-        ]
+        select_parts = {
+            "select": self.nb_nodes,
+            "ncpus": self.ncpus,
+            "mem": self.mem,
+        }
         if self.ngpus is not None:
-            select_parts.append(f"ngpus={self.ngpus}")
-        select_str = ":".join(select_parts)
+            select_parts["ngpus"] = self.ngpus
+        select_str = ":".join(f"{k}={v}" for k, v in select_parts.items())
 
         request = {
             "-N": self.name,
