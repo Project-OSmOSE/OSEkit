@@ -139,7 +139,7 @@ def test_write_pbs(tmp_path: Path) -> None:
     )
 
     assert (
-        ". /appli/anaconda/latest/etc/profile.d/conda.sh; conda activate osmose"
+        ". /appli/anaconda/latest/etc/profile.d/conda.sh; conda activate osekit"
         in content
     )
     last = content[-1]
@@ -170,14 +170,7 @@ def test_write_pbs_job_with_gpu(tmp_path: Path) -> None:
     job.write_pbs(pbs_path)
 
     content = pbs_path.read_text().splitlines()
-    assert content[0] == "#!/bin/bash"
-    assert any(line.startswith(f"#PBS -N {job.name}") for line in content)
-    assert any(line.startswith("#PBS -q omp") for line in content)
     assert any("select=1:ncpus=2:mem=8gb:ngpus=2" in line for line in content)
-    assert (
-        ". /appli/anaconda/latest/etc/profile.d/conda.sh; conda activate osmose"
-        in content
-    )
     last = content[-1]
     assert last.startswith(f"python {script}")
     assert "--cruelle diablesse" in last

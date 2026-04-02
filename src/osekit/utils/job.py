@@ -64,7 +64,7 @@ class JobConfig:
     ngpus: int | None = None
     mem: str = "8gb"
     walltime: str | Timedelta = "01:00:00"
-    venv_name: str = "osmose"
+    venv_name: str = "osekit"
     queue: Literal["omp", "mpi"] = "omp"
 
 
