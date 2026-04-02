@@ -70,6 +70,7 @@ def test_properties_and_venv_activation() -> None:
     assert job.script_args == {"purple": "bottle"}
     assert job.nb_nodes == nb_nodes
     assert job.ncpus == ncpus
+    assert job.ngpus is None
     assert job.mem == "16gb"
     assert job.walltime == Timedelta(hours=2)
     assert job.venv_name == "merriweather"
@@ -150,6 +151,36 @@ def test_write_pbs(tmp_path: Path) -> None:
 
     assert job.path == pbs_path
     assert job.status == JobStatus.PREPARED
+
+
+def test_write_pbs_job_with_gpu(tmp_path: Path) -> None:
+    script = tmp_path / "deville.py"
+    script.write_text("print('cruella')")
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+
+    job = Job(
+        script_path=script,
+        script_args={"cruelle": "diablesse"},
+        name="penny",
+        config=JobConfig(ngpus=2),
+        output_folder=output_dir,
+    )
+    pbs_path = tmp_path / "patch.pbs"
+    job.write_pbs(pbs_path)
+
+    content = pbs_path.read_text().splitlines()
+    assert content[0] == "#!/bin/bash"
+    assert any(line.startswith(f"#PBS -N {job.name}") for line in content)
+    assert any(line.startswith("#PBS -q omp") for line in content)
+    assert any("select=1:ncpus=2:mem=8gb:ngpus=2" in line for line in content)
+    assert (
+        ". /appli/anaconda/latest/etc/profile.d/conda.sh; conda activate osmose"
+        in content
+    )
+    last = content[-1]
+    assert last.startswith(f"python {script}")
+    assert "--cruelle diablesse" in last
 
 
 def test_submit_pbs_without_write_raises() -> None:

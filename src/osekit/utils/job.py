@@ -46,6 +46,8 @@ class JobConfig:
         Number of nodes on which the job runs.
     ncpus: int
         Number of total cores used per node.
+    ngpus: int | None
+        Number of total GPU used per node.
     mem: str
         Maximum amount of physical memory used by the job.
     walltime: str | Timedelta
@@ -59,6 +61,7 @@ class JobConfig:
 
     nb_nodes: int = 1
     ncpus: int = 2
+    ngpus: int | None = None
     mem: str = "8gb"
     walltime: str | Timedelta = "01:00:00"
     venv_name: str = "osmose"
@@ -97,6 +100,7 @@ class Job:
         self.script_args = script_args if script_args else {}
         self.nb_nodes = config.nb_nodes
         self.ncpus = config.ncpus
+        self.ngpus = config.ngpus
         self.mem = config.mem
         self.walltime = config.walltime
         self.venv_name = config.venv_name
@@ -143,6 +147,15 @@ class Job:
     @ncpus.setter
     def ncpus(self, ncpus: int) -> None:
         self._ncpus = ncpus
+
+    @property
+    def ngpus(self) -> int:
+        """Number of total cores used per node."""
+        return self._ngpus
+
+    @ngpus.setter
+    def ngpus(self, ngpus: int) -> None:
+        self._ngpus = ngpus
 
     @property
     def mem(self) -> str:
@@ -283,11 +296,21 @@ class Job:
 
         """
         preamble = "#!/bin/bash"
+
+        select_parts = [
+            f"select={self.nb_nodes}",
+            f"ncpus={self.ncpus}",
+            f"mem={self.mem}",
+        ]
+        if self.ngpus is not None:
+            select_parts.append(f"ngpus={self.ngpus}")
+        select_str = ":".join(select_parts)
+
         request = {
             "-N": self.name,
             "-q": self.queue,
             "-l": [
-                f"select={self.nb_nodes}:ncpus={self.ncpus}:mem={self.mem}",
+                select_str,
                 f"walltime={self.walltime_str}",
             ],
             "-o": f"{self.output_folder}/{self.name}.out"
