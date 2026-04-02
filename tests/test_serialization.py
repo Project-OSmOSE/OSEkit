@@ -280,6 +280,10 @@ def test_audio_dataset_serialization(
         name=name,
     )
 
+    # NO TIMESTAMP IN THE NAME SHOULD STILL BE DESERIALIZED PROPERLY
+    for idx, ad in list(enumerate(ads.data))[::2]:
+        ad.name = str(idx)
+
     assert ads.begin == begin
 
     if type(sample_rate) is list:
@@ -308,10 +312,11 @@ def test_audio_dataset_serialization(
     assert ads.begin == ads2.begin
     assert ads.normalization == ads2.normalization
 
-    assert all(
-        np.array_equal(ad.get_value(), ad2.get_value())
-        for ad, ad2 in zip(ads.data, ads2.data, strict=False)
-    )
+    zipped = zip(ads.data, ads2.data, strict=True)
+
+    assert all(ad1.name == ad2.name for ad1, ad2 in zipped)
+
+    assert all(np.array_equal(ad.get_value(), ad2.get_value()) for ad, ad2 in zipped)
 
 
 @pytest.mark.parametrize(
