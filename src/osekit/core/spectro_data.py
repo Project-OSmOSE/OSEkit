@@ -21,9 +21,6 @@ from matplotlib.dates import date2num
 from pandas import Timedelta
 from scipy.signal import ShortTimeFFT, welch
 
-from osekit.config import (
-    TIMESTAMP_FORMATS_EXPORTED_FILES,
-)
 from osekit.core.audio_data import AudioData
 from osekit.core.base_data import BaseData, TFile
 from osekit.core.spectro_file import SpectroFile
@@ -602,12 +599,11 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             timestamps="_".join(timestamps),
         )
         if link:
-            self.link(folder=folder)
+            self.link(file=folder / f"{self}.npz")
 
-    def link(self, folder: Path) -> None:
-        """Link the ``SpectroData`` to a ``SpectroFile`` in the folder.
+    def link(self, file: Path) -> None:
+        """Link the ``SpectroData`` to a ``SpectroFile``.
 
-        The given folder should contain a file named ``"str(self).npz"``.
         Linking is intended for ``SpectroData`` objects that have already been
         written to disk.
         After linking, the ``SpectroData`` will have a single item with the same
@@ -615,14 +611,13 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         Parameters
         ----------
-        folder: Path
-            Folder in which is located the ``SpectroFile`` to which the ``SpectroData``
-            instance should be linked.
+        file: Path
+            File to which the ``SpectroData`` instance should be linked.
 
         """
         file = SpectroFile(
-            path=folder / f"{self}.npz",
-            strptime_format=TIMESTAMP_FORMATS_EXPORTED_FILES,
+            path=file,
+            begin=self.begin,
         )
         self.items = SpectroData.from_files([file]).items
 

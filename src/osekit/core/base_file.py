@@ -148,7 +148,10 @@ class BaseFile(Event, ABC):
         path = serialized["path"]
         return cls(
             path=path,
-            strptime_format=TIMESTAMP_FORMATS_EXPORTED_FILES,
+            begin=strptime_from_text(
+                text=serialized["begin"],
+                datetime_template=TIMESTAMP_FORMATS_EXPORTED_FILES,
+            ),
         )
 
     def __hash__(self) -> int:
