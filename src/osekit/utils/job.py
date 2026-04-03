@@ -150,7 +150,7 @@ class Job:
 
     @property
     def ngpus(self) -> int:
-        """Number of total cores used per node."""
+        """Number of total GPU used per node."""
         return self._ngpus
 
     @ngpus.setter
