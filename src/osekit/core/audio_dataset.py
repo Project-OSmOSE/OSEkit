@@ -165,7 +165,12 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             The list of deserialized ``AudioData`` objects.
 
         """
-        return [AudioData.from_dict(data) for data in dictionary.values()]
+        ads = []
+        for name, value in dictionary.items():
+            ad = AudioData.from_dict(value)
+            ad.name = name
+            ads.append(ad)
+        return ads
 
     @classmethod
     def from_folder(  # noqa: PLR0913
