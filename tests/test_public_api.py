@@ -1470,6 +1470,13 @@ def test_rename_transform(
 
     names = (first_name, second_name, second_name)  # Tests both renaming and same name
     for old, new in itertools.pairwise(names):
+        files = {}
+        for dataset in project.get_output_by_transform_name(old):
+            files |= {
+                file.path.name: file.path.relative_to(dataset.folder)
+                for file in dataset.files
+            }
+
         project.rename_transform_with_outputs(old, new)
 
         if old != new:
@@ -1494,6 +1501,10 @@ def test_rename_transform(
             )
             == 2
         )
+
+        for dataset in project.get_output_by_transform_name(new):
+            for file in dataset.files:
+                assert file.path.relative_to(dataset.folder) == files[file.path.name]
 
     # RENAME ERRORS
     with pytest.raises(ValueError, match=r"You can't rename the original dataset."):

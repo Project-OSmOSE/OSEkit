@@ -624,7 +624,10 @@ class Project:
             self._sort_spectro_dataset(dataset)
 
     def _sort_audio_dataset(self, dataset: AudioDataset) -> None:
-        dataset.move_files(self._get_audio_dataset_subpath(dataset))
+        dataset.move_files(
+            self._get_audio_dataset_subpath(dataset),
+            keep_relative_structure=False,
+        )
 
     def _sort_spectro_dataset(self, dataset: SpectroDataset | LTASDataset) -> None:
         raise NotImplementedError
