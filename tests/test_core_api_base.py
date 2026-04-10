@@ -825,7 +825,7 @@ def test_dataset_move(
 
     # Folder should be changed when dataset is moved
     new_destination = tmp_path / "new_destination"
-    dummy_dataset.move_files(new_destination)
+    dummy_dataset.move_files(new_destination, keep_relative_structure=False)
 
     assert new_destination.exists()
     assert new_destination.is_dir()
