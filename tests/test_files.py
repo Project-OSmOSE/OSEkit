@@ -73,11 +73,18 @@ from tests.test_core_api_base import DummyDataset, DummyFile
             Timestamp("2004-05-03 19:12:12", tz="UTC+01:00"),
             id="aware_strptime_converted_to_provided_utc_offset",
         ),
+        pytest.param(
+            "040503121212_-0600.foo",
+            ["%y%m%d%H%M%S_%f", "%y%m%d%H%M%S_%z", "%y%m%d%H%M%S"],
+            "+0100",
+            Timestamp("2004-05-03 19:12:12", tz="UTC+01:00"),
+            id="first_matching_format_is_used",
+        ),
     ],
 )
 def test_file_localization(
     file_name: str,
-    strptime_format: str,
+    strptime_format: str | list[str],
     timezone: str | pytz.timezone | None,
     expected_begin: Timestamp,
 ) -> None:
