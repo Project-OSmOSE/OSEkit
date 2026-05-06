@@ -170,7 +170,7 @@ def test_file_localization(
 def test_dataset_localization(
     tmp_path: Path,
     file_names: list[str],
-    strptime_format: str,
+    strptime_format: str | list[str],
     timezone: str | pytz.timezone | None,
     expected_begins: list[Timestamp],
 ) -> None:

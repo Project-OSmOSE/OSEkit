@@ -619,7 +619,7 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
     def _parse_file(
         cls: type[Self],
         file: Path,
-        strptime_format: str | list[str],
+        strptime_format: str | list[str] | None,
         timezone: str | pytz.timezone | None,
         begin_timestamp: Timestamp,
         valid_files: list[TFile],
