@@ -527,7 +527,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
     def from_folder(  # noqa: PLR0913
         cls,
         folder: Path,
-        strptime_format: str | list[str],
+        strptime_format: str | list[str] | None,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         timezone: str | pytz.timezone | None = None,
@@ -543,7 +543,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         ----------
         folder: Path
             The folder containing the spectro files.
-        strptime_format: str | list[str]
+        strptime_format: str | list[str] | None
             The strptime format of the timestamps in the spectro file names.
         begin: Timestamp | None
             The begin of the spectro dataset.
