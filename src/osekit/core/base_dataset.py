@@ -519,7 +519,7 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
     def from_folder(  # noqa: PLR0913
         cls: type[Self],
         folder: Path,
-        strptime_format: str | None,
+        strptime_format: str | list[str] | None,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         timezone: str | pytz.timezone | None = None,
@@ -536,7 +536,7 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
         ----------
         folder: Path
             The folder containing the files.
-        strptime_format: str | None
+        strptime_format: str | list[str] | None
             The strptime format used in the filenames.
             It should use valid strftime codes (https://strftime.org/).
             If None, the first audio file of the folder will start
@@ -627,7 +627,7 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
     def _parse_file(
         cls: type[Self],
         file: Path,
-        strptime_format: str,
+        strptime_format: str | list[str] | None,
         timezone: str | pytz.timezone | None,
         begin_timestamp: Timestamp,
         valid_files: list[TFile],

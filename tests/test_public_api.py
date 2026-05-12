@@ -1397,6 +1397,10 @@ def test_delete_output(
         assert all(ds.name in proj.outputs.keys() for ds in datasets_to_keep)
         assert not any(ds.name in proj.outputs.keys() for ds in datasets_to_delete)
 
+    # Trying to delete an unexisting transform should raise:
+    with pytest.raises(ValueError, match="'FrankieCosmos'"):
+        project.delete_transform_with_outputs("FrankieCosmos")
+
 
 def test_existing_output_warning(
     tmp_path: pytest.fixture,

@@ -45,7 +45,7 @@ class AudioFile(BaseFile):
             If it is not provided, ``strptime_format`` is mandatory.
             If both ``begin`` and ``strptime_format`` are provided,
             ``begin`` will overrule the timestamp embedded in the filename.
-        strptime_format: str | None
+        strptime_format: str | list[str] | None
             The strptime format used in the text.
             It should use valid strftime codes (https://strftime.org/).
             Example: ``'%y%m%d_%H:%M:%S'``.

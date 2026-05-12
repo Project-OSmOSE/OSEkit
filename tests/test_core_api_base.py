@@ -457,6 +457,28 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
             id="one_file_default",
         ),
         pytest.param(
+            ["%Y%m%d%H%M%S%f", "%y%m%d%H%M%S", "%y%m%d%H%M%S%z"],
+            None,
+            None,
+            None,
+            "files",
+            0.0,
+            None,
+            None,
+            None,
+            [Path(r"231201000000")],
+            [
+                (
+                    Event(
+                        begin=Timestamp("2023-12-01 00:00:00"),
+                        end=Timestamp("2023-12-01 00:00:01"),
+                    ),
+                    [Path(r"231201000000")],
+                ),
+            ],
+            id="first_matching_strptime_format_is_used",
+        ),
+        pytest.param(
             None,
             None,
             None,
@@ -735,7 +757,7 @@ def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> No
 )
 def test_base_dataset_from_folder(
     monkeypatch: pytest.monkeypatch,
-    strptime_format: str | None,
+    strptime_format: str | list[str] | None,
     begin: Timestamp | None,
     end: Timestamp | None,
     timezone: str | None,

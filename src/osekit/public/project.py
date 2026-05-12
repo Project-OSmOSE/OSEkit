@@ -53,7 +53,7 @@ class Project:
     def __init__(  # noqa: PLR0913
         self,
         folder: Path,
-        strptime_format: str | None,
+        strptime_format: str | list[str] | None,
         gps_coordinates: str | list | tuple = (0, 0),
         depth: float = 0.0,
         timezone: str | None = None,
@@ -68,7 +68,7 @@ class Project:
         ----------
         folder: Path
             Path to the folder containing the original audio files.
-        strptime_format: str | None
+        strptime_format: str | list[str] | None
             The strptime format used in the filenames.
             It should use valid strftime codes (https://strftime.org/).
             If ``None``, the first audio file of the folder will start
@@ -747,6 +747,10 @@ class Project:
             Name of the transform whose output to delete.
 
         """
+        if transform_name not in self.transforms:
+            message = f"Transform '{transform_name}' not found."
+            raise ValueError(message)
+
         for dataset_to_delete in self.get_output_by_transform_name(
             transform_name,
         ):

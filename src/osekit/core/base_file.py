@@ -62,7 +62,7 @@ class BaseFile(Event, ABC):
             ``begin`` will overrule the timestamp embedded in the filename.
         end: pandas.Timestamp | None
             (Optional) timestamp after the last data point in the file.
-        strptime_format: str | None
+        strptime_format: str | list[str] | None
             The strptime format used in the text.
             It should use valid strftime codes (https://strftime.org/).
             Example: ``'%y%m%d_%H:%M:%S'``.
