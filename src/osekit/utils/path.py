@@ -40,7 +40,8 @@ def move_tree(
             continue
         file_destination = destination / file.parent.relative_to(source)
         file_destination.mkdir(parents=True, exist_ok=True)
-        shutil.move(file, file_destination / file.name)
+        if not (file_destination / file.name).exists():
+            shutil.move(file, file_destination)
     if not any(destination.iterdir()):
         destination.rmdir()
 
