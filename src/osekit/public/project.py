@@ -744,6 +744,10 @@ class Project:
             Name of the transform whose output to delete.
 
         """
+        if transform_name not in self.transforms:
+            message = f"Transform '{transform_name}' not found."
+            raise ValueError(message)
+
         for dataset_to_delete in self.get_output_by_transform_name(
             transform_name,
         ):
