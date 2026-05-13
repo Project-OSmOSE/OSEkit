@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 import shutil
+import typing
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar
 
@@ -49,6 +50,13 @@ class Project:
     It has additionnal metadata that can be exported, e.g. to APLOSE.
 
     """
+
+    SUBFOLDERS: typing.ClassVar = {
+        "data": "data",
+        "processed": "processed",
+        "other": "other",
+        "log": "log",
+    }
 
     def __init__(  # noqa: PLR0913
         self,
@@ -164,14 +172,14 @@ class Project:
         afm.close()
         move_tree(
             source=self.folder,
-            destination=self.folder / "other",
+            destination=self.folder / self.SUBFOLDERS["other"],
             excluded_paths={file.path for file in ads.files}
             | set(
-                (self.folder / "log").iterdir()
-                if (self.folder / "log").exists()
+                (self.folder / self.SUBFOLDERS["log"]).iterdir()
+                if (self.folder / self.SUBFOLDERS["log"]).exists()
                 else (),
             )
-            | {self.folder / "log"},
+            | {self.folder / self.SUBFOLDERS["log"]},
         )
         self._sort_dataset(ads)
         ads.write_json(ads.folder)
@@ -228,7 +236,7 @@ class Project:
             self.logger = logging.getLogger()
             return
 
-        logs_directory = self.folder / "log"
+        logs_directory = self.folder / self.SUBFOLDERS["log"]
         if not logs_directory.exists():
             logs_directory.mkdir(mode=DPDEFAULT, parents=True)
         self.logger = logging.getLogger("project").getChild(self.folder.name)
@@ -250,10 +258,35 @@ class Project:
         afm.close()
 
         files_to_remove = list(self.folder.iterdir())
+
+        misplaced_files = []
+        for file in files_to_remove:
+            if file.name == "project.json":
+                continue
+            if file in (
+                self.folder / subfolder for subfolder in self.SUBFOLDERS.values()
+            ):
+                continue
+            if any(
+                (self.folder / subfolder) in file.parents
+                for subfolder in self.SUBFOLDERS.values()
+            ):
+                continue
+            misplaced_files.append(file)
+        if misplaced_files:
+            msg = (
+                f"The following files would be deleted by a reset.\n"
+                f"Either delete them manually or move them to the "
+                f"{self.folder / self.SUBFOLDERS['other']} folder "
+                f"before resetting the project:\n"
+            )
+            msg += "\n".join(file.name for file in misplaced_files)
+            raise RuntimeError(msg)
+
         self.get_output("original").move_files(self.folder)
 
-        if self.folder / "other" in files_to_remove:
-            move_tree(self.folder / "other", self.folder)
+        if self.folder / self.SUBFOLDERS["other"] in files_to_remove:
+            move_tree(self.folder / self.SUBFOLDERS["other"], self.folder)
 
         self.logger.handlers.clear()
 
@@ -458,7 +491,7 @@ class Project:
     ) -> Path:
         return (
             self.folder
-            / "data"
+            / self.SUBFOLDERS["data"]
             / "audio"
             / (
                 f"{round(ads.data_duration.total_seconds())}_{round(ads.sample_rate)}"
@@ -585,7 +618,7 @@ class Project:
                     "dataset-json-path": self.folder / "project.json",
                 },
                 name=name + (f"_{index}" if len(batch_indexes) > 1 else ""),
-                output_folder=self.folder / "log",
+                output_folder=self.folder / self.SUBFOLDERS["log"],
             )
         self.job_builder.submit_pbs()
 
@@ -612,7 +645,7 @@ class Project:
         fft_folder = f"{sds.fft.mfft}_{sds.fft.win.shape[0]}_{sds.fft.hop}_linear"
         return (
             self.folder
-            / "processed"
+            / self.SUBFOLDERS["processed"]
             / (ads_folder / fft_folder if sds.has_default_name else sds.name)
         )
 
