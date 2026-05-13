@@ -297,8 +297,11 @@ def test_project_build(
         project.reset()
 
     # Files added in the "other" folder are moved in the project root after reset
-    new_file_in_other = (tmp_path / "pinnifred.txt").replace(tmp_path / "other")
-    files_before_build.append(new_file_in_other)
+    (tmp_path / "other").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "pinnifred.txt").replace(
+        tmp_path / "other" / "pinnifred.txt",
+    )
+    files_before_build.append(tmp_path / "pinnifred.txt")
 
     # Resetting the project should put back all original files back
     project.reset()
