@@ -264,11 +264,6 @@ class Project:
                 self.folder / subfolder for subfolder in self.SUBFOLDERS.values()
             ):
                 continue
-            if any(
-                (self.folder / subfolder) in file.parents
-                for subfolder in self.SUBFOLDERS.values()
-            ):
-                continue
             misplaced_files.append(file)
         if misplaced_files:
             msg = (
