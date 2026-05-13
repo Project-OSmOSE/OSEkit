@@ -170,16 +170,13 @@ class Project:
 
         self.logger.info("Organizing project folder...")
         afm.close()
+        for folder in self.SUBFOLDERS.values():
+            (self.folder / folder).mkdir(exist_ok=True)
         move_tree(
             source=self.folder,
             destination=self.folder / self.SUBFOLDERS["other"],
             excluded_paths={file.path for file in ads.files}
-            | set(
-                (self.folder / self.SUBFOLDERS["log"]).iterdir()
-                if (self.folder / self.SUBFOLDERS["log"]).exists()
-                else (),
-            )
-            | {self.folder / self.SUBFOLDERS["log"]},
+            | {self.folder / folder for folder in self.SUBFOLDERS.values()},
         )
         self._sort_dataset(ads)
         ads.write_json(ads.folder)
