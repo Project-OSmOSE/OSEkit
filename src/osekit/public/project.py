@@ -272,10 +272,9 @@ class Project:
             misplaced_files.append(file)
         if misplaced_files:
             msg = (
-                f"The following files would be deleted by a reset.\n"
-                f"Either delete them manually or move them to the "
-                f"{self.folder / self.SUBFOLDERS['other']} folder "
-                f"before resetting the project:\n"
+                "Some file(s) or folder(s) would be deleted by a reset.\n"
+                "Either delete them manually or move them to the "
+                "'other' folder before resetting the project:\n"
             )
             msg += "\n".join(file.name for file in misplaced_files)
             raise RuntimeError(msg)
