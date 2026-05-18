@@ -7,11 +7,9 @@ import typing
 from pathlib import Path
 from unittest.mock import MagicMock
 
-import numpy as np
 import pandas as pd
 import pytest
 import soundfile as sf
-from pandas import Timestamp
 
 from osekit import config
 from osekit.audio_backend.soundfile_backend import SoundFileBackend
@@ -19,7 +17,6 @@ from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
 )
-from osekit.core.audio_data import AudioData
 from osekit.core.audio_file import AudioFile
 from osekit.utils.audio import generate_sample_audio
 
@@ -110,7 +107,7 @@ def patch_filehandlers(
     if "allow_log_write_to_file" in request.keywords:
         return
 
-    def disabled_filewrite(self: any, record: any) -> None:
+    def disabled_filewrite(self: typing.Any, record: typing.Any) -> None:
         """Prevent the logger from actually writing files."""
 
     monkeypatch.setattr(logging.FileHandler, "emit", disabled_filewrite)
@@ -165,39 +162,6 @@ def patch_afm_open(monkeypatch: pytest.MonkeyPatch) -> list[Path]:
 
     monkeypatch.setattr(SoundFileBackend, "_open", mock_open)
     return opened_files
-
-
-class MockedAudioData(AudioData):
-    def __init__(
-        self,
-        mocked_value: list[float] | np.ndarray,
-        *args: typing.Any,
-        **kwargs: typing.Any,
-    ) -> None:
-        defaults = {
-            "begin": Timestamp("2000-01-01 00:00:00"),
-            "end": Timestamp("2000-01-01 00:00:01"),
-            "sample_rate": 48000,
-        }
-        for key, value in defaults.items():
-            if key not in kwargs:
-                kwargs.update(**{key: value})
-
-        super().__init__(*args, **kwargs)
-        if mocked_value is not None:
-            self.mocked_value = mocked_value
-            if type(mocked_value) is list or len(mocked_value.shape) == 1:
-                self.mocked_value = np.array(self.mocked_value).reshape(
-                    len(mocked_value),
-                    1,
-                )
-
-    @property
-    def length(self) -> int:
-        return len(self.mocked_value)
-
-    def get_raw_value(self) -> np.ndarray:
-        return self.mocked_value
 
 
 @pytest.fixture(autouse=True)

@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import pytest
 import soundfile as sf
-from conftest import MockedAudioData
 from pandas import Timedelta, Timestamp
 
 import osekit
@@ -27,6 +26,7 @@ from osekit.core.audio_item import AudioItem
 from osekit.core.instrument import Instrument
 from osekit.utils import audio
 from osekit.utils.audio import Normalization, generate_sample_audio, normalize
+from tests.helpers.audio import MockedAudioData
 
 
 def test_mocked_audio_data() -> None:

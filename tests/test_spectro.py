@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
-from conftest import MockedAudioData
 from matplotlib.dates import num2date
 from pandas import Timedelta, Timestamp
 from scipy.signal import ShortTimeFFT
@@ -33,6 +32,7 @@ from osekit.core.spectro_dataset import SpectroDataset
 from osekit.core.spectro_file import SpectroFile
 from osekit.core.spectro_item import SpectroItem
 from osekit.utils.audio import Normalization, generate_sample_audio
+from tests.helpers.audio import MockedAudioData
 from tests.helpers.dummy import DummyFile
 
 
