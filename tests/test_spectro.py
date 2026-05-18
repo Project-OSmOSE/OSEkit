@@ -1506,7 +1506,7 @@ def test_spectrodataset_scale(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     ad = MockedAudioData(
-        mocked_value=np.linspace(0.0, 1.0, 1000),  # Type: ignore # Unexpected argument
+        mocked_value=np.linspace(0.0, 1.0, 1000),
     )
 
     fft = ShortTimeFFT(win=hamming(512), hop=128, fs=ad.sample_rate)
@@ -1543,7 +1543,7 @@ def test_spectrodataset_scale(
 
 def test_spectro_dataset_properties_propagate() -> None:
     ad1, ad2 = MockedAudioData(
-        mocked_value=[0.0 for _ in range(48_000)],  # Type: ignore # Unexpected argument
+        mocked_value=[0.0 for _ in range(48_000)],
     ).split()
 
     fft = ShortTimeFFT(win=hamming(512), hop=128, fs=ad1.sample_rate)
@@ -1568,7 +1568,7 @@ def test_spectro_dataset_folder_moves_files(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     ad1, ad2 = MockedAudioData(
-        mocked_value=[0.0 for _ in range(48_000)],  # Type: ignore # Unexpected argument
+        mocked_value=[0.0 for _ in range(48_000)],
     ).split()
 
     fft = ShortTimeFFT(win=hamming(512), hop=128, fs=ad1.sample_rate)

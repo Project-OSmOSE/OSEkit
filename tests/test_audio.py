@@ -32,10 +32,10 @@ from tests.helpers.audio import MockedAudioData
 def test_mocked_audio_data() -> None:
     mocked_value = [1.0, 2.0, 3.0]
     audio_data = MockedAudioData(
-        mocked_value=mocked_value,  # Type: ignore # Unexpected argument
+        mocked_value=mocked_value,
     )
     assert np.array_equal(
-        audio_data.mocked_value[:, 0],  # Type: ignore # Unresolved attribute
+        audio_data.mocked_value[:, 0],
         mocked_value,
     )
 
