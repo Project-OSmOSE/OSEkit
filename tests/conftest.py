@@ -167,17 +167,12 @@ def patch_afm_open(monkeypatch: pytest.MonkeyPatch) -> list[Path]:
     return opened_files
 
 
-@pytest.fixture
-def patch_audio_data(monkeypatch: pytest.MonkeyPatch) -> None:
-    original_init = AudioData.__init__
-    original_get_raw_value = AudioData.get_raw_value
-    original_length = AudioData.length
-
-    def mocked_init(
-        self: AudioData,
-        *args: list,
-        mocked_value: list[float] | np.ndarray | None = None,
-        **kwargs: dict,
+class MockedAudioData(AudioData):
+    def __init__(
+        self,
+        mocked_value: list[float] | np.ndarray,
+        *args: typing.Any,
+        **kwargs: typing.Any,
     ) -> None:
         defaults = {
             "begin": Timestamp("2000-01-01 00:00:00"),
@@ -188,7 +183,7 @@ def patch_audio_data(monkeypatch: pytest.MonkeyPatch) -> None:
             if key not in kwargs:
                 kwargs.update(**{key: value})
 
-        original_init(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         if mocked_value is not None:
             self.mocked_value = mocked_value
             if type(mocked_value) is list or len(mocked_value.shape) == 1:
@@ -197,23 +192,12 @@ def patch_audio_data(monkeypatch: pytest.MonkeyPatch) -> None:
                     1,
                 )
 
-    def mocked_length(self: AudioData) -> int:
-        if hasattr(self, "mocked_value"):
-            return len(self.mocked_value)
-        return original_length.fget(self)
+    @property
+    def length(self) -> int:
+        return len(self.mocked_value)
 
-    def mocked_get_raw_value(self: AudioData) -> np.ndarray:
-        if hasattr(self, "mocked_value"):
-            return self.mocked_value
-        return original_get_raw_value(self)
-
-    monkeypatch.setattr(AudioData, "__init__", mocked_init)
-    monkeypatch.setattr(AudioData, "length", property(mocked_length))
-    monkeypatch.setattr(
-        AudioData,
-        "get_raw_value",
-        mocked_get_raw_value,
-    )
+    def get_raw_value(self) -> np.ndarray:
+        return self.mocked_value
 
 
 @pytest.fixture(autouse=True)
