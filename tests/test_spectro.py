@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
+from conftest import MockedAudioData
 from matplotlib.dates import num2date
 from pandas import Timedelta, Timestamp
 from scipy.signal import ShortTimeFFT
@@ -84,9 +85,9 @@ def test_spectrogram_shape(
         assert spectro.nb_bytes == nb_points * 8
 
 
-def test_spectro_data_sx_dtype(patch_audio_data: None) -> None:
+def test_spectro_data_sx_dtype() -> None:
     sd = SpectroData.from_audio_data(
-        data=AudioData(mocked_value=[0.0 for _ in range(48_000)]),
+        data=MockedAudioData(mocked_value=[0.0 for _ in range(48_000)]),
         fft=ShortTimeFFT(hamming(1024), 512, 48_000),
     )
     assert sd.sx_dtype is complex
@@ -97,11 +98,10 @@ def test_spectro_data_sx_dtype(patch_audio_data: None) -> None:
 
 
 def test_spectro_data_db_ref(
-    patch_audio_data: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     sd = SpectroData.from_audio_data(
-        data=AudioData(mocked_value=[0.0 for _ in range(48_000)]),
+        data=MockedAudioData(mocked_value=[0.0 for _ in range(48_000)]),
         fft=ShortTimeFFT(hamming(1024), 512, 48_000),
     )
 
@@ -991,7 +991,6 @@ def test_link_audio_data(
     ],
 )
 def test_link_audio_dataset(
-    patch_audio_data: None,
     audio_data_params: list[
         tuple[Timestamp, Timestamp, float]
     ],  # begin, end, sample_rate
@@ -1005,7 +1004,7 @@ def test_link_audio_dataset(
 ) -> None:
     ads_origin = AudioDataset(
         [
-            AudioData(
+            MockedAudioData(
                 begin=sd_params[0],
                 end=sd_params[1],
                 sample_rate=sd_params[2],
@@ -1017,7 +1016,7 @@ def test_link_audio_dataset(
 
     ads_dest = AudioDataset(
         [
-            AudioData(
+            MockedAudioData(
                 begin=ad_params[0],
                 end=ad_params[1],
                 sample_rate=ad_params[2],
@@ -1349,11 +1348,11 @@ def test_ltas(audio_files: tuple[list[AudioFile], None], tmp_path: Path) -> None
     assert np.array_equal(ltas_ds.data[0].get_value(), ltas_ds2.data[0].get_value())
 
 
-def test_ltas_dataset(patch_audio_data: None) -> None:
+def test_ltas_dataset() -> None:
     ads = AudioDataset(
         [
-            AudioData(mocked_value=[0] * 48_000),
-            AudioData(mocked_value=[0] * 48_000),
+            MockedAudioData(mocked_value=[0] * 48_000),
+            MockedAudioData(mocked_value=[0] * 48_000),
         ],
     )
 
@@ -1504,10 +1503,9 @@ def test_garbage_collection_after_save_spectrogram(
 
 def test_spectrodataset_scale(
     tmp_path: Path,
-    patch_audio_data: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    ad = AudioData(
+    ad = MockedAudioData(
         mocked_value=np.linspace(0.0, 1.0, 1000),  # Type: ignore # Unexpected argument
     )
 
@@ -1543,8 +1541,8 @@ def test_spectrodataset_scale(
     ltas_ds.save_all(tmp_path, tmp_path)
 
 
-def test_spectro_dataset_properties_propagate(patch_audio_data: None) -> None:
-    ad1, ad2 = AudioData(
+def test_spectro_dataset_properties_propagate() -> None:
+    ad1, ad2 = MockedAudioData(
         mocked_value=[0.0 for _ in range(48_000)],  # Type: ignore # Unexpected argument
     ).split()
 
@@ -1567,10 +1565,9 @@ def test_spectro_dataset_properties_propagate(patch_audio_data: None) -> None:
 
 
 def test_spectro_dataset_folder_moves_files(
-    patch_audio_data: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    ad1, ad2 = AudioData(
+    ad1, ad2 = MockedAudioData(
         mocked_value=[0.0 for _ in range(48_000)],  # Type: ignore # Unexpected argument
     ).split()
 
@@ -1648,9 +1645,10 @@ def test_spectro_dataset_data_from_dict(
 
 def test_spectro_multichannel_audio_file(
     monkeypatch: pytest.MonkeyPatch,
-    patch_audio_data: pytest.MonkeyPatch,
 ) -> None:
-    ad = AudioData(mocked_value=np.array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]]))
+    ad = MockedAudioData(
+        mocked_value=np.array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]]),
+    )
 
     sft = ShortTimeFFT(win=hamming(512), hop=128, fs=48_000)
 
@@ -1706,7 +1704,6 @@ def test_spectro_begin_and_end(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_spectro_write_welch(
-    patch_audio_data: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     created_dir_calls = []
@@ -1732,7 +1729,7 @@ def test_spectro_write_welch(
     monkeypatch.setattr(np, "savez", mocked_savez)
 
     sd = SpectroData.from_audio_data(
-        data=AudioData(mocked_value=[0.0 for _ in range(48_000)]),
+        data=MockedAudioData(mocked_value=[0.0 for _ in range(48_000)]),
         fft=ShortTimeFFT(win=hamming(512), hop=128, fs=48_000),
     )
 
@@ -1748,7 +1745,6 @@ def test_spectro_write_welch(
 
 
 def test_spectro_get_value_from_items_errors(
-    patch_audio_data: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     def mocked_read_metadata(self: SpectroFile, *args: list, **kwargs: dict) -> None:
@@ -1795,7 +1791,6 @@ def test_spectro_get_value_from_items_errors(
 
 
 def test_spectro_populated_duration(
-    patch_audio_data: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     ad_sentinel = object()
@@ -1820,7 +1815,7 @@ def test_spectro_populated_duration(
     )
     assert (
         SpectroData.from_audio_data(
-            data=AudioData(mocked_value=[0, 1, 2]),
+            data=MockedAudioData(mocked_value=[0, 1, 2]),
             fft=sft,
         ).populated_duration
         == bd_sentinel
@@ -1830,7 +1825,7 @@ def test_spectro_populated_duration(
     monkeypatch.setattr(SpectroData, "files", property(lambda _: None))
     assert (
         SpectroData.from_audio_data(
-            data=AudioData(mocked_value=[0, 1, 2]),
+            data=MockedAudioData(mocked_value=[0, 1, 2]),
             fft=sft,
         ).populated_duration
         == ad_sentinel
@@ -1838,7 +1833,7 @@ def test_spectro_populated_duration(
 
     # SD With no files or audio data return 0.
     sd = SpectroData.from_audio_data(
-        data=AudioData(mocked_value=[0, 1, 2]),
+        data=MockedAudioData(mocked_value=[0, 1, 2]),
         fft=sft,
     )
     sd.audio_data = None
@@ -1846,7 +1841,6 @@ def test_spectro_populated_duration(
 
 
 def test_spectro_get_db_value(
-    patch_audio_data: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     get_value_calls = []
@@ -1862,7 +1856,7 @@ def test_spectro_get_db_value(
     monkeypatch.setattr(SpectroData, "_to_db", mock_to_db)
 
     sd = SpectroData.from_audio_data(
-        data=AudioData(mocked_value=[0, 1, 2]),
+        data=MockedAudioData(mocked_value=[0, 1, 2]),
         fft=ShortTimeFFT(hamming(512), hop=128, fs=48_000),
     )
 
