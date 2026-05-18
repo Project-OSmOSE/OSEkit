@@ -88,9 +88,6 @@ class AudioFileManager:
         if stop is None:
             stop = frames
 
-        if stop is None:
-            stop = frames
-
         if not 0 <= start < frames:
             msg = "Start should be between 0 and the last frame of the audio file."
             raise ValueError(msg)
