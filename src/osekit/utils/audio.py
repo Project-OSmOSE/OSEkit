@@ -301,3 +301,6 @@ class Butterworth:
             output="sos",
         )
         return signal.sosfilt(sos=sos, x=sig, axis=0)
+
+    def __hash__(self) -> int:
+        return hash((self.N, self.Wn, self.btype))
