@@ -26,15 +26,16 @@ from osekit.core.audio_item import AudioItem
 from osekit.core.instrument import Instrument
 from osekit.utils import audio
 from osekit.utils.audio import Normalization, generate_sample_audio, normalize
+from tests.helpers.audio import MockedAudioData
 
 
-def test_patch_audio_data(patch_audio_data: None) -> None:
+def test_mocked_audio_data() -> None:
     mocked_value = [1.0, 2.0, 3.0]
-    audio_data = AudioData(
-        mocked_value=mocked_value,  # Type: ignore # Unexpected argument
+    audio_data = MockedAudioData(
+        mocked_value=mocked_value,
     )
     assert np.array_equal(
-        audio_data.mocked_value[:, 0],  # Type: ignore # Unresolved attribute
+        audio_data.mocked_value[:, 0],
         mocked_value,
     )
 
@@ -1534,10 +1535,16 @@ def test_audio_dataset_from_folder_errors_warnings(
         assert all(f in caplog.text for f in corrupted_audio_files)
 
 
-def test_audio_dataset_instrument(patch_audio_data: None) -> None:
+def test_audio_dataset_instrument() -> None:
     ad = [
-        AudioData(mocked_value=[1, 2, 3], instrument=Instrument(end_to_end_db=150.0)),
-        AudioData(mocked_value=[4, 5, 6], instrument=Instrument(end_to_end_db=150.0)),
+        MockedAudioData(
+            mocked_value=[1, 2, 3],
+            instrument=Instrument(end_to_end_db=150.0),
+        ),
+        MockedAudioData(
+            mocked_value=[4, 5, 6],
+            instrument=Instrument(end_to_end_db=150.0),
+        ),
     ]
 
     ads = AudioDataset(data=ad)
@@ -1807,9 +1814,8 @@ def test_split_data(
                 assert subsubdata.normalization == subdata.normalization
 
 
-def test_split_data_normalization_pass(patch_audio_data: None) -> None:
-    ad = AudioData()
-    ad.mocked_value = [1, 2, 3]
+def test_split_data_normalization_pass() -> None:
+    ad = MockedAudioData(mocked_value=[1, 2, 3])
     original_normalization_values = ad.get_normalization_values()
     assert all(original_normalization_values.values())
 
@@ -1926,9 +1932,9 @@ def test_split_data_frames(
     assert np.array_equal(ad.get_value()[:, 0], expected_data)
 
 
-def test_split_frames_errors(patch_audio_data: None) -> None:
+def test_split_frames_errors() -> None:
     mocked_value = [1, 2, 3]
-    ad = AudioData(mocked_value=mocked_value)
+    ad = MockedAudioData(mocked_value=mocked_value)
     error_msgs = [
         "Start_frame must be greater than or equal to 0.",
         "Stop_frame must be lower than the length of the data.",
