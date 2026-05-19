@@ -12,7 +12,7 @@ from pandas import Timedelta
 
 from osekit.core.ltas_dataset import LTASDataset
 from osekit.core.spectro_dataset import SpectroDataset
-from osekit.utils.audio import Normalization, normalize
+from osekit.utils.audio import Butterworth, Normalization, normalize
 from osekit.utils.core import (
     file_indexes_per_batch,
     get_closest_value_index,
@@ -574,3 +574,15 @@ def test_deserialize_spectro_or_ltas_dataset(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setattr(LTASDataset, "from_json", raise_key_error)
 
     assert deserialize_spectro_or_ltas_dataset(path=Path()) == "SpectroDataset"
+
+
+def test_butter_serialization() -> None:
+    N = 4
+    Wn = [120.0, 200.0]
+    btype = "bandpass"
+    butter = Butterworth(N=N, Wn=Wn, btype=btype)
+    butter2 = Butterworth.from_dict(butter.to_dict())
+
+    assert butter.N == butter2.N
+    assert butter.Wn == butter2.Wn
+    assert butter.btype == butter2.btype
