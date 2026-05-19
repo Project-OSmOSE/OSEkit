@@ -2209,3 +2209,21 @@ def test_butter(monkeypatch: pytest.MonkeyPatch) -> None:
         butter_calls["x"],
         ad.get_raw_value(),
     )
+
+
+def test_butter_audiodataset() -> None:
+    ads = AudioDataset([MockedAudioData(mocked_value=[]) for _ in range(2)])
+
+    assert all(ad.butter is None for ad in ads.data)
+
+    butter = Butterworth(N=2, Wn=[1000, 2000], btype="bandpass")
+    butter2 = Butterworth(N=4, Wn=100, btype="lowpass")
+
+    # AudioDataset to AudioData
+    ads.butter = butter
+    assert all(ad.butter == butter for ad in ads.data)
+
+    # AudioData to AudioDataset
+    for ad in ads.data:
+        ad.butter = butter2
+    assert ads.butter == butter2
