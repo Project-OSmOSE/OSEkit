@@ -191,7 +191,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             "std": standard deviation used for z-score normalization
 
         """
-        values = np.array(self.get_raw_value())
+        values = np.array(self.get_filtered_value())
         self.normalization_values = {
             "mean": values.mean(),
             "peak": values.max(),
@@ -233,7 +233,18 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             The value of the audio data.
 
         """
-        output = np.vstack(list(self.stream()))
+        return np.vstack(list(self.stream()))
+
+    def get_filtered_value(self) -> np.ndarray:
+        """Return the value of the audio data after filtering.
+
+        Returns
+        -------
+        np.ndarray:
+            The value of the audio data filtered by the ``self.butter`` Butterworth filter.
+
+        """
+        output = self.get_raw_value()
         return (
             output
             if self.butter is None
@@ -338,7 +349,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
 
         """
         return normalize(
-            values=self.get_raw_value(),
+            values=self.get_filtered_value(),
             normalization=self.normalization,
             **self.normalization_values,
         )
