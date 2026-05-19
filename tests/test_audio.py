@@ -3,13 +3,14 @@ from __future__ import annotations
 import importlib
 import logging
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
 import pytest
 import soundfile as sf
 from pandas import Timedelta, Timestamp
+from scipy import signal
 
 import osekit
 from osekit.config import (
@@ -25,7 +26,12 @@ from osekit.core.audio_file import AudioFile
 from osekit.core.audio_item import AudioItem
 from osekit.core.instrument import Instrument
 from osekit.utils import audio
-from osekit.utils.audio import Normalization, generate_sample_audio, normalize
+from osekit.utils.audio import (
+    Butterworth,
+    Normalization,
+    generate_sample_audio,
+    normalize,
+)
 from tests.helpers.audio import MockedAudioData
 
 
@@ -2166,3 +2172,40 @@ def test_resampling_from_different_origin_frequencies(tmp_path: Path) -> None:
 
     vs = ad.get_value()
     assert vs.size == int(ad.duration.total_seconds()) * ad.sample_rate
+
+
+def test_butter(monkeypatch: pytest.MonkeyPatch) -> None:
+    butter_calls = {}
+
+    sig_values = [1] * 10
+    butter = Butterworth(N=2, Wn=[1000, 2000], btype="bandpass")
+
+    def butter_patch(*args: Any, **kwargs: Any) -> list[int]:
+        butter_calls.update(kwargs)
+        return sig_values
+
+    from osekit.utils.audio import signal as audio_signal
+
+    monkeypatch.setattr(audio_signal, "sosfilt", butter_patch)
+
+    ad = MockedAudioData(
+        mocked_value=sig_values,
+        butter=butter,
+    )
+    ad.get_value()
+
+    assert np.array_equal(
+        butter_calls["sos"],
+        signal.butter(
+            N=butter.N,
+            Wn=butter.Wn,
+            btype=butter.btype,
+            output="sos",
+            fs=ad.sample_rate,
+        ),
+    )
+
+    assert np.array_equal(
+        butter_calls["x"],
+        ad.get_raw_value(),
+    )
