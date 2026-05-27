@@ -294,6 +294,7 @@ class Project:
             mode=transform.mode,
             overlap=transform.overlap,
             normalization=transform.normalization,
+            butter=transform.butter,
             name=transform.name,
             instrument=self.instrument,
         )

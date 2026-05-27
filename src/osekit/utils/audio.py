@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import dataclasses
 import enum
+from collections.abc import Iterable
 from typing import Literal, Self
 
 import numpy as np
 import soxr
 from pandas import Timedelta
+from scipy import signal
 
 from osekit.config import (
     resample_quality_settings,
@@ -203,3 +206,101 @@ def normalize(
     if Normalization.ZSCORE in normalization:
         values = normalize_zscore(values=values, mean=mean, std=std)
     return values
+
+
+@dataclasses.dataclass
+class Butterworth:
+    """Class that represent a Butterworth sos filter.
+
+    Parameters
+    ----------
+    N: int
+        The order of the filter.
+        For "bandpass" and "bandstop" filters, the resulting order of the final
+        second-order sections ("sos") matrix is ``2*N``,
+        with ``N`` the number of biquad sections of the desired system.
+    Wn: Iterable | int | float
+        The critical frequency or frequencies.
+        For lowpass and highpass filters, ``Wn`` is a scalar.
+        For bandpass and bandstop filters, ``Wn`` is a length-2 sequence.
+        For a Butterworth filter, this is the point at which the gain
+        drops to ``1/sqrt(2)`` that of the passband (the “-3 dB point”).
+        For digital filters, if ``fs`` is not specified,
+        ``Wn`` units are normalized from ``0`` to ``1``,
+        where ``1`` is the Nyquist frequency
+        (``Wn`` is thus in half cycles / sample and defined as
+        ``2*critical frequencies / fs``).
+        If ``fs`` is specified, ``Wn`` is in the same units as ``fs``.
+        For analog filters, ``Wn`` is an angular frequency (e.g. ``rad/s``).
+    btype: Literal["lowpass", "highpass", "bandpass", "bandstop"]
+        The type of filter. Default is "lowpass".
+
+    """
+
+    N: int
+    Wn: Iterable | int | float
+    btype: Literal["lowpass", "highpass", "bandpass", "bandstop"] = "lowpass"
+
+    def to_dict(self) -> dict:
+        """Serialize a Butterworth sos filter to a dictionary.
+
+        Returns
+        -------
+        dict:
+            Serialized Butterworth sos filter.
+
+        """
+        return {
+            "N": self.N,
+            "Wn": self.Wn,
+            "btype": self.btype,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> Butterworth:
+        """Deserialize a Butterworth sos filter from a dictionary.
+
+        Parameters
+        ----------
+        data: dict
+            Serialized Butterworth sos filter.
+
+        Returns
+        -------
+        Butterworth:
+            The Butterworth sos filter.
+
+        """
+        return cls(
+            N=data["N"],
+            Wn=data["Wn"],
+            btype=data["btype"],
+        )
+
+    def filter(self, sig: np.typing.NDArray, fs: float) -> np.typing.NDArray:
+        """Filter an input signal with the Butterworth sos filter.
+
+        Parameters
+        ----------
+        sig: np.typing.NDArray
+            Input signal
+        fs: float
+            Sampling frequency of the signal
+
+        Returns
+        -------
+        np.typing.NDArray
+            Filtered signal
+
+        """
+        sos = signal.butter(
+            N=self.N,
+            Wn=self.Wn,
+            btype=self.btype,
+            fs=fs,
+            output="sos",
+        )
+        return signal.sosfilt(sos=sos, x=sig, axis=0)
+
+    def __hash__(self) -> int:
+        return hash((self.N, self.Wn, self.btype))
