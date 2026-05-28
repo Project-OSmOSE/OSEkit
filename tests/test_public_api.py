@@ -291,6 +291,18 @@ def test_project_build(
     project2 = Project.from_json(tmp_path / "project.json")
     assert project2.origin_dataset == project.outputs["original"]["dataset"]
 
+    # Resetting with an additional file in the project root should raise an error
+    (tmp_path / "pinnifred.txt").touch()
+    with pytest.raises(RuntimeError, match=r"pinnifred.txt"):
+        project.reset()
+
+    # Files added in the "other" folder are moved in the project root after reset
+    (tmp_path / "other").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "pinnifred.txt").replace(
+        tmp_path / "other" / "pinnifred.txt",
+    )
+    files_before_build.append(tmp_path / "pinnifred.txt")
+
     # Resetting the project should put back all original files back
     project.reset()
     assert sorted(str(file) for file in tmp_path.rglob("*")) == sorted(
