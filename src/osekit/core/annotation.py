@@ -134,6 +134,10 @@ class AnnotationMetaData:
     base_id: int
         ID of the base annotation.
         May differ from ``id`` if the annotation is an update/correction.
+    comments: str
+        Comments left by the annotator.
+    phase: Literal["ANNOTATION", "VERIFICATION"]
+        Phase during which the annotation was created.
 
     """
 
@@ -142,6 +146,8 @@ class AnnotationMetaData:
     filename: str
     annotation_id: int
     base_id: int
+    comments: str
+    phase: Literal["ANNOTATION", "VERIFICATION"]
 
 
 @dataclass
@@ -165,8 +171,6 @@ class Annotation(Event):
         annotator_info: AnnotatorInfo,
         annotation_type: Literal["WEAK", "POINT", "BOX"],
         confidence_indicator: ConfidenceIndicator,
-        comments: str,
-        phase: Literal["ANNOTATION", "VERIFICATION"],
         signal_quantity: Literal["SINGLE", "MULTIPLE"],
         signal_parameters: SignalParameters | None,
         verifications: list[Verification],
@@ -194,10 +198,6 @@ class Annotation(Event):
             ``BOX``: Annotation made on one box within the spectrogram.
         confidence_indicator: ConfidenceIndicator
             Indicator of the confidence of the annotator.
-        comments: str
-            Comments left by the annotator.
-        phase: Literal["ANNOTATION", "VERIFICATION"]
-            Phase during which the annotation was created.
         signal_quantity: Literal["SINGLE","MULTIPLE"]
             Whether there is only one signal in the annotation or more.
         signal_parameters: SignalParameters | None
@@ -213,8 +213,6 @@ class Annotation(Event):
         self.frequency_bounds = frequency_bounds
         self.type = annotation_type
         self.confidence_indicator = confidence_indicator
-        self.comments = comments
-        self.phase = phase
         self.signal_quantity = signal_quantity
         self.signal_parameters = signal_parameters
         self.verifications = verifications
@@ -234,6 +232,8 @@ class Annotation(Event):
             filename=row["filename"],
             annotation_id=row["annotation_id"],
             base_id=row["is_update_of_id"],
+            comments=row["comments"],
+            phase=row["created_at_phase"],
         )
         annotator_info = AnnotatorInfo(
             annotator=row["annotator"],
@@ -287,8 +287,6 @@ class Annotation(Event):
             frequency_bounds=frequency_bounds,
             annotation_type=row["type"],
             confidence_indicator=confidence_indicator,
-            comments=row["comments"],
-            phase=row["created_at_phase"],
             signal_quantity=row["signal_quantity"],
             signal_parameters=signal_parameters,
             verifications=verifications,
