@@ -151,20 +151,28 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
         """
         self._folder = folder
 
-    def move_files(self, folder: Path) -> None:
+    def move_files(self, folder: Path, *, keep_relative_structure: bool = True) -> None:
         """Move the dataset files to the destination folder.
 
         Parameters
         ----------
         folder: Path
             Destination folder in which the dataset files will be moved.
+        keep_relative_structure: bool
+            If True, the relative path from the dataset to the file will be preserved.
+            If False, the files will be moved to ``folder`` regardless of their original
+            relative path to the dataset folder.
 
         """
         for file in tqdm(
             self.files,
             disable=os.getenv("DISABLE_TQDM", "False").lower() in ("true", "1", "t"),
         ):
-            file.move(folder)
+            if not keep_relative_structure:
+                file.move(folder)
+                continue
+            relative_folder = folder / file.path.relative_to(self.folder).parent
+            file.move(relative_folder)
         self._folder = folder
 
     @property
