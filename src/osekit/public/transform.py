@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Flag, auto
 from typing import TYPE_CHECKING, Literal
 
-from osekit.utils.audio import Normalization
+from osekit.utils.audio import Butterworth, Normalization
 
 if TYPE_CHECKING:
     from pandas import Timedelta, Timestamp
@@ -73,6 +73,7 @@ class Transform:
         overlap: float = 0.0,
         sample_rate: float | None = None,
         normalization: Normalization = Normalization.RAW,
+        butter: Butterworth | None = None,
         name: str | None = None,
         subtype: str | None = None,
         fft: ShortTimeFFT | None = None,
@@ -118,6 +119,8 @@ class Transform:
             will be set to the one of the original dataset.
         normalization: Normalization
             The type of normalization to apply to the audio data.
+        butter: Butterworth | None
+            Butterworth filter to apply to the audio data.
         name: str | None
             Name of the transform dataset.
             Defaulted as the begin timestamp of the transform dataset.
@@ -160,6 +163,7 @@ class Transform:
         self.sample_rate = sample_rate
         self.name = name
         self.normalization = normalization
+        self.butter = butter
         self.subtype = subtype
         self.v_lim = v_lim
         self.colormap = colormap

@@ -13,7 +13,7 @@ from osekit.core.audio_data import AudioData
 from osekit.core.audio_file import AudioFile
 from osekit.core.base_dataset import BaseDataset
 from osekit.core.json_serializer import deserialize_json
-from osekit.utils.audio import Normalization
+from osekit.utils.audio import Butterworth, Normalization
 from osekit.utils.multiprocess import multiprocess
 
 if TYPE_CHECKING:
@@ -88,6 +88,17 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
     def normalization(self, normalization: Normalization) -> None:
         for data in self.data:
             data.normalization = normalization
+
+    @property
+    def butter(self) -> Butterworth:
+        """Return the most frequent Butterworth filter among those of this dataset data."""
+        butters = [data.butter for data in self.data]
+        return max(set(butters), key=butters.count)
+
+    @butter.setter
+    def butter(self, butter: Butterworth) -> None:
+        for data in self.data:
+            data.butter = butter
 
     @property
     def instrument(self) -> Instrument | None:
@@ -187,6 +198,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         name: str | None = None,
         instrument: Instrument | None = None,
         normalization: Normalization = Normalization.RAW,
+        butter: Butterworth | None = None,
         **kwargs,  # noqa: ANN003
     ) -> Self:
         """Return an ``AudioDataset`` from a folder containing the audio files.
@@ -240,6 +252,8 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             the wav audio data.
         normalization: Normalization
             The type of normalization to apply to the audio data.
+        butter: Butterworth | None
+            Butterworth filter to apply to the audio data.
         kwargs: any
             Keyword arguments passed to the ``BaseDataset.from_folder()`` classmethod.
 
@@ -262,6 +276,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             name=name,
             instrument=instrument,
             normalization=normalization,
+            butter=butter,
         )
 
     @classmethod
@@ -277,6 +292,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         sample_rate: float | None = None,
         instrument: Instrument | None = None,
         normalization: Normalization = Normalization.RAW,
+        butter: Butterworth | None = None,
     ) -> AudioDataset:
         """Return an AudioDataset object from a list of AudioFiles.
 
@@ -317,6 +333,8 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             the wav audio data.
         normalization: Normalization
             The type of normalization to apply to the audio data.
+        butter: Butterworth | None
+            Butterworth filter to apply to the audio data.
 
         Returns
         -------
@@ -335,6 +353,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             mode=mode,
             overlap=overlap,
             data_duration=data_duration,
+            butter=butter,
         )
 
     @classmethod
