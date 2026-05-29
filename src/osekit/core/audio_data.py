@@ -11,8 +11,10 @@ from math import ceil
 from typing import TYPE_CHECKING, Self
 
 import numpy as np
+import pandas as pd
 import soundfile as sf
 import soxr
+from matplotlib import pyplot as plt
 from pandas import Timedelta, Timestamp
 
 from osekit.config import resample_quality_settings
@@ -21,6 +23,7 @@ from osekit.core.audio_item import AudioItem
 from osekit.core.base_data import BaseData
 from osekit.core.instrument import Instrument
 from osekit.utils.audio import Butterworth, Normalization, normalize
+from osekit.utils.plot import get_default_axes
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -371,6 +374,34 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             1.0 if self.instrument is None else self.instrument.end_to_end
         )
         return raw_data * calibration_factor
+
+    def plot(
+        self,
+        ax: plt.Axes | None = None,
+        values: np.ndarray | None = None,
+        **kwargs,  # noqa: ANN003
+    ) -> None:
+        """Plot the waveform on a specific ``Axes``.
+
+        Parameters
+        ----------
+        ax: plt.axes | None
+            ``Axes`` on which the waveform should be plotted.
+            Defaulted to ``osekit.utils.plot.get_default_axes()``.
+        values: np.ndarray | None
+            Values of the audio data. Will be fetched if ``None``.
+        kwargs
+            Keyword arguments that are passed
+            to the ``matplotlib.axes._axes.Axes.plot()`` method.
+
+        """
+        ax = ax if ax is not None else get_default_axes()
+        values = self.get_value() if values is None else values
+
+        time = pd.date_range(start=self.begin, end=self.end, periods=values.shape[0])
+
+        ax.xaxis_date()
+        ax.plot(time, values, **kwargs)
 
     def write(
         self,
