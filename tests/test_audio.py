@@ -2256,3 +2256,13 @@ def test_plot_on_default_axes(patch_plot: None) -> None:
     assert np.array_equal(axes.viewLim, default_axes.viewLim)
     assert np.array_equal(axes.dataLim, default_axes.dataLim)
     assert np.array_equal(axes.spines, default_axes.spines)
+
+
+def test_plot_on_custom_axes(patch_plot: None) -> None:
+    ad = MockedAudioData(mocked_value=[1, 2, 3])
+
+    _, custom_axes = plt.subplots()
+    ad.plot(ax=custom_axes)
+    used_axes, _, _ = plot_calls.pop()
+
+    assert custom_axes is used_axes
