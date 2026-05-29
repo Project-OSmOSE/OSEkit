@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import importlib
 import logging
+from collections.abc import Generator
 from pathlib import Path
 from typing import Any, Literal
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
 import soundfile as sf
+from matplotlib.axes import Axes
 from pandas import Timedelta, Timestamp
 from scipy import signal
 
@@ -32,6 +35,7 @@ from osekit.utils.audio import (
     generate_sample_audio,
     normalize,
 )
+from osekit.utils.plot import get_default_axes
 from tests.helpers.audio import MockedAudioData
 
 
@@ -2227,3 +2231,28 @@ def test_butter_audiodataset() -> None:
     for ad in ads.data:
         ad.butter = butter2
     assert ads.butter == butter2
+
+
+plot_calls = []
+
+
+@pytest.fixture(autouse=False)
+def patch_plot(monkeypatch: pytest.MonkeyPatch) -> Generator[None, Any, None]:
+    def mock_plot(self: Axes, *args: Any, **kwargs: Any) -> tuple[Axes, tuple, dict]:
+        plot_calls.append((self, args, kwargs))
+
+    monkeypatch.setattr(plt.Axes, "plot", mock_plot)
+    yield
+    plot_calls.clear()
+
+
+def test_plot_on_default_axes(patch_plot: None) -> None:
+    ad = MockedAudioData(mocked_value=[1, 2, 3])
+
+    default_axes = get_default_axes()
+    ad.plot()
+    axes, _, _ = plot_calls.pop()
+
+    assert np.array_equal(axes.viewLim, default_axes.viewLim)
+    assert np.array_equal(axes.dataLim, default_axes.dataLim)
+    assert np.array_equal(axes.spines, default_axes.spines)
