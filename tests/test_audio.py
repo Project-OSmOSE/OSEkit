@@ -2274,3 +2274,29 @@ def test_plot_with_kwargs(patch_plot: None) -> None:
     ad.plot(None, None, velvet="underground", sweet="jane")
     _, kwargs = plot_calls.pop()
     assert np.array_equal(kwargs, {"velvet": "underground", "sweet": "jane"})
+
+
+def test_plot_with_value(patch_plot: None, monkeypatch: pytest.Monke) -> None:
+    get_value_calls = [0]
+
+    get_value_method = MockedAudioData.get_value
+
+    def mocked_get_value(*args: Any, **kwargs: Any) -> np.ndarray:
+        get_value_calls[0] += 1
+        return get_value_method(*args, **kwargs)
+
+    monkeypatch.setattr(MockedAudioData, "get_value", mocked_get_value)
+
+    assert get_value_calls[0] == 0
+
+    ad = MockedAudioData(mocked_value=[1, 2, 3])
+    vs = ad.get_value()
+
+    assert get_value_calls[0] == 1
+
+    ad.plot(values=vs, the="voidz")
+    _, kwargs = plot_calls.pop()
+
+    # Values are provided and shouldn't be fetched again
+    assert get_value_calls[0] == 1
+    assert np.array_equal(kwargs, {"the": "voidz"})
