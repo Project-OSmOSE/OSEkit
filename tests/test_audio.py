@@ -2238,8 +2238,8 @@ plot_calls = []
 
 @pytest.fixture(autouse=False)
 def patch_plot(monkeypatch: pytest.MonkeyPatch) -> Generator[None, Any, None]:
-    def mock_plot(self: Axes, *args: Any, **kwargs: Any) -> tuple[Axes, tuple, dict]:
-        plot_calls.append((self, args, kwargs))
+    def mock_plot(self: Axes, *args: Any, **kwargs: Any) -> None:
+        plot_calls.append((self, kwargs))
 
     monkeypatch.setattr(plt.Axes, "plot", mock_plot)
     yield
@@ -2251,7 +2251,7 @@ def test_plot_on_default_axes(patch_plot: None) -> None:
 
     default_axes = get_default_axes()
     ad.plot()
-    axes, _, _ = plot_calls.pop()
+    axes, _ = plot_calls.pop()
 
     assert np.array_equal(axes.viewLim, default_axes.viewLim)
     assert np.array_equal(axes.dataLim, default_axes.dataLim)
@@ -2263,6 +2263,14 @@ def test_plot_on_custom_axes(patch_plot: None) -> None:
 
     _, custom_axes = plt.subplots()
     ad.plot(ax=custom_axes)
-    used_axes, _, _ = plot_calls.pop()
+    used_axes, _ = plot_calls.pop()
 
     assert custom_axes is used_axes
+
+
+def test_plot_with_kwargs(patch_plot: None) -> None:
+    ad = MockedAudioData(mocked_value=[1, 2, 3])
+
+    ad.plot(None, None, velvet="underground", sweet="jane")
+    _, kwargs = plot_calls.pop()
+    assert np.array_equal(kwargs, {"velvet": "underground", "sweet": "jane"})
