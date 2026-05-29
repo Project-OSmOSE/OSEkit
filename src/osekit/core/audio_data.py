@@ -379,7 +379,6 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         self,
         ax: plt.Axes | None = None,
         values: np.ndarray | None = None,
-        *args,  # noqa: ANN002
         **kwargs,  # noqa: ANN003
     ) -> None:
         """Plot the waveform on a specific ``Axes``.
@@ -391,9 +390,6 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             Defaulted to ``osekit.utils.plot.get_default_axes()``.
         values: np.ndarray | None
             Values of the audio data. Will be fetched if ``None``.
-        args
-            Arguments that are passed
-            to the ``matplotlib.axes._axes.Axes.plot()`` method.
         kwargs
             Keyword arguments that are passed
             to the ``matplotlib.axes._axes.Axes.plot()`` method.
@@ -405,7 +401,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         time = pd.date_range(start=self.begin, end=self.end, periods=values.shape[0])
 
         ax.xaxis_date()
-        ax.plot(time, values, *args, **kwargs)
+        ax.plot(time, values, **kwargs)
 
     def write(
         self,
