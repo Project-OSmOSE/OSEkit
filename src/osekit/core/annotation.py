@@ -12,7 +12,7 @@ from osekit.core.event import Event
 
 KNOWN_KEYS = {
     "dataset",
-    "analysis",
+    "project",
     "filename",
     "annotation_id",
     "is_update_of_id",
@@ -146,8 +146,6 @@ class AnnotationMetaData:
     ----------
     project: str
         Name of the project in which the annotation was made.
-    output: str
-        Name of the output ``SpectroDataset`` this annotation was made on.
     filename: str
         Name of the file this annotation was made on.
     annotation_id: int
@@ -163,7 +161,6 @@ class AnnotationMetaData:
     """
 
     project: str
-    output: str
     filename: str
     annotation_id: int
     base_id: int
@@ -249,7 +246,6 @@ class Annotation(Event):
         """Deserialize an Annotation object."""
         metadata = AnnotationMetaData(
             project=row["project"] if "project" in row else row["dataset"],
-            output=row["output"] if "output" in row else row["analysis"],
             filename=row["filename"],
             annotation_id=row["annotation_id"],
             base_id=row["is_update_of_id"],
