@@ -65,6 +65,26 @@ class FrequencyBounds:
     min: int
     max: int
 
+    def __post_init__(self) -> None:
+        """Check the validity of the frequency bounds."""
+        error_msgs = []
+        if self.min < 0:
+            error_msgs.append(
+                f"Min frequency must be greater than or equal to 0, got {self.min}.",
+            )
+        if self.max < 0:
+            error_msgs.append(
+                f"Max frequency must be greater than or equal to 0, got {self.max}.",
+            )
+        if self.min > self.max:
+            error_msgs.append(
+                f"Max frequency must be greater than min frequency, "
+                f"got ({self.min},{self.max}).",
+            )
+        if error_msgs:
+            msg = "\n".join(error_msgs)
+            raise ValueError(msg)
+
     @property
     def bandwidth(self) -> int:
         """Bandwidth of the annotation."""
