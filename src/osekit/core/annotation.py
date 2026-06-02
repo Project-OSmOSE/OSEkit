@@ -297,5 +297,7 @@ class Annotation(Event):
         """Deserialize a list of Annotation from an annotations csv file."""
         return [
             cls.from_dict(record)
-            for record in pd.read_csv(filepath_or_buffer=csv).to_dict(orient="records")
+            for record in pd.read_csv(filepath_or_buffer=csv, na_filter=False).to_dict(
+                orient="records",
+            )
         ]
