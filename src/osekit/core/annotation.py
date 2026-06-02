@@ -99,6 +99,10 @@ class AnnotatorInfo:
     annotator: str
     annotator_expertise: Literal["NOVICE", "AVERAGE", "EXPERT"] | None = None
 
+    def __hash__(self) -> int:
+        """Return a hash for the annotator."""
+        return hash((self.annotator, self.annotator_expertise))
+
 
 @dataclass
 class SignalParameters:
