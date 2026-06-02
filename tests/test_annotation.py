@@ -3,6 +3,7 @@ from contextlib import AbstractContextManager, nullcontext
 import pytest
 
 from osekit.core.annotation import (
+    AnnotatorInfo,
     FrequencyBounds,
 )
 
@@ -65,3 +66,19 @@ def test_frequency_bounds(
     with expectation as e:
         frequency_bounds = FrequencyBounds(min=min_frequency, max=max_frequency)
         assert frequency_bounds.bandwidth == e
+
+
+def test_annotator_info() -> None:
+    annotators = [
+        AnnotatorInfo(annotator="ruby", annotator_expertise="NOVICE"),
+        AnnotatorInfo(annotator="ruby", annotator_expertise="NOVICE"),
+        AnnotatorInfo(annotator="haunt", annotator_expertise="EXPERT"),
+        AnnotatorInfo(annotator="haunt", annotator_expertise="EXPERT"),
+        AnnotatorInfo(annotator="nevada", annotator_expertise="EXPERT"),
+        AnnotatorInfo(annotator="nevada", annotator_expertise="EXPERT"),
+        AnnotatorInfo(annotator="haunt", annotator_expertise=None),
+    ]
+
+    nb_unique_annotators = 4
+
+    assert sum(1 for _ in set(annotators)) == nb_unique_annotators
