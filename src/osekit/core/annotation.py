@@ -1,5 +1,6 @@
 """The Annotation class represents an annotation made on APLOSE."""
 
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, Self
@@ -96,7 +97,7 @@ class AnnotatorInfo:
     """Class representing an annotator info."""
 
     annotator: str
-    annotator_expertise: Literal["NOVICE", "AVERAGE", "EXPERT"]
+    annotator_expertise: Literal["NOVICE", "AVERAGE", "EXPERT"] | None = None
 
 
 @dataclass
@@ -259,10 +260,14 @@ class Annotation(Event):
             annotator=row["annotator"],
             annotator_expertise=row["annotator_expertise"],
         )
-        frequency_bounds = FrequencyBounds(
-            min=row["min_frequency"],
-            max=row["max_frequency"],
+
+        min_frequency, max_frequency = row["min_frequency"], row["max_frequency"]
+        frequency_bounds = (
+            FrequencyBounds(min=min_frequency, max=max_frequency)
+            if not any(m is None for m in (min_frequency, max_frequency))
+            else None
         )
+
         confidence_indicator = ConfidenceIndicator(
             confidence_indicator_label=row["confidence_indicator_label"],
             confidence_indicator_level=row["confidence_indicator_level"],
@@ -315,9 +320,14 @@ class Annotation(Event):
     @classmethod
     def from_csv(cls, csv: Path) -> list[Self]:
         """Deserialize a list of Annotation from an annotations csv file."""
-        return [
-            cls.from_dict(record)
-            for record in pd.read_csv(filepath_or_buffer=csv, na_filter=False).to_dict(
-                orient="records",
-            )
+        records = pd.read_csv(filepath_or_buffer=csv).to_dict(
+            orient="records",
+        )
+        records = [
+            {
+                key: None if type(value) is float and math.isnan(value) else value
+                for key, value in record.items()
+            }
+            for record in records
         ]
+        return [cls.from_dict(record) for record in records]
