@@ -152,7 +152,7 @@ class AnnotationMetaData:
         ID of the annotation.
     base_id: int
         ID of the base annotation.
-        May differ from ``id`` if the annotation is an update/correction.
+        May differ from ``annotation_id`` if the annotation is an update/correction.
     comments: str
         Comments left by the annotator.
     phase: Literal["ANNOTATION", "VERIFICATION"]
