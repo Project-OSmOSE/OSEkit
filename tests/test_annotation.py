@@ -130,3 +130,42 @@ def test_confidence_indicator_value_check(
             level=level,
             maximum_level=max_level,
         )
+
+
+@pytest.mark.parametrize(
+    ("label", "relative_level_string", "expectation"),
+    [
+        pytest.param(
+            "cool",
+            "1/6",
+            nullcontext(
+                ConfidenceIndicator(
+                    label="cool",
+                    level=1,
+                    maximum_level=6,
+                ),
+            ),
+            id="correct_levels",
+        ),
+        pytest.param(
+            "cool",
+            "4/2",
+            pytest.raises(ValueError, match=r"level 4.*higher.*maximum level 2"),
+            id="incorrect_levels_should_raise",
+        ),
+    ],
+)
+def test_confidence_indicator_from_relative_level_string(
+    label: str,
+    relative_level_string: str,
+    expectation: AbstractContextManager,
+) -> None:
+    with expectation as e:
+        ci = ConfidenceIndicator.from_relative_level_string(
+            label=label,
+            relative_level_string=relative_level_string,
+        )
+
+        assert ci.label == e.label
+        assert ci.level == e.level
+        assert ci.maximum_level == e.maximum_level
