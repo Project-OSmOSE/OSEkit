@@ -131,19 +131,48 @@ class ConfidenceIndicator:
     ----------
     label: str
         Name of the level of confidence.
-    level: str
-        Level of confidence relative to the maximum level available.
-        Should be formatted as ``n/m``, where ``n`` is the level of confidence
-        of the annotation and ``m`` is the maximum level available in the project.
+    level: int
+        Level of confidence of the annotation.
+    maximum_level: int
+        Maximum level of confidence authorized in the project.
 
     """
 
     label: str
-    level: str
+    level: int
+    maximum_level: int
 
     def __post_init__(self) -> None:
-        """Parse the level of confidence of the annotation."""
-        self.level, self.maximum_level = map(int, self.level.split("/"))
+        """Check the validity of the level and maximum level values."""
+        if self.level > self.maximum_level:
+            msg = (
+                f"Confidence level {self.level} is higher than "
+                f"maximum level {self.maximum_level} authorized in the project."
+            )
+            raise ValueError(msg)
+
+    @classmethod
+    def from_relative_level_string(cls, label: str, relative_level_string: str) -> Self:
+        """Return a ``ConfidenceIndicator`` from a string representing its level.
+
+        Parameters
+        ----------
+        label: str
+            Name of the level of confidence.
+        relative_level_string: str
+            Level of confidence relative to the maximum level available.
+            Should be formatted as ``n/m``, where ``n`` is the level of confidence
+            of the annotation and ``m`` is the maximum level available in the project.
+
+        Returns
+        -------
+        ConfidenceIndicator
+            The confidence indicator parsed from the input string.
+
+        """
+        level, maximum_level = map(int, relative_level_string.split("/"))
+
+        return cls(label=label, level=level, maximum_level=maximum_level)
 
 
 @dataclass
@@ -272,9 +301,9 @@ class Annotation(Event):
             else None
         )
 
-        confidence_indicator = ConfidenceIndicator(
+        confidence_indicator = ConfidenceIndicator.from_relative_level_string(
             label=row["label"],
-            level=row["level"],
+            relative_level_string=row["level"],
         )
 
         signal_quantity = row["signal_quantity"]
