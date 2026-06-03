@@ -11,8 +11,10 @@ from math import ceil
 from typing import TYPE_CHECKING, Self
 
 import numpy as np
+import pandas as pd
 import soundfile as sf
 import soxr
+from matplotlib import pyplot as plt
 from pandas import Timedelta, Timestamp
 
 from osekit.config import resample_quality_settings
@@ -20,7 +22,8 @@ from osekit.core.audio_file import AudioFile
 from osekit.core.audio_item import AudioItem
 from osekit.core.base_data import BaseData
 from osekit.core.instrument import Instrument
-from osekit.utils.audio import Normalization, normalize
+from osekit.utils.audio import Butterworth, Normalization, normalize
+from osekit.utils.plot import get_default_axes
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -45,6 +48,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         instrument: Instrument | None = None,
         normalization: Normalization = Normalization.RAW,
         normalization_values: dict | None = None,
+        butter: Butterworth | None = None,
     ) -> None:
         """Initialize an ``AudioData`` from a list of ``AudioItems``.
 
@@ -67,6 +71,8 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             the wav audio data.
         normalization: Normalization
             The type of normalization to apply to the audio data.
+        butter: Butterworth | None
+            Butterworth filter to apply to the audio data.
 
         """
         super().__init__(items=items, begin=begin, end=end, name=name)
@@ -74,6 +80,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         self.instrument = instrument
         self.normalization = normalization
         self.normalization_values = normalization_values
+        self.butter = butter
 
     @property
     def nb_channels(self) -> int:
@@ -122,6 +129,15 @@ class AudioData(BaseData[AudioItem, AudioFile]):
                 "std": None,
             }
         )
+
+    @property
+    def butter(self) -> Butterworth:
+        """The Butterworth filter to apply to the audio data."""
+        return self._butter
+
+    @butter.setter
+    def butter(self, value: Butterworth) -> None:
+        self._butter = value
 
     @classmethod
     def _make_item(
@@ -178,7 +194,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             "std": standard deviation used for z-score normalization
 
         """
-        values = np.array(self.get_raw_value())
+        values = np.array(self.get_filtered_value())
         self.normalization_values = {
             "mean": values.mean(),
             "peak": values.max(),
@@ -221,6 +237,22 @@ class AudioData(BaseData[AudioItem, AudioFile]):
 
         """
         return np.vstack(list(self.stream()))
+
+    def get_filtered_value(self) -> np.ndarray:
+        """Return the value of the audio data after filtering.
+
+        Returns
+        -------
+        np.ndarray:
+            The value of the audio data filtered by the ``self.butter`` Butterworth filter.
+
+        """
+        output = self.get_raw_value()
+        return (
+            output
+            if self.butter is None
+            else self.butter.filter(sig=output, fs=self.sample_rate)
+        )
 
     @staticmethod
     def _flush(
@@ -320,7 +352,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
 
         """
         return normalize(
-            values=self.get_raw_value(),
+            values=self.get_filtered_value(),
             normalization=self.normalization,
             **self.normalization_values,
         )
@@ -342,6 +374,34 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             1.0 if self.instrument is None else self.instrument.end_to_end
         )
         return raw_data * calibration_factor
+
+    def plot(
+        self,
+        ax: plt.Axes | None = None,
+        values: np.ndarray | None = None,
+        **kwargs,  # noqa: ANN003
+    ) -> None:
+        """Plot the waveform on a specific ``Axes``.
+
+        Parameters
+        ----------
+        ax: plt.axes | None
+            ``Axes`` on which the waveform should be plotted.
+            Defaulted to ``osekit.utils.plot.get_default_axes()``.
+        values: np.ndarray | None
+            Values of the audio data. Will be fetched if ``None``.
+        kwargs
+            Keyword arguments that are passed
+            to the ``matplotlib.axes._axes.Axes.plot()`` method.
+
+        """
+        ax = ax if ax is not None else get_default_axes()
+        values = self.get_value() if values is None else values
+
+        time = pd.date_range(start=self.begin, end=self.end, periods=values.shape[0])
+
+        ax.xaxis_date()
+        ax.plot(time, values, **kwargs)
 
     def write(
         self,
@@ -547,9 +607,13 @@ class AudioData(BaseData[AudioItem, AudioFile]):
                 None if self.instrument is None else self.instrument.to_dict()
             ),
         }
+        butter_dict = {
+            "butter": (None if self.butter is None else self.butter.to_dict()),
+        }
         return (
             base_dict
             | instrument_dict
+            | butter_dict
             | {
                 "sample_rate": self.sample_rate,
                 "normalization": self.normalization.value,
@@ -595,6 +659,11 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             if dictionary["instrument"] is None
             else Instrument.from_dict(dictionary["instrument"])
         )
+        butter = (
+            None
+            if "butter" not in dictionary or dictionary["butter"] is None
+            else Butterworth.from_dict(dictionary["butter"])
+        )
         return cls.from_files(
             files=files,
             begin=begin,
@@ -603,6 +672,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             sample_rate=dictionary["sample_rate"],
             normalization=Normalization(dictionary["normalization"]),
             normalization_values=dictionary["normalization_values"],
+            butter=butter,
         )
 
     @classmethod
@@ -640,6 +710,9 @@ class AudioData(BaseData[AudioItem, AudioFile]):
 
             normalization: Normalization
             The type of normalization to apply to the audio data.
+
+            butter: Butterworth
+            Butterworth filter to apply to the audio data.
 
         Returns
         -------

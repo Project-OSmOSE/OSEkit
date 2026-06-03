@@ -291,6 +291,18 @@ def test_project_build(
     project2 = Project.from_json(tmp_path / "project.json")
     assert project2.origin_dataset == project.outputs["original"]["dataset"]
 
+    # Resetting with an additional file in the project root should raise an error
+    (tmp_path / "pinnifred.txt").touch()
+    with pytest.raises(RuntimeError, match=r"pinnifred.txt"):
+        project.reset()
+
+    # Files added in the "other" folder are moved in the project root after reset
+    (tmp_path / "other").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "pinnifred.txt").replace(
+        tmp_path / "other" / "pinnifred.txt",
+    )
+    files_before_build.append(tmp_path / "pinnifred.txt")
+
     # Resetting the project should put back all original files back
     project.reset()
     assert sorted(str(file) for file in tmp_path.rglob("*")) == sorted(
@@ -1474,6 +1486,13 @@ def test_rename_transform(
 
     names = (first_name, second_name, second_name)  # Tests both renaming and same name
     for old, new in itertools.pairwise(names):
+        files = {}
+        for dataset in project.get_output_by_transform_name(old):
+            files |= {
+                file.path.name: file.path.relative_to(dataset.folder)
+                for file in dataset.files
+            }
+
         project.rename_transform_with_outputs(old, new)
 
         if old != new:
@@ -1499,6 +1518,10 @@ def test_rename_transform(
             == 2
         )
 
+        for dataset in project.get_output_by_transform_name(new):
+            for file in dataset.files:
+                assert file.path.relative_to(dataset.folder) == files[file.path.name]
+
     # RENAME ERRORS
     with pytest.raises(ValueError, match=r"You can't rename the original dataset."):
         project.rename_transform_with_outputs(
@@ -1519,6 +1542,13 @@ def test_rename_transform(
             transform_name=unknown_name,
             new_transform_name=target_name,
         )
+
+    # DESERIALIZED PROJECT SHOULD DESERIALIZE TRANSFORMS ON RENAME CALL
+    project = Project.from_json(project.folder / "project.json")
+    project.rename_transform_with_outputs(
+        transform_name=names[-1],
+        new_transform_name="cool",
+    )
 
 
 def test_spectro_transform_with_existing_ads(

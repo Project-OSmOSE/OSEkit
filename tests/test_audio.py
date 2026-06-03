@@ -2,14 +2,18 @@ from __future__ import annotations
 
 import importlib
 import logging
+from collections.abc import Generator
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
 import soundfile as sf
+from matplotlib.axes import Axes
 from pandas import Timedelta, Timestamp
+from scipy import signal
 
 import osekit
 from osekit.config import (
@@ -25,7 +29,13 @@ from osekit.core.audio_file import AudioFile
 from osekit.core.audio_item import AudioItem
 from osekit.core.instrument import Instrument
 from osekit.utils import audio
-from osekit.utils.audio import Normalization, generate_sample_audio, normalize
+from osekit.utils.audio import (
+    Butterworth,
+    Normalization,
+    generate_sample_audio,
+    normalize,
+)
+from osekit.utils.plot import get_default_axes
 from tests.helpers.audio import MockedAudioData
 
 
@@ -2166,3 +2176,127 @@ def test_resampling_from_different_origin_frequencies(tmp_path: Path) -> None:
 
     vs = ad.get_value()
     assert vs.size == int(ad.duration.total_seconds()) * ad.sample_rate
+
+
+def test_butter(monkeypatch: pytest.MonkeyPatch) -> None:
+    butter_calls = {}
+
+    sig_values = [1] * 10
+    butter = Butterworth(N=2, Wn=[1000, 2000], btype="bandpass")
+
+    def butter_patch(*args: Any, **kwargs: Any) -> list[int]:
+        butter_calls.update(kwargs)
+        return sig_values
+
+    from osekit.utils.audio import signal as audio_signal
+
+    monkeypatch.setattr(audio_signal, "sosfilt", butter_patch)
+
+    ad = MockedAudioData(
+        mocked_value=sig_values,
+        butter=butter,
+    )
+    ad.get_value()
+
+    assert np.array_equal(
+        butter_calls["sos"],
+        signal.butter(
+            N=butter.N,
+            Wn=butter.Wn,
+            btype=butter.btype,
+            output="sos",
+            fs=ad.sample_rate,
+        ),
+    )
+
+    assert np.array_equal(
+        butter_calls["x"],
+        ad.get_raw_value(),
+    )
+
+
+def test_butter_audiodataset() -> None:
+    ads = AudioDataset([MockedAudioData(mocked_value=[]) for _ in range(2)])
+
+    assert all(ad.butter is None for ad in ads.data)
+
+    butter = Butterworth(N=2, Wn=[1000, 2000], btype="bandpass")
+    butter2 = Butterworth(N=4, Wn=100, btype="lowpass")
+
+    # AudioDataset to AudioData
+    ads.butter = butter
+    assert all(ad.butter == butter for ad in ads.data)
+
+    # AudioData to AudioDataset
+    for ad in ads.data:
+        ad.butter = butter2
+    assert ads.butter == butter2
+
+
+plot_calls = []
+
+
+@pytest.fixture(autouse=False)
+def patch_plot(monkeypatch: pytest.MonkeyPatch) -> Generator[None, Any, None]:
+    def mock_plot(self: Axes, *args: Any, **kwargs: Any) -> None:
+        plot_calls.append((self, kwargs))
+
+    monkeypatch.setattr(plt.Axes, "plot", mock_plot)
+    yield
+    plot_calls.clear()
+
+
+def test_plot_on_default_axes(patch_plot: None) -> None:
+    ad = MockedAudioData(mocked_value=[1, 2, 3])
+
+    default_axes = get_default_axes()
+    ad.plot()
+    axes, _ = plot_calls.pop()
+
+    assert np.array_equal(axes.viewLim, default_axes.viewLim)
+    assert np.array_equal(axes.dataLim, default_axes.dataLim)
+    assert np.array_equal(axes.spines, default_axes.spines)
+
+
+def test_plot_on_custom_axes(patch_plot: None) -> None:
+    ad = MockedAudioData(mocked_value=[1, 2, 3])
+
+    _, custom_axes = plt.subplots()
+    ad.plot(ax=custom_axes)
+    used_axes, _ = plot_calls.pop()
+
+    assert custom_axes is used_axes
+
+
+def test_plot_with_kwargs(patch_plot: None) -> None:
+    ad = MockedAudioData(mocked_value=[1, 2, 3])
+
+    ad.plot(None, None, velvet="underground", sweet="jane")
+    _, kwargs = plot_calls.pop()
+    assert np.array_equal(kwargs, {"velvet": "underground", "sweet": "jane"})
+
+
+def test_plot_with_value(patch_plot: None, monkeypatch: pytest.Monke) -> None:
+    get_value_calls = [0]
+
+    get_value_method = MockedAudioData.get_value
+
+    def mocked_get_value(*args: Any, **kwargs: Any) -> np.ndarray:
+        get_value_calls[0] += 1
+        return get_value_method(*args, **kwargs)
+
+    monkeypatch.setattr(MockedAudioData, "get_value", mocked_get_value)
+
+    assert get_value_calls[0] == 0
+
+    ad = MockedAudioData(mocked_value=[1, 2, 3])
+    vs = ad.get_value()
+
+    assert get_value_calls[0] == 1
+
+    ad.plot(values=vs, the="voidz")
+    _, kwargs = plot_calls.pop()
+
+    # Values are provided and shouldn't be fetched again
+    assert get_value_calls[0] == 1
+    assert np.array_equal(kwargs, {"the": "voidz"})
