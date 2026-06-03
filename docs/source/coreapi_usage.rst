@@ -203,6 +203,33 @@ Modifying the sample rate will not access the data, but the data will be resampl
     ad.sample_rate = 48_000 # Resample the signal at 48 kHz. Nothing happens yet
     resampled_signal = ad.get_value() # The original audio data will be resampled while being fetched here.
 
+Plotting
+""""""""
+
+``AudioData`` waveforms can be plotted thanks to the :meth:`osekit.core.audio_data.AudioData.plot` method.
+
+The waveform is plotted thanks to the `matplotlib.axes.Axes.plot() method <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.html>`_.
+Every keyword argument passed to the :meth:`osekit.core.audio_data.AudioData.plot` method will be passed through to
+the `matplotlib.axes.Axes.plot() method <https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.plot.html>`_:
+
+.. code-block:: python
+
+    from osekit.core.audio_data import AudioData
+    import matplotlib.pyplot as plt
+
+    ad = AudioData(...)
+    ad_signal = ad.get_value()
+
+    fig, ax = plt.subplots()
+
+    ad.plot(
+        values=ad_signal, # If not provided, the signal will be fetched
+        ax=ax, # If not provided, default figure and axes will be created
+        linestyle="dashdot", # Additional kwargs passed to pyplot Plot()
+        linewidth=2, # Additional kwargs passed to pyplot Plot()
+    )
+
+    plt.show()
 
 Audio Dataset
 ^^^^^^^^^^^^^
