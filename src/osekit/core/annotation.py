@@ -29,8 +29,8 @@ KNOWN_KEYS = {
     "end_datetime",
     "is_box",
     "type",
-    "label",
-    "level",
+    "confidence_indicator_label",
+    "confidence_indicator_level",
     "comments",
     "signal_quantity",
     "signal_is_intensity_too_low",
@@ -102,6 +102,13 @@ class AnnotatorInfo:
     def __hash__(self) -> int:
         """Return a hash for the annotator."""
         return hash((self.annotator, self.annotator_expertise))
+
+    def __eq__(self, other: Self) -> bool:
+        """Return whether two annotators are equal."""
+        return (
+            self.annotator == other.annotator
+            and self.annotator_expertise == other.annotator_expertise
+        )
 
 
 @dataclass
@@ -212,6 +219,17 @@ class Verification:
     verificator: str
     is_validated: bool
 
+    def __hash__(self) -> int:
+        """Return a hash of the verification."""
+        return hash((self.verificator, self.is_validated))
+
+    def __eq__(self, other: Self) -> bool:
+        """Return whether the two verifications are equal."""
+        return (
+            self.verificator == other.verificator
+            and self.is_validated == other.is_validated
+        )
+
 
 class Annotation(Event):
     """Class that represents an annotation made on APLOSE."""
@@ -283,7 +301,7 @@ class Annotation(Event):
         """Deserialize an Annotation object."""
         metadata = AnnotationMetaData(
             project=row["project"] if "project" in row else row["dataset"],
-            filename=row["filename"],
+            filename=str(row["filename"]),
             annotation_id=row["annotation_id"],
             base_id=row["is_update_of_id"],
             comments=row["comments"],
@@ -327,14 +345,14 @@ class Annotation(Event):
             else None
         )
 
-        verifications = [
+        verifications = {
             Verification(
                 verificator=key,
                 is_validated=value,
             )
             for key, value in row.items()
             if key not in KNOWN_KEYS
-        ]
+        }
 
         return cls(
             metadata=metadata,

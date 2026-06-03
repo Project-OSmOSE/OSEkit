@@ -1,11 +1,15 @@
 from contextlib import AbstractContextManager, nullcontext
+from pathlib import Path
 
+import numpy as np
 import pytest
 
 from osekit.core.annotation import (
+    Annotation,
     AnnotatorInfo,
     ConfidenceIndicator,
     FrequencyBounds,
+    Verification,
 )
 
 
@@ -169,3 +173,82 @@ def test_confidence_indicator_from_relative_level_string(
         assert ci.label == e.label
         assert ci.level == e.level
         assert ci.maximum_level == e.maximum_level
+
+
+def test_annotations_from_csv() -> None:
+    annotations = Annotation.from_csv(
+        csv=Path(r"_static/aplose_result.csv"),
+    )
+
+    # All records should be loaded
+    assert len(annotations) == 8
+    assert all(a.metadata.project == "great_tit" for a in annotations)
+
+    # Two distinct annotated files
+    filenames = {a.metadata.filename for a in annotations}
+    assert filenames == {"990694", "994410"}
+
+    # Types
+    types = {a.type for a in annotations}
+    assert types == {"WEAK", "BOX"}
+
+    # Phases
+    phases = {a.metadata.phase for a in annotations}
+    assert phases == {"ANNOTATION", "VERIFICATION"}
+
+    # Single signal parameters
+    single = next(a for a in annotations if a.metadata.annotation_id == 586657)
+    assert single.signal_quantity == "SINGLE"
+    assert single.signal_parameters is not None
+    assert not single.signal_parameters.is_itensity_too_low
+    assert not single.signal_parameters.does_overlap_other_signals
+    assert single.signal_parameters.min_frequency == 12000
+    assert single.signal_parameters.max_frequency == 13000
+    assert single.signal_parameters.nb_relative_mins == 3
+    assert single.signal_parameters.nb_relative_maxes == 2
+    assert single.signal_parameters.nb_steps == 4
+    assert single.signal_parameters.trend == "MOD"
+    assert single.signal_parameters.frequency_jumps
+    assert single.signal_parameters.has_harmonics
+    assert single.signal_parameters.has_sidebands
+    assert not single.signal_parameters.has_subharmonics
+    assert single.signal_parameters.has_deterministic_chaos
+
+    # Multiple signal quantity: parameters should be None
+    multiple = next(a for a in annotations if a.metadata.annotation_id == 586654)
+    assert multiple.signal_quantity == "MULTIPLE"
+    assert multiple.signal_parameters is None
+
+    # Annotation update
+    update = next(a for a in annotations if a.metadata.annotation_id == 586669)
+    assert update.metadata.base_id == 586655
+
+    # Annotation without base
+    base = next(a for a in annotations if a.metadata.annotation_id == 586655)
+    assert base.metadata.base_id is None
+
+    # Annotator parsing
+    annotators = {
+        AnnotatorInfo(annotator="vashti", annotator_expertise="NOVICE"),
+        AnnotatorInfo(annotator="heartleap", annotator_expertise=None),
+        AnnotatorInfo(annotator="bunyan", annotator_expertise="EXPERT"),
+        AnnotatorInfo(annotator="lookaftering", annotator_expertise="EXPERT"),
+    }
+    assert np.array_equal(
+        annotators,
+        {a.annotator_info for a in annotations},
+    )
+
+    # Verification parsing
+    verificated = next(a for a in annotations if a.metadata.annotation_id == 586654)
+    verification = {
+        Verification(
+            verificator="lookaftering",
+            is_validated=True,
+        ),
+        Verification(
+            verificator="bunyan",
+            is_validated=False,
+        ),
+    }
+    assert np.array_equal(verification, verificated.verifications)
