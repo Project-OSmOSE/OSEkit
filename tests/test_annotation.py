@@ -4,6 +4,7 @@ import pytest
 
 from osekit.core.annotation import (
     AnnotatorInfo,
+    ConfidenceIndicator,
     FrequencyBounds,
 )
 
@@ -82,3 +83,50 @@ def test_annotator_info() -> None:
     nb_unique_annotators = 4
 
     assert sum(1 for _ in set(annotators)) == nb_unique_annotators
+
+
+@pytest.mark.parametrize(
+    ("label", "level", "max_level", "expectation"),
+    [
+        pytest.param(
+            "Sure",
+            1,
+            1,
+            nullcontext(),
+            id="max_level_is_ok",
+        ),
+        pytest.param(
+            "Not sure",
+            0,
+            1,
+            nullcontext(),
+            id="level_0_is_ok",
+        ),
+        pytest.param(
+            "Moderate",
+            1,
+            2,
+            nullcontext(),
+            id="between_0_and_max_is_ok",
+        ),
+        pytest.param(
+            "Moderate",
+            3,
+            2,
+            pytest.raises(ValueError, match=r"level 3.*higher.*maximum level 2"),
+            id="higher_than_max_raises",
+        ),
+    ],
+)
+def test_confidence_indicator_value_check(
+    label: str,
+    level: int,
+    max_level: int,
+    expectation: AbstractContextManager,
+) -> None:
+    with expectation:
+        ConfidenceIndicator(
+            label=label,
+            level=level,
+            maximum_level=max_level,
+        )
