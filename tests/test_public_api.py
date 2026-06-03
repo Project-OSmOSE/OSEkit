@@ -1543,6 +1543,13 @@ def test_rename_transform(
             new_transform_name=target_name,
         )
 
+    # DESERIALIZED PROJECT SHOULD DESERIALIZE TRANSFORMS ON RENAME CALL
+    project = Project.from_json(project.folder / "project.json")
+    project.rename_transform_with_outputs(
+        transform_name=names[-1],
+        new_transform_name="cool",
+    )
+
 
 def test_spectro_transform_with_existing_ads(
     tmp_path: Path,
