@@ -190,7 +190,7 @@ class AnnotationMetaData:
     base_id: int
         ID of the base annotation.
         May differ from ``annotation_id`` if the annotation is an update/correction.
-    comments: str
+    comments: str | None
         Comments left by the annotator.
     phase: Literal["ANNOTATION", "VERIFICATION"]
         Phase during which the annotation was created.
@@ -200,8 +200,8 @@ class AnnotationMetaData:
     project: str
     filename: str
     annotation_id: int
-    base_id: int
-    comments: str
+    base_id: int | None
+    comments: str | None
     phase: Literal["ANNOTATION", "VERIFICATION"]
 
 
@@ -302,8 +302,8 @@ class Annotation(Event):
         )
 
         confidence_indicator = ConfidenceIndicator.from_relative_level_string(
-            label=row["label"],
-            relative_level_string=row["level"],
+            label=row["confidence_indicator_label"],
+            relative_level_string=row["confidence_indicator_level"],
         )
 
         signal_quantity = row["signal_quantity"]
