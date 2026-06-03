@@ -177,7 +177,7 @@ def test_confidence_indicator_from_relative_level_string(
 
 def test_annotations_from_csv() -> None:
     annotations = Annotation.from_csv(
-        csv=Path(r"_static/aplose_result.csv"),
+        csv=Path(__file__).parent / "_static" / "aplose_result.csv",
     )
 
     # All records should be loaded
