@@ -108,19 +108,19 @@ class AnnotatorInfo:
 class SignalParameters:
     """Class representing parameters of an annoted signal."""
 
-    is_itensity_too_low: bool
-    does_overlap_other_signals: bool
-    min_frequency: int
-    max_frequency: int
-    nb_relative_mins: int
-    nb_relative_maxes: int
-    nb_steps: int
-    trend: Literal["FLAT", "ASCENDING", "DESCENDING", "MODULATED"]
-    frequency_jumps: bool | int
-    has_harmonics: bool
-    has_sidebands: bool
-    has_subharmonics: bool
-    has_deterministic_chaos: bool
+    is_itensity_too_low: bool | None = None
+    does_overlap_other_signals: bool | None = None
+    min_frequency: int | None = None
+    max_frequency: int | None = None
+    nb_relative_mins: int | None = None
+    nb_relative_maxes: int | None = None
+    nb_steps: int | None = None
+    trend: Literal["FLAT", "ASCENDING", "DESCENDING", "MODULATED"] | None = None
+    frequency_jumps: bool | int | None = None
+    has_harmonics: bool | None = None
+    has_sidebands: bool | None = None
+    has_subharmonics: bool | None = None
+    has_deterministic_chaos: bool | None = None
 
 
 @dataclass
