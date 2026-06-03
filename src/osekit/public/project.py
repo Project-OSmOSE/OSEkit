@@ -733,27 +733,28 @@ class Project:
             raise ValueError(msg)
 
         keys_to_rename = {}
-        for output_dataset in self.outputs.values():
-            if output_dataset["transform"] == transform_name:
-                output_dataset["transform"] = new_transform_name
-                ds = output_dataset["dataset"]
-                old_name, new_name = (
-                    ds.name,
-                    new_transform_name + (f"_{ds.suffix}" if ds.suffix else ""),
-                )
-                ds.base_name = new_transform_name
-                old_folder = ds.folder
-                new_folder = ds.folder.parent / new_name
-                keys_to_rename[old_name] = new_name
+        for output_name, output_dataset in self.outputs.items():
+            if output_dataset["transform"] != transform_name:
+                continue
+            output_dataset["transform"] = new_transform_name
+            ds = self.deserialize_output(output_name=output_name)
+            old_name, new_name = (
+                ds.name,
+                new_transform_name + (f"_{ds.suffix}" if ds.suffix else ""),
+            )
+            ds.base_name = new_transform_name
+            old_folder = ds.folder
+            new_folder = ds.folder.parent / new_name
+            keys_to_rename[old_name] = new_name
 
-                ds.move_files(new_folder)
-                move_tree(
-                    old_folder,
-                    new_folder,
-                    excluded_paths=old_folder.glob("*.json"),
-                )  # Moves exported files
-                shutil.rmtree(str(old_folder))
-                ds.write_json(ds.folder)
+            ds.move_files(new_folder)
+            move_tree(
+                old_folder,
+                new_folder,
+                excluded_paths=old_folder.glob("*.json"),
+            )  # Moves exported files
+            shutil.rmtree(str(old_folder))
+            ds.write_json(ds.folder)
 
         for old_name, new_name in keys_to_rename.items():
             self.outputs[new_name] = self.outputs.pop(old_name)
