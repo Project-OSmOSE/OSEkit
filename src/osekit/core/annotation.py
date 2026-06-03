@@ -29,8 +29,8 @@ KNOWN_KEYS = {
     "end_datetime",
     "is_box",
     "type",
-    "confidence_indicator_label",
-    "confidence_indicator_level",
+    "label",
+    "level",
     "comments",
     "signal_quantity",
     "signal_is_intensity_too_low",
@@ -129,17 +129,21 @@ class ConfidenceIndicator:
 
     Parameters
     ----------
-    confidence_indicator_label: str
+    label: str
         Name of the level of confidence.
-    confidence_indicator_level: str
+    level: str
         Level of confidence relative to the maximum level available.
         Should be formatted as ``n/m``, where ``n`` is the level of confidence
         of the annotation and ``m`` is the maximum level available in the project.
 
     """
 
-    confidence_indicator_label: str
-    confidence_indicator_level: str
+    label: str
+    level: str
+
+    def __post_init__(self) -> None:
+        """Parse the level of confidence of the annotation."""
+        self.level, self.maximum_level = map(int, self.level.split("/"))
 
 
 @dataclass
@@ -269,8 +273,8 @@ class Annotation(Event):
         )
 
         confidence_indicator = ConfidenceIndicator(
-            confidence_indicator_label=row["confidence_indicator_label"],
-            confidence_indicator_level=row["confidence_indicator_level"],
+            label=row["label"],
+            level=row["level"],
         )
 
         signal_quantity = row["signal_quantity"]
