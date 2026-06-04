@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Literal, Self
 
 import pandas as pd
+from matplotlib.patches import Rectangle
 from pandas import Timestamp
 
 from osekit.core.event import Event
@@ -246,7 +247,7 @@ class Annotation(Event):
         confidence_indicator: ConfidenceIndicator,
         signal_quantity: Literal["SINGLE", "MULTIPLE"],
         signal_parameters: SignalParameters | None,
-        verifications: list[Verification],
+        verifications: set[Verification],
     ) -> None:
         """Initialize an Annotation object.
 
@@ -276,7 +277,7 @@ class Annotation(Event):
         signal_parameters: SignalParameters | None
             Parameters of the annotated signal.
             ```None`` if ``signal_quantity`` is ``MULTIPLE``.
-        verifications: list[Verification]
+        verifications: set[Verification]
             Verifications made on this annotation.
 
         """
@@ -366,6 +367,25 @@ class Annotation(Event):
             signal_quantity=row["signal_quantity"],
             signal_parameters=signal_parameters,
             verifications=verifications,
+        )
+
+    def to_rectangle(self) -> Rectangle:
+        """Return a matplotlib Rectangle representing the annotation.
+
+        Returns
+        -------
+        matplotlib.patches.Rectangle
+            Rectangle representing the annotation.
+            The coordinates of the rectangle are in time x frequency.
+
+        """
+        return Rectangle(
+            xy=(  # type: ignore[arg-type]
+                self.begin,
+                self.frequency_bounds.min,
+            ),
+            width=self.duration,  # type: ignore[arg-type]
+            height=self.frequency_bounds.bandwidth,
         )
 
     @classmethod
