@@ -369,14 +369,21 @@ class Annotation(Event):
             verifications=verifications,
         )
 
-    def to_rectangle(self) -> Rectangle:
+    def to_rectangle(self, **kwargs) -> Rectangle:
         """Return a matplotlib Rectangle representing the annotation.
+
+        Parameters
+        ----------
+        kwargs:
+            Additional keyword arguments
 
         Returns
         -------
         matplotlib.patches.Rectangle
             Rectangle representing the annotation.
             The coordinates of the rectangle are in time x frequency.
+
+
 
         """
         return Rectangle(
@@ -386,6 +393,7 @@ class Annotation(Event):
             ),
             width=self.duration,  # type: ignore[arg-type]
             height=self.frequency_bounds.bandwidth,
+            **kwargs,
         )
 
     @classmethod
