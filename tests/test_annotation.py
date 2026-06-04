@@ -252,3 +252,7 @@ def test_annotations_from_csv() -> None:
         ),
     }
     assert np.array_equal(verification, verificated.verifications)
+
+    # Repr should be the annotation ID
+    annotation = annotations[0]
+    assert str(annotation) == str(annotation.metadata.annotation_id)
