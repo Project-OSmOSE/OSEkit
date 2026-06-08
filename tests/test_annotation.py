@@ -3,14 +3,70 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from pandas import Timestamp
 
 from osekit.core.annotation import (
     Annotation,
+    AnnotationMetaData,
     AnnotatorInfo,
     ConfidenceIndicator,
     FrequencyBounds,
+    SignalParameters,
     Verification,
 )
+
+
+@pytest.fixture
+def sample_annotation() -> Annotation:
+    return Annotation(
+        metadata=AnnotationMetaData(
+            annotation_id=35173,
+            base_id=None,
+            comments="He's a sneaky, sneaky dog friend",
+            filename="its_teasy",
+            phase="ANNOTATION",
+            project="mockasin",
+        ),
+        begin=Timestamp("2013-11-05 00:00:00"),
+        end=Timestamp("2013-11-05 00:00:10"),
+        frequency_bounds=FrequencyBounds(
+            min=1_000,
+            max=3_000,
+        ),
+        label="Connan",
+        annotator_info=AnnotatorInfo(
+            annotator="Mockasin",
+            annotator_expertise="EXPERT",
+        ),
+        annotation_type="BOX",
+        confidence_indicator=ConfidenceIndicator(
+            label="Sure",
+            level=2,
+            maximum_level=2,
+        ),
+        signal_quantity="SINGLE",
+        signal_parameters=SignalParameters(
+            does_overlap_other_signals=False,
+            frequency_jumps=True,
+            has_deterministic_chaos=True,
+            has_harmonics=True,
+            has_sidebands=True,
+            has_subharmonics=False,
+            is_itensity_too_low=False,
+            max_frequency=2_800,
+            min_frequency=1_300,
+            nb_relative_maxes=2,
+            nb_relative_mins=3,
+            nb_steps=4,
+            trend="MODULATED",
+        ),
+        verifications={
+            Verification(
+                verificator="soft_hair",
+                is_validated=True,
+            ),
+        },
+    )
 
 
 @pytest.mark.parametrize(
