@@ -3,7 +3,7 @@
 import math
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, Self
+from typing import Any, Literal, Self
 
 import pandas as pd
 from matplotlib.patches import Rectangle
@@ -369,7 +369,7 @@ class Annotation(Event):
             verifications=verifications,
         )
 
-    def to_rectangle(self, **kwargs) -> Rectangle:
+    def to_rectangle(self, **kwargs: Any) -> Rectangle:
         """Return a matplotlib Rectangle representing the annotation.
 
         Parameters

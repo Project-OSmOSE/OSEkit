@@ -312,3 +312,20 @@ def test_annotations_from_csv() -> None:
     # Repr should be the annotation ID
     annotation = annotations[0]
     assert str(annotation) == str(annotation.metadata.annotation_id)
+
+
+def test_annotation_to_rectangle(sample_annotation: Annotation) -> None:
+    rectangle = sample_annotation.to_rectangle()
+
+    t1, t2 = sample_annotation.begin, sample_annotation.end
+
+    f_box = sample_annotation.frequency_bounds
+    f1, f2 = f_box.min, f_box.max
+
+    x, y = rectangle.xy
+
+    assert x == t1
+    assert y == f1
+
+    assert x + rectangle.get_width() == t2
+    assert y + rectangle.get_height() == f2
