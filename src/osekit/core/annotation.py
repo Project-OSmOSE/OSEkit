@@ -97,19 +97,16 @@ class FrequencyBounds:
 class AnnotatorInfo:
     """Class representing an annotator info."""
 
-    annotator: str
-    annotator_expertise: Literal["NOVICE", "AVERAGE", "EXPERT"] | None = None
+    name: str
+    expertise: Literal["NOVICE", "AVERAGE", "EXPERT"] | None = None
 
     def __hash__(self) -> int:
         """Return a hash for the annotator."""
-        return hash((self.annotator, self.annotator_expertise))
+        return hash((self.name, self.expertise))
 
     def __eq__(self, other: Self) -> bool:
         """Return whether two annotators are equal."""
-        return (
-            self.annotator == other.annotator
-            and self.annotator_expertise == other.annotator_expertise
-        )
+        return self.name == other.name and self.expertise == other.expertise
 
 
 @dataclass
@@ -309,8 +306,8 @@ class Annotation(Event):
             phase=row["created_at_phase"],
         )
         annotator_info = AnnotatorInfo(
-            annotator=row["annotator"],
-            annotator_expertise=row["annotator_expertise"],
+            name=row["annotator"],
+            expertise=row["annotator_expertise"],
         )
 
         min_frequency, max_frequency = row["min_frequency"], row["max_frequency"]

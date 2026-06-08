@@ -35,8 +35,8 @@ def sample_annotation() -> Annotation:
         ),
         label="Connan",
         annotator_info=AnnotatorInfo(
-            annotator="Mockasin",
-            annotator_expertise="EXPERT",
+            name="Mockasin",
+            expertise="EXPERT",
         ),
         annotation_type="BOX",
         confidence_indicator=ConfidenceIndicator(
@@ -131,13 +131,13 @@ def test_frequency_bounds(
 
 def test_annotator_info() -> None:
     annotators = [
-        AnnotatorInfo(annotator="ruby", annotator_expertise="NOVICE"),
-        AnnotatorInfo(annotator="ruby", annotator_expertise="NOVICE"),
-        AnnotatorInfo(annotator="haunt", annotator_expertise="EXPERT"),
-        AnnotatorInfo(annotator="haunt", annotator_expertise="EXPERT"),
-        AnnotatorInfo(annotator="nevada", annotator_expertise="EXPERT"),
-        AnnotatorInfo(annotator="nevada", annotator_expertise="EXPERT"),
-        AnnotatorInfo(annotator="haunt", annotator_expertise=None),
+        AnnotatorInfo(name="ruby", expertise="NOVICE"),
+        AnnotatorInfo(name="ruby", expertise="NOVICE"),
+        AnnotatorInfo(name="haunt", expertise="EXPERT"),
+        AnnotatorInfo(name="haunt", expertise="EXPERT"),
+        AnnotatorInfo(name="nevada", expertise="EXPERT"),
+        AnnotatorInfo(name="nevada", expertise="EXPERT"),
+        AnnotatorInfo(name="haunt", expertise=None),
     ]
 
     nb_unique_annotators = 4
@@ -285,10 +285,10 @@ def test_annotations_from_csv() -> None:
 
     # Annotator parsing
     annotators = {
-        AnnotatorInfo(annotator="vashti", annotator_expertise="NOVICE"),
-        AnnotatorInfo(annotator="heartleap", annotator_expertise=None),
-        AnnotatorInfo(annotator="bunyan", annotator_expertise="EXPERT"),
-        AnnotatorInfo(annotator="lookaftering", annotator_expertise="EXPERT"),
+        AnnotatorInfo(name="vashti", expertise="NOVICE"),
+        AnnotatorInfo(name="heartleap", expertise=None),
+        AnnotatorInfo(name="bunyan", expertise="EXPERT"),
+        AnnotatorInfo(name="lookaftering", expertise="EXPERT"),
     }
     assert np.array_equal(
         annotators,
