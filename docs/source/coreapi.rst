@@ -23,3 +23,4 @@ Core
    ltasdata
    audiofilemanager
    frequencyscale
+   annotation
