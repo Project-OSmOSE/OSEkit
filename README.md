@@ -20,7 +20,7 @@
 
 [Presentation](#presentation) •
 [Getting into it](#getting-into-it) •
-[Acknowledgements](#acknowledgements)
+[Documentation](https://project-osmose.github.io/OSEkit/)
 # ㅤ
 
 </div>
