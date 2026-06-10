@@ -27,3 +27,4 @@ The package combines two APIs:
     coreapi_home
     multiprocessing
     jobs
+    aplose

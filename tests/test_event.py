@@ -483,3 +483,49 @@ def test_repr() -> None:
 )
 def test_duration(event: Event, expected_duration: Timedelta) -> None:
     assert event.duration == expected_duration
+
+
+@pytest.mark.parametrize(
+    ("event", "timezone", "expected"),
+    [
+        pytest.param(
+            Event(
+                begin=Timestamp("18-02-1954 00:00:00"),
+                end=Timestamp("26-05-2022 00:00:00"),
+            ),
+            "UTC+0100",
+            Event(
+                begin=Timestamp("18-02-1954 00:00:00+0100"),
+                end=Timestamp("26-05-2022 00:00:00+0100"),
+            ),
+            id="naive_to_aware",
+        ),
+        pytest.param(
+            Event(
+                begin=Timestamp("18-02-1954 00:00:00+0100"),
+                end=Timestamp("26-05-2022 00:00:00+0100"),
+            ),
+            None,
+            Event(
+                begin=Timestamp("18-02-1954 00:00:00"),
+                end=Timestamp("26-05-2022 00:00:00"),
+            ),
+            id="aware_to_naive",
+        ),
+        pytest.param(
+            Event(
+                begin=Timestamp("18-02-1954 00:00:00+0100"),
+                end=Timestamp("26-05-2022 00:00:00+0100"),
+            ),
+            "UTC+0300",
+            Event(
+                begin=Timestamp("18-02-1954 02:00:00+0300"),
+                end=Timestamp("26-05-2022 02:00:00+0300"),
+            ),
+            id="aware_to_aware_converts_timezones",
+        ),
+    ],
+)
+def test_localize(event: Event, timezone: str | None, expected: Event) -> None:
+    event.localize(timezone)
+    assert event == expected

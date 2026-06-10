@@ -583,6 +583,12 @@ def test_reformat_timestamp(
             Timestamp("2024-10-17T10:14:11.000+0000", tz="UTC"),
             id="negative_zero_UTC_offset_timezone",
         ),
+        pytest.param(
+            Timestamp("2024-10-17 10:14:11+0200"),
+            None,
+            Timestamp("2024-10-17T10:14:11"),
+            id="aware_to_naive",
+        ),
     ],
 )
 def test_localize_timestamp(
