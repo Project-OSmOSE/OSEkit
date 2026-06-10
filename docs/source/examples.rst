@@ -55,6 +55,12 @@ In the ``docs/source/_static/sample_audio/timestamped`` folder, files are just n
 
     Compute, plot and export a **L**\ ong-\ **T**\ erm **A**\ verage **S**\ pectrum (**LTAS**).
 
+===========
+
+.. topic:: :doc:`Use APLOSE results <example_aplose_result>`
+
+    Parse `APLOSE <https://osmose.ifremer.fr/doc/>`_ results csv files in OSEkit, and use the annotations to filter the audio or spectrograms from the project.
+
 .. toctree ::
     :hidden:
 
@@ -64,3 +70,4 @@ In the ``docs/source/_static/sample_audio/timestamped`` folder, files are just n
     example_multiple_spectrograms
     example_multiple_spectrograms_id
     example_ltas
+    example_aplose_result
