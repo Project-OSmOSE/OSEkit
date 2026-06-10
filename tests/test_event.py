@@ -85,7 +85,7 @@ from osekit.core.event import Event
         ),
         pytest.param(
             Event(
-                begin=Timestamp("2024-01-01 0:00:00"),
+                begin=Timestamp("2024-01-01 00:00:00"),
                 end=Timestamp("2024-01-01 12:00:00"),
             ),
             Event(
@@ -94,6 +94,18 @@ from osekit.core.event import Event
             ),
             False,
             id="border_sharing_isnt_overlapping",
+        ),
+        pytest.param(
+            Event(
+                begin=Timestamp("2024-01-01 00:00:00"),
+                end=Timestamp("2024-01-01 00:00:00"),
+            ),
+            Event(
+                begin=Timestamp("2024-01-01 00:00:00"),
+                end=Timestamp("2024-01-01 00:00:00"),
+            ),
+            False,
+            id="instantaneous_events_dont_overlap",
         ),
     ],
 )
@@ -390,7 +402,12 @@ def test_get_overlapping_events(
             ),
             Timestamp("2024-01-01 01:00:00"),
             None,
-            pytest.raises(ValueError, match="`end`.*must be greater than `begin`.*"),
+            nullcontext(
+                Event(
+                    begin=Timestamp("2024-01-01 01:00:00"),
+                    end=Timestamp("2024-01-01 01:00:00"),
+                ),
+            ),
             id="begin_equals_end",
         ),
     ],
@@ -423,11 +440,6 @@ def test_event_begin_end_updates(
             Timestamp("2024-01-02 00:00:00"),
             Timestamp("2024-01-01 00:00:00"),
             id="begin_after_end",
-        ),
-        pytest.param(
-            Timestamp("2024-01-01 00:00:00"),
-            Timestamp("2024-01-01 00:00:00"),
-            id="begin_equals_end",
         ),
     ],
 )
