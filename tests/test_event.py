@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import nullcontext
 
 import pytest
-from pandas import Timestamp
+from pandas import Timedelta, Timestamp
 
 from osekit.core.event import Event
 
@@ -85,7 +85,7 @@ from osekit.core.event import Event
         ),
         pytest.param(
             Event(
-                begin=Timestamp("2024-01-01 0:00:00"),
+                begin=Timestamp("2024-01-01 00:00:00"),
                 end=Timestamp("2024-01-01 12:00:00"),
             ),
             Event(
@@ -94,6 +94,18 @@ from osekit.core.event import Event
             ),
             False,
             id="border_sharing_isnt_overlapping",
+        ),
+        pytest.param(
+            Event(
+                begin=Timestamp("2024-01-01 00:00:00"),
+                end=Timestamp("2024-01-01 00:00:00"),
+            ),
+            Event(
+                begin=Timestamp("2024-01-01 00:00:00"),
+                end=Timestamp("2024-01-01 00:00:00"),
+            ),
+            False,
+            id="instantaneous_events_dont_overlap",
         ),
     ],
 )
@@ -390,7 +402,12 @@ def test_get_overlapping_events(
             ),
             Timestamp("2024-01-01 01:00:00"),
             None,
-            pytest.raises(ValueError, match="`end`.*must be greater than `begin`.*"),
+            nullcontext(
+                Event(
+                    begin=Timestamp("2024-01-01 01:00:00"),
+                    end=Timestamp("2024-01-01 01:00:00"),
+                ),
+            ),
             id="begin_equals_end",
         ),
     ],
@@ -424,11 +441,6 @@ def test_event_begin_end_updates(
             Timestamp("2024-01-01 00:00:00"),
             id="begin_after_end",
         ),
-        pytest.param(
-            Timestamp("2024-01-01 00:00:00"),
-            Timestamp("2024-01-01 00:00:00"),
-            id="begin_equals_end",
-        ),
     ],
 )
 def test_event_errors(begin: Timestamp, end: Timestamp) -> None:
@@ -446,6 +458,31 @@ def test_repr() -> None:
         )
         == "1990-09-12 12:00:00 - 1990-09-12 12:00:10"
     )
+
+
+@pytest.mark.parametrize(
+    ("event", "expected_duration"),
+    [
+        pytest.param(
+            Event(
+                begin=Timestamp("1990-09-12 12:00:00"),
+                end=Timestamp("1990-09-12 12:00:10"),
+            ),
+            Timedelta(seconds=10),
+            id="non-instantaneous_event",
+        ),
+        pytest.param(
+            Event(
+                begin=Timestamp("1990-09-12 12:00:10"),
+                end=Timestamp("1990-09-12 12:00:10"),
+            ),
+            Timedelta(seconds=0),
+            id="instantaneous_event",
+        ),
+    ],
+)
+def test_duration(event: Event, expected_duration: Timedelta) -> None:
+    assert event.duration == expected_duration
 
 
 @pytest.mark.parametrize(
