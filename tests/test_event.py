@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import nullcontext
 
 import pytest
-from pandas import Timestamp
+from pandas import Timedelta, Timestamp
 
 from osekit.core.event import Event
 
@@ -458,3 +458,28 @@ def test_repr() -> None:
         )
         == "1990-09-12 12:00:00 - 1990-09-12 12:00:10"
     )
+
+
+@pytest.mark.parametrize(
+    ("event", "expected_duration"),
+    [
+        pytest.param(
+            Event(
+                begin=Timestamp("1990-09-12 12:00:00"),
+                end=Timestamp("1990-09-12 12:00:10"),
+            ),
+            Timedelta(seconds=10),
+            id="non-instantaneous_event",
+        ),
+        pytest.param(
+            Event(
+                begin=Timestamp("1990-09-12 12:00:10"),
+                end=Timestamp("1990-09-12 12:00:10"),
+            ),
+            Timedelta(seconds=0),
+            id="instantaneous_event",
+        ),
+    ],
+)
+def test_duration(event: Event, expected_duration: Timedelta) -> None:
+    assert event.duration == expected_duration
