@@ -59,7 +59,7 @@ In the ``docs/source/_static/sample_audio/timestamped`` folder, files are just n
 
 .. topic:: :doc:`Use APLOSE results <example_aplose_result>`
 
-    Parse `APLOSE <https://osmose.ifremer.fr/doc/>`_ results csv files in OSEkit, and use the annotations to filter the audio or spectrograms from the project.
+    Parse `APLOSE <https://osmose.ifremer.fr/doc/>`_ results csv files in OSEkit, and use the detections to filter the audio or spectrograms from the project.
 
 .. toctree ::
     :hidden:

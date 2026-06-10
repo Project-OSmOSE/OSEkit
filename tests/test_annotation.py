@@ -5,11 +5,11 @@ import numpy as np
 import pytest
 from pandas import Timestamp
 
-from osekit.core.annotation import (
-    Annotation,
-    AnnotationMetaData,
-    AnnotatorInfo,
+from osekit.core.detection import (
     ConfidenceIndicator,
+    Detection,
+    DetectionMetaData,
+    DetectorInfo,
     FrequencyBounds,
     SignalParameters,
     Verification,
@@ -17,10 +17,10 @@ from osekit.core.annotation import (
 
 
 @pytest.fixture
-def sample_annotation() -> Annotation:
-    return Annotation(
-        metadata=AnnotationMetaData(
-            annotation_id=35173,
+def sample_detection() -> Detection:
+    return Detection(
+        metadata=DetectionMetaData(
+            detection_id=35173,
             base_id=None,
             comments="He's a sneaky, sneaky dog friend",
             filename="its_teasy",
@@ -34,11 +34,11 @@ def sample_annotation() -> Annotation:
             max=3_000,
         ),
         label="Connan",
-        annotator_info=AnnotatorInfo(
+        detector_info=DetectorInfo(
             name="Mockasin",
             expertise="EXPERT",
         ),
-        annotation_type="BOX",
+        detection_type="BOX",
         confidence_indicator=ConfidenceIndicator(
             label="Sure",
             level=2,
@@ -131,13 +131,13 @@ def test_frequency_bounds(
 
 def test_annotator_info() -> None:
     annotators = [
-        AnnotatorInfo(name="ruby", expertise="NOVICE"),
-        AnnotatorInfo(name="ruby", expertise="NOVICE"),
-        AnnotatorInfo(name="haunt", expertise="EXPERT"),
-        AnnotatorInfo(name="haunt", expertise="EXPERT"),
-        AnnotatorInfo(name="nevada", expertise="EXPERT"),
-        AnnotatorInfo(name="nevada", expertise="EXPERT"),
-        AnnotatorInfo(name="haunt", expertise=None),
+        DetectorInfo(name="ruby", expertise="NOVICE"),
+        DetectorInfo(name="ruby", expertise="NOVICE"),
+        DetectorInfo(name="haunt", expertise="EXPERT"),
+        DetectorInfo(name="haunt", expertise="EXPERT"),
+        DetectorInfo(name="nevada", expertise="EXPERT"),
+        DetectorInfo(name="nevada", expertise="EXPERT"),
+        DetectorInfo(name="haunt", expertise=None),
     ]
 
     nb_unique_annotators = 4
@@ -231,29 +231,29 @@ def test_confidence_indicator_from_relative_level_string(
         assert ci.maximum_level == e.maximum_level
 
 
-def test_annotations_from_csv() -> None:
-    annotations = Annotation.from_csv(
+def test_detections_from_csv() -> None:
+    detections = Detection.from_csv(
         csv=Path(__file__).parent / "_static" / "aplose_result.csv",
     )
 
     # All records should be loaded
-    assert len(annotations) == 8
-    assert all(a.metadata.project == "great_tit" for a in annotations)
+    assert len(detections) == 8
+    assert all(a.metadata.project == "great_tit" for a in detections)
 
     # Two distinct annotated files
-    filenames = {a.metadata.filename for a in annotations}
+    filenames = {a.metadata.filename for a in detections}
     assert filenames == {"990694", "994410"}
 
     # Types
-    types = {a.type for a in annotations}
+    types = {a.type for a in detections}
     assert types == {"WEAK", "BOX"}
 
     # Phases
-    phases = {a.metadata.phase for a in annotations}
+    phases = {a.metadata.phase for a in detections}
     assert phases == {"ANNOTATION", "VERIFICATION"}
 
     # Single signal parameters
-    single = next(a for a in annotations if a.metadata.annotation_id == 586657)
+    single = next(a for a in detections if a.metadata.detection_id == 586657)
     assert single.signal_quantity == "SINGLE"
     assert single.signal_parameters is not None
     assert not single.signal_parameters.is_itensity_too_low
@@ -271,32 +271,32 @@ def test_annotations_from_csv() -> None:
     assert single.signal_parameters.has_deterministic_chaos
 
     # Multiple signal quantity: parameters should be None
-    multiple = next(a for a in annotations if a.metadata.annotation_id == 586654)
+    multiple = next(a for a in detections if a.metadata.detection_id == 586654)
     assert multiple.signal_quantity == "MULTIPLE"
     assert multiple.signal_parameters is None
 
-    # Annotation update
-    update = next(a for a in annotations if a.metadata.annotation_id == 586669)
+    # Detection update
+    update = next(a for a in detections if a.metadata.detection_id == 586669)
     assert update.metadata.base_id == 586655
 
-    # Annotation without base
-    base = next(a for a in annotations if a.metadata.annotation_id == 586655)
+    # Detection without base
+    base = next(a for a in detections if a.metadata.detection_id == 586655)
     assert base.metadata.base_id is None
 
     # Annotator parsing
     annotators = {
-        AnnotatorInfo(name="vashti", expertise="NOVICE"),
-        AnnotatorInfo(name="heartleap", expertise=None),
-        AnnotatorInfo(name="bunyan", expertise="EXPERT"),
-        AnnotatorInfo(name="lookaftering", expertise="EXPERT"),
+        DetectorInfo(name="vashti", expertise="NOVICE"),
+        DetectorInfo(name="heartleap", expertise=None),
+        DetectorInfo(name="bunyan", expertise="EXPERT"),
+        DetectorInfo(name="lookaftering", expertise="EXPERT"),
     }
     assert np.array_equal(
         annotators,
-        {a.annotator_info for a in annotations},
+        {a.detector_info for a in detections},
     )
 
     # Verification parsing
-    verificated = next(a for a in annotations if a.metadata.annotation_id == 586654)
+    verificated = next(a for a in detections if a.metadata.detection_id == 586654)
     verification = {
         Verification(
             verificator="lookaftering",
@@ -309,17 +309,17 @@ def test_annotations_from_csv() -> None:
     }
     assert np.array_equal(verification, verificated.verifications)
 
-    # Repr should be the annotation ID
-    annotation = annotations[0]
-    assert str(annotation) == str(annotation.metadata.annotation_id)
+    # Repr should be the detection ID
+    detection = detections[0]
+    assert str(detection) == str(detection.metadata.detection_id)
 
 
-def test_annotation_to_rectangle(sample_annotation: Annotation) -> None:
-    rectangle = sample_annotation.to_rectangle()
+def test_detection_to_rectangle(sample_detection: Detection) -> None:
+    rectangle = sample_detection.to_rectangle()
 
-    t1, t2 = sample_annotation.begin, sample_annotation.end
+    t1, t2 = sample_detection.begin, sample_detection.end
 
-    f_box = sample_annotation.frequency_bounds
+    f_box = sample_detection.frequency_bounds
     f1, f2 = f_box.min, f_box.max
 
     x, y = rectangle.xy

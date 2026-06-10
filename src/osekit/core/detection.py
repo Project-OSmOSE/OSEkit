@@ -1,4 +1,4 @@
-"""The Annotation class represents an annotation made on APLOSE."""
+"""The Detection class represents a detection made on APLOSE."""
 
 import math
 from dataclasses import dataclass
@@ -53,7 +53,7 @@ KNOWN_KEYS = {
 
 @dataclass
 class FrequencyBounds:
-    """Class representing  the frequency bounds of an annotation.
+    """Class representing  the frequency bounds of a detection.
 
     Parameters
     ----------
@@ -89,29 +89,29 @@ class FrequencyBounds:
 
     @property
     def bandwidth(self) -> int:
-        """Bandwidth of the annotation."""
+        """Bandwidth of the detection."""
         return self.max - self.min
 
 
 @dataclass
-class AnnotatorInfo:
-    """Class representing an annotator info."""
+class DetectorInfo:
+    """Class representing a detector info."""
 
     name: str
     expertise: Literal["NOVICE", "AVERAGE", "EXPERT"] | None = None
 
     def __hash__(self) -> int:
-        """Return a hash for the annotator."""
+        """Return a hash for the detector."""
         return hash((self.name, self.expertise))
 
     def __eq__(self, other: Self) -> bool:
-        """Return whether two annotators are equal."""
+        """Return whether two detectors are equal."""
         return self.name == other.name and self.expertise == other.expertise
 
 
 @dataclass
 class SignalParameters:
-    """Class representing parameters of an annoted signal."""
+    """Class representing parameters of detection signal."""
 
     is_itensity_too_low: bool | None = None
     does_overlap_other_signals: bool | None = None
@@ -130,14 +130,14 @@ class SignalParameters:
 
 @dataclass
 class ConfidenceIndicator:
-    """Class that represents an annotation confidence indicator.
+    """Class that represents a detection confidence indicator.
 
     Parameters
     ----------
     label: str
         Name of the level of confidence.
     level: int
-        Level of confidence of the annotation.
+        Level of confidence of the detection.
     maximum_level: int
         Maximum level of confidence authorized in the project.
 
@@ -167,7 +167,7 @@ class ConfidenceIndicator:
         relative_level_string: str
             Level of confidence relative to the maximum level available.
             Should be formatted as ``n/m``, where ``n`` is the level of confidence
-            of the annotation and ``m`` is the maximum level available in the project.
+            of the detection and ``m`` is the maximum level available in the project.
 
         Returns
         -------
@@ -181,30 +181,30 @@ class ConfidenceIndicator:
 
 
 @dataclass
-class AnnotationMetaData:
-    """Class that represents the metadata of an annotation.
+class DetectionMetaData:
+    """Class that represents the metadata of a detection.
 
     Parameters
     ----------
     project: str
-        Name of the project in which the annotation was made.
+        Name of the project in which the detection was made.
     filename: str
-        Name of the file this annotation was made on.
-    annotation_id: int
-        ID of the annotation.
+        Name of the file this detection was made on.
+    detection_id: int
+        ID of the detection.
     base_id: int
-        ID of the base annotation.
-        May differ from ``annotation_id`` if the annotation is an update/correction.
+        ID of the base detection.
+        May differ from ``detection_id`` if the detection is an update/correction.
     comments: str | None
         Comments left by the annotator.
     phase: Literal["ANNOTATION", "VERIFICATION"]
-        Phase during which the annotation was created.
+        Phase during which the detection was created.
 
     """
 
     project: str
     filename: str
-    annotation_id: int
+    detection_id: int
     base_id: int | None
     comments: str | None
     phase: Literal["ANNOTATION", "VERIFICATION"]
@@ -212,7 +212,7 @@ class AnnotationMetaData:
 
 @dataclass
 class Verification:
-    """Class that represents a verification of an annotation."""
+    """Class that represents a verification of a detection."""
 
     verificator: str
     is_validated: bool
@@ -229,60 +229,60 @@ class Verification:
         )
 
 
-class Annotation(Event):
-    """Class that represents an annotation made on APLOSE."""
+class Detection(Event):
+    """Class that represents a detection made on APLOSE."""
 
     def __init__(  # noqa: PLR0913
         self,
-        metadata: AnnotationMetaData,
+        metadata: DetectionMetaData,
         begin: Timestamp,
         end: Timestamp,
         frequency_bounds: FrequencyBounds,
         label: str,
-        annotator_info: AnnotatorInfo,
-        annotation_type: Literal["WEAK", "POINT", "BOX"],
+        detector_info: DetectorInfo,
+        detection_type: Literal["WEAK", "POINT", "BOX"],
         confidence_indicator: ConfidenceIndicator,
         signal_quantity: Literal["SINGLE", "MULTIPLE"],
         signal_parameters: SignalParameters | None,
         verifications: set[Verification],
     ) -> None:
-        """Initialize an Annotation object.
+        """Initialize a Detection object.
 
         Parameters
         ----------
-        metadata: AnnotationMetaData
-            Metadata on the annotation.
+        metadata: DetectionMetaData
+            Metadata on the detection.
         begin: Timestamp
-            Begin timestamp of the annotation.
+            Begin timestamp of the detection.
         end: Timestamp
-            End timestamp of the annotation.
+            End timestamp of the detection.
         frequency_bounds: FrequencyBounds
-            Frequency bounds of the annotation.
+            Frequency bounds of the detection.
         label: str
-            Label of the annotation.
-        annotator_info: AnnotatorInfo
+            Label of the detection.
+        detector_info: DetectorInfo
             Information on the annotator or detector.
-        annotation_type: Literal["WEAK", "POINT", "BOX"]
-            Type of the annotation.
-            ``WEAK``: Annotation made on the whole spectrogram.
-            ``POINT``: Annotation made on one pixel of the spectrogram.
-            ``BOX``: Annotation made on one box within the spectrogram.
+        detection_type: Literal["WEAK", "POINT", "BOX"]
+            Type of the detection.
+            ``WEAK``: Detection made on the whole spectrogram.
+            ``POINT``: Detection made on one pixel of the spectrogram.
+            ``BOX``: Detection made on one box within the spectrogram.
         confidence_indicator: ConfidenceIndicator
             Indicator of the confidence of the annotator.
         signal_quantity: Literal["SINGLE","MULTIPLE"]
-            Whether there is only one signal in the annotation or more.
+            Whether there is only one signal in the detection or more.
         signal_parameters: SignalParameters | None
             Parameters of the annotated signal.
             ```None`` if ``signal_quantity`` is ``MULTIPLE``.
         verifications: set[Verification]
-            Verifications made on this annotation.
+            Verifications made on this detection.
 
         """
         self.metadata = metadata
         self.label = label
-        self.annotator_info = annotator_info
+        self.detector_info = detector_info
         self.frequency_bounds = frequency_bounds
-        self.type = annotation_type
+        self.type = detection_type
         self.confidence_indicator = confidence_indicator
         self.signal_quantity = signal_quantity
         self.signal_parameters = signal_parameters
@@ -291,21 +291,21 @@ class Annotation(Event):
         super().__init__(begin=begin, end=end)
 
     def __repr__(self) -> str:
-        """Override the string representation of the annotation."""
-        return str(self.metadata.annotation_id)
+        """Override the string representation of the detection."""
+        return str(self.metadata.detection_id)
 
     @classmethod
     def from_dict(cls, row: dict) -> Self:
-        """Deserialize an Annotation object."""
-        metadata = AnnotationMetaData(
+        """Deserialize a Detection object."""
+        metadata = DetectionMetaData(
             project=row["project"] if "project" in row else row["dataset"],
             filename=str(row["filename"]),
-            annotation_id=row["annotation_id"],
+            detection_id=row["annotation_id"],
             base_id=row["is_update_of_id"],
             comments=row["comments"],
             phase=row["created_at_phase"],
         )
-        annotator_info = AnnotatorInfo(
+        detector_info = DetectorInfo(
             name=row["annotator"],
             expertise=row["annotator_expertise"],
         )
@@ -355,11 +355,11 @@ class Annotation(Event):
         return cls(
             metadata=metadata,
             label=row["annotation"],
-            annotator_info=annotator_info,
+            detector_info=detector_info,
             begin=Timestamp(row["start_datetime"]),
             end=Timestamp(row["end_datetime"]),
             frequency_bounds=frequency_bounds,
-            annotation_type=row["type"],
+            detection_type=row["type"],
             confidence_indicator=confidence_indicator,
             signal_quantity=row["signal_quantity"],
             signal_parameters=signal_parameters,
@@ -367,7 +367,7 @@ class Annotation(Event):
         )
 
     def to_rectangle(self, **kwargs: Any) -> Rectangle:
-        """Return a matplotlib Rectangle representing the annotation.
+        """Return a matplotlib Rectangle representing the detection.
 
         Parameters
         ----------
@@ -377,7 +377,7 @@ class Annotation(Event):
         Returns
         -------
         matplotlib.patches.Rectangle
-            Rectangle representing the annotation.
+            Rectangle representing the detection.
             The coordinates of the rectangle are in time x frequency.
 
 
@@ -395,7 +395,7 @@ class Annotation(Event):
 
     @classmethod
     def from_csv(cls, csv: Path) -> list[Self]:
-        """Deserialize a list of Annotation from an annotations csv file."""
+        """Deserialize a list of Detection from a detections csv file."""
         records = pd.read_csv(filepath_or_buffer=csv).to_dict(
             orient="records",
         )
