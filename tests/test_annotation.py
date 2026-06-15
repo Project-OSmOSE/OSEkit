@@ -237,7 +237,7 @@ def test_detections_from_csv() -> None:
     )
 
     # All records should be loaded
-    assert len(detections) == 8
+    assert len(detections) == 9
     assert all(a.metadata.project == "great_tit" for a in detections)
 
     # Two distinct annotated files
@@ -312,6 +312,10 @@ def test_detections_from_csv() -> None:
     # Repr should be the detection ID
     detection = detections[0]
     assert str(detection) == str(detection.metadata.detection_id)
+
+    # Non-specified confidence indicator should be None
+    detection = next(d for d in detections if d.metadata.detection_id == 586673)
+    assert detection.confidence_indicator is None
 
 
 def test_detection_to_rectangle(sample_detection: Detection) -> None:

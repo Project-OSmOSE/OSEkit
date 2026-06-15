@@ -241,7 +241,7 @@ class Detection(Event):
         label: str,
         detector_info: DetectorInfo,
         detection_type: Literal["WEAK", "POINT", "BOX"],
-        confidence_indicator: ConfidenceIndicator,
+        confidence_indicator: ConfidenceIndicator | None,
         signal_quantity: Literal["SINGLE", "MULTIPLE"],
         signal_parameters: SignalParameters | None,
         verifications: set[Verification],
@@ -267,7 +267,7 @@ class Detection(Event):
             ``WEAK``: Detection made on the whole spectrogram.
             ``POINT``: Detection made on one pixel of the spectrogram.
             ``BOX``: Detection made on one box within the spectrogram.
-        confidence_indicator: ConfidenceIndicator
+        confidence_indicator: ConfidenceIndicator | None
             Indicator of the confidence of the annotator.
         signal_quantity: Literal["SINGLE","MULTIPLE"]
             Whether there is only one signal in the detection or more.
@@ -317,9 +317,13 @@ class Detection(Event):
             else None
         )
 
-        confidence_indicator = ConfidenceIndicator.from_relative_level_string(
-            label=row["confidence_indicator_label"],
-            relative_level_string=row["confidence_indicator_level"],
+        confidence_indicator = (
+            ConfidenceIndicator.from_relative_level_string(
+                label=row["confidence_indicator_label"],
+                relative_level_string=row["confidence_indicator_level"],
+            )
+            if row["confidence_indicator_label"]
+            else None
         )
 
         signal_quantity = row["signal_quantity"]
