@@ -1,4 +1,3 @@
-import importlib
 import logging
 import os
 import typing
@@ -19,16 +18,9 @@ def setup_module_logging() -> None:
     setup_logging()
 
 
-@pytest.fixture(autouse=True)
-def reset_logging():
-    """Reset the python logging module."""
-    yield
-    importlib.reload(logging)
-
-
 @pytest.fixture
 def temp_user_logging_config(tmp_path: Path) -> Path:
-    """Writes a yaml logging config file in tmp_path, then returns its path.
+    """Writes a YAML logging config file in tmp_path, then returns its path.
 
     Parameters
     ----------
@@ -95,7 +87,6 @@ def set_user_config_env(temp_user_logging_config: Path) -> typing.Generator:
         The path to the logging_config.yaml user config file.
 
     """
-    importlib.reload(logging)
 
     original_config_env = os.getenv("OSMOSE_USER_CONFIG", None)
     os.environ["OSMOSE_USER_CONFIG"] = str(temp_user_logging_config.parent)
@@ -105,7 +96,6 @@ def set_user_config_env(temp_user_logging_config: Path) -> typing.Generator:
         os.environ["OSMOSE_USER_CONFIG"] = original_config_env
     else:
         del os.environ["OSMOSE_USER_CONFIG"]
-    importlib.reload(logging)
 
 
 @pytest.mark.allow_log_write_to_file
