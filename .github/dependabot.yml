@@ -21,6 +21,21 @@ updates:
       indirect-deps:
         dependency-type: "indirect"
 
+
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Europe/Paris"
+    allow:
+      dependency-type: "indirect"
+    groups:
+      indirect-deps:
+        patterns: "*"
+
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
