@@ -4,7 +4,9 @@ import logging
 import os
 import sys
 import typing
+from collections.abc import Generator
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock
 
 import pandas as pd
@@ -206,10 +208,10 @@ def reset_logging() -> typing.Generator[None, typing.Any, None]:
 
 
 @pytest.fixture(autouse=True)
-def check_logger() -> None:
+def check_logger() -> Generator[None, Any, None]:
     h1 = list(logging.root.handlers)
     yield
     h2 = list(logging.root.handlers)
     if h1 != h2:
-        print(h2)
-        raise ValueError
+        msg = "This test changed the root logger handlers."
+        raise ValueError(msg)
