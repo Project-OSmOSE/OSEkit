@@ -18,8 +18,21 @@ updates:
         dependency-type: "development"
       prod-deps:
         dependency-type: "production"
+
+
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Europe/Paris"
+    allow:
+      dependency-type: "indirect"
+    groups:
       indirect-deps:
-        dependency-type: "indirect"
+        patterns: "*"
+
 
   - package-ecosystem: "github-actions"
     directory: "/"
