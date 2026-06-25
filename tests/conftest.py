@@ -212,6 +212,6 @@ def check_logger() -> Generator[None, Any, None]:
     h1 = list(logging.root.handlers)
     yield
     h2 = list(logging.root.handlers)
-    if h1 != h2:
+    if h1 != h2:  # pragma: no cover
         msg = "This test changed the root logger handlers."
         raise ValueError(msg)
