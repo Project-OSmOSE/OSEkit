@@ -18,9 +18,8 @@ updates:
         dependency-type: "development"
       prod-deps:
         dependency-type: "production"
-      all-deps:
-        patterns:
-          "*"
+      indirect-deps:
+        dependency-type: "indirect"
 
   - package-ecosystem: "github-actions"
     directory: "/"
