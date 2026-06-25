@@ -220,6 +220,7 @@ def test_project_build(
     audio_files: pytest.fixture,
     other_files: list[str],
     expected_audio_events: list[Event],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _, request = audio_files
     file_timezone = (
@@ -450,8 +451,7 @@ def test_reshape(
 
     expected_ads_name = (
         transform.name
-        if transform.name
-        else f"{expected_ads.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED)}"
+        or f"{expected_ads.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED)}"
     )
 
     # The new dataset should be added to the outputs property
@@ -473,8 +473,7 @@ def test_reshape(
     # ads folder should match the ads name
     ads_folder_name = (
         transform.name
-        if transform.name
-        else f"{round(ads.data_duration.total_seconds())}_{ads.sample_rate}"
+        or f"{round(ads.data_duration.total_seconds())}_{ads.sample_rate}"
     )
     assert ads.folder.name == ads_folder_name
 

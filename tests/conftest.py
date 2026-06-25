@@ -4,7 +4,9 @@ import logging
 import os
 import sys
 import typing
+from collections.abc import Generator
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock
 
 import pandas as pd
@@ -173,3 +175,43 @@ def restore_config() -> typing.Generator:
         config.resample_quality_settings[key] = value
     for key, value in multiprocessing.items():
         config.multiprocessing[key] = value
+
+
+@pytest.fixture(autouse=True)
+def reset_logging() -> typing.Generator[None, typing.Any, None]:
+    """Reset the python logging module."""
+    root = logging.getLogger()
+    handlers_before = list(root.handlers)
+    level_before = root.level
+
+    # Snapshot of loggers before the test
+    loggers_before = {
+        name: list(logger.handlers)
+        for name, logger in logging.Logger.manager.loggerDict.items()
+        if isinstance(logger, logging.Logger)
+    }
+
+    yield
+    root.handlers = handlers_before
+    root.level = level_before
+
+    # Cleaning of the handlers of each logger:
+    for name, logger in logging.Logger.manager.loggerDict.items():
+        if isinstance(logger, logging.Logger):
+            logger.handlers = loggers_before.get(name, [])
+
+    logging.Logger.manager.loggerDict = {
+        key: value
+        for key, value in logging.Logger.manager.loggerDict.items()
+        if key in loggers_before
+    }
+
+
+@pytest.fixture(autouse=True)
+def check_logger() -> Generator[None, Any, None]:
+    h1 = list(logging.root.handlers)
+    yield
+    h2 = list(logging.root.handlers)
+    if h1 != h2:  # pragma: no cover
+        msg = "This test changed the root logger handlers."
+        raise ValueError(msg)
