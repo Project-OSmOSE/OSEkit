@@ -18,6 +18,10 @@ updates:
         dependency-type: "development"
       prod-deps:
         dependency-type: "production"
+      indirect-deps:
+        patterns:
+          - "*"
+
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -27,6 +31,6 @@ updates:
       time: "08:00"
       timezone: "Europe/Paris"
     groups:
-      everything:
+      gh-actions:
         patterns:
           - "*"
