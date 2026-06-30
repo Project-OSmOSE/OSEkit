@@ -404,18 +404,23 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         ax: plt.Axes | None = None,
         sx: np.ndarray | None = None,
         scale: Scale | None = None,
-    ) -> None:
+    ) -> plt.Axes:
         """Plot the spectrogram on a specific ``Axes``.
 
         Parameters
         ----------
-        ax: plt.axes | None
+        ax: plt.Axes | None
             ``Axes`` on which the spectrogram should be plotted.
             Defaulted to ``osekit.utils.plot.get_default_axes()``.
         sx: np.ndarray | None
             Spectrogram ``sx`` values. Will be computed if ``None``.
         scale: osekit.core.frequecy_scale.Scale
             Custom frequency scale to use for plotting the spectrogram.
+
+        Returns
+        -------
+        plt.Axes
+            The ``Axes`` on which the spectrogram has been plotted.
 
         """
         ax = ax if ax is not None else get_default_axes()
@@ -439,6 +444,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             interpolation="none",
             extent=(date2num(time[0]), date2num(time[-1]), freq[0], freq[-1]),
         )
+        return ax
 
     def get_db_value(self, sx: np.ndarray | None = None) -> np.ndarray:
         """Return the ``Sx`` spectrum of the spectrogram expressed in ``dB``.
