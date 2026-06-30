@@ -202,12 +202,12 @@ class DetectionMetaData:
 
     """
 
-    project: str
-    filename: str
-    detection_id: int
+    project: str | None
+    filename: str | None
+    detection_id: int | None
     base_id: int | None
     comments: str | None
-    phase: Literal["ANNOTATION", "VERIFICATION"]
+    phase: Literal["ANNOTATION", "VERIFICATION"] | None
 
 
 @dataclass
@@ -234,47 +234,47 @@ class Detection(Event):
 
     def __init__(  # noqa: PLR0913
         self,
-        metadata: DetectionMetaData,
         begin: Timestamp,
         end: Timestamp,
         frequency_bounds: FrequencyBounds,
-        label: str,
-        detector_info: DetectorInfo,
-        detection_type: Literal["WEAK", "POINT", "BOX"],
-        confidence_indicator: ConfidenceIndicator | None,
-        signal_quantity: Literal["SINGLE", "MULTIPLE"],
-        signal_parameters: SignalParameters | None,
-        verifications: set[Verification],
+        metadata: DetectionMetaData | None = None,
+        label: str | None = None,
+        detector_info: DetectorInfo | None = None,
+        detection_type: Literal["WEAK", "POINT", "BOX"] | None = None,
+        confidence_indicator: ConfidenceIndicator | None = None,
+        signal_quantity: Literal["SINGLE", "MULTIPLE"] | None = None,
+        signal_parameters: SignalParameters | None = None,
+        verifications: set[Verification] | None = None,
     ) -> None:
         """Initialize a Detection object.
 
         Parameters
         ----------
-        metadata: DetectionMetaData
-            Metadata on the detection.
         begin: Timestamp
             Begin timestamp of the detection.
         end: Timestamp
             End timestamp of the detection.
         frequency_bounds: FrequencyBounds
             Frequency bounds of the detection.
-        label: str
+        metadata: DetectionMetaData | None
+            Metadata on the detection.
+        label: str | None
             Label of the detection.
-        detector_info: DetectorInfo
+        detector_info: DetectorInfo | None
             Information on the annotator or detector.
-        detection_type: Literal["WEAK", "POINT", "BOX"]
+        detection_type: Literal["WEAK", "POINT", "BOX"] | None
             Type of the detection.
             ``WEAK``: Detection made on the whole spectrogram.
             ``POINT``: Detection made on one pixel of the spectrogram.
             ``BOX``: Detection made on one box within the spectrogram.
         confidence_indicator: ConfidenceIndicator | None
             Indicator of the confidence of the annotator.
-        signal_quantity: Literal["SINGLE","MULTIPLE"]
+        signal_quantity: Literal["SINGLE","MULTIPLE"] | None
             Whether there is only one signal in the detection or more.
         signal_parameters: SignalParameters | None
             Parameters of the annotated signal.
             ```None`` if ``signal_quantity`` is ``MULTIPLE``.
-        verifications: set[Verification]
+        verifications: set[Verification] | None
             Verifications made on this detection.
 
         """
@@ -305,9 +305,13 @@ class Detection(Event):
             comments=row["comments"],
             phase=row["created_at_phase"],
         )
-        detector_info = DetectorInfo(
-            name=row["annotator"],
-            expertise=row["annotator_expertise"],
+        detector_info = (
+            DetectorInfo(
+                name=row["annotator"],
+                expertise=row["annotator_expertise"],
+            )
+            if row["annotator"] is not None
+            else None
         )
 
         min_frequency, max_frequency = row["min_frequency"], row["max_frequency"]
@@ -400,8 +404,12 @@ class Detection(Event):
     @classmethod
     def from_csv(cls, csv: Path) -> list[Self]:
         """Deserialize a list of Detection from a detections csv file."""
-        records = pd.read_csv(filepath_or_buffer=csv).to_dict(
-            orient="records",
+        records = (
+            pd.read_csv(filepath_or_buffer=csv)
+            .convert_dtypes()
+            .to_dict(
+                orient="records",
+            )
         )
         records = [
             {

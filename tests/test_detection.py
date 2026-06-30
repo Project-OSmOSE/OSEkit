@@ -236,7 +236,11 @@ def test_detections_from_csv() -> None:
         csv=Path(__file__).parent / "_static" / "aplose_result.csv",
     )
 
+    minimal_detection = next(d for d in detections if d.label is None)
+    detections = [d for d in detections if d is not minimal_detection]
+
     # All records should be loaded
+    assert minimal_detection is not None
     assert len(detections) == 9
     assert all(a.metadata.project == "great_tit" for a in detections)
 
@@ -317,6 +321,16 @@ def test_detections_from_csv() -> None:
     detection = next(d for d in detections if d.metadata.detection_id == 586673)
     assert detection.confidence_indicator is None
 
+    # Minimum required parameters detection
+    assert minimal_detection.metadata is None
+    assert minimal_detection.label is None
+    assert minimal_detection.detector_info is None
+    assert minimal_detection.type is None
+    assert minimal_detection.confidence_indicator is None
+    assert minimal_detection.signal_quantity is None
+    assert minimal_detection.signal_parameters is None
+    assert minimal_detection.verifications is None
+
 
 def test_detection_to_rectangle(sample_detection: Detection) -> None:
     rectangle = sample_detection.to_rectangle()
@@ -333,3 +347,17 @@ def test_detection_to_rectangle(sample_detection: Detection) -> None:
 
     assert x + rectangle.get_width() == t2
     assert y + rectangle.get_height() == f2
+
+
+def test_detection_required_parameters() -> None:
+    # only time and frequency bounds are required
+    (
+        Detection(
+            begin=Timestamp("1991-04-08 00:00:00"),
+            end=Timestamp("1991-04-08 00:45:09"),
+            frequency_bounds=FrequencyBounds(
+                min=1991,
+                max=2010,
+            ),
+        ),
+    )
