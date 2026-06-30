@@ -228,3 +228,19 @@ def get_closest_value_index(target: float, values: list[float]) -> int:
         (closest_lower_index, closest_upper_index),
         key=lambda i: abs(values[i] - target),
     )
+
+
+def is_empty_dataclass(instance: object) -> bool:
+    """Return True if all fields of a dataclass instance are None.
+
+    Parameters
+    ----------
+    instance: object
+        A dataclass instance.
+
+    Returns
+    -------
+    bool:
+        True if all fields of instance are None.
+
+    """
