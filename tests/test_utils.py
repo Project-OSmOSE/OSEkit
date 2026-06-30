@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 from contextlib import nullcontext
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -14,6 +15,7 @@ from osekit.utils.audio import Butterworth, Normalization, normalize
 from osekit.utils.core import (
     file_indexes_per_batch,
     get_closest_value_index,
+    is_empty_dataclass,
     locked,
     nb_files_per_batch,
 )
@@ -22,6 +24,7 @@ from osekit.utils.path import is_absolute, move_tree
 
 if TYPE_CHECKING:
     from _pytest.monkeypatch import MonkeyPatch
+
 
 @pytest.mark.parametrize(
     ("files", "destination", "excluded_files"),
@@ -507,3 +510,46 @@ def test_butter_serialization() -> None:
     assert butter.N == butter2.N
     assert butter.Wn == butter2.Wn
     assert butter.btype == butter2.btype
+
+
+@dataclass
+class DummyDataclass:
+    str_field: str | None
+    int_field: int | None
+    float_field: float | None
+
+
+@pytest.mark.parametrize(
+    ("instance", "expected"),
+    [
+        pytest.param(
+            DummyDataclass(
+                str_field="35173",
+                int_field=35173,
+                float_field=351.73,
+            ),
+            False,
+            id="all_filled_fields_isnt_empty",
+        ),
+        pytest.param(
+            DummyDataclass(
+                str_field=None,
+                int_field=35173,
+                float_field=None,
+            ),
+            False,
+            id="any_filled_fields_isnt_empty",
+        ),
+        pytest.param(
+            DummyDataclass(
+                str_field=None,
+                int_field=None,
+                float_field=None,
+            ),
+            True,
+            id="no_filled_fields_is_empty",
+        ),
+    ],
+)
+def test_is_empty_dataclass(instance: DummyDataclass, expected: bool) -> None:
+    assert is_empty_dataclass(instance=instance) is expected
