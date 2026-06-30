@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import os
 import time
 from bisect import bisect
@@ -230,12 +231,12 @@ def get_closest_value_index(target: float, values: list[float]) -> int:
     )
 
 
-def is_empty_dataclass(instance: object) -> bool:
+def is_empty_dataclass(instance) -> bool:
     """Return True if all fields of a dataclass instance are None.
 
     Parameters
     ----------
-    instance: object
+    instance: DataclassInstance | type[DataclassInstance]
         A dataclass instance.
 
     Returns
@@ -244,3 +245,6 @@ def is_empty_dataclass(instance: object) -> bool:
         True if all fields of instance are None.
 
     """
+    return all(
+        getattr(instance, field.name) is None for field in dataclasses.fields(instance)
+    )
