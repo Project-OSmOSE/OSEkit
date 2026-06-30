@@ -329,7 +329,7 @@ def test_detections_from_csv() -> None:
     assert minimal_detection.confidence_indicator is None
     assert minimal_detection.signal_quantity is None
     assert minimal_detection.signal_parameters is None
-    assert minimal_detection.verifications is None
+    assert len(minimal_detection.verifications) == 0
 
 
 def test_detection_to_rectangle(sample_detection: Detection) -> None:

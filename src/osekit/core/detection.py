@@ -10,6 +10,7 @@ from matplotlib.patches import Rectangle
 from pandas import Timestamp
 
 from osekit.core.event import Event
+from osekit.utils.core import is_empty_dataclass
 
 KNOWN_KEYS = {
     "dataset",
@@ -186,18 +187,18 @@ class DetectionMetaData:
 
     Parameters
     ----------
-    project: str
+    project: str | None
         Name of the project in which the detection was made.
-    filename: str
+    filename: str | None
         Name of the file this detection was made on.
-    detection_id: int
+    detection_id: int | None
         ID of the detection.
-    base_id: int
+    base_id: int | None
         ID of the base detection.
         May differ from ``detection_id`` if the detection is an update/correction.
     comments: str | None
         Comments left by the annotator.
-    phase: Literal["ANNOTATION", "VERIFICATION"]
+    phase: Literal["ANNOTATION", "VERIFICATION"] | None
         Phase during which the detection was created.
 
     """
@@ -286,7 +287,7 @@ class Detection(Event):
         self.confidence_indicator = confidence_indicator
         self.signal_quantity = signal_quantity
         self.signal_parameters = signal_parameters
-        self.verifications = verifications
+        self.verifications = verifications or {}
 
         super().__init__(begin=begin, end=end)
 
@@ -299,12 +300,14 @@ class Detection(Event):
         """Deserialize a Detection object."""
         metadata = DetectionMetaData(
             project=row["project"] if "project" in row else row["dataset"],
-            filename=str(row["filename"]),
+            filename=str(row["filename"]) if row["filename"] is not None else None,
             detection_id=row["annotation_id"],
             base_id=row["is_update_of_id"],
             comments=row["comments"],
             phase=row["created_at_phase"],
         )
+        metadata = None if is_empty_dataclass(instance=metadata) else metadata
+
         detector_info = (
             DetectorInfo(
                 name=row["annotator"],
@@ -330,7 +333,7 @@ class Detection(Event):
             else None
         )
 
-        signal_quantity = row["signal_quantity"]
+        signal_quantity = row["signal_quantity"] or None
         signal_parameters = (
             SignalParameters(
                 does_overlap_other_signals=row["signal_is_intensity_too_low"],
@@ -359,6 +362,7 @@ class Detection(Event):
             for key, value in row.items()
             if key not in KNOWN_KEYS
         }
+        verifications = {v for v in verifications if v.is_validated is not None}
 
         return cls(
             metadata=metadata,
