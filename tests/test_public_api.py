@@ -1550,9 +1550,23 @@ def test_rename_transform(
     )
 
 
+@pytest.mark.parametrize(
+    "output_recovery_method",
+    [
+        pytest.param(
+            "get_output",
+            id="get_output-method",
+        ),
+        pytest.param(
+            "json",
+            id="JSON-file",
+        ),
+    ],
+)
 def test_sds_link_to_ads(
     tmp_path: Path,
     audio_files: tuple[list[AudioFile], None],
+    output_recovery_method: str,
 ) -> None:
     project = Project(
         folder=tmp_path,
@@ -1571,23 +1585,20 @@ def test_sds_link_to_ads(
 
     project.run(transform)
 
-    # Both project.get_output() and the JSONs should allow to recover the outputs:
     ads = project.get_output("full_audio")
     sds = project.get_output("full")
 
-    for i in range(2):
-        # Both project.get_output() and JSON files should allow to recover the outputs
-        if i == 1:
-            ads = AudioDataset.from_json(file=Path(ads.folder / f"{ads.name}.json"))
-            sds = SpectroDataset.from_json(file=Path(sds.folder / f"{sds.name}.json"))
+    if output_recovery_method == "json":
+        ads = AudioDataset.from_json(file=Path(ads.folder / f"{ads.name}.json"))
+        sds = SpectroDataset.from_json(file=Path(sds.folder / f"{sds.name}.json"))
 
-        assert type(ads) is AudioDataset
-        assert type(sds) is SpectroDataset
+    assert type(ads) is AudioDataset
+    assert type(sds) is SpectroDataset
 
-        for ad, sd in zip(ads.data, sds.data, strict=True):
-            assert ad.begin == sd.begin
-            assert ad.end == sd.end
-            assert sd.audio_data == ad
+    for ad, sd in zip(ads.data, sds.data, strict=True):
+        assert ad.begin == sd.begin
+        assert ad.end == sd.end
+        assert sd.audio_data == ad
 
 
 def test_spectro_transform_with_existing_ads(
