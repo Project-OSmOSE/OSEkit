@@ -4,7 +4,6 @@ import logging
 import os
 import sys
 import typing
-from collections.abc import Generator
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
@@ -22,38 +21,29 @@ from osekit.config import (
 from osekit.core.audio_file import AudioFile
 from osekit.utils.audio import generate_sample_audio
 
+if typing.TYPE_CHECKING:
+    from collections.abc import Generator
 
-@pytest.fixture
-def audio_files(
+
+def _generate_audio_files(
     tmp_path: Path,
-    request: pytest.fixtures.Subrequest,
-) -> tuple[list[AudioFile], pytest.fixtures.Subrequest]:
-    nb_files = request.param.get("nb_files", 1) if hasattr(request, "param") else 1
-
+    params: dict,
+) -> list[AudioFile]:
+    nb_files = params.get("nb_files", 1)
     if nb_files == 0:
-        return [], request
+        return []
 
-    if hasattr(request, "param"):
-        sample_rate = request.param.get("sample_rate", 48_000)
-        duration = request.param.get("duration", 1.0)
-        date_begin = request.param.get(
-            "date_begin",
-            pd.Timestamp("2000-01-01 00:00:00"),
-        )
-        inter_file_duration = request.param.get("inter_file_duration", 0)
-        series_type = request.param.get("series_type", "repeat")
-        sine_frequency = request.param.get("sine_frequency", 1000.0)
-        magnitude = request.param.get("magnitude", 1.0)
-        audio_format = request.param.get("format", "wav")
-    else:
-        sample_rate = 48_000
-        duration = 1.0
-        date_begin = pd.Timestamp("2000-01-01 00:00:00")
-        inter_file_duration = 0
-        series_type = "repeat"
-        sine_frequency = 1000.0
-        magnitude = 1.0
-        audio_format = "wav"
+    sample_rate = params.get("sample_rate", 48_000)
+    duration = params.get("duration", 1.0)
+    date_begin = params.get(
+        "date_begin",
+        pd.Timestamp("2000-01-01 00:00:00"),
+    )
+    inter_file_duration = params.get("inter_file_duration", 0)
+    series_type = params.get("series_type", "repeat")
+    sine_frequency = params.get("sine_frequency", 1000.0)
+    magnitude = params.get("magnitude", 1.0)
+    audio_format = params.get("format", "wav")
 
     nb_samples = round(duration * sample_rate)
     data = generate_sample_audio(
@@ -90,15 +80,22 @@ def audio_files(
         while (file := tmp_path / f"audio_{time_str}_{idx}.{audio_format}").exists():
             idx += 1
         files.append(file)
-        kwargs = {
-            "file": file,
-            "data": data[index],
-            "samplerate": sample_rate,
-            "subtype": "DOUBLE" if audio_format.lower() == "wav" else "PCM_24",
-        }
-        sf.write(**kwargs)
-    output = [AudioFile(path=f, strptime_format=datetime_format) for f in files]
-    return output, request
+        sf.write(
+            file=file,
+            data=data[index],
+            samplerate=sample_rate,
+            subtype="DOUBLE" if audio_format.lower() == "wav" else "PCM_24",
+        )
+    return [AudioFile(path=f, strptime_format=datetime_format) for f in files]
+
+
+@pytest.fixture
+def audio_files(
+    tmp_path: Path,
+    request: pytest.fixtures.Subrequest,
+) -> tuple[list[AudioFile], pytest.fixtures.Subrequest]:
+    params = request.param if hasattr(request, "param") else {}
+    return _generate_audio_files(tmp_path=tmp_path, params=params), request
 
 
 @pytest.fixture(autouse=True)
