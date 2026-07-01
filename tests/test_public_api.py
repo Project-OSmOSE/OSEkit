@@ -27,6 +27,21 @@ from osekit.public.transform import OutputType, Transform
 from osekit.utils.audio import Normalization
 
 
+@pytest.fixture(scope="function")
+def sample_project(
+    tmp_path: Path,
+    audio_files: tuple[list[AudioFile], None],
+) -> Project:
+    project = Project(
+        folder=tmp_path,
+        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+    )
+
+    project.build()
+
+    return project
+
+
 @pytest.mark.parametrize(
     (
         "audio_files",
