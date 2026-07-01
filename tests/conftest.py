@@ -17,8 +17,10 @@ from osekit.audio_backend.soundfile_backend import SoundFileBackend
 from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+    TIMESTAMP_FORMATS_EXPORTED_FILES,
 )
 from osekit.core.audio_file import AudioFile
+from osekit.public.project import Project
 from osekit.utils.audio import generate_sample_audio
 
 if typing.TYPE_CHECKING:
@@ -87,6 +89,24 @@ def _generate_audio_files(
             subtype="DOUBLE" if audio_format.lower() == "wav" else "PCM_24",
         )
     return [AudioFile(path=f, strptime_format=datetime_format) for f in files]
+
+
+@pytest.fixture(scope="module")
+def sample_project(
+    tmp_path_factory: pytest.TempPathFactory,
+    request: pytest.fixture.SubRequest,
+) -> Project:
+    tmp_path = tmp_path_factory.mktemp("sample_project")
+    params = request.param if hasattr(request, "param") else {}
+
+    _generate_audio_files(tmp_path=tmp_path, params=params)
+
+    project = Project(
+        folder=tmp_path,
+        strptime_format=TIMESTAMP_FORMATS_EXPORTED_FILES,
+    )
+    project.build()
+    return project
 
 
 @pytest.fixture

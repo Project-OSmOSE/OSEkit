@@ -27,21 +27,6 @@ from osekit.public.transform import OutputType, Transform
 from osekit.utils.audio import Normalization
 
 
-@pytest.fixture(scope="function")
-def sample_project(
-    tmp_path: Path,
-    audio_files: tuple[list[AudioFile], None],
-) -> Project:
-    project = Project(
-        folder=tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
-    )
-
-    project.build()
-
-    return project
-
-
 @pytest.mark.parametrize(
     (
         "audio_files",
@@ -327,7 +312,7 @@ def test_project_build(
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "transform"),
+    "sample_project",
     [
         pytest.param(
             {
@@ -336,6 +321,15 @@ def test_project_build(
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
+            id="fixed_project",
+        ),
+    ],
+    indirect=["sample_project"],
+)
+@pytest.mark.parametrize(
+    "transform",
+    [
+        pytest.param(
             Transform(
                 output_type=OutputType.AUDIO,
                 name=None,
@@ -348,12 +342,6 @@ def test_project_build(
             id="same_format_as_original",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             Transform(
                 output_type=OutputType.AUDIO,
                 name="cool",
@@ -366,15 +354,9 @@ def test_project_build(
             id="named_dataset",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             Transform(
                 output_type=OutputType.AUDIO,
-                name=None,
+                name="part_timestamp",
                 begin=Timestamp("2024-01-01 12:00:02"),
                 end=Timestamp("2024-01-01 12:00:04"),
                 data_duration=None,
@@ -384,15 +366,9 @@ def test_project_build(
             id="part_of_the_timespan",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             Transform(
                 output_type=OutputType.AUDIO,
-                name=None,
+                name="resize_data",
                 begin=None,
                 end=None,
                 data_duration=Timedelta(seconds=1),
@@ -402,15 +378,9 @@ def test_project_build(
             id="resize_data_with_data_duration",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             Transform(
                 output_type=OutputType.AUDIO,
-                name=None,
+                name="reshape_data",
                 begin=None,
                 end=None,
                 data_duration=None,
@@ -420,12 +390,6 @@ def test_project_build(
             id="reshaping_data",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             Transform(
                 output_type=OutputType.AUDIO,
                 name="fun",
@@ -438,24 +402,18 @@ def test_project_build(
             id="full_reshape",
         ),
     ],
-    indirect=["audio_files"],
 )
 def test_reshape(
     tmp_path: pytest.fixture,
-    audio_files: pytest.fixture,
+    sample_project: Project,
     transform: Transform,
 ) -> None:
-    project = Project(
-        folder=tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
-    )
-    project.build()
-    project.run(
+    sample_project.run(
         transform=transform,
     )
 
     expected_ads = AudioDataset.from_files(
-        list(project.origin_dataset.files),
+        list(sample_project.origin_dataset.files),
         begin=transform.begin,
         end=transform.end,
         data_duration=transform.data_duration,
@@ -470,8 +428,8 @@ def test_reshape(
     )
 
     # The new dataset should be added to the outputs property
-    assert expected_ads_name in project.outputs
-    ads = project.get_output(expected_ads_name)
+    assert expected_ads_name in sample_project.outputs
+    ads = sample_project.get_output(expected_ads_name)
     assert ads is not None
     assert type(ads) is AudioDataset
 
@@ -493,7 +451,7 @@ def test_reshape(
     assert ads.folder.name == ads_folder_name
 
     # ads should be linked to the new files instead of the originals
-    assert all(file not in project.origin_files for file in ads.files)
+    assert all(file not in sample_project.origin_files for file in ads.files)
 
     # ads should be deserializable from the exported JSON file
     json_file = ads.folder / f"{expected_ads_name}.json"
