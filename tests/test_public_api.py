@@ -1583,7 +1583,7 @@ def test_sds_link_to_ads(
         fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=8_000),
     )
 
-    project.run(transform)
+    project.run(transform=transform)
 
     ads = project.get_output("full_audio")
     sds = project.get_output("full")
