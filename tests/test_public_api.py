@@ -1183,8 +1183,9 @@ def test_edit_transform_before_run(
 
 
 def test_delete_output_dataset(
-    tmp_path: pytest.fixture,
-    audio_files: pytest.fixture,
+    tmp_path: Path,
+    audio_files: tuple[list[AudioFile], pytest.fixtures.subrequest],
+    dummy_export_transform: None,
 ) -> None:
     project = Project(
         folder=tmp_path,
