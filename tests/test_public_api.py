@@ -408,12 +408,14 @@ def test_reshape(
     sample_project: tuple[Project, pytest.fixtures.Subrequest],
     transform: Transform,
 ) -> None:
-    sample_project.run(
+    project, _ = sample_project
+
+    project.run(
         transform=transform,
     )
 
     expected_ads = AudioDataset.from_files(
-        list(sample_project.origin_dataset.files),
+        list(project.origin_dataset.files),
         begin=transform.begin,
         end=transform.end,
         data_duration=transform.data_duration,
@@ -428,8 +430,8 @@ def test_reshape(
     )
 
     # The new dataset should be added to the outputs property
-    assert expected_ads_name in sample_project.outputs
-    ads = sample_project.get_output(expected_ads_name)
+    assert expected_ads_name in project.outputs
+    ads = project.get_output(expected_ads_name)
     assert ads is not None
     assert type(ads) is AudioDataset
 
@@ -451,7 +453,7 @@ def test_reshape(
     assert ads.folder.name == ads_folder_name
 
     # ads should be linked to the new files instead of the originals
-    assert all(file not in sample_project.origin_files for file in ads.files)
+    assert all(file not in project.origin_files for file in ads.files)
 
     # ads should be deserializable from the exported JSON file
     json_file = ads.folder / f"{expected_ads_name}.json"
