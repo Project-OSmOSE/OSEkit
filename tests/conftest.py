@@ -19,7 +19,10 @@ from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
     TIMESTAMP_FORMATS_EXPORTED_FILES,
 )
+from osekit.core import audio_file_manager
+from osekit.core.audio_dataset import AudioDataset
 from osekit.core.audio_file import AudioFile
+from osekit.core.spectro_dataset import SpectroDataset
 from osekit.public import export_transform
 from osekit.public.project import Project
 from osekit.public.transform import OutputType
@@ -249,34 +252,49 @@ def dummy_export_transform(
     that don't need to."""
 
     def dummy_export(*args, **kwargs) -> None:  # noqa: ANN002, ANN003
-        output_type = kwargs["output_type"]
-        ads = kwargs.get("ads")
-        sds = kwargs.get("sds")
+        output_type: OutputType = kwargs["output_type"]
+        ads: AudioDataset = kwargs.get("ads")
+        sds: SpectroDataset = kwargs.get("sds")
         spectrum_folder_path = kwargs.get("spectrum_folder_path")
         spectrogram_folder_path = kwargs.get("spectrogram_folder_path")
         welch_folder_path = kwargs.get("welch_folder_path")
-
-        exports = []
+        link = kwargs.get("link")
 
         if ads:
-            exports.append((OutputType.AUDIO, ads.folder / "dummy_audio.wav"))
+            Path.mkdir(ads.folder, parents=True, exist_ok=True)
+            if OutputType.AUDIO in output_type:
+                for ad in ads.data:
+                    (ads.folder / f"{ad.name}.wav").touch()
+                    if link:
+                        ad.link(ads.folder)
+                ads.write_json(ads.folder)
 
         if sds:
-            exports += [
-                (
-                    OutputType.SPECTROGRAM,
-                    sds.folder / spectrogram_folder_path / "dummy_spectrogram.png",
-                ),
-                (
-                    OutputType.SPECTRUM,
-                    sds.folder / spectrum_folder_path / "dummy_spectrum.npz",
-                ),
-                (OutputType.WELCH, sds.folder / welch_folder_path / "dummy_welch.npz"),
-            ]
+            for output, folder, extension in (
+                (OutputType.SPECTROGRAM, spectrogram_folder_path, "png"),
+                (OutputType.SPECTRUM, spectrum_folder_path, "npz"),
+            ):
+                if output not in output_type:
+                    continue
 
-        for output, file in exports:
-            if output in output_type:
-                Path.mkdir(file.parent, parents=True, exist_ok=True)
-                file.touch()
+                Path.mkdir(sds.folder / folder, parents=True, exist_ok=True)
+                for sd in sds.data:
+                    (sds.folder / folder / f"{sd.name}.{extension}").touch()
+
+            if OutputType.WELCH in output_type:
+                Path.mkdir(sds.folder / welch_folder_path, parents=True, exist_ok=True)
+                (sds.folder / welch_folder_path / f"{sds.name}.npz").touch()
 
     monkeypatch.setattr(export_transform, "write_transform_output", dummy_export)
+
+
+@pytest.fixture
+def patch_afm_info(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Return dummy info instead of actually reading the file with soundfile."""
+
+    def patch_afm_info(
+        path: Path,
+    ) -> tuple[int, int, int]:
+        return 48_000, 48_000, 1
+
+    monkeypatch.setattr(audio_file_manager, "info", patch_afm_info)
