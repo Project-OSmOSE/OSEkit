@@ -1233,6 +1233,21 @@ def test_delete_output_dataset(
 
 
 @pytest.mark.parametrize(
+    "sample_project",
+    [
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 500,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00"),
+            },
+            id="fixed_project",
+        ),
+    ],
+    indirect=["sample_project"],
+)
+@pytest.mark.parametrize(
     "transform_to_delete",
     [
         pytest.param(
@@ -1240,8 +1255,8 @@ def test_delete_output_dataset(
                 output_type=OutputType.AUDIO,
                 data_duration=Timedelta(seconds=1),
                 name="transform_to_delete",
-                sample_rate=24_000,
-                fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
+                sample_rate=500,
+                fft=ShortTimeFFT(win=hamming(128), hop=64, fs=500),
             ),
             id="audio_only",
         ),
@@ -1250,8 +1265,8 @@ def test_delete_output_dataset(
                 output_type=OutputType.SPECTROGRAM,
                 data_duration=Timedelta(seconds=1),
                 name="transform_to_delete",
-                sample_rate=24_000,
-                fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
+                sample_rate=500,
+                fft=ShortTimeFFT(win=hamming(128), hop=64, fs=500),
             ),
             id="spectro_only",
         ),
@@ -1260,24 +1275,23 @@ def test_delete_output_dataset(
                 output_type=OutputType.AUDIO | OutputType.SPECTROGRAM,
                 data_duration=Timedelta(seconds=1),
                 name="transform_to_delete",
-                sample_rate=24_000,
-                fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
+                sample_rate=500,
+                fft=ShortTimeFFT(win=hamming(128), hop=64, fs=500),
             ),
             id="audio_and_spectro",
         ),
     ],
 )
 def test_delete_output(
-    tmp_path: Path,
-    audio_files: pytest.fixture,
+    sample_project: tuple[Project, pytest.fixtures.Subrequest],
     transform_to_delete: Transform,
 ) -> None:
-    project = Project(
-        folder=tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
-    )
+    project, _ = sample_project
 
-    project.build()
+    for transform in project.transforms:
+        if transform == "original":
+            continue
+        project.delete_transform_with_outputs(transform)
 
     # Add another transform to check that it is not affected by the deletion
 
