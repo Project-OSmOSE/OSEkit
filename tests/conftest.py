@@ -95,18 +95,21 @@ def _generate_audio_files(
 def sample_project(
     tmp_path_factory: pytest.TempPathFactory,
     request: pytest.fixture.SubRequest,
-) -> Project:
+) -> tuple[Project, pytest.fixtures.Subrequest]:
     tmp_path = tmp_path_factory.mktemp("sample_project")
     params = request.param if hasattr(request, "param") else {}
 
     _generate_audio_files(tmp_path=tmp_path, params=params)
 
+    instrument = params.get("instrument", None)
+
     project = Project(
         folder=tmp_path,
         strptime_format=TIMESTAMP_FORMATS_EXPORTED_FILES,
+        instrument=instrument,
     )
     project.build()
-    return project
+    return project, request
 
 
 @pytest.fixture
