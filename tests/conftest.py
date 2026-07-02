@@ -20,9 +20,7 @@ from osekit.config import (
     TIMESTAMP_FORMATS_EXPORTED_FILES,
 )
 from osekit.core import audio_file_manager
-from osekit.core.audio_dataset import AudioDataset
 from osekit.core.audio_file import AudioFile
-from osekit.core.spectro_dataset import SpectroDataset
 from osekit.public import export_transform
 from osekit.public.project import Project
 from osekit.public.transform import OutputType
@@ -30,6 +28,9 @@ from osekit.utils.audio import generate_sample_audio
 
 if typing.TYPE_CHECKING:
     from collections.abc import Generator
+
+    from osekit.core.audio_dataset import AudioDataset
+    from osekit.core.spectro_dataset import SpectroDataset
 
 
 def _generate_audio_files(
