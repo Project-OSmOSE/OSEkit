@@ -470,7 +470,7 @@ def test_reshape(
     [
         pytest.param(
             {
-                "duration": 3,
+                "duration": 1,
                 "sample_rate": 48_000,
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
@@ -1420,7 +1420,10 @@ def test_rename_transform(
     first_name, second_name = "fontaines", "dc"
 
     transform = Transform(
-        output_type=OutputType.AUDIO | OutputType.SPECTROGRAM | OutputType.SPECTRUM,
+        output_type=OutputType.AUDIO
+        | OutputType.SPECTROGRAM
+        | OutputType.SPECTRUM
+        | OutputType.WELCH,
         data_duration=project.origin_dataset.duration / 2,
         name=first_name,
         sample_rate=24_000,
