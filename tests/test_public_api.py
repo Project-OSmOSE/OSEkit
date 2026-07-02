@@ -1186,6 +1186,7 @@ def test_delete_output_dataset(
     tmp_path: Path,
     audio_files: tuple[list[AudioFile], pytest.fixtures.subrequest],
     dummy_export_transform: None,
+    patch_afm_info: None,
 ) -> None:
     project = Project(
         folder=tmp_path,
@@ -1292,6 +1293,7 @@ def test_delete_output(
     sample_project: tuple[Project, pytest.fixtures.Subrequest],
     transform_to_delete: Transform,
     dummy_export_transform: None,
+    patch_afm_info: None,
 ) -> None:
     project, _ = sample_project
 
@@ -1357,6 +1359,7 @@ def test_existing_output_warning(
     tmp_path: pytest.fixture,
     audio_files: pytest.fixture,
     dummy_export_transform: None,
+    patch_afm_info: None,
 ) -> None:
     project = Project(
         folder=tmp_path,
