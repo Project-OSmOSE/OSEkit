@@ -20,7 +20,9 @@ from osekit.config import (
     TIMESTAMP_FORMATS_EXPORTED_FILES,
 )
 from osekit.core.audio_file import AudioFile
+from osekit.public import export_transform
 from osekit.public.project import Project
+from osekit.public.transform import OutputType
 from osekit.utils.audio import generate_sample_audio
 
 if typing.TYPE_CHECKING:
@@ -235,3 +237,39 @@ def check_logger() -> Generator[None, Any, None]:
     if h1 != h2:  # pragma: no cover
         msg = "This test changed the root logger handlers."
         raise ValueError(msg)
+
+
+@pytest.fixture
+def dummy_export_transform(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Create dummy files in the transform output(s) dataset(s) folders(s).
+
+    This avoids actually computing the outputs of transforms in tests
+    that don't need to."""
+
+    def dummy_export(*args, **kwargs) -> None:  # noqa: ANN002, ANN003
+        output_type = kwargs["output_type"]
+        ads = kwargs.get("ads")
+        sds = kwargs.get("sds")
+        spectrum_folder_path = kwargs.get("spectrum_folder_path")
+        spectrogram_folder_path = kwargs.get("spectrogram_folder_path")
+        welch_folder_path = kwargs.get("welch_folder_path")
+
+        for output, file in (
+            (OutputType.AUDIO, ads.folder / "dummy_audio.wav"),
+            (
+                OutputType.SPECTROGRAM,
+                sds.folder / spectrogram_folder_path / "dummy_spectrogram.png",
+            ),
+            (
+                OutputType.SPECTRUM,
+                sds.folder / spectrum_folder_path / "dummy_spectrum.npz",
+            ),
+            (OutputType.WELCH, sds.folder / welch_folder_path / "dummy_welch.npz"),
+        ):
+            if output in output_type:
+                Path.mkdir(file.parent, parents=True, exist_ok=True)
+                file.touch()
+
+    monkeypatch.setattr(export_transform, "write_transform_output", dummy_export)
