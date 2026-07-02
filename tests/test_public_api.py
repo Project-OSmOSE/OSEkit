@@ -746,7 +746,7 @@ def test_transform_validate_sample_rate(
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "instrument", "transform", "expected_data"),
+    "sample_project",
     [
         pytest.param(
             {
@@ -755,6 +755,15 @@ def test_transform_validate_sample_rate(
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
+            id="fixed_project",
+        )
+    ],
+    indirect=["sample_project"],
+)
+@pytest.mark.parametrize(
+    ("instrument", "transform", "expected_data"),
+    [
+        pytest.param(
             None,
             Transform(
                 output_type=OutputType.AUDIO,
@@ -771,19 +780,13 @@ def test_transform_validate_sample_rate(
                     end=Timestamp("2024-01-01 12:00:05"),
                 ),
             ],
-            id="only_one_data",
+            id="no_transform_name",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             Instrument(end_to_end_db=150),
             Transform(
                 output_type=OutputType.AUDIO,
-                name=None,
+                name="ads_has_project_instrument",
                 begin=None,
                 end=None,
                 data_duration=None,
@@ -799,16 +802,10 @@ def test_transform_validate_sample_rate(
             id="ads_has_project_instrument",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             None,
             Transform(
                 output_type=OutputType.AUDIO,
-                name=None,
+                name="reshaped_ads",
                 begin=None,
                 end=None,
                 data_duration=Timedelta(seconds=1),
@@ -840,16 +837,10 @@ def test_transform_validate_sample_rate(
             id="reshaped_ads",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             None,
             Transform(
                 output_type=OutputType.AUDIO,
-                name=None,
+                name="resampled_ads",
                 begin=None,
                 end=None,
                 data_duration=None,
@@ -865,16 +856,10 @@ def test_transform_validate_sample_rate(
             id="resampled_ads",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             None,
             Transform(
                 output_type=OutputType.AUDIO,
-                name="cool",
+                name="named_ads",
                 begin=None,
                 end=None,
                 data_duration=None,
@@ -890,16 +875,10 @@ def test_transform_validate_sample_rate(
             id="named_ads",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             None,
             Transform(
                 output_type=OutputType.SPECTROGRAM,
-                name="cool",
+                name="named_ads_in_spectro_transform",
                 begin=None,
                 end=None,
                 data_duration=None,
@@ -916,16 +895,10 @@ def test_transform_validate_sample_rate(
             id="named_ads_in_spectro_transform",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             None,
             Transform(
                 output_type=OutputType.AUDIO,
-                name=None,
+                name="specified_begin_and_end",
                 begin=Timestamp("2024-01-01 12:00:02"),
                 end=Timestamp("2024-01-01 12:00:04"),
                 data_duration=Timedelta(seconds=1),
@@ -945,16 +918,10 @@ def test_transform_validate_sample_rate(
             id="specified_begin_and_end",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             Instrument(end_to_end_db=150),
             Transform(
                 output_type=OutputType.SPECTROGRAM,
-                name="cool",
+                name="full_reshape",
                 begin=Timestamp("2024-01-01 12:00:02"),
                 end=Timestamp("2024-01-01 12:00:04"),
                 data_duration=Timedelta(seconds=1),
@@ -975,16 +942,10 @@ def test_transform_validate_sample_rate(
             id="full_reshape",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             None,
             Transform(
                 output_type=OutputType.AUDIO,
-                name=None,
+                name="normalized_data",
                 begin=None,
                 end=None,
                 data_duration=None,
@@ -1001,21 +962,16 @@ def test_transform_validate_sample_rate(
             id="normalized_data",
         ),
     ],
-    indirect=["audio_files"],
 )
 def test_prepare_audio(
-    tmp_path: pytest.fixture,
-    audio_files: pytest.fixture,
+    sample_project: tuple[Project, pytest.fixtures.Subrequest],
     instrument: Instrument | None,
     transform: Transform,
     expected_data: list[Event],
 ) -> None:
-    project = Project(
-        folder=tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
-        instrument=instrument,
-    )
-    project.build()
+    project, _ = sample_project
+
+    project.instrument = instrument
 
     transform_ds = project.prepare_audio(transform=transform)
 
