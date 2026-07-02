@@ -1356,6 +1356,7 @@ def test_delete_output(
 def test_existing_output_warning(
     tmp_path: pytest.fixture,
     audio_files: pytest.fixture,
+    dummy_export_transform: None,
 ) -> None:
     project = Project(
         folder=tmp_path,
