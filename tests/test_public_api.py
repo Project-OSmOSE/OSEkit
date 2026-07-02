@@ -1291,6 +1291,7 @@ def test_delete_output_dataset(
 def test_delete_output(
     sample_project: tuple[Project, pytest.fixtures.Subrequest],
     transform_to_delete: Transform,
+    dummy_export_transform: None,
 ) -> None:
     project, _ = sample_project
 
