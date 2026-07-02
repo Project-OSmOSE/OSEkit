@@ -256,18 +256,25 @@ def dummy_export_transform(
         spectrogram_folder_path = kwargs.get("spectrogram_folder_path")
         welch_folder_path = kwargs.get("welch_folder_path")
 
-        for output, file in (
-            (OutputType.AUDIO, ads.folder / "dummy_audio.wav"),
-            (
-                OutputType.SPECTROGRAM,
-                sds.folder / spectrogram_folder_path / "dummy_spectrogram.png",
-            ),
-            (
-                OutputType.SPECTRUM,
-                sds.folder / spectrum_folder_path / "dummy_spectrum.npz",
-            ),
-            (OutputType.WELCH, sds.folder / welch_folder_path / "dummy_welch.npz"),
-        ):
+        exports = []
+
+        if ads:
+            exports.append((OutputType.AUDIO, ads.folder / "dummy_audio.wav"))
+
+        if sds:
+            exports += [
+                (
+                    OutputType.SPECTROGRAM,
+                    sds.folder / spectrogram_folder_path / "dummy_spectrogram.png",
+                ),
+                (
+                    OutputType.SPECTRUM,
+                    sds.folder / spectrum_folder_path / "dummy_spectrum.npz",
+                ),
+                (OutputType.WELCH, sds.folder / welch_folder_path / "dummy_welch.npz"),
+            ]
+
+        for output, file in exports:
             if output in output_type:
                 Path.mkdir(file.parent, parents=True, exist_ok=True)
                 file.touch()
