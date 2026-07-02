@@ -461,12 +461,7 @@ def test_reshape(
 
 
 @pytest.mark.parametrize(
-    (
-        "audio_files",
-        "instrument",
-        "transform",
-        "expected_level",
-    ),
+    "sample_project",
     [
         pytest.param(
             {
@@ -477,11 +472,23 @@ def test_reshape(
                 "series_type": "sine",
                 "sine_frequency": 1_000,
                 "magnitude": 0.1,
+                "instrument": Instrument(end_to_end_db=150),
             },
-            Instrument(end_to_end_db=150),
+            id="fixed_project",
+        ),
+    ],
+    indirect=["sample_project"],
+)
+@pytest.mark.parametrize(
+    (
+        "transform",
+        "expected_level",
+    ),
+    [
+        pytest.param(
             Transform(
                 output_type=OutputType.AUDIO | OutputType.SPECTROGRAM,
-                name="pingu",
+                name="nutnut",
                 begin=Timestamp("2024-01-01 12:00:00"),
                 end=Timestamp("2024-01-01 12:00:01"),
                 data_duration=Timedelta(seconds=1.0),
@@ -498,16 +505,6 @@ def test_reshape(
             id="all_parameters_without_npz",
         ),
         pytest.param(
-            {
-                "duration": 3,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-                "series_type": "sine",
-                "sine_frequency": 1_000,
-                "magnitude": 0.1,
-            },
-            Instrument(end_to_end_db=150),
             Transform(
                 output_type=OutputType.AUDIO
                 | OutputType.SPECTRUM
@@ -529,25 +526,17 @@ def test_reshape(
             id="all_parameters_with_npz",
         ),
     ],
-    indirect=["audio_files"],
 )
 def test_serialization(
-    tmp_path: pytest.fixture,
-    audio_files: pytest.fixture,
-    instrument: Instrument | None,
+    sample_project: Project,
     transform: Transform,
     expected_level: float | None,
 ) -> None:
-    project = Project(
-        folder=tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
-        instrument=instrument,
-    )
-    project.build()
+    project, request = sample_project
     project.run(
         transform=transform,
     )
-    _, request = audio_files
+
     sine_frequency = request.param["sine_frequency"]
 
     assert transform.name in project.outputs
@@ -566,7 +555,7 @@ def test_serialization(
         computed_level = equalized_sx[bin_idx, :].mean()
         assert abs(computed_level - expected_level) < level_tolerance
 
-    deserialized = Project.from_json(tmp_path / "project.json")
+    deserialized = Project.from_json(project.folder / "project.json")
 
     # transform dataset deserialization is only done on request
     assert all(
