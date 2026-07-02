@@ -4,6 +4,7 @@ import itertools
 from contextlib import AbstractContextManager, nullcontext
 from copy import deepcopy
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
@@ -16,7 +17,6 @@ from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
 )
 from osekit.core.audio_dataset import AudioDataset
-from osekit.core.audio_file import AudioFile
 from osekit.core.event import Event
 from osekit.core.frequency_scale import Scale, ScalePart
 from osekit.core.instrument import Instrument
@@ -25,6 +25,9 @@ from osekit.core.spectro_dataset import SpectroDataset
 from osekit.public.project import Project
 from osekit.public.transform import OutputType, Transform
 from osekit.utils.audio import Normalization
+
+if TYPE_CHECKING:
+    from osekit.core.audio_file import AudioFile
 
 
 @pytest.mark.parametrize(
