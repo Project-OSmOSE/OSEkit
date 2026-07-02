@@ -1404,6 +1404,8 @@ def test_existing_output_warning(
 def test_rename_transform(
     tmp_path: Path,
     audio_files: tuple[list[AudioFile], None],
+    dummy_export_transform: None,
+    patch_afm_info: None,
 ) -> None:
     project = Project(
         folder=tmp_path,
