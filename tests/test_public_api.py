@@ -405,7 +405,7 @@ def test_project_build(
 )
 def test_reshape(
     tmp_path: pytest.fixture,
-    sample_project: Project,
+    sample_project: tuple[Project, pytest.fixtures.Subrequest],
     transform: Transform,
 ) -> None:
     sample_project.run(
@@ -528,7 +528,7 @@ def test_reshape(
     ],
 )
 def test_serialization(
-    sample_project: Project,
+    sample_project: tuple[Project, pytest.fixtures.Subrequest],
     transform: Transform,
     expected_level: float | None,
 ) -> None:
@@ -756,7 +756,7 @@ def test_transform_validate_sample_rate(
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
             id="fixed_project",
-        )
+        ),
     ],
     indirect=["sample_project"],
 )
@@ -1000,7 +1000,7 @@ def test_prepare_audio(
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "instrument", "transform", "expected_data"),
+    "sample_project",
     [
         pytest.param(
             {
@@ -1008,8 +1008,17 @@ def test_prepare_audio(
                 "sample_rate": 48_000,
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
+                "instrument": Instrument(end_to_end_db=150),
             },
-            Instrument(end_to_end_db=150),
+            id="fixed_project",
+        ),
+    ],
+    indirect=["sample_project"],
+)
+@pytest.mark.parametrize(
+    ("transform", "expected_data"),
+    [
+        pytest.param(
             Transform(
                 output_type=OutputType.SPECTROGRAM,
                 name="cool",
@@ -1039,21 +1048,13 @@ def test_prepare_audio(
             id="full_transform",
         ),
     ],
-    indirect=["audio_files"],
 )
 def test_prepare_spectro(
-    tmp_path: pytest.fixture,
-    audio_files: pytest.fixture,
-    instrument: Instrument | None,
+    sample_project: tuple[Project, pytest.fixtures.Subrequest],
     transform: Transform,
     expected_data: list[Event],
 ) -> None:
-    project = Project(
-        folder=tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
-        instrument=instrument,
-    )
-    project.build()
+    project, _ = sample_project
 
     transform_sds = project.prepare_spectro(transform=transform)
 
