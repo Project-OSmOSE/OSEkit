@@ -1496,6 +1496,8 @@ def test_rename_transform(
 def test_spectro_transform_with_existing_ads(
     tmp_path: Path,
     audio_files: tuple[list[AudioFile], None],
+    dummy_export_transform: None,
+    patch_afm_info: None,
 ) -> None:
     project = Project(
         folder=tmp_path,
