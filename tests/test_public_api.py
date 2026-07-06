@@ -4,6 +4,7 @@ import itertools
 from contextlib import AbstractContextManager, nullcontext
 from copy import deepcopy
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
@@ -16,7 +17,6 @@ from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
 )
 from osekit.core.audio_dataset import AudioDataset
-from osekit.core.audio_file import AudioFile
 from osekit.core.event import Event
 from osekit.core.frequency_scale import Scale, ScalePart
 from osekit.core.instrument import Instrument
@@ -25,6 +25,9 @@ from osekit.core.spectro_dataset import SpectroDataset
 from osekit.public.project import Project
 from osekit.public.transform import OutputType, Transform
 from osekit.utils.audio import Normalization
+
+if TYPE_CHECKING:
+    from osekit.core.audio_file import AudioFile
 
 
 @pytest.mark.parametrize(
@@ -312,7 +315,7 @@ def test_project_build(
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "transform"),
+    "sample_project",
     [
         pytest.param(
             {
@@ -321,6 +324,15 @@ def test_project_build(
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
+            id="fixed_project",
+        ),
+    ],
+    indirect=["sample_project"],
+)
+@pytest.mark.parametrize(
+    "transform",
+    [
+        pytest.param(
             Transform(
                 output_type=OutputType.AUDIO,
                 name=None,
@@ -333,12 +345,6 @@ def test_project_build(
             id="same_format_as_original",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             Transform(
                 output_type=OutputType.AUDIO,
                 name="cool",
@@ -351,15 +357,9 @@ def test_project_build(
             id="named_dataset",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             Transform(
                 output_type=OutputType.AUDIO,
-                name=None,
+                name="part_timestamp",
                 begin=Timestamp("2024-01-01 12:00:02"),
                 end=Timestamp("2024-01-01 12:00:04"),
                 data_duration=None,
@@ -369,15 +369,9 @@ def test_project_build(
             id="part_of_the_timespan",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             Transform(
                 output_type=OutputType.AUDIO,
-                name=None,
+                name="resize_data",
                 begin=None,
                 end=None,
                 data_duration=Timedelta(seconds=1),
@@ -387,15 +381,9 @@ def test_project_build(
             id="resize_data_with_data_duration",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             Transform(
                 output_type=OutputType.AUDIO,
-                name=None,
+                name="reshape_data",
                 begin=None,
                 end=None,
                 data_duration=None,
@@ -405,12 +393,6 @@ def test_project_build(
             id="reshaping_data",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             Transform(
                 output_type=OutputType.AUDIO,
                 name="fun",
@@ -423,18 +405,14 @@ def test_project_build(
             id="full_reshape",
         ),
     ],
-    indirect=["audio_files"],
 )
 def test_reshape(
     tmp_path: pytest.fixture,
-    audio_files: pytest.fixture,
+    sample_project: tuple[Project, pytest.fixtures.Subrequest],
     transform: Transform,
 ) -> None:
-    project = Project(
-        folder=tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
-    )
-    project.build()
+    project, _ = sample_project
+
     project.run(
         transform=transform,
     )
@@ -488,27 +466,34 @@ def test_reshape(
 
 
 @pytest.mark.parametrize(
-    (
-        "audio_files",
-        "instrument",
-        "transform",
-        "expected_level",
-    ),
+    "sample_project",
     [
         pytest.param(
             {
-                "duration": 3,
+                "duration": 1,
                 "sample_rate": 48_000,
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
                 "series_type": "sine",
                 "sine_frequency": 1_000,
                 "magnitude": 0.1,
+                "instrument": Instrument(end_to_end_db=150),
             },
-            Instrument(end_to_end_db=150),
+            id="fixed_project",
+        ),
+    ],
+    indirect=["sample_project"],
+)
+@pytest.mark.parametrize(
+    (
+        "transform",
+        "expected_level",
+    ),
+    [
+        pytest.param(
             Transform(
                 output_type=OutputType.AUDIO | OutputType.SPECTROGRAM,
-                name="pingu",
+                name="nutnut",
                 begin=Timestamp("2024-01-01 12:00:00"),
                 end=Timestamp("2024-01-01 12:00:01"),
                 data_duration=Timedelta(seconds=1.0),
@@ -525,16 +510,6 @@ def test_reshape(
             id="all_parameters_without_npz",
         ),
         pytest.param(
-            {
-                "duration": 3,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-                "series_type": "sine",
-                "sine_frequency": 1_000,
-                "magnitude": 0.1,
-            },
-            Instrument(end_to_end_db=150),
             Transform(
                 output_type=OutputType.AUDIO
                 | OutputType.SPECTRUM
@@ -556,25 +531,17 @@ def test_reshape(
             id="all_parameters_with_npz",
         ),
     ],
-    indirect=["audio_files"],
 )
 def test_serialization(
-    tmp_path: pytest.fixture,
-    audio_files: pytest.fixture,
-    instrument: Instrument | None,
+    sample_project: tuple[Project, pytest.fixtures.Subrequest],
     transform: Transform,
     expected_level: float | None,
 ) -> None:
-    project = Project(
-        folder=tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
-        instrument=instrument,
-    )
-    project.build()
+    project, request = sample_project
     project.run(
         transform=transform,
     )
-    _, request = audio_files
+
     sine_frequency = request.param["sine_frequency"]
 
     assert transform.name in project.outputs
@@ -593,7 +560,7 @@ def test_serialization(
         computed_level = equalized_sx[bin_idx, :].mean()
         assert abs(computed_level - expected_level) < level_tolerance
 
-    deserialized = Project.from_json(tmp_path / "project.json")
+    deserialized = Project.from_json(project.folder / "project.json")
 
     # transform dataset deserialization is only done on request
     assert all(
@@ -784,7 +751,7 @@ def test_transform_validate_sample_rate(
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "instrument", "transform", "expected_data"),
+    "sample_project",
     [
         pytest.param(
             {
@@ -793,6 +760,15 @@ def test_transform_validate_sample_rate(
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
             },
+            id="fixed_project",
+        ),
+    ],
+    indirect=["sample_project"],
+)
+@pytest.mark.parametrize(
+    ("instrument", "transform", "expected_data"),
+    [
+        pytest.param(
             None,
             Transform(
                 output_type=OutputType.AUDIO,
@@ -809,19 +785,13 @@ def test_transform_validate_sample_rate(
                     end=Timestamp("2024-01-01 12:00:05"),
                 ),
             ],
-            id="only_one_data",
+            id="no_transform_name",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             Instrument(end_to_end_db=150),
             Transform(
                 output_type=OutputType.AUDIO,
-                name=None,
+                name="ads_has_project_instrument",
                 begin=None,
                 end=None,
                 data_duration=None,
@@ -837,16 +807,10 @@ def test_transform_validate_sample_rate(
             id="ads_has_project_instrument",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             None,
             Transform(
                 output_type=OutputType.AUDIO,
-                name=None,
+                name="reshaped_ads",
                 begin=None,
                 end=None,
                 data_duration=Timedelta(seconds=1),
@@ -878,16 +842,10 @@ def test_transform_validate_sample_rate(
             id="reshaped_ads",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             None,
             Transform(
                 output_type=OutputType.AUDIO,
-                name=None,
+                name="resampled_ads",
                 begin=None,
                 end=None,
                 data_duration=None,
@@ -903,16 +861,10 @@ def test_transform_validate_sample_rate(
             id="resampled_ads",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             None,
             Transform(
                 output_type=OutputType.AUDIO,
-                name="cool",
+                name="named_ads",
                 begin=None,
                 end=None,
                 data_duration=None,
@@ -928,16 +880,10 @@ def test_transform_validate_sample_rate(
             id="named_ads",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             None,
             Transform(
                 output_type=OutputType.SPECTROGRAM,
-                name="cool",
+                name="named_ads_in_spectro_transform",
                 begin=None,
                 end=None,
                 data_duration=None,
@@ -954,16 +900,10 @@ def test_transform_validate_sample_rate(
             id="named_ads_in_spectro_transform",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             None,
             Transform(
                 output_type=OutputType.AUDIO,
-                name=None,
+                name="specified_begin_and_end",
                 begin=Timestamp("2024-01-01 12:00:02"),
                 end=Timestamp("2024-01-01 12:00:04"),
                 data_duration=Timedelta(seconds=1),
@@ -983,16 +923,10 @@ def test_transform_validate_sample_rate(
             id="specified_begin_and_end",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             Instrument(end_to_end_db=150),
             Transform(
                 output_type=OutputType.SPECTROGRAM,
-                name="cool",
+                name="full_reshape",
                 begin=Timestamp("2024-01-01 12:00:02"),
                 end=Timestamp("2024-01-01 12:00:04"),
                 data_duration=Timedelta(seconds=1),
@@ -1013,16 +947,10 @@ def test_transform_validate_sample_rate(
             id="full_reshape",
         ),
         pytest.param(
-            {
-                "duration": 5,
-                "sample_rate": 48_000,
-                "nb_files": 1,
-                "date_begin": Timestamp("2024-01-01 12:00:00"),
-            },
             None,
             Transform(
                 output_type=OutputType.AUDIO,
-                name=None,
+                name="normalized_data",
                 begin=None,
                 end=None,
                 data_duration=None,
@@ -1039,21 +967,16 @@ def test_transform_validate_sample_rate(
             id="normalized_data",
         ),
     ],
-    indirect=["audio_files"],
 )
 def test_prepare_audio(
-    tmp_path: pytest.fixture,
-    audio_files: pytest.fixture,
+    sample_project: tuple[Project, pytest.fixtures.Subrequest],
     instrument: Instrument | None,
     transform: Transform,
     expected_data: list[Event],
 ) -> None:
-    project = Project(
-        folder=tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
-        instrument=instrument,
-    )
-    project.build()
+    project, _ = sample_project
+
+    project.instrument = instrument
 
     transform_ds = project.prepare_audio(transform=transform)
 
@@ -1082,7 +1005,7 @@ def test_prepare_audio(
 
 
 @pytest.mark.parametrize(
-    ("audio_files", "instrument", "transform", "expected_data"),
+    "sample_project",
     [
         pytest.param(
             {
@@ -1090,8 +1013,17 @@ def test_prepare_audio(
                 "sample_rate": 48_000,
                 "nb_files": 1,
                 "date_begin": Timestamp("2024-01-01 12:00:00"),
+                "instrument": Instrument(end_to_end_db=150),
             },
-            Instrument(end_to_end_db=150),
+            id="fixed_project",
+        ),
+    ],
+    indirect=["sample_project"],
+)
+@pytest.mark.parametrize(
+    ("transform", "expected_data"),
+    [
+        pytest.param(
             Transform(
                 output_type=OutputType.SPECTROGRAM,
                 name="cool",
@@ -1121,21 +1053,13 @@ def test_prepare_audio(
             id="full_transform",
         ),
     ],
-    indirect=["audio_files"],
 )
 def test_prepare_spectro(
-    tmp_path: pytest.fixture,
-    audio_files: pytest.fixture,
-    instrument: Instrument | None,
+    sample_project: tuple[Project, pytest.fixtures.Subrequest],
     transform: Transform,
     expected_data: list[Event],
 ) -> None:
-    project = Project(
-        folder=tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
-        instrument=instrument,
-    )
-    project.build()
+    project, _ = sample_project
 
     transform_sds = project.prepare_spectro(transform=transform)
 
@@ -1259,8 +1183,10 @@ def test_edit_transform_before_run(
 
 
 def test_delete_output_dataset(
-    tmp_path: pytest.fixture,
-    audio_files: pytest.fixture,
+    tmp_path: Path,
+    audio_files: tuple[list[AudioFile], pytest.fixtures.subrequest],
+    dummy_export_transform: None,
+    patch_afm_info: None,
 ) -> None:
     project = Project(
         folder=tmp_path,
@@ -1314,6 +1240,21 @@ def test_delete_output_dataset(
 
 
 @pytest.mark.parametrize(
+    "sample_project",
+    [
+        pytest.param(
+            {
+                "duration": 1,
+                "sample_rate": 500,
+                "nb_files": 1,
+                "date_begin": Timestamp("2024-01-01 12:00:00"),
+            },
+            id="fixed_project",
+        ),
+    ],
+    indirect=["sample_project"],
+)
+@pytest.mark.parametrize(
     "transform_to_delete",
     [
         pytest.param(
@@ -1321,8 +1262,8 @@ def test_delete_output_dataset(
                 output_type=OutputType.AUDIO,
                 data_duration=Timedelta(seconds=1),
                 name="transform_to_delete",
-                sample_rate=24_000,
-                fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
+                sample_rate=500,
+                fft=ShortTimeFFT(win=hamming(128), hop=64, fs=500),
             ),
             id="audio_only",
         ),
@@ -1331,8 +1272,8 @@ def test_delete_output_dataset(
                 output_type=OutputType.SPECTROGRAM,
                 data_duration=Timedelta(seconds=1),
                 name="transform_to_delete",
-                sample_rate=24_000,
-                fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
+                sample_rate=500,
+                fft=ShortTimeFFT(win=hamming(128), hop=64, fs=500),
             ),
             id="spectro_only",
         ),
@@ -1341,24 +1282,25 @@ def test_delete_output_dataset(
                 output_type=OutputType.AUDIO | OutputType.SPECTROGRAM,
                 data_duration=Timedelta(seconds=1),
                 name="transform_to_delete",
-                sample_rate=24_000,
-                fft=ShortTimeFFT(win=hamming(1024), hop=1024, fs=24_000),
+                sample_rate=500,
+                fft=ShortTimeFFT(win=hamming(128), hop=64, fs=500),
             ),
             id="audio_and_spectro",
         ),
     ],
 )
 def test_delete_output(
-    tmp_path: Path,
-    audio_files: pytest.fixture,
+    sample_project: tuple[Project, pytest.fixtures.Subrequest],
     transform_to_delete: Transform,
+    dummy_export_transform: None,
+    patch_afm_info: None,
 ) -> None:
-    project = Project(
-        folder=tmp_path,
-        strptime_format=TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
-    )
+    project, _ = sample_project
 
-    project.build()
+    for transform in project.transforms:
+        if transform == "original":
+            continue
+        project.delete_transform_with_outputs(transform)
 
     # Add another transform to check that it is not affected by the deletion
 
@@ -1416,6 +1358,8 @@ def test_delete_output(
 def test_existing_output_warning(
     tmp_path: pytest.fixture,
     audio_files: pytest.fixture,
+    dummy_export_transform: None,
+    patch_afm_info: None,
 ) -> None:
     project = Project(
         folder=tmp_path,
@@ -1463,6 +1407,8 @@ def test_existing_output_warning(
 def test_rename_transform(
     tmp_path: Path,
     audio_files: tuple[list[AudioFile], None],
+    dummy_export_transform: None,
+    patch_afm_info: None,
 ) -> None:
     project = Project(
         folder=tmp_path,
@@ -1474,7 +1420,10 @@ def test_rename_transform(
     first_name, second_name = "fontaines", "dc"
 
     transform = Transform(
-        output_type=OutputType.AUDIO | OutputType.SPECTROGRAM | OutputType.SPECTRUM,
+        output_type=OutputType.AUDIO
+        | OutputType.SPECTROGRAM
+        | OutputType.SPECTRUM
+        | OutputType.WELCH,
         data_duration=project.origin_dataset.duration / 2,
         name=first_name,
         sample_rate=24_000,
@@ -1553,6 +1502,8 @@ def test_rename_transform(
 def test_spectro_transform_with_existing_ads(
     tmp_path: Path,
     audio_files: tuple[list[AudioFile], None],
+    dummy_export_transform: None,
+    patch_afm_info: None,
 ) -> None:
     project = Project(
         folder=tmp_path,
