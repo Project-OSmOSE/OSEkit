@@ -1445,13 +1445,12 @@ def test_spectro_axis(
     "audio_files",
     [
         {"date_begin": Timestamp("2026-01-01 00:00:00", tz="UTC")},
-        {"date_begin": Timestamp("2026-01-01 00:00:00", tz="Europe/Paris")},
-        {"date_begin": Timestamp("2026-06-15 12:00:00", tz="America/New_York")},
+        {"date_begin": Timestamp("2026-01-01 00:00:00", tz="Etc/GMT+2")},
         {"date_begin": Timestamp("2025-12-31 23:59:59", tz="Asia/Tokyo")},
         {"date_begin": Timestamp("2025-12-31 23:59:59")},
     ],
     indirect=True,
-    ids=["utc", "paris", "new_york", "tokyo", "naive"],
+    ids=["utc", "%z", "%Z", "naive"],
 )
 def test_plot_timezone(
     audio_files: tuple[list[AudioFile], ...],
@@ -1477,12 +1476,12 @@ def test_plot_timezone(
 
     _, ax = plt.subplots()
     sd.plot(ax=ax)
-    spectro_data_timezone = called_ax.pop()
+    spectro_data_axes = called_ax.pop()
 
     if sd.begin.tz:
-        assert isinstance(spectro_data_timezone.xaxis.units, datetime.tzinfo)
+        assert isinstance(spectro_data_axes.xaxis.units, datetime.tzinfo)
     else:
-        assert spectro_data_timezone.xaxis.units is None
+        assert spectro_data_axes.xaxis.units is None
 
 
 
