@@ -299,56 +299,54 @@ class Detection(Event):
     def from_dict(cls, row: dict) -> Self:
         """Deserialize a Detection object."""
         metadata = DetectionMetaData(
-            project=row["project"] if "project" in row else row["dataset"],
-            filename=str(row["filename"]) if row["filename"] is not None else None,
-            detection_id=row["annotation_id"],
-            base_id=row["is_update_of_id"],
-            comments=row["comments"],
-            phase=row["created_at_phase"],
+            project=row.get("project", row.get("dataset")),
+            filename=str(row.get("filename")) if row.get("filename") else None,
+            detection_id=row.get("annotation_id"),
+            base_id=row.get("is_update_of_id"),
+            comments=row.get("comments"),
+            phase=row.get("created_at_phase"),
         )
         metadata = None if is_empty_dataclass(instance=metadata) else metadata
 
         detector_info = (
             DetectorInfo(
-                name=row["annotator"],
-                expertise=row["annotator_expertise"],
+                name=str(row.get("annotator")),
+                expertise=row.get("annotator_expertise"),
             )
-            if row["annotator"] is not None
+            if row.get("annotator")
             else None
         )
 
-        min_frequency, max_frequency = row["min_frequency"], row["max_frequency"]
-        frequency_bounds = (
-            FrequencyBounds(min=min_frequency, max=max_frequency)
-            if not any(m is None for m in (min_frequency, max_frequency))
-            else None
+        frequency_bounds = FrequencyBounds(
+            min=row["min_frequency"],
+            max=row["max_frequency"],
         )
 
         confidence_indicator = (
             ConfidenceIndicator.from_relative_level_string(
-                label=row["confidence_indicator_label"],
-                relative_level_string=row["confidence_indicator_level"],
+                label=str(row.get("confidence_indicator_label")),
+                relative_level_string=str(row.get("confidence_indicator_level")),
             )
-            if row["confidence_indicator_label"]
+            if row.get("confidence_indicator_label")
             else None
         )
 
-        signal_quantity = row["signal_quantity"] or None
+        signal_quantity = row.get("signal_quantity")
         signal_parameters = (
             SignalParameters(
-                does_overlap_other_signals=row["signal_is_intensity_too_low"],
-                frequency_jumps=row["signal_frequency_jumps"],
-                has_deterministic_chaos=row["signal_deterministic_chaos"],
-                has_harmonics=row["signal_has_harmonics"],
-                has_sidebands=row["signal_sidebands"],
-                has_subharmonics=row["signal_subharmonics"],
-                is_itensity_too_low=row["signal_is_intensity_too_low"],
-                max_frequency=row["signal_end_frequency"],
-                min_frequency=row["signal_start_frequency"],
-                nb_relative_maxes=row["signal_relative_max_frequency_count"],
-                nb_relative_mins=row["signal_relative_min_frequency_count"],
-                nb_steps=row["signal_steps_count"],
-                trend=row["signal_trend"],
+                does_overlap_other_signals=row.get("signal_is_intensity_too_low"),
+                frequency_jumps=row.get("signal_frequency_jumps"),
+                has_deterministic_chaos=row.get("signal_deterministic_chaos"),
+                has_harmonics=row.get("signal_has_harmonics"),
+                has_sidebands=row.get("signal_sidebands"),
+                has_subharmonics=row.get("signal_subharmonics"),
+                is_itensity_too_low=row.get("signal_is_intensity_too_low"),
+                max_frequency=row.get("signal_end_frequency"),
+                min_frequency=row.get("signal_start_frequency"),
+                nb_relative_maxes=row.get("signal_relative_max_frequency_count"),
+                nb_relative_mins=row.get("signal_relative_min_frequency_count"),
+                nb_steps=row.get("signal_steps_count"),
+                trend=row.get("signal_trend"),
             )
             if signal_quantity == "SINGLE"
             else None
@@ -366,14 +364,14 @@ class Detection(Event):
 
         return cls(
             metadata=metadata,
-            label=row["annotation"],
+            label=row.get("annotation"),
             detector_info=detector_info,
             begin=Timestamp(row["start_datetime"]),
             end=Timestamp(row["end_datetime"]),
             frequency_bounds=frequency_bounds,
-            detection_type=row["type"],
+            detection_type=row.get("type"),
             confidence_indicator=confidence_indicator,
-            signal_quantity=row["signal_quantity"],
+            signal_quantity=row.get("signal_quantity"),
             signal_parameters=signal_parameters,
             verifications=verifications,
         )
