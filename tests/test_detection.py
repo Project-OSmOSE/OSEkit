@@ -348,6 +348,9 @@ def test_detection_to_rectangle(sample_detection: Detection) -> None:
     assert x + rectangle.get_width() == t2
     assert y + rectangle.get_height() == f2
 
+    assert not rectangle.fill
+    assert sample_detection.to_rectangle(fill=True).fill
+
 
 def test_detection_required_parameters() -> None:
     # only time and frequency bounds are required

@@ -376,11 +376,14 @@ class Detection(Event):
             verifications=verifications,
         )
 
-    def to_rectangle(self, **kwargs: Any) -> Rectangle:
+    def to_rectangle(self, *, fill: bool = False, **kwargs: Any) -> Rectangle:
         """Return a matplotlib Rectangle representing the detection.
 
         Parameters
         ----------
+        fill: bool
+            Set whether to fill the patch.
+            Defaulted to False.
         kwargs:
             Additional keyword arguments
 
@@ -400,6 +403,7 @@ class Detection(Event):
             ),
             width=self.duration,  # type: ignore[arg-type]
             height=self.frequency_bounds.bandwidth,
+            fill=fill,
             **kwargs,
         )
 
