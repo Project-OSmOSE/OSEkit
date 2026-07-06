@@ -408,8 +408,7 @@ class Detection(Event):
         )
 
     @classmethod
-    def from_csv(cls, csv: Path) -> list[Self]:
-        """Deserialize a list of Detection from a detections csv file."""
+    def _from_csv(cls, csv: Path) -> list[Self]:
         records = (
             pd.read_csv(filepath_or_buffer=csv)
             .convert_dtypes()
@@ -425,3 +424,28 @@ class Detection(Event):
             for record in records
         ]
         return [cls.from_dict(record) for record in records]
+
+    @classmethod
+    def from_csv(cls, csv: Path | list[Path]) -> list[Self]:
+        """Deserialize a list of Detection from (a) detections csv file(s).
+
+        Parameters
+        ----------
+        csv: Path | list[Path]
+            Path of the detections csv file.
+            If csv is a list, all detections from the multiple csv files
+            are concatenated together.
+
+        Returns
+        -------
+        list[Self]:
+            List of detections taken from the csv file(s).
+        """
+        if type(csv) is not list:
+            csv = [csv]
+
+        output = []
+        for csv_file in csv:
+            output += cls._from_csv(csv_file)
+
+        return output

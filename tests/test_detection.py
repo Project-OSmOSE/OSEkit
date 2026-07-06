@@ -372,3 +372,14 @@ def test_minimal_detector_result_file() -> None:
     )
 
     assert len(detections) == 2
+
+
+def test_detections_from_csv_list() -> None:
+    detections = Detection.from_csv(
+        [
+            Path(__file__).parent / "_static" / "minimal_detector_result.csv",
+            Path(__file__).parent / "_static" / "minimal_detector_result.csv",
+        ]
+    )
+
+    assert len(detections) == 4
