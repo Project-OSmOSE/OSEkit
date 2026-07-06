@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import json
 from contextlib import AbstractContextManager, nullcontext
 from copy import deepcopy
 from pathlib import Path
@@ -1700,3 +1701,42 @@ def test_deserialize_output_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
     # Getting the dataset again should use the cached dataset
     _ = project.get_output("ltas")
     assert json_calls[0] == 3
+
+
+def test_project_json_update(
+    sample_project: tuple[Project, pytest.fixtures.Subrequest],
+    dummy_export_transform: None,
+    patch_afm_info: None,
+) -> None:
+    project, _ = sample_project
+
+    json_file = project.folder / "project.json"
+
+    # We simulate another job writing in the JSON file without sample_project knowing
+    # about it
+    with json_file.open("r") as f:
+        data = json.load(f)
+
+    data["outputs"]["ghost_transform"] = {
+        "class": "AudioDataset",
+        "transform": "ghost_transform",
+        "json": "data/audio/ghost_transform/ghost_transform.json",
+    }
+
+    with json_file.open("w") as f:
+        json.dump(data, f)
+
+    # Run a transform from the instance that ignores ghost_transform
+    project.run(
+        transform=Transform(
+            output_type=OutputType.AUDIO,
+            name="new_transform",
+        ),
+    )
+
+    with json_file.open("r") as f:
+        data_after = json.load(f)
+
+    assert "ghost_transform" in data_after["outputs"]
+    assert "new_transform" in data_after["outputs"]
+    assert "original" in data_after["outputs"]
