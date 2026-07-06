@@ -17,7 +17,6 @@ from typing import TYPE_CHECKING, Literal, Self
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib.dates import date2num
 from pandas import Timedelta
 from scipy.signal import ShortTimeFFT, welch
 
@@ -466,7 +465,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         sx = sx if scale is None else scale.rescale(sx_matrix=sx, original_scale=freq)
 
-        ax.xaxis_date()
+        ax.xaxis_date(tz=time.tz) if time.tz else ax.xaxis_date()
         ax.imshow(
             sx,
             vmin=self._v_lim[0],
@@ -475,7 +474,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             origin="lower",
             aspect="auto",
             interpolation="none",
-            extent=(date2num(time[0]), date2num(time[-1]), freq[0], freq[-1]),
+            extent=(time[0], time[-1], freq[0], freq[-1]),
         )
 
     def get_db_value(self, sx: np.ndarray | None = None) -> np.ndarray:
