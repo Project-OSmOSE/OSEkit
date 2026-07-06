@@ -28,6 +28,7 @@ from osekit.public.transform import OutputType, Transform
 from osekit.utils.core import (
     file_indexes_per_batch,
     get_umask,
+    locked,
 )
 from osekit.utils.path import move_tree
 
@@ -677,7 +678,7 @@ class Project:
 
         afm.close()
         shutil.rmtree(str(output_to_remove.folder))
-        self.write_json()
+        self.write_json(output_to_skip=output_to_remove.name)
 
     def get_output_by_transform_name(
         self,
@@ -862,10 +863,28 @@ class Project:
             outputs=outputs,
         )
 
-    def write_json(self, folder: Path | None = None) -> None:
+    def write_json(
+        self,
+        folder: Path | None = None,
+        output_to_skip: str | None = None,
+    ) -> None:
         """Write a serialized Project to a JSON file."""
         folder = folder if folder is not None else self.folder
-        serialize_json(folder / "project.json", self.to_dict())
+        json_file = folder / "project.json"
+
+        @locked(lock_file=folder / "project.lock")
+        def _write() -> None:
+            dictionary = self.to_dict()
+            if json_file.exists():
+                # Update outputs in case there are unexisting keys in the dictionary.
+                existing_outputs = deserialize_json(path=json_file).get("outputs", {})
+                if output_to_skip and output_to_skip in existing_outputs:
+                    existing_outputs.pop(output_to_skip)
+                dictionary["outputs"] |= existing_outputs
+
+            serialize_json(folder / "project.json", dictionary)
+
+        _write()
 
     @classmethod
     def from_json(cls, file: Path) -> Project:

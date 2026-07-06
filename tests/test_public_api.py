@@ -1226,18 +1226,18 @@ def test_delete_output_dataset(
 
     datasets = [ds1, ds2, ds3, ds4]
 
-    for i, ds in enumerate(datasets):
-        assert ds.name in project.outputs.keys()
+    for ds in datasets:
+        assert ds.name in project.outputs
         assert ds.folder.exists()
 
         project._delete_output(str(ds.name))
 
-        assert ds.name not in project.outputs.keys()
+        assert ds.name not in project.outputs
         assert not ds.folder.exists()
 
         # The JSON should be updated
         new_project = Project.from_json(project.folder / "project.json")
-        assert ds.name not in new_project.outputs.keys()
+        assert ds.name not in new_project.outputs
 
 
 @pytest.mark.parametrize(
