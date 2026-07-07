@@ -147,6 +147,9 @@ def test_main_script(monkeypatch: pytest.MonkeyPatch, script_arguments: dict) ->
 
     monkeypatch.setattr(argparse.ArgumentParser, "parse_args", return_mocked_attr)
 
+    # Mock setup_logging to keep the handlers of the root logger as they are
+    monkeypatch.setattr(export_transform, "setup_logging", lambda: None)
+
     parser = create_parser()
 
     args = parser.parse_args()

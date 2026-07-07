@@ -24,6 +24,7 @@ from osekit.core.audio_data import AudioData
 from osekit.core.base_data import BaseData, TFile
 from osekit.core.spectro_file import SpectroFile
 from osekit.core.spectro_item import SpectroItem
+from osekit.utils.plot import get_default_axes
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -96,45 +97,6 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         self.colormap = "viridis" if colormap is None else colormap
         self.previous_data = None
         self.next_data = None
-
-    @staticmethod
-    def get_default_ax() -> plt.Axes:
-        """Return a default-formatted ``Axes`` on a new figure.
-
-        The default osekit spectrograms are plotted on wide, borderless spectrograms.
-        This method set the default figure and axes parameters.
-
-        Returns
-        -------
-        plt.Axes:
-            The default ``Axes`` on a new figure.
-
-        """
-        # Legacy OSEkit behaviour.
-        _, ax = plt.subplots(
-            nrows=1,
-            ncols=1,
-            figsize=(1813 / 100, 512 / 100),
-            dpi=100,
-        )
-
-        ax.get_xaxis().set_visible(False)
-        ax.get_yaxis().set_visible(False)
-        ax.set_frame_on(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_visible(False)
-        ax.spines["bottom"].set_visible(False)
-        ax.spines["top"].set_visible(False)
-        plt.axis("off")
-        plt.subplots_adjust(
-            top=1,
-            bottom=0,
-            right=1,
-            left=0,
-            hspace=0,
-            wspace=0,
-        )
-        return ax
 
     @BaseData.end.setter
     def end(self, end: Timestamp | None) -> None:
@@ -448,14 +410,14 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         ----------
         ax: plt.axes | None
             ``Axes`` on which the spectrogram should be plotted.
-            Defaulted to ``SpectroData.get_default_ax()``.
+            Defaulted to ``osekit.utils.plot.get_default_axes()``.
         sx: np.ndarray | None
             Spectrogram ``sx`` values. Will be computed if ``None``.
         scale: osekit.core.frequecy_scale.Scale
             Custom frequency scale to use for plotting the spectrogram.
 
         """
-        ax = ax if ax is not None else SpectroData.get_default_ax()
+        ax = ax if ax is not None else get_default_axes()
         sx = self.get_value() if sx is None else sx
 
         sx = self._to_db(sx)

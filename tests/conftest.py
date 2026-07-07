@@ -5,6 +5,7 @@ import os
 import sys
 import typing
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock
 
 import pandas as pd
@@ -16,42 +17,41 @@ from osekit.audio_backend.soundfile_backend import SoundFileBackend
 from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
+    TIMESTAMP_FORMATS_EXPORTED_FILES,
 )
+from osekit.core import audio_file_manager
 from osekit.core.audio_file import AudioFile
+from osekit.public import export_transform
+from osekit.public.project import Project
+from osekit.public.transform import OutputType
 from osekit.utils.audio import generate_sample_audio
 
+if typing.TYPE_CHECKING:
+    from collections.abc import Generator
 
-@pytest.fixture
-def audio_files(
+    from osekit.core.audio_dataset import AudioDataset
+    from osekit.core.spectro_dataset import SpectroDataset
+
+
+def _generate_audio_files(
     tmp_path: Path,
-    request: pytest.fixtures.Subrequest,
-) -> tuple[list[AudioFile], pytest.fixtures.Subrequest]:
-    nb_files = request.param.get("nb_files", 1) if hasattr(request, "param") else 1
-
+    params: dict,
+) -> list[AudioFile]:
+    nb_files = params.get("nb_files", 1)
     if nb_files == 0:
-        return [], request
+        return []
 
-    if hasattr(request, "param"):
-        sample_rate = request.param.get("sample_rate", 48_000)
-        duration = request.param.get("duration", 1.0)
-        date_begin = request.param.get(
-            "date_begin",
-            pd.Timestamp("2000-01-01 00:00:00"),
-        )
-        inter_file_duration = request.param.get("inter_file_duration", 0)
-        series_type = request.param.get("series_type", "repeat")
-        sine_frequency = request.param.get("sine_frequency", 1000.0)
-        magnitude = request.param.get("magnitude", 1.0)
-        audio_format = request.param.get("format", "wav")
-    else:
-        sample_rate = 48_000
-        duration = 1.0
-        date_begin = pd.Timestamp("2000-01-01 00:00:00")
-        inter_file_duration = 0
-        series_type = "repeat"
-        sine_frequency = 1000.0
-        magnitude = 1.0
-        audio_format = "wav"
+    sample_rate = params.get("sample_rate", 48_000)
+    duration = params.get("duration", 1.0)
+    date_begin = params.get(
+        "date_begin",
+        pd.Timestamp("2000-01-01 00:00:00"),
+    )
+    inter_file_duration = params.get("inter_file_duration", 0)
+    series_type = params.get("series_type", "repeat")
+    sine_frequency = params.get("sine_frequency", 1000.0)
+    magnitude = params.get("magnitude", 1.0)
+    audio_format = params.get("format", "wav")
 
     nb_samples = round(duration * sample_rate)
     data = generate_sample_audio(
@@ -88,15 +88,43 @@ def audio_files(
         while (file := tmp_path / f"audio_{time_str}_{idx}.{audio_format}").exists():
             idx += 1
         files.append(file)
-        kwargs = {
-            "file": file,
-            "data": data[index],
-            "samplerate": sample_rate,
-            "subtype": "DOUBLE" if audio_format.lower() == "wav" else "PCM_24",
-        }
-        sf.write(**kwargs)
-    output = [AudioFile(path=f, strptime_format=datetime_format) for f in files]
-    return output, request
+        sf.write(
+            file=file,
+            data=data[index],
+            samplerate=sample_rate,
+            subtype="DOUBLE" if audio_format.lower() == "wav" else "PCM_24",
+        )
+    return [AudioFile(path=f, strptime_format=datetime_format) for f in files]
+
+
+@pytest.fixture(scope="module")
+def sample_project(
+    tmp_path_factory: pytest.TempPathFactory,
+    request: pytest.fixture.SubRequest,
+) -> tuple[Project, pytest.fixtures.Subrequest]:
+    tmp_path = tmp_path_factory.mktemp("sample_project")
+    params = request.param if hasattr(request, "param") else {}
+
+    _generate_audio_files(tmp_path=tmp_path, params=params)
+
+    instrument = params.get("instrument", None)
+
+    project = Project(
+        folder=tmp_path,
+        strptime_format=TIMESTAMP_FORMATS_EXPORTED_FILES,
+        instrument=instrument,
+    )
+    project.build()
+    return project, request
+
+
+@pytest.fixture
+def audio_files(
+    tmp_path: Path,
+    request: pytest.fixtures.Subrequest,
+) -> tuple[list[AudioFile], pytest.fixtures.Subrequest]:
+    params = request.param if hasattr(request, "param") else {}
+    return _generate_audio_files(tmp_path=tmp_path, params=params), request
 
 
 @pytest.fixture(autouse=True)
@@ -173,3 +201,101 @@ def restore_config() -> typing.Generator:
         config.resample_quality_settings[key] = value
     for key, value in multiprocessing.items():
         config.multiprocessing[key] = value
+
+
+@pytest.fixture(autouse=True)
+def reset_logging() -> typing.Generator[None, typing.Any, None]:
+    """Reset the python logging module."""
+    root = logging.getLogger()
+    handlers_before = list(root.handlers)
+    level_before = root.level
+
+    # Snapshot of loggers before the test
+    loggers_before = {
+        name: list(logger.handlers)
+        for name, logger in logging.Logger.manager.loggerDict.items()
+        if isinstance(logger, logging.Logger)
+    }
+
+    yield
+    root.handlers = handlers_before
+    root.level = level_before
+
+    # Cleaning of the handlers of each logger:
+    for name, logger in logging.Logger.manager.loggerDict.items():
+        if isinstance(logger, logging.Logger):
+            logger.handlers = loggers_before.get(name, [])
+
+    logging.Logger.manager.loggerDict = {
+        key: value
+        for key, value in logging.Logger.manager.loggerDict.items()
+        if key in loggers_before
+    }
+
+
+@pytest.fixture(autouse=True)
+def check_logger() -> Generator[None, Any, None]:
+    h1 = list(logging.root.handlers)
+    yield
+    h2 = list(logging.root.handlers)
+    if h1 != h2:  # pragma: no cover
+        msg = "This test changed the root logger handlers."
+        raise ValueError(msg)
+
+
+@pytest.fixture
+def dummy_export_transform(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Create dummy files in the transform output(s) dataset(s) folders(s).
+
+    This avoids actually computing the outputs of transforms in tests
+    that don't need to."""
+
+    def dummy_export(*args, **kwargs) -> None:  # noqa: ANN002, ANN003
+        output_type: OutputType = kwargs["output_type"]
+        ads: AudioDataset = kwargs.get("ads")
+        sds: SpectroDataset = kwargs.get("sds")
+        spectrum_folder_path = kwargs.get("spectrum_folder_path")
+        spectrogram_folder_path = kwargs.get("spectrogram_folder_path")
+        welch_folder_path = kwargs.get("welch_folder_path")
+        link = kwargs.get("link")
+
+        if ads:
+            Path.mkdir(ads.folder, parents=True, exist_ok=True)
+            if OutputType.AUDIO in output_type:
+                for ad in ads.data:
+                    (ads.folder / f"{ad.name}.wav").touch()
+                    if link:
+                        ad.link(ads.folder)
+                ads.write_json(ads.folder)
+
+        if sds:
+            for output, folder, extension in (
+                (OutputType.SPECTROGRAM, spectrogram_folder_path, "png"),
+                (OutputType.SPECTRUM, spectrum_folder_path, "npz"),
+            ):
+                if output not in output_type:
+                    continue
+
+                Path.mkdir(sds.folder / folder, parents=True, exist_ok=True)
+                for sd in sds.data:
+                    (sds.folder / folder / f"{sd.name}.{extension}").touch()
+
+            if OutputType.WELCH in output_type:
+                Path.mkdir(sds.folder / welch_folder_path, parents=True, exist_ok=True)
+                (sds.folder / welch_folder_path / f"{sds.name}.npz").touch()
+
+    monkeypatch.setattr(export_transform, "write_transform_output", dummy_export)
+
+
+@pytest.fixture
+def patch_afm_info(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Return dummy info instead of actually reading the file with soundfile."""
+
+    def patch_afm_info(
+        path: Path,
+    ) -> tuple[int, int, int]:
+        return 48_000, 48_000, 1
+
+    monkeypatch.setattr(audio_file_manager, "info", patch_afm_info)
