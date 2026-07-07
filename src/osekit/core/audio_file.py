@@ -69,6 +69,9 @@ class AudioFile(BaseFile):
         self.channels = channels
         self.end = self.begin + Timedelta(seconds=duration)
 
+        if not self.duration:
+            raise ValueError("t'as chié dans la colle frère")
+
     def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray:
         """Return the audio data between start and stop from the file.
 

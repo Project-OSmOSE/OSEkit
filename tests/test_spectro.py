@@ -1444,13 +1444,12 @@ def test_spectro_axis(
 @pytest.mark.parametrize(
     "audio_files",
     [
-        {"date_begin": Timestamp("2026-01-01 00:00:00", tz="UTC")},
-        {"date_begin": Timestamp("2026-01-01 00:00:00", tz="Etc/GMT+2")},
-        {"date_begin": Timestamp("2025-12-31 23:59:59", tz="Asia/Tokyo")},
+        {"date_begin": Timestamp("2026-01-01 00:00:00", tz="Europe/Paris")},
+        {"date_begin": Timestamp("2025-12-31 23:59:59", tz="+0300")},
         {"date_begin": Timestamp("2025-12-31 23:59:59")},
     ],
     indirect=True,
-    ids=["utc", "%z", "%Z", "naive"],
+    ids=["%Z", "%z", "naive"],
 )
 def test_plot_timezone(
     audio_files: tuple[list[AudioFile], ...],
