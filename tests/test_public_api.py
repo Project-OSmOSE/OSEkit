@@ -1740,3 +1740,32 @@ def test_project_json_update(
     assert "ghost_transform" in data_after["outputs"]
     assert "new_transform" in data_after["outputs"]
     assert "original" in data_after["outputs"]
+
+
+def test_run_transform_with_same_name_in_different_process(
+    sample_project: tuple[Project, pytest.fixtures.Subrequest],
+    dummy_export_transform: None,
+    patch_afm_info: None,
+) -> None:
+    project, _ = sample_project
+
+    # We simulate another job running a transform in a different process,
+    # without this process knowing about it:
+    # exported file, updated JSONs, but unregistered transforms and outputs fields.
+    transform = Transform(
+        output_type=OutputType.AUDIO | OutputType.SPECTROGRAM,
+        name="part_company",
+        fft=ShortTimeFFT(
+            win=hamming(1024),
+            hop=512,
+            fs=project.origin_dataset.sample_rate,
+        ),
+    )
+    project.run(transform=transform)
+    for output_name in (
+        output.name for output in project.get_output_by_transform_name("part_company")
+    ):
+        del project.outputs[output_name]
+
+    with pytest.raises(ValueError, match="folder already exists"):
+        project.run(transform=transform)
