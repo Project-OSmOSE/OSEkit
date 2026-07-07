@@ -1767,5 +1767,10 @@ def test_run_transform_with_same_name_in_different_process(
     ):
         del project.outputs[output_name]
 
-    with pytest.raises(ValueError, match="folder already exists"):
+    # Running a transform that exports in the already existing folders should raise:
+    with pytest.raises(FileExistsError, match="already exists"):
+        project.run(transform=transform)
+
+    transform.output_type = OutputType.SPECTROGRAM
+    with pytest.raises(FileExistsError, match="already exists"):
         project.run(transform=transform)

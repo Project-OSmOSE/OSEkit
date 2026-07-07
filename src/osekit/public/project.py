@@ -465,12 +465,41 @@ class Project:
 
         self.write_json()
 
+    @staticmethod
+    def _reserve_folder(folder: Path) -> None:
+        """Create a target folder in which the transform outputs will be exported.
+
+        A ``FileExistsError`` is raised if the target folder already exists.
+        This could happen if a transform with the same name is beeing run
+        from another process.
+
+        Parameters
+        ----------
+        folder: Path
+            Folder in which the transform output files will be exported.
+
+        """
+        try:
+            folder.mkdir(parents=True, exist_ok=False)
+        except FileExistsError as e:
+            msg = (
+                f"Target folder {folder} already exists.\n"
+                f"It might mean that another process already ran a transform that"
+                f"exports in this folder.\n"
+                f"Change the current transform name or use the"
+                f"Project.delete_transform_with_outputs() or"
+                f"Project.rename_transform_with_outputs() method."
+            )
+            raise FileExistsError(msg) from e
+
     def _add_audio_dataset(
         self,
         ads: AudioDataset,
         transform_name: str,
     ) -> None:
         ads.folder = self._get_audio_dataset_subpath(ads=ads)
+        self._reserve_folder(folder=ads.folder)
+
         self.outputs[ads.name] = {
             "class": type(ads).__name__,
             "transform": transform_name,
@@ -621,6 +650,7 @@ class Project:
         transform_name: str,
     ) -> None:
         sds.folder = self._get_spectro_dataset_subpath(sds=sds)
+        self._reserve_folder(folder=sds.folder)
         self.outputs[sds.name] = {
             "class": type(sds).__name__,
             "dataset": sds,
