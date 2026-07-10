@@ -68,6 +68,16 @@ class AudioFile(BaseFile):
         self.sample_rate = sample_rate
         self.channels = channels
         self.end = self.begin + Timedelta(seconds=duration)
+        self._check_validity()
+
+    def _check_validity(self) -> None:
+        """Raise an error if the audio file is not valid."""
+        if not self.duration:
+            msg = (
+                f"Audio file {self.path} is empty.\n"
+                f"This error could be due to corrupted file metadata."
+            )
+            raise ValueError(msg)
 
     def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray:
         """Return the audio data between start and stop from the file.
