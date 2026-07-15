@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path, PureWindowsPath
+from typing import Any
 
 import numpy as np
 import pytest
@@ -8,6 +9,7 @@ from pandas import Timedelta, Timestamp
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming, hann
 
+from osekit.audio_backend.audio_file_manager import AudioFileManager
 from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
@@ -27,6 +29,59 @@ from osekit.core.spectro_data import SpectroData
 from osekit.core.spectro_dataset import SpectroDataset
 from osekit.core.spectro_file import SpectroFile
 from osekit.utils.audio import Normalization
+
+
+def test_audio_file_from_dict_depends_on_available_info(
+    audio_files: tuple[list[AudioFile], Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    audio_files, _ = audio_files
+    af = audio_files[0]
+    minimum = {
+        "begin": af.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED),
+        "end": af.end.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED),
+        "path": af.path,
+    }
+    full = minimum | {
+        "sample_rate": af.sample_rate,
+        "channels": af.channels,
+    }
+
+    afm_calls = [0]
+
+    afm_info = AudioFileManager.info
+
+    def patch_afm_info(*args, **kwargs) -> tuple[int, int, int]:
+        afm_calls[0] += 1
+        return afm_info(*args, **kwargs)
+
+    monkeypatch.setattr(AudioFileManager, "info", patch_afm_info)
+
+    # AudioFile deserialization with minimum info should call afm info to read metadata
+    AudioFile.from_dict(minimum)
+    assert afm_calls[0] == 1
+
+    # AudioFile deserialization with full info should not call afm info
+    AudioFile.from_dict(full)
+    assert afm_calls[0] == 1
+
+
+def test_audio_file_to_dict_should_contain_afm_info(
+    audio_files: tuple[list[AudioFile], Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    audio_files, _ = audio_files
+    af = audio_files[0]
+
+    minimum = {
+        "begin": af.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED),
+        "end": af.end.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED),
+        "path": af.path,
+    }
+    full = minimum | {
+        "sample_rate": af.sample_rate,
+        "channels": af.channels,
+    }
+
+    assert all(key in af.to_dict() for key in full)
 
 
 @pytest.mark.parametrize(
