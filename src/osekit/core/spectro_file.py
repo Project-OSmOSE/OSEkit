@@ -36,6 +36,7 @@ class SpectroFile(BaseFile):
         begin: Timestamp | None = None,
         strptime_format: str | list[str] | None = None,
         timezone: str | pytz.timezone | None = None,
+        **kwargs: dict,
     ) -> None:
         """Initialize a ``SpectroFile`` object from a ``path`` and begin timestamp.
 

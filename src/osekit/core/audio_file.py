@@ -5,6 +5,9 @@ from __future__ import annotations
 import typing
 from typing import TYPE_CHECKING
 
+from osekit.config import TIMESTAMP_FORMATS_EXPORTED_FILES
+from osekit.utils.timestamp import strptime_from_text
+
 if TYPE_CHECKING:
     from os import PathLike
     from pathlib import Path
@@ -30,6 +33,7 @@ class AudioFile(BaseFile):
         begin: Timestamp | None = None,
         strptime_format: str | list[str] | None = None,
         timezone: str | pytz.timezone | None = None,
+        **kwargs: dict,
     ) -> None:
         """Initialize an ``AudioFile`` object with a path and a begin timestamp.
 
@@ -55,7 +59,8 @@ class AudioFile(BaseFile):
             If different from a timezone parsed from the filename, the timestamps'
             timezone will be converted from the parsed timezone
             to the specified timezone.
-
+        kwargs: dict
+            Audio file info that might bypass the afm.info() call on deserialization.
         """
         super().__init__(
             path=path,
@@ -63,11 +68,23 @@ class AudioFile(BaseFile):
             strptime_format=strptime_format,
             timezone=timezone,
         )
-        sample_rate, frames, channels = afm.info(path)
-        duration = frames / sample_rate
+        sample_rate, channels, end = self._get_info(path=path, kwargs=kwargs)
         self.sample_rate = sample_rate
-        self.channels = channels
-        self.end = self.begin + Timedelta(seconds=duration)
+        self.channels = (channels,)
+        self.end = end
+
+    def _get_info(self, path: Path, kwargs: dict) -> tuple[int, int, Timestamp]:
+        keys = ["sample_rate", "channels", "end"]
+        if all(key in kwargs for key in keys):
+            end = strptime_from_text(
+                text=kwargs["end"],
+                datetime_template=TIMESTAMP_FORMATS_EXPORTED_FILES,
+            )
+            return kwargs["sample_rate"], kwargs["channels"], end
+        sample_rate, frames, channels = afm.info(path=path)
+        duration = frames / sample_rate
+        end = self.begin + Timedelta(seconds=duration)
+        return sample_rate, channels, end
 
     def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray:
         """Return the audio data between start and stop from the file.
