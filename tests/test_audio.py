@@ -2300,3 +2300,17 @@ def test_plot_with_value(patch_plot: None, monkeypatch: pytest.Monke) -> None:
     # Values are provided and shouldn't be fetched again
     assert get_value_calls[0] == 1
     assert np.array_equal(kwargs, {"the": "voidz"})
+
+
+def test_audio_file_from_dict_doesnt_read_metadata(
+    audio_files: tuple[list[AudioFile], Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    audio_files, _ = audio_files
+
+    def patch_file_open(*args, **kwargs) -> None:
+        msg = "Deserialization from dict should bypass file IO"
+        raise ValueError(msg)
+
+    monkeypatch.setattr(AudioFileManager, "info", patch_file_open)
+
+    AudioFile.from_dict(audio_files[0].to_dict())
