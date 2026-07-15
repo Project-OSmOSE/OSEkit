@@ -70,7 +70,7 @@ class AudioFile(BaseFile):
         )
         sample_rate, channels, end = self._get_info(path=path, kwargs=kwargs)
         self.sample_rate = sample_rate
-        self.channels = (channels,)
+        self.channels = channels
         self.end = end
 
     def _get_info(self, path: Path, kwargs: dict) -> tuple[int, int, Timestamp]:
@@ -176,3 +176,17 @@ class AudioFile(BaseFile):
         if data.ndim == 1:
             return data[:, None]  # 2D array to match the format of multichannel audio
         return data
+
+    def to_dict(self) -> dict:
+        """Serialize an ``AudioFile`` to a dictionary.
+
+        Returns
+        -------
+        dict:
+            The serialized dictionary representing the ``AudioFile``.
+
+        """
+        return super().to_dict() | {
+            "channels": self.channels,
+            "sample_rate": self.sample_rate,
+        }

@@ -9,6 +9,7 @@ from pandas import Timedelta, Timestamp
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming, hann
 
+import osekit.core
 from osekit.audio_backend.audio_file_manager import AudioFileManager
 from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
@@ -17,6 +18,7 @@ from osekit.config import (
 )
 from osekit.core.audio_data import AudioData
 from osekit.core.audio_dataset import AudioDataset
+import osekit.core.audio_file
 from osekit.core.audio_file import AudioFile
 from osekit.core.frequency_scale import Scale, ScalePart
 from osekit.core.instrument import Instrument
@@ -48,13 +50,14 @@ def test_audio_file_from_dict_depends_on_available_info(
 
     afm_calls = [0]
 
-    afm_info = AudioFileManager.info
+    info_original = AudioFileManager.info
+    afm = osekit.core.audio_file.afm
 
     def patch_afm_info(*args, **kwargs) -> tuple[int, int, int]:
         afm_calls[0] += 1
-        return afm_info(*args, **kwargs)
+        return info_original(self=afm, *args, **kwargs)
 
-    monkeypatch.setattr(AudioFileManager, "info", patch_afm_info)
+    monkeypatch.setattr(afm, "info", patch_afm_info)
 
     # AudioFile deserialization with minimum info should call afm info to read metadata
     AudioFile.from_dict(minimum)
