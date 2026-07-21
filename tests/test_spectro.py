@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import datetime
 import gc
 from contextlib import nullcontext
 from pathlib import Path
@@ -9,7 +10,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
-from matplotlib.dates import num2date
 from pandas import Timedelta, Timestamp
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming
@@ -1435,7 +1435,6 @@ def test_spectro_axis(
     assert plot_kwargs["interpolation"] == "none"
 
     t1, t2, f1, f2 = plot_kwargs["extent"]
-    t1, t2 = map(num2date, (t1, t2))
     t1, t2 = map(Timestamp, (t1, t2))
     assert t1 == sd.begin
     assert t2 == sd.end
@@ -1443,6 +1442,50 @@ def test_spectro_axis(
     assert f2 == sd.fft.f[-1]
 
     assert sd_ax == ax
+
+
+@pytest.mark.parametrize(
+    "audio_files",
+    [
+        {"date_begin": Timestamp("2026-01-01 00:00:00", tz="Europe/Paris")},
+        {"date_begin": Timestamp("2025-12-31 23:59:59", tz="+0300")},
+        {"date_begin": Timestamp("2025-12-31 23:59:59")},
+    ],
+    indirect=True,
+    ids=["%Z", "%z", "naive"],
+)
+def test_plot_timezone(
+    audio_files: tuple[list[AudioFile], ...],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    audio_files, _ = audio_files
+    ad = AudioData.from_files(audio_files)
+    sd = SpectroData.from_audio_data(
+        data=ad,
+        fft=ShortTimeFFT(hamming(1024), 512, ad.sample_rate),
+    )
+
+    called_ax = set()
+
+    def mock_imshow(
+            self: plt.Axes,
+            sx: np.ndarray,
+            **kwargs: str,
+    ) -> None:
+        called_ax.add(self)
+
+    monkeypatch.setattr(plt.Axes, "imshow", mock_imshow)
+
+    _, ax = plt.subplots()
+    sd.plot(ax=ax)
+    spectro_data_axes = called_ax.pop()
+
+    if sd.begin.tz:
+        assert isinstance(spectro_data_axes.xaxis.units, datetime.tzinfo)
+    else:
+        assert spectro_data_axes.xaxis.units is None
+
+
 
 
 def test_spectro_default_v_lim(audio_files: pytest.fixture) -> None:

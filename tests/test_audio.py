@@ -233,6 +233,19 @@ def test_audio_file_read(
     assert np.allclose(files[0].read(start, stop)[:, 0], expected, atol=1e-7)
 
 
+def test_empty_audio_file_should_raise(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def mock_info(*args, **kwargs) -> tuple[int, int, int]:
+        """Mock AudioFileManager info to return an empty audio file info."""
+        return 48_000, 0, 1
+
+    monkeypatch.setattr(AudioFileManager, "info", mock_info)
+
+    with pytest.raises(ValueError, match="empty"):
+        AudioFile(Path(), begin=Timestamp("2020-01-01 00:00:00"))
+
+
 @pytest.mark.parametrize(
     ("mocked_data", "expected_shape"),
     [
