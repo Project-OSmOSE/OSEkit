@@ -28,6 +28,7 @@ from osekit.public.transform import OutputType, Transform
 from osekit.utils.core import (
     file_indexes_per_batch,
     get_umask,
+    locked,
 )
 from osekit.utils.path import move_tree
 
@@ -464,12 +465,41 @@ class Project:
 
         self.write_json()
 
+    @staticmethod
+    def _reserve_folder(folder: Path) -> None:
+        """Create a target folder in which the transform outputs will be exported.
+
+        A ``FileExistsError`` is raised if the target folder already exists.
+        This could happen if a transform with the same name is beeing run
+        from another process.
+
+        Parameters
+        ----------
+        folder: Path
+            Folder in which the transform output files will be exported.
+
+        """
+        try:
+            folder.mkdir(parents=True, exist_ok=False)
+        except FileExistsError as e:
+            msg = (
+                f"Target folder {folder} already exists.\n"
+                f"It might mean that another process already ran a transform that"
+                f"exports in this folder.\n"
+                f"Change the current transform name or use the"
+                f"Project.delete_transform_with_outputs() or"
+                f"Project.rename_transform_with_outputs() method."
+            )
+            raise FileExistsError(msg) from e
+
     def _add_audio_dataset(
         self,
         ads: AudioDataset,
         transform_name: str,
     ) -> None:
         ads.folder = self._get_audio_dataset_subpath(ads=ads)
+        self._reserve_folder(folder=ads.folder)
+
         self.outputs[ads.name] = {
             "class": type(ads).__name__,
             "transform": transform_name,
@@ -620,6 +650,7 @@ class Project:
         transform_name: str,
     ) -> None:
         sds.folder = self._get_spectro_dataset_subpath(sds=sds)
+        self._reserve_folder(folder=sds.folder)
         self.outputs[sds.name] = {
             "class": type(sds).__name__,
             "dataset": sds,
@@ -677,7 +708,7 @@ class Project:
 
         afm.close()
         shutil.rmtree(str(output_to_remove.folder))
-        self.write_json()
+        self.write_json(output_to_skip=output_to_remove.name)
 
     def get_output_by_transform_name(
         self,
@@ -862,10 +893,28 @@ class Project:
             outputs=outputs,
         )
 
-    def write_json(self, folder: Path | None = None) -> None:
+    def write_json(
+        self,
+        folder: Path | None = None,
+        output_to_skip: str | None = None,
+    ) -> None:
         """Write a serialized Project to a JSON file."""
         folder = folder if folder is not None else self.folder
-        serialize_json(folder / "project.json", self.to_dict())
+        json_file = folder / "project.json"
+
+        @locked(lock_file=folder / "project.lock")
+        def _write() -> None:
+            dictionary = self.to_dict()
+            if json_file.exists():
+                # Update outputs in case there are unexisting keys in the dictionary.
+                existing_outputs = deserialize_json(path=json_file).get("outputs", {})
+                if output_to_skip and output_to_skip in existing_outputs:
+                    existing_outputs.pop(output_to_skip)
+                dictionary["outputs"] |= existing_outputs
+
+            serialize_json(folder / "project.json", dictionary)
+
+        _write()
 
     @classmethod
     def from_json(cls, file: Path) -> Project:

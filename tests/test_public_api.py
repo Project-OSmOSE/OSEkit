@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import json
 from contextlib import AbstractContextManager, nullcontext
 from copy import deepcopy
 from pathlib import Path
@@ -1225,18 +1226,18 @@ def test_delete_output_dataset(
 
     datasets = [ds1, ds2, ds3, ds4]
 
-    for i, ds in enumerate(datasets):
-        assert ds.name in project.outputs.keys()
+    for ds in datasets:
+        assert ds.name in project.outputs
         assert ds.folder.exists()
 
         project._delete_output(str(ds.name))
 
-        assert ds.name not in project.outputs.keys()
+        assert ds.name not in project.outputs
         assert not ds.folder.exists()
 
         # The JSON should be updated
         new_project = Project.from_json(project.folder / "project.json")
-        assert ds.name not in new_project.outputs.keys()
+        assert ds.name not in new_project.outputs
 
 
 @pytest.mark.parametrize(
@@ -1700,3 +1701,76 @@ def test_deserialize_output_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
     # Getting the dataset again should use the cached dataset
     _ = project.get_output("ltas")
     assert json_calls[0] == 3
+
+
+def test_project_json_update(
+    sample_project: tuple[Project, pytest.fixtures.Subrequest],
+    dummy_export_transform: None,
+    patch_afm_info: None,
+) -> None:
+    project, _ = sample_project
+
+    json_file = project.folder / "project.json"
+
+    # We simulate another job writing in the JSON file without sample_project knowing
+    # about it
+    with json_file.open("r") as f:
+        data = json.load(f)
+
+    data["outputs"]["ghost_transform"] = {
+        "class": "AudioDataset",
+        "transform": "ghost_transform",
+        "json": "data/audio/ghost_transform/ghost_transform.json",
+    }
+
+    with json_file.open("w") as f:
+        json.dump(data, f)
+
+    # Run a transform from the instance that ignores ghost_transform
+    project.run(
+        transform=Transform(
+            output_type=OutputType.AUDIO,
+            name="new_transform",
+        ),
+    )
+
+    with json_file.open("r") as f:
+        data_after = json.load(f)
+
+    assert "ghost_transform" in data_after["outputs"]
+    assert "new_transform" in data_after["outputs"]
+    assert "original" in data_after["outputs"]
+
+
+def test_run_transform_with_same_name_in_different_process(
+    sample_project: tuple[Project, pytest.fixtures.Subrequest],
+    dummy_export_transform: None,
+    patch_afm_info: None,
+) -> None:
+    project, _ = sample_project
+
+    # We simulate another job running a transform in a different process,
+    # without this process knowing about it:
+    # exported file, updated JSONs, but unregistered transforms and outputs fields.
+    transform = Transform(
+        output_type=OutputType.AUDIO | OutputType.SPECTROGRAM,
+        name="part_company",
+        fft=ShortTimeFFT(
+            win=hamming(1024),
+            hop=512,
+            fs=project.origin_dataset.sample_rate,
+        ),
+    )
+    project.run(transform=transform)
+    for output_name in (
+        output.name for output in project.get_output_by_transform_name("part_company")
+    ):
+        del project.outputs[output_name]
+
+    # Running a transform that exports in the already existing folders should raise:
+    with pytest.raises(FileExistsError, match="already exists"):
+        project.run(transform=transform)
+
+    transform.output_type = OutputType.SPECTROGRAM
+    with pytest.raises(FileExistsError, match="already exists"):
+        project.run(transform=transform)
