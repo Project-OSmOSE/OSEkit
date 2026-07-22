@@ -274,8 +274,9 @@ def test_audio_file_stream_is_always_2d(
     assert af.stream(1024).shape == expected_shape
 
 
-def test_multichannel_audio_file_read(monkeypatch: pytest.MonkeyPatch) -> None:
-    full_file = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3], [4, 4, 4], [5, 5, 5]])
+@pytest.fixture
+def multichannel_audio_file(monkeypatch: pytest.MonkeyPatch) -> np.ndarray:
+    full_file = np.array([[1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3]])
 
     def read_patch(*args: list, **kwargs: dict) -> np.ndarray:
         start, stop = kwargs["start"], kwargs["stop"]
@@ -288,8 +289,15 @@ def test_multichannel_audio_file_read(monkeypatch: pytest.MonkeyPatch) -> None:
         self.path = kwargs["path"]
         self.end = kwargs["end"]
         self.sample_rate = kwargs["sample_rate"]
+        self.channels = full_file.shape[1]
 
     monkeypatch.setattr(AudioFile, "__init__", init_patch)
+
+    return full_file
+
+
+def test_multichannel_audio_file_read(multichannel_audio_file: np.ndarray) -> None:
+    full_file = multichannel_audio_file
 
     af = AudioFile(
         begin=Timestamp("2005-10-18 00:00:00"),
