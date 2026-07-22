@@ -36,7 +36,7 @@ from osekit.utils.audio import (
     normalize,
 )
 from osekit.utils.plot import get_default_axes
-from tests.helpers.audio import MockedAudioData
+from tests.helpers.audio import MockedAudioData, MockedAudioFile
 
 
 def test_mocked_audio_data() -> None:
@@ -59,6 +59,42 @@ def test_mocked_audio_data() -> None:
     assert np.array_equal(
         audio_data.get_value()[:, 0],
         [v - np.mean(mocked_value, dtype=float) for v in mocked_value],
+    )
+
+
+def test_mocked_audio_file() -> None:
+    mocked_value_mono = np.array([1.0, 2.0, 3.0])
+    mocked_value_stereo = np.array([[1, 1], [2, 2], [3, 3]])
+
+    af_mono = MockedAudioFile(
+        mocked_value=mocked_value_mono, sample_rate=len(mocked_value_mono)
+    )
+
+    af_stereo = MockedAudioFile(
+        mocked_value=mocked_value_stereo,
+    )
+
+    assert af_mono.channels == 1
+    assert af_stereo.channels == 2
+
+    # sample_rate equals len
+    assert af_mono.duration == Timedelta(seconds=1)
+
+    # Mono should be 2D too for compatibility issues
+    assert np.array_equal(
+        af_mono.read(af_mono.begin, af_mono.end), mocked_value_mono[:, None]
+    )
+
+    # Full time stereo read
+    assert np.array_equal(
+        af_stereo.read(af_stereo.begin, af_stereo.end), mocked_value_stereo
+    )
+
+    # Specific times
+    period = Timedelta(seconds=1 / af_mono.sample_rate)
+    sample_time = af_mono.begin + 2 * period
+    assert np.array_equal(
+        af_mono.read(start=sample_time, stop=sample_time), mocked_value_mono[1:2, None]
     )
 
 
@@ -272,46 +308,6 @@ def test_audio_file_stream_is_always_2d(
     af = AudioFile()
 
     assert af.stream(1024).shape == expected_shape
-
-
-@pytest.fixture
-def multichannel_audio_file(monkeypatch: pytest.MonkeyPatch) -> np.ndarray:
-    full_file = np.array([[1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3]])
-
-    def read_patch(*args: list, **kwargs: dict) -> np.ndarray:
-        start, stop = kwargs["start"], kwargs["stop"]
-        return full_file[start:stop, :]
-
-    monkeypatch.setattr(AudioFileManager, "read", read_patch)
-
-    def init_patch(self: AudioFile, *args: list, **kwargs: dict) -> None:
-        self.begin = kwargs["begin"]
-        self.path = kwargs["path"]
-        self.end = kwargs["end"]
-        self.sample_rate = kwargs["sample_rate"]
-        self.channels = full_file.shape[1]
-
-    monkeypatch.setattr(AudioFile, "__init__", init_patch)
-
-    return full_file
-
-
-def test_multichannel_audio_file_read(multichannel_audio_file: np.ndarray) -> None:
-    full_file = multichannel_audio_file
-
-    af = AudioFile(
-        begin=Timestamp("2005-10-18 00:00:00"),
-        end=Timestamp("2005-10-18 00:00:01"),
-        path=Path(r"foo"),
-        sample_rate=5,
-    )
-
-    assert np.array_equal(af.read(start=af.begin, stop=af.end), full_file)
-
-    assert np.array_equal(
-        af.read(start=af.begin, stop=af.begin + Timedelta(seconds=3 / 5)),
-        full_file[:3, :],
-    )
 
 
 @pytest.mark.parametrize(
