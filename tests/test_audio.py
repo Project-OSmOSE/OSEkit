@@ -331,7 +331,7 @@ def test_multitchannel_audio_data() -> None:
 
     ad.channels = [1, 2]
     assert ad.nb_channels == 2
-    assert np.array_equal(ad.get_value(), np.array([2, 3] for _ in range(10)))
+    assert np.array_equal(ad.get_value(), np.array([[2, 3] for _ in range(10)]))
 
 
 @pytest.mark.parametrize(

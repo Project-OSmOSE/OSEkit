@@ -334,7 +334,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
                 )
 
             for chunk in item.stream(chunk_size=chunk_size):
-                y = chunk
+                y = chunk[:, self.channels]
                 if item.sample_rate != self.sample_rate:
                     y = resampler.resample_chunk(x=chunk)
 
