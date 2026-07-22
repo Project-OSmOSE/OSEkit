@@ -97,6 +97,14 @@ def test_mocked_audio_file() -> None:
         af_mono.read(start=sample_time, stop=sample_time), mocked_value_mono[1:2, None]
     )
 
+    # Stream
+    assert af_mono.pointer == 0
+    assert np.array_equal(af_mono.stream(1), mocked_value_mono[0:1, None])
+    assert af_mono.pointer == 1
+
+    af_mono.seek(frame=2)
+    assert np.array_equal(af_mono.stream(1), mocked_value_mono[2:3, None])
+
 
 @pytest.mark.parametrize(
     "audio_files",

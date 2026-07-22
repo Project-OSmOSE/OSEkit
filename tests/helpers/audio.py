@@ -33,10 +33,21 @@ class MockedAudioFile(AudioFile):
         self.end = self.begin + Timedelta(
             seconds=mocked_value.shape[0] / self.sample_rate
         )
+        self.pointer = 0
 
     def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray:
         start_sample, stop_sample = self.frames_indexes(start, stop)
         return self.mocked_value[start_sample:stop_sample]
+
+    def stream(self, chunk_size: int) -> np.ndarray:
+        values = self.mocked_value[self.pointer : self.pointer + chunk_size]
+        self.pointer += chunk_size
+        if values.ndim == 1:
+            return values[:, None]  # 2D array to match the format of multichannel audio
+        return values
+
+    def seek(self, frame: int) -> None:
+        self.pointer = frame
 
 
 class MockedAudioData(AudioData):
