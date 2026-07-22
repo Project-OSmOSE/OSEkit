@@ -1965,3 +1965,6 @@ def test_spectro_data_with_multichannel_audio(monkeypatch: pytest.MonkeyPatch) -
     assert np.array_equal(last_fetched_audio, [m[0] for m in mocked_audio_value])
 
     # TODO: SpectroData.audio_channel targets a specific channel
+    sd.audio_channel = 1
+    sd.get_value()
+    assert np.array_equal(last_fetched_audio, [m[1] for m in mocked_audio_value])
