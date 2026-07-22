@@ -323,10 +323,15 @@ def test_multitchannel_audio_data() -> None:
 
     af = MockedAudioFile(mocked_value=af_data, sample_rate=10)
 
-    ad = AudioData.from_files([af])
+    ad: AudioData = AudioData.from_files([af])
 
     # Default channels is all channels
     assert ad.channels == [0, 1, 2]
+    assert np.array_equal(ad.get_value(), af_data)
+
+    ad.channels = [1, 2]
+    assert ad.nb_channels == 2
+    assert np.array_equal(ad.get_value(), np.array([2, 3] for _ in range(10)))
 
 
 @pytest.mark.parametrize(
