@@ -32,7 +32,7 @@ from osekit.core.spectro_dataset import SpectroDataset
 from osekit.core.spectro_file import SpectroFile
 from osekit.core.spectro_item import SpectroItem
 from osekit.utils.audio import Normalization, generate_sample_audio
-from tests.helpers.audio import MockedAudioData
+from tests.helpers.audio import MockedAudioData, MockedAudioFile
 from tests.helpers.dummy import DummyFile
 
 
@@ -1465,9 +1465,9 @@ def test_plot_timezone(
     called_ax = set()
 
     def mock_imshow(
-            self: plt.Axes,
-            sx: np.ndarray,
-            **kwargs: str,
+        self: plt.Axes,
+        sx: np.ndarray,
+        **kwargs: str,
     ) -> None:
         called_ax.add(self)
 
@@ -1481,8 +1481,6 @@ def test_plot_timezone(
         assert isinstance(spectro_data_axes.xaxis.units, datetime.tzinfo)
     else:
         assert spectro_data_axes.xaxis.units is None
-
-
 
 
 def test_spectro_default_v_lim(audio_files: pytest.fixture) -> None:
@@ -1940,3 +1938,30 @@ def test_duplicate_data_check(monkeypatch: pytest.monkeypatch) -> None:
     sds.save_all(spectrum_folder=Path("bantam"), spectrogram_folder=Path("lyons"))
 
     assert check_calls[0] == 2  # noqa: PLR2004
+
+
+def test_spectro_data_with_multichannel_audio(monkeypatch: pytest.MonkeyPatch) -> None:
+    mocked_audio_value = np.array([[0.0, 1.0, 2.0] for _ in range(100)])
+    af = MockedAudioFile(mocked_value=mocked_audio_value, sample_rate=100)
+
+    ad: AudioData = AudioData.from_files(files=[af])
+
+    # By default, SpectroData targets channel 0
+    sd = SpectroData.from_audio_data(
+        data=ad, fft=ShortTimeFFT(win=hamming(16), hop=16, fs=ad.sample_rate)
+    )
+
+    last_fetched_audio = []
+    fft_stft = ShortTimeFFT.stft
+
+    def mock_stft(*args, **kwargs) -> np.ndarray:
+        last_fetched_audio.clear()
+        last_fetched_audio[:] = kwargs["x"]
+        return fft_stft(self=sd.fft, *args, **kwargs)
+
+    monkeypatch.setattr(sd.fft, "stft", mock_stft)
+
+    sd.get_value()
+    assert np.array_equal(last_fetched_audio, [m[0] for m in mocked_audio_value])
+
+    # TODO: SpectroData.audio_channel targets a specific channel
