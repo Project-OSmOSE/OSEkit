@@ -1,9 +1,42 @@
 import typing
+from pathlib import Path
 
 import numpy as np
-from pandas import Timestamp
+from pandas import Timedelta, Timestamp
 
 from osekit.core.audio_data import AudioData
+from osekit.core.audio_file import AudioFile
+
+
+class MockedAudioFile(AudioFile):
+    def __init__(
+        self,
+        mocked_value: np.ndarray,
+        *args: typing.Any,
+        **kwargs: typing.Any,
+    ) -> None:
+        defaults = {
+            "begin": Timestamp("2000-01-01 00:00:00"),
+            "path": Path("foo"),
+        }
+        for key, value in defaults.items():
+            if key not in kwargs:
+                kwargs.update(**{key: value})
+
+        if mocked_value.ndim == 1:
+            mocked_value = mocked_value[:, None]
+
+        self.mocked_value = mocked_value
+        self.channels = self.mocked_value.shape[1]
+        self.sample_rate = kwargs.get("sample_rate", 48000)
+        self.begin = kwargs["begin"]
+        self.end = self.begin + Timedelta(
+            seconds=mocked_value.shape[0] / self.sample_rate
+        )
+
+    def read(self, start: Timestamp, stop: Timestamp) -> np.ndarray:
+        start_sample, stop_sample = self.frames_indexes(start, stop)
+        return self.mocked_value[start_sample:stop_sample]
 
 
 class MockedAudioData(AudioData):
