@@ -49,6 +49,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         normalization: Normalization = Normalization.RAW,
         normalization_values: dict | None = None,
         butter: Butterworth | None = None,
+        channels: list[int] | None = None,
     ) -> None:
         """Initialize an ``AudioData`` from a list of ``AudioItems``.
 
@@ -81,13 +82,12 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         self.normalization = normalization
         self.normalization_values = normalization_values
         self.butter = butter
+        self.channels = channels
 
     @property
     def nb_channels(self) -> int:
         """Number of channels of the audio data."""
-        return max(
-            [1] + [item.nb_channels for item in self.items if type(item) is AudioItem],
-        )
+        return len(self.channels)
 
     @property
     def shape(self) -> tuple[int, int]:
@@ -138,6 +138,21 @@ class AudioData(BaseData[AudioItem, AudioFile]):
     @butter.setter
     def butter(self, value: Butterworth) -> None:
         self._butter = value
+
+    @property
+    def channels(self) -> list[int]:
+        """The Butterworth filter to apply to the audio data."""
+        return self._channels
+
+    @channels.setter
+    def channels(self, value: list[int] | None) -> None:
+        if value is None:
+            nb_channels_max = max(
+                [1]
+                + [item.nb_channels for item in self.items if type(item) is AudioItem],
+            )
+            value = list(range(nb_channels_max))
+        self._channels = value
 
     @classmethod
     def _make_item(
