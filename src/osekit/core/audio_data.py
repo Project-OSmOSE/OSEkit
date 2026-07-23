@@ -213,9 +213,9 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         """
         values = np.array(self.get_filtered_value())
         self.normalization_values = {
-            "mean": values.mean(),
-            "peak": values.max(),
-            "std": values.std(),
+            "mean": values.mean(axis=0),
+            "peak": values.max(axis=0),
+            "std": values.std(axis=0),
         }
         return self.normalization_values
 

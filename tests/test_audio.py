@@ -1891,6 +1891,16 @@ def test_split_data_normalization_pass() -> None:
     )
 
 
+def test_multichannel_data_normalization() -> None:
+    ad = MockedAudioData(mocked_value=np.array([[1, 2] for _ in range(10)]))
+
+    normalization_values = ad.get_normalization_values()
+
+    assert np.array_equal(normalization_values["mean"], [1.0, 2.0])
+    assert np.array_equal(normalization_values["peak"], [1, 2])
+    assert np.array_equal(normalization_values["std"], [0.0, 0.0])
+
+
 @pytest.mark.parametrize(
     ("audio_files", "start_frame", "stop_frame", "expected_begin", "expected_data"),
     [
