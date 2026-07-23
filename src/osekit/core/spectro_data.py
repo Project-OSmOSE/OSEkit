@@ -900,6 +900,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         fft: ShortTimeFFT,
         v_lim: tuple[float, float] | None = None,
         colormap: str | None = None,
+        **kwargs: dict,
     ) -> SpectroData:
         """Instantiate a ``SpectroData`` object from a ``AudioData`` object.
 
@@ -914,6 +915,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             for plotting the spectrogram.
         colormap: str
             Colormap to use for plotting the spectrogram.
+        kwargs: dict
+            Additionnal kwargs to pass to the SpectroData constructor.
 
         Returns
         -------
@@ -928,6 +931,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             end=data.end,
             v_lim=v_lim,
             colormap=colormap,
+            **kwargs,
         )
 
     def to_dict(self, *, embed_sft: bool = True) -> dict:
@@ -974,7 +978,11 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             base_dict
             | audio_dict
             | sft_dict
-            | {"v_lim": self.v_lim, "colormap": self.colormap}
+            | {
+                "v_lim": self.v_lim,
+                "colormap": self.colormap,
+                "audio_channel": self.audio_channel,
+            }
         )
 
     @classmethod
@@ -1021,6 +1029,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             sft,
             v_lim=v_lim,
             colormap=dictionary["colormap"],
+            audio_channel=dictionary.get("audio_channel", 0),
         )
 
         if dictionary["files"]:
