@@ -1918,6 +1918,11 @@ def test_multichannel_data_normalization() -> None:
 
         assert np.array_equal(ad.get_value(), ad2.get_value())
 
+    # Normalization deserialization
+    assert np.array_equal(
+        ad.normalization_values, AudioData.from_dict(ad.to_dict()).normalization_values
+    )
+
 
 @pytest.mark.parametrize(
     ("audio_files", "start_frame", "stop_frame", "expected_begin", "expected_data"),
