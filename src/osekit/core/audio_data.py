@@ -74,6 +74,8 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             The type of normalization to apply to the audio data.
         butter: Butterworth | None
             Butterworth filter to apply to the audio data.
+        channels: list[int]
+            Considered channels of the linked audio file(s).
 
         """
         super().__init__(items=items, begin=begin, end=end, name=name)
