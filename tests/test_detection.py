@@ -354,14 +354,12 @@ def test_detection_to_rectangle(sample_detection: Detection) -> None:
 
 def test_detection_required_parameters() -> None:
     # only time and frequency bounds are required
-    (
-        Detection(
-            begin=Timestamp("1991-04-08 00:00:00"),
-            end=Timestamp("1991-04-08 00:45:09"),
-            frequency_bounds=FrequencyBounds(
-                min=1991,
-                max=2010,
-            ),
+    Detection(
+        begin=Timestamp("1991-04-08 00:00:00"),
+        end=Timestamp("1991-04-08 00:45:09"),
+        frequency_bounds=FrequencyBounds(
+            min=1991,
+            max=2010,
         ),
     )
 

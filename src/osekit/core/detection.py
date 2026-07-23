@@ -293,7 +293,13 @@ class Detection(Event):
 
     def __repr__(self) -> str:
         """Override the string representation of the detection."""
-        return str(self.metadata.detection_id)
+        return (
+            str(self.metadata.detection_id)
+            if self.metadata and self.metadata.detection_id
+            else f"{self.begin.strftime('%Y-%m-%dT%H:%M:%SZ')} - "
+            f"{self.end.strftime('%Y-%m-%dT%H:%M:%SZ')} "
+            f"[{self.frequency_bounds.min} Hz - {self.frequency_bounds.max} Hz]"
+        )
 
     @classmethod
     def from_dict(cls, row: dict) -> Self:
