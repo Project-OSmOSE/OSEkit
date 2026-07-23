@@ -296,8 +296,8 @@ class Detection(Event):
         return (
             str(self.metadata.detection_id)
             if self.metadata and self.metadata.detection_id
-            else f"{self.begin.strftime('%Y-%m-%dT%H:%M:%SZ')} - "
-            f"{self.end.strftime('%Y-%m-%dT%H:%M:%SZ')} "
+            else f"{self.begin.strftime('%Y-%m-%dT%H:%M:%S%Z')} - "
+            f"{self.end.strftime('%Y-%m-%dT%H:%M:%S%Z')} "
             f"[{self.frequency_bounds.min} Hz - {self.frequency_bounds.max} Hz]"
         )
 
