@@ -4,11 +4,11 @@ from pathlib import Path, PureWindowsPath
 
 import numpy as np
 import pytest
+from helpers.audio import MockedAudioFile
 from pandas import Timedelta, Timestamp
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming, hann
 
-from helpers.audio import MockedAudioFile
 from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
