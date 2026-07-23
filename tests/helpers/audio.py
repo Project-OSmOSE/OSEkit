@@ -29,7 +29,8 @@ class MockedAudioFile(AudioFile):
         self.mocked_value = mocked_value
         self.channels = self.mocked_value.shape[1]
         self.sample_rate = kwargs.get("sample_rate", 48000)
-        self.begin = kwargs["begin"]
+        self.begin = kwargs.pop("begin")
+        self.__dict__.update(kwargs)
         self.end = self.begin + Timedelta(
             seconds=mocked_value.shape[0] / self.sample_rate
         )

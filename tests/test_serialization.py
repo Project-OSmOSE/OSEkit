@@ -8,6 +8,7 @@ from pandas import Timedelta, Timestamp
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming, hann
 
+from helpers.audio import MockedAudioFile
 from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
     TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED,
@@ -174,6 +175,30 @@ def test_audio_data_serialization(
     )
 
     assert np.array_equal(ad.get_value(), AudioData.from_dict(ad.to_dict()).get_value())
+
+
+def test_audio_data_channels_serialization(monkeypatch: pytest.MonkeyPatch) -> None:
+    mocked_value = np.array(
+        [
+            [1, 2, 3],
+            [1, 2, 3],
+            [1, 2, 3],
+            [1, 2, 3],
+        ]
+    )
+
+    af = MockedAudioFile(
+        mocked_value=mocked_value,
+    )
+
+    def mocked_make_file(path: Path, begin: Timestamp) -> MockedAudioFile:
+        return MockedAudioFile(mocked_value=mocked_value, path=path, begin=begin)
+
+    monkeypatch.setattr(AudioData, "_make_file", mocked_make_file)
+
+    ad = AudioData.from_files([af], channels=[0, 2])
+
+    assert np.array_equal(AudioData.from_dict(ad.to_dict()).channels, [0, 2])
 
 
 @pytest.mark.parametrize(

@@ -635,6 +635,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
                 "sample_rate": self.sample_rate,
                 "normalization": self.normalization.value,
                 "normalization_values": self.normalization_values,
+                "channels": self.channels,
             }
         )
 
@@ -690,6 +691,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             normalization=Normalization(dictionary["normalization"]),
             normalization_values=dictionary["normalization_values"],
             butter=butter,
+            channels=dictionary.get("channels", None),
         )
 
     @classmethod
