@@ -4,7 +4,6 @@ from pathlib import Path, PureWindowsPath
 
 import numpy as np
 import pytest
-from helpers.audio import MockedAudioFile
 from pandas import Timedelta, Timestamp
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming, hann
@@ -28,6 +27,7 @@ from osekit.core.spectro_data import SpectroData
 from osekit.core.spectro_dataset import SpectroDataset
 from osekit.core.spectro_file import SpectroFile
 from osekit.utils.audio import Normalization
+from tests.helpers.audio import MockedAudioFile
 
 
 @pytest.mark.parametrize(
