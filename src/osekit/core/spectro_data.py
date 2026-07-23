@@ -713,15 +713,13 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         return sd_part1[:, -p1_le:] + sd_part2[:, :p1_le]
 
     @classmethod
-    def _make_file(cls, path: Path, begin: Timestamp) -> SpectroFile:
+    def _make_file(cls, file_dict: dict) -> SpectroFile:
         """Make a ``SpectroFile`` from a ``path`` and a ``begin`` timestamp.
 
         Parameters
         ----------
-        path: Path
-            Path to the file.
-        begin: Timestamp
-            Begin of the file.
+        file_dict: dict
+            Serialized SpectroFile
 
         Returns
         -------
@@ -729,7 +727,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         The ``SpectroFile`` instance.
 
         """
-        return SpectroFile(path=path, begin=begin)
+        return SpectroFile.from_dict(serialized=file_dict)
 
     @classmethod
     def _make_item(

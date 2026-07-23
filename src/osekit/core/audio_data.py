@@ -165,15 +165,13 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         return AudioItem(file=file, begin=begin, end=end)
 
     @classmethod
-    def _make_file(cls, path: Path, begin: Timestamp) -> AudioFile:
+    def _make_file(cls, file_dict: dict) -> AudioFile:
         """Make an ``AudioFile`` from a path and a begin timestamp.
 
         Parameters
         ----------
-        path: Path
-            Path to the file.
-        begin: Timestamp
-            Begin of the file.
+        file_dict: dict
+            Serialized AudioFile.
 
         Returns
         -------
@@ -181,7 +179,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         The ``AudioFile`` instance.
 
         """
-        return AudioFile(path=path, begin=begin)
+        return AudioFile.from_dict(serialized=file_dict)
 
     def get_normalization_values(self) -> dict:
         """Return the values used for normalizing the audio data.
