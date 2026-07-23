@@ -1900,6 +1900,24 @@ def test_multichannel_data_normalization() -> None:
     assert np.array_equal(normalization_values["peak"], [1, 2])
     assert np.array_equal(normalization_values["std"], [0.0, 0.0])
 
+    # Normalization should be channel-wise:
+    ad.normalization = Normalization.DC_REJECT
+    assert not np.any(ad.get_value())
+
+    # Default normalization
+    for normalization in (
+        Normalization.DC_REJECT,
+        Normalization.ZSCORE,
+        Normalization.PEAK,
+    ):
+        # New AudioData with empty normalization_values
+        ad2 = MockedAudioData(mocked_value=np.array([[1, 2] for _ in range(10)]))
+
+        ad.normalization = normalization
+        ad2.normalization = normalization
+
+        assert np.array_equal(ad.get_value(), ad2.get_value())
+
 
 @pytest.mark.parametrize(
     ("audio_files", "start_frame", "stop_frame", "expected_begin", "expected_data"),
