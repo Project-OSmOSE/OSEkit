@@ -142,10 +142,10 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
     @audio_channel.setter
     def audio_channel(self, channel: int) -> None:
-        if self.audio_data and channel > self.audio_data.nb_channels:
+        if self.audio_data and channel not in self.audio_data.channels:
             msg = (
-                f"Can not target audio channel {channel}: AudioData only has "
-                f"{self.audio_data.nb_channels} channels."
+                f"Can't target audio channel {channel}: AudioData only targets "
+                f"channels {self.audio_data.channels}."
             )
             raise ValueError(msg)
         self._audio_channel = channel
@@ -253,7 +253,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         sx = self.fft.stft(
             x=self.audio_data.get_value_calibrated()[
                 :,
-                self.audio_channel,
+                self.audio_data.channels.index(self.audio_channel),
             ],
             padding="zeros",
         )

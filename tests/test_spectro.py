@@ -1964,6 +1964,32 @@ def test_spectro_data_with_multichannel_audio(monkeypatch: pytest.MonkeyPatch) -
     sd.get_value()
     assert np.array_equal(last_fetched_audio, [m[0] for m in mocked_audio_value])
 
+    # Set the audio_channel to the second channel
     sd.audio_channel = 1
     sd.get_value()
     assert np.array_equal(last_fetched_audio, [m[1] for m in mocked_audio_value])
+
+    # SpectroData.audio_channel is the index of the channel of the audio **file**
+    # (not the index of the channel in the AudioData.channels list)
+    sd.audio_data.channels = [1, 2]
+    sd.audio_channel = 1
+    sd.get_value()
+    assert np.array_equal(last_fetched_audio, [m[1] for m in mocked_audio_value])
+
+
+def test_spectrodata_audio_channel_raises_if_not_in_audio_data_channels() -> None:
+    mocked_audio_value = np.array([[0.0, 1.0, 2.0] for _ in range(100)])
+    af = MockedAudioFile(mocked_value=mocked_audio_value, sample_rate=100)
+
+    ad: AudioData = AudioData.from_files(files=[af])
+
+    ad.channels = [0, 2]
+
+    sd = SpectroData.from_audio_data(
+        data=ad, fft=ShortTimeFFT(win=hamming(48), hop=48, fs=ad.sample_rate)
+    )
+
+    with pytest.raises(
+        ValueError, match=r"channel 1: AudioData only targets channels \[0, 2\]"
+    ):
+        sd.audio_channel = 1
