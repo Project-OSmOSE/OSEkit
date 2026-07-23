@@ -5,10 +5,12 @@ from typing import Self
 import numpy as np
 from pandas import Timestamp
 
+from osekit.config import TIMESTAMP_FORMATS_EXPORTED_FILES
 from osekit.core.base_data import BaseData, TFile
 from osekit.core.base_dataset import BaseDataset, TData
 from osekit.core.base_file import BaseFile
 from osekit.core.base_item import BaseItem
+from osekit.utils.timestamp import strptime_from_text
 
 
 class DummyFile(BaseFile):
@@ -37,8 +39,13 @@ class DummyData(BaseData[DummyItem, DummyFile]):
         return DummyData.from_files(files=files, begin=begin, end=end, **kwargs)
 
     @classmethod
-    def _make_file(cls, path: Path, begin: Timestamp) -> DummyFile:
-        return DummyFile(path=path, begin=begin)
+    def _make_file(cls, file_dict: dict) -> DummyFile:
+        if "end" in file_dict:
+            file_dict["end"] = strptime_from_text(
+                text=file_dict["end"],
+                datetime_template=TIMESTAMP_FORMATS_EXPORTED_FILES,
+            )
+        return DummyFile.from_dict(serialized=file_dict)
 
     @classmethod
     def _make_item(

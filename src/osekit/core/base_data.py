@@ -18,12 +18,10 @@ from osekit.config import (
     DPDEFAULT,
     TIMESTAMP_FORMAT_AUDIO_FILE,
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
-    TIMESTAMP_FORMATS_EXPORTED_FILES,
 )
 from osekit.core.base_file import BaseFile
 from osekit.core.base_item import BaseItem
 from osekit.core.event import Event
-from osekit.utils.timestamp import strptime_from_text
 
 TItem = TypeVar("TItem", bound=BaseItem)
 TFile = TypeVar("TFile", bound=BaseFile)
@@ -212,15 +210,7 @@ class BaseData[TItem: BaseItem, TFile: BaseFile](Event, ABC):
 
         """
         files = [
-            cls._make_file(
-                path=Path(file["path"]),
-                begin=strptime_from_text(
-                    file["begin"],
-                    datetime_template=TIMESTAMP_FORMATS_EXPORTED_FILES,
-                ),
-                **{key: file[key] for key in file if key not in ["path", "begin"]},
-            )
-            for file in dictionary["files"].values()
+            cls._make_file(file_dict=file) for file in dictionary["files"].values()
         ]
         begin = Timestamp(dictionary["begin"])
         end = Timestamp(dictionary["end"])
@@ -234,7 +224,7 @@ class BaseData[TItem: BaseItem, TFile: BaseFile](Event, ABC):
 
     @classmethod
     @abstractmethod
-    def _make_file(cls, path: Path, begin: Timestamp, **kwargs: dict) -> type[TFile]:
+    def _make_file(cls, file_dict: dict) -> type[TFile]:
         """Make a File from a path and a begin timestamp."""
         ...
 
