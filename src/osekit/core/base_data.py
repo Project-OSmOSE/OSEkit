@@ -218,6 +218,7 @@ class BaseData[TItem: BaseItem, TFile: BaseFile](Event, ABC):
                     file["begin"],
                     datetime_template=TIMESTAMP_FORMATS_EXPORTED_FILES,
                 ),
+                **{key: file[key] for key in file if key not in ["path", "begin"]},
             )
             for file in dictionary["files"].values()
         ]
@@ -233,7 +234,7 @@ class BaseData[TItem: BaseItem, TFile: BaseFile](Event, ABC):
 
     @classmethod
     @abstractmethod
-    def _make_file(cls, path: Path, begin: Timestamp) -> type[TFile]:
+    def _make_file(cls, path: Path, begin: Timestamp, **kwargs: dict) -> type[TFile]:
         """Make a File from a path and a begin timestamp."""
         ...
 
