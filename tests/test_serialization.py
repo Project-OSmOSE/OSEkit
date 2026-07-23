@@ -27,7 +27,7 @@ from osekit.core.spectro_data import SpectroData
 from osekit.core.spectro_dataset import SpectroDataset
 from osekit.core.spectro_file import SpectroFile
 from osekit.utils.audio import Normalization
-from tests.helpers.audio import MockedAudioFile
+from tests.helpers.audio import MockedAudioFile, MockedAudioData
 
 
 @pytest.mark.parametrize(
@@ -699,6 +699,22 @@ def test_spectro_data_serialization(
     # Linked file from dict
 
     assert SpectroData.from_dict(sd.to_dict(embed_sft=True)).files == sd.files
+
+
+def test_spectro_data_serialization_channel() -> None:
+    ad = MockedAudioData(
+        mocked_value=np.array([[1, 2, 3] for _ in range(100)]),
+        sample_rate=100,
+    )
+
+    ad.channels = [0, 2]
+
+    sd = SpectroData.from_audio_data(
+        ad, fft=ShortTimeFFT(win=hamming(48), hop=48, fs=100)
+    )
+    sd.audio_channel = 2
+
+    assert SpectroData.from_dict(sd.to_dict()).audio_channel == sd.audio_channel
 
 
 @pytest.mark.parametrize(
