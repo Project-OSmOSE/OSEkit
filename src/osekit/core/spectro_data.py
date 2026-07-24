@@ -49,7 +49,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
     def __init__(
         self,
         items: list[SpectroItem] | None = None,
-        audio_data: AudioData = None,
+        audio_data: AudioData | None = None,
+        audio_channel: int = 0,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         name: str | None = None,
@@ -69,6 +70,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             List of the ``SpectroItem`` constituting the ``SpectroData``.
         audio_data: AudioData
             The ``AudioData`` from which to compute the spectrogram.
+        audio_channel: int
+            Channel of the linked ``AudioData`` concerned by this ``SpectroData``.
         begin: Timestamp | None
             Only effective if items is ``None``.
             Set the begin of the empty data.
@@ -90,6 +93,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         """
         super().__init__(items=items, begin=begin, end=end, name=name)
         self.audio_data = audio_data
+        self.audio_channel = audio_channel
         self.fft = fft
         self._sx_dtype = complex
         self._db_ref = db_ref
@@ -130,6 +134,21 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         return self.fft.f_pts, self.fft.p_num(
             int(self.fft.fs * self.duration.total_seconds()),
         )
+
+    @property
+    def audio_channel(self) -> int:
+        """Channel of the linked ``AudioData`` concerned by this ``SpectroData``."""
+        return self._audio_channel
+
+    @audio_channel.setter
+    def audio_channel(self, channel: int) -> None:
+        if self.audio_data and channel not in self.audio_data.channels:
+            msg = (
+                f"Can't target audio channel {channel}: AudioData only targets "
+                f"channels {self.audio_data.channels}."
+            )
+            raise ValueError(msg)
+        self._audio_channel = channel
 
     @property
     def nb_bytes(self) -> int:
@@ -234,8 +253,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         sx = self.fft.stft(
             x=self.audio_data.get_value_calibrated()[
                 :,
-                0,
-            ],  # Only consider the 1st channel
+                self.audio_data.channels.index(self.audio_channel),
+            ],
             padding="zeros",
         )
 
@@ -881,6 +900,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         fft: ShortTimeFFT,
         v_lim: tuple[float, float] | None = None,
         colormap: str | None = None,
+        **kwargs: dict,
     ) -> SpectroData:
         """Instantiate a ``SpectroData`` object from a ``AudioData`` object.
 
@@ -895,6 +915,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             for plotting the spectrogram.
         colormap: str
             Colormap to use for plotting the spectrogram.
+        kwargs: dict
+            Additionnal kwargs to pass to the SpectroData constructor.
 
         Returns
         -------
@@ -909,6 +931,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             end=data.end,
             v_lim=v_lim,
             colormap=colormap,
+            **kwargs,
         )
 
     def to_dict(self, *, embed_sft: bool = True) -> dict:
@@ -955,7 +978,11 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             base_dict
             | audio_dict
             | sft_dict
-            | {"v_lim": self.v_lim, "colormap": self.colormap}
+            | {
+                "v_lim": self.v_lim,
+                "colormap": self.colormap,
+                "audio_channel": self.audio_channel,
+            }
         )
 
     @classmethod
@@ -1002,6 +1029,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             sft,
             v_lim=v_lim,
             colormap=dictionary["colormap"],
+            audio_channel=dictionary.get("audio_channel", 0),
         )
 
         if dictionary["files"]:

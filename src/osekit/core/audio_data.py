@@ -49,6 +49,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         normalization: Normalization = Normalization.RAW,
         normalization_values: dict | None = None,
         butter: Butterworth | None = None,
+        channels: list[int] | None = None,
     ) -> None:
         """Initialize an ``AudioData`` from a list of ``AudioItems``.
 
@@ -73,6 +74,8 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             The type of normalization to apply to the audio data.
         butter: Butterworth | None
             Butterworth filter to apply to the audio data.
+        channels: list[int]
+            Considered channels of the linked audio file(s).
 
         """
         super().__init__(items=items, begin=begin, end=end, name=name)
@@ -81,13 +84,12 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         self.normalization = normalization
         self.normalization_values = normalization_values
         self.butter = butter
+        self.channels = channels
 
     @property
     def nb_channels(self) -> int:
         """Number of channels of the audio data."""
-        return max(
-            [1] + [item.nb_channels for item in self.items if type(item) is AudioItem],
-        )
+        return len(self.channels)
 
     @property
     def shape(self) -> tuple[int, int]:
@@ -138,6 +140,21 @@ class AudioData(BaseData[AudioItem, AudioFile]):
     @butter.setter
     def butter(self, value: Butterworth) -> None:
         self._butter = value
+
+    @property
+    def channels(self) -> list[int]:
+        """The Butterworth filter to apply to the audio data."""
+        return self._channels
+
+    @channels.setter
+    def channels(self, value: list[int] | None) -> None:
+        if value is None:
+            nb_channels_max = max(
+                [1]
+                + [item.nb_channels for item in self.items if type(item) is AudioItem],
+            )
+            value = list(range(nb_channels_max))
+        self._channels = value
 
     @classmethod
     def _make_item(
@@ -196,9 +213,9 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         """
         values = np.array(self.get_filtered_value())
         self.normalization_values = {
-            "mean": values.mean(),
-            "peak": values.max(),
-            "std": values.std(),
+            "mean": values.mean(axis=0),
+            "peak": values.max(axis=0),
+            "std": values.std(axis=0),
         }
         return self.normalization_values
 
@@ -319,7 +336,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
                 )
 
             for chunk in item.stream(chunk_size=chunk_size):
-                y = chunk
+                y = chunk[:, self.channels]
                 if item.sample_rate != self.sample_rate:
                     y = resampler.resample_chunk(x=chunk)
 
@@ -395,13 +412,18 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             to the ``matplotlib.axes._axes.Axes.plot()`` method.
 
         """
-        ax = ax if ax is not None else get_default_axes()
+        ax = ax if ax is not None else get_default_axes(nb_rows=self.nb_channels)
         values = self.get_value() if values is None else values
 
         time = pd.date_range(start=self.begin, end=self.end, periods=values.shape[0])
 
-        ax.xaxis_date()
-        ax.plot(time, values, **kwargs)
+        if type(ax) is plt.Axes:
+            ax.xaxis_date()
+            ax.plot(time, values, **kwargs)
+        if type(ax) is np.ndarray:  # Multichannel audio
+            for idx, axes in enumerate(ax):
+                axes.xaxis_date()
+                axes.plot(time, values[:, idx], **kwargs)
 
     def write(
         self,
@@ -618,6 +640,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
                 "sample_rate": self.sample_rate,
                 "normalization": self.normalization.value,
                 "normalization_values": self.normalization_values,
+                "channels": self.channels,
             }
         )
 
@@ -673,6 +696,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             normalization=Normalization(dictionary["normalization"]),
             normalization_values=dictionary["normalization_values"],
             butter=butter,
+            channels=dictionary.get("channels", None),
         )
 
     @classmethod

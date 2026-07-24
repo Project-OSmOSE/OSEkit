@@ -36,7 +36,7 @@ from osekit.utils.audio import (
     normalize,
 )
 from osekit.utils.plot import get_default_axes
-from tests.helpers.audio import MockedAudioData
+from tests.helpers.audio import MockedAudioData, MockedAudioFile
 
 
 def test_mocked_audio_data() -> None:
@@ -60,6 +60,50 @@ def test_mocked_audio_data() -> None:
         audio_data.get_value()[:, 0],
         [v - np.mean(mocked_value, dtype=float) for v in mocked_value],
     )
+
+
+def test_mocked_audio_file() -> None:
+    mocked_value_mono = np.array([1.0, 2.0, 3.0])
+    mocked_value_stereo = np.array([[1, 1], [2, 2], [3, 3]])
+
+    af_mono = MockedAudioFile(
+        mocked_value=mocked_value_mono, sample_rate=len(mocked_value_mono)
+    )
+
+    af_stereo = MockedAudioFile(
+        mocked_value=mocked_value_stereo,
+    )
+
+    assert af_mono.channels == 1
+    assert af_stereo.channels == 2
+
+    # sample_rate equals len
+    assert af_mono.duration == Timedelta(seconds=1)
+
+    # Mono should be 2D too for compatibility issues
+    assert np.array_equal(
+        af_mono.read(af_mono.begin, af_mono.end), mocked_value_mono[:, None]
+    )
+
+    # Full time stereo read
+    assert np.array_equal(
+        af_stereo.read(af_stereo.begin, af_stereo.end), mocked_value_stereo
+    )
+
+    # Specific times
+    period = Timedelta(seconds=1 / af_mono.sample_rate)
+    sample_time = af_mono.begin + 2 * period
+    assert np.array_equal(
+        af_mono.read(start=sample_time, stop=sample_time), mocked_value_mono[1:2, None]
+    )
+
+    # Stream
+    assert af_mono.pointer == 0
+    assert np.array_equal(af_mono.stream(1), mocked_value_mono[0:1, None])
+    assert af_mono.pointer == 1
+
+    af_mono.seek(frame=2)
+    assert np.array_equal(af_mono.stream(1), mocked_value_mono[2:3, None])
 
 
 @pytest.mark.parametrize(
@@ -274,36 +318,20 @@ def test_audio_file_stream_is_always_2d(
     assert af.stream(1024).shape == expected_shape
 
 
-def test_multichannel_audio_file_read(monkeypatch: pytest.MonkeyPatch) -> None:
-    full_file = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3], [4, 4, 4], [5, 5, 5]])
+def test_multitchannel_audio_data() -> None:
+    af_data = np.array([[1, 2, 3] for _ in range(10)])
 
-    def read_patch(*args: list, **kwargs: dict) -> np.ndarray:
-        start, stop = kwargs["start"], kwargs["stop"]
-        return full_file[start:stop, :]
+    af = MockedAudioFile(mocked_value=af_data, sample_rate=10)
 
-    monkeypatch.setattr(AudioFileManager, "read", read_patch)
+    ad: AudioData = AudioData.from_files([af])
 
-    def init_patch(self: AudioFile, *args: list, **kwargs: dict) -> None:
-        self.begin = kwargs["begin"]
-        self.path = kwargs["path"]
-        self.end = kwargs["end"]
-        self.sample_rate = kwargs["sample_rate"]
+    # Default channels is all channels
+    assert ad.channels == [0, 1, 2]
+    assert np.array_equal(ad.get_value(), af_data)
 
-    monkeypatch.setattr(AudioFile, "__init__", init_patch)
-
-    af = AudioFile(
-        begin=Timestamp("2005-10-18 00:00:00"),
-        end=Timestamp("2005-10-18 00:00:01"),
-        path=Path(r"foo"),
-        sample_rate=5,
-    )
-
-    assert np.array_equal(af.read(start=af.begin, stop=af.end), full_file)
-
-    assert np.array_equal(
-        af.read(start=af.begin, stop=af.begin + Timedelta(seconds=3 / 5)),
-        full_file[:3, :],
-    )
+    ad.channels = [1, 2]
+    assert ad.nb_channels == 2
+    assert np.array_equal(ad.get_value(), np.array([[2, 3] for _ in range(10)]))
 
 
 @pytest.mark.parametrize(
@@ -1863,6 +1891,39 @@ def test_split_data_normalization_pass() -> None:
     )
 
 
+def test_multichannel_data_normalization() -> None:
+    ad = MockedAudioData(mocked_value=np.array([[1, 2] for _ in range(10)]))
+
+    normalization_values = ad.get_normalization_values()
+
+    assert np.array_equal(normalization_values["mean"], [1.0, 2.0])
+    assert np.array_equal(normalization_values["peak"], [1, 2])
+    assert np.array_equal(normalization_values["std"], [0.0, 0.0])
+
+    # Normalization should be channel-wise:
+    ad.normalization = Normalization.DC_REJECT
+    assert not np.any(ad.get_value())
+
+    # Default normalization
+    for normalization in (
+        Normalization.DC_REJECT,
+        Normalization.ZSCORE,
+        Normalization.PEAK,
+    ):
+        # New AudioData with empty normalization_values
+        ad2 = MockedAudioData(mocked_value=np.array([[1, 2] for _ in range(10)]))
+
+        ad.normalization = normalization
+        ad2.normalization = normalization
+
+        assert np.array_equal(ad.get_value(), ad2.get_value())
+
+    # Normalization deserialization
+    assert np.array_equal(
+        ad.normalization_values, AudioData.from_dict(ad.to_dict()).normalization_values
+    )
+
+
 @pytest.mark.parametrize(
     ("audio_files", "start_frame", "stop_frame", "expected_begin", "expected_data"),
     [
@@ -2261,6 +2322,44 @@ def patch_plot(monkeypatch: pytest.MonkeyPatch) -> Generator[None, Any, None]:
 
 def test_plot_on_default_axes(patch_plot: None) -> None:
     ad = MockedAudioData(mocked_value=[1, 2, 3])
+
+    default_axes = get_default_axes()
+    ad.plot()
+    axes, _ = plot_calls.pop()
+
+    assert np.array_equal(axes.viewLim, default_axes.viewLim)
+    assert np.array_equal(axes.dataLim, default_axes.dataLim)
+    assert np.array_equal(axes.spines, default_axes.spines)
+
+
+@pytest.mark.parametrize(
+    ("nb_rows", "nb_cols", "expected_type", "expected_shape"),
+    [
+        pytest.param(1, 1, plt.Axes, None, id="only_one_plot"),
+        pytest.param(1, 3, np.ndarray, (3,), id="multiple_cols"),
+        pytest.param(3, 1, np.ndarray, (3,), id="multiple_rows"),
+        pytest.param(3, 4, np.ndarray, (3, 4), id="2d_plot"),
+    ],
+)
+def test_default_axes_shape(
+    nb_rows: int,
+    nb_cols: int,
+    expected_type: type[Axes] | type[np.ndarray],
+    expected_shape: tuple | None,
+) -> None:
+    axs = get_default_axes(nb_rows=nb_rows, nb_cols=nb_cols)
+
+    assert type(axs) is expected_type
+
+    if expected_shape:
+        assert axs.shape == expected_shape
+
+
+def test() -> None:
+    af = MockedAudioFile(
+        mocked_value=np.array([[1, 2], [1, 2], [1, 2]]),
+    )
+    ad = AudioData.from_files([af])
 
     default_axes = get_default_axes()
     ad.plot()
