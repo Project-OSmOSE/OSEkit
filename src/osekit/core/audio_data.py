@@ -412,13 +412,18 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             to the ``matplotlib.axes._axes.Axes.plot()`` method.
 
         """
-        ax = ax if ax is not None else get_default_axes()
+        ax = ax if ax is not None else get_default_axes(nb_rows=self.nb_channels)
         values = self.get_value() if values is None else values
 
         time = pd.date_range(start=self.begin, end=self.end, periods=values.shape[0])
 
-        ax.xaxis_date()
-        ax.plot(time, values, **kwargs)
+        if type(ax) is plt.Axes:
+            ax.xaxis_date()
+            ax.plot(time, values, **kwargs)
+        if type(ax) is np.ndarray:  # Multichannel audio
+            for idx, axes in enumerate(ax):
+                axes.xaxis_date()
+                axes.plot(time, values[:, idx], **kwargs)
 
     def write(
         self,
