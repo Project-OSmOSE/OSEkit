@@ -11,6 +11,7 @@ import pytest
 
 from osekit.core.ltas_dataset import LTASDataset
 from osekit.core.spectro_dataset import SpectroDataset
+from osekit.utils.aplose import APLOSE_COLORS, get_aplose_color
 from osekit.utils.audio import Butterworth, Normalization, normalize
 from osekit.utils.core import (
     file_indexes_per_batch,
@@ -553,3 +554,13 @@ class DummyDataclass:
 )
 def test_is_empty_dataclass(instance: DummyDataclass, expected: bool) -> None:
     assert is_empty_dataclass(instance=instance) is expected
+
+
+def test_aplose_colors() -> None:
+    color_values = APLOSE_COLORS.values()
+
+    # get_aplose_color should cycle through the colors
+    expected = list(color_values) * 2
+
+    for i, color in enumerate(expected):
+        assert get_aplose_color(i) == color
