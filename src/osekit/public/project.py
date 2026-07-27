@@ -234,7 +234,7 @@ class Project:
             return
 
         logs_directory = self.folder / self.SUBFOLDERS["log"]
-        ensure_within_base(path=logs_directory, base=self.folder)
+        logs_directory = ensure_within_base(path=logs_directory, base=self.folder)
         if not logs_directory.exists():
             logs_directory.mkdir(mode=DPDEFAULT, parents=True)
         self.logger = logging.getLogger("project").getChild(self.folder.name)
