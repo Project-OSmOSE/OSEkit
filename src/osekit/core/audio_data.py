@@ -423,7 +423,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         if type(ax) is np.ndarray:  # Multichannel audio
             for idx, axes in enumerate(ax):
                 axes.xaxis_date()
-                axes.plot(time, values[:, idx], **kwargs)
+                axes.plot(x=time, y=values[:, idx], **kwargs)
 
     def write(
         self,

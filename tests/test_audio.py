@@ -2332,6 +2332,19 @@ def test_plot_on_default_axes(patch_plot: None) -> None:
     assert np.array_equal(axes.spines, default_axes.spines)
 
 
+def test_plot_multichannel_audio_data(patch_plot: None) -> None:
+    af = MockedAudioFile(
+        mocked_value=np.array([[1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3]])
+    )
+    ad: AudioData = AudioData.from_files([af])
+
+    ad.plot()
+    assert len(plot_calls) == af.channels
+    for idx, entry in enumerate(plot_calls):
+        values = entry[1]["y"]
+        assert np.array_equal(values, ad.get_value()[:, idx])
+
+
 @pytest.mark.parametrize(
     ("nb_rows", "nb_cols", "expected_type", "expected_shape"),
     [
