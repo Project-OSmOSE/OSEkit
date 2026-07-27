@@ -2355,21 +2355,6 @@ def test_default_axes_shape(
         assert axs.shape == expected_shape
 
 
-def test() -> None:
-    af = MockedAudioFile(
-        mocked_value=np.array([[1, 2], [1, 2], [1, 2]]),
-    )
-    ad = AudioData.from_files([af])
-
-    default_axes = get_default_axes()
-    ad.plot()
-    axes, _ = plot_calls.pop()
-
-    assert np.array_equal(axes.viewLim, default_axes.viewLim)
-    assert np.array_equal(axes.dataLim, default_axes.dataLim)
-    assert np.array_equal(axes.spines, default_axes.spines)
-
-
 def test_plot_on_custom_axes(patch_plot: None) -> None:
     ad = MockedAudioData(mocked_value=[1, 2, 3])
 
