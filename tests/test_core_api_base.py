@@ -838,11 +838,17 @@ def test_base_dataset_data_duration(
 ) -> None:
     files = []
     for data_duration in data_durations:
-        df = DummyFile(path=Path(), begin=Timestamp("1994-09-27 00:00:00"))
+        df = DummyFile(
+            path=Path(),
+            begin=Timestamp("1994-09-27 00:00:00")
+            + Timedelta(seconds=sum(f.duration.total_seconds() for f in files)),
+        )
         df.end = df.begin + data_duration
         files.append(df)
 
-    assert DummyDataset.from_files(files, mode="files").duration == expected_duration
+    assert (
+        DummyDataset.from_files(files, mode="files").data_duration == expected_duration
+    )
 
 
 @pytest.mark.parametrize(
