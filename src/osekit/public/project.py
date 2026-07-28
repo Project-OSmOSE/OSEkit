@@ -512,16 +512,7 @@ class Project:
         self,
         ads: AudioDataset,
     ) -> Path:
-        return (
-            self.folder
-            / self.SUBFOLDERS["data"]
-            / "audio"
-            / (
-                f"{round(ads.data_duration.total_seconds())}_{round(ads.sample_rate)}"
-                if ads.has_default_name
-                else ads.name
-            )
-        )
+        return self.folder / self.SUBFOLDERS["data"] / "audio" / ads.name
 
     def export(
         self,
@@ -663,15 +654,7 @@ class Project:
         self,
         sds: SpectroDataset | LTASDataset,
     ) -> Path:
-        ads_folder = Path(
-            f"{round(sds.data_duration.total_seconds())}_{round(sds.fft.fs)}",
-        )
-        fft_folder = f"{sds.fft.mfft}_{sds.fft.win.shape[0]}_{sds.fft.hop}_linear"
-        return (
-            self.folder
-            / self.SUBFOLDERS["processed"]
-            / (ads_folder / fft_folder if sds.has_default_name else sds.name)
-        )
+        return self.folder / self.SUBFOLDERS["processed"] / sds.name
 
     def _sort_dataset(self, dataset: type[DatasetChild]) -> None:
         if type(dataset) is AudioDataset:
