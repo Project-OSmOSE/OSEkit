@@ -120,15 +120,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
 
     @normalization_values.setter
     def normalization_values(self, value: dict | None) -> None:
-        self._normalization_values = (
-            value
-            if value
-            else {
-                "mean": None,
-                "peak": None,
-                "std": None,
-            }
-        )
+        self._normalization_values = value or {"mean": None, "peak": None, "std": None}
 
     @property
     def butter(self) -> Butterworth:
@@ -669,7 +661,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             instrument=instrument,
             sample_rate=dictionary["sample_rate"],
             normalization=Normalization(dictionary["normalization"]),
-            normalization_values=dictionary["normalization_values"],
+            normalization_values=dictionary.get("normalization_values", None),
             butter=butter,
         )
 
