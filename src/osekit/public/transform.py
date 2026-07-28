@@ -66,6 +66,7 @@ class Transform:
     def __init__(
         self,
         output_type: OutputType,
+        name: str,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         data_duration: Timedelta | None = None,
@@ -74,7 +75,6 @@ class Transform:
         sample_rate: float | None = None,
         normalization: Normalization = Normalization.RAW,
         butter: Butterworth | None = None,
-        name: str | None = None,
         subtype: str | None = None,
         fft: ShortTimeFFT | None = None,
         v_lim: tuple[float, float] | None = None,
@@ -89,6 +89,8 @@ class Transform:
         output_type: OutputType
             The type of transform to run.
             See ``OutputType`` docstring for more info.
+        name: str | None
+            Name of the transform dataset.
         begin: Timestamp | None
             The begin of the transform dataset.
             Defaulted to the begin of the original dataset.
@@ -121,11 +123,6 @@ class Transform:
             The type of normalization to apply to the audio data.
         butter: Butterworth | None
             Butterworth filter to apply to the audio data.
-        name: str | None
-            Name of the transform dataset.
-            Defaulted as the begin timestamp of the transform dataset.
-            If both audio and spectro outputs are selected, the audio
-            transform dataset name will be suffixed with ``"_audio"``.
         subtype: str | None
             Subtype of the written audio files as provided by the soundfile module.
             Defaulted as the default ``16-bit PCM`` for ``wav`` audio files.
