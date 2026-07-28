@@ -797,6 +797,55 @@ def test_base_dataset_from_folder(
 
 
 @pytest.mark.parametrize(
+    ("data_durations", "expected_duration"),
+    [
+        pytest.param(
+            [Timedelta(seconds=10)],
+            Timedelta(seconds=10),
+            id="only_one_data",
+        ),
+        pytest.param(
+            [
+                Timedelta(seconds=10),
+                Timedelta(seconds=10),
+                Timedelta(seconds=10),
+            ],
+            Timedelta(seconds=10),
+            id="all_data_have_the_same_duration",
+        ),
+        pytest.param(
+            [
+                Timedelta(seconds=15),
+                Timedelta(seconds=15),
+                Timedelta(seconds=10),
+            ],
+            Timedelta(seconds=15),
+            id="dataset_duration_is_most_frequent_one",
+        ),
+        pytest.param(
+            [
+                Timedelta(seconds=10),
+                Timedelta(seconds=20),
+                Timedelta(seconds=15),
+            ],
+            Timedelta(seconds=20),
+            id="only_one_of_each_duration_takes_the_longest",
+        ),
+    ],
+)
+def test_base_dataset_data_duration(
+    data_durations: list[Timedelta], expected_duration: Timedelta
+) -> None:
+    files = []
+    for data_duration in data_durations:
+        df = DummyFile(path=Path(), begin=Timestamp("1994-09-27 00:00:00"))
+        df.end = df.begin + data_duration
+        files.append(df)
+
+    assert DummyDataset.from_files(files, mode="files").duration == expected_duration
+
+
+@pytest.mark.parametrize(
     "destination_folder",
     [
         pytest.param(
