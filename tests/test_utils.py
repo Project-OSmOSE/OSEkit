@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from contextlib import nullcontext
+from contextlib import nullcontext, AbstractContextManager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -11,6 +11,7 @@ import pytest
 
 from osekit.core.ltas_dataset import LTASDataset
 from osekit.core.spectro_dataset import SpectroDataset
+from osekit.utils.aplose import APLOSE_COLORS, get_aplose_color
 from osekit.utils.audio import Butterworth, Normalization, normalize
 from osekit.utils.core import (
     file_indexes_per_batch,
@@ -20,7 +21,7 @@ from osekit.utils.core import (
     nb_files_per_batch,
 )
 from osekit.utils.deserialization import deserialize_spectro_or_ltas_dataset
-from osekit.utils.path import is_absolute, move_tree
+from osekit.utils.path import is_absolute, move_tree, ensure_within_base
 
 if TYPE_CHECKING:
     from _pytest.monkeypatch import MonkeyPatch
@@ -132,6 +133,36 @@ def test_move_tree(
 )
 def test_is_absolute(path: str, expected: bool) -> None:
     assert is_absolute(path) == expected
+
+
+@pytest.mark.parametrize(
+    ("path", "base", "expected"),
+    [
+        pytest.param(
+            Path("built/to/spill"),
+            Path(r"built"),
+            nullcontext(Path("built/to/spill").resolve()),
+            id="subfolder_of_base_is_ok",
+        ),
+        pytest.param(
+            Path("built/to/spill"),
+            Path(r"built/to/spill"),
+            nullcontext(Path("built/to/spill").resolve()),
+            id="same_folder_than_base_is_ok",
+        ),
+        pytest.param(
+            Path("built/to/spill"),
+            Path(r"daniel/johnston"),
+            pytest.raises(ValueError, match="escapes the allowed directory"),
+            id="not_in_base_should_raise",
+        ),
+    ],
+)
+def test_ensure_within_base(
+    path: Path, base: Path, expected: AbstractContextManager
+) -> None:
+    with expected as e:
+        assert ensure_within_base(path=path, base=base) == e
 
 
 @pytest.mark.parametrize(
@@ -553,3 +584,13 @@ class DummyDataclass:
 )
 def test_is_empty_dataclass(instance: DummyDataclass, expected: bool) -> None:
     assert is_empty_dataclass(instance=instance) is expected
+
+
+def test_aplose_colors() -> None:
+    color_values = APLOSE_COLORS.values()
+
+    # get_aplose_color should cycle through the colors
+    expected = list(color_values) * 2
+
+    for i, color in enumerate(expected):
+        assert get_aplose_color(i) == color
