@@ -7,6 +7,8 @@ import copy
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, TypeVar
 
+from osekit.utils.timestamp import localize_timestamp
+
 if TYPE_CHECKING:
     from pandas import Timedelta, Timestamp
 
@@ -62,6 +64,23 @@ class Event:
     def __repr__(self) -> str:
         """Overwrite repr."""
         return f"{self.begin} - {self.end}"
+
+    def localize(self, timezone: str | None) -> None:
+        """Localize the event begin and end in a timezone.
+
+        If the event is already tz-aware, it will be converted
+        to the target timezone.
+
+        Parameters
+        ----------
+        timezone: str | None
+            Target timezone
+
+        """
+        # We use the private fields here because we can't compare
+        # naive and aware timestamps in the begin and end setters
+        self._begin = localize_timestamp(timestamp=self._begin, timezone=timezone)
+        self._end = localize_timestamp(timestamp=self._end, timezone=timezone)
 
     def overlaps(self, other: type[Event] | Event) -> bool:
         """Return ``True`` if the other event shares time with the current event.
