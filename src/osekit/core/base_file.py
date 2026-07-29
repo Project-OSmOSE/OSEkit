@@ -45,6 +45,7 @@ class BaseFile(Event, ABC):
         end: Timestamp | None = None,
         strptime_format: str | list[str] | None = None,
         timezone: str | pytz.timezone | None = None,
+        **kwargs: dict,
     ) -> None:
         """Initialize a File object with a path and timestamps.
 
@@ -145,13 +146,15 @@ class BaseFile(Event, ABC):
             The deserialized File object.
 
         """
-        path = serialized["path"]
+        path = serialized.pop("path")
+        begin = strptime_from_text(
+            text=serialized.pop("begin"),
+            datetime_template=TIMESTAMP_FORMATS_EXPORTED_FILES,
+        )
         return cls(
             path=path,
-            begin=strptime_from_text(
-                text=serialized["begin"],
-                datetime_template=TIMESTAMP_FORMATS_EXPORTED_FILES,
-            ),
+            begin=begin,
+            **serialized,
         )
 
     def __hash__(self) -> int:
