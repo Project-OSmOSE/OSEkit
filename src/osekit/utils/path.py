@@ -52,3 +52,52 @@ def is_absolute(path: PathLike | str) -> bool:
         if formatted_path.is_absolute():
             return True
     return False
+
+
+def ensure_within_base(path: Path, base: Path) -> Path:
+    """Ensure that a path resolves to a location contained within a base folder.
+
+    This guards against path traversal / path injection: if ``path`` is built
+    (even partly) from untrusted data (e.g. a value read from a JSON project
+    file, or from another user's dataset), a crafted value such as
+    ``../../../home/other_user/.ssh`` could otherwise make OSEkit read,
+    write, move or delete files outside the folder it is supposed to
+    operate in.
+
+    Parameters
+    ----------
+    path: Path
+        The path to validate. Doesn't need to exist yet (this also covers
+        paths that are about to be created, e.g. before a ``mkdir()``).
+    base: Path
+        The folder that ``path`` is expected to stay within.
+        This is typically the ``Project`` root folder, i.e. the boundary of
+        what the running process is allowed to touch.
+
+    Returns
+    -------
+    Path:
+        The resolved (absolute, symlink-free) version of ``path``.
+
+    Raises
+    ------
+    ValueError:
+        If the resolved ``path`` is not ``base`` itself and not located
+        inside ``base``.
+
+    Examples
+    --------
+    >>> ensure_within_base(Path("/data/project/log"), Path("/data/project"))
+    PosixPath('/data/project/log')
+    >>> ensure_within_base(Path("/data/project/../../etc"), Path("/data/project"))
+    Traceback (most recent call last):
+        ...
+    ValueError: Path '/data/project/../../etc' escapes the allowed directory '/data/project'.
+
+    """  # noqa: E501
+    resolved_path = path.resolve()
+    resolved_base = base.resolve()
+    if resolved_path != resolved_base and resolved_base not in resolved_path.parents:
+        msg = f"Path '{path}' escapes the allowed directory '{base}'."
+        raise ValueError(msg)
+    return resolved_path

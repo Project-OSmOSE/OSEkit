@@ -1425,7 +1425,8 @@ def test_spectro_axis(
 
     monkeypatch.setattr(plt.Axes, "imshow", mock_imshow)
 
-    sd.plot()
+    _, ax = plt.subplots()
+    sd_ax = sd.plot(ax=ax)
 
     assert (plot_kwargs["vmin"], plot_kwargs["vmax"]) == sd.v_lim
     assert plot_kwargs["cmap"] == sd.colormap
@@ -1439,6 +1440,8 @@ def test_spectro_axis(
     assert t2 == sd.end
     assert f1 == sd.fft.f[0]
     assert f2 == sd.fft.f[-1]
+
+    assert sd_ax == ax
 
 
 @pytest.mark.parametrize(

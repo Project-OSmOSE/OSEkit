@@ -133,11 +133,11 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
     @property
     def data(self) -> list[TData]:
         """List of Data contained in this Dataset."""
-        return sorted(self._data, key=lambda d: d.begin)
+        return self._data
 
     @data.setter
     def data(self, data: list[TData]) -> None:
-        self._data = data
+        self._data = sorted(data, key=lambda d: d.begin)
 
     @folder.setter
     def folder(self, folder: Path) -> None:
