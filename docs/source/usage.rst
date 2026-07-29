@@ -28,3 +28,4 @@ The package combines two APIs:
     multiprocessing
     jobs
     aplose
+    multichannel
