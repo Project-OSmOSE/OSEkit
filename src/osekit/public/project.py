@@ -29,7 +29,7 @@ from osekit.utils.core import (
     file_indexes_per_batch,
     get_umask,
 )
-from osekit.utils.path import move_tree
+from osekit.utils.path import move_tree, ensure_within_base
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -234,6 +234,7 @@ class Project:
             return
 
         logs_directory = self.folder / self.SUBFOLDERS["log"]
+        logs_directory = ensure_within_base(path=logs_directory, base=self.folder)
         if not logs_directory.exists():
             logs_directory.mkdir(mode=DPDEFAULT, parents=True)
         self.logger = logging.getLogger("project").getChild(self.folder.name)

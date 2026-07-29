@@ -90,7 +90,7 @@ def normalize_datetime(datetime: tuple[str], template: str) -> tuple[str, str]:
 
 def localize_timestamp(
     timestamp: Timestamp,
-    timezone: str | pytz.timezone,
+    timezone: str | pytz.timezone | None,
 ) -> Timestamp:
     """Localize a timestamp in the given timezone.
 
@@ -98,8 +98,9 @@ def localize_timestamp(
     ----------
     timestamp: pandas.Timestamp
         The timestamp to localize.
-    timezone: str | pytz.timezone
+    timezone: str | pytz.timezone | None
         The timezone in which the timestamp is localized.
+        If None, the output timestamp is naive.
 
     Returns
     -------
@@ -109,7 +110,7 @@ def localize_timestamp(
     to the new timezone.
 
     """
-    if not timestamp.tz:
+    if not timestamp.tz or timezone is None:
         return timestamp.tz_localize(timezone)
 
     if timestamp.utcoffset() != timestamp.tz_convert(timezone).utcoffset():
