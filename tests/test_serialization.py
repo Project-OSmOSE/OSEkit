@@ -249,8 +249,8 @@ def test_audio_data_channels_serialization(monkeypatch: pytest.MonkeyPatch) -> N
         mocked_value=mocked_value,
     )
 
-    def mocked_make_file(path: Path, begin: Timestamp) -> MockedAudioFile:
-        return MockedAudioFile(mocked_value=mocked_value, path=path, begin=begin)
+    def mocked_make_file(**kwargs: dict) -> MockedAudioFile:
+        return MockedAudioFile(mocked_value=mocked_value, **kwargs)
 
     monkeypatch.setattr(AudioData, "_make_file", mocked_make_file)
 
