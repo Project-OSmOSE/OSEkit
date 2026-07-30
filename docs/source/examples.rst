@@ -77,4 +77,5 @@ In the ``docs/source/_static/sample_audio/timestamped`` folder, files are just n
     example_multiple_spectrograms
     example_multiple_spectrograms_id
     example_ltas
+    example_multichannel
     example_aplose_result
