@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import json
 from contextlib import AbstractContextManager, nullcontext
 from copy import deepcopy
 from pathlib import Path
@@ -335,18 +336,6 @@ def test_project_build(
         pytest.param(
             Transform(
                 output_type=OutputType.AUDIO,
-                name=None,
-                begin=None,
-                end=None,
-                data_duration=None,
-                sample_rate=None,
-                subtype="DOUBLE",
-            ),
-            id="same_format_as_original",
-        ),
-        pytest.param(
-            Transform(
-                output_type=OutputType.AUDIO,
                 name="cool",
                 begin=None,
                 end=None,
@@ -427,14 +416,9 @@ def test_reshape(
     if transform.sample_rate is not None:
         expected_ads.sample_rate = transform.sample_rate
 
-    expected_ads_name = (
-        transform.name
-        or f"{expected_ads.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_UNLOCALIZED)}"
-    )
-
     # The new dataset should be added to the outputs property
-    assert expected_ads_name in project.outputs
-    ads = project.get_output(expected_ads_name)
+    assert transform.name in project.outputs
+    ads = project.get_output(transform.name)
     assert ads is not None
     assert type(ads) is AudioDataset
 
@@ -449,17 +433,13 @@ def test_reshape(
     )
 
     # ads folder should match the ads name
-    ads_folder_name = (
-        transform.name
-        or f"{round(ads.data_duration.total_seconds())}_{ads.sample_rate}"
-    )
-    assert ads.folder.name == ads_folder_name
+    assert ads.folder.name == transform.name
 
     # ads should be linked to the new files instead of the originals
     assert all(file not in project.origin_files for file in ads.files)
 
     # ads should be deserializable from the exported JSON file
-    json_file = ads.folder / f"{expected_ads_name}.json"
+    json_file = ads.folder / f"{transform.name}.json"
     assert json_file.exists()
     deserialized_ads = AudioDataset.from_json(json_file)
     assert deserialized_ads == ads
@@ -612,6 +592,7 @@ def test_spectral_transform_error_if_no_provided_fft(output_type: OutputType) ->
     ):
         Transform(
             output_type=OutputType.SPECTROGRAM,
+            name="magnetic_fields",
         )
 
 
@@ -619,13 +600,14 @@ def test_spectral_transform_error_if_no_provided_fft(output_type: OutputType) ->
     ("transform", "expected"),
     [
         pytest.param(
-            Transform(output_type=OutputType.AUDIO),
+            Transform(output_type=OutputType.AUDIO, name="cool"),
             False,
             id="audio_only",
         ),
         pytest.param(
             Transform(
                 output_type=OutputType.SPECTROGRAM,
+                name="cool",
                 fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
             ),
             True,
@@ -634,6 +616,7 @@ def test_spectral_transform_error_if_no_provided_fft(output_type: OutputType) ->
         pytest.param(
             Transform(
                 output_type=OutputType.SPECTRUM,
+                name="cool",
                 fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
             ),
             True,
@@ -642,6 +625,7 @@ def test_spectral_transform_error_if_no_provided_fft(output_type: OutputType) ->
         pytest.param(
             Transform(
                 output_type=OutputType.SPECTRUM | OutputType.SPECTROGRAM,
+                name="cool",
                 fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
             ),
             True,
@@ -652,6 +636,7 @@ def test_spectral_transform_error_if_no_provided_fft(output_type: OutputType) ->
                 output_type=OutputType.SPECTRUM
                 | OutputType.SPECTROGRAM
                 | OutputType.AUDIO,
+                name="cool",
                 fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
             ),
             True,
@@ -670,6 +655,7 @@ def test_transform_constructor_rejects_mismatched_fs() -> None:
     ):
         Transform(
             output_type=OutputType.SPECTROGRAM,
+            name="cool",
             sample_rate=32_000,
             fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
         )
@@ -678,6 +664,7 @@ def test_transform_constructor_rejects_mismatched_fs() -> None:
 def test_transform_rejects_setting_fft_with_wrong_fs() -> None:
     transform = Transform(
         output_type=OutputType.SPECTROGRAM,
+        name="cool",
         sample_rate=48_000,
         fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
     )
@@ -692,6 +679,7 @@ def test_transform_rejects_setting_fft_with_wrong_fs() -> None:
 def test_transform_sample_rate_propagates_to_fft() -> None:
     transform = Transform(
         output_type=OutputType.SPECTROGRAM,
+        name="cool",
         sample_rate=48_000,
         fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
     )
@@ -744,7 +732,7 @@ def test_transform_validate_sample_rate(
     expected: AbstractContextManager,
 ) -> None:
     with expected:
-        Transform(OutputType.AUDIO)._validate_sample_rate(
+        Transform(OutputType.AUDIO, name="cool")._validate_sample_rate(
             sample_rate=sample_rate,
             fft=fft,
         )
@@ -772,7 +760,7 @@ def test_transform_validate_sample_rate(
             None,
             Transform(
                 output_type=OutputType.AUDIO,
-                name=None,
+                name="cool",
                 begin=None,
                 end=None,
                 data_duration=None,
@@ -785,7 +773,7 @@ def test_transform_validate_sample_rate(
                     end=Timestamp("2024-01-01 12:00:05"),
                 ),
             ],
-            id="no_transform_name",
+            id="no_project_instrument",
         ),
         pytest.param(
             Instrument(end_to_end_db=150),
@@ -1095,6 +1083,7 @@ def test_prepare_spectro(
         project.prepare_spectro(
             transform=Transform(
                 output_type=OutputType.SPECTROGRAM,
+                name="cool",
             ),
         )
 
@@ -1225,18 +1214,18 @@ def test_delete_output_dataset(
 
     datasets = [ds1, ds2, ds3, ds4]
 
-    for i, ds in enumerate(datasets):
-        assert ds.name in project.outputs.keys()
+    for ds in datasets:
+        assert ds.name in project.outputs
         assert ds.folder.exists()
 
         project._delete_output(str(ds.name))
 
-        assert ds.name not in project.outputs.keys()
+        assert ds.name not in project.outputs
         assert not ds.folder.exists()
 
         # The JSON should be updated
         new_project = Project.from_json(project.folder / "project.json")
-        assert ds.name not in new_project.outputs.keys()
+        assert ds.name not in new_project.outputs
 
 
 @pytest.mark.parametrize(
@@ -1759,3 +1748,76 @@ def test_deserialize_output_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
     # Getting the dataset again should use the cached dataset
     _ = project.get_output("ltas")
     assert json_calls[0] == 3
+
+
+def test_project_json_update(
+    sample_project: tuple[Project, pytest.fixtures.Subrequest],
+    dummy_export_transform: None,
+    patch_afm_info: None,
+) -> None:
+    project, _ = sample_project
+
+    json_file = project.folder / "project.json"
+
+    # We simulate another job writing in the JSON file without sample_project knowing
+    # about it
+    with json_file.open("r") as f:
+        data = json.load(f)
+
+    data["outputs"]["ghost_transform"] = {
+        "class": "AudioDataset",
+        "transform": "ghost_transform",
+        "json": "data/audio/ghost_transform/ghost_transform.json",
+    }
+
+    with json_file.open("w") as f:
+        json.dump(data, f)
+
+    # Run a transform from the instance that ignores ghost_transform
+    project.run(
+        transform=Transform(
+            output_type=OutputType.AUDIO,
+            name="new_transform",
+        ),
+    )
+
+    with json_file.open("r") as f:
+        data_after = json.load(f)
+
+    assert "ghost_transform" in data_after["outputs"]
+    assert "new_transform" in data_after["outputs"]
+    assert "original" in data_after["outputs"]
+
+
+def test_run_transform_with_same_name_in_different_process(
+    sample_project: tuple[Project, pytest.fixtures.Subrequest],
+    dummy_export_transform: None,
+    patch_afm_info: None,
+) -> None:
+    project, _ = sample_project
+
+    # We simulate another job running a transform in a different process,
+    # without this process knowing about it:
+    # exported file, updated JSONs, but unregistered transforms and outputs fields.
+    transform = Transform(
+        output_type=OutputType.AUDIO | OutputType.SPECTROGRAM,
+        name="part_company",
+        fft=ShortTimeFFT(
+            win=hamming(1024),
+            hop=512,
+            fs=project.origin_dataset.sample_rate,
+        ),
+    )
+    project.run(transform=transform)
+    for output_name in (
+        output.name for output in project.get_output_by_transform_name("part_company")
+    ):
+        del project.outputs[output_name]
+
+    # Running a transform that exports in the already existing folders should raise:
+    with pytest.raises(FileExistsError, match="already exists"):
+        project.run(transform=transform)
+
+    transform.output_type = OutputType.SPECTROGRAM
+    with pytest.raises(FileExistsError, match="already exists"):
+        project.run(transform=transform)
