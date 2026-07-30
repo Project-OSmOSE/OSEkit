@@ -390,7 +390,6 @@ def test_audio_dataset_serialization(
 
     assert str(ads) == str(ads2)
     assert ads.name == ads2.name
-    assert ads.has_default_name == ads2.has_default_name
     assert ads.sample_rate == ads2.sample_rate
     assert ads.begin == ads2.begin
     assert ads.normalization == ads2.normalization
@@ -976,7 +975,6 @@ def test_spectro_dataset_serialization(
     assert sds.name == sds2.name
     assert sds.colormap == sds2.colormap
     assert sds.scale == sds2.scale
-    assert sds.has_default_name == sds2.has_default_name
     assert sds.begin == sds2.begin
     assert all(
         np.array_equal(sd.get_value(), sd2.get_value())
@@ -1034,7 +1032,6 @@ def test_spectro_dataset_serialization(
     assert sds.name == sds4.name
     assert sds.colormap == sds4.colormap
     assert sds.scale == sds4.scale
-    assert sds.has_default_name == sds4.has_default_name
     assert sds.begin == sds4.begin
 
 

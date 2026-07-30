@@ -124,7 +124,8 @@ def serialize_json(path: Path, serialized_dict: dict) -> None:
         Dictionary to be serialized.
 
     """
-    path.parent.mkdir(parents=True, exist_ok=True)
+    if not (parent_folder := path.parent).exists():
+        parent_folder.mkdir(parents=True)
     set_path_reference(
         serialized_dict=serialized_dict,
         root_path=path.parent,

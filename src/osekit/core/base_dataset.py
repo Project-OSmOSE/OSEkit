@@ -50,7 +50,6 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
         """Instantiate a Dataset object from the Data objects."""
         self.data = data
         self._name = name
-        self._has_default_name = name is None
         self._suffix = suffix
         self._folder = folder
 
@@ -100,11 +99,6 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
     @suffix.setter
     def suffix(self, suffix: str | None) -> None:
         self._suffix = suffix
-
-    @property
-    def has_default_name(self) -> bool:
-        """Return ``True`` if the dataset has a default name, ``False`` if it has a given name."""
-        return self._has_default_name
 
     @property
     def begin(self) -> Timestamp:
