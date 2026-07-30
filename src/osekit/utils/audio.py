@@ -125,27 +125,37 @@ def normalize_raw(values: np.ndarray) -> np.ndarray:
 
 def normalize_dc_reject(
     values: np.ndarray,
-    dc_component: float | None = None,
+    dc_component: float | list[float] | None = None,
 ) -> np.ndarray:
     """Reject the DC component of the audio data."""
-    return values - (values.mean() if dc_component is None else dc_component)
+    return values - (values.mean(axis=0) if dc_component is None else dc_component)
 
 
-def normalize_peak(values: np.ndarray, peak: float | None = None) -> np.ndarray:
+def normalize_peak(
+    values: np.ndarray, peak: float | list[float] | None = None
+) -> np.ndarray:
     """Return values normalized so that the peak value is ``1.0``."""
-    divisor = max(abs(values)) if peak is None else peak
-    return values / (divisor if divisor else 1)
+    divisor = abs(values).max(axis=0) if peak is None else peak
+    if np.isscalar(divisor):
+        divisor = divisor or 1
+    else:
+        divisor[divisor == 0] = 1
+    return values / divisor
 
 
 def normalize_zscore(
     values: np.ndarray,
-    mean: float | None = None,
-    std: float | None = None,
+    mean: float | list[float] | None = None,
+    std: float | list[float] | None = None,
 ) -> np.ndarray:
     """Return normalized zscore from the audio data."""
-    mean = values.mean() if mean is None else mean
-    std = values.std() if std is None else std
-    return (values - mean) / (std if std else 1)
+    mean = values.mean(axis=0) if mean is None else mean
+    std = values.std(axis=0) if std is None else std
+    if np.isscalar(std):
+        std = std or 1
+    else:
+        std[std == 0] = 1
+    return (values - mean) / std
 
 
 class NormalizationValider(enum.EnumMeta):
@@ -194,9 +204,9 @@ class Normalization(enum.Flag, metaclass=NormalizationValider):
 def normalize(
     values: np.ndarray,
     normalization: Normalization,
-    mean: float | None = None,
-    peak: float | None = None,
-    std: float | None = None,
+    mean: float | list[float] | None = None,
+    peak: float | list[float] | None = None,
+    std: float | list[float] | None = None,
 ) -> np.ndarray:
     """Normalize the audio data."""
     if Normalization.DC_REJECT in normalization:
