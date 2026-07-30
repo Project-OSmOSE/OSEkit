@@ -834,7 +834,7 @@ class Project:
                     if isinstance(dataset["dataset"], Path)
                     else str(dataset["dataset"].folder / f"{name}.json"),
                 }
-                for name, dataset in self.outputs.items()
+                for name, dataset in sorted(self.outputs.items(), key=lambda kv: kv[0])
             },
             "instrument": (
                 None if self.instrument is None else self.instrument.to_dict()
