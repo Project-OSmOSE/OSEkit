@@ -122,15 +122,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
 
     @normalization_values.setter
     def normalization_values(self, value: dict | None) -> None:
-        self._normalization_values = (
-            value
-            if value
-            else {
-                "mean": None,
-                "peak": None,
-                "std": None,
-            }
-        )
+        self._normalization_values = value or {"mean": None, "peak": None, "std": None}
 
     @property
     def butter(self) -> Butterworth:
@@ -182,15 +174,13 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         return AudioItem(file=file, begin=begin, end=end)
 
     @classmethod
-    def _make_file(cls, path: Path, begin: Timestamp) -> AudioFile:
+    def _make_file(cls, file_dict: dict) -> AudioFile:
         """Make an ``AudioFile`` from a path and a begin timestamp.
 
         Parameters
         ----------
-        path: Path
-            Path to the file.
-        begin: Timestamp
-            Begin of the file.
+        file_dict: dict
+            Serialized AudioFile.
 
         Returns
         -------
@@ -198,7 +188,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         The ``AudioFile`` instance.
 
         """
-        return AudioFile(path=path, begin=begin)
+        return AudioFile.from_dict(serialized=file_dict)
 
     def get_normalization_values(self) -> dict:
         """Return the values used for normalizing the audio data.
@@ -694,7 +684,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             instrument=instrument,
             sample_rate=dictionary["sample_rate"],
             normalization=Normalization(dictionary["normalization"]),
-            normalization_values=dictionary["normalization_values"],
+            normalization_values=dictionary.get("normalization_values", None),
             butter=butter,
             channels=dictionary.get("channels", None),
         )

@@ -2336,7 +2336,17 @@ def test_dummydata_make_file() -> None:
         ),
     ]
     dd = DummyData.from_files(dfs)
-    assert dd._make_file(Path("foo"), begin=Timestamp("2020-01-01 00:00:00")) == dfs[0]
+    assert (
+        dd._make_file(
+            {
+                "path": "foo",
+                "begin": Timestamp("2020-01-01 00:00:00").strftime(
+                    TIMESTAMP_FORMATS_EXPORTED_FILES[0]
+                ),
+            }
+        )
+        == dfs[0]
+    )
 
 
 def test_dummydata_from_base_dict() -> None:
