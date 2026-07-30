@@ -2307,17 +2307,20 @@ def test_butter_audiodataset() -> None:
     assert ads.butter == butter2
 
 
-plot_calls = []
+plot_calls_args = []
+plot_calls_kwargs = []
 
 
 @pytest.fixture(autouse=False)
 def patch_plot(monkeypatch: pytest.MonkeyPatch) -> Generator[None, Any, None]:
     def mock_plot(self: Axes, *args: Any, **kwargs: Any) -> None:
-        plot_calls.append((self, kwargs))
+        plot_calls_args.append((self, args))
+        plot_calls_kwargs.append((self, kwargs))
 
     monkeypatch.setattr(plt.Axes, "plot", mock_plot)
     yield
-    plot_calls.clear()
+    plot_calls_args.clear()
+    plot_calls_kwargs.clear()
 
 
 def test_plot_on_default_axes(patch_plot: None) -> None:
@@ -2325,7 +2328,7 @@ def test_plot_on_default_axes(patch_plot: None) -> None:
 
     default_axes = get_default_axes()
     ad.plot()
-    axes, _ = plot_calls.pop()
+    axes, _ = plot_calls_kwargs.pop()
 
     assert np.array_equal(axes.viewLim, default_axes.viewLim)
     assert np.array_equal(axes.dataLim, default_axes.dataLim)
@@ -2339,9 +2342,9 @@ def test_plot_multichannel_audio_data(patch_plot: None) -> None:
     ad: AudioData = AudioData.from_files([af])
 
     ad.plot()
-    assert len(plot_calls) == af.channels
-    for idx, entry in enumerate(plot_calls):
-        values = entry[1]["y"]
+    assert len(plot_calls_kwargs) == af.channels
+    for idx, entry in enumerate(plot_calls_args):
+        values = entry[1][1]
         assert np.array_equal(values, ad.get_value()[:, idx])
 
 
@@ -2373,7 +2376,7 @@ def test_plot_on_custom_axes(patch_plot: None) -> None:
 
     _, custom_axes = plt.subplots()
     ad.plot(ax=custom_axes)
-    used_axes, _ = plot_calls.pop()
+    used_axes, _ = plot_calls_kwargs.pop()
 
     assert custom_axes is used_axes
 
@@ -2382,7 +2385,7 @@ def test_plot_with_kwargs(patch_plot: None) -> None:
     ad = MockedAudioData(mocked_value=[1, 2, 3])
 
     ad.plot(None, None, velvet="underground", sweet="jane")
-    _, kwargs = plot_calls.pop()
+    _, kwargs = plot_calls_kwargs.pop()
     assert np.array_equal(kwargs, {"velvet": "underground", "sweet": "jane"})
 
 
@@ -2405,7 +2408,7 @@ def test_plot_with_value(patch_plot: None, monkeypatch: pytest.Monke) -> None:
     assert get_value_calls[0] == 1
 
     ad.plot(values=vs, the="voidz")
-    _, kwargs = plot_calls.pop()
+    _, kwargs = plot_calls_kwargs.pop()
 
     # Values are provided and shouldn't be fetched again
     assert get_value_calls[0] == 1
