@@ -212,6 +212,22 @@ class Transform:
         sample_rate: float | None,
         fft: ShortTimeFFT | None,
     ) -> None:
+        """Check that the sample rates of the transform and of the fft are valid.
+
+        Parameters
+        ----------
+        sample_rate: float | int | None
+            Sample rate of the transform.
+        fft: ShortTimeFFT | None
+            FFT to use for computing the spectrogram.
+
+        Returns
+        -------
+        ``True`` if only one sample rate is provided (directly through ``sample_rate`` or
+        through that of the fft) or if ``fft.fs == sample_rate``.
+        ``False`` otherwise.
+
+        """
         if sample_rate is None:
             return
         if fft is None:
