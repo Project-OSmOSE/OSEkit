@@ -1009,7 +1009,7 @@ def test_prepare_audio(
     indirect=["sample_project"],
 )
 @pytest.mark.parametrize(
-    ("transform", "expected_data"),
+    ("transform", "expected_data", "expected_error"),
     [
         pytest.param(
             Transform(
@@ -1038,6 +1038,7 @@ def test_prepare_audio(
                     end=Timestamp("2024-01-01 12:00:04"),
                 ),
             ],
+            nullcontext(),
             id="full_transform",
         ),
     ],
@@ -1046,10 +1047,12 @@ def test_prepare_spectro(
     sample_project: tuple[Project, pytest.fixtures.Subrequest],
     transform: Transform,
     expected_data: list[Event],
+    expected_error: AbstractContextManager,
 ) -> None:
     project, _ = sample_project
 
-    transform_sds = project.prepare_spectro(transform=transform)
+    with expected_error:
+        transform_sds = project.prepare_spectro(transform=transform)
 
     assert all(
         ad.begin == e.begin and ad.end == e.end
