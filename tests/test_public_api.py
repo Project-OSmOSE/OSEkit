@@ -1041,6 +1041,20 @@ def test_prepare_audio(
             nullcontext(),
             id="full_transform",
         ),
+        pytest.param(
+            Transform(
+                output_type=OutputType.SPECTROGRAM,
+                name="default_sr_different_from_fft_sr",
+                fft=ShortTimeFFT(win=hamming(1024), hop=512, fs=24_000),
+            ),
+            [],
+            pytest.raises(
+                ValueError,
+                match=r"sample rate of the transform (.* Hz) does not match"
+                r"the sampling frequency of the fft",
+            ),
+            id="transform_sr_mismatch_should_raise",
+        ),
     ],
 )
 def test_prepare_spectro(
