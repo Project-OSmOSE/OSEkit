@@ -148,7 +148,7 @@ class Transform:
             representing the maximum number of averaged time bins.
 
         """
-        self._validate_sample_rate(sample_rate=sample_rate, fft=fft)
+        self.validate_sample_rate(sample_rate=sample_rate, fft=fft)
 
         self.output_type = output_type
         self.begin = begin
@@ -204,11 +204,11 @@ class Transform:
     def fft(self, value: ShortTimeFFT | None) -> None:
         """Set the FFT used in the transform."""
         if hasattr(self, "_sample_rate"):
-            self._validate_sample_rate(sample_rate=self.sample_rate, fft=value)
+            self.validate_sample_rate(sample_rate=self.sample_rate, fft=value)
         self._fft = value
 
     @staticmethod
-    def _validate_sample_rate(
+    def validate_sample_rate(
         sample_rate: float | None,
         fft: ShortTimeFFT | None,
     ) -> None:

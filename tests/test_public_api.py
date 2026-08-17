@@ -732,7 +732,7 @@ def test_transform_validate_sample_rate(
     expected: AbstractContextManager,
 ) -> None:
     with expected:
-        Transform(OutputType.AUDIO, name="cool")._validate_sample_rate(
+        Transform(OutputType.AUDIO, name="cool").validate_sample_rate(
             sample_rate=sample_rate,
             fft=fft,
         )
@@ -1050,8 +1050,7 @@ def test_prepare_audio(
             [],
             pytest.raises(
                 ValueError,
-                match=r"sample rate of the transform (.* Hz) does not match"
-                r"the sampling frequency of the fft",
+                match=r"does not match the sampling frequency",
             ),
             id="transform_sr_mismatch_should_raise",
         ),
@@ -1067,6 +1066,9 @@ def test_prepare_spectro(
 
     with expected_error:
         transform_sds = project.prepare_spectro(transform=transform)
+
+    if type(expected_error) is not nullcontext:
+        return
 
     assert all(
         ad.begin == e.begin and ad.end == e.end
