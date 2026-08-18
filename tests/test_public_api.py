@@ -732,7 +732,7 @@ def test_transform_validate_sample_rate(
     expected: AbstractContextManager,
 ) -> None:
     with expected:
-        Transform(OutputType.AUDIO, name="cool")._validate_sample_rate(
+        Transform(OutputType.AUDIO, name="cool").validate_sample_rate(
             sample_rate=sample_rate,
             fft=fft,
         )
@@ -1009,7 +1009,7 @@ def test_prepare_audio(
     indirect=["sample_project"],
 )
 @pytest.mark.parametrize(
-    ("transform", "expected_data"),
+    ("transform", "expected_data", "expected_error"),
     [
         pytest.param(
             Transform(
@@ -1038,7 +1038,21 @@ def test_prepare_audio(
                     end=Timestamp("2024-01-01 12:00:04"),
                 ),
             ],
+            nullcontext(),
             id="full_transform",
+        ),
+        pytest.param(
+            Transform(
+                output_type=OutputType.SPECTROGRAM,
+                name="default_sr_different_from_fft_sr",
+                fft=ShortTimeFFT(win=hamming(1024), hop=512, fs=24_000),
+            ),
+            [],
+            pytest.raises(
+                ValueError,
+                match=r"does not match the sampling frequency",
+            ),
+            id="transform_sr_mismatch_should_raise",
         ),
     ],
 )
@@ -1046,10 +1060,15 @@ def test_prepare_spectro(
     sample_project: tuple[Project, pytest.fixtures.Subrequest],
     transform: Transform,
     expected_data: list[Event],
+    expected_error: AbstractContextManager,
 ) -> None:
     project, _ = sample_project
 
-    transform_sds = project.prepare_spectro(transform=transform)
+    with expected_error:
+        transform_sds = project.prepare_spectro(transform=transform)
+
+    if type(expected_error) is not nullcontext:
+        return
 
     assert all(
         ad.begin == e.begin and ad.end == e.end

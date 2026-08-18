@@ -369,6 +369,11 @@ class Project:
             else audio_dataset
         )
 
+        transform.validate_sample_rate(
+            sample_rate=ads.sample_rate,
+            fft=transform.fft,
+        )
+
         sds = SpectroDataset.from_audio_dataset(
             audio_dataset=ads,
             fft=transform.fft,
