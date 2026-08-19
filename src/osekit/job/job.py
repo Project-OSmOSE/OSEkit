@@ -7,9 +7,8 @@ the transforms will run through jobs, with writting/submitting of ``pbs`` files.
 
 from __future__ import annotations
 
-import subprocess
 from enum import Enum
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from pandas import Timedelta
 
@@ -73,7 +72,6 @@ class Job:
         self.mem = config.mem
         self.walltime = config.walltime
         self.venv_name = config.venv_name
-        self.queue = config.queue
         self.name = name
         self.output_folder = output_folder
         self._status = JobStatus.UNPREPARED
@@ -118,7 +116,7 @@ class Job:
         self._ncpus = ncpus
 
     @property
-    def ngpus(self) -> int:
+    def ngpus(self) -> int | None:
         """Number of total GPU used per node."""
         return self._ngpus
 
@@ -162,20 +160,6 @@ class Job:
     @venv_name.setter
     def venv_name(self, venv_name: str) -> None:
         self._venv_name = venv_name
-
-    @property
-    def venv_activate_script(self) -> str:
-        """Bash script used for activating the conda virtual environment."""
-        return f". /appli/anaconda/latest/etc/profile.d/conda.sh; conda activate {self.venv_name}"
-
-    @property
-    def queue(self) -> Literal["omp", "mpi"]:
-        """Queue in which the job will be submitted."""
-        return self._queue
-
-    @queue.setter
-    def queue(self, queue: Literal["omp", "mpi"]) -> None:
-        self._queue = queue
 
     @property
     def name(self) -> str:
@@ -222,17 +206,17 @@ class Job:
         self._output_folder = output_folder
 
     @property
-    def job_id(self) -> str:
+    def job_id(self) -> str | None:
         """Job ID."""
         return self._id
 
     @job_id.setter
-    def job_id(self, job_id: str) -> None:
+    def job_id(self, job_id: str | None) -> None:
         self._id = job_id
 
     @property
     def job_info(self) -> dict | None:
-        """Information about the job as returned by a qstat request."""
+        """Information about the job."""
         return self._info
 
     @job_info.setter
@@ -245,7 +229,7 @@ class Job:
             return
         self._status = JobStatus(self._status.value + 1)
 
-    def _build_arg_string(self) -> str:
+    def get_arg_string(self) -> str:
         """Build a string representation of the job's arguments."""
         arg_list = []
         for key, value in self.script_args.items():
@@ -254,232 +238,3 @@ class Job:
             else:
                 arg_list.append(f"--{key} {value}")
         return " ".join(arg_list)
-
-    def write_pbs(self, path: Path) -> None:
-        """Write a ``pbs`` file matching the job.
-
-        Parameters
-        ----------
-        path: Path
-            Path of the ``pbs`` file to write.
-
-        """
-        preamble = "#!/bin/bash"
-
-        select_parts = {
-            "select": self.nb_nodes,
-            "ncpus": self.ncpus,
-            "mem": self.mem,
-        }
-        if self.ngpus is not None:
-            select_parts["ngpus"] = self.ngpus
-        select_str = ":".join(f"{k}={v}" for k, v in select_parts.items())
-
-        request = {
-            "-N": self.name,
-            "-q": self.queue,
-            "-l": [
-                select_str,
-                f"walltime={self.walltime_str}",
-            ],
-            "-o": f"{self.output_folder}/{self.name}.out"
-            if self.output_folder
-            else None,
-            "-e": f"{self.output_folder}/{self.name}.err"
-            if self.output_folder
-            else None,
-        }
-        request_str = "\n".join(
-            f"#PBS {key} {value}"
-            if type(value) is not list
-            else "\n".join(f"#PBS {key} {value_part}" for value_part in value)
-            for key, value in request.items()
-            if value
-        )
-
-        script = f"python {self.script_path} {self._build_arg_string()}"
-
-        pbs = f"{preamble}\n{request_str}\n{self.venv_activate_script}\n{script}"
-        with path.open("w") as file:
-            file.write(pbs)
-
-        self.path = path
-        self.progress()
-
-    def submit_pbs(
-        self,
-        dependency: Job | list[Job] | str | list[str] | None = None,
-    ) -> None:
-        """Submit the ``pbs`` file of the job to a ``pbs`` queueing system.
-
-        Parameters
-        ----------
-        dependency: Job | list[Job] | str | None
-            Job dependency. Can be:
-            - A ``Job`` instance: will wait for that job to complete successfully
-            - A ``list[Job]``: will wait for all jobs to complete successfully
-            - A ``str``: job ID (e.g., ``"12345.datarmor"``) or dependency specification
-            - ``None``: no dependency
-
-        """
-        if self.update_status() is not JobStatus.PREPARED:
-            msg = "Job should be written before being submitted."
-            raise ValueError(msg)
-
-        cmd = ["qsub"]
-
-        if dependency is not None:
-            dependency_str = self._build_dependency_string(dependency)
-            if dependency_str:
-                cmd.extend(["-W", f"depend={dependency_str}"])
-
-        cmd.append(str(self.path))
-
-        try:
-            request = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-        except subprocess.CalledProcessError as e:
-            msg = f"Submission failed with exit code {e.returncode}"
-            raise RuntimeError(msg) from e
-
-        self.job_id = request.stdout.split(".", maxsplit=1)[0].strip()
-        self.update_status()
-
-    _VALID_DEPENDENCY_TYPES = {"afterok", "afterany", "afternotok", "after"}
-
-    @staticmethod
-    def _validate_dependency_type(dependency_type: str) -> None:
-        if dependency_type not in Job._VALID_DEPENDENCY_TYPES:
-            msg = (
-                f"Unsupported dependency type '{dependency_type}'. "
-                f"Expected one of {sorted(Job._VALID_DEPENDENCY_TYPES)}."
-            )
-            raise ValueError(msg)
-
-    @staticmethod
-    def _validate_dependency(dependency: list[str] | list[Job]) -> list[str]:
-        job_ids = [dep.job_id if isinstance(dep, Job) else dep for dep in dependency]
-        job_id_length = 7
-        for job_id in job_ids:
-            if not job_id.isdigit() or len(job_id) != job_id_length:
-                msg = (
-                    f"Invalid job ID '{job_id}'. "
-                    f"Job IDs must be {job_id_length} digits long."
-                )
-                raise ValueError(msg)
-        return job_ids
-
-    @staticmethod
-    def _build_dependency_string(
-        dependency: str | Job | list[str] | list[Job],
-        dependency_type: str = "afterok",
-    ) -> str:
-        """Build a PBS dependency string.
-
-        Parameters
-        ----------
-        dependency: Job | str
-            ``Job`` or job ID to depend on.
-        dependency_type: str
-            Type of dependency (``afterok``, ``afterany``, ``afternotok``, ``after``).
-
-        Returns
-        -------
-        str
-            PBS dependency string.
-
-        Examples
-        --------
-        >>> Job._build_dependency_string("1234567")
-        'afterok:1234567'
-        >>> Job._build_dependency_string(["1234567", "4567891"])
-        'afterok:1234567:4567891'
-        >>> Job._build_dependency_string("7894561", dependency_type="afterany")
-        'afterany:7894651'
-
-        """
-        dependency = dependency if isinstance(dependency, list) else [dependency]
-        id_str = Job._validate_dependency(dependency)
-        Job._validate_dependency_type(dependency_type)
-
-        if unsubmitted_job := next(
-            (
-                j
-                for j in dependency
-                if isinstance(j, Job) and j.status.value < JobStatus.QUEUED.value
-            ),
-            None,
-        ):
-            msg = f"Job '{unsubmitted_job.name}' has not been submitted yet."
-            raise ValueError(msg)
-
-        return f"{dependency_type}:{':'.join(id_str)}"
-
-    def update_info(self) -> None:
-        """Request info about the job and update it."""
-        if self.job_id is None:
-            return
-
-        try:
-            request = subprocess.run(
-                ["qstat", "-f", self.job_id],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            stdout = request.stdout
-        except subprocess.CalledProcessError as e:
-            msg = f"Qstat failed with exit code {e.returncode}"
-            raise RuntimeError(msg) from e
-
-        if not stdout:
-            err = request.stderr
-            if "Job has finished" in err:
-                self.status = JobStatus.COMPLETED
-                self.job_info["job_state"] = "C"
-            if "Unknown Job Id" in err:
-                msg = f"Unknown Job Id {self.job_id}"
-                raise ValueError(msg)
-            return
-
-        info = {}
-        for line in stdout.splitlines():
-            if "=" not in line:
-                continue
-            key, value = line.split("=", 1)
-            info[key.strip()] = value.strip()
-        self.job_info = info
-
-    def update_status(self) -> JobStatus:
-        """Request info about the job and update its status.
-
-        Returns
-        -------
-        JobStatus:
-            The updated status of the job.
-
-        """
-        if self.job_id is None:
-            self.status = (
-                JobStatus.PREPARED
-                if self.path and self.path.exists()
-                else JobStatus.UNPREPARED
-            )
-            return self.status
-
-        self.update_info()
-
-        if self.status == JobStatus.COMPLETED:
-            return self.status
-
-        job_state = {
-            "Q": JobStatus.QUEUED,
-            "R": JobStatus.RUNNING,
-        }
-        if self.job_info["job_state"] in job_state:
-            self.status = job_state[self.job_info["job_state"]]
-        return self.status

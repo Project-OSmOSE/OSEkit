@@ -98,7 +98,7 @@ def script_arguments() -> dict:
 def test_specified_arguments(script_arguments: dict) -> None:
     parser = create_parser()
 
-    parsed_str = Job(Path(), script_arguments)._build_arg_string()
+    parsed_str = Job(Path(), script_arguments).get_arg_string()
 
     args = parser.parse_args(shlex.split(parsed_str))
 

@@ -1,13 +1,12 @@
-from abc import ABC, abstractmethod
 from pathlib import Path
 
-from osekit.job.job import Job
+from osekit.job.job import Job, JobStatus
+from osekit.job.scheduler.scheduler import Scheduler
 
 
-class Scheduler(ABC):
+class Slurm(Scheduler):
     """Abstract class representing a job scheduler."""
 
-    @abstractmethod
     def write(self, job: Job, path: Path) -> None:
         """Write a job script to file.
 
@@ -19,9 +18,8 @@ class Scheduler(ABC):
             Path of the file in which the job script is written.
 
         """
-        ...
+        pass
 
-    @abstractmethod
     def submit(
         self, job: Job, dependency: Job | list[Job] | str | list[str] | None = None
     ) -> None:
@@ -39,14 +37,13 @@ class Scheduler(ABC):
             - ``None``: no dependency
 
         """
+        pass
 
-    @abstractmethod
     def update_info(self, job: Job) -> None:
         """Request info about the job and update it."""
-        ...
+        pass
 
-    @abstractmethod
-    def update_status(self, job: Job) -> None:
+    def update_status(self, job: Job) -> JobStatus:
         """Request info about the job and update its status.
 
         Returns
@@ -55,3 +52,4 @@ class Scheduler(ABC):
             The updated status of the job.
 
         """
+        pass

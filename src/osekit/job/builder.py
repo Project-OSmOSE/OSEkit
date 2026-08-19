@@ -2,6 +2,8 @@ from pathlib import Path
 
 from osekit.job.config import JobConfig
 from osekit.job.job import Job, JobStatus
+from osekit.job.scheduler.pbs import Pbs
+from osekit.job.scheduler.scheduler import Scheduler
 
 
 class JobBuilder:
@@ -11,16 +13,21 @@ class JobBuilder:
 
     """
 
-    def __init__(self, config: JobConfig = JobConfig) -> None:
+    def __init__(
+        self, config: JobConfig | None = None, scheduler: Scheduler | None = None
+    ) -> None:
         """Initialize a ``JobBuilder`` instance.
 
         Parameters
         ----------
         config: JobConfig
             Config of the jobs built by this job builder.
+        scheduler: Scheduler
+            Scheduler used to format, write and submit jobs.
 
         """
-        self.config = config
+        self.config = config or JobConfig()
+        self.scheduler = scheduler or Pbs()
         self.jobs = []
 
     def create_job(
@@ -51,14 +58,16 @@ class JobBuilder:
             output_folder=output_folder,
             config=self.config,
         )
-        job.write_pbs(output_folder / f"{name}.pbs")
+        self.scheduler.write(
+            job=job, path=output_folder / f"{name}.{self.scheduler.JOB_FILE_EXTENSION}"
+        )
         self.jobs.append(job)
 
-    def submit_pbs(
+    def submit(
         self,
         dependencies: dict[str, Job | list[Job]] | None = None,
     ) -> None:
-        """Submit all prepared jobs to the ``pbs`` queueing system.
+        """Submit all prepared jobs to the scheduler system.
 
         Parameters
         ----------
@@ -68,7 +77,7 @@ class JobBuilder:
 
         """
         for job in self.jobs:
-            if job.update_status() is not JobStatus.PREPARED:
+            if self.scheduler.update_status(job=job) is not JobStatus.PREPARED:
                 continue
 
             # Check if this job has dependencies
@@ -76,4 +85,4 @@ class JobBuilder:
             if dependencies and job.name in dependencies:
                 depend_on = dependencies[job.name]
 
-            job.submit_pbs(dependency=depend_on)
+            self.scheduler.submit(job=job, dependency=depend_on)

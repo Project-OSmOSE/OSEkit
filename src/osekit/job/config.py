@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Literal
 
 from pandas import Timedelta
 
@@ -22,8 +21,6 @@ class JobConfig:
         Maximum amount of real time during which the job can be running.
     venv_name: str
         Name (or path) of the conda virtual environment in which the job is running.
-    queue: Literal["omp", "mpi"]
-        Queue in which the job will be submitted.
 
     """
 
@@ -33,4 +30,3 @@ class JobConfig:
     mem: str = "8gb"
     walltime: str | Timedelta = "01:00:00"
     venv_name: str = "osekit"
-    queue: Literal["omp", "mpi"] = "omp"
