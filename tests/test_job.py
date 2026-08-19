@@ -8,8 +8,8 @@ import numpy as np
 import pytest
 from pandas import Timedelta
 
-import osekit.utils.job as job_module
-from osekit.utils.job import Job, JobBuilder, JobConfig, JobStatus
+import osekit.job.job as job_module
+from osekit.job.job import Job, JobBuilder, JobConfig, JobStatus
 
 
 @pytest.mark.parametrize(

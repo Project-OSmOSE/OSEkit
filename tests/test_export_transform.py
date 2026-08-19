@@ -10,7 +10,7 @@ from osekit import config
 from osekit.core.audio_dataset import AudioDataset
 from osekit.public import export_transform
 from osekit.public.export_transform import create_parser
-from osekit.utils.job import Job
+from osekit.job.job import Job
 
 
 def test_parser_factory() -> None:

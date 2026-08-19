@@ -7,17 +7,17 @@ through the PBS queuing system.
 This feature has mainly be thought for the Public API, but it can nonetheless be used for
 any Core API operation.
 
-The job module is located at :mod:`osekit.utils.job`.
+The job module is located at :mod:`osekit.job.job`.
 
 Public API
 ^^^^^^^^^^
 
-Running Public API Analyses through PBS jobs only requires adding a :class:`osekit.utils.job.JobBuilder`
+Running Public API Analyses through PBS jobs only requires adding a :class:`osekit.job.job.JobBuilder`
 instance to the :attr:`osekit.public.project.Project.job_builder` attribute:
 
 .. code-block:: python
 
-    from osekit.utils.job import JobConfig, JobBuilder
+    from osekit.job.job import JobConfig, JobBuilder
     from osekit.public.project import Project
 
     project = Project(...) # See the Project documentation
@@ -46,7 +46,7 @@ instance to the :attr:`osekit.public.project.Project.job_builder` attribute:
 Core API
 ^^^^^^^^
 
-Exporting Core API datasets with jobs is doable by explicitly instantiating a :class:`osekit.utils.job.Job` object.
+Exporting Core API datasets with jobs is doable by explicitly instantiating a :class:`osekit.job.job.Job` object.
 
 The export parameters are specified in the ``script_args`` parameter of the ``Job`` constructor,
 and follow the console arguments of the :mod:`osekit.public.export` script.
@@ -64,7 +64,7 @@ and follow the console arguments of the :mod:`osekit.public.export` script.
 
     # Some Public API imports are required
     from osekit.public.transform import OutputType
-    from osekit.utils.job import Job, JobConfig
+    from osekit.job.job import Job, JobConfig
 
     ads = AudioDataset(...)  # See the AudioDataset doc
     sds = SpectroDataset(...)  # See the SpectroDataset doc

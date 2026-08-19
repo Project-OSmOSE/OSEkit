@@ -3,5 +3,5 @@
 Job
 ---
 
-.. automodule:: osekit.utils.job
+.. automodule:: osekit.job.job
     :members: JobConfig, JobBuilder, Job
