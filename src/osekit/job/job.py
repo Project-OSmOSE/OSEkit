@@ -8,12 +8,12 @@ the transforms will run through jobs, with writting/submitting of ``pbs`` files.
 from __future__ import annotations
 
 import subprocess
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Literal
 
 from pandas import Timedelta
+
+from osekit.job.config import JobConfig
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -35,38 +35,6 @@ class JobStatus(Enum):
     QUEUED = 3
     RUNNING = 4
     COMPLETED = 5
-
-
-@dataclass
-class JobConfig:
-    """Config used for creating a job.
-
-    Parameters
-    ----------
-    nb_nodes: int
-        Number of nodes on which the job runs.
-    ncpus: int
-        Number of total cores used per node.
-    ngpus: int | None
-        Number of total GPU used per node.
-    mem: str
-        Maximum amount of physical memory used by the job.
-    walltime: str | Timedelta
-        Maximum amount of real time during which the job can be running.
-    venv_name: str
-        Name (or path) of the conda virtual environment in which the job is running.
-    queue: Literal["omp", "mpi"]
-        Queue in which the job will be submitted.
-
-    """
-
-    nb_nodes: int = 1
-    ncpus: int = 2
-    ngpus: int | None = None
-    mem: str = "8gb"
-    walltime: str | Timedelta = "01:00:00"
-    venv_name: str = "osekit"
-    queue: Literal["omp", "mpi"] = "omp"
 
 
 class Job:
@@ -515,131 +483,3 @@ class Job:
         if self.job_info["job_state"] in job_state:
             self.status = job_state[self.job_info["job_state"]]
         return self.status
-
-
-class JobBuilder:
-    """Class that should be attached to a Public API ``Project`` for working with jobs.
-
-    If a ``Project`` has a ``JobBuilder``, it will use it to run transforms through jobs.
-
-    """
-
-    def __init__(self, config: JobConfig = JobConfig) -> None:
-        """Initialize a ``JobBuilder`` instance.
-
-        Parameters
-        ----------
-        config: JobConfig
-            Config of the jobs built by this job builder.
-
-        """
-        self.config = config
-        self.jobs = []
-
-    def create_job(
-        self,
-        script_path: Path,
-        script_args: dict | None = None,
-        name: str = "osekit_transform",
-        output_folder: Path | None = None,
-    ) -> None:
-        """Create a new ``Job`` instance.
-
-        Parameters
-        ----------
-        script_path: Path
-            Path to the script file the job must run.
-        script_args: dict | None
-            Additional arguments to pass to the script file.
-        name: str
-            Name of the job.
-        output_folder: Path | None
-            Folder in which the output files (``.out`` and ``.err``) will be written.
-
-        """
-        job = Job(
-            script_path=script_path,
-            script_args=script_args,
-            name=name,
-            output_folder=output_folder,
-            config=self.config,
-        )
-        job.write_pbs(output_folder / f"{name}.pbs")
-        self.jobs.append(job)
-
-    def submit_pbs(
-        self,
-        dependencies: dict[str, Job | list[Job]] | None = None,
-    ) -> None:
-        """Submit all prepared jobs to the ``pbs`` queueing system.
-
-        Parameters
-        ----------
-        dependencies: dict[str, Job | list[Job]] | None
-            Optional dictionary mapping job names to their dependencies.
-            Example: ``{"job2": job1, "job3": [job1, job2]}``
-
-        """
-        for job in self.jobs:
-            if job.update_status() is not JobStatus.PREPARED:
-                continue
-
-            # Check if this job has dependencies
-            depend_on = None
-            if dependencies and job.name in dependencies:
-                depend_on = dependencies[job.name]
-
-            job.submit_pbs(dependency=depend_on)
-
-
-class Scheduler(ABC):
-    """Abstract class representing a job scheduler."""
-
-    @abstractmethod
-    def write(self, job: Job, path: Path) -> None:
-        """Write a job script to file.
-
-        Parameters
-        ----------
-        job: Job
-            Job of which to write the script.
-        path: Path
-            Path of the file in which the job script is written.
-
-        """
-        ...
-
-    @abstractmethod
-    def submit(
-        self, job: Job, dependency: Job | list[Job] | str | list[str] | None = None
-    ) -> None:
-        """Submit the job to the scheduler.
-
-        Parameters
-        ----------
-        job: Job
-            Job to submit to the scheduler.
-        dependency: Job | list[Job] | str | None
-            Job dependency. Can be:
-            - A ``Job`` instance: will wait for that job to complete successfully
-            - A ``list[Job]``: will wait for all jobs to complete successfully
-            - A ``str``: job ID (e.g., ``"12345.datarmor"``) or dependency specification
-            - ``None``: no dependency
-
-        """
-
-    @abstractmethod
-    def update_info(self, job: Job) -> None:
-        """Request info about the job and update it."""
-        ...
-
-    @abstractmethod
-    def update_status(self, job: Job) -> None:
-        """Request info about the job and update its status.
-
-        Returns
-        -------
-        JobStatus:
-            The updated status of the job.
-
-        """

@@ -8,8 +8,9 @@ import numpy as np
 import pytest
 from pandas import Timedelta
 
-import osekit.job.job as job_module
-from osekit.job.job import Job, JobBuilder, JobConfig, JobStatus
+from osekit.job.builder import JobBuilder
+from osekit.job.config import JobConfig
+from osekit.job.job import Job, JobStatus
 
 
 @pytest.mark.parametrize(
@@ -374,7 +375,7 @@ def test_job_builder_write(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
             self.path = path
             self.status = JobStatus.PREPARED
 
-    monkeypatch.setattr(job_module, "Job", DummyJob)
+    monkeypatch.setattr("osekit.job.builder.Job", DummyJob)
 
     job_config = JobConfig(
         nb_nodes=2,
@@ -459,7 +460,7 @@ def test_job_builder_submit(monkeypatch: pytest.MonkeyPatch) -> None:
         def update_status(self) -> JobStatus:
             return self.status
 
-    monkeypatch.setattr(job_module, "Job", DummyJob)
+    monkeypatch.setattr("osekit.job.job.Job", DummyJob)
 
     jobs = [
         DummyJob(name="unprepared", status=JobStatus.UNPREPARED),
