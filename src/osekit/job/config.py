@@ -5,7 +5,7 @@ from pandas import Timedelta
 
 @dataclass
 class JobConfig:
-    """Config used for creating a job.
+    """Configuration of the computing resources allowed for a job.
 
     Parameters
     ----------
