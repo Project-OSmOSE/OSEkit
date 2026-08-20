@@ -74,11 +74,13 @@ and follow the console arguments of the :mod:`osekit.public.export` script.
 
     from osekit.core.audio_dataset import AudioDataset
     from osekit.core.spectro_dataset import SpectroDataset
+    from osekit.job.config import JobConfig
+    from osekit.job.job import Job
+    from osekit.job.scheduler.pbs import Pbs
     from osekit.public import export_transform
 
     # Some Public API imports are required
     from osekit.public.transform import OutputType
-    from osekit.job.job import Job, JobConfig
 
     ads = AudioDataset(...)  # See the AudioDataset doc
     sds = SpectroDataset(...)  # See the SpectroDataset doc
@@ -123,8 +125,10 @@ and follow the console arguments of the :mod:`osekit.public.export` script.
         mem="60gb",
         walltime=Timedelta(hours=1),
         venv_name=os.environ["CONDA_DEFAULT_ENV"],
-        queue="omp",
     )
+
+    # Scheduler configuration
+    scheduler = Pbs(queue="omp")
 
     job = Job(
         script_path=Path(export_transform.__file__),
@@ -134,12 +138,12 @@ and follow the console arguments of the :mod:`osekit.public.export` script.
         output_folder=Path(...),  # Path in which the .out and .err files are written
     )
 
-    # Write the PBS file and submit the job
-    job.write_pbs(Path(...) / f"{job.name}.pbs")
-    job.submit_pbs()
+    # Write the job  file and submit it through the scheduler
+    scheduler.write(job=job, path=Path(...) / f"{job.name}.pbs")
+    scheduler.submit(job=job)
 
-You can then follow the status of the submitted job:
+You can then follow the status of the submitted job through the scheduler:
 
 .. code-block:: python
 
-    job.update_status()
+    scheduler.update_status(job=job)
