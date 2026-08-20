@@ -9,7 +9,8 @@ from osekit.job.scheduler.scheduler import Scheduler
 class JobBuilder:
     """Class that should be attached to a Public API ``Project`` for working with jobs.
 
-    If a ``Project`` has a ``JobBuilder``, it will use it to run transforms through jobs.
+    If a ``Project`` has a ``JobBuilder``, it will run its transforms through jobs
+    using the specified scheduler.
 
     """
 
