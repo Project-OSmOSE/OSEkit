@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     from pandas import Timestamp
 
     from osekit.core.audio_file import AudioFile
-    from osekit.utils.job import JobBuilder
+    from osekit.job.job import JobBuilder
 
 
 class Project:
@@ -634,7 +634,7 @@ class Project:
                 name=name + (f"_{index}" if len(batch_indexes) > 1 else ""),
                 output_folder=self.folder / self.SUBFOLDERS["log"],
             )
-        self.job_builder.submit_pbs()
+        self.job_builder.submit()
 
     def _add_spectro_dataset(
         self,
