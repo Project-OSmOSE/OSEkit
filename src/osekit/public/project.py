@@ -634,7 +634,7 @@ class Project:
                 name=name + (f"_{index}" if len(batch_indexes) > 1 else ""),
                 output_folder=self.folder / self.SUBFOLDERS["log"],
             )
-        self.job_builder.submit_pbs()
+        self.job_builder.submit()
 
     def _add_spectro_dataset(
         self,
