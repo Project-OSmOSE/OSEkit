@@ -333,19 +333,20 @@ def test_detections_from_csv() -> None:
 
 
 def test_detections_to_dict(tmp_path: Path) -> None:
-    detections = Detection.from_csv(
-        csv=Path(__file__).parent / "_static" / "aplose_result.csv",
-    )
+    for result_file in ("aplose_result.csv", "minimal_detection_result.csv"):
+        detections = Detection.from_csv(
+            csv=Path(__file__).parent / "_static" / result_file,
+        )
 
-    for detection in detections:
-        assert Detection.from_dict(detection.to_dict()) == detection
+        for detection in detections:
+            assert Detection.from_dict(detection.to_dict()) == detection
 
-    # Output dict should be formatted as an APLOSE output dict
-    DataFrame([d.to_dict() for d in detections]).to_csv(tmp_path / "export.csv")
-    assert np.array_equal(
-        sorted(detections, key=str),
-        sorted(Detection.from_csv(tmp_path / "export.csv"), key=str),
-    )
+        # Output dict should be formatted as an APLOSE output dict
+        DataFrame([d.to_dict() for d in detections]).to_csv(tmp_path / "export.csv")
+        assert np.array_equal(
+            sorted(detections, key=str),
+            sorted(Detection.from_csv(tmp_path / "export.csv"), key=str),
+        )
 
 
 def test_detection_to_rectangle(sample_detection: Detection) -> None:
