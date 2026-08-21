@@ -3,7 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from pandas import Timestamp
+from pandas import DataFrame, Timestamp
 
 from osekit.core.detection import (
     ConfidenceIndicator,
@@ -332,6 +332,22 @@ def test_detections_from_csv() -> None:
     assert len(minimal_detection.verifications) == 0
 
 
+def test_detections_to_dict(tmp_path: Path) -> None:
+    detections = Detection.from_csv(
+        csv=Path(__file__).parent / "_static" / "aplose_result.csv",
+    )
+
+    for detection in detections:
+        assert Detection.from_dict(detection.to_dict()) == detection
+
+    # Output dict should be formatted as an APLOSE output dict
+    DataFrame([d.to_dict() for d in detections]).to_csv(tmp_path / "export.csv")
+    assert np.array_equal(
+        sorted(detections, key=str),
+        sorted(Detection.from_csv(tmp_path / "export.csv"), key=str),
+    )
+
+
 def test_detection_to_rectangle(sample_detection: Detection) -> None:
     rectangle = sample_detection.to_rectangle()
 
@@ -377,7 +393,7 @@ def test_detections_from_csv_list() -> None:
         [
             Path(__file__).parent / "_static" / "minimal_detector_result.csv",
             Path(__file__).parent / "_static" / "minimal_detector_result.csv",
-        ]
+        ],
     )
 
     assert len(detections) == 4
