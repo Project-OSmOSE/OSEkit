@@ -377,7 +377,7 @@ class Detection(Event):
             frequency_bounds=frequency_bounds,
             detection_type=row.get("type"),
             confidence_indicator=confidence_indicator,
-            signal_quantity=row.get("signal_quantity"),
+            signal_quantity=signal_quantity,
             signal_parameters=signal_parameters,
             verifications=verifications,
         )
@@ -446,6 +446,7 @@ class Detection(Event):
         -------
         list[Self]:
             List of detections taken from the csv file(s).
+
         """
         if type(csv) is not list:
             csv = [csv]
