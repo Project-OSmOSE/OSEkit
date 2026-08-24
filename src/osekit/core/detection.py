@@ -93,6 +93,20 @@ class FrequencyBounds:
         """Bandwidth of the detection."""
         return self.max - self.min
 
+    def to_dict(self) -> dict:
+        """Return a serialized dictionary representation of the frequency bounds.
+
+        Returns
+        -------
+        dict:
+            The serialized frequency bounds, formatted for APLOSE.
+
+        """
+        return {
+            "min_frequency": self.min,
+            "max_frequency": self.max,
+        }
+
 
 @dataclass
 class DetectorInfo:
@@ -108,6 +122,20 @@ class DetectorInfo:
     def __eq__(self, other: Self) -> bool:
         """Return whether two detectors are equal."""
         return self.name == other.name and self.expertise == other.expertise
+
+    def to_dict(self) -> dict:
+        """Return a serialized dictionary representation of the detector info.
+
+        Returns
+        -------
+        dict:
+            The serialized detector info, formatted for APLOSE.
+
+        """
+        return {
+            "annotator": self.name,
+            "annotator_expertise": self.expertise,
+        }
 
 
 @dataclass
@@ -127,6 +155,31 @@ class SignalParameters:
     has_sidebands: bool | None = None
     has_subharmonics: bool | None = None
     has_deterministic_chaos: bool | None = None
+
+    def to_dict(self) -> dict:
+        """Return a serialized dictionary representation of the signal parameters.
+
+        Returns
+        -------
+        dict:
+            The serialized signal parameters, formatted for APLOSE.
+
+        """
+        return {
+            "signal_is_intensity_too_low": self.is_intensity_too_low,
+            "signal_does_overlap_other_signals": self.does_overlap_other_signals,
+            "signal_frequency_jumps": self.frequency_jumps,
+            "signal_deterministic_chaos": self.has_deterministic_chaos,
+            "signal_has_harmonics": self.has_harmonics,
+            "signal_sidebands": self.has_sidebands,
+            "signal_subharmonics": self.has_subharmonics,
+            "signal_end_frequency": self.max_frequency,
+            "signal_start_frequency": self.min_frequency,
+            "signal_relative_max_frequency_count": self.nb_relative_maxes,
+            "signal_relative_min_frequency_count": self.nb_relative_mins,
+            "signal_steps_count": self.nb_steps,
+            "signal_trend": self.trend,
+        }
 
 
 @dataclass
@@ -180,6 +233,20 @@ class ConfidenceIndicator:
 
         return cls(label=label, level=level, maximum_level=maximum_level)
 
+    def to_dict(self) -> dict:
+        """Return a serialized dictionary representation of the confidence indicator.
+
+        Returns
+        -------
+        dict:
+            The serialized confidence indicator, formatted for APLOSE.
+
+        """
+        return {
+            "confidence_indicator_label": self.label,
+            "confidence_indicator_level": f"{self.level}/{self.maximum_level}",
+        }
+
 
 @dataclass
 class DetectionMetaData:
@@ -210,6 +277,24 @@ class DetectionMetaData:
     comments: str | None
     phase: Literal["ANNOTATION", "VERIFICATION"] | None
 
+    def to_dict(self) -> dict:
+        """Return a serialized dictionary representation of the detection metadata.
+
+        Returns
+        -------
+        dict:
+            The serialized detection metadata, formatted for APLOSE.
+
+        """
+        return {
+            "project": self.project,
+            "filename": self.filename,
+            "annotation_id": self.detection_id,
+            "is_update_of_id": self.base_id,
+            "comments": self.comments,
+            "created_at_phase": self.phase,
+        }
+
 
 @dataclass
 class Verification:
@@ -228,6 +313,19 @@ class Verification:
             self.verificator == other.verificator
             and self.is_validated == other.is_validated
         )
+
+    def to_dict(self) -> dict:
+        """Return a serialized dictionary representation of the verification.
+
+        Returns
+        -------
+        dict:
+            The serialized verification, formatted for APLOSE.
+
+        """
+        return {
+            self.verificator: self.is_validated,
+        }
 
 
 class Detection(Event):
