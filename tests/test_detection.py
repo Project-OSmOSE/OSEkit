@@ -333,7 +333,7 @@ def test_detections_from_csv() -> None:
 
 
 def test_detections_to_dict(tmp_path: Path) -> None:
-    for result_file in ("aplose_result.csv", "minimal_detection_result.csv"):
+    for result_file in ("aplose_result.csv", "minimal_detector_result.csv"):
         detections = Detection.from_csv(
             csv=Path(__file__).parent / "_static" / result_file,
         )

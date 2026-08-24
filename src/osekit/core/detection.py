@@ -480,6 +480,42 @@ class Detection(Event):
             verifications=verifications,
         )
 
+    def to_dict(self) -> dict:
+        """Return a serialized dictionary representation of the detection.
+
+        Returns
+        -------
+        dict:
+            The serialized detection, formatted for APLOSE.
+
+        """
+        return (
+            {
+                "annotation": self.label,
+                "start_datetime": self.begin,
+                "end_datetime": self.end,
+                "type": self.type,
+                "signal_quantity": self.signal_quantity,
+            }
+            | (self.metadata.to_dict() if self.metadata is not None else {})
+            | (self.detector_info.to_dict() if self.detector_info is not None else {})
+            | self.frequency_bounds.to_dict()
+            | (
+                self.confidence_indicator.to_dict()
+                if self.confidence_indicator is not None
+                else {}
+            )
+            | (
+                self.signal_parameters.to_dict()
+                if self.signal_parameters is not None
+                else {}
+            )
+        ) | {
+            verificator: verification
+            for kvp in self.verifications
+            for verificator, verification in kvp.to_dict().items()
+        }
+
     def to_rectangle(self, *, fill: bool = False, **kwargs: Any) -> Rectangle:
         """Return a matplotlib Rectangle representing the detection.
 
