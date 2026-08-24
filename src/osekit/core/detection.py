@@ -340,7 +340,7 @@ class Detection(Event):
         signal_quantity = row.get("signal_quantity")
         signal_parameters = (
             SignalParameters(
-                does_overlap_other_signals=row.get("signal_is_intensity_too_low"),
+                does_overlap_other_signals=row.get("signal_does_overlap_other_signals"),
                 frequency_jumps=row.get("signal_frequency_jumps"),
                 has_deterministic_chaos=row.get("signal_deterministic_chaos"),
                 has_harmonics=row.get("signal_has_harmonics"),
@@ -446,6 +446,7 @@ class Detection(Event):
         -------
         list[Self]:
             List of detections taken from the csv file(s).
+
         """
         if type(csv) is not list:
             csv = [csv]
