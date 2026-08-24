@@ -114,7 +114,7 @@ class DetectorInfo:
 class SignalParameters:
     """Class representing parameters of detection signal."""
 
-    is_itensity_too_low: bool | None = None
+    is_intensity_too_low: bool | None = None
     does_overlap_other_signals: bool | None = None
     min_frequency: int | None = None
     max_frequency: int | None = None
@@ -346,7 +346,7 @@ class Detection(Event):
                 has_harmonics=row.get("signal_has_harmonics"),
                 has_sidebands=row.get("signal_sidebands"),
                 has_subharmonics=row.get("signal_subharmonics"),
-                is_itensity_too_low=row.get("signal_is_intensity_too_low"),
+                is_intensity_too_low=row.get("signal_is_intensity_too_low"),
                 max_frequency=row.get("signal_end_frequency"),
                 min_frequency=row.get("signal_start_frequency"),
                 nb_relative_maxes=row.get("signal_relative_max_frequency_count"),

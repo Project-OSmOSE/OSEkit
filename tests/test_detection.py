@@ -52,7 +52,7 @@ def sample_detection() -> Detection:
             has_harmonics=True,
             has_sidebands=True,
             has_subharmonics=False,
-            is_itensity_too_low=False,
+            is_intensity_too_low=False,
             max_frequency=2_800,
             min_frequency=1_300,
             nb_relative_maxes=2,
@@ -260,7 +260,7 @@ def test_detections_from_csv() -> None:
     single = next(a for a in detections if a.metadata.detection_id == 586657)
     assert single.signal_quantity == "SINGLE"
     assert single.signal_parameters is not None
-    assert not single.signal_parameters.is_itensity_too_low
+    assert not single.signal_parameters.is_intensity_too_low
     assert not single.signal_parameters.does_overlap_other_signals
     assert single.signal_parameters.min_frequency == 12000
     assert single.signal_parameters.max_frequency == 13000
