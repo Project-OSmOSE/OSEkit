@@ -576,7 +576,7 @@ class Detection(Event):
             If csv is a list, all detections from the multiple csv files
             are concatenated together.
         **kwargs: Any
-            Additional keyword arguments passed to pandas' `read_csv` method.
+            Additional keyword arguments passed to the ``pandas.read_csv()`` method.
 
         Returns
         -------
