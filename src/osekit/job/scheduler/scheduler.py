@@ -9,7 +9,6 @@ class Scheduler(ABC):
 
     JOB_FILE_EXTENSION = "job"
 
-    @abstractmethod
     def write(self, job: Job, path: Path) -> None:
         """Write a job script to file.
 
@@ -21,11 +20,44 @@ class Scheduler(ABC):
             Path of the file in which the job script is written.
 
         """
+        preamble = "#!/bin/bash"
+
+        request_str = self._build_job_specification(job=job)
+        venv_str = self._build_venv_string(job=job)
+        python_script = f"python {job.script_path} {job.get_arg_string()}"
+
+        script = f"{preamble}\n\n{request_str}\n\n{venv_str}\n\n{python_script}"
+
+        with path.open("w") as file:
+            file.write(script)
+
+        job.path = path
+        job.progress()
+
+    @abstractmethod
+    def _build_job_specification(self, job: Job) -> str:
+        """Build the job specification string.
+
+        Parameters
+        ----------
+        job: Job
+            The job for which to build the specifications.
+
+        Returns
+        -------
+        str:
+            Job specification string.
+            It includes the name of the job, the requested resources,
+            output log directories, etc.
+
+        """
         ...
 
     @abstractmethod
     def submit(
-        self, job: Job, dependency: Job | list[Job] | str | list[str] | None = None
+        self,
+        job: Job,
+        dependency: Job | list[Job] | str | list[str] | None = None,
     ) -> None:
         """Submit the job to the scheduler.
 
@@ -92,5 +124,6 @@ class Scheduler(ABC):
         -------
         str
             Job dependency string.
+
         """
         ...

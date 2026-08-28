@@ -1,5 +1,4 @@
 import subprocess
-from pathlib import Path
 from typing import Literal
 
 from osekit.job.job import Job, JobStatus
@@ -25,19 +24,22 @@ class Pbs(Scheduler):
     def queue(self, queue: Literal["omp", "mpi"]) -> None:
         self._queue = queue
 
-    def write(self, job: Job, path: Path) -> None:
-        """Write a job script to file.
+    def _build_job_specification(self, job: Job) -> str:
+        """Build the job specification string.
 
         Parameters
         ----------
         job: Job
-            Job of which to write the script.
-        path: Path
-            Path of the file in which the job script is written.
+            The job for which to build the specifications.
+
+        Returns
+        -------
+        str:
+            Job specification string.
+            It includes the name of the job, the requested resources,
+            output log directories, etc.
 
         """
-        preamble = "#!/bin/bash"
-
         select_parts = {
             "select": job.nb_nodes,
             "ncpus": job.ncpus,
@@ -57,7 +59,7 @@ class Pbs(Scheduler):
             "-o": f"{job.output_folder}/{job.name}.out" if job.output_folder else None,
             "-e": f"{job.output_folder}/{job.name}.err" if job.output_folder else None,
         }
-        request_str = "\n".join(
+        return "\n".join(
             f"#PBS {key} {value}"
             if type(value) is not list
             else "\n".join(f"#PBS {key} {value_part}" for value_part in value)
@@ -65,17 +67,10 @@ class Pbs(Scheduler):
             if value
         )
 
-        script = f"python {job.script_path} {job.get_arg_string()}"
-
-        pbs = f"{preamble}\n{request_str}\n{self._build_venv_string(job=job)}\n{script}"
-        with path.open("w") as file:
-            file.write(pbs)
-
-        job.path = path
-        job.progress()
-
     def submit(
-        self, job: Job, dependency: Job | list[Job] | str | list[str] | None = None
+        self,
+        job: Job,
+        dependency: Job | list[Job] | str | list[str] | None = None,
     ) -> None:
         """Submit the job to the scheduler.
 
