@@ -148,7 +148,7 @@ class Transform:
             representing the maximum number of averaged time bins.
 
         """
-        self._validate_sample_rate(sample_rate=sample_rate, fft=fft)
+        self.validate_sample_rate(sample_rate=sample_rate, fft=fft)
 
         self.output_type = output_type
         self.begin = begin
@@ -204,14 +204,30 @@ class Transform:
     def fft(self, value: ShortTimeFFT | None) -> None:
         """Set the FFT used in the transform."""
         if hasattr(self, "_sample_rate"):
-            self._validate_sample_rate(sample_rate=self.sample_rate, fft=value)
+            self.validate_sample_rate(sample_rate=self.sample_rate, fft=value)
         self._fft = value
 
     @staticmethod
-    def _validate_sample_rate(
+    def validate_sample_rate(
         sample_rate: float | None,
         fft: ShortTimeFFT | None,
     ) -> None:
+        """Check that the sample rates of the transform and of the fft are valid.
+
+        Parameters
+        ----------
+        sample_rate: float | int | None
+            Sample rate of the transform.
+        fft: ShortTimeFFT | None
+            FFT to use for computing the spectrogram.
+
+        Returns
+        -------
+        ``True`` if only one sample rate is provided (directly through ``sample_rate`` or
+        through that of the fft) or if ``fft.fs == sample_rate``.
+        ``False`` otherwise.
+
+        """
         if sample_rate is None:
             return
         if fft is None:
