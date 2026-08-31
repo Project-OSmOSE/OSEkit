@@ -30,7 +30,7 @@ from osekit.utils.core import (
     get_umask,
     locked,
 )
-from osekit.utils.path import move_tree, ensure_within_base
+from osekit.utils.path import ensure_within_base, move_tree
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -522,7 +522,7 @@ class Project:
     def export(
         self,
         output_type: OutputType,
-        ads: AudioDataset | None = None,
+        ads: AudioDataset,
         sds: SpectroDataset | LTASDataset | None = None,
         subtype: str | None = None,
         spectrum_folder_name: str = "spectrum",
@@ -608,12 +608,11 @@ class Project:
             nb_batches=nb_jobs,
         )
 
-        ads_json = (
-            ads.folder / f"{ads.name}.json"
-            if OutputType.AUDIO in output_type
-            else "None"
+        ads_json, sds_json = Project.get_json_paths(
+            audio_dataset=ads,
+            spectro_dataset=sds,
+            output_type=output_type,
         )
-        sds_json = sds.folder / f"{sds.name}.json" if sds is not None else "None"
 
         for index, (start, stop) in enumerate(batch_indexes):
             self.job_builder.create_job(
@@ -640,6 +639,46 @@ class Project:
                 output_folder=self.folder / self.SUBFOLDERS["log"],
             )
         self.job_builder.submit_pbs()
+
+    @staticmethod
+    def get_json_paths(
+        audio_dataset: AudioDataset,
+        spectro_dataset: SpectroDataset | None,
+        output_type: OutputType,
+    ) -> tuple[Path | str, Path | str]:
+        """Return the paths of the audio and spectro output JSON files.
+
+        Parameters
+        ----------
+        audio_dataset: AudioDataset
+            The ``AudioDataset`` the transform is based on.
+        spectro_dataset: SpectroDataset | None
+            The ``SpectroDataset`` that is output by the transform.
+            ``None`` if the transform is audio-only.
+        output_type: OutputType
+            The ``OutputType`` of the transform.
+
+        Returns
+        -------
+        tuple[Path | str, Path | str]:
+            Paths of the audio and spectro output JSON files, respectively.
+            If there is no output dataset for the given ``OutputType``,
+            the corresponding path in the tuple is replaced with "None".
+
+        """
+        ads_json = (
+            audio_dataset.folder / f"{audio_dataset.name}.json"
+            if OutputType.AUDIO in output_type
+            else "None"
+        )
+
+        sds_json = (
+            spectro_dataset.folder / f"{spectro_dataset.name}.json"
+            if spectro_dataset is not None
+            else "None"
+        )
+
+        return ads_json, sds_json
 
     def _add_spectro_dataset(
         self,
