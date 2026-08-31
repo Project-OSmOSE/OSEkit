@@ -103,6 +103,34 @@ def test_walltime_str_and_setter() -> None:
         assert job.walltime_str == "13:08:09"
 
 
+def test_pbs_build_job_specifications() -> None:
+    job = Job(
+        script_path=Path(),
+        config=JobConfig(
+            nb_nodes=2,
+            ncpus=3,
+            ngpus=1,
+            mem="16gb",
+            walltime=Timedelta(hours=2),
+            venv_name="cool_env",
+        ),
+        output_folder=Path(r"cool/folder"),
+        name="cool_job",
+    )
+
+    specifications = Pbs(queue="mpi")._build_job_specification(job=job).splitlines()
+
+    for expected_specification in (
+        "#PBS -N cool_job",
+        "#PBS -q mpi",
+        "#PBS -l select=2:ncpus=3:mem=16gb:ngpus=1",
+        "#PBS -l walltime=02:00:00",
+        f"#PBS -o {Path('cool/folder') / 'cool_job.out'}",
+        f"#PBS -e {Path('cool/folder') / 'cool_job.err'}",
+    ):
+        assert expected_specification in specifications
+
+
 def test_write_pbs(tmp_path: Path) -> None:
     script = tmp_path / "shpouik_shpouik.py"
     script.write_text("print('edgar')")
@@ -462,7 +490,9 @@ def test_job_builder_submit(monkeypatch: pytest.MonkeyPatch) -> None:
             self.status = status
 
     def mock_submit(
-        self: Scheduler, job: Job, dependency: Job | str | None = None
+        self: Scheduler,
+        job: Job,
+        dependency: Job | str | None = None,
     ) -> None:
         submitted_jobs.append((job.name, dependency))
 
@@ -688,7 +718,8 @@ def test_pbs_build_dependency_string_with_different_types(
     with expected as e:
         assert (
             scheduler._build_dependency_string(
-                dependency="1234567", dependency_type=dependency_type
+                dependency="1234567",
+                dependency_type=dependency_type,
             )
             == e
         )
