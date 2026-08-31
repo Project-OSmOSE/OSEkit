@@ -14,7 +14,6 @@ from typing import TYPE_CHECKING, Literal
 
 from pandas import Timedelta
 
-from osekit.core.audio_dataset import AudioDataset
 from osekit.utils.core import file_indexes_per_batch
 
 if TYPE_CHECKING:
@@ -540,7 +539,7 @@ class JobBuilder:
 
     def create_jobs(
         self,
-        audio_dataset: AudioDataset,
+        nb_tasks: int,
         script_path: Path,
         script_args: dict,
         output_folder: Path,
@@ -551,8 +550,8 @@ class JobBuilder:
 
         Parameters
         ----------
-        audio_dataset: AudioDataset
-            The ``AudioDataset`` the transform is based on.
+        nb_tasks:
+            The number of tasks that are distributed across ``nb_jobs`` jobs.
         script_path: Path
             Path to the export script.
         script_args: dict
@@ -569,7 +568,7 @@ class JobBuilder:
 
         """
         batch_indexes = file_indexes_per_batch(
-            total_nb_files=len(audio_dataset.data),
+            total_nb_files=nb_tasks,
             nb_batches=nb_jobs,
         )
         for index, (start, stop) in enumerate(batch_indexes):

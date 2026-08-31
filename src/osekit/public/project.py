@@ -626,7 +626,7 @@ class Project:
         }
 
         self.job_builder.create_jobs(
-            audio_dataset=ads,
+            nb_tasks=len(ads.data),
             script_path=Path(export_transform.__file__),
             script_args=script_args,
             job_name=name,
