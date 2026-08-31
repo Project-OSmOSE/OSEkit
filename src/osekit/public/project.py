@@ -603,41 +603,37 @@ class Project:
             )
             return
 
-        batch_indexes = file_indexes_per_batch(
-            total_nb_files=len(ads.data),
-            nb_batches=nb_jobs,
-        )
-
         ads_json, sds_json = Project.get_json_paths(
             audio_dataset=ads,
             spectro_dataset=sds,
             output_type=output_type,
         )
 
-        for index, (start, stop) in enumerate(batch_indexes):
-            self.job_builder.create_job(
-                script_path=Path(export_transform.__file__),
-                script_args={
-                    "output-type": output_type.value,
-                    "ads-json": ads_json,
-                    "sds-json": sds_json,
-                    "subtype": subtype,
-                    "spectrum-folder-path": spectrum_folder_path,
-                    "spectrogram-folder-path": spectrogram_folder_path,
-                    "welch-folder-path": welch_folder_path,
-                    "first": start,
-                    "last": stop,
-                    "downsampling-quality": resample_quality_settings["downsample"],
-                    "upsampling-quality": resample_quality_settings["upsample"],
-                    "umask": get_umask(),
-                    "multiprocessing": config.multiprocessing["is_active"],
-                    "nb-processes": config.multiprocessing["nb_processes"],
-                    "use-logging-setup": True,
-                    "dataset-json-path": self.folder / "project.json",
-                },
-                name=name + (f"_{index}" if len(batch_indexes) > 1 else ""),
-                output_folder=self.folder / self.SUBFOLDERS["log"],
-            )
+        script_args = {
+            "output-type": output_type.value,
+            "ads-json": ads_json,
+            "sds-json": sds_json,
+            "subtype": subtype,
+            "spectrum-folder-path": spectrum_folder_path,
+            "spectrogram-folder-path": spectrogram_folder_path,
+            "welch-folder-path": welch_folder_path,
+            "downsampling-quality": resample_quality_settings["downsample"],
+            "upsampling-quality": resample_quality_settings["upsample"],
+            "umask": get_umask(),
+            "multiprocessing": config.multiprocessing["is_active"],
+            "nb-processes": config.multiprocessing["nb_processes"],
+            "use-logging-setup": True,
+            "dataset-json-path": self.folder / "project.json",
+        }
+
+        self.create_jobs(
+            audio_dataset=ads,
+            script_path=Path(export_transform.__file__),
+            script_args=script_args,
+            job_name=name,
+            nb_jobs=nb_jobs,
+        )
+
         self.job_builder.submit_pbs()
 
     @staticmethod
@@ -679,6 +675,45 @@ class Project:
         )
 
         return ads_json, sds_json
+
+    def create_jobs(
+        self,
+        audio_dataset: AudioDataset,
+        script_path: Path,
+        script_args: dict,
+        job_name: str,
+        nb_jobs: int = 1,
+    ) -> None:
+        """Create the jobs corresponding to each batch.
+
+        Parameters
+        ----------
+        audio_dataset: AudioDataset
+            The ``AudioDataset`` the transform is based on.
+        script_path: Path
+            Path to the export script.
+        script_args: dict
+            Arguments passed to the export script.
+        job_name: str
+            Name of the job.
+            If there are multiple batches, each batch will be suffixed
+            with "_{index}".
+        nb_jobs: int
+            Number of batches used to run the transform.
+            Each batch will run in a separate job.
+
+        """
+        batch_indexes = file_indexes_per_batch(
+            total_nb_files=len(audio_dataset.data),
+            nb_batches=nb_jobs,
+        )
+        for index, (start, stop) in enumerate(batch_indexes):
+            self.job_builder.create_job(
+                script_path=script_path,
+                script_args=script_args | {"first": start, "last": stop},
+                name=job_name + (f"_{index}" if len(batch_indexes) > 1 else ""),
+                output_folder=self.folder / self.SUBFOLDERS["log"],
+            )
 
     def _add_spectro_dataset(
         self,
