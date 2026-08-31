@@ -12,6 +12,7 @@ from osekit.job.config import JobConfig
 from osekit.job.job import Job, JobStatus
 from osekit.job.scheduler.pbs import Pbs
 from osekit.job.scheduler.scheduler import Scheduler
+from osekit.job.scheduler.slurm import Slurm
 
 
 def test_properties() -> None:
@@ -77,6 +78,39 @@ def test_pbs_build_job_specifications() -> None:
         "#PBS -l walltime=02:00:00",
         f"#PBS -o {Path('cool/folder') / 'cool_job.out'}",
         f"#PBS -e {Path('cool/folder') / 'cool_job.err'}",
+    ):
+        assert expected_specification in specifications
+
+
+def test_slurm_build_job_specifications() -> None:
+    job = Job(
+        script_path=Path(),
+        config=JobConfig(
+            nb_nodes=2,
+            ncpus=3,
+            ngpus=1,
+            mem="16gb",
+            walltime=Timedelta(hours=2),
+            venv_name="cool_env",
+        ),
+        output_folder=Path(r"cool/folder"),
+        name="cool_job",
+    )
+
+    specifications = (
+        Slurm(partition="gpu")._build_job_specification(job=job).splitlines()
+    )
+
+    for expected_specification in (
+        "#SBATCH --job-name=cool_job",
+        "#SBATCH --partition=gpu",
+        "#SBATCH --nodes=2",
+        "#SBATCH --cpus-per-task=3",
+        "#SBATCH --mem=16gb",
+        "#SBATCH --gpus=1",
+        "#SBATCH --time=02:00:00",
+        f"#SBATCH --output={Path('cool/folder') / 'cool_job.out'}",
+        f"#SBATCH --error={Path('cool/folder') / 'cool_job.err'}",
     ):
         assert expected_specification in specifications
 

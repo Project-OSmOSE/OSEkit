@@ -45,10 +45,10 @@ class Slurm(Scheduler):
             "job-name": job.name,
             "partition": self.partition,
             "time": job.walltime_str,
-            "output": f"{job.output_folder}/{job.name}.out"
+            "output": f"{job.output_folder / job.name}.out"
             if job.output_folder
             else None,
-            "error": f"{job.output_folder}/{job.name}.err"
+            "error": f"{job.output_folder / job.name}.err"
             if job.output_folder
             else None,
         }
