@@ -56,8 +56,8 @@ class Pbs(Scheduler):
                 select_str,
                 f"walltime={job.walltime_str}",
             ],
-            "-o": f"{job.output_folder}/{job.name}.out" if job.output_folder else None,
-            "-e": f"{job.output_folder}/{job.name}.err" if job.output_folder else None,
+            "-o": f"{job.output_folder / job.name}.out" if job.output_folder else None,
+            "-e": f"{job.output_folder / job.name}.err" if job.output_folder else None,
         }
         return "\n".join(
             f"#PBS {key} {value}"
