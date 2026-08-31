@@ -1,4 +1,4 @@
-from pathlib import Path
+from typing import Literal
 
 from osekit.job.job import Job, JobStatus
 from osekit.job.scheduler.scheduler import Scheduler
@@ -9,17 +9,56 @@ class Slurm(Scheduler):
 
     JOB_FILE_EXTENSION = "slurm"
 
-    def write(self, job: Job, path: Path) -> None:
-        """Write a job script to file.
+    def __init__(self, partition: Literal["cpu", "gpu", "ops"] = "cpu") -> None:
+        """Initialize the SLURM scheduler."""
+        self.partition = partition
+
+    @property
+    def partition(self) -> str:
+        """Partition in which the job will be submitted."""
+        return self._partition
+
+    @partition.setter
+    def partition(self, partition: Literal["omp", "mpi"]) -> None:
+        self._partition = partition
+
+    def _build_job_specification(self, job: Job) -> str:
+        """Build the job specification string.
 
         Parameters
         ----------
         job: Job
-            Job of which to write the script.
-        path: Path
-            Path of the file in which the job script is written.
+            The job for which to build the specifications.
+
+        Returns
+        -------
+        str:
+            Job specification string.
+            It includes the name of the job, the requested resources,
+            output log directories, etc.
 
         """
+        specifications = {
+            "nodes": job.nb_nodes,
+            "cpus-per-task": job.ncpus,
+            "mem": job.mem,
+            "job-name": job.name,
+            "partition": self.partition,
+            "time": job.walltime_str,
+            "output": f"{job.output_folder}/{job.name}.out"
+            if job.output_folder
+            else None,
+            "error": f"{job.output_folder}/{job.name}.err"
+            if job.output_folder
+            else None,
+        }
+
+        if job.ngpus is not None:
+            specifications["gpus"] = job.ngpus
+
+        return "\n".join(
+            f"#SBATCH --{key}={value}" for key, value in specifications.items() if value
+        )
 
     def submit(
         self,
