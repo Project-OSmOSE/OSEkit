@@ -155,11 +155,11 @@ def test_write_pbs(tmp_path: Path) -> None:
     assert any("select=1:ncpus=2:mem=8gb" in line for line in content)
     assert any("walltime=01:00:00" in line for line in content)
     assert any(
-        line.startswith(f"#PBS -o {job.output_folder}/{job.name}.out")
+        line.startswith(f"#PBS -o {job.output_folder / job.name}.out")
         for line in content
     )
     assert any(
-        line.startswith(f"#PBS -e {job.output_folder}/{job.name}.err")
+        line.startswith(f"#PBS -e {job.output_folder / job.name}.err")
         for line in content
     )
 
