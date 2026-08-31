@@ -1840,3 +1840,64 @@ def test_run_transform_with_same_name_in_different_process(
     transform.output_type = OutputType.SPECTROGRAM
     with pytest.raises(FileExistsError, match="already exists"):
         project.run(transform=transform)
+
+
+@pytest.mark.parametrize(
+    ("ads_folder_and_name", "sds_folder_and_name", "output_type", "expected"),
+    [
+        pytest.param(
+            (Path("cool"), "cool_ads"),
+            None,
+            OutputType.SPECTROGRAM,
+            ("None", "None"),
+            id="no_audio_output_is_none",
+        ),
+        pytest.param(
+            (Path("cool"), "cool_ads"),
+            None,
+            OutputType.AUDIO,
+            (Path(r"cool/cool_ads.json"), "None"),
+            id="audio_json_only",
+        ),
+        pytest.param(
+            (Path("cool"), "cool_ads"),
+            (Path("fun"), "fun_sds"),
+            OutputType.SPECTROGRAM,
+            ("None", Path(r"fun/fun_sds.json")),
+            id="spectro_json_only",
+        ),
+        pytest.param(
+            (Path("cool"), "cool_ads"),
+            (Path("fun"), "fun_sds"),
+            OutputType.AUDIO | OutputType.SPECTROGRAM,
+            (Path(r"cool/cool_ads.json"), Path(r"fun/fun_sds.json")),
+            id="both_ads_and_sds_jsons",
+        ),
+    ],
+)
+def test_get_json_paths(
+    monkeypatch: pytest.MonkeyPatch,
+    ads_folder_and_name: tuple[Path, str],
+    sds_folder_and_name: tuple[Path, str] | None,
+    output_type: OutputType,
+    expected: tuple[Path | str, Path | str],
+) -> None:
+    class DummyDataset:
+        def __init__(self, folder: Path, name: str) -> None:
+            self.folder = folder
+            self.name = name
+
+    monkeypatch.setattr("osekit.public.project.AudioDataset", DummyDataset)
+    monkeypatch.setattr("osekit.public.project.SpectroDataset", DummyDataset)
+
+    ads = DummyDataset(*ads_folder_and_name) if ads_folder_and_name else None
+    sds = DummyDataset(*sds_folder_and_name) if sds_folder_and_name else None
+
+    assert (
+        Project.get_json_paths(
+            audio_dataset=ads,
+            spectro_dataset=sds,
+            output_type=output_type,
+        )
+        == expected
+    )
