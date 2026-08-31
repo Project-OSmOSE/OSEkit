@@ -26,11 +26,10 @@ from osekit.core.ltas_dataset import LTASDataset
 from osekit.core.spectro_dataset import SpectroDataset
 from osekit.public.transform import OutputType, Transform
 from osekit.utils.core import (
-    file_indexes_per_batch,
     get_umask,
     locked,
 )
-from osekit.utils.path import move_tree, ensure_within_base
+from osekit.utils.path import ensure_within_base, move_tree
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -522,7 +521,7 @@ class Project:
     def export(
         self,
         output_type: OutputType,
-        ads: AudioDataset | None = None,
+        ads: AudioDataset,
         sds: SpectroDataset | LTASDataset | None = None,
         subtype: str | None = None,
         spectrum_folder_name: str = "spectrum",
@@ -603,43 +602,79 @@ class Project:
             )
             return
 
-        batch_indexes = file_indexes_per_batch(
-            total_nb_files=len(ads.data),
-            nb_batches=nb_jobs,
+        ads_json, sds_json = Project.get_json_paths(
+            audio_dataset=ads,
+            spectro_dataset=sds,
+            output_type=output_type,
         )
 
+        script_args = {
+            "output-type": output_type.value,
+            "ads-json": ads_json,
+            "sds-json": sds_json,
+            "subtype": subtype,
+            "spectrum-folder-path": spectrum_folder_path,
+            "spectrogram-folder-path": spectrogram_folder_path,
+            "welch-folder-path": welch_folder_path,
+            "downsampling-quality": resample_quality_settings["downsample"],
+            "upsampling-quality": resample_quality_settings["upsample"],
+            "umask": get_umask(),
+            "multiprocessing": config.multiprocessing["is_active"],
+            "nb-processes": config.multiprocessing["nb_processes"],
+            "use-logging-setup": True,
+            "dataset-json-path": self.folder / "project.json",
+        }
+
+        self.job_builder.create_jobs(
+            nb_tasks=len(ads.data),
+            script_path=Path(export_transform.__file__),
+            script_args=script_args,
+            job_name=name,
+            output_folder=self.folder / self.SUBFOLDERS["log"],
+            nb_jobs=nb_jobs,
+        )
+
+        self.job_builder.submit_pbs()
+
+    @staticmethod
+    def get_json_paths(
+        audio_dataset: AudioDataset,
+        spectro_dataset: SpectroDataset | None,
+        output_type: OutputType,
+    ) -> tuple[Path | str, Path | str]:
+        """Return the paths of the audio and spectro output JSON files.
+
+        Parameters
+        ----------
+        audio_dataset: AudioDataset
+            The ``AudioDataset`` the transform is based on.
+        spectro_dataset: SpectroDataset | None
+            The ``SpectroDataset`` that is output by the transform.
+            ``None`` if the transform is audio-only.
+        output_type: OutputType
+            The ``OutputType`` of the transform.
+
+        Returns
+        -------
+        tuple[Path | str, Path | str]:
+            Paths of the audio and spectro output JSON files, respectively.
+            If there is no output dataset for the given ``OutputType``,
+            the corresponding path in the tuple is replaced with "None".
+
+        """
         ads_json = (
-            ads.folder / f"{ads.name}.json"
+            audio_dataset.folder / f"{audio_dataset.name}.json"
             if OutputType.AUDIO in output_type
             else "None"
         )
-        sds_json = sds.folder / f"{sds.name}.json" if sds is not None else "None"
 
-        for index, (start, stop) in enumerate(batch_indexes):
-            self.job_builder.create_job(
-                script_path=Path(export_transform.__file__),
-                script_args={
-                    "output-type": output_type.value,
-                    "ads-json": ads_json,
-                    "sds-json": sds_json,
-                    "subtype": subtype,
-                    "spectrum-folder-path": spectrum_folder_path,
-                    "spectrogram-folder-path": spectrogram_folder_path,
-                    "welch-folder-path": welch_folder_path,
-                    "first": start,
-                    "last": stop,
-                    "downsampling-quality": resample_quality_settings["downsample"],
-                    "upsampling-quality": resample_quality_settings["upsample"],
-                    "umask": get_umask(),
-                    "multiprocessing": config.multiprocessing["is_active"],
-                    "nb-processes": config.multiprocessing["nb_processes"],
-                    "use-logging-setup": True,
-                    "dataset-json-path": self.folder / "project.json",
-                },
-                name=name + (f"_{index}" if len(batch_indexes) > 1 else ""),
-                output_folder=self.folder / self.SUBFOLDERS["log"],
-            )
-        self.job_builder.submit()
+        sds_json = (
+            spectro_dataset.folder / f"{spectro_dataset.name}.json"
+            if spectro_dataset is not None
+            else "None"
+        )
+
+        return ads_json, sds_json
 
     def _add_spectro_dataset(
         self,

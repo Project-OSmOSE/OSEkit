@@ -726,3 +726,97 @@ def test_pbs_build_dependency_string_with_different_types(
 def test_job_walltime(walltime: str | Timedelta) -> None:
     job = Job(Path(), config=JobConfig(walltime=walltime))
     assert Timedelta(job.walltime_str) == Timedelta(walltime)
+
+
+@pytest.mark.parametrize(
+    (
+        "nb_tasks",
+        "script_path",
+        "script_args",
+        "output_folder",
+        "job_name",
+        "nb_jobs",
+        "expected_task_indexes",
+    ),
+    [
+        pytest.param(
+            10,
+            Path("path/to/script.py"),
+            {"int_arg": 1, "str_arg": "cool"},
+            Path("path/to/output"),
+            "cool_name",
+            1,
+            [(0, 10)],
+            id="one_job_covers_all_tasks",
+        ),
+        pytest.param(
+            10,
+            Path("path/to/script.py"),
+            {"int_arg": 1, "str_arg": "cool"},
+            Path("path/to/output"),
+            "cool_name",
+            5,
+            [(0, 2), (2, 4), (4, 6), (6, 8), (8, 10)],
+            id="tasks_are_equally_distributed",
+        ),
+    ],
+)
+def test_create_jobs(  # noqa: PLR0917
+    monkeypatch: pytest.MonkeyPatch,
+    nb_tasks: int,
+    script_path: Path,
+    script_args: dict,
+    output_folder: Path,
+    job_name: str,
+    nb_jobs: int,
+    expected_task_indexes: list[tuple[int, int]],
+) -> None:
+    created_jobs = {}
+
+    def patch_create_job(self: JobBuilder, **kwargs: str) -> None:
+        job_name = kwargs.pop("name")
+        created_jobs[job_name] = kwargs
+
+    monkeypatch.setattr(JobBuilder, "create_job", patch_create_job)
+
+    JobBuilder().create_jobs(
+        nb_tasks=nb_tasks,
+        script_path=script_path,
+        script_args=script_args,
+        output_folder=output_folder,
+        job_name=job_name,
+        nb_jobs=nb_jobs,
+    )
+
+    # Correct number of jobs
+    assert len(created_jobs) == nb_jobs
+
+    # Correct distribution across jobs
+    for job in created_jobs.values():
+        assert (
+            job["script_args"]["first"],
+            job["script_args"]["last"],
+        ) in expected_task_indexes
+
+    # Script path
+    assert all(job["script_path"] == script_path for job in created_jobs.values())
+
+    # Script args
+    for job in created_jobs.values():
+        for arg in script_args:
+            assert arg in job["script_args"]
+
+    # Output folder
+    assert all(job["output_folder"] == output_folder for job in created_jobs.values())
+
+    # Job names
+    if nb_jobs == 1:
+        assert np.array_equal(list(created_jobs.keys()), [job_name])
+    else:
+        for idx, job in enumerate(
+            sorted(
+                created_jobs.items(),
+                key=lambda kvp: kvp[1]["script_args"]["first"],
+            ),
+        ):
+            assert job[0] == f"{job_name}_{idx}"
