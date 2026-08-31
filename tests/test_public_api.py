@@ -1840,3 +1840,43 @@ def test_run_transform_with_same_name_in_different_process(
     transform.output_type = OutputType.SPECTROGRAM
     with pytest.raises(FileExistsError, match="already exists"):
         project.run(transform=transform)
+
+
+@pytest.mark.parametrize(
+    ("ads_folder_and_name", "sds_folder_and_name", "output_type", "expected"),
+    [
+        pytest.param(
+            None,
+            None,
+            OutputType.SPECTROGRAM,
+            ("None", "None"),
+            id="both_to_none",
+        ),
+    ],
+)
+def test_get_json_paths(
+    monkeypatch: pytest.MonkeyPatch,
+    ads_folder_and_name: tuple[Path, str] | None,
+    sds_folder_and_name: tuple[Path, str] | None,
+    output_type: OutputType,
+    expected: tuple[Path | str, Path | str],
+) -> None:
+    class DummyDataset:
+        def __init__(self, folder: Path, name: str) -> None:
+            self.folder = folder
+            self.name = name
+
+    monkeypatch.setattr("osekit.public.project.AudioDataset", DummyDataset)
+    monkeypatch.setattr("osekit.public.project.SpectroDataset", DummyDataset)
+
+    ads = AudioDataset(*ads_folder_and_name) if ads_folder_and_name else None
+    sds = AudioDataset(*sds_folder_and_name) if ads_folder_and_name else None
+
+    assert (
+        Project.get_json_paths(
+            audio_dataset=ads,
+            spectro_dataset=sds,
+            output_type=output_type,
+        )
+        == expected
+    )
