@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     from pandas import Timestamp
 
     from osekit.core.audio_file import AudioFile
-    from osekit.job.job import JobBuilder
+    from osekit.job.builder import JobBuilder
 
 
 class Project:
@@ -634,7 +634,7 @@ class Project:
             nb_jobs=nb_jobs,
         )
 
-        self.job_builder.submit_pbs()
+        self.job_builder.submit()
 
     @staticmethod
     def get_json_paths(
