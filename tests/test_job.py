@@ -770,3 +770,12 @@ def test_create_jobs(  # noqa: PLR0917
             ),
         ):
             assert job[0] == f"{job_name}_{idx}"
+
+
+def test_slurm_venv_str() -> None:
+    slurm = Slurm()
+    job = Job(script_path=Path(), config=JobConfig(venv_name="cool_venv"))
+    venv_commands = slurm._build_venv_string(job=job).splitlines()
+
+    assert venv_commands[0] == "module load conda"
+    assert venv_commands[1] == "conda activate cool_venv"
