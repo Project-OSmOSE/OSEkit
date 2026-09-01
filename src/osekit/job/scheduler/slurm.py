@@ -96,7 +96,7 @@ class Slurm(Scheduler):
     @staticmethod
     def _build_venv_string(job: Job) -> str:
         """Bash script used for activating the conda virtual environment."""
-        return f"module load cond\nconda activate {job.venv_name}"
+        return f"module load conda\nconda activate {job.venv_name}"
 
     @classmethod
     def _validate_dependency_type(cls, dependency_type: str) -> None:
