@@ -101,12 +101,21 @@ class Scheduler(ABC):
     @abstractmethod
     def _validate_dependency_type(cls, dependency_type: str) -> None: ...
 
-    @classmethod
-    @abstractmethod
+    @staticmethod
     def _parse_job_ids(
-        cls,
         dependencies: dict[str, Job | str | list[Job | str]],
-    ) -> dict[str, list[str]]: ...
+    ) -> dict[str, list[str]]:
+        """Replace all ``Job`` instances by their ID string."""
+        parsed_dependencies = {}
+        for key, value in dependencies.items():
+            parsed_values = value if isinstance(value, list) else [value]
+            parsed_values = [
+                parsed_value.job_id if isinstance(parsed_value, Job) else parsed_value
+                for parsed_value in parsed_values
+            ]
+            parsed_dependencies[key] = parsed_values
+
+        return parsed_dependencies
 
     @classmethod
     @abstractmethod
