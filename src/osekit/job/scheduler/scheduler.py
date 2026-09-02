@@ -57,7 +57,7 @@ class Scheduler(ABC):
     def submit(
         self,
         job: Job,
-        dependency: Job | list[Job] | str | list[str] | None = None,
+        dependencies: dict[str, Job | str | list[Job | str]] | None = None,
     ) -> None:
         """Submit the job to the scheduler.
 
@@ -65,12 +65,13 @@ class Scheduler(ABC):
         ----------
         job: Job
             Job to submit to the scheduler.
-        dependency: Job | list[Job] | str | None
-            Job dependency. Can be:
-            - A ``Job`` instance: will wait for that job to complete successfully
-            - A ``list[Job]``: will wait for all jobs to complete successfully
-            - A ``str``: job ID (e.g., ``"12345.datarmor"``) or dependency specification
-            - ``None``: no dependency
+        dependencies: dict[str, Job | str | list[Job|str]]
+            The dependencies of the submitted job.
+            The keys of the dictionary are the dependency types,
+            that are proper to the scheduler.
+            The values are the  other jobs (or their ID) ``job`` depends on
+            with the given dependency type.
+            If ``None``, the job is submitted without any dependency.
 
         """
         ...
@@ -100,25 +101,30 @@ class Scheduler(ABC):
     @abstractmethod
     def _validate_dependency_type(cls, dependency_type: str) -> None: ...
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def _validate_dependency(dependency: list[str] | list[Job]) -> list[str]: ...
+    def _parse_job_ids(
+        cls,
+        dependencies: dict[str, Job | str | list[Job | str]],
+    ) -> dict[str, list[str]]: ...
 
     @classmethod
     @abstractmethod
     def _build_dependency_string(
         cls,
-        dependency: str | Job | list[str] | list[Job],
-        dependency_type: str = "",
+        dependencies: dict[str, Job | str | list[Job | str]],
     ) -> str:
         """Build a job dependency string.
 
         Parameters
         ----------
-        dependency: Job | str
-            ``Job`` or job ID to depend on.
-        dependency_type: str
-            Type of dependency.
+        dependencies: dict[str, Job | str | list[Job|str]]
+            The dependencies of the submitted job.
+            The keys of the dictionary are the dependency types,
+            that are proper to the scheduler.
+            The values are the  other jobs (or their ID) ``job`` depends on
+            with the given dependency type.
+            If ``None``, the job is submitted without any dependency.
 
         Returns
         -------
