@@ -33,7 +33,8 @@ class JobStatus(Enum):
     PREPARED = 2
     QUEUED = 3
     RUNNING = 4
-    COMPLETED = 5
+    SUSPENDED = 5
+    COMPLETED = 6
 
 
 class Job:
@@ -74,7 +75,7 @@ class Job:
         self.venv_name = config.venv_name
         self.name = name
         self.output_folder = output_folder
-        self.job_info = {}
+        self.info = {}
         self._status = JobStatus.UNPREPARED
         self._path = None
         self._id = None
@@ -215,19 +216,13 @@ class Job:
         self._id = job_id
 
     @property
-    def job_info(self) -> dict:
+    def info(self) -> dict:
         """Information about the job."""
         return self._info
 
-    @job_info.setter
-    def job_info(self, info: dict) -> None:
+    @info.setter
+    def info(self, info: dict) -> None:
         self._info = info
-
-    def progress(self) -> None:
-        """Bring the job to the next state."""
-        if self.status == JobStatus.COMPLETED:
-            return
-        self._status = JobStatus(self._status.value + 1)
 
     def get_arg_string(self) -> str:
         """Build a string representation of the job's arguments."""
