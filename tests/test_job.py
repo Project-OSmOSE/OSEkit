@@ -528,22 +528,22 @@ def test_pbs_validate_dependency_type() -> None:
     [
         pytest.param(
             {"afterok": "1234567"},
-            "afterok:1234567",
+            "-W depend=afterok:1234567",
             id="one_type_one_job",
         ),
         pytest.param(
             {"afterok": ["1234567", "2345678"]},
-            "afterok:1234567:2345678",
+            "-W depend=afterok:1234567:2345678",
             id="one_type_multiple_jobs",
         ),
         pytest.param(
             {"afterok": "1234567", "afterany": "2345678"},
-            "afterok:1234567,afterany:2345678",
+            "-W depend=afterok:1234567,afterany:2345678",
             id="multiple_types_one_job",
         ),
         pytest.param(
             {"afterok": ["1234567", "2345678"], "afterany": ["3456789", "4567890"]},
-            "afterok:1234567:2345678,afterany:3456789:4567890",
+            "-W depend=afterok:1234567:2345678,afterany:3456789:4567890",
             id="multiple_types_multiple_jobs",
         ),
     ],

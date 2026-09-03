@@ -34,6 +34,8 @@ class Pbs(Scheduler):
         "F": JobStatus.COMPLETED,
     }
 
+    SUBMIT_CMD = "qsub"
+
     def __init__(self, queue: Literal["omp", "mpi"] = "omp") -> None:
         """Initialize the PBS scheduler."""
         self.queue = queue
@@ -89,54 +91,6 @@ class Pbs(Scheduler):
             for key, value in request.items()
             if value
         )
-
-    def submit(
-        self,
-        job: Job,
-        dependencies: dict[str, Job | str | list[Job | str]] | None = None,
-    ) -> None:
-        """Submit the job to the scheduler.
-
-        Parameters
-        ----------
-        job: Job
-            Job to submit to the scheduler.
-        dependencies: dict[str, Job | str | list[Job|str]]
-            The dependencies of the submitted job.
-            The keys of the dictionary are the dependency types,
-            see https://help.altair.com/2022.1.0/PBS%20Professional/PBSReferenceGuide2022.1.pdf#page=151
-            for the list of supported values.
-            The values are the  other jobs (or their ID) ``job`` depends on
-            with the given dependency type.
-            If ``None``, the job is submitted without any dependency.
-
-        """
-        if self.update_status(job=job) is not JobStatus.PREPARED:
-            msg = "Job should be written before being submitted."
-            raise ValueError(msg)
-
-        cmd = ["qsub"]
-
-        if dependencies is not None:
-            dependency_str = self._build_dependency_string(dependencies)
-            if dependency_str:
-                cmd.extend(["-W", f"depend={dependency_str}"])
-
-        cmd.append(str(job.path))
-
-        try:
-            request = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-        except subprocess.CalledProcessError as e:
-            msg = f"Submission failed with exit code {e.returncode}"
-            raise RuntimeError(msg) from e
-
-        job.job_id = request.stdout.split(".", maxsplit=1)[0].strip()
-        self.update_status(job=job)
 
     def update_info(self, job: Job) -> None:
         """Request info about the job and update it."""
@@ -245,21 +199,21 @@ class Pbs(Scheduler):
         Examples
         --------
         >>> Pbs._build_dependency_string({"afterok": "1234567"})
-        'afterok:1234567'
+        '-W depend=afterok:1234567'
         >>> Pbs._build_dependency_string({"afterok": ["1234567","4567891"]})
-        'afterok:1234567:4567891'
+        '-W depend=afterok:1234567:4567891'
         >>> from pathlib import Path
         >>> job = Job(Path())
         >>> job._id = "7894561"
         >>> Pbs._build_dependency_string({"afterany":job})
-        'afterany:7894561'
+        '-W depend=afterany:7894561'
         >>> from pathlib import Path
         >>> job1 = Job(Path())
         >>> job1._id = "7894561"
         >>> job2 = Job(Path())
         >>> job2._id = "4839572"
         >>> Pbs._build_dependency_string({"afterany":[job1,job2]})
-        'afterany:7894561:4839572'
+        '-W depend=afterany:7894561:4839572'
 
         """
         # Check that types are valid before submitting
@@ -268,7 +222,7 @@ class Pbs(Scheduler):
 
         id_str = cls._parse_job_ids(dependencies=dependencies)
 
-        return ",".join(
+        return "-W depend=" + ",".join(
             f"{dependency_type}:{':'.join(ids)}"
             for dependency_type, ids in id_str.items()
         )

@@ -1,3 +1,4 @@
+import subprocess
 from abc import ABC, abstractmethod
 from pathlib import Path
 
@@ -8,6 +9,7 @@ class Scheduler(ABC):
     """Abstract class representing a job scheduler."""
 
     JOB_FILE_EXTENSION = "job"
+    SUBMIT_CMD = ""
 
     def write(self, job: Job, path: Path) -> None:
         """Write a job script to file.
@@ -53,7 +55,6 @@ class Scheduler(ABC):
         """
         ...
 
-    @abstractmethod
     def submit(
         self,
         job: Job,
@@ -74,7 +75,30 @@ class Scheduler(ABC):
             If ``None``, the job is submitted without any dependency.
 
         """
-        ...
+        if self.update_status(job=job) is not JobStatus.PREPARED:
+            msg = "Job should be written before being submitted."
+            raise ValueError(msg)
+
+        cmd = [self.SUBMIT_CMD]
+
+        if dependencies:
+            cmd.extend(self._build_dependency_string(dependencies=dependencies).split())
+
+        cmd.append(str(job.path))
+
+        try:
+            request = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except subprocess.CalledProcessError as e:
+            msg = f"Submission failed with exit code {e.returncode}"
+            raise RuntimeError(msg) from e
+
+        job.job_id = request.stdout.split(".", maxsplit=1)[0].strip()
+        self.update_status(job=job)
 
     @abstractmethod
     def update_info(self, job: Job) -> None:
