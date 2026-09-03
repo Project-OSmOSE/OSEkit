@@ -1,4 +1,5 @@
 import subprocess
+import typing
 from typing import Literal
 
 from osekit.job.job import Job, JobStatus
@@ -8,7 +9,7 @@ from osekit.job.scheduler.scheduler import Scheduler
 class Pbs(Scheduler):
     """Abstract class representing a PBS job scheduler."""
 
-    _VALID_DEPENDENCY_TYPES = frozenset(
+    _VALID_DEPENDENCY_TYPES: typing.ClassVar = frozenset(
         {
             "after",
             "afterok",
@@ -22,7 +23,16 @@ class Pbs(Scheduler):
             "runone",
         },
     )
-    JOB_FILE_EXTENSION = "pbs"
+    JOB_FILE_EXTENSION: typing.ClassVar = "pbs"
+
+    JOB_STATUS_CODES: typing.ClassVar = {
+        "Q": JobStatus.QUEUED,
+        "R": JobStatus.RUNNING,
+        "S": JobStatus.SUSPENDED,
+        "H": JobStatus.SUSPENDED,
+        "E": JobStatus.COMPLETED,
+        "F": JobStatus.COMPLETED,
+    }
 
     def __init__(self, queue: Literal["omp", "mpi"] = "omp") -> None:
         """Initialize the PBS scheduler."""
@@ -154,7 +164,8 @@ class Pbs(Scheduler):
 
         self._parse_info_str(job=job, info=stdout)
 
-    def _parse_info_str(self, job: Job, info: str) -> None:
+    @classmethod
+    def _parse_info_str(cls, job: Job, info: str) -> None:
         """Parse the info from the requested qstat info string."""
         keys, _, values = info.splitlines()
 
@@ -165,9 +176,12 @@ class Pbs(Scheduler):
         # Get the associated values
         kvp = dict(zip(keys, values.split(), strict=True))
 
-        job.job_info["user"] = kvp["User"]
-        job.job_info["time"] = kvp["Time Use"]
-        job.job_info["queue"] = kvp["Queue"]
+        job.info["user"] = kvp["User"]
+        job.info["time"] = kvp["Time Use"]
+        job.info["queue"] = kvp["Queue"]
+
+        if status := cls.JOB_STATUS_CODES.get(kvp["S"], False):
+            job.status = status
 
     def update_status(self, job: Job) -> JobStatus:
         """Request info about the job and update its status.
@@ -195,8 +209,8 @@ class Pbs(Scheduler):
             "Q": JobStatus.QUEUED,
             "R": JobStatus.RUNNING,
         }
-        if job.job_info["job_state"] in job_state:
-            job.status = job_state[job.job_info["job_state"]]
+        if job.info["job_state"] in job_state:
+            job.status = job_state[job.info["job_state"]]
         return job.status
 
     @staticmethod

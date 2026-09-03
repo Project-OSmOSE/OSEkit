@@ -32,7 +32,7 @@ class Scheduler(ABC):
             file.write(script)
 
         job.path = path
-        job.progress()
+        job.status = JobStatus.PREPARED
 
     @abstractmethod
     def _build_job_specification(self, job: Job) -> str:
