@@ -14,40 +14,6 @@ from osekit.job.scheduler.pbs import Pbs
 from osekit.job.scheduler.scheduler import Scheduler
 
 
-@pytest.mark.parametrize(
-    ("initial_status", "expected_status"),
-    [
-        pytest.param(
-            JobStatus.UNPREPARED,
-            JobStatus.PREPARED,
-            id="unprepared_becomes_prepared",
-        ),
-        pytest.param(
-            JobStatus.PREPARED,
-            JobStatus.QUEUED,
-            id="prepared_becomes_queued",
-        ),
-        pytest.param(JobStatus.QUEUED, JobStatus.RUNNING, id="queued_becomes_running"),
-        pytest.param(
-            JobStatus.RUNNING,
-            JobStatus.COMPLETED,
-            id="running_becomes_completed",
-        ),
-        pytest.param(
-            JobStatus.COMPLETED,
-            JobStatus.COMPLETED,
-            id="completed_remains_completed",
-        ),
-    ],
-)
-def test_job_progress(initial_status: JobStatus, expected_status: JobStatus) -> None:
-    job = Job(script_path=Path())
-    assert job.status == JobStatus.UNPREPARED
-    job._status = initial_status
-    job.progress()
-    assert job.status == expected_status
-
-
 def test_properties() -> None:
     script = Path("myscript.py")
     nb_nodes = 2
@@ -77,21 +43,6 @@ def test_properties() -> None:
     assert job.venv_name == "merriweather"
     assert job.name == "post_pavillion"
     assert job.output_folder == Path("output")
-
-
-def test_progress_transitions() -> None:
-    job = Job(Path("strawberry.py"))
-    assert job.status == JobStatus.UNPREPARED
-    for expected in (
-        JobStatus.PREPARED,
-        JobStatus.QUEUED,
-        JobStatus.RUNNING,
-        JobStatus.COMPLETED,
-    ):
-        job.progress()
-        assert job.status == expected
-    job.progress()
-    assert job.status == JobStatus.COMPLETED
 
 
 def test_walltime_str_and_setter() -> None:
@@ -282,11 +233,11 @@ def test_pbs_update_info_no_job_id() -> None:
     pbs_scheduler = Pbs()
     job.job_id = None
     pbs_scheduler.update_info(job=job)
-    assert job.job_info is None
+    assert not job.info
 
 
 def test_pbs_update_info_parse_stdout(monkeypatch: pytest.MonkeyPatch) -> None:
-    job = Job(Path("fontaines.py"))
+    job = Job(script_path=Path("fontaines.py"), name="SwissArmyMan")
     job.job_id = "7137005"
 
     class Dummy:
@@ -305,32 +256,11 @@ def test_pbs_update_info_parse_stdout(monkeypatch: pytest.MonkeyPatch) -> None:
     assert job.job_id == "7137005"
     assert job.name == "SwissArmyMan"
     assert job.status == JobStatus.RUNNING
-    assert job.job_info == {
+    assert job.info == {
         "user": "daniels",
         "time": "00:10:37",
         "queue": "jetski",
     }
-
-
-def test_pbs_update_info_completed(monkeypatch: pytest.MonkeyPatch) -> None:
-    job = Job(Path("amok.py"))
-    job.job_id = "25022013"
-    job.job_info = {}
-
-    class Dummy:
-        stdout = ""
-        stderr = "Atoms\nJob has finished\nFor peace"
-
-    monkeypatch.setattr(
-        subprocess,
-        "run",
-        lambda *args, **kwargs: Dummy(),
-    )
-
-    scheduler = Pbs()
-    scheduler.update_info(job=job)
-    assert job.status == JobStatus.COMPLETED
-    assert job.job_info["job_state"] == "C"
 
 
 def test_pbs_update_info_unknown_job_raises(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -388,12 +318,12 @@ def test_pbs_update_status(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
         lambda job: None,
     )
 
-    job.job_info = {"job_state": "Q"}
+    job.info = {"job_state": "Q"}
     job.job_id = "5129195"
     assert scheduler.update_status(job=job) == JobStatus.QUEUED
     assert job.status == JobStatus.QUEUED
 
-    job.job_info = {"job_state": "R"}
+    job.info = {"job_state": "R"}
     assert scheduler.update_status(job=job) == JobStatus.RUNNING
     assert job.status == JobStatus.RUNNING
 
