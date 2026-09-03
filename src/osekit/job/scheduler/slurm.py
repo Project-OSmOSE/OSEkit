@@ -8,6 +8,7 @@ class Slurm(Scheduler):
     """Abstract class representing a job scheduler."""
 
     JOB_FILE_EXTENSION = "slurm"
+    SUBMIT_CMD = "sbatch"
 
     def __init__(self, partition: Literal["cpu", "gpu", "ops"] = "cpu") -> None:
         """Initialize the SLURM scheduler."""
