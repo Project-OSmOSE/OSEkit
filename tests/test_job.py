@@ -282,6 +282,28 @@ def test_pbs_update_info_unknown_job_raises(monkeypatch: pytest.MonkeyPatch) -> 
         scheduler.update_info(job=job)
 
 
+def test_pbs_update_info_without_qstat_output(monkeypatch: pytest.MonkeyPatch) -> None:
+    job = Job(Path("pompom.py"))
+    job.job_id = "17112014"
+    job.status = JobStatus.RUNNING
+
+    class Dummy:
+        stdout = ""
+        stderr = ""
+
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        lambda *args, **kwargs: Dummy(),
+    )
+
+    Pbs().update_info(job=job)
+
+    # No qstat output shouldn't do anything
+    assert job.job_id == "17112014"
+    assert job.status == JobStatus.RUNNING
+
+
 def test_pbs_update_info_error(monkeypatch: pytest.MonkeyPatch) -> None:
     job = Job(Path("pompom.py"))
     job.job_id = "17112014"
