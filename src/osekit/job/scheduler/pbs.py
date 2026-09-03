@@ -135,7 +135,7 @@ class Pbs(Scheduler):
 
         try:
             request = subprocess.run(
-                ["qstat", "-f", str(job.job_id)],
+                ["qstat", "-x", str(job.job_id)],
                 capture_output=True,
                 text=True,
                 check=False,
@@ -147,21 +147,27 @@ class Pbs(Scheduler):
 
         if not stdout:
             err = request.stderr
-            if "Job has finished" in err:
-                job.status = JobStatus.COMPLETED
-                job.job_info["job_state"] = "C"
             if "Unknown Job Id" in err:
                 msg = f"Unknown Job Id {job.job_id}"
                 raise ValueError(msg)
             return
 
-        info = {}
-        for line in stdout.splitlines():
-            if "=" not in line:
-                continue
-            key, value = line.split("=", 1)
-            info[key.strip()] = value.strip()
-        job.job_info = info
+        self._parse_info_str(job=job, info=stdout)
+
+    def _parse_info_str(self, job: Job, info: str) -> None:
+        """Parse the info from the requested qstat info string."""
+        keys, _, values = info.splitlines()
+
+        # Get keys order in the string
+        known_keys = ["Job id", "Name", "User", "Time Use", "S", "Queue"]
+        keys = sorted(known_keys, key=keys.index)
+
+        # Get the associated values
+        kvp = dict(zip(keys, values.split(), strict=True))
+
+        job.job_info["user"] = kvp["User"]
+        job.job_info["time"] = kvp["Time Use"]
+        job.job_info["queue"] = kvp["Queue"]
 
     def update_status(self, job: Job) -> JobStatus:
         """Request info about the job and update its status.

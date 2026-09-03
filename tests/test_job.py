@@ -277,7 +277,7 @@ def test_submit_pbs_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     assert job.status == JobStatus.PREPARED
 
 
-def test_update_info_no_job_id() -> None:
+def test_pbs_update_info_no_job_id() -> None:
     job = Job(Path("pixies.py"))
     pbs_scheduler = Pbs()
     job.job_id = None
@@ -285,14 +285,14 @@ def test_update_info_no_job_id() -> None:
     assert job.job_info is None
 
 
-def test_update_info_parse_stdout(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_pbs_update_info_parse_stdout(monkeypatch: pytest.MonkeyPatch) -> None:
     job = Job(Path("fontaines.py"))
-    job.job_id = "43"
-    job.status = JobStatus.RUNNING
-    raw = " frankie = cosmos \navey=tare\nattic= abasement\nthis will be ignored"
+    job.job_id = "7137005"
 
     class Dummy:
-        stdout = raw
+        stdout = (
+            Path(__file__).parent / "_static/job_status_request_results/pbs.txt"
+        ).read_text()
         stderr = ""
 
     monkeypatch.setattr(
@@ -302,10 +302,17 @@ def test_update_info_parse_stdout(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     scheduler = Pbs()
     scheduler.update_info(job=job)
-    assert job.job_info == {"frankie": "cosmos", "avey": "tare", "attic": "abasement"}
+    assert job.job_id == "7137005"
+    assert job.name == "SwissArmyMan"
+    assert job.status == JobStatus.RUNNING
+    assert job.job_info == {
+        "user": "daniels",
+        "time": "00:10:37",
+        "queue": "jetski",
+    }
 
 
-def test_update_info_completed(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_pbs_update_info_completed(monkeypatch: pytest.MonkeyPatch) -> None:
     job = Job(Path("amok.py"))
     job.job_id = "25022013"
     job.job_info = {}
@@ -326,7 +333,7 @@ def test_update_info_completed(monkeypatch: pytest.MonkeyPatch) -> None:
     assert job.job_info["job_state"] == "C"
 
 
-def test_update_info_unknown_job_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_pbs_update_info_unknown_job_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     job = Job(Path("pompom.py"))
     job.job_id = "17112014"
 
@@ -345,7 +352,7 @@ def test_update_info_unknown_job_raises(monkeypatch: pytest.MonkeyPatch) -> None
         scheduler.update_info(job=job)
 
 
-def test_update_info_error(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_pbs_update_info_error(monkeypatch: pytest.MonkeyPatch) -> None:
     job = Job(Path("pompom.py"))
     job.job_id = "17112014"
 
@@ -364,7 +371,7 @@ def test_update_info_error(monkeypatch: pytest.MonkeyPatch) -> None:
         scheduler.update_info(job=job)
 
 
-def test_update_status(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_pbs_update_status(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     job = Job(Path("porticoquartet.py"))
     job.path = tmp_path / "pompidou.pbs"
 

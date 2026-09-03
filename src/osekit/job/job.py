@@ -65,7 +65,7 @@ class Job:
         """
         config = JobConfig() if config is None else config
         self.script_path = script_path
-        self.script_args = script_args if script_args else {}
+        self.script_args = script_args or {}
         self.nb_nodes = config.nb_nodes
         self.ncpus = config.ncpus
         self.ngpus = config.ngpus
@@ -74,10 +74,10 @@ class Job:
         self.venv_name = config.venv_name
         self.name = name
         self.output_folder = output_folder
+        self.job_info = {}
         self._status = JobStatus.UNPREPARED
         self._path = None
         self._id = None
-        self._info = None
 
     @property
     def script_path(self) -> Path:
@@ -215,7 +215,7 @@ class Job:
         self._id = job_id
 
     @property
-    def job_info(self) -> dict | None:
+    def job_info(self) -> dict:
         """Information about the job."""
         return self._info
 
