@@ -61,27 +61,6 @@ class Slurm(Scheduler):
             f"#SBATCH --{key}={value}" for key, value in specifications.items() if value
         )
 
-    def submit(
-        self,
-        job: Job,
-        dependencies: dict[str, Job | str | list[Job | str]] | None = None,
-    ) -> None:
-        """Submit the job to the scheduler.
-
-        Parameters
-        ----------
-        job: Job
-            Job to submit to the scheduler.
-        dependencies: dict[str, Job | str | list[Job|str]]
-            The dependencies of the submitted job.
-            The keys of the dictionary are the dependency types,
-            that are proper to the scheduler.
-            The values are the  other jobs (or their ID) ``job`` depends on
-            with the given dependency type.
-            If ``None``, the job is submitted without any dependency.
-
-        """
-
     def update_info(self, job: Job) -> None:
         """Request info about the job and update it."""
 
