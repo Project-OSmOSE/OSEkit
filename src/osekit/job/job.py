@@ -25,7 +25,8 @@ class JobStatus(Enum):
     ``PREPARED``: The job file has been written but not submitted.
     ``QUEUED``: The job has been queued.
     ``RUNNING``: The job is currently running.
-    ``COMPLETED``: The job has been completed.
+    ``SUSPENDED``: The job has been suspended or is held.
+    ``COMPLETED``: The job is exiting or has been completed.
 
     """
 
@@ -179,7 +180,8 @@ class Job:
         ``PREPARED``: The job file has been written but not submitted.
         ``QUEUED``: The job has been queued.
         ``RUNNING``: The job is currently running.
-        ``COMPLETED``: The job has been completed.
+        ``SUSPENDED``: The job has been suspended or is held.
+        ``COMPLETED``: The job is exiting or has been completed.
 
         """
         return self._status

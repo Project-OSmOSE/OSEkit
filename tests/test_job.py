@@ -312,24 +312,23 @@ def test_pbs_update_status(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     job.path.write_text("prickly pear")
     assert scheduler.update_status(job=job) == JobStatus.PREPARED
 
+    def mock_update_info(
+        job: Job,
+        status: JobStatus,
+        *args: list,
+        **kwargs: dict,
+    ) -> None:
+        job.status = status
+
     monkeypatch.setattr(
         scheduler,
         "update_info",
-        lambda job: None,
+        lambda job: mock_update_info(job=job, status=JobStatus.QUEUED),
     )
 
-    job.info = {"job_state": "Q"}
     job.job_id = "5129195"
     assert scheduler.update_status(job=job) == JobStatus.QUEUED
     assert job.status == JobStatus.QUEUED
-
-    job.info = {"job_state": "R"}
-    assert scheduler.update_status(job=job) == JobStatus.RUNNING
-    assert job.status == JobStatus.RUNNING
-
-    job.status = JobStatus.COMPLETED
-    assert scheduler.update_status(job=job) == JobStatus.COMPLETED
-    assert job.status == JobStatus.COMPLETED
 
 
 def test_pbs_job_builder_write(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

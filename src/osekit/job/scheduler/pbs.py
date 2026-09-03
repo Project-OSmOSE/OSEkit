@@ -201,16 +201,6 @@ class Pbs(Scheduler):
             return job.status
 
         self.update_info(job=job)
-
-        if job.status == JobStatus.COMPLETED:
-            return job.status
-
-        job_state = {
-            "Q": JobStatus.QUEUED,
-            "R": JobStatus.RUNNING,
-        }
-        if job.info["job_state"] in job_state:
-            job.status = job_state[job.info["job_state"]]
         return job.status
 
     @staticmethod
