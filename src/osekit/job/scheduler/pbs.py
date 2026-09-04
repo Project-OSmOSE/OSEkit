@@ -120,15 +120,6 @@ class Pbs(Scheduler):
         )
 
     @classmethod
-    def _validate_dependency_type(cls, dependency_type: str) -> None:
-        if dependency_type not in cls._VALID_DEPENDENCY_TYPES:
-            msg = (
-                f"Unsupported dependency type '{dependency_type}'.\n"
-                f"Expected one of:\n\t{'\n\t'.join(sorted(cls._VALID_DEPENDENCY_TYPES))}."
-            )
-            raise ValueError(msg)
-
-    @classmethod
     def _build_dependency_string(
         cls,
         dependencies: dict[str, Job | str | list[Job | str]],

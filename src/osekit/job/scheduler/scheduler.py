@@ -9,6 +9,7 @@ from osekit.job.job import Job, JobStatus
 class Scheduler(ABC):
     """Abstract class representing a job scheduler."""
 
+    _VALID_DEPENDENCY_TYPES: typing.ClassVar = frozenset()
     JOB_FILE_EXTENSION: typing.ClassVar = "job"
     SUBMIT_CMD: typing.ClassVar = ""
     INFO_CMD: typing.ClassVar = []
@@ -175,8 +176,14 @@ class Scheduler(ABC):
     def _build_venv_string(job: Job) -> str: ...
 
     @classmethod
-    @abstractmethod
-    def _validate_dependency_type(cls, dependency_type: str) -> None: ...
+    def _validate_dependency_type(cls, dependency_type: str) -> None:
+        """Validate dependency types in the dependencies instruction."""
+        if dependency_type not in cls._VALID_DEPENDENCY_TYPES:
+            msg = (
+                f"Unsupported dependency type '{dependency_type}'.\n"
+                f"Expected one of:\n\t{'\n\t'.join(sorted(cls._VALID_DEPENDENCY_TYPES))}."
+            )
+            raise ValueError(msg)
 
     @staticmethod
     def _parse_job_ids(
