@@ -8,6 +8,17 @@ from osekit.job.scheduler.scheduler import Scheduler
 class Slurm(Scheduler):
     """Abstract class representing a job scheduler."""
 
+    _VALID_DEPENDENCY_TYPES: typing.ClassVar = frozenset(
+        {
+            "after",
+            "afterany",
+            "afterburstbuffer",
+            "aftercorr",
+            "afternotok",
+            "afterok",
+            "singleton",
+        },
+    )
     JOB_FILE_EXTENSION: typing.ClassVar = "slurm"
     INFO_CMD: typing.ClassVar = ["squeue", "--jobs"]
     SUBMIT_CMD: typing.ClassVar = "sbatch"
@@ -105,17 +116,11 @@ class Slurm(Scheduler):
         return f"module load conda\nconda activate {job.venv_name}"
 
     @classmethod
-    def _validate_dependency_type(cls, dependency_type: str) -> None:
-        pass
-
-    @staticmethod
-    def _validate_dependency(dependency: list[str] | list[Job]) -> list[str]:
-        pass
-
-    @classmethod
     def _build_dependency_string(
         cls,
         dependencies: dict[str, Job | str | list[Job | str]],
+        *,
+        instructions_or: bool = False,
     ) -> str:
         """Build a job dependency string.
 
@@ -124,14 +129,52 @@ class Slurm(Scheduler):
         dependencies: dict[str, Job | str | list[Job|str]]
             The dependencies of the submitted job.
             The keys of the dictionary are the dependency types,
-            that are proper to the scheduler.
+            see https://slurm.schedmd.com/sbatch.html
             The values are the  other jobs (or their ID) ``job`` depends on
             with the given dependency type.
             If ``None``, the job is submitted without any dependency.
+        instructions_or: bool, optional
+            If ``True``, the instructions in the ``dependencies`` list
+            are joined with a logical OR (``?`` character in Slurm).
+            If ``False``, the instructions are joined with a logical
+            AND (``,`` character in Slurm).
 
         Returns
         -------
         str
             Job dependency string.
 
-        """
+        Examples
+        --------
+        >>> Slurm._build_dependency_string({"afterok": "1234567"})
+        '-d afterok:1234567'
+        >>> Slurm._build_dependency_string({"afterok": ["1234567","4567891"]})
+        '-d afterok:1234567:4567891'
+        >>> Slurm._build_dependency_string({"afterok": ["1234567","4567891"], "afterany":"7654321"}, instructions_or=True)
+        '-d afterok:1234567:4567891?afterany:7654321'
+        >>> from pathlib import Path
+        >>> job = Job(Path())
+        >>> job._id = "7894561"
+        >>> Slurm._build_dependency_string({"afterany":job})
+        '-d afterany:7894561'
+        >>> from pathlib import Path
+        >>> job1 = Job(Path())
+        >>> job1._id = "7894561"
+        >>> job2 = Job(Path())
+        >>> job2._id = "4839572"
+        >>> Slurm._build_dependency_string({"afterany":[job1,job2]})
+        '-d afterany:7894561:4839572'
+
+        """  # noqa: E501
+        # Check that types are valid before submitting
+        for dependency_type in dependencies:
+            cls._validate_dependency_type(dependency_type=dependency_type)
+
+        id_str = cls._parse_job_ids(dependencies=dependencies)
+
+        logical_join_character = "?" if instructions_or else ","
+
+        return "-d " + logical_join_character.join(
+            f"{dependency_type}:{':'.join(ids)}"
+            for dependency_type, ids in id_str.items()
+        )
