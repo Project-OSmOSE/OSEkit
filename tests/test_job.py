@@ -297,6 +297,34 @@ def test_pbs_update_info_parse_stdout(monkeypatch: pytest.MonkeyPatch) -> None:
     }
 
 
+def test_slurm_update_info_parse_stdout(monkeypatch: pytest.MonkeyPatch) -> None:
+    job = Job(script_path=Path("fontaines.py"), name="SwissArmyMan")
+    job.job_id = "7137005"
+
+    class Dummy:
+        stdout = (
+            Path(__file__).parent / "_static/job_status_request_results/slurm.txt"
+        ).read_text()
+        stderr = ""
+
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        lambda *args, **kwargs: Dummy(),
+    )
+    scheduler = Slurm()
+    scheduler.update_info(job=job)
+    assert job.job_id == "7137005"
+    assert job.name == "SwissArmyMan"
+    assert job.status == JobStatus.RUNNING
+    assert job.info == {
+        "user": "daniels",
+        "time": "10:37",
+        "partition": "jetski",
+        "node_list": "compute-114-9",
+    }
+
+
 def test_pbs_update_info_unknown_job_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     job = Job(Path("pompom.py"))
     job.job_id = "17112014"
