@@ -1,3 +1,4 @@
+import typing
 from typing import Literal
 
 from osekit.job.job import Job, JobStatus
@@ -7,8 +8,16 @@ from osekit.job.scheduler.scheduler import Scheduler
 class Slurm(Scheduler):
     """Abstract class representing a job scheduler."""
 
-    JOB_FILE_EXTENSION = "slurm"
-    SUBMIT_CMD = "sbatch"
+    JOB_FILE_EXTENSION: typing.ClassVar = "slurm"
+    INFO_CMD: typing.ClassVar = ["squeue", "--jobs"]
+    SUBMIT_CMD: typing.ClassVar = "sbatch"
+    JOB_STATUS_CODES: typing.ClassVar = {
+        "PD": JobStatus.QUEUED,
+        "R": JobStatus.RUNNING,
+        "S": JobStatus.SUSPENDED,
+        "CG": JobStatus.COMPLETED,
+        "CD": JobStatus.COMPLETED,
+    }
 
     def __init__(self, partition: Literal["cpu", "gpu", "ops"] = "cpu") -> None:
         """Initialize the SLURM scheduler."""
@@ -61,9 +70,6 @@ class Slurm(Scheduler):
             f"#SBATCH --{key}={value}" for key, value in specifications.items() if value
         )
 
-    def update_info(self, job: Job) -> None:
-        """Request info about the job and update it."""
-
     def update_status(self, job: Job) -> JobStatus:
         """Request info about the job and update its status.
 
@@ -73,6 +79,35 @@ class Slurm(Scheduler):
             The updated status of the job.
 
         """
+
+    @classmethod
+    def _parse_info_str(cls, job: Job, info: str) -> None:
+        """Parse the info from the requested squeue info string."""
+        keys, values = info.splitlines()
+
+        # Get keys order in the string
+        known_keys = [
+            "JOBID",
+            "PARTITION",
+            "NAME",
+            "USER",
+            "ST",
+            "TIME",
+            "NODES",
+            "NODELIST(REASON)",
+        ]
+        keys = sorted(known_keys, key=keys.index)
+
+        # Get the associated values
+        kvp = dict(zip(keys, values.split(), strict=True))
+
+        job.info["user"] = kvp["USER"]
+        job.info["time"] = kvp["TIME"]
+        job.info["partition"] = kvp["PARTITION"]
+        job.info["node_list"] = kvp["NODELIST(REASON)"]
+
+        if status := cls.JOB_STATUS_CODES.get(kvp["ST"], False):
+            job.status = status
 
     @staticmethod
     def _build_venv_string(job: Job) -> str:
