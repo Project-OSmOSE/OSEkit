@@ -83,7 +83,7 @@ class Slurm(Scheduler):
 
     @staticmethod
     def _parse_job_id(submit_output: str) -> str:
-        """Parse the output of the submit command.
+        r"""Parse the output of the submit command.
 
         Parameters
         ----------
@@ -97,11 +97,11 @@ class Slurm(Scheduler):
 
         Examples
         --------
-        >>> Slurm._parse_job_id(submit_output="Submitted batch job 3647090")
+        >>> Slurm._parse_job_id(submit_output="Submitted batch job 3647090\n")
         '3647090'
 
         """
-        return submit_output.removeprefix("Submitted batch job ")
+        return submit_output.removeprefix("Submitted batch job ").strip("\n")
 
     @classmethod
     def _parse_info_str(cls, job: Job, info: str) -> None:
