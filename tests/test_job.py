@@ -319,7 +319,7 @@ def test_pbs_update_info_error(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
     scheduler = Pbs()
-    with pytest.raises(RuntimeError, match="Qstat failed with exit code 5"):
+    with pytest.raises(RuntimeError, match=r"qstat failed.*code 5"):
         scheduler.update_info(job=job)
 
 

@@ -1,4 +1,5 @@
 import subprocess
+import typing
 from abc import ABC, abstractmethod
 from pathlib import Path
 
@@ -8,8 +9,9 @@ from osekit.job.job import Job, JobStatus
 class Scheduler(ABC):
     """Abstract class representing a job scheduler."""
 
-    JOB_FILE_EXTENSION = "job"
-    SUBMIT_CMD = ""
+    JOB_FILE_EXTENSION: typing.ClassVar = "job"
+    SUBMIT_CMD: typing.ClassVar = ""
+    INFO_CMD: typing.ClassVar = []
 
     def write(self, job: Job, path: Path) -> None:
         """Write a job script to file.
@@ -100,9 +102,52 @@ class Scheduler(ABC):
         job.job_id = request.stdout.split(".", maxsplit=1)[0].strip()
         self.update_status(job=job)
 
-    @abstractmethod
     def update_info(self, job: Job) -> None:
-        """Request info about the job and update it."""
+        """Request info about the job and update it.
+
+        Parameters
+        ----------
+        job: Job
+            Job for which to update the info.
+
+        """
+        if job.job_id is None:
+            return
+
+        try:
+            request = subprocess.run(
+                [*self.INFO_CMD, str(job.job_id)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            stdout = request.stdout
+        except subprocess.CalledProcessError as e:
+            msg = f"{self.INFO_CMD[0]} failed with exit code {e.returncode}"
+            raise RuntimeError(msg) from e
+
+        if not stdout:
+            err = request.stderr
+            if err:
+                msg = f"{job.job_id}: {err}"
+                raise ValueError(msg)
+            return
+
+        self._parse_info_str(job=job, info=stdout)
+
+    @classmethod
+    @abstractmethod
+    def _parse_info_str(cls, job: Job, info: str) -> None:
+        """Parse the info string to update a job info.
+
+        Parameters
+        ----------
+        job: Job
+            Job of which the info is updated
+        info: str
+            Info string as returned by a request.
+
+        """
         ...
 
     @abstractmethod
