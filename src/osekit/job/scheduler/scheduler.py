@@ -150,7 +150,6 @@ class Scheduler(ABC):
         """
         ...
 
-    @abstractmethod
     def update_status(self, job: Job) -> JobStatus:
         """Request info about the job and update its status.
 
@@ -160,7 +159,16 @@ class Scheduler(ABC):
             The updated status of the job.
 
         """
-        ...
+        if job.job_id is None:
+            job.status = (
+                JobStatus.PREPARED
+                if job.path and job.path.exists()
+                else JobStatus.UNPREPARED
+            )
+            return job.status
+
+        self.update_info(job=job)
+        return job.status
 
     @staticmethod
     @abstractmethod

@@ -111,26 +111,6 @@ class Pbs(Scheduler):
         if status := cls.JOB_STATUS_CODES.get(kvp["S"], False):
             job.status = status
 
-    def update_status(self, job: Job) -> JobStatus:
-        """Request info about the job and update its status.
-
-        Returns
-        -------
-        JobStatus:
-            The updated status of the job.
-
-        """
-        if job.job_id is None:
-            job.status = (
-                JobStatus.PREPARED
-                if job.path and job.path.exists()
-                else JobStatus.UNPREPARED
-            )
-            return job.status
-
-        self.update_info(job=job)
-        return job.status
-
     @staticmethod
     def _build_venv_string(job: Job) -> str:
         """Bash script used for activating the conda virtual environment."""
