@@ -70,16 +70,6 @@ class Slurm(Scheduler):
             f"#SBATCH --{key}={value}" for key, value in specifications.items() if value
         )
 
-    def update_status(self, job: Job) -> JobStatus:
-        """Request info about the job and update its status.
-
-        Returns
-        -------
-        JobStatus:
-            The updated status of the job.
-
-        """
-
     @classmethod
     def _parse_info_str(cls, job: Job, info: str) -> None:
         """Parse the info from the requested squeue info string."""
