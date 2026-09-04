@@ -100,8 +100,14 @@ class Scheduler(ABC):
             msg = f"Submission failed with exit code {e.returncode}"
             raise RuntimeError(msg) from e
 
-        job.job_id = request.stdout.split(".", maxsplit=1)[0].strip()
+        job.job_id = self._parse_job_id(submit_output=request.stdout)
         self.update_status(job=job)
+
+    @staticmethod
+    @abstractmethod
+    def _parse_job_id(submit_output: str) -> str:
+        """Parse the job id from the submit cmd output."""
+        ...
 
     def update_info(self, job: Job) -> None:
         """Request info about the job and update it.

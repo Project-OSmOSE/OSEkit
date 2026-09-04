@@ -92,6 +92,11 @@ class Pbs(Scheduler):
             if value
         )
 
+    @staticmethod
+    def _parse_job_id(submit_output: str) -> str:
+        """Parse the output of the submit command."""
+        return submit_output.split(".", maxsplit=1)[0].strip()
+
     @classmethod
     def _parse_info_str(cls, job: Job, info: str) -> None:
         """Parse the info from the requested qstat info string."""
