@@ -81,6 +81,28 @@ class Slurm(Scheduler):
             f"#SBATCH --{key}={value}" for key, value in specifications.items() if value
         )
 
+    @staticmethod
+    def _parse_job_id(submit_output: str) -> str:
+        """Parse the output of the submit command.
+
+        Parameters
+        ----------
+        submit_output: str
+            stdout after a successful sbatch cmd.
+
+        Returns
+        -------
+        str:
+            ID of the submitted job.
+
+        Examples
+        --------
+        >>> Slurm._parse_job_id(submit_output="Submitted batch job 3647090")
+        '3647090'
+
+        """
+        return submit_output.removeprefix("Submitted batch job ")
+
     @classmethod
     def _parse_info_str(cls, job: Job, info: str) -> None:
         """Parse the info from the requested squeue info string."""
