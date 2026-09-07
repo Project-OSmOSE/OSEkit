@@ -188,7 +188,7 @@ def test_submit_pbs_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
         updated_jobs.append(job)
         return JobStatus.PREPARED
 
-    monkeypatch.setattr(Pbs, "update_status", mock_update_status)
+    monkeypatch.setattr(Scheduler, "update_status", mock_update_status)
 
     assert job.status == JobStatus.PREPARED
     pbs.submit(job=job)
@@ -219,7 +219,7 @@ def test_submit_pbs_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     def mock_update_status(self: Pbs, job: Job) -> JobStatus:
         return JobStatus.PREPARED
 
-    monkeypatch.setattr(Pbs, "update_status", mock_update_status)
+    monkeypatch.setattr(Scheduler, "update_status", mock_update_status)
 
     # Submit error should leave the job prepared:
     with pytest.raises(RuntimeError, match="Submission failed with exit code 5"):
@@ -335,6 +335,7 @@ def test_pbs_update_status(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     assert scheduler.update_status(job=job) == JobStatus.PREPARED
 
     def mock_update_info(
+        self: Scheduler,
         job: Job,
         status: JobStatus,
         *args: list,
@@ -343,9 +344,9 @@ def test_pbs_update_status(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
         job.status = status
 
     monkeypatch.setattr(
-        scheduler,
+        Scheduler,
         "update_info",
-        lambda job: mock_update_info(job=job, status=JobStatus.QUEUED),
+        lambda self, job: mock_update_info(self, job=job, status=JobStatus.QUEUED),
     )
 
     job.job_id = "5129195"
@@ -368,7 +369,7 @@ def test_pbs_job_builder_write(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
         job.status = JobStatus.PREPARED
 
     monkeypatch.setattr("osekit.job.builder.Job", DummyJob)
-    monkeypatch.setattr(Pbs, "write", mock_write)
+    monkeypatch.setattr(Scheduler, "write", mock_write)
 
     job_config = JobConfig(
         nb_nodes=2,
@@ -457,8 +458,8 @@ def test_job_builder_submit(monkeypatch: pytest.MonkeyPatch) -> None:
         return job.status
 
     monkeypatch.setattr("osekit.job.job.Job", DummyJob)
-    monkeypatch.setattr(Pbs, "submit", mock_submit)
-    monkeypatch.setattr(Pbs, "update_status", mock_update_status)
+    monkeypatch.setattr(Scheduler, "submit", mock_submit)
+    monkeypatch.setattr(Scheduler, "update_status", mock_update_status)
 
     jobs = [
         DummyJob(name="unprepared", status=JobStatus.UNPREPARED),
@@ -498,7 +499,7 @@ def test_pbs_build_dependencies_string_validates_type(
     def mock_validate(dependency_type: str) -> None:
         validate_calls.append(dependency_type)
 
-    monkeypatch.setattr(Pbs, "_validate_dependency_type", mock_validate)
+    monkeypatch.setattr(Scheduler, "_validate_dependency_type", mock_validate)
 
     dependencies = {"afterok": "1234567", "afterany": ["2345678", "3456789"]}
     Pbs()._build_dependency_string(
@@ -602,7 +603,7 @@ def test_submit_pbs_adds_dependency_flag(
         return JobStatus.PREPARED
 
     monkeypatch.setattr(subprocess, "run", fake_run)
-    monkeypatch.setattr(Pbs, "update_status", mock_update_status)
+    monkeypatch.setattr(Scheduler, "update_status", mock_update_status)
 
     scheduler.submit(job=job, dependencies={"afterok": "1234567"})
 
