@@ -20,7 +20,12 @@ class Slurm(Scheduler):
         },
     )
     JOB_FILE_EXTENSION: typing.ClassVar = "slurm"
-    INFO_CMD: typing.ClassVar = ["squeue", "--jobs"]
+    INFO_CMD: typing.ClassVar = [
+        "squeue",
+        "--noheader",
+        '--format="%i|%P|%j|%u|%t|%M|%D|%R',
+        "--jobs",
+    ]
     SUBMIT_CMD: typing.ClassVar = "sbatch"
     JOB_STATUS_CODES: typing.ClassVar = {
         "PD": JobStatus.QUEUED,
@@ -106,30 +111,25 @@ class Slurm(Scheduler):
     @classmethod
     def _parse_info_str(cls, job: Job, info: str) -> None:
         """Parse the info from the requested squeue info string."""
-        keys, values = info.splitlines()
+        values = info.strip().split("|", maxsplit=7)
 
-        # Get keys order in the string
-        known_keys = [
-            "JOBID",
-            "PARTITION",
-            "NAME",
-            "USER",
-            "ST",
-            "TIME",
-            "NODES",
-            "NODELIST(REASON)",
-        ]
-        keys = sorted(known_keys, key=keys.index)
+        (
+            _job_id,
+            partition,
+            _name,
+            user,
+            status,
+            time,
+            nodes,
+            node_list,
+        ) = values
 
-        # Get the associated values
-        kvp = dict(zip(keys, values.split(), strict=True))
+        job.info["user"] = user
+        job.info["time"] = time
+        job.info["partition"] = partition
+        job.info["node_list"] = node_list
 
-        job.info["user"] = kvp["USER"]
-        job.info["time"] = kvp["TIME"]
-        job.info["partition"] = kvp["PARTITION"]
-        job.info["node_list"] = kvp["NODELIST(REASON)"]
-
-        if status := cls.JOB_STATUS_CODES.get(kvp["ST"], False):
+        if status := cls.JOB_STATUS_CODES.get(status, False):
             job.status = status
 
     @staticmethod
