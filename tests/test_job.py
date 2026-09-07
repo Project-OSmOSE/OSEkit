@@ -387,6 +387,35 @@ def test_slurm_get_info_error(monkeypatch: pytest.MonkeyPatch) -> None:
         scheduler.update_info(job=job)
 
 
+def test_slurm_get_info_no_output(monkeypatch: pytest.MonkeyPatch) -> None:
+    job = Job(script_path=Path("fontaines.py"), name="SwissArmyMan")
+    job.job_id = "7137005"
+    job.status = JobStatus.PREPARED
+
+    class EmptyRequest:
+        def __init__(self) -> None:
+            self.stdout = ""
+            self.stderr = ""
+
+    class DummySacctRequest:
+        def __init__(self) -> None:
+            self.stdout = ""
+            self.stderr = ""
+
+    def mock_run(*args, **kwargs) -> EmptyRequest | DummySacctRequest:
+        cmd = args[0][0]
+        return EmptyRequest() if "squeue" in cmd else DummySacctRequest()
+
+    monkeypatch.setattr(subprocess, "run", mock_run)
+
+    scheduler = Slurm()
+    scheduler.update_info(job=job)  # Shouldn't raise
+    # Information should not have changed
+    assert job.job_id == "7137005"
+    assert job.status == JobStatus.PREPARED
+    assert job.info == {}
+
+
 def test_pbs_update_info_unknown_job_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     job = Job(Path("pompom.py"))
     job.job_id = "17112014"
