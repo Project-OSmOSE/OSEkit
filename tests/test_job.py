@@ -362,6 +362,31 @@ def test_slurm_get_info_completed_job(monkeypatch: pytest.MonkeyPatch) -> None:
     }
 
 
+def test_slurm_get_info_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    job = Job(script_path=Path("fontaines.py"), name="SwissArmyMan")
+    job.job_id = "7137005"
+
+    class EmptyRequest:
+        def __init__(self) -> None:
+            self.stdout = ""
+            self.stderr = ""
+
+    class DummySacctRequestError:
+        def __init__(self) -> None:
+            self.stdout = ""
+            self.stderr = "timeout"
+
+    def mock_run(*args, **kwargs) -> EmptyRequest | DummySacctRequestError:
+        cmd = args[0][0]
+        return EmptyRequest() if "squeue" in cmd else DummySacctRequestError()
+
+    monkeypatch.setattr(subprocess, "run", mock_run)
+
+    scheduler = Slurm()
+    with pytest.raises(ValueError, match=r"7137005.*timeout"):
+        scheduler.update_info(job=job)
+
+
 def test_pbs_update_info_unknown_job_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     job = Job(Path("pompom.py"))
     job.job_id = "17112014"
