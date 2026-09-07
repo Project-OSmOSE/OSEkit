@@ -1,3 +1,4 @@
+import subprocess
 import typing
 from typing import Literal
 
@@ -34,7 +35,6 @@ class Pbs(Scheduler):
     }
 
     SUBMIT_CMD: typing.ClassVar = "qsub"
-    INFO_CMD: typing.ClassVar = ["qstat", "-f"]
 
     def __init__(self, queue: Literal["omp", "mpi"] = "omp") -> None:
         """Initialize the PBS scheduler."""
@@ -96,6 +96,42 @@ class Pbs(Scheduler):
     def _parse_job_id(submit_output: str) -> str:
         """Parse the output of the submit command."""
         return submit_output.split(".", maxsplit=1)[0].strip()
+
+    @staticmethod
+    def _get_info(job: Job) -> str:
+        """Request information about a job.
+
+        Parameters
+        ----------
+        job: Job
+            Job for which the information is requested.
+
+        Returns
+        -------
+        str:
+            The information string, as returned by the ``qstat -f`` command.
+
+        """
+        try:
+            request = subprocess.run(
+                ["qstat", "-f", str(job.job_id)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if request.stdout:
+                return request.stdout
+
+        except subprocess.CalledProcessError as e:
+            msg = f"qstat failed with exit code {e.returncode}"
+            raise RuntimeError(msg) from e
+
+        err = request.stderr
+        if err:
+            msg = f"{job.job_id}: {err}"
+            raise ValueError(msg)
+
+        return ""
 
     @classmethod
     def _parse_info_str(cls, job: Job, info: str) -> None:

@@ -121,26 +121,30 @@ class Scheduler(ABC):
         if job.job_id is None:
             return
 
-        try:
-            request = subprocess.run(
-                [*self.INFO_CMD, str(job.job_id)],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            stdout = request.stdout
-        except subprocess.CalledProcessError as e:
-            msg = f"{self.INFO_CMD[0]} failed with exit code {e.returncode}"
-            raise RuntimeError(msg) from e
-
-        if not stdout:
-            err = request.stderr
-            if err:
-                msg = f"{job.job_id}: {err}"
-                raise ValueError(msg)
+        info = self._get_info(job=job)
+        if not info:
             return
 
-        self._parse_info_str(job=job, info=stdout)
+        self._parse_info_str(job=job, info=info)
+
+    @staticmethod
+    @abstractmethod
+    def _get_info(job: Job) -> str:
+        """Request information about a job.
+
+        Parameters
+        ----------
+        job: Job
+            Job for which the information is requested.
+
+        Returns
+        -------
+        str:
+            The information string.
+            Depends on the scheduler.
+
+        """
+        ...
 
     @classmethod
     @abstractmethod
