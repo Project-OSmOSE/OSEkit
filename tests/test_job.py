@@ -677,6 +677,25 @@ def test_pbs_validate_dependency_type() -> None:
         assert e.match(supported)
 
 
+def id_to_job(job_id: str | list[str]) -> Job | list[Job]:
+    """Convert a Job ID ``job_id`` to a Job object with an ID of ``job_id``
+
+    If ``job_id`` is a list, converts the list of job_ids to a list of jobs
+    with the given IDs."""
+    if isinstance(job_id, str):
+        job = Job(Path())
+        job._id = job_id
+        job.status = JobStatus.QUEUED
+        return job
+    output = []
+    for j_id in job_id:
+        job = Job(Path())
+        job._id = j_id
+        job.status = JobStatus.QUEUED
+        output.append(job)
+    return output
+
+
 @pytest.mark.parametrize(
     ("dependencies", "expected"),
     [
@@ -710,26 +729,68 @@ def test_pbs_build_dependencies_string(
     assert Pbs()._build_dependency_string(dependencies=dependencies) == expected
 
     # %% Dependencies string from Job instances
-    def id_to_job(job_id: str | list[str]) -> Job | list[Job]:
-        """Convert a Job ID ``job_id`` to a Job object with an ID of ``job_id``
-
-        If ``job_id`` is a list, converts the list of job_ids to a list of jobs
-        with the given IDs."""
-        if isinstance(job_id, str):
-            job = Job(Path())
-            job._id = job_id
-            job.status = JobStatus.QUEUED
-            return job
-        output = []
-        for j_id in job_id:
-            job = Job(Path())
-            job._id = j_id
-            job.status = JobStatus.QUEUED
-            output.append(job)
-        return output
-
     dependencies = {key: id_to_job(value) for key, value in dependencies.items()}
     assert Pbs()._build_dependency_string(dependencies=dependencies) == expected
+
+
+@pytest.mark.parametrize(
+    ("dependencies", "instructions_or", "expected"),
+    [
+        pytest.param(
+            {"afterok": "1234567"},
+            False,
+            "-d afterok:1234567",
+            id="one_type_one_job",
+        ),
+        pytest.param(
+            {"afterok": ["1234567", "2345678"]},
+            False,
+            "-d afterok:1234567:2345678",
+            id="one_type_multiple_jobs",
+        ),
+        pytest.param(
+            {"afterok": "1234567", "afterany": "2345678"},
+            False,
+            "-d afterok:1234567,afterany:2345678",
+            id="multiple_types_one_job",
+        ),
+        pytest.param(
+            {"afterok": ["1234567", "2345678"], "afterany": ["3456789", "4567890"]},
+            False,
+            "-d afterok:1234567:2345678,afterany:3456789:4567890",
+            id="multiple_types_multiple_jobs",
+        ),
+        pytest.param(
+            {"afterok": ["1234567", "2345678"], "afterany": ["3456789", "4567890"]},
+            True,
+            "-d afterok:1234567:2345678?afterany:3456789:4567890",
+            id="logical_or",
+        ),
+    ],
+)
+def test_slurm_build_dependencies_string(
+    dependencies: dict[str, str | list[str]],
+    instructions_or: bool,
+    expected: str,
+) -> None:
+    # %% Dependencies string from job IDs
+    assert (
+        Slurm()._build_dependency_string(
+            dependencies=dependencies,
+            instructions_or=instructions_or,
+        )
+        == expected
+    )
+
+    # %% Dependencies string from Job instances
+    dependencies = {key: id_to_job(value) for key, value in dependencies.items()}
+    assert (
+        Slurm()._build_dependency_string(
+            dependencies=dependencies,
+            instructions_or=instructions_or,
+        )
+        == expected
+    )
 
 
 def test_submit_pbs_adds_dependency_flag(
