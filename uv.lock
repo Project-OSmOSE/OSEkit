@@ -1874,7 +1874,7 @@ wheels = [
 
 [[package]]
 name = "obspy"
-version = "1.5.0"
+version = "1.5.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "decorator" },
@@ -1886,17 +1886,17 @@ dependencies = [
     { name = "setuptools" },
     { name = "sqlalchemy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/41/0b/50a110935197e25d7ff62b412e6e235cba18ed75d9401a938aa3bf90b115/obspy-1.5.0.tar.gz", hash = "sha256:88202d8a616dbe789a6c35bbf86d1008dd1b78b300cde92174a9d76d00af666e", size = 17869707, upload-time = "2026-03-13T18:36:03.102Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e3/d9/02f4735bcf9b224d6897de499494421f1c597e12f2b5f14fd4b90b7a52b0/obspy-1.5.1.tar.gz", hash = "sha256:95990a0b052b6d436b91cb6ee9f1f27ce302cc553818006ec88ed03c272e8c54", size = 17877155, upload-time = "2026-08-28T08:23:12.589Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7e/79/b50cfad83822de779ea045d9ea3b6e775ee721e1677ee5395abe89776df7/obspy-1.5.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:9980839735d9e6311eea86e4e1ebc3267517b234472cd51dcba75947476a7c56", size = 14876897, upload-time = "2026-03-13T18:35:24.786Z" },
-    { url = "https://files.pythonhosted.org/packages/65/78/99c7339e830e1ebffe42f795385846ab4e436e44f11bfedebadfa0267f74/obspy-1.5.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:805142c38df0e3f3442ab50584f0ad46385749b37a68b2b155f005d447ea521c", size = 15266758, upload-time = "2026-03-13T18:35:27.407Z" },
-    { url = "https://files.pythonhosted.org/packages/3b/e3/daf69891a608ee087a96826d77f55a518ae5ec1938418581d24bf8f7a497/obspy-1.5.0-cp312-cp312-win_amd64.whl", hash = "sha256:7bcf7c692d287abd248091ee9794ee94c2c9d8bf977c38618d6f0dcb2b4b0902", size = 14843987, upload-time = "2026-03-13T18:35:30.017Z" },
-    { url = "https://files.pythonhosted.org/packages/92/91/f0860a1d4e13c86dbf236d19fcd72da136dd4ab95a44a829dad5d9e625b4/obspy-1.5.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:bfef3f8282ae0bca7654bd0982a6bd0da33e4bc36eae14d9463ec83a205fb354", size = 14876886, upload-time = "2026-03-13T18:35:32.505Z" },
-    { url = "https://files.pythonhosted.org/packages/45/bc/8fa9ecd68d0f692ea18d78737ca520ff272705f1dedbd3f37e7c1ee46f36/obspy-1.5.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:70a3885baffae6dfdf45d23c8d1a8720f200a01016505586e546a5309a98414b", size = 15266757, upload-time = "2026-03-13T18:35:35.051Z" },
-    { url = "https://files.pythonhosted.org/packages/62/3a/37b20a34b5eb7435f20f56ff1b7195d2f3778dd7a0c7dd59b9bf6e03d4ca/obspy-1.5.0-cp313-cp313-win_amd64.whl", hash = "sha256:d5b534107cac6177233c62b100ca3e034eae5713a8a99ddfcc7f13f4084061d9", size = 14843983, upload-time = "2026-03-13T18:35:37.693Z" },
-    { url = "https://files.pythonhosted.org/packages/d6/2f/e2a194e530dc31e22cce0a6506a8a04d31a45fe5da69021357a74ac709f7/obspy-1.5.0-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:0f0cf6839d5f1ab033a6d432f18eba06667547ad838c9e83d277994be23f7c9c", size = 14876885, upload-time = "2026-03-13T18:35:40.308Z" },
-    { url = "https://files.pythonhosted.org/packages/0a/e5/16ab212e37d83d6ae5ff02a8cf6f3740f07ccea105820391670cfb849215/obspy-1.5.0-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:23cc1eed5a86b17ac08e2982b1e876e259406ad64cf5ce7c13591d3db20cf1ce", size = 15266759, upload-time = "2026-03-13T18:35:42.779Z" },
-    { url = "https://files.pythonhosted.org/packages/2b/28/e6c329bce08f9a053c806d13a0662042615b078fab5453a04c9861e9197c/obspy-1.5.0-cp314-cp314-win_amd64.whl", hash = "sha256:2d3c5e465f573f666cbee0a86ea056fdcb1ae56222eb9d60c1bdf64b5fdbe9ad", size = 14846248, upload-time = "2026-03-13T18:35:45.07Z" },
+    { url = "https://files.pythonhosted.org/packages/3a/25/c066d86fd3f48a0c7f7e7d98668849cd159675e84232cd2011334ddbd4c8/obspy-1.5.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:dd5063bac2261e3af0fdb4bcfea78922deab5f2c30f6dbe3c1a89d2b6daa1aaa", size = 14883968, upload-time = "2026-08-28T08:22:31.493Z" },
+    { url = "https://files.pythonhosted.org/packages/e4/19/d95380e637552ff4a1148e5e9feda34de534aa9c52ee0eeccc40daba8f0f/obspy-1.5.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:2307696de62bf5aead11ff5978a2878eaebc49fd368193292d1093d62e99bf3c", size = 15269264, upload-time = "2026-08-28T08:22:34.255Z" },
+    { url = "https://files.pythonhosted.org/packages/e9/b0/d4364f816f3e20bd7b92bd3e5e4590061fd2b2b9c77b81fe53e0e8affd2c/obspy-1.5.1-cp312-cp312-win_amd64.whl", hash = "sha256:b07658e14ae5e0a9f4b5300d169a1c79609d7f788b39bc502cddfed9791228c4", size = 14837490, upload-time = "2026-08-28T08:22:37.036Z" },
+    { url = "https://files.pythonhosted.org/packages/a5/f7/b59a2b1d4a28dbb3762eed0487148024ef1ff20d8d94806cdf65338997f7/obspy-1.5.1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:eff3863333be7ff1c6ee1e65ecbd10d2ce16b99f2087a1a8c1ae269d0ada6d3c", size = 14883958, upload-time = "2026-08-28T08:22:39.696Z" },
+    { url = "https://files.pythonhosted.org/packages/c6/e6/502e22935b7c45796bc986f873ef7176086672bf630c7297022337452ad8/obspy-1.5.1-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:265801e82feef23b4944ddbddcfc932e8f36e634676897b8c71171e103d9e2a5", size = 15269263, upload-time = "2026-08-28T08:22:42.252Z" },
+    { url = "https://files.pythonhosted.org/packages/36/cd/8d29a5c86f101aef7f571ecbc15ee08748fb9cf136b9342e64ba88e53a07/obspy-1.5.1-cp313-cp313-win_amd64.whl", hash = "sha256:c56b2afbbee65f05fa198b46f8a4e50009ca947a886ee54266b5b3242088c994", size = 14837493, upload-time = "2026-08-28T08:22:44.833Z" },
+    { url = "https://files.pythonhosted.org/packages/a1/07/81a8b2c05a53a54e6cd03f7ef6aa8ae5a926ec40b3a9c38d7bda6a44da1a/obspy-1.5.1-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:a47902e3ec7d3e46309b85ac6b69327c37f8c0b772a97a29df0cc8dc3f16fc1e", size = 14883957, upload-time = "2026-08-28T08:22:47.425Z" },
+    { url = "https://files.pythonhosted.org/packages/23/e4/defc76e78f203c22d38e7a388afc6e4f00013938cb34ab72462e01b22445/obspy-1.5.1-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:3e0316d9bcd9869febf78af165a403583fa18e21868913c74c3bf87c3e243e25", size = 15269263, upload-time = "2026-08-28T08:22:50.172Z" },
+    { url = "https://files.pythonhosted.org/packages/be/29/3ad91203d5e80184d9f10e0cb2d4fb8c1970c03e7787b3ae11bc5394d213/obspy-1.5.1-cp314-cp314-win_amd64.whl", hash = "sha256:25bf04aa82dea9909935a99213778870832d16dbb8ccb90be144928cdedc8f28", size = 14840080, upload-time = "2026-08-28T08:22:52.985Z" },
 ]
 
 [[package]]
