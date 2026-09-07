@@ -809,3 +809,9 @@ def test_slurm_venv_str() -> None:
 
     assert venv_commands[0] == "module load conda"
     assert venv_commands[1] == "conda activate cool_venv"
+
+
+def test_slurm_parse_job_id() -> None:
+    submit_output = "Submitted batch job 3647090\n"
+    job_id = "3647090"
+    assert Slurm()._parse_job_id(submit_output=submit_output) == job_id
