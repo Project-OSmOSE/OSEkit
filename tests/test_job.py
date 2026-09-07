@@ -326,6 +326,42 @@ def test_slurm_update_info_parse_stdout(monkeypatch: pytest.MonkeyPatch) -> None
     }
 
 
+def test_slurm_get_info_completed_job(monkeypatch: pytest.MonkeyPatch) -> None:
+    job = Job(script_path=Path("fontaines.py"), name="SwissArmyMan")
+    job.job_id = "7137005"
+
+    class EmptyRequest:
+        def __init__(self) -> None:
+            self.stdout = ""
+            self.stderr = ""
+
+    class DummySacctRequest:
+        def __init__(self) -> None:
+            self.stdout = (
+                Path(__file__).parent
+                / "_static/job_status_request_results/slurm_sacct.txt"
+            ).read_text()
+            self.stderr = ""
+
+    def mock_run(*args, **kwargs) -> EmptyRequest | DummySacctRequest:
+        cmd = args[0][0]
+        return EmptyRequest() if "squeue" in cmd else DummySacctRequest()
+
+    monkeypatch.setattr(subprocess, "run", mock_run)
+
+    scheduler = Slurm()
+    scheduler.update_info(job=job)
+    assert job.job_id == "7137005"
+    assert job.name == "SwissArmyMan"
+    assert job.status == JobStatus.COMPLETED
+    assert job.info == {
+        "user": "daniels",
+        "time": "10:37",
+        "partition": "jetski",
+        "node_list": "compute-114-9 (Dependency)",
+    }
+
+
 def test_pbs_update_info_unknown_job_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     job = Job(Path("pompom.py"))
     job.job_id = "17112014"
