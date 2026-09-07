@@ -34,7 +34,7 @@ class Pbs(Scheduler):
     }
 
     SUBMIT_CMD: typing.ClassVar = "qsub"
-    INFO_CMD: typing.ClassVar = ["qstat", "-x"]
+    INFO_CMD: typing.ClassVar = ["qstat", "-f"]
 
     def __init__(self, queue: Literal["omp", "mpi"] = "omp") -> None:
         """Initialize the PBS scheduler."""
@@ -100,20 +100,15 @@ class Pbs(Scheduler):
     @classmethod
     def _parse_info_str(cls, job: Job, info: str) -> None:
         """Parse the info from the requested qstat info string."""
-        keys, _, values = info.splitlines()
+        kvp_lines = (line for line in info.splitlines() if "=" in line)
+        kvp_lines = dict(line.split("=", maxsplit=1) for line in kvp_lines)
+        kvp_lines = {k.strip(): v.strip() for k, v in kvp_lines.items()}
 
-        # Get keys order in the string
-        known_keys = ["Job id", "Name", "User", "Time Use", "S", "Queue"]
-        keys = sorted(known_keys, key=keys.index)
+        job.info["user"] = kvp_lines["Job_Owner"].split("@", maxsplit=1)[0]
+        job.info["time"] = kvp_lines.get("resources_used.walltime", "00:00:00")
+        job.info["queue"] = kvp_lines["queue"]
 
-        # Get the associated values
-        kvp = dict(zip(keys, values.split(), strict=True))
-
-        job.info["user"] = kvp["User"]
-        job.info["time"] = kvp["Time Use"]
-        job.info["queue"] = kvp["Queue"]
-
-        if status := cls.JOB_STATUS_CODES.get(kvp["S"], False):
+        if status := cls.JOB_STATUS_CODES.get(kvp_lines["job_state"], False):
             job.status = status
 
     @staticmethod
