@@ -303,7 +303,8 @@ def test_slurm_update_info_parse_stdout(monkeypatch: pytest.MonkeyPatch) -> None
 
     class Dummy:
         stdout = (
-            Path(__file__).parent / "_static/job_status_request_results/slurm.txt"
+            Path(__file__).parent
+            / "_static/job_status_request_results/slurm_squeue.txt"
         ).read_text()
         stderr = ""
 
