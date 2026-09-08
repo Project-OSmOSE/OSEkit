@@ -328,6 +328,49 @@ class Verification:
         }
 
 
+class Label:
+    """Class that represents a label of a detection.
+
+    It contains helper methods to plot the label next to the
+    detection rectangle using pyplot.
+    """
+
+    def __init__(
+        self,
+        text: str,
+        anchor: Literal["top_left", "top_right", "bottom_right", "bottom_left"],
+        color: str = "white",
+        text_color: str = "black",
+        *,
+        inner_text: bool,
+        fill: bool = True,
+    ) -> None:
+        """Initialize the label object.
+
+        Parameters
+        ----------
+        text: str
+            Text of the label.
+        anchor: Literal["top_left", "top_right", "bottom_right", "bottom_left"]
+            Anchor of the label relative to the detection rectangle.
+        color: str
+            Color of the label rectangle.
+        text_color: str
+            Color of the label text.
+        inner_text: bool
+            If ``True``, the label rectangle is plotted inside the detection rectangle.
+        fill: bool
+            If ``True``, the label rectangle is plotted as a fill.
+
+        """
+        self.text = text
+        self.anchor = anchor
+        self.color = color
+        self.text_color = text_color
+        self.inner_text = inner_text
+        self.fill = fill
+
+
 class Detection(Event):
     """Class that represents a detection made on APLOSE."""
 
