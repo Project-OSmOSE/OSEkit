@@ -10,7 +10,7 @@ from matplotlib.axes import Axes
 from matplotlib.patches import Rectangle
 from matplotlib.text import Text
 from matplotlib.transforms import TransformedBbox
-from pandas import Timestamp
+from pandas import Timedelta, Timestamp
 
 from osekit.core.event import Event
 from osekit.utils.core import is_empty_dataclass
@@ -341,12 +341,19 @@ class Label:
     def __init__(
         self,
         text: str,
-        anchor: Literal["top_left", "top_right", "bottom_right", "bottom_left"],
+        anchor: Literal[
+            "top_left",
+            "top_right",
+            "bottom_right",
+            "bottom_left",
+        ] = "top_left",
         color: str = "white",
         text_color: str = "black",
         *,
-        inner_text: bool,
+        inner_text: bool = False,
         fill: bool = True,
+        text_kwargs: dict | None = None,
+        background_kwargs: dict | None = None,
     ) -> None:
         """Initialize the label object.
 
@@ -364,6 +371,10 @@ class Label:
             If ``True``, the label rectangle is plotted inside the detection rectangle.
         fill: bool
             If ``True``, the label rectangle is plotted as a fill.
+        text_kwargs: dict|None
+            Additional kwargs to pass to the ``Text``.
+        background_kwargs: dict|None
+            Additional kwargs to pass to the background ``Rectangle``.
 
         """
         self.text = text
@@ -372,8 +383,10 @@ class Label:
         self.text_color = text_color
         self.inner_text = inner_text
         self.fill = fill
+        self.text_kwargs = text_kwargs or {}
+        self.background_kwargs = background_kwargs or {}
 
-    def get_text_size(self, ax: Axes) -> tuple[float, float]:
+    def get_text_size(self, ax: Axes) -> tuple[Timedelta, float]:
         """Return the width and height of the label text.
 
         The size is given in data coordinates.
@@ -385,14 +398,14 @@ class Label:
 
         Returns
         -------
-        tuple[float, float]
+        tuple[Timedelta, float]
             The width and height of the label text, in the
             data coordinates of the ``Axes`` object.
 
         """
         # We add a Text object with the given text to the Axes
         # to measure its size, then remove it
-        text = Text(text=self.text)
+        text = Text(text=self.text, **self.text_kwargs)
         ax.add_artist(text)
         renderer = ax.get_figure().canvas.get_renderer()
         text_bbox = text.get_window_extent(renderer=renderer)  # display coordinates
@@ -400,7 +413,7 @@ class Label:
 
         # Conversion of the bbox in data units
         text_bbox = TransformedBbox(bbox=text_bbox, transform=ax.transData.inverted())
-        return text_bbox.width, text_bbox.height
+        return Timedelta(days=text_bbox.width), text_bbox.height
 
     def get_coordinates(
         self,
@@ -457,13 +470,14 @@ class Label:
 
         """
         xy = self.get_coordinates(ax=ax, labelled_rect=labelled_rect)
-        height, width = self.get_text_size(ax=ax)
-        Rectangle(
+        width, height = self.get_text_size(ax=ax)
+        return Rectangle(
             xy=xy,
             height=height,
             width=width,
             color=self.color,
             fill=self.fill,
+            **self.background_kwargs,
         )
 
 
@@ -654,6 +668,57 @@ class Detection(Event):
             for kvp in self.verifications
             for verificator, verification in kvp.to_dict().items()
         }
+
+    def plot(
+        self,
+        ax: Axes,
+        *,
+        plot_label: bool,
+        detection_rect_kwargs: dict | None = None,
+        label_kwargs: dict | None = None,
+    ) -> None:
+        """Plot the detection on the given ``Axes``.
+
+        Parameters
+        ----------
+        ax: Axes
+            Axes in which to plot the detection box.
+        plot_label: bool
+            Whether or not to add the label in the detection plot.
+        detection_rect_kwargs: dict|None
+            Additional kwargs to pass to the detection rectangle.
+        label_kwargs: dict|None
+            Additional kwargs to pass to the ``Label`` object.
+
+        """
+        detection_rect_kwargs = detection_rect_kwargs or {}
+        label_kwargs = label_kwargs or {}
+
+        detection_rectangle = self.to_rectangle(**detection_rect_kwargs)
+        ax.add_patch(detection_rectangle)
+
+        if not plot_label:
+            return
+
+        # Default color is rectangle color
+        if (
+            "color" in detection_rect_kwargs
+            and "text_kwargs" in label_kwargs
+            and "color" not in label_kwargs["text_kwargs"]
+        ):
+            label_kwargs["text_kwargs"]["color"] = detection_rect_kwargs["color"]
+
+        label = Label(
+            text=self.label,
+            **label_kwargs,
+        )
+        label_rectangle = label.get_rectangle(ax=ax, labelled_rect=detection_rectangle)
+        ax.add_patch(p=label_rectangle)
+        ax.annotate(
+            text=label.text,
+            xy=label.get_coordinates(ax=ax, labelled_rect=detection_rectangle),
+            **label.text_kwargs,
+        )
 
     def to_rectangle(self, *, fill: bool = False, **kwargs: Any) -> Rectangle:
         """Return a matplotlib Rectangle representing the detection.
