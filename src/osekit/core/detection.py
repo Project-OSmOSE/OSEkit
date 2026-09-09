@@ -6,7 +6,10 @@ from pathlib import Path
 from typing import Any, Literal, Self
 
 import pandas as pd
+from matplotlib.axes import Axes
 from matplotlib.patches import Rectangle
+from matplotlib.text import Text
+from matplotlib.transforms import TransformedBbox
 from pandas import Timestamp
 
 from osekit.core.event import Event
@@ -369,6 +372,99 @@ class Label:
         self.text_color = text_color
         self.inner_text = inner_text
         self.fill = fill
+
+    def get_text_size(self, ax: Axes) -> tuple[float, float]:
+        """Return the width and height of the label text.
+
+        The size is given in data coordinates.
+
+        Parameters
+        ----------
+        ax: Axes
+            Axes in which the text is drawn.
+
+        Returns
+        -------
+        tuple[float, float]
+            The width and height of the label text, in the
+            data coordinates of the ``Axes`` object.
+
+        """
+        # We add a Text object with the given text to the Axes
+        # to measure its size, then remove it
+        text = Text(text=self.text)
+        ax.add_artist(text)
+        renderer = ax.get_figure().canvas.get_renderer()
+        text_bbox = text.get_window_extent(renderer=renderer)  # display coordinates
+        text.remove()
+
+        # Conversion of the bbox in data units
+        text_bbox = TransformedBbox(bbox=text_bbox, transform=ax.transData.inverted())
+        return text_bbox.width, text_bbox.height
+
+    def get_coordinates(
+        self,
+        ax: Axes,
+        labelled_rect: Rectangle,
+    ) -> tuple[float, float]:
+        """Return the coordinates of the bottom left point of the label.
+
+        The coordinates are given in data coordinates.
+
+        Parameters
+        ----------
+        ax: Axes
+            Axes in which the text is drawn.
+        labelled_rect: Rectangle
+            Rectangle that is labelled by the label.
+
+        Returns
+        -------
+        tuple[float, float]:
+            Coordinates of the bottom left point of the label, in
+            data coordinates.
+
+        """
+        x0, y0 = labelled_rect.xy
+        x1 = x0 + labelled_rect.get_width()
+        y1 = y0 + labelled_rect.get_height()
+
+        label_width, label_height = self.get_text_size(ax=ax)
+
+        vertical_anchor, horizontal_anchor = self.anchor.split("_", maxsplit=1)
+
+        label_x = x0 if horizontal_anchor == "left" else (x1 - label_width)
+        if self.inner_text:
+            label_y = y0 if vertical_anchor == "bottom" else y1 - label_height
+        else:
+            label_y = y0 - label_height if vertical_anchor == "bottom" else y1
+        return label_x, label_y
+
+    def get_rectangle(self, ax: Axes, labelled_rect: Rectangle) -> Rectangle:
+        """Return the background rectangle of the label.
+
+        Parameters
+        ----------
+        ax: Axes
+            Axes in which the label is drawn.
+        labelled_rect: Rectangle
+            Rectangle that is labelled by the label.
+
+        Returns
+        -------
+        Rectangle
+            Background rectangle of the label
+
+        """
+        xy = self.get_coordinates(ax=ax, labelled_rect=labelled_rect)
+        height, width = self.get_text_size(ax=ax)
+        Rectangle(
+            xy=xy,
+            height=height,
+            width=width,
+            color=self.color,
+            fill=self.fill,
+        )
 
 
 class Detection(Event):
