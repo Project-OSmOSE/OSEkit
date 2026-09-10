@@ -619,3 +619,17 @@ def test_detection_plot_doesnt_plot_label_if_parameter_is_false(
     monkeypatch.setattr(Label, "__init__", fails_test)
 
     sample_detection.plot(ax=custom_axes, plot_label=False)
+
+
+def test_detection_plot_doesnt_plot_label_if_no_label(
+    custom_axes: Axes,
+    monkeypatch: pytest.MonkeyPatch,
+    sample_detection: Detection,
+) -> None:
+    def fails_test(*args: Any, **kwargs: Any) -> None:
+        pytest.fail("No Detection.label should not instantiate a Label object on plot.")
+
+    monkeypatch.setattr(Label, "__init__", fails_test)
+
+    sample_detection.label = None
+    sample_detection.plot(ax=custom_axes, plot_label=True)
