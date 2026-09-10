@@ -458,3 +458,11 @@ def test_label_get_size_depends_on_text_size(custom_axes: Axes) -> None:
 
     assert small_width < large_width
     assert small_height < large_height
+
+
+def test_get_size_removes_artists_from_ax(custom_axes: Axes) -> None:
+    initial_artists = len(custom_axes.artists)
+
+    Label("cool").get_text_size(ax=custom_axes)
+
+    assert len(custom_axes.artists) == initial_artists
