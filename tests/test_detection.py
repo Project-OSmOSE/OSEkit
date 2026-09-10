@@ -1,6 +1,6 @@
 from contextlib import AbstractContextManager, nullcontext
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 import numpy as np
 import pytest
@@ -625,3 +625,43 @@ def test_detection_plot_doesnt_plot_label_if_no_label(
     sample_detection.plot(ax=custom_axes, plot_label=True)
     assert len(custom_axes.patches) == 1
     assert len(custom_axes.texts) == 0
+
+
+def test_detection_plot_passes_label_kwargs(
+    custom_axes: Axes,
+    sample_detection: Detection,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    label_kwargs = {
+        "anchor": "bottom_right",
+        "inner_text": True,
+        "text_kwargs": {
+            "fontsize": 42,
+            "color": "red",
+        },
+        "background_kwargs": {
+            "color": "blue",
+            "alpha": 0.3,
+        },
+    }
+
+    initialized_labels_kwargs = []
+    label_init = Label.__init__
+
+    def mock_label_init(*args: Any, **kwargs: Any) -> None:
+        initialized_labels_kwargs.append(kwargs)
+        label_init(*args, **kwargs)
+
+    monkeypatch.setattr(Label, "__init__", mock_label_init)
+
+    sample_detection.plot(
+        ax=custom_axes,
+        plot_label=True,
+        label_kwargs=label_kwargs,
+    )
+
+    assert len(initialized_labels_kwargs) == 1
+
+    # Check that all label_kwargs have been passed to the Label init
+    assert label_kwargs.items() <= initialized_labels_kwargs[0].items()
+    assert label_kwargs["text"] == sample_detection.label
