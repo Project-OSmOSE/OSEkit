@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 from matplotlib.axes import Axes
-from pandas import DataFrame, Timestamp, Timedelta
+from pandas import DataFrame, Timedelta, Timestamp
 
 from osekit.core.detection import (
     ConfidenceIndicator,
@@ -436,3 +436,14 @@ def test_label_get_text_size_is_positive(custom_axes: Axes) -> None:
 
     assert width > Timedelta(0)
     assert height > 0
+
+
+def test_label_get_size_longer_for_longer_text(custom_axes: Axes) -> None:
+    short_label = Label("cool")
+    long_label = Label("ultra cool stuff")
+
+    width1, height1 = short_label.get_text_size(ax=custom_axes)
+    width2, height2 = long_label.get_text_size(ax=custom_axes)
+
+    assert width1 < width2
+    assert height1 == pytest.approx(height2)
