@@ -1,9 +1,11 @@
 from contextlib import AbstractContextManager, nullcontext
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 import pytest
 from matplotlib.axes import Axes
+from matplotlib.patches import Rectangle
 from pandas import DataFrame, Timedelta, Timestamp
 
 from osekit.core.detection import (
@@ -466,3 +468,92 @@ def test_get_size_removes_text_from_ax(custom_axes: Axes) -> None:
     Label("cool").get_text_size(ax=custom_axes)
 
     assert len(custom_axes.texts) == initial_artists
+
+
+@pytest.mark.parametrize(
+    ("anchor", "inner", "expected_x", "expected_y"),
+    [
+        pytest.param(
+            "bottom_left",
+            True,
+            Timestamp("2020-01-01 00:00:00"),
+            100,
+            id="bottom_left_inner",
+        ),
+        pytest.param(
+            "bottom_left",
+            False,
+            Timestamp("2020-01-01 00:00:00"),
+            80,
+            id="bottom_left_outer",
+        ),
+        pytest.param(
+            "top_left",
+            True,
+            Timestamp("2020-01-01 00:00:00"),
+            130,
+            id="top_left_inner",
+        ),
+        pytest.param(
+            "top_left",
+            False,
+            Timestamp("2020-01-01 00:00:00"),
+            150,
+            id="top_left_outer",
+        ),
+        pytest.param(
+            "bottom_right",
+            True,
+            Timestamp("2020-01-01 00:00:20"),
+            100,
+            id="bottom_right_inner",
+        ),
+        pytest.param(
+            "bottom_right",
+            False,
+            Timestamp("2020-01-01 00:00:20"),
+            80,
+            id="bottom_right_outer",
+        ),
+        pytest.param(
+            "top_right",
+            True,
+            Timestamp("2020-01-01 00:00:20"),
+            130,
+            id="top_right_inner",
+        ),
+        pytest.param(
+            "top_right",
+            False,
+            Timestamp("2020-01-01 00:00:20"),
+            150,
+            id="top_right_outer",
+        ),
+    ],
+)
+def test_label_get_coordinates(
+    monkeypatch: pytest.MonkeyPatch,
+    anchor: Literal["top_left", "top_right", "bottom_right", "bottom_left"],
+    inner: bool,
+    expected_x: Timestamp,
+    expected_y: float,
+) -> None:
+    monkeypatch.setattr(
+        Label,
+        "get_text_size",
+        lambda self, ax: (Timedelta(seconds=10), 20),
+    )
+
+    detection_rectangle = Rectangle(
+        xy=(Timestamp("2020-01-01 00:00:00"), 100),
+        width=Timedelta(seconds=30),
+        height=50,
+    )
+
+    x, y = Label("", anchor=anchor, inner_text=inner).get_coordinates(
+        ax=None,
+        labelled_rect=detection_rectangle,
+    )
+
+    assert x == expected_x
+    assert y == expected_y
