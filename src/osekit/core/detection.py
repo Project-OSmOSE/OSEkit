@@ -347,11 +347,8 @@ class Label:
             "bottom_right",
             "bottom_left",
         ] = "top_left",
-        color: str = "white",
-        text_color: str = "black",
         *,
         inner_text: bool = False,
-        fill: bool = True,
         text_kwargs: dict | None = None,
         background_kwargs: dict | None = None,
     ) -> None:
@@ -379,10 +376,7 @@ class Label:
         """
         self.text = text
         self.anchor = anchor
-        self.color = color
-        self.text_color = text_color
         self.inner_text = inner_text
-        self.fill = fill
         self.text_kwargs = text_kwargs or {}
         self.background_kwargs = background_kwargs or {}
 
@@ -475,8 +469,6 @@ class Label:
             xy=xy,
             height=height,
             width=width,
-            color=self.color,
-            fill=self.fill,
             **self.background_kwargs,
         )
 
@@ -692,7 +684,7 @@ class Detection(Event):
 
         """
         detection_rect_kwargs = detection_rect_kwargs or {}
-        label_kwargs = label_kwargs or {}
+        label_kwargs = label_kwargs or {"text_kwargs": {}, "background_kwargs": {}}
 
         detection_rectangle = self.to_rectangle(**detection_rect_kwargs)
         ax.add_patch(detection_rectangle)
@@ -701,8 +693,14 @@ class Detection(Event):
             return
 
         # Default color is rectangle color
-        if "color" in detection_rect_kwargs and "color" not in label_kwargs:
-            label_kwargs["color"] = detection_rect_kwargs["color"]
+        if (
+            "color" in detection_rect_kwargs
+            and "color" not in label_kwargs["background_kwargs"]
+        ):
+            label_kwargs["background_kwargs"]["color"] = detection_rect_kwargs["color"]
+
+        if not self.label:
+            return
 
         label = Label(
             text=self.label,
