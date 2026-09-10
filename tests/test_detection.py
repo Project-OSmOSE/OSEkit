@@ -447,3 +447,14 @@ def test_label_get_size_longer_for_longer_text(custom_axes: Axes) -> None:
 
     assert width1 < width2
     assert height1 == pytest.approx(height2)
+
+
+def test_label_get_size_depends_on_text_size(custom_axes: Axes) -> None:
+    small_text = Label("cool", text_kwargs={"fontsize": 12})
+    large_text = Label("cool", text_kwargs={"fontsize": 24})
+
+    small_width, small_height = small_text.get_text_size(ax=custom_axes)
+    large_width, large_height = large_text.get_text_size(ax=custom_axes)
+
+    assert small_width < large_width
+    assert small_height < large_height
