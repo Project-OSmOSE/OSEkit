@@ -664,7 +664,7 @@ def test_detection_plot_passes_label_kwargs(
 
     # Check that all label_kwargs have been passed to the Label init
     assert label_kwargs.items() <= initialized_labels_kwargs[0].items()
-    assert label_kwargs["text"] == sample_detection.label
+    assert initialized_labels_kwargs[0]["text"] == sample_detection.label
 
 
 def test_default_label_color_is_detection_color(
