@@ -383,7 +383,8 @@ class Label:
     def get_text_size(self, ax: Axes) -> tuple[Timedelta, float]:
         """Return the width and height of the label text.
 
-        The size is given in data coordinates.
+        The size is given as a ``Timedelta`` on the X axis and a float on the
+        Y axis.
 
         Parameters
         ----------
@@ -392,9 +393,10 @@ class Label:
 
         Returns
         -------
-        tuple[Timedelta, float]
-            The width and height of the label text, in the
-            data coordinates of the ``Axes`` object.
+        Timedelta:
+            Width of the label text.
+        float:
+            Height of the label text.
 
         """
         # We add a Text object with the given text to the Axes
@@ -405,7 +407,7 @@ class Label:
         text_bbox = text.get_window_extent(renderer=renderer)  # display coordinates
         text.remove()
 
-        # Conversion of the bbox in data units
+        # Conversion of the bbox width in Timedelta
         text_bbox = TransformedBbox(bbox=text_bbox, transform=ax.transData.inverted())
         return Timedelta(days=text_bbox.width), text_bbox.height
 
@@ -416,7 +418,8 @@ class Label:
     ) -> tuple[float, float]:
         """Return the coordinates of the bottom left point of the label.
 
-        The coordinates are given in data coordinates.
+        The X coordinate is given as a ``Timestamp``, the Y coordinate
+        as a float.
 
         Parameters
         ----------
@@ -427,9 +430,10 @@ class Label:
 
         Returns
         -------
-        tuple[float, float]:
-            Coordinates of the bottom left point of the label, in
-            data coordinates.
+        Timestamp:
+            X coordinate of the label.
+        float:
+            Y Coordinate of the label.
 
         """
         x0, y0 = labelled_rect.xy
