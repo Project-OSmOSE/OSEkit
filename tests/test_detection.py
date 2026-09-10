@@ -709,3 +709,46 @@ def test_default_label_color_is_detection_color(
 
     spied_rectangle = spied_label_rectangles[0]
     assert spied_rectangle.get_facecolor()[:-1] == detection_rect_kwargs["color"]
+
+
+def test_detection_plot_with_label_adds_patch_and_text(
+    custom_axes: Axes,
+    sample_detection: Detection,
+) -> None:
+    label_kwargs = {
+        "anchor": "bottom_right",
+        "inner_text": True,
+        "text_kwargs": {
+            "fontsize": 42,
+            "color": "red",
+        },
+        "background_kwargs": {
+            "alpha": 0.3,
+            "color": (0.0, 0.0, 1.0),
+        },
+    }
+
+    detection_rect_kwargs = {
+        "color": (0.0, 1.0, 0.0),
+    }
+
+    sample_detection.plot(
+        ax=custom_axes,
+        detection_rect_kwargs=detection_rect_kwargs,
+        label_kwargs=label_kwargs,
+        plot_label=True,
+    )
+
+    assert len(custom_axes.patches) == 2  # Detection rect + label background
+    assert len(custom_axes.texts) == 1  # Label text
+
+    detection_rect, label_background = custom_axes.patches
+
+    assert detection_rect.get_facecolor()[:-1] == detection_rect_kwargs["color"]
+    assert (
+        label_background.get_facecolor()[:-1]
+        == label_kwargs["background_kwargs"]["color"]
+    )
+
+    text = custom_axes.texts[0]
+    assert text.get_fontsize() == label_kwargs["text_kwargs"]["fontsize"]
