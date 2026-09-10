@@ -689,7 +689,7 @@ class Detection(Event):
         detection_rectangle = self.to_rectangle(**detection_rect_kwargs)
         ax.add_patch(detection_rectangle)
 
-        if not plot_label:
+        if not self.label or not plot_label:
             return
 
         # Default color is rectangle color
@@ -698,9 +698,6 @@ class Detection(Event):
             and "color" not in label_kwargs["background_kwargs"]
         ):
             label_kwargs["background_kwargs"]["color"] = detection_rect_kwargs["color"]
-
-        if not self.label:
-            return
 
         label = Label(
             text=self.label,
