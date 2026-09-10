@@ -13,6 +13,7 @@ from osekit.core.detection import (
     FrequencyBounds,
     SignalParameters,
     Verification,
+    Label,
 )
 
 
@@ -398,3 +399,28 @@ def test_detections_from_csv_list() -> None:
     )
 
     assert len(detections) == 4
+
+
+def test_label_init() -> None:
+    text = "cool"
+    anchor = "bottom_left"
+    inner_text = True
+    text_kwargs = {
+        "fontsize": 12,
+        "color": "red",
+    }
+    background_kwargs = {"fill": True, "color": "blue"}
+
+    label = Label(
+        text=text,
+        anchor=anchor,
+        inner_text=inner_text,
+        text_kwargs=text_kwargs,
+        background_kwargs=background_kwargs,
+    )
+
+    assert label.text == text
+    assert label.anchor == anchor
+    assert label.inner_text == inner_text
+    assert label.text_kwargs == text_kwargs
+    assert label.background_kwargs == background_kwargs
