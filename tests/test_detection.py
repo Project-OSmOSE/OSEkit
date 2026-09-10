@@ -3,7 +3,8 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from pandas import DataFrame, Timestamp
+from matplotlib.axes import Axes
+from pandas import DataFrame, Timestamp, Timedelta
 
 from osekit.core.detection import (
     ConfidenceIndicator,
@@ -11,9 +12,9 @@ from osekit.core.detection import (
     DetectionMetaData,
     DetectorInfo,
     FrequencyBounds,
+    Label,
     SignalParameters,
     Verification,
-    Label,
 )
 
 
@@ -424,3 +425,14 @@ def test_label_init() -> None:
     assert label.inner_text == inner_text
     assert label.text_kwargs == text_kwargs
     assert label.background_kwargs == background_kwargs
+
+
+def test_label_get_text_size_is_positive(custom_axes: Axes) -> None:
+    label = Label("cool")
+
+    width, height = label.get_text_size(ax=custom_axes)
+
+    assert isinstance(width, Timedelta)
+
+    assert width > Timedelta(0)
+    assert height > 0
