@@ -1,6 +1,6 @@
 from contextlib import AbstractContextManager, nullcontext
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 import numpy as np
 import pytest
@@ -591,3 +591,31 @@ def test_label_get_rectangle(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert rectangle.get_facecolor()[:-1] == (0.0, 0.0, 1.0)
     assert rectangle.get_alpha() == 0.3
+
+
+def test_detection_plot_passes_rect_kwargs(
+    custom_axes: Axes,
+    sample_detection: Detection,
+) -> None:
+    sample_detection.plot(
+        ax=custom_axes,
+        detection_rect_kwargs={"color": (0.0, 1.0, 0.0)},
+    )
+
+    assert len(custom_axes.patches) == 1
+
+    rectangle: Rectangle = custom_axes.patches[0]
+    assert rectangle.get_facecolor()[:-1] == (0.0, 1.0, 0.0)
+
+
+def test_detection_plot_doesnt_plot_label_if_parameter_is_false(
+    custom_axes: Axes,
+    monkeypatch: pytest.MonkeyPatch,
+    sample_detection: Detection,
+) -> None:
+    def fails_test(*args: Any, **kwargs: Any) -> None:
+        pytest.fail("plot_label set to False should not instantiate a Label object.")
+
+    monkeypatch.setattr(Label, "__init__", fails_test)
+
+    sample_detection.plot(ax=custom_axes, plot_label=False)

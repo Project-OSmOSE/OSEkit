@@ -669,7 +669,7 @@ class Detection(Event):
         self,
         ax: Axes,
         *,
-        plot_label: bool,
+        plot_label: bool = False,
         detection_rect_kwargs: dict | None = None,
         label_kwargs: dict | None = None,
     ) -> None:
@@ -691,7 +691,7 @@ class Detection(Event):
         label_kwargs = label_kwargs or {"text_kwargs": {}, "background_kwargs": {}}
 
         detection_rectangle = self.to_rectangle(**detection_rect_kwargs)
-        ax.add_patch(detection_rectangle)
+        ax.add_patch(p=detection_rectangle)
 
         if not self.label or not plot_label:
             return
