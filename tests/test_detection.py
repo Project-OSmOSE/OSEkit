@@ -665,3 +665,47 @@ def test_detection_plot_passes_label_kwargs(
     # Check that all label_kwargs have been passed to the Label init
     assert label_kwargs.items() <= initialized_labels_kwargs[0].items()
     assert label_kwargs["text"] == sample_detection.label
+
+
+def test_default_label_color_is_detection_color(
+    custom_axes: Axes,
+    sample_detection: Detection,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    label_kwargs = {
+        "anchor": "bottom_right",
+        "inner_text": True,
+        "text_kwargs": {
+            "fontsize": 42,
+            "color": "red",
+        },
+        "background_kwargs": {
+            "alpha": 0.3,
+        },
+    }
+
+    detection_rect_kwargs = {
+        "color": (0.0, 1.0, 0.0),
+    }
+
+    label_get_rectangle = Label.get_rectangle
+    spied_label_rectangles = []
+
+    def spy_label_rectangle(*args: Any, **kwargs: Any) -> Rectangle:
+        output = label_get_rectangle(*args, **kwargs)
+        spied_label_rectangles.append(output)
+        return output
+
+    monkeypatch.setattr(Label, "get_rectangle", spy_label_rectangle)
+
+    sample_detection.plot(
+        ax=custom_axes,
+        detection_rect_kwargs=detection_rect_kwargs,
+        label_kwargs=label_kwargs,
+        plot_label=True,
+    )
+
+    assert len(spied_label_rectangles) == 1
+
+    spied_rectangle = spied_label_rectangles[0]
+    assert spied_rectangle.get_facecolor()[:-1] == detection_rect_kwargs["color"]
