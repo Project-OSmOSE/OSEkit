@@ -557,3 +557,37 @@ def test_label_get_coordinates(
 
     assert x == expected_x
     assert y == expected_y
+
+
+def test_label_get_rectangle(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        Label,
+        "get_coordinates",
+        lambda self, ax, labelled_rect: (Timestamp("2020-01-01 00:00:00"), 100),
+    )
+
+    monkeypatch.setattr(
+        Label,
+        "get_text_size",
+        lambda self, ax: (Timedelta(seconds=10), 20),
+    )
+
+    label = Label(
+        text="cool",
+        background_kwargs={"color": (0.0, 0.0, 1.0), "alpha": 0.3},
+    )
+
+    detection_rectangle = Rectangle(
+        xy=(Timestamp("2020-01-01 00:00:00"), 100),
+        width=Timedelta(seconds=30),
+        height=50,
+    )
+
+    rectangle = label.get_rectangle(ax=None, labelled_rect=detection_rectangle)
+
+    assert rectangle.xy == (Timestamp("2020-01-01 00:00:00"), 100)
+    assert rectangle.get_width() == Timedelta(seconds=10)
+    assert rectangle.get_height() == 20
+
+    assert rectangle.get_facecolor()[:-1] == (0.0, 0.0, 1.0)
+    assert rectangle.get_alpha() == 0.3
