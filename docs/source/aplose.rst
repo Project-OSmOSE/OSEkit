@@ -76,7 +76,7 @@ Keyword arguments can be passed to the rectangle constructor thanks to the ``det
     _static/detections/detection_unlabelled.png
     :align: center
 
-Detection labels (:class:`osekit.core.detection.Detection.Label`) can be added to the detection rectangle thanks to the ``plot_label`` parameter.
+Detection labels (:class:`osekit.core.detection.Label`) can be added to the detection rectangle thanks to the ``plot_label`` parameter.
 
 Labels consist in a background `matplotlib Rectangle <https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.Rectangle.html>`_ and a foreground
 `matplotlib Text <https://matplotlib.org/stable/api/text_api.html#matplotlib.text.Text>`_.
