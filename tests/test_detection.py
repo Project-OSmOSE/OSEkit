@@ -667,23 +667,42 @@ def test_detection_plot_passes_label_kwargs(
     assert initialized_labels_kwargs[0]["text"] == sample_detection.label
 
 
+@pytest.mark.parametrize(
+    "label_kwargs",
+    [
+        pytest.param(
+            {
+                "anchor": "bottom_right",
+                "inner_text": True,
+                "text_kwargs": {
+                    "fontsize": 42,
+                    "color": "red",
+                },
+            },
+            id="without_background_kwargs",
+        ),
+        pytest.param(
+            {
+                "anchor": "bottom_right",
+                "inner_text": True,
+                "text_kwargs": {
+                    "fontsize": 42,
+                    "color": "red",
+                },
+                "background_kwargs": {
+                    "alpha": 0.3,
+                },
+            },
+            id="with_background_kwargs",
+        ),
+    ],
+)
 def test_default_label_color_is_detection_color(
     custom_axes: Axes,
     sample_detection: Detection,
     monkeypatch: pytest.MonkeyPatch,
+    label_kwargs: dict,
 ) -> None:
-    label_kwargs = {
-        "anchor": "bottom_right",
-        "inner_text": True,
-        "text_kwargs": {
-            "fontsize": 42,
-            "color": "red",
-        },
-        "background_kwargs": {
-            "alpha": 0.3,
-        },
-    }
-
     detection_rect_kwargs = {
         "color": (0.0, 1.0, 0.0),
     }
