@@ -697,10 +697,12 @@ class Detection(Event):
             return
 
         # Default color is rectangle color
-        if (
-            "color" in detection_rect_kwargs
-            and "color" not in label_kwargs["background_kwargs"]
+        if "color" in detection_rect_kwargs and "color" not in label_kwargs.get(
+            "background_kwargs",
+            {},
         ):
+            if "background_kwargs" not in label_kwargs:
+                label_kwargs["background_kwargs"] = {}
             label_kwargs["background_kwargs"]["color"] = detection_rect_kwargs["color"]
 
         label = Label(
