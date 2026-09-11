@@ -774,7 +774,7 @@ class Detection(Event):
             Path of the detections csv file.
             If csv is a list, all detections from the multiple csv files
             are concatenated together.
-        **kwargs: Any
+        kwargs: Any
             Additional keyword arguments passed to the ``pandas.read_csv()`` method.
 
         Returns
