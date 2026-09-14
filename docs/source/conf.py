@@ -33,3 +33,9 @@ html_theme_options = {
     "repository_url": "https://github.com/Project-OSmOSE/OSEkit",
     "use_repository_button": True,
 }
+
+html_static_path = ["_static"]
+
+html_css_files = [
+    "custom.css",
+]
