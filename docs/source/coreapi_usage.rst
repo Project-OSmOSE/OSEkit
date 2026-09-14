@@ -442,7 +442,7 @@ correspond to a given frequency range on a given area of the y-axis:
 
 The resulting figure presents the full-scale spectrogram at the top (from 0 to 72 kHz), and the custom-scale one at the bottom:
 
-.. image:: _static/spectrograms/frequency_scale.png
+.. image:: _static/spectrograms/frequency_scale.svg
 
 
 .. _ltas:
