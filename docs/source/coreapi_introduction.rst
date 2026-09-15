@@ -29,6 +29,11 @@ nor if it contains empty time periods between files.
 
 To do so, **OSEkit** uses an intermediary object between the ``Data`` and the ``File``: an ``Item``, which is a **part** of ``Data`` that is found in a **single** ``File``.
 
+.. note::
+    - ``File`` : Object that represents an actual file on disk (e.g. an audio file, a spectrogram matrix, etc.)
+    - ``Data`` : Object that represents the data contained by file(s) between two timestamps (e.g. a spectrogram plot from a part of an audio file)
+    - ``Item`` : Part of a ``Data`` that is found in a singular ``File``. If a ``Data`` spans over multiple ``File`` , an ``Item`` is created for each one of them and their concatenation forms the ``Data`` values.
+
 As an example, let's consider 3 files that differ in duration (along the x-axis in the figures here below).
 The first two files are consecutive, and the third one is separated from the end of the second by a duration for which there is no data.
 
