@@ -32,13 +32,14 @@ To do so, **OSEkit** uses an intermediary object between the ``Data`` and the ``
 As an example, let's consider 3 files that differ in duration (along the x-axis in the figures here below).
 The first two files are consecutive, and the third one is separated from the end of the second by a duration for which there is no data.
 
-From these 3 files, the user want to manipulate 2 data objects (for example to plot spectrograms from audio files at these 2 time periods):
+From these 3 files, the user want to manipulate a data object (for example to plot a spectrogram from the audio files in a given time period).
 
-.. image:: _static/data_structure/file_item_data_0.svg
+Under the hood, **OSEkit** will create intermediate ``Item`` objects that will be used for the data to be fetched seamlessly, with an optimized I/O workflow.
 
-Under the hood, **OSEkit** will create intermediate ``Item`` objects that will be used for the data to be fetched seamlessly, with an optimized I/O workflow:
+An ``Item`` correspond to a single link between a ``Data`` and a ``File``: although a ``Data`` can be linked to multiple ``File`` (and vice versa),
 
-.. image:: _static/data_structure/file_item_data_2.svg
+
+.. image:: _static/data_structure/data_structure.svg
 
 
 Different type of data
