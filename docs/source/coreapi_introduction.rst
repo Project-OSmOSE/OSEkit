@@ -46,6 +46,15 @@ An ``Item`` correspond to a single link between a ``Data`` and a ``File``: altho
 
 .. image:: _static/data_structure/data_structure.svg
 
+Optimized I/O
+"""""""""""""
+
+The ``Data``/``Item``/``File`` structure allow for an optimized handling of the files.
+
+The values from the ``File`` objects transit through the ``Item`` **on demand**, and ``File`` related files are opened/closed only when needed,
+that is when another ``Item`` requests values from another ``File`` than the currently opened one:
+
+.. image:: _static/data_structure/optimized_IO.svg
 
 Different type of data
 """"""""""""""""""""""
