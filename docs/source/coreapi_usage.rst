@@ -26,7 +26,7 @@ Audio Data
 Design
 """"""
 
-The :class:`osekit.core.audio_data.AudioData` class represent a chunk of audio taken between two specific timestamps from one or more `AudioFile` instances.
+The :class:`osekit.core.audio_data.AudioData` class represent a chunk of audio taken between two specific timestamps from one or more ``AudioFile`` instances.
 
 This class offers means of easily resample the data and access it on-demand (with an optimized I/O workflow to minimize the file openings/closings).
 
