@@ -73,7 +73,7 @@ Let's create a single ``AudioData`` that covers the total duration of the 4 file
 
 This will create one ``AudioItem`` per file, plus one **empty** ``AudioItem`` for the gap:
 
-.. image:: _static/audio_data/ex2.svg
+.. image:: _static/audio_data/ex_2.svg
 
 We can check that with code:
 
