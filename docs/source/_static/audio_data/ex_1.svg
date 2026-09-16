@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="81.487762mm"
+   height="74.244164mm"
+   viewBox="0 0 81.487762 74.244164"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4 (86a8ad7, 2024-10-11)"
+   sodipodi:docname="ex_1.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050"
+     inkscape:document-units="mm"
+     inkscape:zoom="1.4770342"
+     inkscape:cx="144.2079"
+     inkscape:cy="146.57751"
+     inkscape:window-width="1920"
+     inkscape:window-height="1009"
+     inkscape:window-x="1912"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1">
+    <marker
+       style="overflow:visible"
+       id="RoundedArrow"
+       refX="4"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Rounded arrow"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.7)"
+         d="m -0.21114562,-4.1055728 6.42229122,3.21114561 a 1,1 90 0 1 0,1.78885438 L -0.21114562,4.1055728 A 1.236068,1.236068 31.717474 0 1 -2,3 v -6 a 1.236068,1.236068 148.28253 0 1 1.78885438,-1.1055728 z"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:none"
+         id="path8" />
+    </marker>
+  </defs>
+  <g
+     inkscape:label="Calque 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-54.573807,-114.47893)">
+    <g
+       id="file_1">
+      <rect
+         style="fill:#443983;fill-opacity:1;stroke:none;stroke-width:0.705003;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+         id="file_1_rect"
+         width="74.742126"
+         height="17.585871"
+         x="57.946625"
+         y="161.5435"
+         rx="2.7602232"
+         ry="2.7602232" />
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre-wrap;shape-inside:url(#rect66);display:inline;fill:#fde725;fill-opacity:1;stroke:#d35f5f;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
+         x="53.788872"
+         y="225.38052"
+         id="file_1_text"
+         transform="translate(90.198233,172.03633)"><tspan
+           x="0"
+           y="0"
+           id="tspan2"><tspan
+             style="stroke:none;stroke-width:0.705"
+             id="tspan1">FILE</tspan></tspan></text>
+    </g>
+    <path
+       style="fill:#063470;fill-opacity:1;stroke:#fde725;stroke-width:0.3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#RoundedArrow)"
+       d="M 54.723807,184.18947 H 135.84114"
+       id="time_arrow" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans';text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:#d35f5f;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
+       x="144.30231"
+       y="414.05478"
+       id="time_text"><tspan
+         x="90.513428"
+         y="188.67426"
+         id="tspan80"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans';fill:#fde725;fill-opacity:1;stroke:none">time</tspan></text>
+    <path
+       style="fill:#87de87;stroke:#fde725;stroke-width:0.3;stroke-linecap:round;stroke-dasharray:0.899999, 0.899999;stroke-dashoffset:0;stroke-opacity:1"
+       d="m 77.37796,127.26642 v 56.8185"
+       id="cut_1">
+      <animate
+         attributeName="opacity"
+         dur="8s"
+         values="0;0;1;1"
+         keyTimes="0;.185;.215;1"
+         calcMode="linear"
+         repeatCount="indefinite" />
+    </path>
+    <g
+       id="data"
+       transform="translate(-10.236984)">
+      <rect
+         style="fill:#90d743;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+         id="data_rect"
+         width="19.431335"
+         height="17.585871"
+         x="68.183609"
+         y="114.47893"
+         rx="2.7602232"
+         ry="2.7602232">
+      </rect>
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre-wrap;shape-inside:url(#rect64);display:inline;fill:#440154;fill-opacity:1;stroke:#d35f5f;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
+         x="53.788872"
+         y="225.38052"
+         id="data_text"
+         transform="translate(71.504319,124.97176)"><tspan
+           x="0"
+           y="0"
+           id="tspan4"><tspan
+             style="stroke:none"
+             id="tspan3">DATA</tspan></tspan></text>
+    </g>
+    <g
+       id="item_1"
+       transform="translate(-10.386986,0.02264493)">
+      <rect
+         style="fill:#21918c;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+         id="item_1_rect"
+         width="19.431335"
+         height="17.585871"
+         x="68.333611"
+         y="138.00787"
+         rx="2.7602232"
+         ry="2.7602232">
+      </rect>
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre-wrap;shape-inside:url(#rect72);display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+         x="53.788872"
+         y="225.38052"
+         id="item_1_text"
+         transform="translate(72.206612,148.50071)"><tspan
+           x="0"
+           y="0"
+           id="tspan5">ITEM</tspan></text>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.335;.365;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+    </g>
+  </g>
+</svg>

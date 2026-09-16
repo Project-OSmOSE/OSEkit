@@ -46,7 +46,7 @@ Example for an ``AudioData`` representing the first 2 seconds of the ``foo/7189.
 
 This will lead to the following *data* <-> *file* structure (see the :ref:`Data and Files <data_files>` section):
 
-.. image:: _static/audio_data/ex1.svg
+.. image:: _static/audio_data/ex_1.svg
 
 If the ``AudioData`` begin and end timestamps cover multiple ``AudioFile``, the corresponding ``AudioItem``.
 
