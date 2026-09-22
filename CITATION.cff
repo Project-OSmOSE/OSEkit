@@ -11,8 +11,12 @@ authors:
   given-names: Benjamin
   orcid: 0009-0005-0362-1835
 - affiliation: ENSTA
-  family-names: Mathieu Dupont
-- family-names: Anatole Gros-Martial
+  family-names: Dupont
+  given-names: Mathieu
+  orcid: 0009-0008-6747-1209
+- affiliation: ENSTA
+  family-names: Gros-Martial
+  given-names: Anatole
 - affiliation: ENSTA
   family-names: Torterotot
   given-names: Maelle
