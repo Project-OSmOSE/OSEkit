@@ -2,51 +2,65 @@ Working with jobs
 -----------------
 
 **OSEkit** can be set to send transform instructions to be computed on a remote server
-through the PBS queuing system.
+through queuing systems.
 
 This feature has mainly be thought for the Public API, but it can nonetheless be used for
 any Core API operation.
 
-The job module is located at :mod:`osekit.utils.job`.
+This is done thanks to the job package, located in :mod:`osekit.job`.
 
 Public API
 ^^^^^^^^^^
 
-Running Public API Analyses through PBS jobs only requires adding a :class:`osekit.utils.job.JobBuilder`
-instance to the :attr:`osekit.public.project.Project.job_builder` attribute:
+Running Public API Analyses through jobs only requires adding a :class:`osekit.job.builder.JobBuilder`
+instance to the :attr:`osekit.public.project.Project.job_builder` attribute.
+
+The :class:`osekit.job.builder.JobBuilder`
+
+Here is an example for running a transform on a PBS queue:
 
 .. code-block:: python
 
-    from osekit.utils.job import JobConfig, JobBuilder
+    import os
+
+    from pandas import Timedelta
+
+    from osekit.job.builder import JobBuilder
+    from osekit.job.config import JobConfig
+    from osekit.job.scheduler.pbs import Pbs
     from osekit.public.project import Project
 
-    project = Project(...) # See the Project documentation
+    project = Project(...)  # See the Project documentation
 
     job_config = JobConfig(
-        nb_nodes=1, # Number of nodes on which the job runs
-        ncpus=28, # Number of total cores used per node
-        ngpus=1, # Number of total GPU used per node
-        mem="60gb", # Maximum amount of physical memory used by the job
-        walltime=Timedelta(hours=5), # Maximum amount of real itime during which the job can be running
-        venv_name=os.environ["CONDA_DEFAULT_ENV"], # Works only for conda venvs
-        queue="omp" # Queue in which the job will be submitted
+        nb_nodes=1,  # Number of nodes on which the job runs
+        ncpus=28,  # Number of total cores used per node
+        ngpus=1,  # Number of total GPU used per node
+        mem="60gb",  # Maximum amount of physical memory used by the job
+        walltime=Timedelta(
+            hours=5
+        ),  # Maximum amount of real itime during which the job can be running
+        venv_name=os.environ["CONDA_DEFAULT_ENV"],  # Works only for conda venvs
     )
+
+    scheduler = Pbs(queue="omp")  # Scheduler in which the job is submitted
 
     project.job_builder = JobBuilder(
         config=job_config,
+        scheduler=scheduler,
     )
 
     # Now the dataset has a non-None job_builder attribute,
     # running a transform will write a PBS file in the logs directory
-    # and submit it to the requested queue.
+    # and submit it through the selected scheduler.
 
-    project.run(...) # See the Transform documentation
+    project.run(...)  # See the Transform documentation
 
 
 Core API
 ^^^^^^^^
 
-Exporting Core API datasets with jobs is doable by explicitly instantiating a :class:`osekit.utils.job.Job` object.
+Exporting Core API datasets with jobs is doable by explicitly instantiating a :class:`osekit.job.job.Job` object.
 
 The export parameters are specified in the ``script_args`` parameter of the ``Job`` constructor,
 and follow the console arguments of the :mod:`osekit.public.export` script.
@@ -60,11 +74,13 @@ and follow the console arguments of the :mod:`osekit.public.export` script.
 
     from osekit.core.audio_dataset import AudioDataset
     from osekit.core.spectro_dataset import SpectroDataset
+    from osekit.job.config import JobConfig
+    from osekit.job.job import Job
+    from osekit.job.scheduler.pbs import Pbs
     from osekit.public import export_transform
 
     # Some Public API imports are required
     from osekit.public.transform import OutputType
-    from osekit.utils.job import Job, JobConfig
 
     ads = AudioDataset(...)  # See the AudioDataset doc
     sds = SpectroDataset(...)  # See the SpectroDataset doc
@@ -109,8 +125,10 @@ and follow the console arguments of the :mod:`osekit.public.export` script.
         mem="60gb",
         walltime=Timedelta(hours=1),
         venv_name=os.environ["CONDA_DEFAULT_ENV"],
-        queue="omp",
     )
+
+    # Scheduler configuration
+    scheduler = Pbs(queue="omp")
 
     job = Job(
         script_path=Path(export_transform.__file__),
@@ -120,12 +138,12 @@ and follow the console arguments of the :mod:`osekit.public.export` script.
         output_folder=Path(...),  # Path in which the .out and .err files are written
     )
 
-    # Write the PBS file and submit the job
-    job.write_pbs(Path(...) / f"{job.name}.pbs")
-    job.submit_pbs()
+    # Write the job  file and submit it through the scheduler
+    scheduler.write(job=job, path=Path(...) / f"{job.name}.pbs")
+    scheduler.submit(job=job)
 
-You can then follow the status of the submitted job:
+You can then follow the status of the submitted job through the scheduler:
 
 .. code-block:: python
 
-    job.update_status()
+    scheduler.update_status(job=job)
