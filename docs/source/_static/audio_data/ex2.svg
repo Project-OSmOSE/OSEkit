@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="75.454269mm"
+   height="74.770668mm"
+   viewBox="0 0 75.454269 74.770668"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="ex2.svg"
+   inkscape:version="1.4 (86a8ad7, 2024-10-11)"
+   inkscape:export-batch-path="C:\Users\berthoga\Documents\Communications\OSEkit_rework\media\audio_data"
+   inkscape:export-batch-name="ex2"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050"
+     inkscape:document-units="mm"
+     inkscape:zoom="0.5"
+     inkscape:cx="264"
+     inkscape:cy="109"
+     inkscape:window-width="1920"
+     inkscape:window-height="1009"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1"
+     showgrid="false">
+    <inkscape:page
+       x="0"
+       y="0"
+       width="75.454269"
+       height="74.770668"
+       id="page3"
+       margin="0"
+       bleed="0"
+       inkscape:label="3" />
+  </sodipodi:namedview>
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Calque 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-257.56423,-79.501804)">
+    <g
+       id="g79">
+      <rect
+         style="fill:none;stroke:#2ecc71;stroke-width:0.705;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+         id="rect12"
+         width="74.749252"
+         height="17.585871"
+         x="257.91675"
+         y="84.561913"
+         rx="2.7602232"
+         ry="2.7602232" />
+      <g
+         id="g23"
+         transform="matrix(0.78131261,0,0,1,56.678543,0)"
+         style="stroke-width:1.13133">
+        <rect
+           style="fill:none;stroke:#e74c3c;stroke-width:0.797586;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+           id="rect10"
+           width="18.863583"
+           height="17.585871"
+           x="257.56424"
+           y="131.6265"
+           rx="3.5328023"
+           ry="2.7602232" />
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre-wrap;shape-inside:url(#rect10);display:inline;fill:#e74c3c;fill-opacity:1;stroke:#d35f5f;stroke-width:0.797586;stroke-linecap:round;stroke-dasharray:none"
+           x="53.788872"
+           y="225.38052"
+           id="text13"><tspan
+             x="263.0884"
+             y="134.40508"
+             id="tspan4"><tspan
+               style="stroke:none;stroke-width:0.797585"
+               id="tspan3">FILE</tspan></tspan></text>
+      </g>
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre-wrap;shape-inside:url(#rect12);display:inline;fill:#2ecc71;fill-opacity:1;stroke:#d35f5f;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
+         x="53.788872"
+         y="225.38052"
+         id="text17"><tspan
+           x="291.38382"
+           y="87.340625"
+           id="tspan6"><tspan
+             style="stroke:none"
+             id="tspan5">DATA</tspan></tspan></text>
+      <g
+         id="g23-5"
+         transform="matrix(0.80061052,0,0,1,66.434913,0)"
+         style="stroke-width:1.11761">
+        <rect
+           style="fill:none;stroke:#e74c3c;stroke-width:0.787915;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+           id="rect10-5"
+           width="18.863583"
+           height="17.585871"
+           x="257.56424"
+           y="131.6265"
+           rx="3.4476478"
+           ry="2.7602232" />
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre-wrap;shape-inside:url(#rect10-5);display:inline;fill:#e74c3c;fill-opacity:1;stroke:#d35f5f;stroke-width:0.787915;stroke-linecap:round;stroke-dasharray:none"
+           x="53.788872"
+           y="225.38052"
+           id="text13-1"><tspan
+             x="263.0884"
+             y="134.40508"
+             id="tspan8"><tspan
+               style="stroke:none;stroke-width:0.787913"
+               id="tspan7">FILE</tspan></tspan></text>
+      </g>
+      <g
+         id="g24"
+         transform="matrix(0.800244,0,0,1,81.629395,0)"
+         style="stroke-width:1.11786">
+        <rect
+           style="fill:none;stroke:#e74c3c;stroke-width:0.788095;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+           id="rect23"
+           width="18.863583"
+           height="17.585871"
+           x="257.56424"
+           y="131.6265"
+           rx="3.4492269"
+           ry="2.7602232" />
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre-wrap;shape-inside:url(#rect23);display:inline;fill:#e74c3c;fill-opacity:1;stroke:#d35f5f;stroke-width:0.788095;stroke-linecap:round;stroke-dasharray:none"
+           x="53.788872"
+           y="225.38052"
+           id="text24"><tspan
+             x="263.0884"
+             y="134.40508"
+             id="tspan10"><tspan
+               style="stroke:none;stroke-width:0.788093"
+               id="tspan9">FILE</tspan></tspan></text>
+      </g>
+      <g
+         id="g26"
+         transform="matrix(0.78150084,0,0,1,116.64098,0)"
+         style="stroke-width:1.13119">
+        <rect
+           style="fill:none;stroke:#e74c3c;stroke-width:0.79749;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+           id="rect24"
+           width="18.863583"
+           height="17.585871"
+           x="257.56424"
+           y="131.6265"
+           rx="3.5319514"
+           ry="2.7602232" />
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre-wrap;shape-inside:url(#rect24);display:inline;fill:#e74c3c;fill-opacity:1;stroke:#d35f5f;stroke-width:0.79749;stroke-linecap:round;stroke-dasharray:none"
+           x="53.788872"
+           y="225.38052"
+           id="text26"><tspan
+             x="263.0884"
+             y="134.40508"
+             id="tspan12"><tspan
+               style="stroke:none;stroke-width:0.797489"
+               id="tspan11">FILE</tspan></tspan></text>
+      </g>
+      <g
+         id="g28"
+         transform="matrix(0.781241,0,0,1,56.697663,-23.535636)"
+         style="stroke:#3498db;stroke-width:1.13138;stroke-opacity:1">
+        <rect
+           style="fill:none;stroke:#3498db;stroke-width:0.797623;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+           id="rect26"
+           width="18.863583"
+           height="17.585871"
+           x="257.56424"
+           y="131.6265"
+           rx="3.5331261"
+           ry="2.7602232" />
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre-wrap;shape-inside:url(#rect26);display:inline;fill:#3498db;fill-opacity:1;stroke:none;stroke-width:0.797623;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+           x="53.788872"
+           y="225.38052"
+           id="text28"><tspan
+             x="263.0884"
+             y="134.40508"
+             id="tspan13">ITEM</tspan></text>
+      </g>
+      <g
+         id="g30"
+         transform="matrix(0.79945891,0,0,1,66.742389,-23.535636)"
+         style="stroke:#3498db;stroke-width:1.11841;stroke-opacity:1">
+        <rect
+           style="fill:none;stroke:#3498db;stroke-width:0.788482;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+           id="rect28"
+           width="18.863583"
+           height="17.585871"
+           x="257.56424"
+           y="131.6265"
+           rx="3.4526141"
+           ry="2.7602232" />
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre-wrap;shape-inside:url(#rect28);display:inline;fill:#3498db;fill-opacity:1;stroke:none;stroke-width:0.788482;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+           x="53.788872"
+           y="225.38052"
+           id="text30"><tspan
+             x="263.08838"
+             y="134.40508"
+             id="tspan14">ITEM</tspan></text>
+      </g>
+      <g
+         id="g32"
+         transform="matrix(0.80115102,0,0,1,81.387224,-23.535636)"
+         style="stroke:#3498db;stroke-width:1.11723;stroke-opacity:1">
+        <rect
+           style="fill:none;stroke:#3498db;stroke-width:0.787649;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+           id="rect30"
+           width="18.863583"
+           height="17.585871"
+           x="257.56424"
+           y="131.6265"
+           rx="3.4453218"
+           ry="2.7602232" />
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre-wrap;shape-inside:url(#rect30);display:inline;fill:#3498db;fill-opacity:1;stroke:none;stroke-width:0.787649;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+           x="53.788872"
+           y="225.38052"
+           id="text32"><tspan
+             x="263.0884"
+             y="134.40508"
+             id="tspan15">ITEM</tspan></text>
+      </g>
+      <g
+         id="g34"
+         transform="matrix(0.78146366,0,0,1,116.65056,-23.535636)"
+         style="stroke:#3498db;stroke-width:1.13122;stroke-opacity:1">
+        <rect
+           style="fill:none;stroke:#3498db;stroke-width:0.79751;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+           id="rect32"
+           width="18.863583"
+           height="17.585871"
+           x="257.56424"
+           y="131.6265"
+           rx="3.5321195"
+           ry="2.7602232" />
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre-wrap;shape-inside:url(#rect32);display:inline;fill:#3498db;fill-opacity:1;stroke:none;stroke-width:0.79751;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+           x="53.788872"
+           y="225.38052"
+           id="text34"><tspan
+             x="263.0884"
+             y="134.40508"
+             id="tspan16">ITEM</tspan></text>
+      </g>
+      <path
+         style="fill:#87de87;stroke:#cccccc;stroke-width:0.3;stroke-linecap:round;stroke-dasharray:0.899999, 0.899999;stroke-dashoffset:0"
+         d="M 272.65509,79.651804 V 154.12247"
+         id="path12" />
+      <g
+         id="g78"
+         transform="matrix(0.80115102,0,0,1,96.467219,-23.535636)"
+         style="stroke:#3498db;stroke-width:1.11723;stroke-opacity:1">
+        <rect
+           style="fill:none;stroke:#3498db;stroke-width:0.787649;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+           id="rect76"
+           width="18.863583"
+           height="17.585871"
+           x="257.56424"
+           y="131.6265"
+           rx="3.4453218"
+           ry="2.7602232" />
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.175px;font-family:'Fira Code';-inkscape-font-specification:'Fira Code';text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre-wrap;shape-inside:url(#rect76);display:inline;fill:#3498db;fill-opacity:1;stroke:none;stroke-width:0.787649;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+           x="53.788872"
+           y="225.38052"
+           id="text78"><tspan
+             x="263.0884"
+             y="134.40508"
+             id="tspan17">ITEM</tspan></text>
+      </g>
+      <path
+         style="fill:#87de87;stroke:#cccccc;stroke-width:0.3;stroke-linecap:round;stroke-dasharray:0.899999, 0.899999;stroke-dashoffset:0"
+         d="M 302.8368,79.651804 V 154.12247"
+         id="path18" />
+      <path
+         style="fill:#87de87;stroke:#cccccc;stroke-width:0.3;stroke-linecap:round;stroke-dasharray:0.899999, 0.899999;stroke-dashoffset:0"
+         d="M 317.92765,79.651804 V 154.12247"
+         id="path19" />
+      <path
+         style="fill:#87de87;stroke:#cccccc;stroke-width:0.3;stroke-linecap:round;stroke-dasharray:0.899999, 0.899999;stroke-dashoffset:0"
+         d="M 287.74594,79.651804 V 154.12247"
+         id="path73" />
+    </g>
+  </g>
+</svg>
