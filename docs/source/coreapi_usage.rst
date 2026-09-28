@@ -26,7 +26,7 @@ Audio Data
 Design
 """"""
 
-The :class:`osekit.core.audio_data.AudioData` class represent a chunk of audio taken between two specific timestamps from one or more `AudioFile` instances.
+The :class:`osekit.core.audio_data.AudioData` class represent a chunk of audio taken between two specific timestamps from one or more ``AudioFile`` instances.
 
 This class offers means of easily resample the data and access it on-demand (with an optimized I/O workflow to minimize the file openings/closings).
 
@@ -46,7 +46,7 @@ Example for an ``AudioData`` representing the first 2 seconds of the ``foo/7189.
 
 This will lead to the following *data* <-> *file* structure (see the :ref:`Data and Files <data_files>` section):
 
-.. image:: _static/audio_data/ex1.svg
+.. image:: _static/audio_data/ex_1.svg
 
 If the ``AudioData`` begin and end timestamps cover multiple ``AudioFile``, the corresponding ``AudioItem``.
 
@@ -73,7 +73,7 @@ Let's create a single ``AudioData`` that covers the total duration of the 4 file
 
 This will create one ``AudioItem`` per file, plus one **empty** ``AudioItem`` for the gap:
 
-.. image:: _static/audio_data/ex2.svg
+.. image:: _static/audio_data/ex_2.svg
 
 We can check that with code:
 
