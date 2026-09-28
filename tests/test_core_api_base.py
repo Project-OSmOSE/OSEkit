@@ -370,17 +370,17 @@ def test_base_dataset_from_files(
     [
         pytest.param(
             -1.0,
-            "timedelta_files",
+            "timedelta_file",
             id="negative_overlap_files",
         ),
         pytest.param(
             1.0,
-            "timedelta_files",
+            "timedelta_file",
             id="one_overlap_files",
         ),
         pytest.param(
             10.0,
-            "timedelta_files",
+            "timedelta_file",
             id="greater_than_one_overlap_files",
         ),
         pytest.param(
@@ -834,7 +834,8 @@ def test_base_dataset_from_folder(
     ],
 )
 def test_base_dataset_data_duration(
-    data_durations: list[Timedelta], expected_duration: Timedelta
+    data_durations: list[Timedelta],
+    expected_duration: Timedelta,
 ) -> None:
     files = []
     for data_duration in data_durations:
@@ -2396,9 +2397,9 @@ def test_dummydata_make_file() -> None:
             {
                 "path": "foo",
                 "begin": Timestamp("2020-01-01 00:00:00").strftime(
-                    TIMESTAMP_FORMATS_EXPORTED_FILES[0]
+                    TIMESTAMP_FORMATS_EXPORTED_FILES[0],
                 ),
-            }
+            },
         )
         == dfs[0]
     )
