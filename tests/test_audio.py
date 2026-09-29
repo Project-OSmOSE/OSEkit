@@ -338,6 +338,27 @@ def test_multichannel_audio_data() -> None:
     assert np.array_equal(ad.get_value(), np.array([[2, 3] for _ in range(10)]))
 
 
+def test_multichannel_audio_empty_item() -> None:
+    af_data = np.array([[1, 2, 3] for _ in range(10)])
+    af = MockedAudioFile(mocked_value=af_data, sample_rate=10)
+    ad: AudioData = AudioData.from_files(
+        files=[af],
+        begin=af.begin,
+        end=af.end
+        + Timedelta(
+            seconds=1 / af.sample_rate,
+        ),  # Empty item with 10 samples at the end
+    )
+
+    assert len(ad.items) == 2
+    assert not ad.items[0].is_empty
+    assert ad.items[1].is_empty
+
+    vs = ad.get_value()
+    assert np.array_equal(vs[:, :-10], af_data)
+    assert np.array_equal(vs[:, -10:], np.zeros((3, 10)))
+
+
 @pytest.mark.parametrize(
     ("audio_files", "start", "stop", "expected"),
     [
