@@ -322,7 +322,7 @@ def test_audio_file_stream_is_always_2d(
     assert af.stream(1024).shape == expected_shape
 
 
-def test_multitchannel_audio_data() -> None:
+def test_multichannel_audio_data() -> None:
     af_data = np.array([[1, 2, 3] for _ in range(10)])
 
     af = MockedAudioFile(mocked_value=af_data, sample_rate=10)
