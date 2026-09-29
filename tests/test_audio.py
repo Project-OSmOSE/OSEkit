@@ -359,6 +359,20 @@ def test_multichannel_audio_empty_item() -> None:
     assert np.array_equal(vs[:, -10:], np.zeros((3, 10)))
 
 
+def test_multichannel_audio_resample(monkeypatch: pytest.MonkeyPatch) -> None:
+    file = MockedAudioFile(
+        mocked_value=np.array([[0.1, 0.2, 0.3] for _ in range(200)]),
+        sample_rate=200,
+    )
+
+    ad = AudioData.from_files([file], sample_rate=100)
+    ad.channels = [0, 2]
+
+    vs = ad.get_value()
+
+    assert vs.shape == (100, 2)
+
+
 @pytest.mark.parametrize(
     ("audio_files", "start", "stop", "expected"),
     [
