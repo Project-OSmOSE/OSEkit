@@ -330,15 +330,16 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
             End of the last data object.
             Defaulted to the end of the last file.
         mode: Literal["files", "timedelta_total", "timedelta_file"]
-            Mode of creation of the dataset data from the original files.
+            Mode of creation of the dataset data from the files.
             ``"files"``: one data will be created for each file.
             ``"timedelta_total"``: data objects of duration equal to ``data_duration`` will
             be created from the ``begin`` timestamp to the ``end`` timestamp.
             ``"timedelta_file"``: data objects of duration equal to ``data_duration`` will
-            be created from the the ``begin`` timestamp, until it would resume in a data
+            be created from the ``begin`` timestamp, until it would resume in a data
             beginning between two files.
             Then, the next data object will be created from the
-            beginning of the next original file and so on.
+            beginning of the next file and so on until the ``end`` timestamp (if
+            specified) or the last file's end is reached.
         data_duration: Timedelta | None
             Duration of the data objects.
             If mode is set to ``"files"``, this parameter has no effect.
