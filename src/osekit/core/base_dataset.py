@@ -503,7 +503,7 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
                 )
                 for data_begin in date_range(
                     begin,
-                    files_chunk[-1].end,
+                    min(files_chunk[-1].end, end),
                     freq=data_hop,
                     inclusive="left",
                 )
