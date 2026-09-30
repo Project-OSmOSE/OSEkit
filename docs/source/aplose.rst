@@ -38,7 +38,7 @@ The :class:`osekit.core.detection.Detection` class inherits from the :class:`ose
 Plotting a detection
 ^^^^^^^^^^^^^^^^^^^^
 
-Detection boxes can be plotted on spectrograms thanks to the :method:`osekit.core.detection.Detection.to_rectangle` method:
+Detection boxes can be plotted on spectrograms thanks to the :meth:`osekit.core.detection.Detection.to_rectangle` method:
 
 .. code-block:: python
 
