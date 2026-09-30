@@ -32,7 +32,7 @@ authors:
   orcid: https://orcid.org/0009-0000-9390-6765
 cff-version: 1.2.0
 date-released: '2026-01-22'
-doi: 10.5281/zenodo.18337275
+doi: 10.5281/zenodo.18337274
 license: MIT
 message: If you use this software, please cite it using the metadata from this file.
 repository-code: https://github.com/Project-OSmOSE/OSEkit
