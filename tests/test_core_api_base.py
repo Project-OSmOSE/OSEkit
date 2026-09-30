@@ -2317,6 +2317,8 @@ def test_data_name(data: DummyData, name: str | None, expected: str) -> None:
                         ),
                         "depression",
                     ),
+                ],
+                [
                     (
                         Event(
                             begin=Timestamp("2015-08-28 12:12:20"),
