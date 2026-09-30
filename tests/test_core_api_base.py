@@ -2263,16 +2263,7 @@ def test_data_name(data: DummyData, name: str | None, expected: str) -> None:
                 [
                     (
                         Event(
-                            begin=Timestamp("2015-08-28 12:12:00"),
-                            end=Timestamp("2015-08-28 12:13:00"),
-                        ),
-                        "depression",
-                    ),
-                ],
-                [
-                    (
-                        Event(
-                            begin=Timestamp("2015-08-28 12:13:00"),
+                            begin=Timestamp("2015-08-28 12:12:12"),
                             end=Timestamp("2015-08-28 12:13:02"),
                         ),
                         "depression",
@@ -2280,22 +2271,15 @@ def test_data_name(data: DummyData, name: str | None, expected: str) -> None:
                     (
                         Event(
                             begin=Timestamp("2015-08-28 12:13:02"),
-                            end=Timestamp("2015-08-28 12:13:22"),
+                            end=Timestamp("2015-08-28 12:13:12"),
                         ),
                         None,
-                    ),
-                    (
-                        Event(
-                            begin=Timestamp("2015-08-28 12:13:22"),
-                            end=Timestamp("2015-08-28 12:14:00"),
-                        ),
-                        "cherry",
                     ),
                 ],
                 [
                     (
                         Event(
-                            begin=Timestamp("2015-08-28 12:14:00"),
+                            begin=Timestamp("2015-08-28 12:13:22"),
                             end=Timestamp("2015-08-28 12:14:12"),
                         ),
                         "cherry",
@@ -2303,7 +2287,7 @@ def test_data_name(data: DummyData, name: str | None, expected: str) -> None:
                     (
                         Event(
                             begin=Timestamp("2015-08-28 12:14:12"),
-                            end=Timestamp("2015-08-28 12:15:00"),
+                            end=Timestamp("2015-08-28 12:14:22"),
                         ),
                         None,
                     ),
