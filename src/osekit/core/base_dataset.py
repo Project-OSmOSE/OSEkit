@@ -335,8 +335,8 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
             ``"timedelta_total"``: data objects of duration equal to ``data_duration`` will
             be created from the ``begin`` timestamp to the ``end`` timestamp.
             ``"timedelta_file"``: data objects of duration equal to ``data_duration`` will
-            be created from the beginning of the first file that the ``begin`` timestamp
-            is into, until it would resume in a data beginning between two files.
+            be created from the the ``begin`` timestamp, until it would resume in a data
+            beginning between two files.
             Then, the next data object will be created from the
             beginning of the next original file and so on.
         data_duration: Timedelta | None
@@ -481,14 +481,16 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
                 continue
             files_chunk = [file]
 
+            next_jump = None
             for next_file in files[idx + 1 :]:
                 upper_data_limit = last_window_end(
-                    begin=file.begin,
+                    begin=begin,
                     end=files_chunk[-1].end,
                     window_hop=data_hop,
                     window_duration=data_duration,
                 )
                 if upper_data_limit < next_file.begin:
+                    next_jump = next_file
                     break
                 files_chunk.append(next_file)
 
@@ -500,12 +502,15 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
                     **kwargs,
                 )
                 for data_begin in date_range(
-                    file.begin,
+                    begin,
                     files_chunk[-1].end,
                     freq=data_hop,
                     inclusive="left",
                 )
             )
+
+            if next_jump:
+                begin = next_jump.begin
 
         return output
 
