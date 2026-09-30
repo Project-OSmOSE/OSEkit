@@ -2295,6 +2295,39 @@ def test_data_name(data: DummyData, name: str | None, expected: str) -> None:
             ],
             id="file_two_separate_files_begin_mid_file",
         ),
+        pytest.param(
+            [
+                DummyFile(
+                    "depression",
+                    begin=Timestamp("2015-08-28 12:12:00"),
+                    end=Timestamp("2015-08-28 12:13:02"),
+                ),
+            ],
+            Timestamp("2015-08-28 12:12:10"),
+            Timestamp("2015-08-28 12:12:25"),
+            Timedelta(seconds=10),
+            "timedelta_file",
+            0.0,
+            [
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:12:10"),
+                            end=Timestamp("2015-08-28 12:12:20"),
+                        ),
+                        "depression",
+                    ),
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:12:20"),
+                            end=Timestamp("2015-08-28 12:12:30"),
+                        ),
+                        "depression",
+                    ),
+                ],
+            ],
+            id="file_end_mid_file",
+        ),
     ],
 )
 def test_get_base_data_from_files(
