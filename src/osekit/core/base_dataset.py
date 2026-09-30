@@ -330,15 +330,16 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
             End of the last data object.
             Defaulted to the end of the last file.
         mode: Literal["files", "timedelta_total", "timedelta_file"]
-            Mode of creation of the dataset data from the original files.
+            Mode of creation of the dataset data from the files.
             ``"files"``: one data will be created for each file.
             ``"timedelta_total"``: data objects of duration equal to ``data_duration`` will
             be created from the ``begin`` timestamp to the ``end`` timestamp.
             ``"timedelta_file"``: data objects of duration equal to ``data_duration`` will
-            be created from the beginning of the first file that the ``begin`` timestamp
-            is into, until it would resume in a data beginning between two files.
+            be created from the ``begin`` timestamp, until it would resume in a data
+            beginning between two files.
             Then, the next data object will be created from the
-            beginning of the next original file and so on.
+            beginning of the next file and so on until the ``end`` timestamp (if
+            specified) or the last file's end is reached.
         data_duration: Timedelta | None
             Duration of the data objects.
             If mode is set to ``"files"``, this parameter has no effect.
@@ -481,14 +482,16 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
                 continue
             files_chunk = [file]
 
+            next_jump = None
             for next_file in files[idx + 1 :]:
                 upper_data_limit = last_window_end(
-                    begin=file.begin,
+                    begin=begin,
                     end=files_chunk[-1].end,
                     window_hop=data_hop,
                     window_duration=data_duration,
                 )
                 if upper_data_limit < next_file.begin:
+                    next_jump = next_file
                     break
                 files_chunk.append(next_file)
 
@@ -500,12 +503,15 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
                     **kwargs,
                 )
                 for data_begin in date_range(
-                    file.begin,
-                    files_chunk[-1].end,
+                    begin,
+                    min(files_chunk[-1].end, end),
                     freq=data_hop,
                     inclusive="left",
                 )
             )
+
+            if next_jump:
+                begin = next_jump.begin
 
         return output
 
