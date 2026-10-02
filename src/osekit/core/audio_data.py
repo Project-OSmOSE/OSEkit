@@ -135,7 +135,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
 
     @property
     def channels(self) -> list[int]:
-        """The Butterworth filter to apply to the audio data."""
+        """The channels targeted by this ``AudioData``."""
         return self._channels
 
     @channels.setter
