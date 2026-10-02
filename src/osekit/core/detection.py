@@ -6,8 +6,11 @@ from pathlib import Path
 from typing import Any, Literal, Self
 
 import pandas as pd
+from matplotlib.axes import Axes
 from matplotlib.patches import Rectangle
-from pandas import Timestamp
+from matplotlib.text import Text
+from matplotlib.transforms import TransformedBbox
+from pandas import Timedelta, Timestamp
 
 from osekit.core.event import Event
 from osekit.utils.core import is_empty_dataclass
@@ -328,6 +331,152 @@ class Verification:
         }
 
 
+class Label:
+    """Class that represents a label of a detection.
+
+    It contains helper methods to plot the label next to the
+    detection rectangle using pyplot.
+    """
+
+    def __init__(
+        self,
+        text: str,
+        anchor: Literal[
+            "top_left",
+            "top_right",
+            "bottom_right",
+            "bottom_left",
+        ] = "top_left",
+        *,
+        inner_text: bool = False,
+        text_kwargs: dict | None = None,
+        background_kwargs: dict | None = None,
+    ) -> None:
+        """Initialize the label object.
+
+        Parameters
+        ----------
+        text: str
+            Text of the label.
+        anchor: Literal["top_left", "top_right", "bottom_right", "bottom_left"]
+            Anchor of the label relative to the detection rectangle.
+        color: str
+            Color of the label rectangle.
+        text_color: str
+            Color of the label text.
+        inner_text: bool
+            If ``True``, the label rectangle is plotted inside the detection rectangle.
+        fill: bool
+            If ``True``, the label rectangle is plotted as a fill.
+        text_kwargs: dict|None
+            Additional kwargs to pass to the ``Text``.
+        background_kwargs: dict|None
+            Additional kwargs to pass to the background ``Rectangle``.
+
+        """
+        self.text = text
+        self.anchor = anchor
+        self.inner_text = inner_text
+        self.text_kwargs = text_kwargs or {}
+        self.background_kwargs = background_kwargs or {}
+
+    def get_text_size(self, ax: Axes) -> tuple[Timedelta, float]:
+        """Return the width and height of the label text.
+
+        The size is given as a ``Timedelta`` on the X axis and a float on the
+        Y axis.
+
+        Parameters
+        ----------
+        ax: Axes
+            Axes in which the text is drawn.
+
+        Returns
+        -------
+        Timedelta:
+            Width of the label text.
+        float:
+            Height of the label text.
+
+        """
+        # We add a Text object with the given text to the Axes
+        # to measure its size, then remove it
+        text = Text(text=self.text, **self.text_kwargs)
+        ax.add_artist(text)
+        renderer = ax.get_figure().canvas.get_renderer()
+        text_bbox = text.get_window_extent(renderer=renderer)  # display coordinates
+        text.remove()
+
+        # Conversion of the bbox width in Timedelta
+        text_bbox = TransformedBbox(bbox=text_bbox, transform=ax.transData.inverted())
+        return Timedelta(days=text_bbox.width), text_bbox.height
+
+    def get_coordinates(
+        self,
+        ax: Axes,
+        labelled_rect: Rectangle,
+    ) -> tuple[float, float]:
+        """Return the coordinates of the bottom left point of the label.
+
+        The X coordinate is given as a ``Timestamp``, the Y coordinate
+        as a float.
+
+        Parameters
+        ----------
+        ax: Axes
+            Axes in which the text is drawn.
+        labelled_rect: Rectangle
+            Rectangle that is labelled by the label.
+
+        Returns
+        -------
+        Timestamp:
+            X coordinate of the label.
+        float:
+            Y Coordinate of the label.
+
+        """
+        x0, y0 = labelled_rect.xy
+        x1 = x0 + labelled_rect.get_width()
+        y1 = y0 + labelled_rect.get_height()
+
+        label_width, label_height = self.get_text_size(ax=ax)
+
+        vertical_anchor, horizontal_anchor = self.anchor.split("_", maxsplit=1)
+
+        label_x = x0 if horizontal_anchor == "left" else (x1 - label_width)
+        if self.inner_text:
+            label_y = y0 if vertical_anchor == "bottom" else y1 - label_height
+        else:
+            label_y = y0 - label_height if vertical_anchor == "bottom" else y1
+        return label_x, label_y
+
+    def get_rectangle(self, ax: Axes, labelled_rect: Rectangle) -> Rectangle:
+        """Return the background rectangle of the label.
+
+        Parameters
+        ----------
+        ax: Axes
+            Axes in which the label is drawn.
+        labelled_rect: Rectangle
+            Rectangle that is labelled by the label.
+
+        Returns
+        -------
+        Rectangle
+            Background rectangle of the label
+
+        """
+        xy = self.get_coordinates(ax=ax, labelled_rect=labelled_rect)
+        width, height = self.get_text_size(ax=ax)
+        return Rectangle(
+            xy=xy,
+            height=height,
+            width=width,
+            **self.background_kwargs,
+        )
+
+
 class Detection(Event):
     """Class that represents a detection made on APLOSE."""
 
@@ -516,6 +665,58 @@ class Detection(Event):
             for verificator, verification in kvp.to_dict().items()
         }
 
+    def plot(
+        self,
+        ax: Axes,
+        *,
+        plot_label: bool = False,
+        detection_rect_kwargs: dict | None = None,
+        label_kwargs: dict | None = None,
+    ) -> None:
+        """Plot the detection on the given ``Axes``.
+
+        Parameters
+        ----------
+        ax: Axes
+            Axes in which to plot the detection box.
+        plot_label: bool
+            Whether or not to add the label in the detection plot.
+        detection_rect_kwargs: dict|None
+            Additional kwargs to pass to the detection rectangle.
+        label_kwargs: dict|None
+            Additional kwargs to pass to the ``Label`` object.
+
+        """
+        detection_rect_kwargs = detection_rect_kwargs or {}
+        label_kwargs = label_kwargs or {"text_kwargs": {}, "background_kwargs": {}}
+
+        detection_rectangle = self.to_rectangle(**detection_rect_kwargs)
+        ax.add_patch(p=detection_rectangle)
+
+        if not self.label or not plot_label:
+            return
+
+        # Default color is rectangle color
+        if "color" in detection_rect_kwargs and "color" not in label_kwargs.get(
+            "background_kwargs",
+            {},
+        ):
+            if "background_kwargs" not in label_kwargs:
+                label_kwargs["background_kwargs"] = {}
+            label_kwargs["background_kwargs"]["color"] = detection_rect_kwargs["color"]
+
+        label = Label(
+            text=self.label,
+            **label_kwargs,
+        )
+        label_rectangle = label.get_rectangle(ax=ax, labelled_rect=detection_rectangle)
+        ax.add_patch(p=label_rectangle)
+        ax.annotate(
+            text=label.text,
+            xy=label.get_coordinates(ax=ax, labelled_rect=detection_rectangle),
+            **label.text_kwargs,
+        )
+
     def to_rectangle(self, *, fill: bool = False, **kwargs: Any) -> Rectangle:
         """Return a matplotlib Rectangle representing the detection.
 
@@ -575,7 +776,7 @@ class Detection(Event):
             Path of the detections csv file.
             If csv is a list, all detections from the multiple csv files
             are concatenated together.
-        **kwargs: Any
+        kwargs: Any
             Additional keyword arguments passed to the ``pandas.read_csv()`` method.
 
         Returns

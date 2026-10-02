@@ -1,9 +1,12 @@
 from contextlib import AbstractContextManager, nullcontext
 from pathlib import Path
+from typing import Any, Literal
 
 import numpy as np
 import pytest
-from pandas import DataFrame, Timestamp
+from matplotlib.axes import Axes
+from matplotlib.patches import Rectangle
+from pandas import DataFrame, Timedelta, Timestamp
 
 from osekit.core.detection import (
     ConfidenceIndicator,
@@ -11,6 +14,7 @@ from osekit.core.detection import (
     DetectionMetaData,
     DetectorInfo,
     FrequencyBounds,
+    Label,
     SignalParameters,
     Verification,
 )
@@ -398,3 +402,372 @@ def test_detections_from_csv_list() -> None:
     )
 
     assert len(detections) == 4
+
+
+def test_label_init() -> None:
+    text = "cool"
+    anchor = "bottom_left"
+    inner_text = True
+    text_kwargs = {
+        "fontsize": 12,
+        "color": "red",
+    }
+    background_kwargs = {"fill": True, "color": "blue"}
+
+    label = Label(
+        text=text,
+        anchor=anchor,
+        inner_text=inner_text,
+        text_kwargs=text_kwargs,
+        background_kwargs=background_kwargs,
+    )
+
+    assert label.text == text
+    assert label.anchor == anchor
+    assert label.inner_text == inner_text
+    assert label.text_kwargs == text_kwargs
+    assert label.background_kwargs == background_kwargs
+
+
+def test_label_get_text_size_is_positive(custom_axes: Axes) -> None:
+    label = Label("cool")
+
+    width, height = label.get_text_size(ax=custom_axes)
+
+    assert isinstance(width, Timedelta)
+
+    assert width > Timedelta(0)
+    assert height > 0
+
+
+def test_label_get_size_longer_for_longer_text(custom_axes: Axes) -> None:
+    short_label = Label("cool")
+    long_label = Label("ultra cool stuff")
+
+    width1, height1 = short_label.get_text_size(ax=custom_axes)
+    width2, height2 = long_label.get_text_size(ax=custom_axes)
+
+    assert width1 < width2
+    assert height1 == pytest.approx(height2)
+
+
+def test_label_get_size_depends_on_text_size(custom_axes: Axes) -> None:
+    small_text = Label("cool", text_kwargs={"fontsize": 12})
+    large_text = Label("cool", text_kwargs={"fontsize": 24})
+
+    small_width, small_height = small_text.get_text_size(ax=custom_axes)
+    large_width, large_height = large_text.get_text_size(ax=custom_axes)
+
+    assert small_width < large_width
+    assert small_height < large_height
+
+
+def test_get_size_removes_text_from_ax(custom_axes: Axes) -> None:
+    initial_artists = len(custom_axes.texts)
+
+    Label("cool").get_text_size(ax=custom_axes)
+
+    assert len(custom_axes.texts) == initial_artists
+
+
+@pytest.mark.parametrize(
+    ("anchor", "inner", "expected_x", "expected_y"),
+    [
+        pytest.param(
+            "bottom_left",
+            True,
+            Timestamp("2020-01-01 00:00:00"),
+            100,
+            id="bottom_left_inner",
+        ),
+        pytest.param(
+            "bottom_left",
+            False,
+            Timestamp("2020-01-01 00:00:00"),
+            80,
+            id="bottom_left_outer",
+        ),
+        pytest.param(
+            "top_left",
+            True,
+            Timestamp("2020-01-01 00:00:00"),
+            130,
+            id="top_left_inner",
+        ),
+        pytest.param(
+            "top_left",
+            False,
+            Timestamp("2020-01-01 00:00:00"),
+            150,
+            id="top_left_outer",
+        ),
+        pytest.param(
+            "bottom_right",
+            True,
+            Timestamp("2020-01-01 00:00:20"),
+            100,
+            id="bottom_right_inner",
+        ),
+        pytest.param(
+            "bottom_right",
+            False,
+            Timestamp("2020-01-01 00:00:20"),
+            80,
+            id="bottom_right_outer",
+        ),
+        pytest.param(
+            "top_right",
+            True,
+            Timestamp("2020-01-01 00:00:20"),
+            130,
+            id="top_right_inner",
+        ),
+        pytest.param(
+            "top_right",
+            False,
+            Timestamp("2020-01-01 00:00:20"),
+            150,
+            id="top_right_outer",
+        ),
+    ],
+)
+def test_label_get_coordinates(
+    monkeypatch: pytest.MonkeyPatch,
+    anchor: Literal["top_left", "top_right", "bottom_right", "bottom_left"],
+    inner: bool,
+    expected_x: Timestamp,
+    expected_y: float,
+) -> None:
+    monkeypatch.setattr(
+        Label,
+        "get_text_size",
+        lambda self, ax: (Timedelta(seconds=10), 20),
+    )
+
+    detection_rectangle = Rectangle(
+        xy=(Timestamp("2020-01-01 00:00:00"), 100),
+        width=Timedelta(seconds=30),
+        height=50,
+    )
+
+    x, y = Label("", anchor=anchor, inner_text=inner).get_coordinates(
+        ax=None,
+        labelled_rect=detection_rectangle,
+    )
+
+    assert x == expected_x
+    assert y == expected_y
+
+
+def test_label_get_rectangle(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        Label,
+        "get_coordinates",
+        lambda self, ax, labelled_rect: (Timestamp("2020-01-01 00:00:00"), 100),
+    )
+
+    monkeypatch.setattr(
+        Label,
+        "get_text_size",
+        lambda self, ax: (Timedelta(seconds=10), 20),
+    )
+
+    label = Label(
+        text="cool",
+        background_kwargs={"color": (0.0, 0.0, 1.0), "alpha": 0.3},
+    )
+
+    detection_rectangle = Rectangle(
+        xy=(Timestamp("2020-01-01 00:00:00"), 100),
+        width=Timedelta(seconds=30),
+        height=50,
+    )
+
+    rectangle = label.get_rectangle(ax=None, labelled_rect=detection_rectangle)
+
+    assert rectangle.xy == (Timestamp("2020-01-01 00:00:00"), 100)
+    assert rectangle.get_width() == Timedelta(seconds=10)
+    assert rectangle.get_height() == 20
+
+    assert rectangle.get_facecolor()[:-1] == (0.0, 0.0, 1.0)
+    assert rectangle.get_alpha() == 0.3
+
+
+def test_detection_plot_passes_rect_kwargs(
+    custom_axes: Axes,
+    sample_detection: Detection,
+) -> None:
+    sample_detection.plot(
+        ax=custom_axes,
+        detection_rect_kwargs={"color": (0.0, 1.0, 0.0)},
+    )
+
+    assert len(custom_axes.patches) == 1
+
+    rectangle: Rectangle = custom_axes.patches[0]
+    assert rectangle.get_facecolor()[:-1] == (0.0, 1.0, 0.0)
+
+
+def test_detection_plot_doesnt_plot_label_if_parameter_is_false(
+    custom_axes: Axes,
+    sample_detection: Detection,
+) -> None:
+    sample_detection.plot(ax=custom_axes, plot_label=False)
+    assert len(custom_axes.patches) == 1
+    assert len(custom_axes.texts) == 0
+
+
+def test_detection_plot_doesnt_plot_label_if_no_label(
+    custom_axes: Axes,
+    sample_detection: Detection,
+) -> None:
+    sample_detection.label = None
+    sample_detection.plot(ax=custom_axes, plot_label=True)
+    assert len(custom_axes.patches) == 1
+    assert len(custom_axes.texts) == 0
+
+
+def test_detection_plot_passes_label_kwargs(
+    custom_axes: Axes,
+    sample_detection: Detection,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    label_kwargs = {
+        "anchor": "bottom_right",
+        "inner_text": True,
+        "text_kwargs": {
+            "fontsize": 42,
+            "color": "red",
+        },
+        "background_kwargs": {
+            "color": "blue",
+            "alpha": 0.3,
+        },
+    }
+
+    initialized_labels_kwargs = []
+    label_init = Label.__init__
+
+    def mock_label_init(*args: Any, **kwargs: Any) -> None:
+        initialized_labels_kwargs.append(kwargs)
+        label_init(*args, **kwargs)
+
+    monkeypatch.setattr(Label, "__init__", mock_label_init)
+
+    sample_detection.plot(
+        ax=custom_axes,
+        plot_label=True,
+        label_kwargs=label_kwargs,
+    )
+
+    assert len(initialized_labels_kwargs) == 1
+
+    # Check that all label_kwargs have been passed to the Label init
+    assert label_kwargs.items() <= initialized_labels_kwargs[0].items()
+    assert initialized_labels_kwargs[0]["text"] == sample_detection.label
+
+
+@pytest.mark.parametrize(
+    "label_kwargs",
+    [
+        pytest.param(
+            {
+                "anchor": "bottom_right",
+                "inner_text": True,
+                "text_kwargs": {
+                    "fontsize": 42,
+                    "color": "red",
+                },
+            },
+            id="without_background_kwargs",
+        ),
+        pytest.param(
+            {
+                "anchor": "bottom_right",
+                "inner_text": True,
+                "text_kwargs": {
+                    "fontsize": 42,
+                    "color": "red",
+                },
+                "background_kwargs": {
+                    "alpha": 0.3,
+                },
+            },
+            id="with_background_kwargs",
+        ),
+    ],
+)
+def test_default_label_color_is_detection_color(
+    custom_axes: Axes,
+    sample_detection: Detection,
+    monkeypatch: pytest.MonkeyPatch,
+    label_kwargs: dict,
+) -> None:
+    detection_rect_kwargs = {
+        "color": (0.0, 1.0, 0.0),
+    }
+
+    label_get_rectangle = Label.get_rectangle
+    spied_label_rectangles = []
+
+    def spy_label_rectangle(*args: Any, **kwargs: Any) -> Rectangle:
+        output = label_get_rectangle(*args, **kwargs)
+        spied_label_rectangles.append(output)
+        return output
+
+    monkeypatch.setattr(Label, "get_rectangle", spy_label_rectangle)
+
+    sample_detection.plot(
+        ax=custom_axes,
+        detection_rect_kwargs=detection_rect_kwargs,
+        label_kwargs=label_kwargs,
+        plot_label=True,
+    )
+
+    assert len(spied_label_rectangles) == 1
+
+    spied_rectangle = spied_label_rectangles[0]
+    assert spied_rectangle.get_facecolor()[:-1] == detection_rect_kwargs["color"]
+
+
+def test_detection_plot_with_label_adds_patch_and_text(
+    custom_axes: Axes,
+    sample_detection: Detection,
+) -> None:
+    label_kwargs = {
+        "anchor": "bottom_right",
+        "inner_text": True,
+        "text_kwargs": {
+            "fontsize": 42,
+            "color": "red",
+        },
+        "background_kwargs": {
+            "alpha": 0.3,
+            "color": (0.0, 0.0, 1.0),
+        },
+    }
+
+    detection_rect_kwargs = {
+        "color": (0.0, 1.0, 0.0),
+    }
+
+    sample_detection.plot(
+        ax=custom_axes,
+        detection_rect_kwargs=detection_rect_kwargs,
+        label_kwargs=label_kwargs,
+        plot_label=True,
+    )
+
+    assert len(custom_axes.patches) == 2  # Detection rect + label background
+    assert len(custom_axes.texts) == 1  # Label text
+
+    detection_rect, label_background = custom_axes.patches
+
+    assert detection_rect.get_facecolor()[:-1] == detection_rect_kwargs["color"]
+    assert (
+        label_background.get_facecolor()[:-1]
+        == label_kwargs["background_kwargs"]["color"]
+    )
+
+    text = custom_axes.texts[0]
+    assert text.get_fontsize() == label_kwargs["text_kwargs"]["fontsize"]

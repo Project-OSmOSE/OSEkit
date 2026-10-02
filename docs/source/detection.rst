@@ -6,6 +6,9 @@ Detection
 .. autoclass:: osekit.core.detection.Detection
    :members:
 
+.. autoclass:: osekit.core.detection.Label
+   :members:
+
 .. autoclass:: osekit.core.detection.FrequencyBounds
    :members:
 

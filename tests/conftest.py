@@ -11,6 +11,9 @@ from unittest.mock import MagicMock
 import pandas as pd
 import pytest
 import soundfile as sf
+from matplotlib import pyplot as plt
+from matplotlib.axes import Axes
+from pandas import Timestamp
 
 from osekit import config
 from osekit.audio_backend.soundfile_backend import SoundFileBackend
@@ -299,3 +302,22 @@ def patch_afm_info(monkeypatch: pytest.MonkeyPatch) -> None:
         return 48_000, 48_000, 1
 
     monkeypatch.setattr(audio_file_manager, "info", patch_afm_info)
+
+
+@pytest.fixture
+def custom_axes() -> typing.Generator[Axes, None, None]:
+    """Create a deterministic Matplotlib axes with a datetime X axis."""
+    fig, ax = plt.subplots(figsize=(10, 5), dpi=100)
+
+    ax.set_xlim(
+        Timestamp("2020-01-01 00:00:00"),
+        Timestamp("2020-01-01 00:01:00"),
+    )
+    ax.set_ylim(0, 1)
+
+    # Make sure the renderer and transforms are initialized.
+    fig.canvas.draw()
+
+    yield ax
+
+    plt.close(fig)
