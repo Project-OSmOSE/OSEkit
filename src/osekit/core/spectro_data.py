@@ -50,7 +50,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         self,
         items: list[SpectroItem] | None = None,
         audio_data: AudioData | None = None,
-        audio_channel: int = 0,
+        audio_channel: int | None = None,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         name: str | None = None,
@@ -93,7 +93,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         """
         super().__init__(items=items, begin=begin, end=end, name=name)
         self.audio_data = audio_data
-        self.audio_channel = audio_channel
+        self.audio_channel = audio_channel or self.audio_data.channels[0]
         self.fft = fft
         self._sx_dtype = complex
         self._db_ref = db_ref
