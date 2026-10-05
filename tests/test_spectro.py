@@ -32,7 +32,7 @@ from osekit.core.spectro_dataset import SpectroDataset
 from osekit.core.spectro_file import SpectroFile
 from osekit.core.spectro_item import SpectroItem
 from osekit.utils.audio import Normalization, generate_sample_audio
-from tests.helpers.audio import MockedAudioData
+from tests.helpers.audio import MockedAudioData, MockedAudioFile
 from tests.helpers.dummy import DummyFile
 
 
@@ -1915,6 +1915,20 @@ def test_duplicate_data_check(monkeypatch: pytest.monkeypatch) -> None:
     sds.save_all(spectrum_folder=Path("bantam"), spectrogram_folder=Path("lyons"))
 
     assert check_calls[0] == 2  # noqa: PLR2004
+
+
+def test_spectro_data_get_audio_data_value() -> None:
+    af = MockedAudioFile(
+        mocked_value=np.array([[0.0, 1.0, 2.0, 3.0] for _ in range(10)]),
+    )
+    ad = AudioData.from_files([af], channels=[1, 3])
+    sd = SpectroData.from_audio_data(
+        data=ad,
+        fft=ShortTimeFFT(win=hamming(16), hop=16, fs=ad.sample_rate),
+    )
+
+    sd.audio_channel = 1  # Should target the second channel of the file
+    assert np.array_equal(sd.get_audio_data_value(), af.mocked_value[:, 1])
 
 
 def test_spectro_data_with_multichannel_audio(monkeypatch: pytest.MonkeyPatch) -> None:
