@@ -2,7 +2,6 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from helpers.audio import MockedAudioData
 from pandas import Timestamp
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming
@@ -12,6 +11,7 @@ from osekit.core.audio_dataset import AudioDataset
 from osekit.core.instrument import Instrument
 from osekit.core.spectro_data import SpectroData
 from osekit.core.spectro_dataset import SpectroDataset
+from tests.helpers.audio import MockedAudioData
 
 
 @pytest.mark.parametrize(
