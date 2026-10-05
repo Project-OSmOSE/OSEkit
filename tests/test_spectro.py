@@ -32,7 +32,7 @@ from osekit.core.spectro_dataset import SpectroDataset
 from osekit.core.spectro_file import SpectroFile
 from osekit.core.spectro_item import SpectroItem
 from osekit.utils.audio import Normalization, generate_sample_audio
-from tests.helpers.audio import MockedAudioData, MockedAudioFile
+from tests.helpers.audio import MockedAudioData
 from tests.helpers.dummy import DummyFile
 
 
@@ -1945,14 +1945,17 @@ def test_duplicate_data_check(monkeypatch: pytest.monkeypatch) -> None:
 
 def test_spectro_data_with_multichannel_audio(monkeypatch: pytest.MonkeyPatch) -> None:
     mocked_audio_value = np.array([[0.0, 1.0, 2.0] for _ in range(100)])
-    af = MockedAudioFile(mocked_value=mocked_audio_value, sample_rate=100)
 
-    ad: AudioData = AudioData.from_files(files=[af])
+    ad = MockedAudioData(
+        mocked_value=mocked_audio_value,
+    )
 
     # By default, SpectroData targets channel 0
     sd = SpectroData.from_audio_data(
-        data=ad, fft=ShortTimeFFT(win=hamming(16), hop=16, fs=ad.sample_rate)
+        data=ad,
+        fft=ShortTimeFFT(win=hamming(16), hop=16, fs=ad.sample_rate),
     )
+    assert sd.audio_channel == 0
 
     last_fetched_audio = []
     fft_stft = ShortTimeFFT.stft
@@ -1981,18 +1984,18 @@ def test_spectro_data_with_multichannel_audio(monkeypatch: pytest.MonkeyPatch) -
 
 
 def test_spectrodata_audio_channel_raises_if_not_in_audio_data_channels() -> None:
-    mocked_audio_value = np.array([[0.0, 1.0, 2.0] for _ in range(100)])
-    af = MockedAudioFile(mocked_value=mocked_audio_value, sample_rate=100)
-
-    ad: AudioData = AudioData.from_files(files=[af])
-
+    ad = MockedAudioData(
+        mocked_value=np.ones(shape=(10, 3)),
+    )
     ad.channels = [0, 2]
 
     sd = SpectroData.from_audio_data(
-        data=ad, fft=ShortTimeFFT(win=hamming(48), hop=48, fs=ad.sample_rate)
+        data=ad,
+        fft=ShortTimeFFT(win=hamming(48), hop=48, fs=ad.sample_rate),
     )
 
     with pytest.raises(
-        ValueError, match=r"channel 1: AudioData only targets channels \[0, 2\]"
+        ValueError,
+        match=r"channel 1: AudioData only targets channels \[0, 2\]",
     ):
         sd.audio_channel = 1
