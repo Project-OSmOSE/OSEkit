@@ -396,6 +396,40 @@ def test_multichannel_audio_resample(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.mark.parametrize(
+    ("audio_data_channels", "audio_item_channels", "expected_mapping"),
+    [
+        pytest.param(
+            [0],
+            [0],
+            [0],
+            id="mono_audio_data_and_item",
+        ),
+    ],
+)
+def test_audio_data_get_item_channel_mapping(
+    audio_data_channels: list[int],
+    audio_item_channels: list[int],
+    expected_mapping: list[int],
+) -> None:
+    # Mock a file with sufficient number of channels
+    file_channels = (
+        max(channel for channel in audio_data_channels + audio_item_channels) + 1
+    )
+    file = MockedAudioFile(
+        mocked_value=np.ones(shape=(10, file_channels)),
+    )
+
+    # Mock an item with the requested audio_item_channels
+    item = AudioItem(file=file)
+    item.channels = audio_item_channels
+
+    # Mock an audio data with the requested audio_data_channels
+    ad: AudioData = AudioData.from_files(files=[file], channels=audio_data_channels)
+
+    assert np.array_equal(ad._get_item_channel_mapping(item=item), expected_mapping)
+
+
+@pytest.mark.parametrize(
     ("audio_files", "start", "stop", "expected"),
     [
         pytest.param(
