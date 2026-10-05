@@ -2,6 +2,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from helpers.audio import MockedAudioData
 from pandas import Timestamp
 from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming
@@ -183,3 +184,27 @@ def test_welch_provided_pxs(
 
     assert savez["timestamps"] == list(pxs.columns)
     assert np.array_equal(savez["pxs"], pxs.to_numpy().T)
+
+
+def test_welch_targeted_channel(monkeypatch: pytest.MonkeyPatch) -> None:
+    ad = MockedAudioData(
+        mocked_value=np.array([[1.0, 2.0] for _ in range(100)]),
+    )
+
+    sd = SpectroData.from_audio_data(
+        data=ad,
+        fft=ShortTimeFFT(win=hamming(16), hop=16, fs=ad.sample_rate),
+    )
+
+    sd.audio_channel = 1
+
+    welch_input = []
+
+    def mocked_welch(x, *args, **kwargs) -> tuple:
+        welch_input.append(x)
+        return None, np.empty(shape=sd.shape)
+
+    monkeypatch.setattr("osekit.core.spectro_data.welch", mocked_welch)
+    sd.get_welch()
+
+    assert np.array_equal(welch_input[0], ad.get_value()[:, 1])

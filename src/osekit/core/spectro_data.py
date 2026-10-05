@@ -333,7 +333,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         nfft = self.fft.mfft
 
         _, sx = welch(
-            self.audio_data.get_value_calibrated()[
+            x=self.audio_data.get_value_calibrated()[
                 :,
                 0,
             ],  # Only considers the 1rst channel
