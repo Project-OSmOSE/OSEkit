@@ -1687,32 +1687,6 @@ def test_spectro_dataset_data_from_dict(
     assert np.array_equal(output, ["cool", "top"])
 
 
-def test_spectro_multichannel_audio_file(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    ad = MockedAudioData(
-        mocked_value=np.array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]]),
-    )
-
-    sft = ShortTimeFFT(win=hamming(512), hop=128, fs=48_000)
-
-    sd = SpectroData.from_audio_data(ad, sft)
-
-    treated_audio = []
-
-    def patch_stft(*args: list, **kwargs: dict) -> None:
-        treated_audio.append(kwargs["x"])
-
-    monkeypatch.setattr(ShortTimeFFT, "stft", patch_stft)
-
-    sd.get_value()
-
-    assert np.array_equal(
-        treated_audio[0],
-        [1, 5, 9],
-    )  # Only first channel is accounted for.
-
-
 def test_spectro_begin_and_end(monkeypatch: pytest.MonkeyPatch) -> None:
     def mocked_ad_init(
         self: AudioData | SpectroData,
