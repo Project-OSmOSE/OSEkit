@@ -93,7 +93,9 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         """
         super().__init__(items=items, begin=begin, end=end, name=name)
         self.audio_data = audio_data
-        self.audio_channel = audio_channel or self.audio_data.channels[0]
+        self.audio_channel = audio_channel or (
+            self.audio_data.channels[0] if self.audio_data else 0
+        )
         self.fft = fft
         self._sx_dtype = complex
         self._db_ref = db_ref
