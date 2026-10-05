@@ -22,6 +22,7 @@ class AudioItem(BaseItem[AudioFile]):
         file: AudioFile | None = None,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
+        channels: list[int] | None = None,
     ) -> None:
         """Initialize an ``AudioItem`` from an ``AudioFile`` and begin/end timestamps.
 
@@ -35,9 +36,12 @@ class AudioItem(BaseItem[AudioFile]):
         end: pandas.Timestamp (optional)
             The timestamp at which this item ends.
             It is defaulted to ``file.end``.
+        channels: list[int]
+            Considered channels of the linked audio file.
 
         """
         super().__init__(file=file, begin=begin, end=end)
+        self.channels = channels
 
     @property
     def sample_rate(self) -> float:
@@ -46,8 +50,25 @@ class AudioItem(BaseItem[AudioFile]):
 
     @property
     def nb_channels(self) -> int:
-        """Number of channels in the associated ``AudioFile``."""
-        return 1 if self.is_empty else self.file.channels
+        """Number of channels targeted in the associated ``AudioFile``."""
+        return len(self.channels)
+
+    @property
+    def channels(self) -> list[int]:
+        """The channels targeted by this ``AudioItem``."""
+        return self._channels
+
+    @channels.setter
+    def channels(self, value: list[int] | None) -> None:
+        if self.is_empty:
+            self._channels = [0]
+            return
+
+        if value is None:
+            self._channels = list(range(self.file.channels))
+            return
+
+        self._channels = [channel for channel in value if channel < self.file.channels]
 
     @property
     def shape(self) -> tuple[int, int]:
@@ -78,5 +99,5 @@ class AudioItem(BaseItem[AudioFile]):
 
         while remaining > 0:
             frames_to_read = min(chunk_size, remaining)
-            yield self.file.stream(chunk_size=frames_to_read)
+            yield self.file.stream(chunk_size=frames_to_read)[:, self.channels]
             remaining -= frames_to_read
