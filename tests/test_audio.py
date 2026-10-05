@@ -62,6 +62,22 @@ def test_mocked_audio_data() -> None:
     )
 
 
+def test_multichannel_mocked_audio_data() -> None:
+    mocked_value = np.array([[1.0, 2.0, 3.0] for _ in range(10)])
+
+    audio_data = MockedAudioData(
+        mocked_value=mocked_value,
+    )
+
+    assert audio_data.shape == mocked_value.shape
+    assert audio_data.channels == list(range(mocked_value.shape[1]))
+
+    audio_data.channels = [0, 2]
+
+    assert audio_data.shape[1] == 2
+    assert np.array_equal(audio_data.get_value(), [[1.0, 3.0] for _ in range(10)])
+
+
 def test_mocked_audio_file() -> None:
     mocked_value_mono = np.array([1.0, 2.0, 3.0])
     mocked_value_stereo = np.array([[1, 1], [2, 2], [3, 3]])
