@@ -404,6 +404,24 @@ def test_multichannel_audio_resample(monkeypatch: pytest.MonkeyPatch) -> None:
             [0],
             id="mono_audio_data_and_item",
         ),
+        pytest.param(
+            [0, 1],
+            [1],
+            [1],
+            id="mono_item_stereo_data",
+        ),
+        pytest.param(
+            [2, 3],
+            [2],
+            [0],
+            id="mono_item_with_data_targeting_higher_than_channel_0",
+        ),
+        pytest.param(
+            [2, 3, 6, 7],
+            [3, 6],
+            [1, 2],
+            id="mono_item_with_data_targeting_higher_than_channel_0",
+        ),
     ],
 )
 def test_audio_data_get_item_channel_mapping(
