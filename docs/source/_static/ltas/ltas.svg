@@ -1,19 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Created with Inkscape (http://www.inkscape.org/) -->
-
 <svg
-   width="90.011833mm"
-   height="53.46244mm"
-   viewBox="0 0 90.011833 53.46244"
-   version="1.1"
-   id="svg1"
-   xml:space="preserve"
-   sodipodi:docname="ltas.svg"
-   inkscape:version="1.4 (86a8ad7, 2024-10-11)"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg"><sodipodi:namedview
+  width="90.011833mm"
+  height="53.46244mm"
+  viewBox="0 0 90.011833 53.46244"
+  version="1.1"
+  id="svg1"
+  xml:space="preserve"
+  sodipodi:docname="ltas.svg"
+  inkscape:version="1.4 (86a8ad7, 2024-10-11)"
+  xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+  xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+  xmlns="http://www.w3.org/2000/svg"
+  xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
      id="namedview1"
      pagecolor="#505050"
      bordercolor="#eeeeee"
@@ -31,10 +30,13 @@
      inkscape:window-x="1912"
      inkscape:window-y="-8"
      inkscape:window-maximized="1"
-     inkscape:current-layer="layer1" /><defs
-     id="defs1"><clipPath
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1">
+    <clipPath
        clipPathUnits="userSpaceOnUse"
-       id="clipPath8"><rect
+       id="clipPath8">
+      <rect
          style="fill:none;fill-opacity:1;stroke:#fde725;stroke-width:0.704998;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
          id="rect9"
          width="89.294998"
@@ -42,12 +44,17 @@
          x="60.535988"
          y="164.60843"
          rx="2.7602229"
-         ry="2.7602232" /></clipPath></defs><g
+         ry="2.7602232" />
+    </clipPath>
+  </defs>
+  <g
      inkscape:label="Calque 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(-60.183293,-129.08436)"><g
-       id="level_0"><rect
+     transform="translate(-60.183293,-129.08436)">
+    <g
+       id="level_0">
+      <rect
          style="fill:#21918c;fill-opacity:1;stroke:none;stroke-width:0.705;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
          id="level_0_tile_1_fill"
          width="30"
@@ -55,42 +62,85 @@
          x="90.183487"
          y="164.60843"
          rx="0"
-         ry="0" /><path
+         ry="0">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </rect>
+      <path
          id="level_0_tile_0_fill"
          clip-path="none"
          style="fill:#443983;fill-opacity:1;stroke:none;stroke-width:0.705;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-         d="m 63.296395,164.60856 c -1.529164,0 -2.760555,1.23087 -2.760555,2.76004 v 12.06541 c 0,1.52916 1.231391,2.76004 2.760555,2.76004 h 26.887248 v -17.58549 z" /><path
+         d="m 63.296395,164.60856 c -1.529164,0 -2.760555,1.23087 -2.760555,2.76004 v 12.06541 c 0,1.52916 1.231391,2.76004 2.760555,2.76004 h 26.887248 v -17.58549 z" >
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </path>
+      <path
          id="level_0_tile_2_fill"
          clip-path="none"
          style="fill:#90d743;fill-opacity:1;stroke:none;stroke-width:0.705;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-         d="m 120.18336,164.60856 v 17.58549 h 26.88725 c 1.52916,0 2.76055,-1.23088 2.76055,-2.76004 V 167.3686 c 0,-1.52917 -1.23139,-2.76004 -2.76055,-2.76004 z" /><text
+         d="m 120.18336,164.60856 v 17.58549 h 26.88725 c 1.52916,0 2.76055,-1.23088 2.76055,-2.76004 V 167.3686 c 0,-1.52917 -1.23139,-2.76004 -2.76055,-2.76004 z">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </path>
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;white-space:pre-wrap;shape-inside:url(#rect64);display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="59.741997"
          y="225.38052"
          id="level_0_text_0_before"
-         transform="translate(126.99354,180.43454)"><tspan
+         transform="translate(126.99354,180.43454)">
+        <tspan
            x="0"
            y="0"
-           id="tspan2">1054950</tspan></text><path
+           id="tspan2">1054950</tspan>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </text>
+      <path
          style="fill:#87de87;stroke:#fde725;stroke-width:0.3;stroke-linecap:round;stroke-dasharray:0.900001, 0.900001;stroke-dashoffset:0;stroke-opacity:1"
          d="m 90.183483,164.4068 v 17.98913"
-         id="level_0_cut_0"><animate
+         id="level_0_cut_0">
+        <animate
            attributeName="opacity"
            dur="8s"
            values="0;0;1;1"
            keyTimes="0;.225;.235;1"
            calcMode="linear"
-           repeatCount="indefinite" /></path><path
+           repeatCount="indefinite" />
+      </path>
+      <path
          style="fill:#87de87;stroke:#fde725;stroke-width:0.3;stroke-linecap:round;stroke-dasharray:0.900001, 0.900001;stroke-dashoffset:0;stroke-opacity:1"
          d="m 120.18349,164.4068 v 17.98913"
-         id="level_0_cut_1"><animate
+         id="level_0_cut_1">
+        <animate
            attributeName="opacity"
            dur="8s"
            values="0;0;1;1"
            keyTimes="0;.225;.235;1"
            calcMode="linear"
-           repeatCount="indefinite" /></path><rect
+           repeatCount="indefinite" />
+      </path>
+      <rect
          style="fill:none;fill-opacity:1;stroke:#fde725;stroke-width:0.704998;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
          id="level_0_stroke"
          width="89.294998"
@@ -98,22 +148,44 @@
          x="60.535988"
          y="164.60843"
          rx="2.7602229"
-         ry="2.7602232" /><text
+         ry="2.7602232" />
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="207.56914"
          y="405.81506"
-         id="level_0_text_0_after"><tspan
+         id="level_0_text_0_after">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+        <tspan
            x="147.82715"
            y="180.43454"
            id="tspan65"
-           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">3000</tspan></text></g><g
-       id="level_1_tile_1"><path
+           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">3000</tspan>
+      </text>
+    </g>
+    <g
+       id="level_1_tile_1">
+      <path
          id="level_1_tile_5_fill"
          clip-path="url(#clipPath8)"
          style="fill:#90d743;fill-opacity:1;stroke:none;stroke-width:1.23076;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
          d="m 120.18277,164.60823 v 17.58601 h 21.2351 c 4.66046,0 8.4134,-1.23088 8.4134,-2.76004 v -12.06541 c 0,-1.52917 -3.75294,-2.76056 -8.4134,-2.76056 z"
-         transform="matrix(0.32811406,0,0,1,70.677022,-17.58567)" /><rect
+         transform="matrix(0.32811406,0,0,1,70.677022,-17.58567)">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </path>
+      <rect
          style="fill:#21918c;fill-opacity:1;stroke:none;stroke-width:0.704997;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
          id="level_1_tile_4_fill"
          width="9.8434219"
@@ -121,38 +193,72 @@
          x="100.26747"
          y="147.02274"
          rx="0"
-         ry="0" /><path
+         ry="0">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </rect>
+      <path
          id="level_1_tile_3_fill"
          clip-path="none"
          style="fill:#443983;fill-opacity:1;stroke:none;stroke-width:0.704995;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-         d="m 93.299819,147.02257 c -1.529164,0 -2.760039,1.23139 -2.760039,2.76056 v 12.06541 c 0,1.52916 1.230875,2.76004 2.760039,2.76004 h 6.967541 v -17.58601 z" /><path
+         d="m 93.299819,147.02257 c -1.529164,0 -2.760039,1.23139 -2.760039,2.76056 v 12.06541 c 0,1.52916 1.230875,2.76004 2.760039,2.76004 h 6.967541 v -17.58601 z">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </path>
+      <path
          style="fill:#87de87;stroke:#fde725;stroke-width:0.3;stroke-linecap:round;stroke-dasharray:0.900002, 0.900002;stroke-dashoffset:0;stroke-opacity:1"
          d="m 100.2675,146.82114 v 17.98913"
-         id="level_1_cut_2"><animate
+         id="level_1_cut_2">
+        <animate
            attributeName="opacity"
            dur="8s"
            values="0;0;1;1"
            keyTimes="0;.225;.235;1"
            calcMode="linear"
-           repeatCount="indefinite" /></path><path
+           repeatCount="indefinite" />
+      </path>
+      <path
          style="fill:#87de87;stroke:#fde725;stroke-width:0.3;stroke-linecap:round;stroke-dasharray:0.900002, 0.900002;stroke-dashoffset:0;stroke-opacity:1"
          d="m 110.11092,146.82114 v 17.98913"
-         id="level_1_cut_3"><animate
+         id="level_1_cut_3">
+        <animate
            attributeName="opacity"
            dur="8s"
            values="0;0;1;1"
            keyTimes="0;.225;.235;1"
            calcMode="linear"
-           repeatCount="indefinite" /></path><text
+           repeatCount="indefinite" />
+      </path>
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="177.56522"
          y="388.22937"
-         id="level_1_tile_1_text_before"><tspan
+         id="level_1_tile_1_text_before">
+        <tspan
            x="117.82321"
            y="162.84886"
            id="tspan42"
-           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">4000</tspan></text><rect
+           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">4000</tspan>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </text>
+      <rect
          style="fill:none;fill-opacity:1;stroke:#fde725;stroke-width:0.705;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
          id="level_1_tile_1_stroke"
          width="29.298944"
@@ -160,22 +266,52 @@
          x="90.539734"
          y="147.02275"
          rx="2.7602232"
-         ry="2.7602232" /><text
+         ry="2.7602232">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </rect>
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="177.56522"
          y="388.22937"
-         id="level_1_tile_1_text_after"><tspan
+         id="level_1_tile_1_text_after">
+        <tspan
            x="117.82321"
            y="162.84886"
            id="tspan69"
-           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">3000</tspan></text></g><g
-       id="level_1_tile_2"><path
+           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">3000</tspan>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </text>
+    </g>
+    <g
+       id="level_1_tile_2">
+      <path
          id="level_1_tile_8_fill"
          clip-path="url(#clipPath8)"
          style="fill:#90d743;fill-opacity:1;stroke:none;stroke-width:1.23076;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
          d="m 120.18277,164.60823 v 17.58601 h 21.2351 c 4.66046,0 8.4134,-1.23088 8.4134,-2.76004 v -12.06541 c 0,-1.52917 -3.75294,-2.76056 -8.4134,-2.76056 z"
-         transform="matrix(0.32811406,0,0,1,100.68097,-17.585671)" /><rect
+         transform="matrix(0.32811406,0,0,1,100.68097,-17.585671)">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </path>
+      <rect
          style="fill:#21918c;fill-opacity:1;stroke:none;stroke-width:0.704997;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
          id="level_1_tile_7_fill"
          width="9.8434219"
@@ -183,38 +319,72 @@
          x="130.27141"
          y="147.02274"
          rx="0"
-         ry="0" /><path
+         ry="0">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </rect>
+      <path
          id="level_1_tile_6_fill"
          clip-path="none"
          style="fill:#443983;fill-opacity:1;stroke:none;stroke-width:0.704995;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-         d="m 123.30376,147.02257 c -1.52916,0 -2.76004,1.23139 -2.76004,2.76056 v 12.06541 c 0,1.52916 1.23088,2.76004 2.76004,2.76004 h 6.96754 v -17.58601 z" /><path
+         d="m 123.30376,147.02257 c -1.52916,0 -2.76004,1.23139 -2.76004,2.76056 v 12.06541 c 0,1.52916 1.23088,2.76004 2.76004,2.76004 h 6.96754 v -17.58601 z">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </path>
+      <path
          style="fill:#87de87;stroke:#fde725;stroke-width:0.3;stroke-linecap:round;stroke-dasharray:0.900002, 0.900002;stroke-dashoffset:0;stroke-opacity:1"
          d="m 130.27144,146.82114 v 17.98913"
-         id="level_1_cut_4"><animate
+         id="level_1_cut_4">
+        <animate
            attributeName="opacity"
            dur="8s"
            values="0;0;1;1"
            keyTimes="0;.225;.235;1"
            calcMode="linear"
-           repeatCount="indefinite" /></path><path
+           repeatCount="indefinite" />
+      </path>
+      <path
          style="fill:#87de87;stroke:#fde725;stroke-width:0.3;stroke-linecap:round;stroke-dasharray:0.900002, 0.900002;stroke-dashoffset:0;stroke-opacity:1"
          d="m 140.11486,146.82114 v 17.98913"
-         id="level_1_cut_5"><animate
+         id="level_1_cut_5">
+        <animate
            attributeName="opacity"
            dur="8s"
            values="0;0;1;1"
            keyTimes="0;.225;.235;1"
            calcMode="linear"
-           repeatCount="indefinite" /></path><text
+           repeatCount="indefinite" />
+      </path>
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="207.56915"
          y="388.22937"
-         id="level_1_tile_2_text_before"><tspan
+         id="level_1_tile_2_text_before">
+        <tspan
            x="147.82715"
            y="162.84886"
            id="tspan51"
-           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">4000</tspan></text><rect
+           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">4000</tspan>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </text>
+      <rect
          style="fill:none;fill-opacity:1;stroke:#fde725;stroke-width:0.705;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
          id="level_1_tile_2_stroke"
          width="29.298944"
@@ -222,22 +392,52 @@
          x="120.54368"
          y="147.02275"
          rx="2.7602232"
-         ry="2.7602232" /><text
+         ry="2.7602232" >
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </rect>
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="207.56915"
          y="388.22937"
-         id="level_1_tile_2_text_after"><tspan
+         id="level_1_tile_2_text_after">
+        <tspan
            x="147.82715"
            y="162.84886"
            id="tspan70"
-           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">3000</tspan></text></g><g
-       id="level_1_tile_0"><path
+           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">3000</tspan>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </text>
+    </g>
+    <g
+       id="level_1_tile_0">
+      <path
          id="level_1_tile_2_fill"
          clip-path="url(#clipPath8)"
          style="fill:#90d743;fill-opacity:1;stroke:none;stroke-width:1.23076;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
          d="m 120.18277,164.60823 v 17.58601 h 21.2351 c 4.66046,0 8.4134,-1.23088 8.4134,-2.76004 v -12.06541 c 0,-1.52917 -3.75294,-2.76056 -8.4134,-2.76056 z"
-         transform="matrix(0.32811406,0,0,1,40.673082,-17.585682)" /><rect
+         transform="matrix(0.32811406,0,0,1,40.673082,-17.585682)">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </path>
+      <rect
          style="fill:#21918c;fill-opacity:1;stroke:none;stroke-width:0.704997;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
          id="level_1_tile_1_fill"
          width="9.8434219"
@@ -245,38 +445,72 @@
          x="70.26355"
          y="147.02274"
          rx="0"
-         ry="0" /><path
+         ry="0">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </rect>
+      <path
          id="level_1_tile_0_fill"
          clip-path="none"
          style="fill:#443983;fill-opacity:1;stroke:none;stroke-width:0.704995;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-         d="m 63.295879,147.02255 c -1.529164,0 -2.760039,1.23139 -2.760039,2.76056 v 12.06541 c 0,1.52916 1.230875,2.76004 2.760039,2.76004 h 6.967533 v -17.58601 z" /><path
+         d="m 63.295879,147.02255 c -1.529164,0 -2.760039,1.23139 -2.760039,2.76056 v 12.06541 c 0,1.52916 1.230875,2.76004 2.760039,2.76004 h 6.967533 v -17.58601 z">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </path>
+      <path
          style="fill:#87de87;stroke:#fde725;stroke-width:0.3;stroke-linecap:round;stroke-dasharray:0.900002, 0.900002;stroke-dashoffset:0;stroke-opacity:1"
          d="m 70.263551,146.82112 v 17.98913"
-         id="level_1_cut_0"><animate
+         id="level_1_cut_0">
+        <animate
            attributeName="opacity"
            dur="8s"
            values="0;0;1;1"
            keyTimes="0;.225;.235;1"
            calcMode="linear"
-           repeatCount="indefinite" /></path><path
+           repeatCount="indefinite" />
+      </path>
+      <path
          style="fill:#87de87;stroke:#fde725;stroke-width:0.3;stroke-linecap:round;stroke-dasharray:0.900002, 0.900002;stroke-dashoffset:0;stroke-opacity:1"
          d="m 80.106974,146.82112 v 17.98913"
-         id="level_1_cut_1"><animate
+         id="level_1_cut_1">
+        <animate
            attributeName="opacity"
            dur="8s"
            values="0;0;1;1"
            keyTimes="0;.225;.235;1"
            calcMode="linear"
-           repeatCount="indefinite" /></path><text
+           repeatCount="indefinite" />
+      </path>
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="147.56126"
          y="388.22937"
-         id="level_1_tile_0_text_before"><tspan
+         id="level_1_tile_0_text_before">
+        <tspan
            x="87.819275"
            y="162.84886"
            id="tspan18"
-           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">4000</tspan></text><rect
+           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">4000</tspan>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </text>
+      <rect
          style="fill:none;fill-opacity:1;stroke:#fde725;stroke-width:0.705;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
          id="level_1_tile_0_stroke"
          width="29.298944"
@@ -284,21 +518,51 @@
          x="60.535793"
          y="147.02275"
          rx="2.7602232"
-         ry="2.7602232" /><text
+         ry="2.7602232">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </rect>
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="147.56126"
          y="388.22937"
-         id="level_1_tile_0_text_after"><tspan
+         id="level_1_tile_0_text_after">
+        <tspan
            x="87.819275"
            y="162.84886"
            id="tspan71"
-           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">3000</tspan></text></g><g
-       id="level_2_tile_3"><path
+           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">3000</tspan>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </text>
+    </g>
+    <g
+       id="level_2_tile_3">
+      <path
          id="level_2_tile_3_fill"
          clip-path="none"
          style="fill:#443983;fill-opacity:1;stroke:none;stroke-width:0.704995;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-         d="m 93.18527,129.43708 c -0.09557,0 -0.189654,0.005 -0.28267,0.0139 -1.69e-4,2e-5 -3.47e-4,-10e-6 -5.17e-4,0 -0.185851,0.0188 -0.366072,0.056 -0.538985,0.10956 -1.58e-4,5e-5 -3.59e-4,-5e-5 -5.17e-4,0 -1.038196,0.32176 -1.810735,1.23732 -1.923397,2.35334 -1.7e-5,1.7e-4 1.8e-5,3.5e-4 0,5.2e-4 -0.0094,0.0928 -0.01395,0.18727 -0.01395,0.28267 v 12.06541 c 0,0.57344 0.173219,1.10473 0.470255,1.54513 8.2e-5,1.2e-4 -8.2e-5,3.9e-4 0,5.1e-4 0.04944,0.0733 0.102572,0.14387 0.158647,0.21188 8.8e-5,1e-4 -8.8e-5,4.1e-4 0,5.1e-4 0.280779,0.34041 0.641772,0.61192 1.054716,0.786 0.08261,0.0348 0.167199,0.0657 0.253731,0.0925 0.08669,0.0269 0.174935,0.0493 0.2651,0.0677 0.09,0.0183 0.181388,0.0325 0.274402,0.0419 0.09318,0.009 0.187439,0.0139 0.283187,0.0139 h 4.004924 c 1.529163,0 2.760036,-1.23087 2.760036,-2.76004 v -12.06535 c 0,-1.52916 -1.230873,-2.76004 -2.760036,-2.76004 z" /><rect
+         d="m 93.18527,129.43708 c -0.09557,0 -0.189654,0.005 -0.28267,0.0139 -1.69e-4,2e-5 -3.47e-4,-10e-6 -5.17e-4,0 -0.185851,0.0188 -0.366072,0.056 -0.538985,0.10956 -1.58e-4,5e-5 -3.59e-4,-5e-5 -5.17e-4,0 -1.038196,0.32176 -1.810735,1.23732 -1.923397,2.35334 -1.7e-5,1.7e-4 1.8e-5,3.5e-4 0,5.2e-4 -0.0094,0.0928 -0.01395,0.18727 -0.01395,0.28267 v 12.06541 c 0,0.57344 0.173219,1.10473 0.470255,1.54513 8.2e-5,1.2e-4 -8.2e-5,3.9e-4 0,5.1e-4 0.04944,0.0733 0.102572,0.14387 0.158647,0.21188 8.8e-5,1e-4 -8.8e-5,4.1e-4 0,5.1e-4 0.280779,0.34041 0.641772,0.61192 1.054716,0.786 0.08261,0.0348 0.167199,0.0657 0.253731,0.0925 0.08669,0.0269 0.174935,0.0493 0.2651,0.0677 0.09,0.0183 0.181388,0.0325 0.274402,0.0419 0.09318,0.009 0.187439,0.0139 0.283187,0.0139 h 4.004924 c 1.529163,0 2.760036,-1.23087 2.760036,-2.76004 v -12.06535 c 0,-1.52916 -1.230873,-2.76004 -2.760036,-2.76004 z">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </path>
+      <rect
          style="fill:none;fill-opacity:1;stroke:#fde725;stroke-width:0.705;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
          id="level_2_tile_3_stroke"
          width="9.2950001"
@@ -306,30 +570,70 @@
          x="90.539734"
          y="129.43686"
          rx="2.7602232"
-         ry="2.7602232" /><text
+         ry="2.7602232">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </rect>
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="157.79161"
          y="370.29083"
-         id="level_2_tile_3_text_before"><tspan
+         id="level_2_tile_3_text_before">
+        <tspan
            x="98.049622"
            y="144.91029"
            id="tspan48"
-           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan></text><text
+           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </text>
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="157.79161"
          y="370.29083"
-         id="level_2_tile_3_text_after"><tspan
+         id="level_2_tile_3_text_after">
+        <tspan
            x="98.049622"
            y="144.91029"
            id="tspan73"
-           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan></text></g><g
-       id="level_2_tile_6"><path
+           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </text>
+    </g>
+    <g
+       id="level_2_tile_6">
+      <path
          id="level_2_tile_6_fill"
          clip-path="none"
          style="fill:#443983;fill-opacity:1;stroke:none;stroke-width:0.704995;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-         d="m 123.18965,129.43708 c -0.0956,0 -0.18965,0.005 -0.28267,0.0139 -1.7e-4,2e-5 -3.5e-4,-10e-6 -5.2e-4,0 -0.18585,0.0188 -0.36607,0.056 -0.53898,0.10956 -1.6e-4,5e-5 -3.6e-4,-5e-5 -5.2e-4,0 -1.03819,0.32176 -1.81073,1.23732 -1.92339,2.35334 -2e-5,1.7e-4 1e-5,3.5e-4 0,5.2e-4 -0.009,0.0928 -0.0139,0.18727 -0.0139,0.28267 v 12.06541 c 0,0.57344 0.17321,1.10473 0.47025,1.54513 8e-5,1.2e-4 -8e-5,3.9e-4 0,5.1e-4 0.0494,0.0733 0.10257,0.14387 0.15865,0.21188 9e-5,1e-4 -9e-5,4.1e-4 0,5.1e-4 0.28078,0.34041 0.64177,0.61192 1.05471,0.786 0.0826,0.0348 0.1672,0.0657 0.25373,0.0925 0.0867,0.0269 0.17494,0.0493 0.2651,0.0677 0.09,0.0183 0.18139,0.0325 0.27441,0.0419 0.0932,0.009 0.18744,0.0139 0.28318,0.0139 h 4.00493 c 1.52916,0 2.76003,-1.23087 2.76003,-2.76004 v -12.06535 c 0,-1.52916 -1.23087,-2.76004 -2.76003,-2.76004 z" /><rect
+         d="m 123.18965,129.43708 c -0.0956,0 -0.18965,0.005 -0.28267,0.0139 -1.7e-4,2e-5 -3.5e-4,-10e-6 -5.2e-4,0 -0.18585,0.0188 -0.36607,0.056 -0.53898,0.10956 -1.6e-4,5e-5 -3.6e-4,-5e-5 -5.2e-4,0 -1.03819,0.32176 -1.81073,1.23732 -1.92339,2.35334 -2e-5,1.7e-4 1e-5,3.5e-4 0,5.2e-4 -0.009,0.0928 -0.0139,0.18727 -0.0139,0.28267 v 12.06541 c 0,0.57344 0.17321,1.10473 0.47025,1.54513 8e-5,1.2e-4 -8e-5,3.9e-4 0,5.1e-4 0.0494,0.0733 0.10257,0.14387 0.15865,0.21188 9e-5,1e-4 -9e-5,4.1e-4 0,5.1e-4 0.28078,0.34041 0.64177,0.61192 1.05471,0.786 0.0826,0.0348 0.1672,0.0657 0.25373,0.0925 0.0867,0.0269 0.17494,0.0493 0.2651,0.0677 0.09,0.0183 0.18139,0.0325 0.27441,0.0419 0.0932,0.009 0.18744,0.0139 0.28318,0.0139 h 4.00493 c 1.52916,0 2.76003,-1.23087 2.76003,-2.76004 v -12.06535 c 0,-1.52916 -1.23087,-2.76004 -2.76003,-2.76004 z">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </path>
+      <rect
          style="fill:none;fill-opacity:1;stroke:#fde725;stroke-width:0.705;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
          id="level_2_tile_6_stroke"
          width="9.2950001"
@@ -337,30 +641,70 @@
          x="120.54368"
          y="129.43686"
          rx="2.7602232"
-         ry="2.7602232" /><text
+         ry="2.7602232">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </rect>
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="187.79555"
          y="370.29083"
-         id="level_2_tile_6_text_before"><tspan
+         id="level_2_tile_6_text_before">
+        <tspan
            x="128.05356"
            y="144.91029"
            id="tspan57"
-           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan></text><text
+           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </text>
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="187.79555"
          y="370.29083"
-         id="level_2_tile_6_text_after"><tspan
+         id="level_2_tile_6_text_after">
+        <tspan
            x="128.05356"
            y="144.91029"
            id="tspan74"
-           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan></text></g><g
-       id="level_2_tile_1"><path
+           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </text>
+    </g>
+    <g
+       id="level_2_tile_1">
+      <path
          id="level_2_tile_1_fill"
          clip-path="none"
          style="fill:#21918c;fill-opacity:1;stroke:none;stroke-width:0.704995;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-         d="m 73.182311,129.43706 c -0.09557,0 -0.189654,0.005 -0.28267,0.0139 -1.69e-4,2e-5 -3.47e-4,-1e-5 -5.17e-4,0 -0.185851,0.0188 -0.366072,0.056 -0.538985,0.10956 -1.58e-4,5e-5 -3.59e-4,-5e-5 -5.17e-4,0 -1.038196,0.32176 -1.810735,1.23732 -1.923397,2.35334 -1.7e-5,1.7e-4 1.8e-5,3.5e-4 0,5.2e-4 -0.0094,0.0928 -0.01395,0.18727 -0.01395,0.28267 v 12.06541 c 0,0.57344 0.173219,1.10473 0.470255,1.54513 8.2e-5,1.2e-4 -8.2e-5,3.9e-4 0,5.1e-4 0.04944,0.0733 0.102572,0.14387 0.158647,0.21188 8.8e-5,1e-4 -8.8e-5,4.1e-4 0,5.1e-4 0.280779,0.34041 0.641772,0.61192 1.054716,0.786 0.08261,0.0348 0.167199,0.0657 0.253731,0.0925 0.08669,0.0269 0.174935,0.0493 0.2651,0.0677 0.09,0.0183 0.181388,0.0325 0.274402,0.0419 0.09318,0.009 0.187439,0.0139 0.283187,0.0139 h 4.004924 c 1.529163,0 2.760038,-1.23087 2.760038,-2.76004 V 132.1971 c 0,-1.52916 -1.230875,-2.76004 -2.760038,-2.76004 z" /><rect
+         d="m 73.182311,129.43706 c -0.09557,0 -0.189654,0.005 -0.28267,0.0139 -1.69e-4,2e-5 -3.47e-4,-1e-5 -5.17e-4,0 -0.185851,0.0188 -0.366072,0.056 -0.538985,0.10956 -1.58e-4,5e-5 -3.59e-4,-5e-5 -5.17e-4,0 -1.038196,0.32176 -1.810735,1.23732 -1.923397,2.35334 -1.7e-5,1.7e-4 1.8e-5,3.5e-4 0,5.2e-4 -0.0094,0.0928 -0.01395,0.18727 -0.01395,0.28267 v 12.06541 c 0,0.57344 0.173219,1.10473 0.470255,1.54513 8.2e-5,1.2e-4 -8.2e-5,3.9e-4 0,5.1e-4 0.04944,0.0733 0.102572,0.14387 0.158647,0.21188 8.8e-5,1e-4 -8.8e-5,4.1e-4 0,5.1e-4 0.280779,0.34041 0.641772,0.61192 1.054716,0.786 0.08261,0.0348 0.167199,0.0657 0.253731,0.0925 0.08669,0.0269 0.174935,0.0493 0.2651,0.0677 0.09,0.0183 0.181388,0.0325 0.274402,0.0419 0.09318,0.009 0.187439,0.0139 0.283187,0.0139 h 4.004924 c 1.529163,0 2.760038,-1.23087 2.760038,-2.76004 V 132.1971 c 0,-1.52916 -1.230875,-2.76004 -2.760038,-2.76004 z">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </path>
+      <rect
          style="fill:none;fill-opacity:1;stroke:#fde725;stroke-width:0.705;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
          id="level_2_tile_1_stroke"
          width="9.2950001"
@@ -368,30 +712,70 @@
          x="70.537766"
          y="129.43686"
          rx="2.7602232"
-         ry="2.7602232" /><text
+         ry="2.7602232">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </rect>
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="137.67451"
          y="370.2908"
-         id="level_2_tile_1_text_before"><tspan
+         id="level_2_tile_1_text_before">
+        <tspan
            x="77.932526"
            y="144.91029"
            id="tspan58"
-           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan></text><text
+           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </text>
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="137.67451"
          y="370.2908"
-         id="level_2_tile_1_text_after"><tspan
+         id="level_2_tile_1_text_after">
+        <tspan
            x="77.932526"
            y="144.91029"
            id="tspan75"
-           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan></text></g><g
-       id="level_2_tile_4"><path
+           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </text>
+    </g>
+    <g
+       id="level_2_tile_4">
+      <path
          id="level_2_tile_4_fill"
          clip-path="none"
          style="fill:#21918c;fill-opacity:1;stroke:none;stroke-width:0.704995;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-         d="m 103.18669,129.43708 c -0.0956,0 -0.18966,0.005 -0.28267,0.0139 -1.7e-4,2e-5 -3.5e-4,-10e-6 -5.2e-4,0 -0.18585,0.0188 -0.36607,0.056 -0.53898,0.10956 -1.6e-4,5e-5 -3.6e-4,-5e-5 -5.2e-4,0 -1.0382,0.32176 -1.81074,1.23732 -1.9234,2.35334 -2e-5,1.7e-4 2e-5,3.5e-4 0,5.2e-4 -0.009,0.0928 -0.0139,0.18727 -0.0139,0.28267 v 12.06541 c 0,0.57344 0.17322,1.10473 0.47026,1.54513 8e-5,1.2e-4 -9e-5,3.9e-4 0,5.1e-4 0.0494,0.0733 0.10257,0.14387 0.15864,0.21188 9e-5,1e-4 -8e-5,4.1e-4 0,5.1e-4 0.28078,0.34041 0.64178,0.61192 1.05472,0.786 0.0826,0.0348 0.1672,0.0657 0.25373,0.0925 0.0867,0.0269 0.17494,0.0493 0.2651,0.0677 0.09,0.0183 0.18139,0.0325 0.2744,0.0419 0.0932,0.009 0.18744,0.0139 0.28319,0.0139 h 4.00492 c 1.52917,0 2.76004,-1.23087 2.76004,-2.76004 v -12.06535 c 0,-1.52916 -1.23087,-2.76004 -2.76004,-2.76004 z" /><rect
+         d="m 103.18669,129.43708 c -0.0956,0 -0.18966,0.005 -0.28267,0.0139 -1.7e-4,2e-5 -3.5e-4,-10e-6 -5.2e-4,0 -0.18585,0.0188 -0.36607,0.056 -0.53898,0.10956 -1.6e-4,5e-5 -3.6e-4,-5e-5 -5.2e-4,0 -1.0382,0.32176 -1.81074,1.23732 -1.9234,2.35334 -2e-5,1.7e-4 2e-5,3.5e-4 0,5.2e-4 -0.009,0.0928 -0.0139,0.18727 -0.0139,0.28267 v 12.06541 c 0,0.57344 0.17322,1.10473 0.47026,1.54513 8e-5,1.2e-4 -9e-5,3.9e-4 0,5.1e-4 0.0494,0.0733 0.10257,0.14387 0.15864,0.21188 9e-5,1e-4 -8e-5,4.1e-4 0,5.1e-4 0.28078,0.34041 0.64178,0.61192 1.05472,0.786 0.0826,0.0348 0.1672,0.0657 0.25373,0.0925 0.0867,0.0269 0.17494,0.0493 0.2651,0.0677 0.09,0.0183 0.18139,0.0325 0.2744,0.0419 0.0932,0.009 0.18744,0.0139 0.28319,0.0139 h 4.00492 c 1.52917,0 2.76004,-1.23087 2.76004,-2.76004 v -12.06535 c 0,-1.52916 -1.23087,-2.76004 -2.76004,-2.76004 z">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </path>
+      <rect
          style="fill:none;fill-opacity:1;stroke:#fde725;stroke-width:0.705;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
          id="level_2_tile_4_stroke"
          width="9.2950001"
@@ -399,30 +783,70 @@
          x="100.5417"
          y="129.43686"
          rx="2.7602232"
-         ry="2.7602232" /><text
+         ry="2.7602232">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </rect>
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="167.67847"
          y="370.2908"
-         id="level_2_tile_4_text_before"><tspan
+         id="level_2_tile_4_text_before">
+        <tspan
            x="107.93647"
            y="144.91029"
            id="tspan59"
-           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan></text><text
+           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </text>
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="167.67847"
          y="370.2908"
-         id="level_2_tile_4_text_after"><tspan
+         id="level_2_tile_4_text_after">
+        <tspan
            x="107.93647"
            y="144.91029"
            id="tspan76"
-           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan></text></g><g
-       id="level_2_tile_5"><path
+           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </text>
+    </g>
+    <g
+       id="level_2_tile_5">
+      <path
          id="level_2_tile_5_fill"
          clip-path="none"
          style="fill:#90d743;fill-opacity:1;stroke:none;stroke-width:0.704995;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-         d="m 113.18818,129.43708 c -0.0956,0 -0.18966,0.005 -0.28267,0.0139 -1.7e-4,2e-5 -3.5e-4,-10e-6 -5.2e-4,0 -0.18585,0.0188 -0.36607,0.056 -0.53898,0.10956 -1.6e-4,5e-5 -3.6e-4,-5e-5 -5.2e-4,0 -1.0382,0.32176 -1.81074,1.23732 -1.9234,2.35334 -10e-6,1.7e-4 2e-5,3.5e-4 0,5.2e-4 -0.009,0.0928 -0.0139,0.18727 -0.0139,0.28267 v 12.06541 c 0,0.57344 0.17322,1.10473 0.47026,1.54513 8e-5,1.2e-4 -8e-5,3.9e-4 0,5.1e-4 0.0494,0.0733 0.10257,0.14387 0.15864,0.21188 9e-5,1e-4 -8e-5,4.1e-4 0,5.1e-4 0.28078,0.34041 0.64178,0.61192 1.05472,0.786 0.0826,0.0348 0.1672,0.0657 0.25373,0.0925 0.0867,0.0269 0.17494,0.0493 0.2651,0.0677 0.09,0.0183 0.18139,0.0325 0.2744,0.0419 0.0932,0.009 0.18744,0.0139 0.28319,0.0139 h 4.00492 c 1.52917,0 2.76004,-1.23087 2.76004,-2.76004 v -12.06535 c 0,-1.52916 -1.23087,-2.76004 -2.76004,-2.76004 z" /><rect
+         d="m 113.18818,129.43708 c -0.0956,0 -0.18966,0.005 -0.28267,0.0139 -1.7e-4,2e-5 -3.5e-4,-10e-6 -5.2e-4,0 -0.18585,0.0188 -0.36607,0.056 -0.53898,0.10956 -1.6e-4,5e-5 -3.6e-4,-5e-5 -5.2e-4,0 -1.0382,0.32176 -1.81074,1.23732 -1.9234,2.35334 -10e-6,1.7e-4 2e-5,3.5e-4 0,5.2e-4 -0.009,0.0928 -0.0139,0.18727 -0.0139,0.28267 v 12.06541 c 0,0.57344 0.17322,1.10473 0.47026,1.54513 8e-5,1.2e-4 -8e-5,3.9e-4 0,5.1e-4 0.0494,0.0733 0.10257,0.14387 0.15864,0.21188 9e-5,1e-4 -8e-5,4.1e-4 0,5.1e-4 0.28078,0.34041 0.64178,0.61192 1.05472,0.786 0.0826,0.0348 0.1672,0.0657 0.25373,0.0925 0.0867,0.0269 0.17494,0.0493 0.2651,0.0677 0.09,0.0183 0.18139,0.0325 0.2744,0.0419 0.0932,0.009 0.18744,0.0139 0.28319,0.0139 h 4.00492 c 1.52917,0 2.76004,-1.23087 2.76004,-2.76004 v -12.06535 c 0,-1.52916 -1.23087,-2.76004 -2.76004,-2.76004 z">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </path>
+      <rect
          style="fill:none;fill-opacity:1;stroke:#fde725;stroke-width:0.705;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
          id="level_2_tile_5_stroke"
          width="9.2950001"
@@ -430,30 +854,70 @@
          x="110.54368"
          y="129.43686"
          rx="2.7602232"
-         ry="2.7602232" /><text
+         ry="2.7602232">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </rect>
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="177.56531"
          y="370.2908"
-         id="level_2_tile_5_text_before"><tspan
+         id="level_2_tile_5_text_before">
+        <tspan
            x="117.82331"
            y="144.91029"
            id="tspan60"
-           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan></text><text
+           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </text>
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="177.56531"
          y="370.2908"
-         id="level_2_tile_5_text_after"><tspan
+         id="level_2_tile_5_text_after">
+        <tspan
            x="117.82331"
            y="144.91029"
            id="tspan77"
-           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan></text></g><g
-       id="level_2_tile_7"><path
+           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </text>
+    </g>
+    <g
+       id="level_2_tile_7">
+      <path
          id="level_2_tile_7_fill"
          clip-path="none"
          style="fill:#21918c;fill-opacity:1;stroke:none;stroke-width:0.704995;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-         d="m 133.19113,129.43708 c -0.0956,0 -0.18966,0.005 -0.28267,0.0139 -1.7e-4,2e-5 -3.5e-4,-10e-6 -5.2e-4,0 -0.18585,0.0188 -0.36607,0.056 -0.53898,0.10956 -1.6e-4,5e-5 -3.6e-4,-5e-5 -5.2e-4,0 -1.0382,0.32176 -1.81074,1.23732 -1.9234,2.35334 -2e-5,1.7e-4 2e-5,3.5e-4 0,5.2e-4 -0.009,0.0928 -0.0139,0.18727 -0.0139,0.28267 v 12.06541 c 0,0.57344 0.17322,1.10473 0.47026,1.54513 8e-5,1.2e-4 -9e-5,3.9e-4 0,5.1e-4 0.0494,0.0733 0.10257,0.14387 0.15864,0.21188 9e-5,1e-4 -8e-5,4.1e-4 0,5.1e-4 0.28078,0.34041 0.64178,0.61192 1.05472,0.786 0.0826,0.0348 0.1672,0.0657 0.25373,0.0925 0.0867,0.0269 0.17494,0.0493 0.2651,0.0677 0.09,0.0183 0.18139,0.0325 0.2744,0.0419 0.0932,0.009 0.18744,0.0139 0.28319,0.0139 h 4.00492 c 1.52917,0 2.76004,-1.23087 2.76004,-2.76004 v -12.06535 c 0,-1.52916 -1.23087,-2.76004 -2.76004,-2.76004 z" /><rect
+         d="m 133.19113,129.43708 c -0.0956,0 -0.18966,0.005 -0.28267,0.0139 -1.7e-4,2e-5 -3.5e-4,-10e-6 -5.2e-4,0 -0.18585,0.0188 -0.36607,0.056 -0.53898,0.10956 -1.6e-4,5e-5 -3.6e-4,-5e-5 -5.2e-4,0 -1.0382,0.32176 -1.81074,1.23732 -1.9234,2.35334 -2e-5,1.7e-4 2e-5,3.5e-4 0,5.2e-4 -0.009,0.0928 -0.0139,0.18727 -0.0139,0.28267 v 12.06541 c 0,0.57344 0.17322,1.10473 0.47026,1.54513 8e-5,1.2e-4 -9e-5,3.9e-4 0,5.1e-4 0.0494,0.0733 0.10257,0.14387 0.15864,0.21188 9e-5,1e-4 -8e-5,4.1e-4 0,5.1e-4 0.28078,0.34041 0.64178,0.61192 1.05472,0.786 0.0826,0.0348 0.1672,0.0657 0.25373,0.0925 0.0867,0.0269 0.17494,0.0493 0.2651,0.0677 0.09,0.0183 0.18139,0.0325 0.2744,0.0419 0.0932,0.009 0.18744,0.0139 0.28319,0.0139 h 4.00492 c 1.52917,0 2.76004,-1.23087 2.76004,-2.76004 v -12.06535 c 0,-1.52916 -1.23087,-2.76004 -2.76004,-2.76004 z">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </path>
+      <rect
          style="fill:none;fill-opacity:1;stroke:#fde725;stroke-width:0.705;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
          id="level_2_tile_7_stroke"
          width="9.2950001"
@@ -461,30 +925,70 @@
          x="130.54565"
          y="129.43686"
          rx="2.7602232"
-         ry="2.7602232" /><text
+         ry="2.7602232">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </rect>
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="197.68242"
          y="370.29083"
-         id="level_2_tile_7_text_before"><tspan
+         id="level_2_tile_7_text_before">
+        <tspan
            x="137.94043"
            y="144.91029"
            id="tspan61"
-           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan></text><text
+           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </text>
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="197.68242"
          y="370.29083"
-         id="level_2_tile_7_text_after"><tspan
+         id="level_2_tile_7_text_after">
+        <tspan
            x="137.94043"
            y="144.91029"
            id="tspan78"
-           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan></text></g><g
-       id="level_2_tile_8"><path
+           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </text>
+    </g>
+    <g
+       id="level_2_tile_8">
+      <path
          id="level_2_tile_8_fill"
          clip-path="none"
          style="fill:#90d743;fill-opacity:1;stroke:none;stroke-width:0.704995;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-         d="m 143.19261,129.43708 c -0.0956,0 -0.18966,0.005 -0.28267,0.0139 -1.7e-4,2e-5 -3.5e-4,-10e-6 -5.2e-4,0 -0.18585,0.0188 -0.36607,0.056 -0.53898,0.10956 -1.6e-4,5e-5 -3.6e-4,-5e-5 -5.2e-4,0 -1.0382,0.32176 -1.81074,1.23732 -1.9234,2.35334 -1e-5,1.7e-4 2e-5,3.5e-4 0,5.2e-4 -0.009,0.0928 -0.0139,0.18727 -0.0139,0.28267 v 12.06541 c 0,0.57344 0.17322,1.10473 0.47026,1.54513 8e-5,1.2e-4 -8e-5,3.9e-4 0,5.1e-4 0.0494,0.0733 0.10257,0.14387 0.15864,0.21188 9e-5,1e-4 -8e-5,4.1e-4 0,5.1e-4 0.28078,0.34041 0.64178,0.61192 1.05472,0.786 0.0826,0.0348 0.1672,0.0657 0.25373,0.0925 0.0867,0.0269 0.17494,0.0493 0.2651,0.0677 0.09,0.0183 0.18139,0.0325 0.2744,0.0419 0.0932,0.009 0.18744,0.0139 0.28319,0.0139 h 4.00492 c 1.52917,0 2.76004,-1.23087 2.76004,-2.76004 v -12.06535 c 0,-1.52916 -1.23087,-2.76004 -2.76004,-2.76004 z" /><rect
+         d="m 143.19261,129.43708 c -0.0956,0 -0.18966,0.005 -0.28267,0.0139 -1.7e-4,2e-5 -3.5e-4,-10e-6 -5.2e-4,0 -0.18585,0.0188 -0.36607,0.056 -0.53898,0.10956 -1.6e-4,5e-5 -3.6e-4,-5e-5 -5.2e-4,0 -1.0382,0.32176 -1.81074,1.23732 -1.9234,2.35334 -1e-5,1.7e-4 2e-5,3.5e-4 0,5.2e-4 -0.009,0.0928 -0.0139,0.18727 -0.0139,0.28267 v 12.06541 c 0,0.57344 0.17322,1.10473 0.47026,1.54513 8e-5,1.2e-4 -8e-5,3.9e-4 0,5.1e-4 0.0494,0.0733 0.10257,0.14387 0.15864,0.21188 9e-5,1e-4 -8e-5,4.1e-4 0,5.1e-4 0.28078,0.34041 0.64178,0.61192 1.05472,0.786 0.0826,0.0348 0.1672,0.0657 0.25373,0.0925 0.0867,0.0269 0.17494,0.0493 0.2651,0.0677 0.09,0.0183 0.18139,0.0325 0.2744,0.0419 0.0932,0.009 0.18744,0.0139 0.28319,0.0139 h 4.00492 c 1.52917,0 2.76004,-1.23087 2.76004,-2.76004 v -12.06535 c 0,-1.52916 -1.23087,-2.76004 -2.76004,-2.76004 z">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </path>
+      <rect
          style="fill:none;fill-opacity:1;stroke:#fde725;stroke-width:0.705;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
          id="level_2_tile_8_stroke"
          width="9.2950001"
@@ -492,30 +996,70 @@
          x="140.54762"
          y="129.43686"
          rx="2.7602232"
-         ry="2.7602232" /><text
+         ry="2.7602232">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </rect>
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="207.56926"
          y="370.29083"
-         id="level_2_tile_8_text_before"><tspan
+         id="level_2_tile_8_text_before">
+        <tspan
            x="147.82726"
            y="144.91029"
            id="tspan62"
-           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan></text><text
+           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </text>
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="207.56926"
          y="370.29083"
-         id="level_2_tile_8_text_after"><tspan
+         id="level_2_tile_8_text_after">
+        <tspan
            x="147.82726"
            y="144.91029"
            id="tspan79"
-           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan></text></g><g
-       id="level_2_tile_2"><path
+           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </text>
+    </g>
+    <g
+       id="level_2_tile_2">
+      <path
          id="level_2_tile_2_fill"
          clip-path="none"
          style="fill:#90d743;fill-opacity:1;stroke:none;stroke-width:0.704995;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-         d="m 83.18379,129.43706 c -0.09557,0 -0.189654,0.005 -0.28267,0.0139 -1.69e-4,2e-5 -3.47e-4,-1e-5 -5.17e-4,0 -0.185851,0.0188 -0.366072,0.056 -0.538985,0.10956 -1.58e-4,5e-5 -3.59e-4,-5e-5 -5.17e-4,0 -1.038196,0.32176 -1.810735,1.23732 -1.923397,2.35334 -1.7e-5,1.7e-4 1.8e-5,3.5e-4 0,5.2e-4 -0.0094,0.0928 -0.01395,0.18727 -0.01395,0.28267 v 12.06541 c 0,0.57344 0.173219,1.10473 0.470255,1.54513 8.2e-5,1.2e-4 -8.2e-5,3.9e-4 0,5.1e-4 0.04944,0.0733 0.102572,0.14387 0.158647,0.21188 8.8e-5,1e-4 -8.8e-5,4.1e-4 0,5.1e-4 0.280779,0.34041 0.641772,0.61192 1.054716,0.786 0.08261,0.0348 0.167199,0.0657 0.253731,0.0925 0.08669,0.0269 0.174935,0.0493 0.2651,0.0677 0.09,0.0183 0.181388,0.0325 0.274402,0.0419 0.09318,0.009 0.187439,0.0139 0.283187,0.0139 h 4.004924 c 1.529163,0 2.760038,-1.23087 2.760038,-2.76004 V 132.1971 c 0,-1.52916 -1.230875,-2.76004 -2.760038,-2.76004 z" /><rect
+         d="m 83.18379,129.43706 c -0.09557,0 -0.189654,0.005 -0.28267,0.0139 -1.69e-4,2e-5 -3.47e-4,-1e-5 -5.17e-4,0 -0.185851,0.0188 -0.366072,0.056 -0.538985,0.10956 -1.58e-4,5e-5 -3.59e-4,-5e-5 -5.17e-4,0 -1.038196,0.32176 -1.810735,1.23732 -1.923397,2.35334 -1.7e-5,1.7e-4 1.8e-5,3.5e-4 0,5.2e-4 -0.0094,0.0928 -0.01395,0.18727 -0.01395,0.28267 v 12.06541 c 0,0.57344 0.173219,1.10473 0.470255,1.54513 8.2e-5,1.2e-4 -8.2e-5,3.9e-4 0,5.1e-4 0.04944,0.0733 0.102572,0.14387 0.158647,0.21188 8.8e-5,1e-4 -8.8e-5,4.1e-4 0,5.1e-4 0.280779,0.34041 0.641772,0.61192 1.054716,0.786 0.08261,0.0348 0.167199,0.0657 0.253731,0.0925 0.08669,0.0269 0.174935,0.0493 0.2651,0.0677 0.09,0.0183 0.181388,0.0325 0.274402,0.0419 0.09318,0.009 0.187439,0.0139 0.283187,0.0139 h 4.004924 c 1.529163,0 2.760038,-1.23087 2.760038,-2.76004 V 132.1971 c 0,-1.52916 -1.230875,-2.76004 -2.760038,-2.76004 z">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </path>
+      <rect
          style="fill:none;fill-opacity:1;stroke:#fde725;stroke-width:0.705;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
          id="level_2_tile_2_stroke"
          width="9.2950001"
@@ -523,30 +1067,70 @@
          x="80.539734"
          y="129.43686"
          rx="2.7602232"
-         ry="2.7602232" /><text
+         ry="2.7602232">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </rect>
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="147.56136"
          y="370.29083"
-         id="level_2_tile_2_text_before"><tspan
+         id="level_2_tile_2_text_before">
+        <tspan
            x="87.819366"
            y="144.91029"
            id="tspan63"
-           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan></text><text
+           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </text>
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="147.56136"
          y="370.29083"
-         id="level_2_tile_2_text_after"><tspan
+         id="level_2_tile_2_text_after">
+        <tspan
            x="87.819366"
            y="144.91029"
            id="tspan80"
-           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan></text></g><g
-       id="level_2_tile_0"><path
+           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </text>
+    </g>
+    <g
+       id="level_2_tile_0">
+      <path
          id="level_2_tile_0_fill"
          clip-path="none"
          style="fill:#443983;fill-opacity:1;stroke:none;stroke-width:0.704995;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-         d="m 63.180831,129.43706 c -0.09557,0 -0.189654,0.005 -0.28267,0.0139 -1.69e-4,2e-5 -3.47e-4,-1e-5 -5.17e-4,0 -0.185851,0.0188 -0.366072,0.056 -0.538985,0.10956 -1.58e-4,5e-5 -3.59e-4,-5e-5 -5.17e-4,0 -1.038196,0.32176 -1.810735,1.23732 -1.923397,2.35334 -1.7e-5,1.7e-4 1.8e-5,3.5e-4 0,5.2e-4 -0.0094,0.0928 -0.01395,0.18727 -0.01395,0.28267 v 12.06541 c 0,0.57344 0.173219,1.10473 0.470255,1.54513 8.2e-5,1.2e-4 -8.2e-5,3.9e-4 0,5.1e-4 0.04944,0.0733 0.102572,0.14387 0.158647,0.21188 8.8e-5,1e-4 -8.8e-5,4.1e-4 0,5.1e-4 0.280779,0.34041 0.641772,0.61192 1.054716,0.786 0.08261,0.0348 0.167199,0.0657 0.253731,0.0925 0.08668,0.0269 0.174935,0.0493 0.2651,0.0677 0.09,0.0183 0.181388,0.0325 0.274402,0.0419 0.09318,0.009 0.187439,0.0139 0.283187,0.0139 h 4.004924 c 1.529163,0 2.760038,-1.23087 2.760038,-2.76004 V 132.1971 c 0,-1.52916 -1.230875,-2.76004 -2.760038,-2.76004 z" /><rect
+         d="m 63.180831,129.43706 c -0.09557,0 -0.189654,0.005 -0.28267,0.0139 -1.69e-4,2e-5 -3.47e-4,-1e-5 -5.17e-4,0 -0.185851,0.0188 -0.366072,0.056 -0.538985,0.10956 -1.58e-4,5e-5 -3.59e-4,-5e-5 -5.17e-4,0 -1.038196,0.32176 -1.810735,1.23732 -1.923397,2.35334 -1.7e-5,1.7e-4 1.8e-5,3.5e-4 0,5.2e-4 -0.0094,0.0928 -0.01395,0.18727 -0.01395,0.28267 v 12.06541 c 0,0.57344 0.173219,1.10473 0.470255,1.54513 8.2e-5,1.2e-4 -8.2e-5,3.9e-4 0,5.1e-4 0.04944,0.0733 0.102572,0.14387 0.158647,0.21188 8.8e-5,1e-4 -8.8e-5,4.1e-4 0,5.1e-4 0.280779,0.34041 0.641772,0.61192 1.054716,0.786 0.08261,0.0348 0.167199,0.0657 0.253731,0.0925 0.08668,0.0269 0.174935,0.0493 0.2651,0.0677 0.09,0.0183 0.181388,0.0325 0.274402,0.0419 0.09318,0.009 0.187439,0.0139 0.283187,0.0139 h 4.004924 c 1.529163,0 2.760038,-1.23087 2.760038,-2.76004 V 132.1971 c 0,-1.52916 -1.230875,-2.76004 -2.760038,-2.76004 z">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </path>
+      <rect
          style="fill:none;fill-opacity:1;stroke:#fde725;stroke-width:0.705;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
          id="level_2_tile_0_stroke"
          width="9.2950001"
@@ -554,22 +1138,53 @@
          x="60.535793"
          y="129.43686"
          rx="2.7602232"
-         ry="2.7602232" /><text
+         ry="2.7602232">
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </rect>
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="127.78767"
          y="370.2908"
-         id="level_2_tile_0_text_before"><tspan
+         id="level_2_tile_0_text_before">
+        <tspan
            x="68.045685"
            y="144.91029"
            id="tspan20"
-           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan></text><text
+           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </text>
+      <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="127.78767"
          y="370.2908"
-         id="text81"><tspan
+         id="text81">
+        <tspan
            x="68.045685"
            y="144.91029"
            id="tspan81"
-           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan></text></g></g></svg>
+           style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
+        <animate
+           attributeName="opacity"
+           dur="8s"
+           values="0;0;1;1"
+           keyTimes="0;.2;.25;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
+      </text>
+    </g>
+  </g>
+</svg>
