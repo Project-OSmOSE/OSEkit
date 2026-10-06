@@ -1687,32 +1687,6 @@ def test_spectro_dataset_data_from_dict(
     assert np.array_equal(output, ["cool", "top"])
 
 
-def test_spectro_multichannel_audio_file(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    ad = MockedAudioData(
-        mocked_value=np.array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]]),
-    )
-
-    sft = ShortTimeFFT(win=hamming(512), hop=128, fs=48_000)
-
-    sd = SpectroData.from_audio_data(ad, sft)
-
-    treated_audio = []
-
-    def patch_stft(*args: list, **kwargs: dict) -> None:
-        treated_audio.append(kwargs["x"])
-
-    monkeypatch.setattr(ShortTimeFFT, "stft", patch_stft)
-
-    sd.get_value()
-
-    assert np.array_equal(
-        treated_audio[0],
-        [1, 5, 9],
-    )  # Only first channel is accounted for.
-
-
 def test_spectro_begin_and_end(monkeypatch: pytest.MonkeyPatch) -> None:
     def mocked_ad_init(
         self: AudioData | SpectroData,
@@ -1943,16 +1917,33 @@ def test_duplicate_data_check(monkeypatch: pytest.monkeypatch) -> None:
     assert check_calls[0] == 2  # noqa: PLR2004
 
 
+def test_spectro_data_get_audio_data_value() -> None:
+    af = MockedAudioFile(
+        mocked_value=np.array([[0.0, 1.0, 2.0, 3.0] for _ in range(10)]),
+    )
+    ad = AudioData.from_files([af], channels=[1, 3])
+    sd = SpectroData.from_audio_data(
+        data=ad,
+        fft=ShortTimeFFT(win=hamming(16), hop=16, fs=ad.sample_rate),
+    )
+
+    sd.audio_channel = 1  # Should target the second channel of the file
+    assert np.array_equal(sd.get_audio_data_value(), af.mocked_value[:, 1])
+
+
 def test_spectro_data_with_multichannel_audio(monkeypatch: pytest.MonkeyPatch) -> None:
     mocked_audio_value = np.array([[0.0, 1.0, 2.0] for _ in range(100)])
-    af = MockedAudioFile(mocked_value=mocked_audio_value, sample_rate=100)
 
-    ad: AudioData = AudioData.from_files(files=[af])
+    ad = MockedAudioData(
+        mocked_value=mocked_audio_value,
+    )
 
     # By default, SpectroData targets channel 0
     sd = SpectroData.from_audio_data(
-        data=ad, fft=ShortTimeFFT(win=hamming(16), hop=16, fs=ad.sample_rate)
+        data=ad,
+        fft=ShortTimeFFT(win=hamming(16), hop=16, fs=ad.sample_rate),
     )
+    assert sd.audio_channel == 0
 
     last_fetched_audio = []
     fft_stft = ShortTimeFFT.stft
@@ -1981,18 +1972,18 @@ def test_spectro_data_with_multichannel_audio(monkeypatch: pytest.MonkeyPatch) -
 
 
 def test_spectrodata_audio_channel_raises_if_not_in_audio_data_channels() -> None:
-    mocked_audio_value = np.array([[0.0, 1.0, 2.0] for _ in range(100)])
-    af = MockedAudioFile(mocked_value=mocked_audio_value, sample_rate=100)
-
-    ad: AudioData = AudioData.from_files(files=[af])
-
+    ad = MockedAudioData(
+        mocked_value=np.ones(shape=(10, 3)),
+    )
     ad.channels = [0, 2]
 
     sd = SpectroData.from_audio_data(
-        data=ad, fft=ShortTimeFFT(win=hamming(48), hop=48, fs=ad.sample_rate)
+        data=ad,
+        fft=ShortTimeFFT(win=hamming(48), hop=48, fs=ad.sample_rate),
     )
 
     with pytest.raises(
-        ValueError, match=r"channel 1: AudioData only targets channels \[0, 2\]"
+        ValueError,
+        match=r"channel 1: AudioData only targets channels \[0, 2\]",
     ):
         sd.audio_channel = 1
