@@ -174,6 +174,13 @@
     </g>
     <g
    id="level_1_tile_1">
+      <animate
+   attributeName="opacity"
+   dur="30s"
+   values="0;0;1;1"
+   keyTimes="0;.549;.551;1"
+   calcMode="linear"
+   repeatCount="indefinite" />
       <path
    id="level_1_tile_5_fill"
    clip-path="url(#clipPath8)"
@@ -184,7 +191,7 @@
    attributeName="opacity"
    dur="30s"
    values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
+   keyTimes="0;.689;.691;1"
    calcMode="linear"
    repeatCount="indefinite" />
       </path>
@@ -201,7 +208,7 @@
    attributeName="opacity"
    dur="30s"
    values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
+   keyTimes="0;.649;.651;1"
    calcMode="linear"
    repeatCount="indefinite" />
       </rect>
@@ -214,7 +221,7 @@
    attributeName="opacity"
    dur="30s"
    values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
+   keyTimes="0;.609;.611;1"
    calcMode="linear"
    repeatCount="indefinite" />
       </path>
@@ -226,7 +233,7 @@
    attributeName="opacity"
    dur="30s"
    values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
+   keyTimes="0;.559;.561;1"
    calcMode="linear"
    repeatCount="indefinite" />
       </path>
@@ -238,7 +245,7 @@
    attributeName="opacity"
    dur="30s"
    values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
+   keyTimes="0;.569;.571;1"
    calcMode="linear"
    repeatCount="indefinite" />
       </path>
@@ -257,7 +264,7 @@
    attributeName="opacity"
    dur="30s"
    values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
+   keyTimes="0;.995;.996;1"
    calcMode="linear"
    repeatCount="indefinite" />
       </text>
@@ -273,7 +280,7 @@
         <animate
    attributeName="opacity"
    dur="30s"
-   values="0;0;1;1"
+   values="1;1;0;0"
    keyTimes="0;.95;.96;1"
    calcMode="linear"
    repeatCount="indefinite" />
@@ -587,6 +594,13 @@
     </g>
     <g
    id="level_2_tile_3">
+      <animate
+   attributeName="opacity"
+   dur="30s"
+   values="0;0;1;1;0;0"
+   keyTimes="0;.589;.591;.609;.611;1"
+   calcMode="linear"
+   repeatCount="indefinite" />
       <path
    id="level_2_tile_3_fill"
    clip-path="none"
@@ -596,7 +610,7 @@
    attributeName="opacity"
    dur="30s"
    values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
+   keyTimes="0;.599;.601;1"
    calcMode="linear"
    repeatCount="indefinite" />
       </path>
@@ -609,13 +623,6 @@
    y="129.43686"
    rx="2.7602232"
    ry="2.7602232">
-        <animate
-   attributeName="opacity"
-   dur="30s"
-   values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
-   calcMode="linear"
-   repeatCount="indefinite" />
       </rect>
       <text
    xml:space="preserve"
@@ -807,6 +814,13 @@
     </g>
     <g
    id="level_2_tile_4">
+      <animate
+   attributeName="opacity"
+   dur="30s"
+   values="0;0;1;1;0;0"
+   keyTimes="0;.629;.631;.649;.651;1"
+   calcMode="linear"
+   repeatCount="indefinite" />
       <path
    id="level_2_tile_4_fill"
    clip-path="none"
@@ -816,7 +830,7 @@
    attributeName="opacity"
    dur="30s"
    values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
+   keyTimes="0;.639;.641;1"
    calcMode="linear"
    repeatCount="indefinite" />
       </path>
@@ -829,13 +843,6 @@
    y="129.43686"
    rx="2.7602232"
    ry="2.7602232">
-        <animate
-   attributeName="opacity"
-   dur="30s"
-   values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
-   calcMode="linear"
-   repeatCount="indefinite" />
       </rect>
       <text
    xml:space="preserve"
@@ -878,6 +885,13 @@
     </g>
     <g
    id="level_2_tile_5">
+      <animate
+   attributeName="opacity"
+   dur="30s"
+   values="0;0;1;1;0;0"
+   keyTimes="0;.669;.671;.689;.691;1"
+   calcMode="linear"
+   repeatCount="indefinite" />
       <path
    id="level_2_tile_5_fill"
    clip-path="none"
@@ -887,7 +901,7 @@
    attributeName="opacity"
    dur="30s"
    values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
+   keyTimes="0;.679;.681;1"
    calcMode="linear"
    repeatCount="indefinite" />
       </path>
@@ -900,13 +914,6 @@
    y="129.43686"
    rx="2.7602232"
    ry="2.7602232">
-        <animate
-   attributeName="opacity"
-   dur="30s"
-   values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
-   calcMode="linear"
-   repeatCount="indefinite" />
       </rect>
       <text
    xml:space="preserve"
