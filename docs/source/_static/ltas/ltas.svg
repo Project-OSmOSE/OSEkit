@@ -463,7 +463,7 @@
            attributeName="opacity"
            dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.95;.96;1"
+           keyTimes="0;.28;.282;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -1117,6 +1117,13 @@
     </g>
     <g
        id="level_2_tile_0">
+        <animate
+           attributeName="opacity"
+           dur="30s"
+           values="1;1;0;0"
+           keyTimes="0;.279;.281;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
       <path
          id="level_2_tile_0_fill"
          clip-path="none"
@@ -1126,7 +1133,7 @@
            attributeName="opacity"
            dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.95;.96;1"
+           keyTimes="0;.219;.221;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -1143,7 +1150,7 @@
            attributeName="opacity"
            dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.95;.96;1"
+           keyTimes="0;.199;.201;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </rect>
@@ -1161,8 +1168,8 @@
         <animate
            attributeName="opacity"
            dur="30s"
-           values="0;0;1;1"
-           keyTimes="0;.95;.96;1"
+           values="0;0;1;1;0;0"
+           keyTimes="0;.199;.201;.238;.24;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -1171,7 +1178,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="127.78767"
          y="370.2908"
-         id="text81">
+         id="level_2_tile_0_text_after">
         <tspan
            x="68.045685"
            y="144.91029"
@@ -1181,7 +1188,7 @@
            attributeName="opacity"
            dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.95;.96;1"
+           keyTimes="0;.24;.242;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
