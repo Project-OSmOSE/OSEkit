@@ -423,6 +423,13 @@
     </g>
     <g
        id="level_1_tile_0">
+      <animate
+           attributeName="opacity"
+           dur="30s"
+           values="1;1;0;0"
+           keyTimes="0;.48;.482;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
       <path
          id="level_1_tile_2_fill"
          clip-path="url(#clipPath8)"
@@ -433,7 +440,7 @@
            attributeName="opacity"
            dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.95;.96;1"
+           keyTimes="0;.441;.443;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -1053,6 +1060,13 @@
     </g>
     <g
        id="level_2_tile_2">
+        <animate
+           attributeName="opacity"
+           dur="30s"
+           values="0;0;1;1;0;0"
+           keyTimes="0;.379;.381;.439;.441;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
       <path
          id="level_2_tile_2_fill"
          clip-path="none"
@@ -1062,7 +1076,7 @@
            attributeName="opacity"
            dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.95;.96;1"
+           keyTimes="0;.399;.401;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -1078,7 +1092,7 @@
         <animate
            attributeName="opacity"
            dur="30s"
-           values="0;0;1;1"
+           values="1;1;0;0"
            keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
@@ -1097,8 +1111,8 @@
         <animate
            attributeName="opacity"
            dur="30s"
-           values="0;0;1;1"
-           keyTimes="0;.95;.96;1"
+           values="1;1;0;0"
+           keyTimes="0;.418;.42;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -1117,7 +1131,7 @@
            attributeName="opacity"
            dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.95;.96;1"
+           keyTimes="0;.42;.422;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
