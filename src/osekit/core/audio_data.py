@@ -135,18 +135,13 @@ class AudioData(BaseData[AudioItem, AudioFile]):
 
     @property
     def channels(self) -> list[int]:
-        """The Butterworth filter to apply to the audio data."""
-        return self._channels
+        """The channels targeted by this ``AudioData``."""
+        return list({channel for i in self.items for channel in i.channels})
 
     @channels.setter
     def channels(self, value: list[int] | None) -> None:
-        if value is None:
-            nb_channels_max = max(
-                [1]
-                + [item.nb_channels for item in self.items if type(item) is AudioItem],
-            )
-            value = list(range(nb_channels_max))
-        self._channels = value
+        for item in self.items:
+            item.channels = value
 
     @classmethod
     def _make_item(
@@ -261,16 +256,20 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             else self.butter.filter(sig=output, fs=self.sample_rate)
         )
 
-    @staticmethod
     def _flush(
+        self: AudioData,
         resampler: soxr.ResampleStream,
         remaining_samples: int,
     ) -> np.ndarray:
-        flush = resampler.resample_chunk(np.array([]), last=True)
+        empty_values = np.empty((0, self.nb_channels))
+        flush = resampler.resample_chunk(
+            empty_values,
+            last=True,
+        )
         if len(flush) == 0:
-            return np.array([])[:, None]
+            return empty_values
         if not remaining_samples:
-            return np.array([])[:, None]
+            return empty_values
         flush = flush[:remaining_samples]
         return flush[:, None] if flush.ndim == 1 else flush
 
@@ -297,9 +296,16 @@ class AudioData(BaseData[AudioItem, AudioFile]):
         for item in self.items:
             if item.is_empty:
                 silence_length = round(item.duration.total_seconds() * self.sample_rate)
-                yield item.get_value().repeat(
-                    silence_length,
-                    axis=0,
+                yield (
+                    item.get_value()
+                    .repeat(
+                        silence_length,
+                        axis=0,
+                    )
+                    .repeat(
+                        self.nb_channels,
+                        axis=1,
+                    )
                 )
                 produced_samples += silence_length
                 continue
@@ -326,7 +332,8 @@ class AudioData(BaseData[AudioItem, AudioFile]):
                 )
 
             for chunk in item.stream(chunk_size=chunk_size):
-                y = chunk[:, self.channels]
+                y = np.zeros((chunk.shape[0], self.nb_channels))
+                y[:, self._get_item_channel_mapping(item=item)] = chunk
                 if item.sample_rate != self.sample_rate:
                     y = resampler.resample_chunk(x=chunk)
 
@@ -346,6 +353,15 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             resampler=resampler,
             remaining_samples=total_samples - produced_samples,
         )
+
+    def _get_item_channel_mapping(self, item: AudioItem) -> list[int]:
+        """Return the mapping of the item channels in the AudioData channels.
+
+        If the AudioItem targets channels [2,4] and the AudioData target channels
+        [0,2,3,4], the channels with indexes 0 and 1 of the item data (channels 2 and 4) must be mapped
+        to the channels with indexes 1 and 3 of the AudioData (channels 2 and 4).
+        """
+        return [self.channels.index(channel) for channel in item.channels]
 
     def get_value(self) -> np.ndarray:
         """Return the value of the audio data.
