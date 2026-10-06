@@ -65,9 +65,9 @@
          ry="0">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </rect>
@@ -78,9 +78,9 @@
          d="m 63.296395,164.60856 c -1.529164,0 -2.760555,1.23087 -2.760555,2.76004 v 12.06541 c 0,1.52916 1.231391,2.76004 2.760555,2.76004 h 26.887248 v -17.58549 z" >
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -91,9 +91,9 @@
          d="m 120.18336,164.60856 v 17.58549 h 26.88725 c 1.52916,0 2.76055,-1.23088 2.76055,-2.76004 V 167.3686 c 0,-1.52917 -1.23139,-2.76004 -2.76055,-2.76004 z">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -110,9 +110,9 @@
            id="tspan2">1054950</tspan>
         <animate
            attributeName="opacity"
-           dur="8s"
-           values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           dur="30s"
+           values="1;1;0;0"
+           keyTimes="0;.073;.075;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -122,9 +122,9 @@
          id="level_0_cut_0">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.225;.235;1"
+           keyTimes="0;.06;.07;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -134,9 +134,9 @@
          id="level_0_cut_1">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.225;.235;1"
+           keyTimes="0;.067;.068;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -157,9 +157,9 @@
          id="level_0_text_0_after">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.075;.077;1"
            calcMode="linear"
            repeatCount="indefinite" />
         <tspan
@@ -179,9 +179,9 @@
          transform="matrix(0.32811406,0,0,1,70.677022,-17.58567)">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -196,9 +196,9 @@
          ry="0">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </rect>
@@ -209,9 +209,9 @@
          d="m 93.299819,147.02257 c -1.529164,0 -2.760039,1.23139 -2.760039,2.76056 v 12.06541 c 0,1.52916 1.230875,2.76004 2.760039,2.76004 h 6.967541 v -17.58601 z">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -221,9 +221,9 @@
          id="level_1_cut_2">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.225;.235;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -233,9 +233,9 @@
          id="level_1_cut_3">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.225;.235;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -252,9 +252,9 @@
            style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">4000</tspan>
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -269,9 +269,9 @@
          ry="2.7602232">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </rect>
@@ -288,9 +288,9 @@
            style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">3000</tspan>
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -305,9 +305,9 @@
          transform="matrix(0.32811406,0,0,1,100.68097,-17.585671)">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -322,9 +322,9 @@
          ry="0">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </rect>
@@ -335,9 +335,9 @@
          d="m 123.30376,147.02257 c -1.52916,0 -2.76004,1.23139 -2.76004,2.76056 v 12.06541 c 0,1.52916 1.23088,2.76004 2.76004,2.76004 h 6.96754 v -17.58601 z">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -347,9 +347,9 @@
          id="level_1_cut_4">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.225;.235;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -359,9 +359,9 @@
          id="level_1_cut_5">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.225;.235;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -378,9 +378,9 @@
            style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">4000</tspan>
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -395,9 +395,9 @@
          ry="2.7602232" >
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </rect>
@@ -414,9 +414,9 @@
            style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">3000</tspan>
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -431,9 +431,9 @@
          transform="matrix(0.32811406,0,0,1,40.673082,-17.585682)">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -448,9 +448,9 @@
          ry="0">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </rect>
@@ -461,9 +461,9 @@
          d="m 63.295879,147.02255 c -1.529164,0 -2.760039,1.23139 -2.760039,2.76056 v 12.06541 c 0,1.52916 1.230875,2.76004 2.760039,2.76004 h 6.967533 v -17.58601 z">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -473,9 +473,9 @@
          id="level_1_cut_0">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.225;.235;1"
+           keyTimes="0;.1345;.1355;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -485,9 +485,9 @@
          id="level_1_cut_1">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.225;.235;1"
+           keyTimes="0;.1375;.1385;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -504,9 +504,9 @@
            style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">4000</tspan>
         <animate
            attributeName="opacity"
-           dur="8s"
-           values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           dur="30s"
+           values="0;0;1;1;0;0"
+           keyTimes="0;.099;.11;.148;.150;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -521,9 +521,9 @@
          ry="2.7602232">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.0995;.105;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </rect>
@@ -540,9 +540,9 @@
            style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">3000</tspan>
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.150;.152;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -556,9 +556,9 @@
          d="m 93.18527,129.43708 c -0.09557,0 -0.189654,0.005 -0.28267,0.0139 -1.69e-4,2e-5 -3.47e-4,-10e-6 -5.17e-4,0 -0.185851,0.0188 -0.366072,0.056 -0.538985,0.10956 -1.58e-4,5e-5 -3.59e-4,-5e-5 -5.17e-4,0 -1.038196,0.32176 -1.810735,1.23732 -1.923397,2.35334 -1.7e-5,1.7e-4 1.8e-5,3.5e-4 0,5.2e-4 -0.0094,0.0928 -0.01395,0.18727 -0.01395,0.28267 v 12.06541 c 0,0.57344 0.173219,1.10473 0.470255,1.54513 8.2e-5,1.2e-4 -8.2e-5,3.9e-4 0,5.1e-4 0.04944,0.0733 0.102572,0.14387 0.158647,0.21188 8.8e-5,1e-4 -8.8e-5,4.1e-4 0,5.1e-4 0.280779,0.34041 0.641772,0.61192 1.054716,0.786 0.08261,0.0348 0.167199,0.0657 0.253731,0.0925 0.08669,0.0269 0.174935,0.0493 0.2651,0.0677 0.09,0.0183 0.181388,0.0325 0.274402,0.0419 0.09318,0.009 0.187439,0.0139 0.283187,0.0139 h 4.004924 c 1.529163,0 2.760036,-1.23087 2.760036,-2.76004 v -12.06535 c 0,-1.52916 -1.230873,-2.76004 -2.760036,-2.76004 z">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -573,9 +573,9 @@
          ry="2.7602232">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </rect>
@@ -592,9 +592,9 @@
            style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan>
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -611,9 +611,9 @@
            style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -627,9 +627,9 @@
          d="m 123.18965,129.43708 c -0.0956,0 -0.18965,0.005 -0.28267,0.0139 -1.7e-4,2e-5 -3.5e-4,-10e-6 -5.2e-4,0 -0.18585,0.0188 -0.36607,0.056 -0.53898,0.10956 -1.6e-4,5e-5 -3.6e-4,-5e-5 -5.2e-4,0 -1.03819,0.32176 -1.81073,1.23732 -1.92339,2.35334 -2e-5,1.7e-4 1e-5,3.5e-4 0,5.2e-4 -0.009,0.0928 -0.0139,0.18727 -0.0139,0.28267 v 12.06541 c 0,0.57344 0.17321,1.10473 0.47025,1.54513 8e-5,1.2e-4 -8e-5,3.9e-4 0,5.1e-4 0.0494,0.0733 0.10257,0.14387 0.15865,0.21188 9e-5,1e-4 -9e-5,4.1e-4 0,5.1e-4 0.28078,0.34041 0.64177,0.61192 1.05471,0.786 0.0826,0.0348 0.1672,0.0657 0.25373,0.0925 0.0867,0.0269 0.17494,0.0493 0.2651,0.0677 0.09,0.0183 0.18139,0.0325 0.27441,0.0419 0.0932,0.009 0.18744,0.0139 0.28318,0.0139 h 4.00493 c 1.52916,0 2.76003,-1.23087 2.76003,-2.76004 v -12.06535 c 0,-1.52916 -1.23087,-2.76004 -2.76003,-2.76004 z">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -644,9 +644,9 @@
          ry="2.7602232">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </rect>
@@ -663,9 +663,9 @@
            style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan>
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -682,9 +682,9 @@
            style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -698,9 +698,9 @@
          d="m 73.182311,129.43706 c -0.09557,0 -0.189654,0.005 -0.28267,0.0139 -1.69e-4,2e-5 -3.47e-4,-1e-5 -5.17e-4,0 -0.185851,0.0188 -0.366072,0.056 -0.538985,0.10956 -1.58e-4,5e-5 -3.59e-4,-5e-5 -5.17e-4,0 -1.038196,0.32176 -1.810735,1.23732 -1.923397,2.35334 -1.7e-5,1.7e-4 1.8e-5,3.5e-4 0,5.2e-4 -0.0094,0.0928 -0.01395,0.18727 -0.01395,0.28267 v 12.06541 c 0,0.57344 0.173219,1.10473 0.470255,1.54513 8.2e-5,1.2e-4 -8.2e-5,3.9e-4 0,5.1e-4 0.04944,0.0733 0.102572,0.14387 0.158647,0.21188 8.8e-5,1e-4 -8.8e-5,4.1e-4 0,5.1e-4 0.280779,0.34041 0.641772,0.61192 1.054716,0.786 0.08261,0.0348 0.167199,0.0657 0.253731,0.0925 0.08669,0.0269 0.174935,0.0493 0.2651,0.0677 0.09,0.0183 0.181388,0.0325 0.274402,0.0419 0.09318,0.009 0.187439,0.0139 0.283187,0.0139 h 4.004924 c 1.529163,0 2.760038,-1.23087 2.760038,-2.76004 V 132.1971 c 0,-1.52916 -1.230875,-2.76004 -2.760038,-2.76004 z">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -715,9 +715,9 @@
          ry="2.7602232">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </rect>
@@ -734,9 +734,9 @@
            style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan>
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -753,9 +753,9 @@
            style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -769,9 +769,9 @@
          d="m 103.18669,129.43708 c -0.0956,0 -0.18966,0.005 -0.28267,0.0139 -1.7e-4,2e-5 -3.5e-4,-10e-6 -5.2e-4,0 -0.18585,0.0188 -0.36607,0.056 -0.53898,0.10956 -1.6e-4,5e-5 -3.6e-4,-5e-5 -5.2e-4,0 -1.0382,0.32176 -1.81074,1.23732 -1.9234,2.35334 -2e-5,1.7e-4 2e-5,3.5e-4 0,5.2e-4 -0.009,0.0928 -0.0139,0.18727 -0.0139,0.28267 v 12.06541 c 0,0.57344 0.17322,1.10473 0.47026,1.54513 8e-5,1.2e-4 -9e-5,3.9e-4 0,5.1e-4 0.0494,0.0733 0.10257,0.14387 0.15864,0.21188 9e-5,1e-4 -8e-5,4.1e-4 0,5.1e-4 0.28078,0.34041 0.64178,0.61192 1.05472,0.786 0.0826,0.0348 0.1672,0.0657 0.25373,0.0925 0.0867,0.0269 0.17494,0.0493 0.2651,0.0677 0.09,0.0183 0.18139,0.0325 0.2744,0.0419 0.0932,0.009 0.18744,0.0139 0.28319,0.0139 h 4.00492 c 1.52917,0 2.76004,-1.23087 2.76004,-2.76004 v -12.06535 c 0,-1.52916 -1.23087,-2.76004 -2.76004,-2.76004 z">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -786,9 +786,9 @@
          ry="2.7602232">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </rect>
@@ -805,9 +805,9 @@
            style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan>
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -824,9 +824,9 @@
            style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -840,9 +840,9 @@
          d="m 113.18818,129.43708 c -0.0956,0 -0.18966,0.005 -0.28267,0.0139 -1.7e-4,2e-5 -3.5e-4,-10e-6 -5.2e-4,0 -0.18585,0.0188 -0.36607,0.056 -0.53898,0.10956 -1.6e-4,5e-5 -3.6e-4,-5e-5 -5.2e-4,0 -1.0382,0.32176 -1.81074,1.23732 -1.9234,2.35334 -10e-6,1.7e-4 2e-5,3.5e-4 0,5.2e-4 -0.009,0.0928 -0.0139,0.18727 -0.0139,0.28267 v 12.06541 c 0,0.57344 0.17322,1.10473 0.47026,1.54513 8e-5,1.2e-4 -8e-5,3.9e-4 0,5.1e-4 0.0494,0.0733 0.10257,0.14387 0.15864,0.21188 9e-5,1e-4 -8e-5,4.1e-4 0,5.1e-4 0.28078,0.34041 0.64178,0.61192 1.05472,0.786 0.0826,0.0348 0.1672,0.0657 0.25373,0.0925 0.0867,0.0269 0.17494,0.0493 0.2651,0.0677 0.09,0.0183 0.18139,0.0325 0.2744,0.0419 0.0932,0.009 0.18744,0.0139 0.28319,0.0139 h 4.00492 c 1.52917,0 2.76004,-1.23087 2.76004,-2.76004 v -12.06535 c 0,-1.52916 -1.23087,-2.76004 -2.76004,-2.76004 z">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -857,9 +857,9 @@
          ry="2.7602232">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </rect>
@@ -876,9 +876,9 @@
            style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan>
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -895,9 +895,9 @@
            style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -911,9 +911,9 @@
          d="m 133.19113,129.43708 c -0.0956,0 -0.18966,0.005 -0.28267,0.0139 -1.7e-4,2e-5 -3.5e-4,-10e-6 -5.2e-4,0 -0.18585,0.0188 -0.36607,0.056 -0.53898,0.10956 -1.6e-4,5e-5 -3.6e-4,-5e-5 -5.2e-4,0 -1.0382,0.32176 -1.81074,1.23732 -1.9234,2.35334 -2e-5,1.7e-4 2e-5,3.5e-4 0,5.2e-4 -0.009,0.0928 -0.0139,0.18727 -0.0139,0.28267 v 12.06541 c 0,0.57344 0.17322,1.10473 0.47026,1.54513 8e-5,1.2e-4 -9e-5,3.9e-4 0,5.1e-4 0.0494,0.0733 0.10257,0.14387 0.15864,0.21188 9e-5,1e-4 -8e-5,4.1e-4 0,5.1e-4 0.28078,0.34041 0.64178,0.61192 1.05472,0.786 0.0826,0.0348 0.1672,0.0657 0.25373,0.0925 0.0867,0.0269 0.17494,0.0493 0.2651,0.0677 0.09,0.0183 0.18139,0.0325 0.2744,0.0419 0.0932,0.009 0.18744,0.0139 0.28319,0.0139 h 4.00492 c 1.52917,0 2.76004,-1.23087 2.76004,-2.76004 v -12.06535 c 0,-1.52916 -1.23087,-2.76004 -2.76004,-2.76004 z">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -928,9 +928,9 @@
          ry="2.7602232">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </rect>
@@ -947,9 +947,9 @@
            style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan>
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -966,9 +966,9 @@
            style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -982,9 +982,9 @@
          d="m 143.19261,129.43708 c -0.0956,0 -0.18966,0.005 -0.28267,0.0139 -1.7e-4,2e-5 -3.5e-4,-10e-6 -5.2e-4,0 -0.18585,0.0188 -0.36607,0.056 -0.53898,0.10956 -1.6e-4,5e-5 -3.6e-4,-5e-5 -5.2e-4,0 -1.0382,0.32176 -1.81074,1.23732 -1.9234,2.35334 -1e-5,1.7e-4 2e-5,3.5e-4 0,5.2e-4 -0.009,0.0928 -0.0139,0.18727 -0.0139,0.28267 v 12.06541 c 0,0.57344 0.17322,1.10473 0.47026,1.54513 8e-5,1.2e-4 -8e-5,3.9e-4 0,5.1e-4 0.0494,0.0733 0.10257,0.14387 0.15864,0.21188 9e-5,1e-4 -8e-5,4.1e-4 0,5.1e-4 0.28078,0.34041 0.64178,0.61192 1.05472,0.786 0.0826,0.0348 0.1672,0.0657 0.25373,0.0925 0.0867,0.0269 0.17494,0.0493 0.2651,0.0677 0.09,0.0183 0.18139,0.0325 0.2744,0.0419 0.0932,0.009 0.18744,0.0139 0.28319,0.0139 h 4.00492 c 1.52917,0 2.76004,-1.23087 2.76004,-2.76004 v -12.06535 c 0,-1.52916 -1.23087,-2.76004 -2.76004,-2.76004 z">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -999,9 +999,9 @@
          ry="2.7602232">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </rect>
@@ -1018,9 +1018,9 @@
            style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan>
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -1037,9 +1037,9 @@
            style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -1053,9 +1053,9 @@
          d="m 83.18379,129.43706 c -0.09557,0 -0.189654,0.005 -0.28267,0.0139 -1.69e-4,2e-5 -3.47e-4,-1e-5 -5.17e-4,0 -0.185851,0.0188 -0.366072,0.056 -0.538985,0.10956 -1.58e-4,5e-5 -3.59e-4,-5e-5 -5.17e-4,0 -1.038196,0.32176 -1.810735,1.23732 -1.923397,2.35334 -1.7e-5,1.7e-4 1.8e-5,3.5e-4 0,5.2e-4 -0.0094,0.0928 -0.01395,0.18727 -0.01395,0.28267 v 12.06541 c 0,0.57344 0.173219,1.10473 0.470255,1.54513 8.2e-5,1.2e-4 -8.2e-5,3.9e-4 0,5.1e-4 0.04944,0.0733 0.102572,0.14387 0.158647,0.21188 8.8e-5,1e-4 -8.8e-5,4.1e-4 0,5.1e-4 0.280779,0.34041 0.641772,0.61192 1.054716,0.786 0.08261,0.0348 0.167199,0.0657 0.253731,0.0925 0.08669,0.0269 0.174935,0.0493 0.2651,0.0677 0.09,0.0183 0.181388,0.0325 0.274402,0.0419 0.09318,0.009 0.187439,0.0139 0.283187,0.0139 h 4.004924 c 1.529163,0 2.760038,-1.23087 2.760038,-2.76004 V 132.1971 c 0,-1.52916 -1.230875,-2.76004 -2.760038,-2.76004 z">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -1070,9 +1070,9 @@
          ry="2.7602232">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </rect>
@@ -1089,9 +1089,9 @@
            style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan>
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -1108,9 +1108,9 @@
            style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -1124,9 +1124,9 @@
          d="m 63.180831,129.43706 c -0.09557,0 -0.189654,0.005 -0.28267,0.0139 -1.69e-4,2e-5 -3.47e-4,-1e-5 -5.17e-4,0 -0.185851,0.0188 -0.366072,0.056 -0.538985,0.10956 -1.58e-4,5e-5 -3.59e-4,-5e-5 -5.17e-4,0 -1.038196,0.32176 -1.810735,1.23732 -1.923397,2.35334 -1.7e-5,1.7e-4 1.8e-5,3.5e-4 0,5.2e-4 -0.0094,0.0928 -0.01395,0.18727 -0.01395,0.28267 v 12.06541 c 0,0.57344 0.173219,1.10473 0.470255,1.54513 8.2e-5,1.2e-4 -8.2e-5,3.9e-4 0,5.1e-4 0.04944,0.0733 0.102572,0.14387 0.158647,0.21188 8.8e-5,1e-4 -8.8e-5,4.1e-4 0,5.1e-4 0.280779,0.34041 0.641772,0.61192 1.054716,0.786 0.08261,0.0348 0.167199,0.0657 0.253731,0.0925 0.08668,0.0269 0.174935,0.0493 0.2651,0.0677 0.09,0.0183 0.181388,0.0325 0.274402,0.0419 0.09318,0.009 0.187439,0.0139 0.283187,0.0139 h 4.004924 c 1.529163,0 2.760038,-1.23087 2.760038,-2.76004 V 132.1971 c 0,-1.52916 -1.230875,-2.76004 -2.760038,-2.76004 z">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -1141,9 +1141,9 @@
          ry="2.7602232">
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </rect>
@@ -1160,9 +1160,9 @@
            style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">60</tspan>
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -1179,9 +1179,9 @@
            style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
         <animate
            attributeName="opacity"
-           dur="8s"
+           dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.2;.25;1"
+           keyTimes="0;.95;.96;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
