@@ -340,9 +340,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         """
         window = self.fft.win
-        noverlap = len(window) - self.fft.hop
-        if noverlap == window.shape[0]:
-            noverlap //= 2
+        noverlap = window.shape[0] - self.fft.hop
         nfft = self.fft.mfft
 
         _, sx = welch(
