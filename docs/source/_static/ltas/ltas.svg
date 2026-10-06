@@ -450,7 +450,7 @@
            attributeName="opacity"
            dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.95;.96;1"
+           keyTimes="0;.36;.362;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </rect>
@@ -691,6 +691,13 @@
     </g>
     <g
        id="level_2_tile_1">
+      <animate
+           attributeName="opacity"
+           dur="30s"
+           values="1;1;0;0"
+           keyTimes="0;.358;.36;1"
+           calcMode="linear"
+           repeatCount="indefinite" />
       <path
          id="level_2_tile_1_fill"
          clip-path="none"
@@ -700,7 +707,7 @@
            attributeName="opacity"
            dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.95;.96;1"
+           keyTimes="0;.319;.321;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </path>
@@ -717,7 +724,7 @@
            attributeName="opacity"
            dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.95;.96;1"
+           keyTimes="0;.299;.301;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </rect>
@@ -735,8 +742,8 @@
         <animate
            attributeName="opacity"
            dur="30s"
-           values="0;0;1;1"
-           keyTimes="0;.95;.96;1"
+           values="0;0;1;1;0;0"
+           keyTimes="0;.299;.301;.338;.34;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
@@ -755,7 +762,7 @@
            attributeName="opacity"
            dur="30s"
            values="0;0;1;1"
-           keyTimes="0;.95;.96;1"
+           keyTimes="0;.34;.342;1"
            calcMode="linear"
            repeatCount="indefinite" />
       </text>
