@@ -102,7 +102,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;white-space:pre-wrap;shape-inside:url(#rect64);display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="59.741997"
          y="225.38052"
-         id="level_0_text_0_before"
+         id="level_0_text_0_0"
          transform="translate(126.99354,180.43454)">
         <tspan
            x="0"
@@ -154,7 +154,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="207.56914"
          y="405.81506"
-         id="level_0_text_0_after">
+         id="level_0_text_0_1">
         <animate
            attributeName="opacity"
            dur="30s"
@@ -244,7 +244,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="177.56522"
          y="388.22937"
-         id="level_1_tile_1_text_before">
+         id="level_1_tile_1_text_0">
         <tspan
            x="117.82321"
            y="162.84886"
@@ -280,7 +280,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="177.56522"
          y="388.22937"
-         id="level_1_tile_1_text_after">
+         id="level_1_tile_1_text_1">
         <tspan
            x="117.82321"
            y="162.84886"
@@ -370,7 +370,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="207.56915"
          y="388.22937"
-         id="level_1_tile_2_text_before">
+         id="level_1_tile_2_text_0">
         <tspan
            x="147.82715"
            y="162.84886"
@@ -406,7 +406,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="207.56915"
          y="388.22937"
-         id="level_1_tile_2_text_after">
+         id="level_1_tile_2_text_1">
         <tspan
            x="147.82715"
            y="162.84886"
@@ -503,7 +503,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="147.56126"
          y="388.22937"
-         id="level_1_tile_0_text_before">
+         id="level_1_tile_0_text_0">
         <tspan
            x="87.819275"
            y="162.84886"
@@ -539,7 +539,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="147.56126"
          y="388.22937"
-         id="level_1_tile_0_text_after">
+         id="level_1_tile_0_text_1">
         <tspan
            x="87.819275"
            y="162.84886"
@@ -591,7 +591,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="157.79161"
          y="370.29083"
-         id="level_2_tile_3_text_before">
+         id="level_2_tile_3_text_0">
         <tspan
            x="98.049622"
            y="144.91029"
@@ -610,7 +610,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="157.79161"
          y="370.29083"
-         id="level_2_tile_3_text_after">
+         id="level_2_tile_3_text_1">
         <tspan
            x="98.049622"
            y="144.91029"
@@ -662,7 +662,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="187.79555"
          y="370.29083"
-         id="level_2_tile_6_text_before">
+         id="level_2_tile_6_text_0">
         <tspan
            x="128.05356"
            y="144.91029"
@@ -681,7 +681,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="187.79555"
          y="370.29083"
-         id="level_2_tile_6_text_after">
+         id="level_2_tile_6_text_1">
         <tspan
            x="128.05356"
            y="144.91029"
@@ -740,7 +740,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="137.67451"
          y="370.2908"
-         id="level_2_tile_1_text_before">
+         id="level_2_tile_1_text_0">
         <tspan
            x="77.932526"
            y="144.91029"
@@ -759,7 +759,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="137.67451"
          y="370.2908"
-         id="level_2_tile_1_text_after">
+         id="level_2_tile_1_text_1">
         <tspan
            x="77.932526"
            y="144.91029"
@@ -811,7 +811,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="167.67847"
          y="370.2908"
-         id="level_2_tile_4_text_before">
+         id="level_2_tile_4_text_0">
         <tspan
            x="107.93647"
            y="144.91029"
@@ -830,7 +830,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="167.67847"
          y="370.2908"
-         id="level_2_tile_4_text_after">
+         id="level_2_tile_4_text_1">
         <tspan
            x="107.93647"
            y="144.91029"
@@ -882,7 +882,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="177.56531"
          y="370.2908"
-         id="level_2_tile_5_text_before">
+         id="level_2_tile_5_text_0">
         <tspan
            x="117.82331"
            y="144.91029"
@@ -901,7 +901,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="177.56531"
          y="370.2908"
-         id="level_2_tile_5_text_after">
+         id="level_2_tile_5_text_1">
         <tspan
            x="117.82331"
            y="144.91029"
@@ -953,7 +953,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="197.68242"
          y="370.29083"
-         id="level_2_tile_7_text_before">
+         id="level_2_tile_7_text_0">
         <tspan
            x="137.94043"
            y="144.91029"
@@ -972,7 +972,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="197.68242"
          y="370.29083"
-         id="level_2_tile_7_text_after">
+         id="level_2_tile_7_text_1">
         <tspan
            x="137.94043"
            y="144.91029"
@@ -1024,7 +1024,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="207.56926"
          y="370.29083"
-         id="level_2_tile_8_text_before">
+         id="level_2_tile_8_text_0">
         <tspan
            x="147.82726"
            y="144.91029"
@@ -1043,7 +1043,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="207.56926"
          y="370.29083"
-         id="level_2_tile_8_text_after">
+         id="level_2_tile_8_text_1">
         <tspan
            x="147.82726"
            y="144.91029"
@@ -1102,7 +1102,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="147.56136"
          y="370.29083"
-         id="level_2_tile_2_text_before">
+         id="level_2_tile_2_text_0">
         <tspan
            x="87.819366"
            y="144.91029"
@@ -1121,7 +1121,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="147.56136"
          y="370.29083"
-         id="level_2_tile_2_text_after">
+         id="level_2_tile_2_text_1">
         <tspan
            x="87.819366"
            y="144.91029"
@@ -1180,7 +1180,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="127.78767"
          y="370.2908"
-         id="level_2_tile_0_text_before">
+         id="level_2_tile_0_text_0">
         <tspan
            x="68.045685"
            y="144.91029"
@@ -1199,7 +1199,7 @@
          style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
          x="127.78767"
          y="370.2908"
-         id="level_2_tile_0_text_after">
+         id="level_2_tile_0_text_1">
         <tspan
            x="68.045685"
            y="144.91029"
