@@ -93,7 +93,7 @@
    attributeName="opacity"
    dur="30s"
    values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
+   keyTimes="0;.949;.951;1"
    calcMode="linear"
    repeatCount="indefinite" />
       </path>
@@ -316,6 +316,13 @@
     </g>
     <g
    id="level_1_tile_2">
+      <animate
+   attributeName="opacity"
+   dur="30s"
+   values="0;0;1;1;0;0"
+   keyTimes="0;.749;.751;.947;.949;1"
+   calcMode="linear"
+   repeatCount="indefinite" />
       <path
    id="level_1_tile_8_fill"
    clip-path="url(#clipPath8)"
@@ -326,7 +333,7 @@
    attributeName="opacity"
    dur="30s"
    values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
+   keyTimes="0;.889;.891;1"
    calcMode="linear"
    repeatCount="indefinite" />
       </path>
@@ -343,7 +350,7 @@
    attributeName="opacity"
    dur="30s"
    values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
+   keyTimes="0;.849;.851;1"
    calcMode="linear"
    repeatCount="indefinite" />
       </rect>
@@ -356,7 +363,7 @@
    attributeName="opacity"
    dur="30s"
    values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
+   keyTimes="0;.809;.811;1"
    calcMode="linear"
    repeatCount="indefinite" />
       </path>
@@ -368,7 +375,7 @@
    attributeName="opacity"
    dur="30s"
    values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
+   keyTimes="0;.909;.911;1"
    calcMode="linear"
    repeatCount="indefinite" /></path><path
    style="fill:#87de87;stroke:#fde725;stroke-width:0.3;stroke-linecap:round;stroke-dasharray:0.900002, 0.900002;stroke-dashoffset:0;stroke-opacity:1"
@@ -378,7 +385,7 @@
    attributeName="opacity"
    dur="30s"
    values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
+   keyTimes="0;.759;.761;1"
    calcMode="linear"
    repeatCount="indefinite" />
       </path>
@@ -390,7 +397,7 @@
    attributeName="opacity"
    dur="30s"
    values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
+   keyTimes="0;.769;.771;1"
    calcMode="linear"
    repeatCount="indefinite" />
       </path>
@@ -422,13 +429,6 @@
    y="147.02275"
    rx="2.7602232"
    ry="2.7602232">
-        <animate
-   attributeName="opacity"
-   dur="30s"
-   values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
-   calcMode="linear"
-   repeatCount="indefinite" />
       </rect>
       <text
    xml:space="preserve"
@@ -684,6 +684,13 @@
     </g>
     <g
    id="level_2_tile_6">
+        <animate
+   attributeName="opacity"
+   dur="30s"
+   values="0;0;1;1;0;0"
+   keyTimes="0;.789;.791;.809;.811;1"
+   calcMode="linear"
+   repeatCount="indefinite" />
       <path
    id="level_2_tile_6_fill"
    clip-path="none"
@@ -693,7 +700,7 @@
    attributeName="opacity"
    dur="30s"
    values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
+   keyTimes="0;.799;.801;1"
    calcMode="linear"
    repeatCount="indefinite" />
       </path>
@@ -706,13 +713,6 @@
    y="129.43686"
    rx="2.7602232"
    ry="2.7602232">
-        <animate
-   attributeName="opacity"
-   dur="30s"
-   values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
-   calcMode="linear"
-   repeatCount="indefinite" />
       </rect>
       <text
    xml:space="preserve"
@@ -974,20 +974,26 @@
       </text>
     </g>
     <g
-   id="level_2_tile_7">
+   id="level_2_tile_7"><animate
+   attributeName="opacity"
+   dur="30s"
+   values="0;0;1;1;0;0"
+   keyTimes="0;.829;.831;.849;.859;1"
+   calcMode="linear"
+   repeatCount="indefinite" />
       <path
    id="level_2_tile_7_fill"
    clip-path="none"
    style="fill:#21918c;fill-opacity:1;stroke:none;stroke-width:0.704995;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
    d="m 133.19113,129.43708 c -0.0956,0 -0.18966,0.005 -0.28267,0.0139 -1.7e-4,2e-5 -3.5e-4,-10e-6 -5.2e-4,0 -0.18585,0.0188 -0.36607,0.056 -0.53898,0.10956 -1.6e-4,5e-5 -3.6e-4,-5e-5 -5.2e-4,0 -1.0382,0.32176 -1.81074,1.23732 -1.9234,2.35334 -2e-5,1.7e-4 2e-5,3.5e-4 0,5.2e-4 -0.009,0.0928 -0.0139,0.18727 -0.0139,0.28267 v 12.06541 c 0,0.57344 0.17322,1.10473 0.47026,1.54513 8e-5,1.2e-4 -9e-5,3.9e-4 0,5.1e-4 0.0494,0.0733 0.10257,0.14387 0.15864,0.21188 9e-5,1e-4 -8e-5,4.1e-4 0,5.1e-4 0.28078,0.34041 0.64178,0.61192 1.05472,0.786 0.0826,0.0348 0.1672,0.0657 0.25373,0.0925 0.0867,0.0269 0.17494,0.0493 0.2651,0.0677 0.09,0.0183 0.18139,0.0325 0.2744,0.0419 0.0932,0.009 0.18744,0.0139 0.28319,0.0139 h 4.00492 c 1.52917,0 2.76004,-1.23087 2.76004,-2.76004 v -12.06535 c 0,-1.52916 -1.23087,-2.76004 -2.76004,-2.76004 z">
+
         <animate
    attributeName="opacity"
    dur="30s"
    values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
+   keyTimes="0;.839;.841;1"
    calcMode="linear"
-   repeatCount="indefinite" />
-      </path>
+   repeatCount="indefinite" /></path>
       <rect
    style="fill:none;fill-opacity:1;stroke:#fde725;stroke-width:0.705;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
    id="level_2_tile_7_stroke"
@@ -997,13 +1003,6 @@
    y="129.43686"
    rx="2.7602232"
    ry="2.7602232">
-        <animate
-   attributeName="opacity"
-   dur="30s"
-   values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
-   calcMode="linear"
-   repeatCount="indefinite" />
       </rect>
       <text
    xml:space="preserve"
@@ -1046,6 +1045,13 @@
     </g>
     <g
    id="level_2_tile_8">
+        <animate
+   attributeName="opacity"
+   dur="30s"
+   values="0;0;1;1;0;0"
+   keyTimes="0;.869;.871;.889;.891;1"
+   calcMode="linear"
+   repeatCount="indefinite" />
       <path
    id="level_2_tile_8_fill"
    clip-path="none"
@@ -1055,7 +1061,7 @@
    attributeName="opacity"
    dur="30s"
    values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
+   keyTimes="0;.879;.881;1"
    calcMode="linear"
    repeatCount="indefinite" />
       </path>
@@ -1068,13 +1074,6 @@
    y="129.43686"
    rx="2.7602232"
    ry="2.7602232">
-        <animate
-   attributeName="opacity"
-   dur="30s"
-   values="0;0;1;1"
-   keyTimes="0;.95;.96;1"
-   calcMode="linear"
-   repeatCount="indefinite" />
       </rect>
       <text
    xml:space="preserve"
