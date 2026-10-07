@@ -235,8 +235,8 @@
                     <animate
    attributeName="opacity"
    dur="30s"
-   values="0;0;1;1"
-   keyTimes="0;.559;.561;1"
+   values="0;0;1;1;0;0"
+   keyTimes="0;.559;.561;.709;.711;1"
    calcMode="linear"
    repeatCount="indefinite" />
                </path>
@@ -247,8 +247,8 @@
                     <animate
    attributeName="opacity"
    dur="30s"
-   values="0;0;1;1"
-   keyTimes="0;.569;.571;1"
+   values="0;0;1;1;0;0"
+   keyTimes="0;.569;.571;.709;.711;1"
    calcMode="linear"
    repeatCount="indefinite" />
                </path>
@@ -380,8 +380,8 @@
                     <animate
    attributeName="opacity"
    dur="30s"
-   values="0;0;1;1"
-   keyTimes="0;.759;.761;1"
+   values="0;0;1;1;0;0"
+   keyTimes="0;.759;.761;.909;.911;1"
    calcMode="linear"
    repeatCount="indefinite" />
                </path>
@@ -392,8 +392,8 @@
                     <animate
    attributeName="opacity"
    dur="30s"
-   values="0;0;1;1"
-   keyTimes="0;.769;.771;1"
+   values="0;0;1;1;0;0"
+   keyTimes="0;.769;.771;.909;.911;1"
    calcMode="linear"
    repeatCount="indefinite" />
                </path>
