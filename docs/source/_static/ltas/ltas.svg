@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
-   width="90.011833mm"
-   height="53.46244mm"
-   viewBox="0 0 90.011833 53.46244"
+   width="90.000191mm"
+   height="61.237003mm"
+   viewBox="0 0 90.00019 61.237002"
    version="1.1"
    id="svg1"
    xml:space="preserve"
@@ -22,9 +22,9 @@
    inkscape:pagecheckerboard="0"
    inkscape:deskcolor="#505050"
    inkscape:document-units="mm"
-   inkscape:zoom="1.5471826"
-   inkscape:cx="34.578983"
-   inkscape:cy="118.60268"
+   inkscape:zoom="1.0940233"
+   inkscape:cx="158.58894"
+   inkscape:cy="146.7062"
    inkscape:window-width="1920"
    inkscape:window-height="1009"
    inkscape:window-x="-8"
@@ -46,7 +46,23 @@
    rx="2.7602229"
    ry="2.7602232" />
           </clipPath>
-     </defs>
+     <marker
+   style="overflow:visible"
+   id="RoundedArrow"
+   refX="4"
+   refY="0"
+   orient="auto-start-reverse"
+   inkscape:stockid="Rounded arrow"
+   markerWidth="1"
+   markerHeight="1"
+   viewBox="0 0 1 1"
+   inkscape:isstock="true"
+   inkscape:collect="always"
+   preserveAspectRatio="xMidYMid"><path
+     transform="scale(0.7)"
+     d="m -0.21114562,-4.1055728 6.42229122,3.21114561 a 1,1 90 0 1 0,1.78885438 L -0.21114562,4.1055728 A 1.236068,1.236068 31.717474 0 1 -2,3 v -6 a 1.236068,1.236068 148.28253 0 1 1.78885438,-1.1055728 z"
+     style="fill:context-stroke;fill-rule:evenodd;stroke:none"
+     id="path8" /></marker></defs>
      <g
    inkscape:label="Calque 1"
    inkscape:groupmode="layer"
@@ -106,11 +122,12 @@
    transform="translate(126.99354,180.43454)"><tspan
      x="0"
      y="0"
-     id="tspan1">1500700</tspan><animate
+     id="tspan2">1500700</tspan>
+                    <animate
    attributeName="opacity"
    dur="30s"
    values="1;1;0;0"
-   keyTimes="0;.073;.075;1"
+   keyTimes="0;.074;0.076;1"
    calcMode="linear"
    repeatCount="indefinite" /></text>
                <path
@@ -219,7 +236,7 @@
                <path
    id="level_1_tile_1_fill_full"
    style="fill:#21918c;fill-opacity:1;stroke:none;stroke-width:0.704996;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-   d="M 93.300135 147.0228 C 91.770971 147.0228 90.53958 148.25367 90.53958 149.78284 L 90.53958 161.84825 C 90.53958 163.37742 91.770971 164.60881 93.300135 164.60881 L 117.07853 164.60881 C 118.60769 164.60881 119.83857 163.37742 119.83857 161.84825 L 119.83857 149.78284 C 119.83857 148.25367 118.60769 147.0228 117.07853 147.0228 L 93.300135 147.0228 z ">
+   d="m 93.300135,147.0228 c -1.529164,0 -2.760555,1.23087 -2.760555,2.76004 v 12.06541 c 0,1.52917 1.231391,2.76056 2.760555,2.76056 h 23.778395 c 1.52916,0 2.76004,-1.23139 2.76004,-2.76056 v -12.06541 c 0,-1.52917 -1.23088,-2.76004 -2.76004,-2.76004 z">
                     <animate
    attributeName="opacity"
    dur="30s"
@@ -364,7 +381,7 @@
                <path
    id="level_1_tile_2_fill_full"
    style="fill:#90d743;fill-opacity:1;stroke:none;stroke-width:0.704995;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-   d="M 123.30399 147.0228 C 121.77832 147.0228 120.54956 148.2482 120.54395 149.7725 L 120.54395 161.85859 C 120.54955 163.3829 121.77831 164.60881 123.30399 164.60881 L 147.08238 164.60881 C 148.61155 164.60881 149.84242 163.37742 149.84242 161.84825 L 149.84242 149.78284 C 149.84242 148.25367 148.61155 147.0228 147.08238 147.0228 L 123.30399 147.0228 z ">
+   d="m 123.30399,147.0228 c -1.52567,0 -2.75443,1.2254 -2.76004,2.7497 v 12.08609 c 0.006,1.52431 1.23436,2.75022 2.76004,2.75022 h 23.77839 c 1.52917,0 2.76004,-1.23139 2.76004,-2.76056 v -12.06541 c 0,-1.52917 -1.23087,-2.76004 -2.76004,-2.76004 z">
                     <animate
    attributeName="opacity"
    dur="30s"
@@ -496,7 +513,7 @@
    id="level_1_tile_0_fill_full"
    clip-path="none"
    style="fill:#443983;fill-opacity:1;stroke:none;stroke-width:0.704995;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-   d="M 68.949166 147.0228 C 64.288521 147.0228 60.536571 148.25391 60.535726 149.78284 L 60.535726 149.78335 L 60.535726 161.84825 L 60.535726 161.84877 L 60.535726 161.8498 C 60.537421 163.37848 64.289049 164.60881 68.949166 164.60881 L 87.074675 164.60881 C 88.603838 164.60881 89.834713 163.37742 89.834713 161.84825 L 89.834713 149.78284 C 89.834713 148.25367 88.603838 147.0228 87.074675 147.0228 L 68.949166 147.0228 z ">
+   d="m 68.949166,147.0228 c -4.660645,0 -8.412595,1.23111 -8.41344,2.76004 v 5.1e-4 12.0649 5.2e-4 0.001 c 0.0017,1.52868 3.753323,2.75901 8.41344,2.75901 h 18.125509 c 1.529163,0 2.760038,-1.23139 2.760038,-2.76056 v -12.06541 c 0,-1.52917 -1.230875,-2.76004 -2.760038,-2.76004 z">
                     <animate
    attributeName="opacity"
    dur="30s"
@@ -1264,5 +1281,21 @@
    repeatCount="indefinite" />
                </text>
           </g>
-     </g>
+     <g
+   id="g1"
+   transform="translate(0.03846908,-1.2813809)"><path
+     style="fill:#063470;fill-opacity:1;stroke:#fde725;stroke-width:0.3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#RoundedArrow)"
+     d="m 64.55114,187.06914 h 81.11733"
+     id="time_arrow" /><text
+     xml:space="preserve"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans';text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:#d35f5f;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
+     x="154.12964"
+     y="416.93445"
+     id="time_text"><tspan
+       x="100.34076"
+       y="191.55391"
+       id="tspan80-8"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans';fill:#fde725;fill-opacity:1"><tspan
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans';fill:#fde725;fill-opacity:1;stroke:none"
+         id="tspan79-8">time</tspan></tspan></text></g></g>
 </svg>
