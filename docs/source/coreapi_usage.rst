@@ -450,19 +450,31 @@ The resulting figure presents the full-scale spectrogram at the top (from 0 to 7
 LTAS Data
 ^^^^^^^^^
 
-OSEkit provides the :class:`osekit.core.ltas_data.LTASData` class for computing and plotting LTAS (**L**\ ong-\ **T**\ erm **A**\ verage **S**\ pectrum).
+OSEkit provides the :class:`osekit.core.ltas_data.LTASData` class for computing and plotting long-term spectral averages.
 
-LTAS are suitable when a spectrum is computed over a very long time and that the spectrum matrix time dimension reach a really high value.
-In that case, time bins can be averaged to form a LTAS, which time resolution is lower than that of the original spectrum.
+When computing an STFT over a long audio recording, the resulting spectrum matrix can contain a very large number of time bins. ``LTASData`` reduces this temporal resolution by averaging STFT time bins while preserving the spectral information along the frequency axis.
 
-In OSEkit, LTAS are computed recursively: the user specifies a target number of time bins in the spectrum matrix, noted ``n_bins``.
+The target number of time bins is specified with the ``n_bins`` parameter. OSEkit computes the result recursively so that the full STFT matrix never needs to be materialized when it would exceed this target size.
 
-The visualization below depicts the process: the LTAS is computed with a target ``n_bins = 3000``.
-Yellow rectangles depict the audio data (the x-axis being the time axis), and the number in the lower right
-corner depicts the number of time bins in the spectrum matrix for this audio data.
-The audio is recursively split in ``n_bins`` parts (it is split in 3 in the
-representation instead of 3000 for clarity purposes) until the number of time bins in the spectrum gets below ``n_bins``.
-Then, these spectrum parts are computed (hatched rectangles) and averaged across the time axis (filled rectangles).
+The algorithm works as follows:
+
+1. Compute the number of STFT time bins that would be produced for the current audio segment.
+2. If this number is greater than ``n_bins``, split the segment into ``n_bins`` equal-duration sub-segments and process each sub-segment recursively.
+3. Otherwise, compute the STFT of the segment and average it along the time axis, producing a single averaged spectrum.
+4. Use the averaged spectra returned by the recursive calls as the time bins of the parent segment.
+
+The illustration below shows the process for ``n_bins = 3000``. Yellow rectangles represent audio segments, and the number in the lower-right corner indicates the number of STFT time bins that would be produced for the corresponding segment.
+For readability, the illustration shows three sub-segments instead of the ``3000`` sub-segments used in the example.
+
+* The complete recording would produce ``1 500 700`` STFT time bins, which exceeds ``n_bins``.
+* The recording is therefore split into ``3000`` equal-duration segments.
+* The first segment would still produce ``4 137`` STFT time bins, so it is split again.
+* One of its sub-segments produces only ``60`` STFT time bins. Its STFT can therefore be computed directly.
+* The ``60`` time bins are averaged along the time axis, producing a single spectrum.
+* This spectrum is returned to the parent level and becomes one time bin of the resulting LTAS.
+* The process continues until all ``3000`` top-level segments have produced their averaged spectra.
+
+This recursive approach limits the number of STFT time bins held in memory at each computation step while allowing the computation to be distributed across independent audio segments.
 
 .. image:: _static/ltas/ltas.svg
    :width: 300px
