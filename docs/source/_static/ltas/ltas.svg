@@ -22,9 +22,9 @@
    inkscape:pagecheckerboard="0"
    inkscape:deskcolor="#505050"
    inkscape:document-units="mm"
-   inkscape:zoom="1.0940233"
-   inkscape:cx="-71.753499"
-   inkscape:cy="90.034645"
+   inkscape:zoom="1.5471826"
+   inkscape:cx="34.578983"
+   inkscape:cy="118.60268"
    inkscape:window-width="1920"
    inkscape:window-height="1009"
    inkscape:window-x="-8"
@@ -99,20 +99,20 @@
                </path>
                <text
    xml:space="preserve"
-   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;white-space:pre-wrap;shape-inside:url(#rect64);display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
+   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;white-space:pre-wrap;shape-inside:url(#rect64);display:inline;fill:#bc3754;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
    x="59.741997"
    y="225.38052"
    id="level_0_text_0_0"
    transform="translate(126.99354,180.43454)"><tspan
      x="0"
      y="0"
-     id="tspan2">1054950</tspan><animate
-        attributeName="opacity"
-        dur="30s"
-        values="1;1;0;0"
-        keyTimes="0;.074;.076;1"
-        calcMode="linear"
-        repeatCount="indefinite" /></text>
+     id="tspan1">1054950</tspan><animate
+   attributeName="opacity"
+   dur="30s"
+   values="1;1;0;0"
+   keyTimes="0;.073;.075;1"
+   calcMode="linear"
+   repeatCount="indefinite" /></text>
                <path
    style="fill:#87de87;stroke:#fde725;stroke-width:0.3;stroke-linecap:round;stroke-dasharray:0.900001, 0.900001;stroke-dashoffset:0;stroke-opacity:1"
    d="m 90.183483,164.4068 v 17.98913"
@@ -254,7 +254,7 @@
                </path>
                <text
    xml:space="preserve"
-   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
+   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#bc3754;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
    x="177.56522"
    y="388.22937"
    id="level_1_tile_1_text_0">
@@ -262,7 +262,7 @@
    x="117.82321"
    y="162.84886"
    id="tspan42"
-   style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">4000</tspan>
+   style="text-align:end;text-anchor:end;fill:#bc3754;fill-opacity:1;stroke:none">4000</tspan>
                     <animate
    attributeName="opacity"
    dur="30s"
@@ -399,7 +399,7 @@
                </path>
                <text
    xml:space="preserve"
-   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
+   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#bc3754;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
    x="207.56915"
    y="388.22937"
    id="level_1_tile_2_text_0">
@@ -407,7 +407,7 @@
    x="147.82715"
    y="162.84886"
    id="tspan51"
-   style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">4000</tspan>
+   style="text-align:end;text-anchor:end;fill:#bc3754;fill-opacity:1;stroke:none">4000</tspan>
                     <animate
    attributeName="opacity"
    dur="30s"
@@ -531,7 +531,7 @@
                </path>
                <text
    xml:space="preserve"
-   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
+   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#bc3754;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
    x="147.56126"
    y="388.22937"
    id="level_1_tile_0_text_0">
@@ -539,7 +539,7 @@
    x="87.819275"
    y="162.84886"
    id="tspan18"
-   style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">4000</tspan>
+   style="text-align:end;text-anchor:end;fill:#bc3754;fill-opacity:1;stroke:none">4000</tspan>
                     <animate
    attributeName="opacity"
    dur="30s"
@@ -586,7 +586,7 @@
                </text>
                <text
    xml:space="preserve"
-   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
+   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fcffa4;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
    x="147.41708"
    y="388.22937"
    id="level_1_tile_0_text_2">
@@ -594,7 +594,7 @@
    x="87.675095"
    y="162.84886"
    id="tspan71-6"
-   style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
+   style="text-align:end;text-anchor:end;fill:#fcffa4;fill-opacity:1;stroke:none">1</tspan>
                     <animate
    attributeName="opacity"
    dur="30s"
@@ -657,7 +657,7 @@
                </text>
                <text
    xml:space="preserve"
-   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
+   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fcffa4;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
    x="157.79161"
    y="370.29083"
    id="level_2_tile_3_text_1">
@@ -665,7 +665,7 @@
    x="98.049622"
    y="144.91029"
    id="tspan73"
-   style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
+   style="text-align:end;text-anchor:end;fill:#fcffa4;fill-opacity:1;stroke:none">1</tspan>
                     <animate
    attributeName="opacity"
    dur="30s"
@@ -728,7 +728,7 @@
                </text>
                <text
    xml:space="preserve"
-   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
+   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fcffa4;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
    x="187.79555"
    y="370.29083"
    id="level_2_tile_6_text_1">
@@ -736,7 +736,7 @@
    x="128.05356"
    y="144.91029"
    id="tspan74"
-   style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
+   style="text-align:end;text-anchor:end;fill:#fcffa4;fill-opacity:1;stroke:none">1</tspan>
                     <animate
    attributeName="opacity"
    dur="30s"
@@ -806,7 +806,7 @@
                </text>
                <text
    xml:space="preserve"
-   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
+   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fcffa4;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
    x="137.67451"
    y="370.2908"
    id="level_2_tile_1_text_1">
@@ -814,7 +814,7 @@
    x="77.932526"
    y="144.91029"
    id="tspan75"
-   style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
+   style="text-align:end;text-anchor:end;fill:#fcffa4;fill-opacity:1;stroke:none">1</tspan>
                     <animate
    attributeName="opacity"
    dur="30s"
@@ -877,7 +877,7 @@
                </text>
                <text
    xml:space="preserve"
-   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
+   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fcffa4;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
    x="167.67847"
    y="370.2908"
    id="level_2_tile_4_text_1">
@@ -885,7 +885,7 @@
    x="107.93647"
    y="144.91029"
    id="tspan76"
-   style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
+   style="text-align:end;text-anchor:end;fill:#fcffa4;fill-opacity:1;stroke:none">1</tspan>
                     <animate
    attributeName="opacity"
    dur="30s"
@@ -1019,7 +1019,7 @@
                </text>
                <text
    xml:space="preserve"
-   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
+   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fcffa4;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
    x="197.68242"
    y="370.29083"
    id="level_2_tile_7_text_1">
@@ -1027,7 +1027,7 @@
    x="137.94043"
    y="144.91029"
    id="tspan78"
-   style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
+   style="text-align:end;text-anchor:end;fill:#fcffa4;fill-opacity:1;stroke:none">1</tspan>
                     <animate
    attributeName="opacity"
    dur="30s"
@@ -1090,7 +1090,7 @@
                </text>
                <text
    xml:space="preserve"
-   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
+   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fcffa4;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
    x="207.56926"
    y="370.29083"
    id="level_2_tile_8_text_1">
@@ -1098,7 +1098,7 @@
    x="147.82726"
    y="144.91029"
    id="tspan79"
-   style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
+   style="text-align:end;text-anchor:end;fill:#fcffa4;fill-opacity:1;stroke:none">1</tspan>
                     <animate
    attributeName="opacity"
    dur="30s"
@@ -1168,7 +1168,7 @@
                </text>
                <text
    xml:space="preserve"
-   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
+   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fcffa4;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
    x="147.56136"
    y="370.29083"
    id="level_2_tile_2_text_1">
@@ -1176,7 +1176,7 @@
    x="87.819366"
    y="144.91029"
    id="tspan80"
-   style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
+   style="text-align:end;text-anchor:end;fill:#fcffa4;fill-opacity:1;stroke:none">1</tspan>
                     <animate
    attributeName="opacity"
    dur="30s"
@@ -1246,7 +1246,7 @@
                </text>
                <text
    xml:space="preserve"
-   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fde725;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
+   style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.7625px;font-family:'Canva Sans';-inkscape-font-specification:'Canva Sans Bold';text-align:end;writing-mode:lr-tb;direction:ltr;text-anchor:end;white-space:pre-wrap;display:inline;fill:#fcffa4;fill-opacity:1;stroke:none;stroke-width:0.705001;stroke-linecap:round;stroke-dasharray:none"
    x="127.78767"
    y="370.2908"
    id="level_2_tile_0_text_1">
@@ -1254,7 +1254,7 @@
    x="68.045685"
    y="144.91029"
    id="tspan81"
-   style="text-align:end;text-anchor:end;fill:#fde725;fill-opacity:1;stroke:none">1</tspan>
+   style="text-align:end;text-anchor:end;fill:#fcffa4;fill-opacity:1;stroke:none">1</tspan>
                     <animate
    attributeName="opacity"
    dur="30s"
