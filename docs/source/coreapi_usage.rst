@@ -464,7 +464,7 @@ The audio is recursively split in ``n_bins`` parts (it is split in 3 in the
 representation instead of 3000 for clarity purposes) until the number of time bins in the spectrum gets below ``n_bins``.
 Then, these spectrum parts are computed (hatched rectangles) and averaged across the time axis (filled rectangles).
 
-.. image:: _static/ltas/ltas.gif
+.. image:: _static/ltas/ltas.svg
    :width: 300px
    :align: center
 

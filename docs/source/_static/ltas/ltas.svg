@@ -106,7 +106,7 @@
    transform="translate(126.99354,180.43454)"><tspan
      x="0"
      y="0"
-     id="tspan1">1054950</tspan><animate
+     id="tspan1">1500700</tspan><animate
    attributeName="opacity"
    dur="30s"
    values="1;1;0;0"
@@ -262,7 +262,7 @@
    x="117.82321"
    y="162.84886"
    id="tspan42"
-   style="text-align:end;text-anchor:end;fill:#bc3754;fill-opacity:1;stroke:none">4000</tspan>
+   style="text-align:end;text-anchor:end;fill:#bc3754;fill-opacity:1;stroke:none">4137</tspan>
                     <animate
    attributeName="opacity"
    dur="30s"
@@ -407,7 +407,7 @@
    x="147.82715"
    y="162.84886"
    id="tspan51"
-   style="text-align:end;text-anchor:end;fill:#bc3754;fill-opacity:1;stroke:none">4000</tspan>
+   style="text-align:end;text-anchor:end;fill:#bc3754;fill-opacity:1;stroke:none">4137</tspan>
                     <animate
    attributeName="opacity"
    dur="30s"
@@ -539,7 +539,7 @@
    x="87.819275"
    y="162.84886"
    id="tspan18"
-   style="text-align:end;text-anchor:end;fill:#bc3754;fill-opacity:1;stroke:none">4000</tspan>
+   style="text-align:end;text-anchor:end;fill:#bc3754;fill-opacity:1;stroke:none">4137</tspan>
                     <animate
    attributeName="opacity"
    dur="30s"
