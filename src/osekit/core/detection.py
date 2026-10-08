@@ -12,6 +12,7 @@ from matplotlib.text import Text
 from matplotlib.transforms import TransformedBbox
 from pandas import Timedelta, Timestamp
 
+from osekit.config import global_logging_context as glc
 from osekit.core.event import Event
 from osekit.utils.core import is_empty_dataclass
 
@@ -765,11 +766,19 @@ class Detection(Event):
             for record in records
         ]
         parsed_records = []
+        failed_records = []
         for idx, record in enumerate(records):
             try:
                 parsed_records.append(cls.from_dict(record))
             except TypeError:  # Most probably a weak comment on the spectrogram
-                pass
+                failed_records.append(idx)
+
+        if failed_records:
+            glc.logger.warning(
+                f"The following line(s) couldn't be parsed as detections: "
+                f"{failed_records}",
+            )
+
         return parsed_records
 
     @classmethod
