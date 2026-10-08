@@ -3,6 +3,7 @@ name: documentation
 on:
   push:
     branches: [ main ]
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -35,8 +36,12 @@ jobs:
       run: uv run sphinx-build docs/source _site
 
     - name: Upload Pages artifact
+      if: github.event_name != 'pull_request'
       uses: actions/upload-pages-artifact@v5
+      with:
+        path: _site
 
     - name: Deploy to GitHub Pages
       id: deployment
+      if: github.event.event_name != 'pull_request'
       uses: actions/deploy-pages@v5
