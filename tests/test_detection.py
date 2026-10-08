@@ -1,9 +1,11 @@
+import logging
 from contextlib import AbstractContextManager, nullcontext
 from pathlib import Path
 from typing import Any, Literal
 
 import numpy as np
 import pytest
+from _pytest.logging import LogCaptureFixture
 from matplotlib.axes import Axes
 from matplotlib.patches import Rectangle
 from pandas import DataFrame, Timedelta, Timestamp
@@ -235,10 +237,14 @@ def test_confidence_indicator_from_relative_level_string(
         assert ci.maximum_level == e.maximum_level
 
 
-def test_detections_from_csv() -> None:
-    detections = Detection.from_csv(
-        csv=Path(__file__).parent / "_static" / "aplose_result.csv",
-    )
+def test_detections_from_csv(caplog: LogCaptureFixture) -> None:
+    with caplog.at_level(logging.WARNING):
+        detections = Detection.from_csv(
+            csv=Path(__file__).parent / "_static" / "aplose_result.csv",
+        )
+
+    # Failed parsed line should be logged (weak comment at idx 10)
+    assert "[10]" in caplog.text
 
     minimal_detection = next(d for d in detections if d.label is None)
     detections = [d for d in detections if d is not minimal_detection]
