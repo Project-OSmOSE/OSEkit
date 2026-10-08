@@ -764,7 +764,13 @@ class Detection(Event):
             }
             for record in records
         ]
-        return [cls.from_dict(record) for record in records]
+        parsed_records = []
+        for idx, record in enumerate(records):
+            try:
+                parsed_records.append(cls.from_dict(record))
+            except TypeError:  # Most probably a weak comment on the spectrogram
+                pass
+        return parsed_records
 
     @classmethod
     def from_csv(cls, csv: Path | list[Path], **kwargs: Any) -> list[Self]:
