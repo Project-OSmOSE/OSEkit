@@ -10,6 +10,7 @@ from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming, hann
 
 import osekit.core
+import osekit.core.audio_file
 from osekit.audio_backend.audio_file_manager import AudioFileManager
 from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
@@ -18,12 +19,13 @@ from osekit.config import (
 )
 from osekit.core.audio_data import AudioData
 from osekit.core.audio_dataset import AudioDataset
-import osekit.core.audio_file
 from osekit.core.audio_file import AudioFile
 from osekit.core.frequency_scale import Scale, ScalePart
 from osekit.core.instrument import Instrument
 from osekit.core.json_serializer import (
+    _anchor,
     absolute_to_relative,
+    path_anchor,
     relative_to_absolute,
     set_path_reference,
 )
@@ -31,11 +33,12 @@ from osekit.core.spectro_data import SpectroData
 from osekit.core.spectro_dataset import SpectroDataset
 from osekit.core.spectro_file import SpectroFile
 from osekit.utils.audio import Normalization
-from tests.helpers.audio import MockedAudioFile, MockedAudioData
+from tests.helpers.audio import MockedAudioData, MockedAudioFile
 
 
 def test_audio_file_from_dict_depends_on_available_info(
-    audio_files: tuple[list[AudioFile], Any], monkeypatch: pytest.MonkeyPatch
+    audio_files: tuple[list[AudioFile], Any],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     audio_files, _ = audio_files
     af = audio_files[0]
@@ -70,7 +73,8 @@ def test_audio_file_from_dict_depends_on_available_info(
 
 
 def test_audio_file_to_dict_should_contain_afm_info(
-    audio_files: tuple[list[AudioFile], Any], monkeypatch: pytest.MonkeyPatch
+    audio_files: tuple[list[AudioFile], Any],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     audio_files, _ = audio_files
     af = audio_files[0]
@@ -242,7 +246,7 @@ def test_audio_data_channels_serialization(monkeypatch: pytest.MonkeyPatch) -> N
             [1, 2, 3],
             [1, 2, 3],
             [1, 2, 3],
-        ]
+        ],
     )
 
     af = MockedAudioFile(
@@ -767,7 +771,8 @@ def test_spectro_data_serialization_channel() -> None:
     ad.channels = [0, 2]
 
     sd = SpectroData.from_audio_data(
-        ad, fft=ShortTimeFFT(win=hamming(48), hop=48, fs=100)
+        ad,
+        fft=ShortTimeFFT(win=hamming(48), hop=48, fs=100),
     )
     sd.audio_channel = 2
 
@@ -1225,3 +1230,15 @@ def test_relative_paths_serialization(tmp_path: Path) -> None:
         reference="absolute",
     )
     assert dict_copy == dictionary
+
+
+def test_path_anchor() -> None:
+    assert _anchor.get() is None  # Default
+
+    @path_anchor(anchor=Path(r"cool/anchor"))
+    def test_anchor() -> None:
+        assert _anchor.get() == Path(r"cool/anchor")
+
+    test_anchor()
+
+    assert _anchor.get() is None
