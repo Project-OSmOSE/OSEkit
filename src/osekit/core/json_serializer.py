@@ -2,10 +2,35 @@
 
 import json
 import os
+from collections.abc import Generator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from pathlib import Path, PurePosixPath, PureWindowsPath  # noqa: F401
 from typing import Literal
 
 from osekit.utils.path import is_absolute
+
+_anchor: ContextVar[Path | None] = ContextVar("anchor_path", default=None)
+
+
+@contextmanager
+def path_anchor(anchor: Path) -> Generator[None, None, None]:
+    """Set the anchor for serializing paths.
+
+    All paths that are within ``anchor`` will be serialized as relative paths.
+    All paths that are outside ``anchor`` will be serialized as absolute paths.
+
+    Parameters
+    ----------
+    anchor: Path
+        Path of the anchor.
+
+    """
+    token = _anchor.set(anchor)
+    try:
+        yield
+    finally:
+        _anchor.reset(token)
 
 
 def absolute_to_relative(
