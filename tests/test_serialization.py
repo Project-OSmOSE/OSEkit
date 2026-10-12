@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from pathlib import Path, PureWindowsPath
 from typing import Any
 
@@ -1343,3 +1344,27 @@ def test_deserialize_relative_path_walk_up(tmp_path: Path) -> None:
     result = _deserialize_path(value=value, root_path=root)
 
     assert result == tmp_path / "baston/saphir.wav"
+
+
+@pytest.mark.parametrize("use_anchor", [True, False])
+def test_serialize_deserialize_round_trip(tmp_path: Path, use_anchor: bool) -> None:
+    project = tmp_path / "project"
+    remote = tmp_path / "remote"  # Emulates another partition
+    root = project / "processed" / "jsons"
+
+    inside = project / "data" / "audio" / "a1.wav"
+    outside = remote / "audio" / "b.wav"
+
+    context = path_anchor(anchor=project) if use_anchor else contextlib.nullcontext()
+
+    with context:
+        serialized_in = _serialize_path(value=inside, root_path=root)
+        serialized_out = _serialize_path(value=outside, root_path=root)
+
+    assert serialized_in == "../../data/audio/a1.wav"
+    assert serialized_out == (
+        outside.as_posix() if use_anchor else "../../../remote/audio/b.wav"
+    )
+
+    assert _deserialize_path(value=serialized_in, root_path=root) == inside.resolve()
+    assert _deserialize_path(value=serialized_out, root_path=root) == outside.resolve()
