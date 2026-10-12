@@ -64,6 +64,35 @@ def _serialize_path(value: Path, root_path: Path) -> str:
         return value.as_posix()
 
 
+def _deserialize_path(value: str, root_path: Path | None = None) -> Path:
+    """Deserialize a string into a path.
+
+    Is the path is not absolute, it is considered to be relative to ``root_path``.
+
+    Parameters
+    ----------
+    value: str
+        The string representation of the path to deserialize.
+    root_path: Path|None
+        The path ``value`` is relative to, if ``value`` is not absolute.
+
+    Returns
+    -------
+    Path
+        The deserialized path corresponding to ``value``.
+
+    """
+    if is_absolute(path=value):
+        return Path(value)
+    if root_path is None:
+        msg = (
+            f"{value} is not an absolute serialized path.\n"
+            f"Please provide a Path as root_path."
+        )
+        raise ValueError(msg)
+    return (root_path / value).resolve()
+
+
 def absolute_to_relative(
     target_path: os.PathLike | str,
     root_path: os.PathLike | str,

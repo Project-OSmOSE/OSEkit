@@ -24,6 +24,7 @@ from osekit.core.frequency_scale import Scale, ScalePart
 from osekit.core.instrument import Instrument
 from osekit.core.json_serializer import (
     _anchor,
+    _deserialize_path,
     _serialize_path,
     absolute_to_relative,
     path_anchor,
@@ -1315,3 +1316,30 @@ def test_serialize_path_outside_anchor(tmp_path: Path) -> None:
 
     with path_anchor(anchor=anchor):
         assert _serialize_path(value=value, root_path=root_path) == expected
+
+
+def test_deserialize_absolute_path_bypasses_root(tmp_path: Path) -> None:
+    value = tmp_path / "baston" / "saphir.wav"
+    root = tmp_path / "fun" / "cool"
+
+    result = _deserialize_path(value=value.as_posix(), root_path=root)
+
+    assert result == value
+
+
+def test_deserialize_relative_path(tmp_path: Path) -> None:
+    value = "baston/saphir.wav"
+    root = tmp_path / "fun"
+
+    result = _deserialize_path(value=value, root_path=root)
+
+    assert result == tmp_path / "fun" / "baston" / "saphir.wav"
+
+
+def test_deserialize_relative_path_walk_up(tmp_path: Path) -> None:
+    value = "../../baston/saphir.wav"
+    root = tmp_path / "wilde" / "jagd"
+
+    result = _deserialize_path(value=value, root_path=root)
+
+    assert result == tmp_path / "baston/saphir.wav"
