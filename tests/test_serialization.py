@@ -1271,3 +1271,27 @@ def test_serialize_without_anchor_relative(
     value, root = (tmp_path / relpath for relpath in (value, root))
 
     assert _serialize_path(value=value, root_path=root) == expected
+
+
+def test_serialize_without_anchor_absolute(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def patch_relpath(*args, **kwargs) -> None:
+        """Patch relpatch to raise a ``ValueError``.
+
+        This simulates an error when e.g. trying to express a path relative
+        to a ``root_path`` in another partition."""
+        raise ValueError
+
+    monkeypatch.setattr("osekit.core.json_serializer.os.path.relpath", patch_relpath)
+
+    value = tmp_path / "fun" / "top.wav"
+
+    # Not important as it will raise in patch_relpath whatever root_path is
+    root_path = Path(r"cool")
+
+    # Absolute path since value can't be expressed as relative to root_path
+    expected = value.as_posix()
+
+    assert _serialize_path(value=value, root_path=root_path) == expected
