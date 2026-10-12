@@ -1295,3 +1295,23 @@ def test_serialize_without_anchor_absolute(
     expected = value.as_posix()
 
     assert _serialize_path(value=value, root_path=root_path) == expected
+
+
+def test_serialize_path_within_anchor(tmp_path: Path) -> None:
+    value = tmp_path / "fun" / "top.wav"
+    anchor = tmp_path
+    root_path = tmp_path / "fun"
+    expected = "top.wav"
+
+    with path_anchor(anchor=anchor):
+        assert _serialize_path(value=value, root_path=root_path) == expected
+
+
+def test_serialize_path_outside_anchor(tmp_path: Path) -> None:
+    value = tmp_path / "fun" / "top.wav"
+    anchor = tmp_path / "cool"
+    root_path = tmp_path / "cool" / "fun"
+    expected = value.as_posix()  # Absolute because we're outside the anchor
+
+    with path_anchor(anchor=anchor):
+        assert _serialize_path(value=value, root_path=root_path) == expected
