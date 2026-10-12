@@ -24,6 +24,7 @@ from osekit.core.frequency_scale import Scale, ScalePart
 from osekit.core.instrument import Instrument
 from osekit.core.json_serializer import (
     _anchor,
+    _serialize_path,
     absolute_to_relative,
     path_anchor,
     relative_to_absolute,
@@ -1242,3 +1243,31 @@ def test_path_anchor() -> None:
     test_anchor()
 
     assert _anchor.get() is None
+
+
+@pytest.mark.parametrize(
+    ("value", "root", "expected"),
+    [
+        pytest.param(
+            "cool/fun/top.wav",
+            "cool",
+            "fun/top.wav",
+            id="value_is_relative_to_root",
+        ),
+        pytest.param(
+            "cool/fun/top.wav",
+            "cool/jazz",
+            "../fun/top.wav",
+            id="value_requires_walk_up",
+        ),
+    ],
+)
+def test_serialize_without_anchor_relative(
+    tmp_path: Path,
+    value: str,
+    root: str,
+    expected: str,
+) -> None:
+    value, root = (tmp_path / relpath for relpath in (value, root))
+
+    assert _serialize_path(value=value, root_path=root) == expected

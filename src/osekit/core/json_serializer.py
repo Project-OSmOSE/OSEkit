@@ -33,6 +33,37 @@ def path_anchor(anchor: Path) -> Generator[None, None, None]:
         _anchor.reset(token)
 
 
+def _serialize_path(value: Path, root_path: Path) -> str:
+    """Serialize a path into a string.
+
+    If the path is within the ``_anchor`` path, it will be serialized as relative
+    to ``root_path`` (provided this is possible).
+    Else, it will be serialized with its absolute path.
+
+    Parameters
+    ----------
+    value: Path
+        Path to serialize.
+    root_path: Path
+        Root path according to which paths are serialized as relative.
+
+    Returns
+    -------
+    str:
+        The serialized path.
+
+    """
+    anchor = _anchor.get()
+    if anchor is not None and not value.is_relative_to(anchor):
+        # Path is outside the project: we store it as an absolute path.
+        return value.as_posix()
+    try:
+        return Path(os.path.relpath(path=value, start=root_path)).as_posix()
+    except ValueError:
+        # Value is not expressible as relative to root
+        return value.as_posix()
+
+
 def absolute_to_relative(
     target_path: os.PathLike | str,
     root_path: os.PathLike | str,
