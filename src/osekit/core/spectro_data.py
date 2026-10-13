@@ -50,7 +50,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         self,
         items: list[SpectroItem] | None = None,
         audio_data: AudioData | None = None,
-        audio_channel: int = 0,
+        audio_channel: int | None = None,
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         name: str | None = None,
@@ -93,7 +93,9 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         """
         super().__init__(items=items, begin=begin, end=end, name=name)
         self.audio_data = audio_data
-        self.audio_channel = audio_channel
+        self.audio_channel = audio_channel or (
+            self.audio_data.channels[0] if self.audio_data else 0
+        )
         self.fft = fft
         self._sx_dtype = complex
         self._db_ref = db_ref
@@ -239,6 +241,20 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             return Timedelta(0)
         return self.audio_data.populated_duration
 
+    def get_audio_data_value(self) -> np.ndarray:
+        """Return the value from the targeted channel of the audio data.
+
+        Returns
+        -------
+        np.ndarray:
+            AudioData value.
+
+        """
+        return self.audio_data.get_value_calibrated()[
+            :,
+            self.audio_data.channels.index(self.audio_channel),
+        ]
+
     def get_value(self) -> np.ndarray:
         """Return the Sx spectrum of the spectrogram.
 
@@ -251,10 +267,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
             raise ValueError(msg)
 
         sx = self.fft.stft(
-            x=self.audio_data.get_value_calibrated()[
-                :,
-                self.audio_data.channels.index(self.audio_channel),
-            ],
+            x=self.get_audio_data_value(),
             padding="zeros",
         )
 
@@ -327,16 +340,11 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
 
         """
         window = self.fft.win
-        noverlap = self.fft.hop
-        if noverlap == window.shape[0]:
-            noverlap //= 2
+        noverlap = window.shape[0] - self.fft.hop
         nfft = self.fft.mfft
 
         _, sx = welch(
-            self.audio_data.get_value_calibrated()[
-                :,
-                0,
-            ],  # Only considers the 1rst channel
+            x=self.get_audio_data_value(),
             fs=self.audio_data.sample_rate,
             window=window,
             nperseg=nperseg,

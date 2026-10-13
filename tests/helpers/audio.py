@@ -32,7 +32,7 @@ class MockedAudioFile(AudioFile):
         self.begin = kwargs.pop("begin")
         self.__dict__.update(kwargs)
         self.end = self.begin + Timedelta(
-            seconds=mocked_value.shape[0] / self.sample_rate
+            seconds=mocked_value.shape[0] / self.sample_rate,
         )
         self.pointer = 0
 
@@ -64,6 +64,9 @@ class MockedAudioData(AudioData):
             "begin": Timestamp("2000-01-01 00:00:00"),
             "end": Timestamp("2000-01-01 00:00:01"),
             "sample_rate": 48000,
+            "channels": [0]
+            if np.ndim(mocked_value) == 1
+            else list(range(mocked_value.shape[1])),
         }
         for key, value in defaults.items():
             if key not in kwargs:
@@ -83,4 +86,12 @@ class MockedAudioData(AudioData):
         return len(self.mocked_value)
 
     def get_raw_value(self) -> np.ndarray:
-        return self.mocked_value
+        return self.mocked_value[:, self.channels]
+
+    @property
+    def channels(self) -> list[int]:
+        return self._channels
+
+    @channels.setter
+    def channels(self, value: list[int]) -> None:
+        self._channels = value
