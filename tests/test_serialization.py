@@ -28,6 +28,7 @@ from osekit.core.json_serializer import (
     _deserialize_path,
     _serialize_path,
     absolute_to_relative,
+    deserialize_paths,
     path_anchor,
     relative_to_absolute,
     serialize_paths,
@@ -1415,3 +1416,32 @@ def test_serialize_dictionary_paths(tmp_path: Path, use_anchor: bool) -> None:
             root_path=root_path,
         )
         assert input_copy == serialized
+
+
+def test_dictionary_paths_deserialization(tmp_path: Path) -> None:
+    input_dict = {
+        "path": r"C:/windows_like/absolute_path",
+        "folder": r"/posix/absolute_path",
+        "json": r"relative/path",
+        "not_a_path": 16,
+        "nested_dictionary": {
+            "path": r"relative/path",
+        },
+    }
+
+    deserialized_dict = {
+        "path": Path(r"C:/windows_like/absolute_path"),
+        "folder": Path(r"/posix/absolute_path"),
+        "json": tmp_path / "root_folder/relative/path",
+        "not_a_path": 16,
+        "nested_dictionary": {
+            "path": tmp_path / "root_folder/relative/path",
+        },
+    }
+
+    deserialize_paths(
+        data=input_dict,
+        root_path=tmp_path / "root_folder",
+    )
+
+    assert input_dict == deserialized_dict
