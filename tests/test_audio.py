@@ -62,6 +62,22 @@ def test_mocked_audio_data() -> None:
     )
 
 
+def test_multichannel_mocked_audio_data() -> None:
+    mocked_value = np.array([[1.0, 2.0, 3.0] for _ in range(10)])
+
+    audio_data = MockedAudioData(
+        mocked_value=mocked_value,
+    )
+
+    assert audio_data.shape == mocked_value.shape
+    assert audio_data.channels == list(range(mocked_value.shape[1]))
+
+    audio_data.channels = [0, 2]
+
+    assert audio_data.shape[1] == 2
+    assert np.array_equal(audio_data.get_value(), [[1.0, 3.0] for _ in range(10)])
+
+
 def test_mocked_audio_file() -> None:
     mocked_value_mono = np.array([1.0, 2.0, 3.0])
     mocked_value_stereo = np.array([[1, 1], [2, 2], [3, 3]])
@@ -322,7 +338,7 @@ def test_audio_file_stream_is_always_2d(
     assert af.stream(1024).shape == expected_shape
 
 
-def test_multitchannel_audio_data() -> None:
+def test_multichannel_audio_data_default_channels() -> None:
     af_data = np.array([[1, 2, 3] for _ in range(10)])
 
     af = MockedAudioFile(mocked_value=af_data, sample_rate=10)
@@ -333,9 +349,102 @@ def test_multitchannel_audio_data() -> None:
     assert ad.channels == [0, 1, 2]
     assert np.array_equal(ad.get_value(), af_data)
 
+
+def test_multichannel_audio_data_targeted_channels() -> None:
+    af_data = np.array([[1, 2, 3] for _ in range(10)])
+    af = MockedAudioFile(mocked_value=af_data, sample_rate=10)
+    ad: AudioData = AudioData.from_files([af])
+
     ad.channels = [1, 2]
     assert ad.nb_channels == 2
     assert np.array_equal(ad.get_value(), np.array([[2, 3] for _ in range(10)]))
+
+
+def test_multichannel_audio_empty_item() -> None:
+    af_data = np.array([[1, 2, 3] for _ in range(10)])
+    af = MockedAudioFile(mocked_value=af_data, sample_rate=10)
+    ad: AudioData = AudioData.from_files(
+        files=[af],
+        begin=af.begin,
+        end=af.end
+        + Timedelta(
+            seconds=10 / af.sample_rate,
+        ),  # Empty item with 10 samples at the end
+    )
+
+    assert len(ad.items) == 2
+    assert not ad.items[0].is_empty
+    assert ad.items[1].is_empty
+
+    vs = ad.get_value()
+    assert np.array_equal(vs[:10, :], af_data)
+    assert np.array_equal(vs[-10:, :], np.zeros((10, 3)))
+
+
+def test_multichannel_audio_resample(monkeypatch: pytest.MonkeyPatch) -> None:
+    file = MockedAudioFile(
+        mocked_value=np.array([[0.1, 0.2, 0.3] for _ in range(200)]),
+        sample_rate=200,
+    )
+
+    ad = AudioData.from_files([file], sample_rate=100)
+    ad.channels = [0, 2]
+
+    vs = ad.get_value()
+
+    assert vs.shape == (100, 2)
+
+
+@pytest.mark.parametrize(
+    ("audio_data_channels", "audio_item_channels", "expected_mapping"),
+    [
+        pytest.param(
+            [0],
+            [0],
+            [0],
+            id="mono_audio_data_and_item",
+        ),
+        pytest.param(
+            [0, 1],
+            [1],
+            [1],
+            id="mono_item_stereo_data",
+        ),
+        pytest.param(
+            [2, 3],
+            [2],
+            [0],
+            id="mono_item_with_data_targeting_higher_than_channel_0",
+        ),
+        pytest.param(
+            [2, 3, 6, 7],
+            [3, 6],
+            [1, 2],
+            id="mono_item_with_data_targeting_higher_than_channel_0",
+        ),
+    ],
+)
+def test_audio_data_get_item_channel_mapping(
+    audio_data_channels: list[int],
+    audio_item_channels: list[int],
+    expected_mapping: list[int],
+) -> None:
+    # Mock a file with sufficient number of channels
+    file_channels = (
+        max(channel for channel in audio_data_channels + audio_item_channels) + 1
+    )
+    file = MockedAudioFile(
+        mocked_value=np.ones(shape=(10, file_channels)),
+    )
+
+    # Mock an item with the requested audio_item_channels
+    item = AudioItem(file=file)
+    item.channels = audio_item_channels
+
+    # Mock an audio data with the requested audio_data_channels
+    ad: AudioData = AudioData.from_files(files=[file], channels=audio_data_channels)
+
+    assert np.array_equal(ad._get_item_channel_mapping(item=item), expected_mapping)
 
 
 @pytest.mark.parametrize(
