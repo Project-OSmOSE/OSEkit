@@ -2,15 +2,17 @@
 
 import json
 import os
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from pathlib import Path, PurePosixPath, PureWindowsPath  # noqa: F401
-from typing import Literal
+from typing import Any, Literal
 
 from osekit.utils.path import is_absolute
 
 _anchor: ContextVar[Path | None] = ContextVar("anchor_path", default=None)
+
+_PATH_KEYS = {"path", "folder", "json"}
 
 
 @contextmanager
@@ -161,6 +163,83 @@ def relative_to_absolute(
             ),
         )
     return Path(root_path / target_path).resolve()
+
+
+def serialize_paths(
+    data: dict[str, Any],
+    root_path: Path,
+) -> None:
+    """Serialize all paths in ``data``.
+
+    ``data`` is edited in-place.
+
+    Parameters
+    ----------
+    data: dict[str,Any]
+        Input dictionary.
+        Will be edited in-place.
+    root_path: Path
+        Path that serves as root for relative paths.
+
+    """
+    _transform_paths(
+        data=data,
+        root_path=root_path,
+        transform=_serialize_path,
+    )
+
+
+def deserialize_paths(
+    data: dict[str, Any],
+    root_path: Path,
+) -> None:
+    """Deserialize all paths in ``data`` to ``Path`` instances.
+
+    ``data`` is edited in-place.
+
+    Parameters
+    ----------
+    data: dict[str,Any]
+        Input dictionary.
+        Will be edited in-place.
+    root_path: Path
+        Path that serves as root for relative paths.
+
+    """
+    _transform_paths(
+        data=data,
+        root_path=root_path,
+        transform=_deserialize_path,
+    )
+
+
+def _transform_paths(
+    data: dict[str, Any],
+    root_path: Path,
+    transform: Callable[Path | str, Path | str],
+) -> None:
+    """In-place transform of the paths in ``data``.
+
+    Each path (identified thanks to ``json_serializer._PATH_KEYS`` key names) will be transformed
+    according to the input ``transform``.
+
+    Parameters
+    ----------
+    data: dict[str, Any]
+        Input dictionary.
+        Will be edited in-place.
+    root_path: Path
+        Path that serves as root for relative paths.
+    transform: Callable[Path|str,Path|str]
+        Transform to apply to the path values.
+
+    """
+    for key, value in data.items():
+        if type(value) is dict:
+            _transform_paths(data=value, root_path=root_path, transform=transform)
+            continue
+        if key in _PATH_KEYS:
+            data[key] = transform(value=key, root_path=root_path)
 
 
 def set_path_reference(
