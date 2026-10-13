@@ -21,7 +21,7 @@ from osekit.core import audio_file_manager as afm
 from osekit.core.audio_dataset import AudioDataset
 from osekit.core.base_dataset import BaseDataset
 from osekit.core.instrument import Instrument
-from osekit.core.json_serializer import deserialize_json, serialize_json
+from osekit.core.json_serializer import deserialize_json, path_anchor, serialize_json
 from osekit.core.ltas_dataset import LTASDataset
 from osekit.core.spectro_dataset import SpectroDataset
 from osekit.public.transform import OutputType, Transform
@@ -938,7 +938,11 @@ class Project:
 
             serialize_json(folder / "project.json", dictionary)
 
-        _write()
+        with path_anchor(anchor=self.folder):
+            # Setting the path anchor to the project folder
+            # allows for serializing paths that are on different partitions
+            # (or simply outside the project folder) as absolute paths.
+            _write()
 
     @classmethod
     def from_json(cls, file: Path) -> Project:
