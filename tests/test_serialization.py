@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import contextlib
-from pathlib import Path, PureWindowsPath
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -27,12 +27,9 @@ from osekit.core.json_serializer import (
     _anchor,
     _deserialize_path,
     _serialize_path,
-    absolute_to_relative,
     deserialize_paths,
     path_anchor,
-    relative_to_absolute,
     serialize_paths,
-    set_path_reference,
 )
 from osekit.core.spectro_data import SpectroData
 from osekit.core.spectro_dataset import SpectroDataset
@@ -1055,64 +1052,6 @@ def test_spectro_dataset_serialization(
 """
 
 
-@pytest.mark.parametrize(
-    ("target", "root", "expected"),
-    [
-        pytest.param(
-            "saphir.wav",
-            "C:/baston",
-            "C:/baston/saphir.wav",
-            id="relative_to_windows_root",
-        ),
-        pytest.param(
-            "i/want/sky.wav",
-            "C:/what/would",
-            "C:/what/would/i/want/sky.wav",
-            id="relative_tree_to_windows_root",
-        ),
-        pytest.param(
-            "agency/group",
-            "/the",
-            "/the/agency/group",
-            id="relative_tree_to_posix_root",
-        ),
-        pytest.param(
-            "C:/user/dataset/file.csv",
-            "C:/root/to/dataset",
-            "C:/root/to/dataset/file.csv",
-            id="absolute_windows_path_to_windows_root",
-        ),
-        pytest.param(
-            "C:/user/dataset/file.csv",
-            "C:/root/to/dataset/with/more",
-            "C:/root/to/dataset/file.csv",
-            id="absolute_windows_path_to_windows_root_takes_first_common_folder",
-        ),
-        pytest.param(
-            "C:/user/outputs/audio/transform/audio/audio/audio.wav",
-            "C:/root/to/my_datasets/audio/some/stuff",
-            "C:/root/to/my_datasets/audio/transform/audio/audio/audio.wav",
-            id="absolute_windows_path_to_windows_root_with_repeated_folders",
-        ),
-        pytest.param(
-            "C:/user/outputs/audio/transform/audio/audio/audio.wav",
-            "/root/to/my_datasets/audio/some/stuff",
-            "/root/to/my_datasets/audio/transform/audio/audio/audio.wav",
-            id="absolute_windows_path_to_posix_root_with_repeated_folders",
-        ),
-        pytest.param(
-            "audio/transform/audio/audio/audio.wav",
-            "/root/to/my_datasets/audio/some/stuff",
-            "/root/to/my_datasets/audio/some/stuff/audio/transform/audio/audio/audio.wav",
-            id="relative_path_to_posix_root_with_repeated_folders",
-        ),
-    ],
-)
-def test_relative_to_absolute(target: str, root: str, expected: str) -> None:
-    path: Path = relative_to_absolute(target_path=target, root_path=root)
-    assert path.resolve() == Path(PureWindowsPath(expected)).resolve()
-
-
 def can_symlink(tmp_path: Path) -> bool:
     try:
         test_link = tmp_path / "link_test"
@@ -1121,120 +1060,6 @@ def can_symlink(tmp_path: Path) -> bool:
     except OSError:
         return False
     return True
-
-
-@pytest.mark.parametrize(
-    ("target", "use_alias"),
-    [
-        pytest.param(
-            ".",
-            False,
-            id="same_path",
-        ),
-        pytest.param(
-            "../",
-            False,
-            id="parent",
-        ),
-        pytest.param(
-            "../milkkisses/serpentskirt",
-            False,
-            id="folder_in_parent",
-        ),
-        pytest.param(
-            "milkkisses/serpentskirt",
-            False,
-            id="folder_in_child",
-        ),
-        pytest.param(
-            "serpentskirt",
-            True,
-            id="drive_alias",
-        ),
-    ],
-)
-def test_absolute_ro_relative(
-    tmp_path: Path,
-    target: str,
-    use_alias: bool,
-) -> None:
-    if use_alias and not can_symlink(tmp_path):
-        pytest.skip("Symlink not permitted on this system.")
-
-    real_root = tmp_path / "cocteau"
-    real_root.mkdir(parents=True, exist_ok=True)
-
-    if use_alias:
-        alias_root = tmp_path / "twins"
-        alias_root.symlink_to(real_root)
-        root = alias_root
-    else:
-        root = real_root
-
-    expected = Path(target)
-
-    target = (real_root / target).resolve()
-    result = absolute_to_relative(target_path=target, root_path=root)
-
-    assert result == expected
-
-
-def test_relative_paths_serialization(tmp_path: Path) -> None:
-    dictionary = {
-        "path": str(tmp_path / "user" / "cool"),
-        "folder": str(tmp_path / "user" / "cool"),
-        "json": str(tmp_path / "user" / "cool"),
-        "ignored": str(tmp_path / "user" / "cool"),
-        "not_a_path": "hello",
-        "nested_dict": {
-            "path": str(tmp_path / "user" / "cool"),
-            "folder": str(tmp_path / "user" / "cool"),
-            "json": str(tmp_path / "user" / "cool"),
-            "ignored": str(tmp_path / "user" / "cool"),
-            "not_a_path": "hello",
-        },
-    }
-
-    relative_to_user_folder = {
-        "path": str(Path("cool")),
-        "folder": str(Path("cool")),
-        "json": str(Path("cool")),
-        "ignored": str(tmp_path / "user" / "cool"),
-        "not_a_path": "hello",
-        "nested_dict": {
-            "path": str(Path("cool")),
-            "folder": str(Path("cool")),
-            "json": str(Path("cool")),
-            "ignored": str(tmp_path / "user" / "cool"),
-            "not_a_path": "hello",
-        },
-    }
-
-    dict_copy = dict(dictionary)
-
-    # Absolute to relative
-    set_path_reference(
-        serialized_dict=dict_copy,
-        root_path=tmp_path / "user",
-        reference="relative",
-    )
-    assert dict_copy == relative_to_user_folder
-
-    # Relative to absolute
-    set_path_reference(
-        serialized_dict=dict_copy,
-        root_path=tmp_path / "user",
-        reference="absolute",
-    )
-    assert dict_copy == dictionary
-
-    # Absolute to absolute
-    set_path_reference(
-        serialized_dict=dict_copy,
-        root_path=tmp_path / "user",
-        reference="absolute",
-    )
-    assert dict_copy == dictionary
 
 
 def test_path_anchor() -> None:
