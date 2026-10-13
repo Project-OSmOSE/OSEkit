@@ -30,6 +30,7 @@ from osekit.core.json_serializer import (
     absolute_to_relative,
     path_anchor,
     relative_to_absolute,
+    serialize_paths,
     set_path_reference,
 )
 from osekit.core.spectro_data import SpectroData
@@ -1368,3 +1369,49 @@ def test_serialize_deserialize_round_trip(tmp_path: Path, use_anchor: bool) -> N
 
     assert _deserialize_path(value=serialized_in, root_path=root) == inside.resolve()
     assert _deserialize_path(value=serialized_out, root_path=root) == outside.resolve()
+
+
+@pytest.mark.parametrize("use_anchor", [True, False])
+def test_serialize_dictionary_paths(tmp_path: Path, use_anchor: bool) -> None:
+    project_path = tmp_path / "project"
+    root_path = project_path / "fun"
+
+    deserialized = {
+        "path": tmp_path / "outside_project" / "audio.wav",
+        "folder": project_path / "cool" / "audio.wav",
+        "json": root_path / "audio.wav",
+        "not_a_path": 16,
+        "nested_dictionary": {
+            "path": root_path / "audio.wav",
+        },
+    }
+
+    serialized = {
+        "path": (tmp_path / "outside_project" / "audio.wav").as_posix(),
+        "folder": "../cool/audio.wav",  # Relative because in anchor
+        "json": "audio.wav",
+        "not_a_path": 16,
+        "nested_dictionary": {
+            "path": "audio.wav",
+        },
+    }
+
+    input_copy = dict(deserialized)
+    context = (
+        path_anchor(anchor=project_path) if use_anchor else contextlib.nullcontext()
+    )
+
+    # Path outside project: absolute if we use project as anchor
+    # relative if we don't use anchors.
+    serialized["path"] = (
+        (tmp_path / "outside_project" / "audio.wav").as_posix()
+        if use_anchor
+        else "../../outside_project/audio.wav"
+    )
+
+    with context:
+        serialize_paths(
+            data=input_copy,
+            root_path=root_path,
+        )
+        assert input_copy == serialized

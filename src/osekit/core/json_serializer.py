@@ -216,7 +216,7 @@ def deserialize_paths(
 def _transform_paths(
     data: dict[str, Any],
     root_path: Path,
-    transform: Callable[[Path | str], Path | str],
+    transform: Callable[..., Path | str],
 ) -> None:
     """In-place transform of the paths in ``data``.
 
@@ -230,7 +230,7 @@ def _transform_paths(
         Will be edited in-place.
     root_path: Path
         Path that serves as root for relative paths.
-    transform: Callable[Path|str,Path|str]
+    transform: Callable[...,Path|str]
         Transform to apply to the path values.
 
     """
@@ -239,7 +239,7 @@ def _transform_paths(
             _transform_paths(data=value, root_path=root_path, transform=transform)
             continue
         if key in _PATH_KEYS:
-            data[key] = transform(value=key, root_path=root_path)
+            data[key] = transform(value=value, root_path=root_path)
 
 
 def set_path_reference(
