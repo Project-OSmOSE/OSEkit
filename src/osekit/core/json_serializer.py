@@ -216,7 +216,7 @@ def deserialize_paths(
 def _transform_paths(
     data: dict[str, Any],
     root_path: Path,
-    transform: Callable[Path | str, Path | str],
+    transform: Callable[[Path | str], Path | str],
 ) -> None:
     """In-place transform of the paths in ``data``.
 
