@@ -277,26 +277,26 @@ def set_path_reference(
             )
 
 
-def serialize_json(path: Path, serialized_dict: dict) -> None:
+def serialize_json(path: Path, data: dict) -> None:
     """Serialize a dictionary in a JSON file.
 
     Parameters
     ----------
     path: Path
         Path of the JSON file to be written.
-    serialized_dict: dict
+    data: dict
         Dictionary to be serialized.
 
     """
     if not (parent_folder := path.parent).exists():
         parent_folder.mkdir(parents=True)
-    set_path_reference(
-        serialized_dict=serialized_dict,
+
+    serialize_paths(
+        data=data,
         root_path=path.parent,
-        reference="relative",
     )
     with path.open("w") as file:
-        file.write(json.dumps(serialized_dict, sort_keys=True, indent=4))
+        file.write(json.dumps(data, sort_keys=True, indent=4))
 
 
 def deserialize_json(path: Path) -> dict:
@@ -315,9 +315,9 @@ def deserialize_json(path: Path) -> dict:
     """
     with path.open("r") as f:
         dictionary = json.loads(f.read())
-    set_path_reference(
-        serialized_dict=dictionary,
+
+    deserialize_paths(
+        data=dictionary,
         root_path=path.parent,
-        reference="absolute",
     )
     return dictionary

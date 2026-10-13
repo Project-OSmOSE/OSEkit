@@ -870,9 +870,9 @@ class Project:
                 name: {
                     "class": dataset["class"],
                     "transform": dataset["transform"],
-                    "json": str(dataset["dataset"])
+                    "json": dataset["dataset"]
                     if isinstance(dataset["dataset"], Path)
-                    else str(dataset["dataset"].folder / f"{name}.json"),
+                    else dataset["dataset"].folder / f"{name}.json",
                 }
                 for name, dataset in sorted(self.outputs.items(), key=lambda kv: kv[0])
             },
@@ -905,7 +905,7 @@ class Project:
             outputs[name] = {
                 "class": dataset["class"],
                 "transform": dataset["transform"],
-                "dataset": Path(dataset["json"]),
+                "dataset": dataset["json"],
             }
         return cls(
             folder=Path(),
