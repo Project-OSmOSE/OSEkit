@@ -399,6 +399,14 @@ def test_minimal_detector_result_file() -> None:
     assert len(detections) == 2
 
 
+def test_retro_compatibility() -> None:
+    detections = Detection.from_csv(
+        csv=Path(__file__).parent / "_static/retro_compatibility_result.csv",
+    )
+
+    assert detections[0].label == "bird"
+
+
 def test_detections_from_csv_list() -> None:
     detections = Detection.from_csv(
         [

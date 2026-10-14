@@ -29,6 +29,7 @@ KNOWN_KEYS = {
     "min_frequency",
     "max_frequency",
     "annotation",
+    "label",
     "annotator",
     "annotator_expertise",
     "start_datetime",
@@ -618,7 +619,7 @@ class Detection(Event):
 
         return cls(
             metadata=metadata,
-            label=row.get("annotation"),
+            label=row.get("label") or row.get("annotation"),
             detector_info=detector_info,
             begin=Timestamp(row["start_datetime"]),
             end=Timestamp(row["end_datetime"]),
