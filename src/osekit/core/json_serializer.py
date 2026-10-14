@@ -55,6 +55,10 @@ def _serialize_path(value: Path, root_path: Path) -> str:
         The serialized path.
 
     """
+    if not isinstance(value, Path):
+        # Some folders can be None
+        return str(value)
+
     anchor = _anchor.get()
     if anchor is not None and not value.is_relative_to(anchor):
         # Path is outside the project: we store it as an absolute path.
