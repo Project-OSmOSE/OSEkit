@@ -220,46 +220,35 @@ class Project:
 
         self.build()
 
-    @classmethod
-    def from_audio_dataset_json(
-        cls,
+    def build_from_audio_dataset_json(
+        self,
         audio_dataset_json: Path,
-        project_folder: Path,
-    ) -> Project:
-        """Instantiate a ``Project`` directly from its original dataset.
+    ) -> None:
+        """Build a ``Project`` directly from its original dataset.
 
-        The project will be created in the ``project_folder`` path and its original
+        The project will be built in the ``self.folder`` path and its original
         audio dataset will be the one serialized in ``audio_dataset_json``.
 
         Parameters
         ----------
         audio_dataset_json: Path
             Path to the JSON serialized file of the original ``AudioDataset``.
-        project_folder: Path
-            Path to the project folder.
-
-        Returns
-        -------
-        Project
-            The instantiated ``Project`` object.
 
         """
-        project = Project(folder=project_folder, strptime_format=None)
-        project._create_logger()
+        self._create_logger()
 
         ads = AudioDataset.from_json(file=audio_dataset_json)
 
-        project.outputs[ads.name] = {
+        self.outputs[ads.name] = {
             "class": type(ads).__name__,
             "transform": "original",
             "dataset": ads,
         }
 
-        for folder in project.SUBFOLDERS.values():
-            (project.folder / folder).mkdir(exist_ok=True, parents=True)
+        for folder in self.SUBFOLDERS.values():
+            (self.folder / folder).mkdir(exist_ok=True, parents=True)
 
-        project.write_json()
-        return project
+        self.write_json()
 
     def _create_logger(self) -> None:
         if self.logger:
