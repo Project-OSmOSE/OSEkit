@@ -808,4 +808,11 @@ class Detection(Event):
         for csv_file in csv:
             output += cls._from_csv(csv_file, **kwargs)
 
+        if not output:
+            msg = (
+                "No valid Detection was found in the given csv file(s).\n"
+                "Tip: you can specify the used separator with the sep parameter."
+            )
+            raise ValueError(msg)
+
         return output
