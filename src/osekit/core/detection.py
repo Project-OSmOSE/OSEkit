@@ -12,6 +12,7 @@ from matplotlib.text import Text
 from matplotlib.transforms import TransformedBbox
 from pandas import Timedelta, Timestamp
 
+from osekit.config import global_logging_context as glc
 from osekit.core.event import Event
 from osekit.utils.core import is_empty_dataclass
 
@@ -28,6 +29,7 @@ KNOWN_KEYS = {
     "min_frequency",
     "max_frequency",
     "annotation",
+    "label",
     "annotator",
     "annotator_expertise",
     "start_datetime",
@@ -617,7 +619,7 @@ class Detection(Event):
 
         return cls(
             metadata=metadata,
-            label=row.get("annotation"),
+            label=row.get("label") or row.get("annotation"),
             detector_info=detector_info,
             begin=Timestamp(row["start_datetime"]),
             end=Timestamp(row["end_datetime"]),
@@ -764,7 +766,21 @@ class Detection(Event):
             }
             for record in records
         ]
-        return [cls.from_dict(record) for record in records]
+        parsed_records = []
+        failed_records = []
+        for idx, record in enumerate(records):
+            try:
+                parsed_records.append(cls.from_dict(record))
+            except TypeError:  # Most probably a weak comment on the spectrogram
+                failed_records.append(idx)
+
+        if failed_records:
+            glc.logger.warning(
+                f"The following line(s) couldn't be parsed as detections: "
+                f"{failed_records}",
+            )
+
+        return parsed_records
 
     @classmethod
     def from_csv(cls, csv: Path | list[Path], **kwargs: Any) -> list[Self]:
