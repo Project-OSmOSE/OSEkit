@@ -61,7 +61,7 @@ class Project:
     def __init__(  # noqa: PLR0913
         self,
         folder: Path,
-        strptime_format: str | list[str] | None,
+        strptime_format: str | list[str] | None = None,
         gps_coordinates: str | list | tuple = (0, 0),
         depth: float = 0.0,
         timezone: str | None = None,
