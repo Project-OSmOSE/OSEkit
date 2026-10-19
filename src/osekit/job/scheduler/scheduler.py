@@ -14,6 +14,37 @@ class Scheduler(ABC):
     SUBMIT_CMD: typing.ClassVar = ""
     INFO_CMD: typing.ClassVar = []
 
+    def __init__(self, cmd_prefix: list[str] | None = None) -> None:
+        """Initialize the scheduler.
+
+        Parameters
+        ----------
+        cmd_prefix: list[str]|None
+            Commands that are prefixed to commands run through
+            the ``Scheduler.run_subprocess()`` method.
+
+        """
+        self._cmd_prefix = cmd_prefix or []
+
+    @property
+    def cmd_prefix(self) -> list[str]:
+        """Return the list of command prefixes.
+
+        These commands are prefixed to commands run through
+        the ``Scheduler.run_subprocess()`` method.
+
+        Returns
+        -------
+        list[str]
+            The prefix commands.
+
+        """
+        return self._cmd_prefix
+
+    @cmd_prefix.setter
+    def cmd_prefix(self, cmd_prefix: list[str]) -> None:
+        self._cmd_prefix = cmd_prefix
+
     def write(self, job: Job, path: Path) -> None:
         """Write a job script to file.
 
@@ -90,18 +121,34 @@ class Scheduler(ABC):
         cmd.append(str(job.path))
 
         try:
-            request = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                check=False,
-            )
+            request = self.run_subprocess(cmd=cmd)
         except subprocess.CalledProcessError as e:
             msg = f"Submission failed with exit code {e.returncode}"
             raise RuntimeError(msg) from e
 
         job.job_id = self._parse_job_id(submit_output=request.stdout)
         self.update_status(job=job)
+
+    def run_subprocess(self, cmd: list[str]) -> subprocess.CompletedProcess[str]:
+        """Run a command through the subprocess package.
+
+        Parameters
+        ----------
+        cmd: list[str]
+            Command to run.
+
+        Returns
+        -------
+        subprocess.CompletedProcess[str]
+            Process output.
+
+        """
+        return subprocess.run(
+            self._cmd_prefix + cmd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
 
     @staticmethod
     @abstractmethod
@@ -127,9 +174,8 @@ class Scheduler(ABC):
 
         self._parse_info_str(job=job, info=info)
 
-    @staticmethod
     @abstractmethod
-    def _get_info(job: Job) -> str:
+    def _get_info(self, job: Job) -> str:
         """Request information about a job.
 
         Parameters
