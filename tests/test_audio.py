@@ -67,7 +67,8 @@ def test_mocked_audio_file() -> None:
     mocked_value_stereo = np.array([[1, 1], [2, 2], [3, 3]])
 
     af_mono = MockedAudioFile(
-        mocked_value=mocked_value_mono, sample_rate=len(mocked_value_mono)
+        mocked_value=mocked_value_mono,
+        sample_rate=len(mocked_value_mono),
     )
 
     af_stereo = MockedAudioFile(
@@ -82,19 +83,22 @@ def test_mocked_audio_file() -> None:
 
     # Mono should be 2D too for compatibility issues
     assert np.array_equal(
-        af_mono.read(af_mono.begin, af_mono.end), mocked_value_mono[:, None]
+        af_mono.read(af_mono.begin, af_mono.end),
+        mocked_value_mono[:, None],
     )
 
     # Full time stereo read
     assert np.array_equal(
-        af_stereo.read(af_stereo.begin, af_stereo.end), mocked_value_stereo
+        af_stereo.read(af_stereo.begin, af_stereo.end),
+        mocked_value_stereo,
     )
 
     # Specific times
     period = Timedelta(seconds=1 / af_mono.sample_rate)
     sample_time = af_mono.begin + 2 * period
     assert np.array_equal(
-        af_mono.read(start=sample_time, stop=sample_time), mocked_value_mono[1:2, None]
+        af_mono.read(start=sample_time, stop=sample_time),
+        mocked_value_mono[1:2, None],
     )
 
     # Stream
@@ -1891,6 +1895,14 @@ def test_split_data_normalization_pass() -> None:
     )
 
 
+def test_split_data_butter_pass() -> None:
+    ad = MockedAudioData(mocked_value=[1, 2, 3])
+    ad.butter = Butterworth(N=10, Wn=500, btype="highpass")
+
+    for ad2 in ad.split():
+        assert ad2.butter == ad.butter
+
+
 def test_multichannel_data_normalization() -> None:
     ad = MockedAudioData(mocked_value=np.array([[1, 2] for _ in range(10)]))
 
@@ -1920,7 +1932,8 @@ def test_multichannel_data_normalization() -> None:
 
     # Normalization deserialization
     assert np.array_equal(
-        ad.normalization_values, AudioData.from_dict(ad.to_dict()).normalization_values
+        ad.normalization_values,
+        AudioData.from_dict(ad.to_dict()).normalization_values,
     )
 
 
@@ -2337,7 +2350,7 @@ def test_plot_on_default_axes(patch_plot: None) -> None:
 
 def test_plot_multichannel_audio_data(patch_plot: None) -> None:
     af = MockedAudioFile(
-        mocked_value=np.array([[1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3]])
+        mocked_value=np.array([[1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3]]),
     )
     ad: AudioData = AudioData.from_files([af])
 
@@ -2360,7 +2373,7 @@ def test_plot_multichannel_audio_data(patch_plot: None) -> None:
 def test_default_axes_shape(
     nb_rows: int,
     nb_cols: int,
-    expected_type: type[Axes] | type[np.ndarray],
+    expected_type: type[Axes | np.ndarray],
     expected_shape: tuple | None,
 ) -> None:
     axs = get_default_axes(nb_rows=nb_rows, nb_cols=nb_cols)

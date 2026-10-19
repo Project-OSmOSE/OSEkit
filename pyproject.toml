@@ -1,6 +1,6 @@
 [project]
 name = "osekit"
-version = "1.2.0"
+version = "1.2.1"
 description = "OSEkit"
 readme = "README.md"
 license = "MIT"

@@ -541,6 +541,7 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             instrument=self.instrument,
             normalization=self.normalization,
             normalization_values=kwargs["normalization_values"],
+            butter=self.butter,
         )
 
     def split_frames(
@@ -684,9 +685,9 @@ class AudioData(BaseData[AudioItem, AudioFile]):
             instrument=instrument,
             sample_rate=dictionary["sample_rate"],
             normalization=Normalization(dictionary["normalization"]),
-            normalization_values=dictionary.get("normalization_values", None),
+            normalization_values=dictionary.get("normalization_values"),
             butter=butter,
-            channels=dictionary.get("channels", None),
+            channels=dictionary.get("channels"),
         )
 
     @classmethod
