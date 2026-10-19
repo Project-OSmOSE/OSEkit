@@ -1,4 +1,3 @@
-import subprocess
 import typing
 from typing import Literal
 
@@ -30,8 +29,13 @@ class Slurm(Scheduler):
         "COMPLETED": JobStatus.COMPLETED,
     }
 
-    def __init__(self, partition: Literal["cpu", "gpu", "ops"] = "cpu") -> None:
+    def __init__(
+        self,
+        partition: Literal["cpu", "gpu", "ops"] = "cpu",
+        cmd_prefix: list[str] | None = None,
+    ) -> None:
         """Initialize the SLURM scheduler."""
+        super().__init__(cmd_prefix=cmd_prefix)
         self.partition = partition
 
     @property
@@ -103,8 +107,7 @@ class Slurm(Scheduler):
         """
         return submit_output.removeprefix("Submitted batch job ").strip("\n")
 
-    @classmethod
-    def _get_info(cls, job: Job) -> str:
+    def _get_info(self, job: Job) -> str:
         """Request information about a job.
 
         Parameters
@@ -121,47 +124,39 @@ class Slurm(Scheduler):
             by a specific parser, and an empty string is returned.
 
         """
-        request = subprocess.run(
-            [
-                "/usr/bin/squeue",
-                "--jobs",
-                str(job.job_id),
-                "--noheader",
-                (
-                    "--format="
-                    '"%i|'  # ID
-                    "%P|"  # Partition
-                    "%j|"  # Job name
-                    "%u|"  # User name
-                    "%T|"  # Status
-                    "%M|"  # Time
-                    "%D"  # Nodes nb
-                    '|%R"'
-                ),  # Nodes List (Reason)
-            ],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
+        cmd = [
+            "/usr/bin/squeue",
+            "--jobs",
+            str(job.job_id),
+            "--noheader",
+            (
+                "--format="
+                '"%i|'  # ID
+                "%P|"  # Partition
+                "%j|"  # Job name
+                "%u|"  # User name
+                "%T|"  # Status
+                "%M|"  # Time
+                "%D"  # Nodes nb
+                '|%R"'
+            ),  # Nodes List (Reason)
+        ]
+        request = self.run_subprocess(cmd=cmd)
 
         if info := request.stdout.strip():
             return info
 
         # The job doesn't appear in squeue anymore
-        request = subprocess.run(
-            [
-                "/usr/bin/sacct",
-                "--jobs",
-                str(job.job_id),
-                "--allocations",
-                "--noheader",
-                "--parsable2",
-                "--format=JobID,Partition,JobName,User,State,Elapsed,NNodes,NodeList,Reason",
-            ],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
+        cmd = [
+            "/usr/bin/sacct",
+            "--jobs",
+            str(job.job_id),
+            "--allocations",
+            "--noheader",
+            "--parsable2",
+            "--format=JobID,Partition,JobName,User,State,Elapsed,NNodes,NodeList,Reason",
+        ]
+        request = self.run_subprocess(cmd=cmd)
 
         if acct_info := request.stdout.strip():
             return acct_info
