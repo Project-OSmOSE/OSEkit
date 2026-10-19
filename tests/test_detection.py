@@ -342,6 +342,21 @@ def test_detections_from_csv(caplog: LogCaptureFixture) -> None:
     assert len(minimal_detection.verifications) == 0
 
 
+def test_detections_from_csv_raises_if_no_detection(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def mock_from_dict(*args, **kwargs) -> None:  # noqa: ANN002, ANN003
+        msg = r"Mock a TypeError while trying to parse a Detection object."
+        raise TypeError(msg)
+
+    monkeypatch.setattr(Detection, "from_dict", mock_from_dict)
+
+    with pytest.raises(ValueError, match="No valid Detection was found"):
+        Detection.from_csv(
+            csv=Path(__file__).parent / "_static/minimal_detector_result.csv",
+        )
+
+
 def test_detections_to_dict(tmp_path: Path) -> None:
     for result_file in ("aplose_result.csv", "minimal_detector_result.csv"):
         detections = Detection.from_csv(
