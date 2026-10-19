@@ -24,7 +24,8 @@ class Scheduler(ABC):
             the ``Scheduler.run_subprocess()`` method.
 
         """
-        self._cmd_prefix = cmd_prefix or []
+        self.cmd_prefix = cmd_prefix or []
+        self.shebang = "#!/bin/bash"
 
     @property
     def cmd_prefix(self) -> list[str]:
@@ -45,6 +46,24 @@ class Scheduler(ABC):
     def cmd_prefix(self, cmd_prefix: list[str]) -> None:
         self._cmd_prefix = cmd_prefix
 
+    @property
+    def shebang(self) -> str:
+        """Return the shebang string of the scheduler job files.
+
+        Defaulted to ``"#!/bin/bash"``.
+
+        Returns
+        -------
+        str:
+            Shebang of the scheduler job files.
+
+        """
+        return self._shebang
+
+    @shebang.setter
+    def shebang(self, value: str) -> None:
+        self._shebang = value
+
     def write(self, job: Job, path: Path) -> None:
         """Write a job script to file.
 
@@ -56,13 +75,11 @@ class Scheduler(ABC):
             Path of the file in which the job script is written.
 
         """
-        preamble = "#!/bin/bash"
-
         request_str = self._build_job_specification(job=job)
         venv_str = self._build_venv_string(job=job)
         python_script = f"python {job.script_path} {job.get_arg_string()}"
 
-        script = f"{preamble}\n\n{request_str}\n\n{venv_str}\n\n{python_script}"
+        script = f"{self.shebang}\n\n{request_str}\n\n{venv_str}\n\n{python_script}"
 
         with path.open("w") as file:
             file.write(script)
