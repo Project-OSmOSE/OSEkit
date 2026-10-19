@@ -121,6 +121,36 @@ not exist, it will be created before the files are moved:
         move_files=False, # Copy files rather than moving them
     )
 
+Building a project from a (distant) ``AudioDataset``
+""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+Alternatively, the :meth:`osekit.public.project.Project.build_from_audio_dataset_json` method allows for
+building a project from a :class:`osekit.core.audio_dataset.AudioDataset` JSON file.
+
+Such build can be used to separate the :meth:`osekit.public.project.Project` folder from its original
+audio dataset (which could then be stored in another disk or partition):
+
+.. code-block:: python
+
+    from pathlib import Path
+
+    from osekit.public.project import Project
+
+    project = Project(
+        folder=Path(r"C:\Users\berthoga\Documents\Datasets\detached"),
+    )
+
+    # The JSON can be written with the AudioDataset.write_json() method,
+    # see the Core API documentation for more info
+    ads_json_path = Path(
+        r"C:\Users\berthoga\Documents\Datasets\cool_dataset\data\audio\original\original.json"
+    )
+
+    project.build_from_audio_dataset_json(
+        audio_dataset_json=ads_json_path,
+    )
+
+
 Running an ``Transform``
 ^^^^^^^^^^^^^^^^^^^^^^^^
 

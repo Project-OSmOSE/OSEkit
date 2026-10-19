@@ -254,7 +254,7 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
             "data": {str(d): d.to_dict() for d in self.data},
             "name": self._name,
             "suffix": self.suffix,
-            "folder": str(self.folder),
+            "folder": self.folder,
         }
 
     @classmethod
@@ -275,7 +275,7 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
         data = cls._data_from_dict(dictionary["data"])
         name = dictionary["name"]
         suffix = dictionary["suffix"]
-        folder = Path(dictionary["folder"])
+        folder = dictionary["folder"]
         return cls(data=data, name=name, suffix=suffix, folder=folder)
 
     @classmethod
