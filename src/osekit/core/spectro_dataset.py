@@ -49,7 +49,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         suffix: str = "",
         folder: Path | None = None,
         scale: Scale | None = None,
-        v_lim: tuple[float, float] | None | object = sentinel_value,
+        v_lim: tuple[float, float] | object | None = sentinel_value,
     ) -> None:
         """Initialize a ``SpectroDataset``."""
         super().__init__(data=data, name=name, suffix=suffix, folder=folder)
@@ -474,7 +474,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             "scale": self.scale.to_dict_value() if self.scale is not None else None,
             "name": self._name,
             "suffix": self.suffix,
-            "folder": str(self.folder),
+            "folder": self.folder,
         }
 
     @classmethod
@@ -519,7 +519,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
             data=sds,
             name=dictionary["name"],
             suffix=dictionary["suffix"],
-            folder=Path(dictionary["folder"]),
+            folder=dictionary["folder"],
             scale=scale,
         )
 
