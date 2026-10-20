@@ -292,21 +292,25 @@ Each next valid audio file will be considered to start immediately after the end
 .. code-block:: python
 
     from pathlib import Path
+
+    from pandas import Timedelta, Timestamp
+
     from osekit.core.audio_dataset import AudioDataset
     from osekit.core.instrument import Instrument
-    from pandas import Timestamp, Timedelta
+    from osekit.utils.audio import Normalization
 
     folder = Path(r"...")
-    ads = AudioDataset.from_folder
-    (
+    ads = AudioDataset.from_folder(
         folder=folder,
-        strptime_format=None # Will use first_file_begin to timestamp the files
+        strptime_format=None,  # Will use first_file_begin to timestamp the files
         first_file_begin=Timestamp("2009-01-06 10:00:00"),
-        begin=Timestamp("2009-01-06 12:00:00"), # We can still specify the begin/end timestamps of the required dataset
+        begin=Timestamp(
+            "2009-01-06 12:00:00"
+        ),  # We can still specify the begin/end timestamps of the required dataset
         end=Timestamp("2009-01-06 14:00:00"),
         data_duration=Timedelta("10s"),
         instrument=Instrument(end_to_end_db=150),
-        normalization="dc_reject"
+        normalization=Normalization.DC_REJECT,
     )
 
 In the example above, the first valid file in the folder will be considered to start at ``2009-01-06 10:00:00``.
