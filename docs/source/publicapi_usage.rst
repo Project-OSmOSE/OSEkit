@@ -338,7 +338,7 @@ Let's now say we want to export audio, spectrum matrices and spectrograms with t
    * - Sample rate
      - ``48 kHz``
    * - Audio data normalization
-     - ``dc_reject`` (removes the audio DC component)
+     - ``DC_REJECT`` (see the :ref:`Normalization <normalization>` section for more detail)
    * - FFT
      - ``hamming window``, ``1024 points``, ``40% overlap``
 
@@ -360,21 +360,29 @@ Then we are all set for running the transform:
 
 .. code-block:: python
 
-    from osekit.public.transform import Transform, OutputType
     from pandas import Timedelta
 
+    from osekit.public.transform import OutputType, Transform
+    from osekit.utils.audio import Normalization
+
     transform = Transform(
-        output_type = OutputType.AUDIO | OutputType.SPECTRUM | OutputType.WELCH | OutputType.SPECTROGRAM, # Full transform : audio files, spectrum matrices and spectrograms will be exported.
-        begin=project.origin_dataset.begin + Timedelta(minutes=30), # 30m after the begin of the original dataset
-        end=project.origin_dataset.begin + Timedelta(hours=1.5), # 1h30 after the begin of the original dataset
-        data_duration=Timedelta("10s"), # Duration of the output data
-        sample_rate=48_000, # Sample rate of the output data
-        normalization="dc_reject",
-        name="full_transform", # You can name the transform, or keep the default name.
-        fft=sft, # The FFT parameters
+        output_type=OutputType.AUDIO
+        | OutputType.SPECTRUM
+        | OutputType.WELCH
+        | OutputType.SPECTROGRAM,  # Full transform : audio files, spectrum matrices and spectrograms will be exported.
+        begin=project.origin_dataset.begin
+        + Timedelta(minutes=30),  # 30m after the begin of the original dataset
+        end=project.origin_dataset.begin
+        + Timedelta(hours=1.5),  # 1h30 after the begin of the original dataset
+        data_duration=Timedelta("10s"),  # Duration of the output data
+        sample_rate=48_000,  # Sample rate of the output data
+        normalization=Normalization.DC_REJECT,
+        name="full_transform",  # You can name the transform, or keep the default name.
+        fft=sft,  # The FFT parameters
     )
 
-    project.run(transform=transform) # And that's it!
+    project.run(transform=transform)  # And that's it!
+
 
 Output 2
 """"""""

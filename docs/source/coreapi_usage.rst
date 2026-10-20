@@ -110,6 +110,8 @@ The data is fetched seamlessly on-demand from the audio file(s). The opening/clo
 
 Eventual time gap between audio items are filled with ``0.`` values.
 
+.. _normalization:
+
 Normalization
 """""""""""""
 
