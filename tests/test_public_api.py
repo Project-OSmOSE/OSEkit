@@ -943,7 +943,7 @@ def test_transform_validate_sample_rate(
                 end=None,
                 data_duration=None,
                 sample_rate=None,
-                normalization="zscore",
+                normalization=Normalization.ZSCORE,
                 subtype="DOUBLE",
             ),
             [
