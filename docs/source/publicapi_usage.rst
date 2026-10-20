@@ -376,7 +376,7 @@ Then we are all set for running the transform:
         + Timedelta(hours=1.5),  # 1h30 after the begin of the original dataset
         data_duration=Timedelta("10s"),  # Duration of the output data
         sample_rate=48_000,  # Sample rate of the output data
-        normalization=Normalization.DC_REJECT,
+        normalization=Normalization.DC_REJECT, # Rejects the DC component of the audio
         name="full_transform",  # You can name the transform, or keep the default name.
         fft=sft,  # The FFT parameters
     )

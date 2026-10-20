@@ -269,7 +269,7 @@ an ``AudioDataset`` from a given folder containing audio files:
         end=Timestamp("2009-01-06 14:00:00"),
         data_duration=Timedelta("10s"),
         instrument=Instrument(end_to_end_db=150),
-        normalization=Normalization.DC_REJECT,
+        normalization=Normalization.DC_REJECT, # Rejects the DC component of the audio
     )
 
 The resulting ``AudioDataset`` will contain 10s-long ``AudioData`` ranging from ``2009-01-06 12:00:00`` to ``2009-01-06 14:00:00``.
@@ -310,7 +310,7 @@ Each next valid audio file will be considered to start immediately after the end
         end=Timestamp("2009-01-06 14:00:00"),
         data_duration=Timedelta("10s"),
         instrument=Instrument(end_to_end_db=150),
-        normalization=Normalization.DC_REJECT,
+        normalization=Normalization.DC_REJECT, # Rejects the DC component of the audio
     )
 
 In the example above, the first valid file in the folder will be considered to start at ``2009-01-06 10:00:00``.
