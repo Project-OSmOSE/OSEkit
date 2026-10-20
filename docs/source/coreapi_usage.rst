@@ -110,6 +110,8 @@ The data is fetched seamlessly on-demand from the audio file(s). The opening/clo
 
 Eventual time gap between audio items are filled with ``0.`` values.
 
+.. _normalization:
+
 Normalization
 """""""""""""
 
@@ -249,20 +251,25 @@ an ``AudioDataset`` from a given folder containing audio files:
 .. code-block:: python
 
     from pathlib import Path
+
+    from pandas import Timedelta, Timestamp
+
     from osekit.core.audio_dataset import AudioDataset
     from osekit.core.instrument import Instrument
-    from pandas import Timestamp, Timedelta
+    from osekit.utils.audio import Normalization
 
     folder = Path(r"...")
-    ads = AudioDataset.from_folder
-    (
+    ads = AudioDataset.from_folder(
         folder=folder,
-        strptime_format="%y_%m_%d_%H_%M_%S", # To parse the files begin Timestamp
-        begin=Timestamp("2009-01-06 12:00:00"),
+        strptime_format=None,  # Will use first_file_begin to timestamp the files
+        first_file_begin=Timestamp("2009-01-06 10:00:00"),
+        begin=Timestamp(
+            "2009-01-06 12:00:00"
+        ),  # We can still specify the begin/end timestamps of the required dataset
         end=Timestamp("2009-01-06 14:00:00"),
         data_duration=Timedelta("10s"),
         instrument=Instrument(end_to_end_db=150),
-        normalization="dc_reject"
+        normalization=Normalization.DC_REJECT, # Rejects the DC component of the audio
     )
 
 The resulting ``AudioDataset`` will contain 10s-long ``AudioData`` ranging from ``2009-01-06 12:00:00`` to ``2009-01-06 14:00:00``.
@@ -285,21 +292,25 @@ Each next valid audio file will be considered to start immediately after the end
 .. code-block:: python
 
     from pathlib import Path
+
+    from pandas import Timedelta, Timestamp
+
     from osekit.core.audio_dataset import AudioDataset
     from osekit.core.instrument import Instrument
-    from pandas import Timestamp, Timedelta
+    from osekit.utils.audio import Normalization
 
     folder = Path(r"...")
-    ads = AudioDataset.from_folder
-    (
+    ads = AudioDataset.from_folder(
         folder=folder,
-        strptime_format=None # Will use first_file_begin to timestamp the files
+        strptime_format=None,  # Will use first_file_begin to timestamp the files
         first_file_begin=Timestamp("2009-01-06 10:00:00"),
-        begin=Timestamp("2009-01-06 12:00:00"), # We can still specify the begin/end timestamps of the required dataset
+        begin=Timestamp(
+            "2009-01-06 12:00:00"
+        ),  # We can still specify the begin/end timestamps of the required dataset
         end=Timestamp("2009-01-06 14:00:00"),
         data_duration=Timedelta("10s"),
         instrument=Instrument(end_to_end_db=150),
-        normalization="dc_reject"
+        normalization=Normalization.DC_REJECT, # Rejects the DC component of the audio
     )
 
 In the example above, the first valid file in the folder will be considered to start at ``2009-01-06 10:00:00``.
