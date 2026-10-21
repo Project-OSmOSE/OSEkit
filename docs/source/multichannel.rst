@@ -37,10 +37,10 @@ Finally, a ``SpectroData`` that has a linked ``AudioData`` targets a **specific 
     from scipy.signal import ShortTimeFFT
 
     sd = SpectroData.from_audio_data(data=ad, ...)
-    sd.audio_channel = 2 # The spectrum will be computed on the channel 2 of the file
+    sd.audio_channel = 2 # The STFT will be computed on the channel 2 of the file
 
 .. important::
 
     The :attr:`osekit.core.spectro_data.SpectroData.audio_channel` value refers to the index of the channel of the **file**.
 
-    If, as in the example above, the ``AudioFile`` has 3 channels ``[0,1,2]``, the ``AudioData`` targets channels ``[0,2]`` and the ``SpectroData`` targets the channel ``2``, the spectrum will be computed on the **third channel** of the file (with index ``2``).
+    If, as in the example above, the ``AudioFile`` has 3 channels ``[0,1,2]``, the ``AudioData`` targets channels ``[0,2]`` and the ``SpectroData`` targets the channel ``2``, the STFT will be computed on the **third channel** of the file (with index ``2``).
