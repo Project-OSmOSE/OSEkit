@@ -255,7 +255,7 @@ def dummy_export_transform(
     This avoids actually computing the outputs of transforms in tests
     that don't need to."""
 
-    def dummy_export(*args, **kwargs) -> None:  # noqa: ANN002, ANN003
+    def dummy_export(*args, **kwargs) -> None:
         output_type: OutputType = kwargs["output_type"]
         ads: AudioDataset = kwargs.get("ads")
         sds: SpectroDataset = kwargs.get("sds")
@@ -276,7 +276,7 @@ def dummy_export_transform(
         if sds:
             for output, folder, extension in (
                 (OutputType.SPECTROGRAM, spectrogram_folder_path, "png"),
-                (OutputType.SPECTRUM, spectrum_folder_path, "npz"),
+                (OutputType.STFT_MATRIX, spectrum_folder_path, "npz"),
             ):
                 if output not in output_type:
                     continue

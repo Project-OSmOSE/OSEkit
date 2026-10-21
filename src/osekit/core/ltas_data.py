@@ -3,7 +3,7 @@
 The Sx values from a ``LTASData`` object are computed recursively.
 LTAS should be preferred in cases where the audio is really long.
 In that case, the corresponding number of time bins (``scipy.ShortTimeFTT.p_nums``) is
-too long for the whole Sx spectrum to be computed once.
+too long for the whole Sx STFT matrix to be computed once.
 
 The LTAS are rather computed recursively. If the number of temporal bins is higher
 than a target ``p_num`` value, the audio is split in ``p_num`` parts.
@@ -40,7 +40,7 @@ class LTASData(SpectroData):
     The Sx values from a ``LTASData`` object are computed recursively.
     LTAS should be preferred in cases where the audio is really long.
     In that case, the corresponding number of time bins (``scipy.ShortTimeFTT.p_nums``) is
-    too long for the whole Sx spectrum to be computed once.
+    too long for the whole Sx STFT matrix to be computed once.
 
     The LTAS are rather computed recursively. If the number of temporal bins is higher
     than a target ``p_num`` value, the audio is split in ``p_num`` parts.
@@ -128,9 +128,9 @@ class LTASData(SpectroData):
         )
 
     def get_value(self, depth: int = 0) -> np.ndarray:
-        """Return the Sx spectrum of the LTAS.
+        """Return the Sx STFT matrix of the LTAS.
 
-        The Sx spectrum contains the absolute square of the STFT.
+        The Sx STFT matrix contains the absolute square of the STFT.
         """
         if not self.is_empty:
             return self._get_value_from_items(self.items)
