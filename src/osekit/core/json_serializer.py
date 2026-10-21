@@ -60,7 +60,7 @@ def _serialize_path(value: Path, root_path: Path) -> str:
         return str(value)
 
     anchor = _anchor.get()
-    if anchor is not None and not value.is_relative_to(anchor):
+    if anchor is not None and not value.resolve().is_relative_to(anchor.resolve()):
         # Path is outside the project: we store it as an absolute path.
         return value.as_posix()
     try:
