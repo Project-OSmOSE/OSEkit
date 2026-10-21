@@ -20,7 +20,7 @@ class OutputType(Flag):
         to disk.
         The new ``AudioDataset`` will be linked to the reshaped audio files rather
         than to the original files.
-    ``SPECTRUM``:
+    ``STFT_MATRIX``:
         Will write the ``npz`` ``SpectroFiles`` to disk and link the ``SpectroDataset``
         to these files.
     ``SPECTROGRAM``:
@@ -39,13 +39,13 @@ class OutputType(Flag):
     True
     >>> OutputType.SPECTROGRAM in export
     True
-    >>> OutputType.SPECTRUM in export
+    >>> OutputType.STFT_MATRIX in export
     False
 
     """
 
     AUDIO = auto()
-    SPECTRUM = auto()
+    STFT_MATRIX = auto()
     SPECTROGRAM = auto()
     WELCH = auto()
 
@@ -177,7 +177,7 @@ class Transform:
         return any(
             flag in self.output_type
             for flag in (
-                OutputType.SPECTRUM,
+                OutputType.STFT_MATRIX,
                 OutputType.SPECTROGRAM,
                 OutputType.WELCH,
             )
