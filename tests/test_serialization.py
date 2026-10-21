@@ -1052,7 +1052,8 @@ def test_spectro_dataset_serialization(
 """
 
 
-def test_serialize_path_with_symlink(tmp_path: Path) -> None:
+@pytest.fixture
+def create_symlink(tmp_path: Path) -> tuple[Path, Path]:
     real_root = tmp_path / "cocteau"
     real_root.mkdir(parents=True, exist_ok=True)
 
@@ -1062,6 +1063,15 @@ def test_serialize_path_with_symlink(tmp_path: Path) -> None:
         alias_root.symlink_to(real_root)
     except (OSError, NotImplementedError) as e:
         pytest.skip(f"Symlink not permitted on this system:\n{e}")
+
+    return real_root, alias_root
+
+
+def test_serialize_path_with_symlink(
+    tmp_path: Path,
+    create_symlink: tuple[Path, Path],
+) -> None:
+    real_root, alias_root = create_symlink
 
     target = "serpentskirt"
 
@@ -1144,6 +1154,21 @@ def test_serialize_path_within_anchor(tmp_path: Path) -> None:
 
     with path_anchor(anchor=anchor):
         assert _serialize_path(value=value, root_path=root_path) == expected
+
+
+def test_serialize_path_within_anchor_with_symlink(
+    tmp_path: Path, create_symlink: tuple[Path, Path]
+) -> None:
+    real_root, alias_root = create_symlink
+
+    target = "fun"
+
+    value = alias_root / target
+
+    with path_anchor(anchor=real_root):
+        # Anchor is real_root, which should also be alias_root
+        # So the path should be serialized as relative
+        assert _serialize_path(value=value, root_path=alias_root) == target
 
 
 def test_serialize_path_outside_anchor(tmp_path: Path) -> None:
