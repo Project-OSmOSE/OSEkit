@@ -1052,14 +1052,24 @@ def test_spectro_dataset_serialization(
 """
 
 
-def can_symlink(tmp_path: Path) -> bool:
+def test_serialize_path_with_symlink(tmp_path: Path) -> None:
+    real_root = tmp_path / "cocteau"
+    real_root.mkdir(parents=True, exist_ok=True)
+
+    alias_root = tmp_path / "twins"
+
     try:
-        test_link = tmp_path / "link_test"
-        test_link.symlink_to(tmp_path)
-        test_link.unlink()
-    except OSError:
-        return False
-    return True
+        alias_root.symlink_to(real_root)
+    except (OSError, NotImplementedError) as e:
+        pytest.skip(f"Symlink not permitted on this system:\n{e}")
+
+    target = "serpentskirt"
+
+    target_path = alias_root / target
+
+    result = _serialize_path(value=target_path, root_path=real_root)
+
+    assert result == target
 
 
 def test_path_anchor() -> None:
