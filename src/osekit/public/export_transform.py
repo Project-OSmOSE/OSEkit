@@ -49,7 +49,7 @@ def write_transform_output(
     sds: SpectroDataset
         The ``SpectroDataset`` of which the data should be written.
     spectrum_folder_path: Path
-        The folder in which the ``npz`` spectrum files should be written.
+        The folder in which the ``npz`` STFT matrix files should be written.
     spectrogram_folder_path: Path
         The folder in which the spectrogram ``png`` files should be written.
     welch_folder_path: Path
@@ -91,7 +91,7 @@ def write_transform_output(
         sds.link_audio_dataset(ads, first=first, last=last)
 
     if OutputType.STFT_MATRIX in output_type and OutputType.SPECTROGRAM in output_type:
-        logger.info("Computing and writing spectrum matrices and spectrograms...")
+        logger.info("Computing and writing STFT matrices and spectrograms...")
         sds.save_all(
             spectrum_folder=spectrum_folder_path,
             spectrogram_folder=spectrogram_folder_path,
@@ -107,7 +107,7 @@ def write_transform_output(
             last=last,
         )
     elif OutputType.STFT_MATRIX in output_type:
-        logger.info("Computing and writing spectrum matrices...")
+        logger.info("Computing and writing STFT matrices...")
         sds.write(
             folder=spectrum_folder_path,
             link=link,
@@ -172,7 +172,7 @@ def create_parser() -> argparse.ArgumentParser:
         "--spectrum-folder-path",
         "-mf",
         required=False,
-        help="The path of the folder in which the npz spectrum files are written.",
+        help="The path of the folder in which the npz STFT matrix files are written.",
         type=str,
         default=None,
     )

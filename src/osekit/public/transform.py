@@ -129,10 +129,10 @@ class Transform:
             This parameter has no effect if ``Transform.AUDIO`` is not in transform.
         fft: ShortTimeFFT | None
             FFT to use for computing the spectra.
-            This parameter is mandatory if either ``Transform.SPECTRUM``
-            or ``Transform.SPECTROGRAM`` is in transform.
-            This parameter has no effect if neither ``Transform.SPECTRUM``
-            nor ``Transform.SPECTROGRAM`` is in the transform.
+            This parameter is mandatory if either ``OutputType.STFT_MATRIX``
+            or ``OutputType.SPECTROGRAM`` is in the transform output type.
+            This parameter has no effect if neither ``OutputType.STFT_MATRIX``
+            nor ``OutputType.SPECTROGRAM`` is in the transform output type.
         v_lim: tuple[float, float] | None
             Limits (in ``dB``) of the colormap used for plotting the spectrogram.
             Has no effect if ``Transform.SPECTROGRAM`` is not in transform.
