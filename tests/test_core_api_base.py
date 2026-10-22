@@ -370,17 +370,17 @@ def test_base_dataset_from_files(
     [
         pytest.param(
             -1.0,
-            "timedelta_files",
+            "timedelta_file",
             id="negative_overlap_files",
         ),
         pytest.param(
             1.0,
-            "timedelta_files",
+            "timedelta_file",
             id="one_overlap_files",
         ),
         pytest.param(
             10.0,
-            "timedelta_files",
+            "timedelta_file",
             id="greater_than_one_overlap_files",
         ),
         pytest.param(
@@ -834,7 +834,8 @@ def test_base_dataset_from_folder(
     ],
 )
 def test_base_dataset_data_duration(
-    data_durations: list[Timedelta], expected_duration: Timedelta
+    data_durations: list[Timedelta],
+    expected_duration: Timedelta,
 ) -> None:
     files = []
     for data_duration in data_durations:
@@ -2262,16 +2263,7 @@ def test_data_name(data: DummyData, name: str | None, expected: str) -> None:
                 [
                     (
                         Event(
-                            begin=Timestamp("2015-08-28 12:12:00"),
-                            end=Timestamp("2015-08-28 12:13:00"),
-                        ),
-                        "depression",
-                    ),
-                ],
-                [
-                    (
-                        Event(
-                            begin=Timestamp("2015-08-28 12:13:00"),
+                            begin=Timestamp("2015-08-28 12:12:12"),
                             end=Timestamp("2015-08-28 12:13:02"),
                         ),
                         "depression",
@@ -2279,22 +2271,15 @@ def test_data_name(data: DummyData, name: str | None, expected: str) -> None:
                     (
                         Event(
                             begin=Timestamp("2015-08-28 12:13:02"),
-                            end=Timestamp("2015-08-28 12:13:22"),
+                            end=Timestamp("2015-08-28 12:13:12"),
                         ),
                         None,
-                    ),
-                    (
-                        Event(
-                            begin=Timestamp("2015-08-28 12:13:22"),
-                            end=Timestamp("2015-08-28 12:14:00"),
-                        ),
-                        "cherry",
                     ),
                 ],
                 [
                     (
                         Event(
-                            begin=Timestamp("2015-08-28 12:14:00"),
+                            begin=Timestamp("2015-08-28 12:13:22"),
                             end=Timestamp("2015-08-28 12:14:12"),
                         ),
                         "cherry",
@@ -2302,13 +2287,48 @@ def test_data_name(data: DummyData, name: str | None, expected: str) -> None:
                     (
                         Event(
                             begin=Timestamp("2015-08-28 12:14:12"),
-                            end=Timestamp("2015-08-28 12:15:00"),
+                            end=Timestamp("2015-08-28 12:14:22"),
                         ),
                         None,
                     ),
                 ],
             ],
             id="file_two_separate_files_begin_mid_file",
+        ),
+        pytest.param(
+            [
+                DummyFile(
+                    "depression",
+                    begin=Timestamp("2015-08-28 12:12:00"),
+                    end=Timestamp("2015-08-28 12:13:02"),
+                ),
+            ],
+            Timestamp("2015-08-28 12:12:10"),
+            Timestamp("2015-08-28 12:12:25"),
+            Timedelta(seconds=10),
+            "timedelta_file",
+            0.0,
+            [
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:12:10"),
+                            end=Timestamp("2015-08-28 12:12:20"),
+                        ),
+                        "depression",
+                    ),
+                ],
+                [
+                    (
+                        Event(
+                            begin=Timestamp("2015-08-28 12:12:20"),
+                            end=Timestamp("2015-08-28 12:12:30"),
+                        ),
+                        "depression",
+                    ),
+                ],
+            ],
+            id="file_end_mid_file",
         ),
     ],
 )
@@ -2396,9 +2416,9 @@ def test_dummydata_make_file() -> None:
             {
                 "path": "foo",
                 "begin": Timestamp("2020-01-01 00:00:00").strftime(
-                    TIMESTAMP_FORMATS_EXPORTED_FILES[0]
+                    TIMESTAMP_FORMATS_EXPORTED_FILES[0],
                 ),
-            }
+            },
         )
         == dfs[0]
     )
