@@ -1,0 +1,39 @@
+Job Id: 7137005.a24films0
+    Job_Name = SwissArmyMan
+    Job_Owner = daniels@a24films.fr
+    job_state = R
+    queue = jetski
+    server = a24films0
+    Checkpoint = u
+    ctime = Mon Sep  7 08:00:18 2026
+    Error_Path = a24films0.a24films.fr:/home1/a24/filmls/SwissArmyMan.err
+    Hold_Types = n
+    Join_Path = oe
+    Keep_Files = n
+    Mail_Points = a
+    mtime = Mon Sep  7 08:00:18 2026
+    Output_Path = a24films0.a24films.fr:/home1/a24/filmls/SwissArmyMan.out
+    Priority = 0
+    qtime = Mon Sep  7 08:00:18 2026
+    Rerunable = True
+    Resource_List.mem = 112gb
+    Resource_List.mpiprocs = 28
+    Resource_List.ncpus = 24
+    Resource_List.nodect = 1
+    Resource_List.place = group=switch
+    Resource_List.select = 1:ncpus=24:mem=112g
+    Resource_List.walltime = 00:30:00
+    resources_used.cpupercent = 1
+    resources_used.cput = 01:01:25
+    resources_used.mem = 40678964kb
+    resources_used.ncpus = 56
+    resources_used.vmem = 3828570148kb
+    resources_used.walltime = 00:10:37
+    substate = 10
+    Variable_List = PBS_O_SYSTEM=Linux,PBS_O_SHELL=/bin/csh,
+    etime = Mon Sep  7 08:00:18 2026
+    run_count = 15
+    eligible_time = 00:00:00
+    Submit_arguments = /home/a24films-exp/workspace/swiss/scheduled__2
+        026-09-07T07-00-00/army_man/run.sh
+    project = _pbs_project_default
