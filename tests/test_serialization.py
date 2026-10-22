@@ -35,7 +35,7 @@ from osekit.core.spectro_data import SpectroData
 from osekit.core.spectro_dataset import SpectroDataset
 from osekit.core.spectro_file import SpectroFile
 from osekit.utils.audio import Normalization
-from tests.helpers.audio import MockedAudioData, MockedAudioFile
+from tests.helpers.audio import MockedAudioFile
 
 
 def test_audio_file_from_dict_depends_on_available_info(
@@ -765,12 +765,15 @@ def test_spectro_data_serialization(
 
 
 def test_spectro_data_serialization_channel() -> None:
-    ad = MockedAudioData(
-        mocked_value=np.array([[1, 2, 3] for _ in range(100)]),
-        sample_rate=100,
+    ad = AudioData.from_files(
+        [
+            MockedAudioFile(
+                mocked_value=np.empty(shape=(100, 3)),
+                sample_rate=100,
+            ),
+        ],
+        channels=[0, 2],
     )
-
-    ad.channels = [0, 2]
 
     sd = SpectroData.from_audio_data(
         ad,
