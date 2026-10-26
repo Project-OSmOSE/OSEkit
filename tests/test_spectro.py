@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import contextlib
-import datetime
+import datetime as dt
 import gc
 from contextlib import nullcontext
 from pathlib import Path
@@ -32,7 +32,7 @@ from osekit.core.spectro_dataset import SpectroDataset
 from osekit.core.spectro_file import SpectroFile
 from osekit.core.spectro_item import SpectroItem
 from osekit.utils.audio import Normalization, generate_sample_audio
-from tests.helpers.audio import MockedAudioData
+from tests.helpers.audio import MockedAudioData, MockedAudioFile
 from tests.helpers.dummy import DummyFile
 
 
@@ -384,7 +384,7 @@ def test_spectrogram_from_npz_files(
 
     sd_split = sd.split(nb_chunks)
 
-    import soundfile as sf  # noqa: PLC0415
+    import soundfile as sf
 
     for spectro in sd_split:
         spectro.write(tmp_path / "output")
@@ -1481,7 +1481,7 @@ def test_plot_timezone(
     spectro_data_axes = called_ax.pop()
 
     if sd.begin.tz:
-        assert isinstance(spectro_data_axes.xaxis.units, datetime.tzinfo)
+        assert isinstance(spectro_data_axes.xaxis.units, dt.tzinfo)
     else:
         assert spectro_data_axes.xaxis.units is None
 
@@ -1527,12 +1527,12 @@ def test_garbage_collection_after_save_spectrogram(
 
     ltas.save_spectrogram(tmp_path / "output")
 
-    assert collect_calls[0] == 2  # noqa: PLR2004
+    assert collect_calls[0] == 2
 
     sds = SpectroDataset(sd.split(5))
     sds.save_spectrogram(tmp_path / "output")
 
-    assert collect_calls[0] == 7  # noqa: PLR2004
+    assert collect_calls[0] == 7
 
     ltass = LTASDataset(
         [
@@ -1542,7 +1542,7 @@ def test_garbage_collection_after_save_spectrogram(
     )
     ltass.save_spectrogram(tmp_path / "output")
 
-    assert collect_calls[0] == 12  # noqa: PLR2004
+    assert collect_calls[0] == 12
 
 
 def test_spectrodataset_scale(
@@ -1742,7 +1742,7 @@ def test_spectro_write_welch(
 
     def mocked_savez(**kwargs: dict) -> None:
         for key, value in kwargs.items():
-            savez_call[key] = value  # noqa: PERF403
+            savez_call[key] = value
 
     monkeypatch.setattr(np, "savez", mocked_savez)
 
@@ -1895,8 +1895,8 @@ def test_duplicate_data_check(monkeypatch: pytest.monkeypatch) -> None:
     check_calls = [0]
 
     def mock_check_duplicate_data_names(
-        *args,  # noqa: ANN002
-        **kwargs,  # noqa: ANN003
+        *args,
+        **kwargs,
     ) -> None:
         check_calls[0] += 1
 
@@ -1914,7 +1914,7 @@ def test_duplicate_data_check(monkeypatch: pytest.monkeypatch) -> None:
 
     sds.save_all(spectrum_folder=Path("bantam"), spectrogram_folder=Path("lyons"))
 
-    assert check_calls[0] == 2  # noqa: PLR2004
+    assert check_calls[0] == 2
 
 
 def test_spectro_data_get_audio_data_value() -> None:
