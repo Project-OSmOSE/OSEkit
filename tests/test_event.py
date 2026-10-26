@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from contextlib import nullcontext
 
+import numpy as np
 import pytest
 from pandas import Timedelta, Timestamp
 
@@ -529,3 +530,34 @@ def test_duration(event: Event, expected_duration: Timedelta) -> None:
 def test_localize(event: Event, timezone: str | None, expected: Event) -> None:
     event.localize(timezone)
     assert event == expected
+
+
+@pytest.mark.parametrize(
+    ("begin", "end", "overlap", "duration", "expected"),
+    [
+        pytest.param(
+            Timestamp("2020-01-01 00:00:00"),
+            Timestamp("2020-01-01 00:00:10"),
+            0.0,
+            None,
+            [
+                Event(
+                    begin=Timestamp("2020-01-01 00:00:00"),
+                    end=Timestamp("2020-01-01 00:00:10"),
+                ),
+            ],
+            id="no_duration_is_full_range",
+        ),
+    ],
+)
+def test_generate(
+    begin: Timestamp,
+    end: Timestamp,
+    overlap: float,
+    duration: Timedelta | None,
+    expected: list[Event],
+) -> None:
+    assert np.array_equal(
+        Event.generate(begin=begin, end=end, overlap=overlap, duration=duration),
+        expected,
+    )

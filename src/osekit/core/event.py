@@ -7,6 +7,8 @@ import copy
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, TypeVar
 
+from pandas import date_range
+
 from osekit.utils.timestamp import localize_timestamp
 
 if TYPE_CHECKING:
@@ -40,7 +42,7 @@ class Event:
     @begin.setter
     def begin(self, value: Timestamp) -> None:
         if hasattr(self, "_end") and value > self._end:
-            msg = f"Invalid Event: `end` ({self._end}) must be greater than `begin` ({value})."  # noqa: E501
+            msg = f"Invalid Event: `end` ({self._end}) must be greater than `begin` ({value})."
             raise ValueError(msg)
         self._begin = value
 
@@ -52,7 +54,7 @@ class Event:
     @end.setter
     def end(self, value: Timestamp) -> None:
         if hasattr(self, "_begin") and value < self._begin:
-            msg = f"Invalid Event: `end` ({value}) must be greater than `begin` ({self._begin})."  # noqa: E501
+            msg = f"Invalid Event: `end` ({value}) must be greater than `begin` ({self._begin})."
             raise ValueError(msg)
         self._end = value
 
@@ -104,7 +106,7 @@ class Event:
         >>> Event(begin=Timestamp("2024-01-01 00:00:00"),end=Timestamp("2024-01-02 00:00:00")).overlaps(Event(begin=Timestamp("2024-01-02 00:00:00"),end=Timestamp("2024-01-02 12:00:00")))
         False
 
-        """  # noqa: E501
+        """
         return self.begin < other.end and self.end > other.begin
 
     def get_overlapping_events(self, events: list[TEvent]) -> list[TEvent]:
@@ -170,7 +172,7 @@ class Event:
         >>> events[0].end == events[1].begin
         True
 
-        """  # noqa: E501
+        """
         events = sorted(
             events,
             key=lambda event: (event.begin, -1 * event.duration),
@@ -199,7 +201,7 @@ class Event:
         cls,
         events: list[TEvent],
         filling_class: type[TEvent],
-        **kwargs,  # noqa: ANN003
+        **kwargs,
     ) -> list[TEvent]:
         """Return a list with empty events added in the gaps between items.
 
@@ -227,7 +229,7 @@ class Event:
         >>> [(event.begin.second, event.end.second) for event in events]
         [(0, 10), (10, 15), (15, 25)]
 
-        """  # noqa: E501
+        """
         events = sorted(
             [copy.copy(event) for event in events],
             key=lambda event: event.begin,
@@ -242,6 +244,45 @@ class Event:
                 )
         filled_event_list.append(events[-1])
         return filled_event_list
+
+    @staticmethod
+    def generate(
+        begin: Timestamp,
+        end: Timestamp,
+        overlap: float = 0.0,
+        duration: Timedelta | None = None,
+    ) -> list[TEvent]:
+        r"""Generate a list of Events of given duration between two timestamps.
+
+        Parameters
+        ----------
+        begin: Timestamp
+            Beginning timestamp of the first event.
+        end: Timestamp
+            Timestamp after which no more event is returned.
+        overlap: float
+            Overlap between two successive events.
+            Expressed in percentage, must be in the ``[0., 1.[`` range.
+        duration: Timedelta|None
+            Duration of the returned events.
+            If ``None``, a single event is returned ranging from ``begin`` to ``end``.
+
+        Returns
+        -------
+        List[TEvent]
+            The list of events.
+
+        """
+        if not 0 <= overlap < 1:
+            msg = f"Overlap must be in the [0., 1.[ interval, got {overlap}"
+            raise ValueError(msg)
+
+        duration = duration or end - begin
+        hop = duration * (1 - overlap)
+
+        begins = date_range(begin, end, freq=hop, inclusive="left")
+
+        return [Event(begin=begin, end=begin + duration) for begin in begins]
 
 
 TEvent = TypeVar("TEvent", bound=Event)
