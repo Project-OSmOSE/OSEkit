@@ -624,3 +624,51 @@ def test_generate(
         Event.generate(begin=begin, end=end, overlap=overlap, duration=duration),
         expected,
     )
+
+
+@pytest.mark.parametrize(
+    ("begin", "end", "overlap", "duration", "error_msg"),
+    [
+        pytest.param(
+            Timestamp("2020-01-01 00:00:00"),
+            Timestamp("2020-01-01 00:00:10"),
+            -1,
+            None,
+            "Overlap must be",
+            id="negative_overlap_raises",
+        ),
+        pytest.param(
+            Timestamp("2020-01-01 00:00:00"),
+            Timestamp("2020-01-01 00:00:10"),
+            2,
+            None,
+            "Overlap must be",
+            id="higher_than_one_overlap_raises",
+        ),
+        pytest.param(
+            Timestamp("2020-01-01 00:00:00"),
+            Timestamp("2020-01-01 00:00:10"),
+            1,
+            None,
+            "Overlap must be",
+            id="exactly_one_overlap_raises",
+        ),
+        pytest.param(
+            Timestamp("2020-01-01 00:00:10"),
+            Timestamp("2020-01-01 00:00:00"),
+            0.0,
+            None,
+            "Invalid Event",
+            id="begin_must_be_before_end",
+        ),
+    ],
+)
+def test_generate_errors(
+    begin: Timestamp,
+    end: Timestamp,
+    overlap: float,
+    duration: Timedelta | None,
+    error_msg: str,
+) -> None:
+    with pytest.raises(ValueError, match=error_msg):
+        Event.generate(begin=begin, end=end, overlap=overlap, duration=duration)
