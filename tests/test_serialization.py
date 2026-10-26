@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from pathlib import Path, PureWindowsPath
+import contextlib
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -10,6 +11,7 @@ from scipy.signal import ShortTimeFFT
 from scipy.signal.windows import hamming, hann
 
 import osekit.core
+import osekit.core.audio_file
 from osekit.audio_backend.audio_file_manager import AudioFileManager
 from osekit.config import (
     TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED,
@@ -18,24 +20,27 @@ from osekit.config import (
 )
 from osekit.core.audio_data import AudioData
 from osekit.core.audio_dataset import AudioDataset
-import osekit.core.audio_file
 from osekit.core.audio_file import AudioFile
 from osekit.core.frequency_scale import Scale, ScalePart
 from osekit.core.instrument import Instrument
 from osekit.core.json_serializer import (
-    absolute_to_relative,
-    relative_to_absolute,
-    set_path_reference,
+    _anchor,
+    _deserialize_path,
+    _serialize_path,
+    deserialize_paths,
+    path_anchor,
+    serialize_paths,
 )
 from osekit.core.spectro_data import SpectroData
 from osekit.core.spectro_dataset import SpectroDataset
 from osekit.core.spectro_file import SpectroFile
 from osekit.utils.audio import Normalization
-from tests.helpers.audio import MockedAudioFile, MockedAudioData
+from tests.helpers.audio import MockedAudioFile
 
 
 def test_audio_file_from_dict_depends_on_available_info(
-    audio_files: tuple[list[AudioFile], Any], monkeypatch: pytest.MonkeyPatch
+    audio_files: tuple[list[AudioFile], Any],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     audio_files, _ = audio_files
     af = audio_files[0]
@@ -70,7 +75,8 @@ def test_audio_file_from_dict_depends_on_available_info(
 
 
 def test_audio_file_to_dict_should_contain_afm_info(
-    audio_files: tuple[list[AudioFile], Any], monkeypatch: pytest.MonkeyPatch
+    audio_files: tuple[list[AudioFile], Any],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     audio_files, _ = audio_files
     af = audio_files[0]
@@ -242,7 +248,7 @@ def test_audio_data_channels_serialization(monkeypatch: pytest.MonkeyPatch) -> N
             [1, 2, 3],
             [1, 2, 3],
             [1, 2, 3],
-        ]
+        ],
     )
 
     af = MockedAudioFile(
@@ -759,15 +765,19 @@ def test_spectro_data_serialization(
 
 
 def test_spectro_data_serialization_channel() -> None:
-    ad = MockedAudioData(
-        mocked_value=np.array([[1, 2, 3] for _ in range(100)]),
-        sample_rate=100,
+    ad = AudioData.from_files(
+        [
+            MockedAudioFile(
+                mocked_value=np.empty(shape=(100, 3)),
+                sample_rate=100,
+            ),
+        ],
+        channels=[0, 2],
     )
 
-    ad.channels = [0, 2]
-
     sd = SpectroData.from_audio_data(
-        ad, fft=ShortTimeFFT(win=hamming(48), hop=48, fs=100)
+        ad,
+        fft=ShortTimeFFT(win=hamming(48), hop=48, fs=100),
     )
     sd.audio_channel = 2
 
@@ -1045,64 +1055,6 @@ def test_spectro_dataset_serialization(
 """
 
 
-@pytest.mark.parametrize(
-    ("target", "root", "expected"),
-    [
-        pytest.param(
-            "saphir.wav",
-            "C:/baston",
-            "C:/baston/saphir.wav",
-            id="relative_to_windows_root",
-        ),
-        pytest.param(
-            "i/want/sky.wav",
-            "C:/what/would",
-            "C:/what/would/i/want/sky.wav",
-            id="relative_tree_to_windows_root",
-        ),
-        pytest.param(
-            "agency/group",
-            "/the",
-            "/the/agency/group",
-            id="relative_tree_to_posix_root",
-        ),
-        pytest.param(
-            "C:/user/dataset/file.csv",
-            "C:/root/to/dataset",
-            "C:/root/to/dataset/file.csv",
-            id="absolute_windows_path_to_windows_root",
-        ),
-        pytest.param(
-            "C:/user/dataset/file.csv",
-            "C:/root/to/dataset/with/more",
-            "C:/root/to/dataset/file.csv",
-            id="absolute_windows_path_to_windows_root_takes_first_common_folder",
-        ),
-        pytest.param(
-            "C:/user/outputs/audio/transform/audio/audio/audio.wav",
-            "C:/root/to/my_datasets/audio/some/stuff",
-            "C:/root/to/my_datasets/audio/transform/audio/audio/audio.wav",
-            id="absolute_windows_path_to_windows_root_with_repeated_folders",
-        ),
-        pytest.param(
-            "C:/user/outputs/audio/transform/audio/audio/audio.wav",
-            "/root/to/my_datasets/audio/some/stuff",
-            "/root/to/my_datasets/audio/transform/audio/audio/audio.wav",
-            id="absolute_windows_path_to_posix_root_with_repeated_folders",
-        ),
-        pytest.param(
-            "audio/transform/audio/audio/audio.wav",
-            "/root/to/my_datasets/audio/some/stuff",
-            "/root/to/my_datasets/audio/some/stuff/audio/transform/audio/audio/audio.wav",
-            id="relative_path_to_posix_root_with_repeated_folders",
-        ),
-    ],
-)
-def test_relative_to_absolute(target: str, root: str, expected: str) -> None:
-    path: Path = relative_to_absolute(target_path=target, root_path=root)
-    assert path.resolve() == Path(PureWindowsPath(expected)).resolve()
-
-
 def can_symlink(tmp_path: Path) -> bool:
     try:
         test_link = tmp_path / "link_test"
@@ -1113,115 +1065,211 @@ def can_symlink(tmp_path: Path) -> bool:
     return True
 
 
+def test_path_anchor() -> None:
+    assert _anchor.get() is None  # Default
+
+    @path_anchor(anchor=Path(r"cool/anchor"))
+    def test_anchor() -> None:
+        assert _anchor.get() == Path(r"cool/anchor")
+
+    test_anchor()
+
+    assert _anchor.get() is None
+
+
 @pytest.mark.parametrize(
-    ("target", "use_alias"),
+    ("value", "root", "expected"),
     [
         pytest.param(
-            ".",
-            False,
-            id="same_path",
+            "cool/fun/top.wav",
+            "cool",
+            "fun/top.wav",
+            id="value_is_relative_to_root",
         ),
         pytest.param(
-            "../",
-            False,
-            id="parent",
-        ),
-        pytest.param(
-            "../milkkisses/serpentskirt",
-            False,
-            id="folder_in_parent",
-        ),
-        pytest.param(
-            "milkkisses/serpentskirt",
-            False,
-            id="folder_in_child",
-        ),
-        pytest.param(
-            "serpentskirt",
-            True,
-            id="drive_alias",
+            "cool/fun/top.wav",
+            "cool/jazz",
+            "../fun/top.wav",
+            id="value_requires_walk_up",
         ),
     ],
 )
-def test_absolute_ro_relative(
+def test_serialize_without_anchor_relative(
     tmp_path: Path,
-    target: str,
-    use_alias: bool,
+    value: str,
+    root: str,
+    expected: str,
 ) -> None:
-    if use_alias and not can_symlink(tmp_path):
-        pytest.skip("Symlink not permitted on this system.")
+    value, root = (tmp_path / relpath for relpath in (value, root))
 
-    real_root = tmp_path / "cocteau"
-    real_root.mkdir(parents=True, exist_ok=True)
-
-    if use_alias:
-        alias_root = tmp_path / "twins"
-        alias_root.symlink_to(real_root)
-        root = alias_root
-    else:
-        root = real_root
-
-    expected = Path(target)
-
-    target = (real_root / target).resolve()
-    result = absolute_to_relative(target_path=target, root_path=root)
-
-    assert result == expected
+    assert _serialize_path(value=value, root_path=root) == expected
 
 
-def test_relative_paths_serialization(tmp_path: Path) -> None:
-    dictionary = {
-        "path": str(tmp_path / "user" / "cool"),
-        "folder": str(tmp_path / "user" / "cool"),
-        "json": str(tmp_path / "user" / "cool"),
-        "ignored": str(tmp_path / "user" / "cool"),
-        "not_a_path": "hello",
-        "nested_dict": {
-            "path": str(tmp_path / "user" / "cool"),
-            "folder": str(tmp_path / "user" / "cool"),
-            "json": str(tmp_path / "user" / "cool"),
-            "ignored": str(tmp_path / "user" / "cool"),
-            "not_a_path": "hello",
+def test_serialize_without_anchor_absolute(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def patch_relpath(*args, **kwargs) -> None:
+        """Patch relpatch to raise a ``ValueError``.
+
+        This simulates an error when e.g. trying to express a path relative
+        to a ``root_path`` in another partition."""
+        raise ValueError
+
+    monkeypatch.setattr("osekit.core.json_serializer.os.path.relpath", patch_relpath)
+
+    value = tmp_path / "fun" / "top.wav"
+
+    # Not important as it will raise in patch_relpath whatever root_path is
+    root_path = Path(r"cool")
+
+    # Absolute path since value can't be expressed as relative to root_path
+    expected = value.as_posix()
+
+    assert _serialize_path(value=value, root_path=root_path) == expected
+
+
+def test_serialize_path_within_anchor(tmp_path: Path) -> None:
+    value = tmp_path / "fun" / "top.wav"
+    anchor = tmp_path
+    root_path = tmp_path / "fun"
+    expected = "top.wav"
+
+    with path_anchor(anchor=anchor):
+        assert _serialize_path(value=value, root_path=root_path) == expected
+
+
+def test_serialize_path_outside_anchor(tmp_path: Path) -> None:
+    value = tmp_path / "fun" / "top.wav"
+    anchor = tmp_path / "cool"
+    root_path = tmp_path / "cool" / "fun"
+    expected = value.as_posix()  # Absolute because we're outside the anchor
+
+    with path_anchor(anchor=anchor):
+        assert _serialize_path(value=value, root_path=root_path) == expected
+
+
+def test_deserialize_absolute_path_bypasses_root(tmp_path: Path) -> None:
+    value = tmp_path / "baston" / "saphir.wav"
+    root = tmp_path / "fun" / "cool"
+
+    result = _deserialize_path(value=value.as_posix(), root_path=root)
+
+    assert result == value
+
+
+def test_deserialize_relative_path(tmp_path: Path) -> None:
+    value = "baston/saphir.wav"
+    root = tmp_path / "fun"
+
+    result = _deserialize_path(value=value, root_path=root)
+
+    assert result == tmp_path / "fun" / "baston" / "saphir.wav"
+
+
+def test_deserialize_relative_path_walk_up(tmp_path: Path) -> None:
+    value = "../../baston/saphir.wav"
+    root = tmp_path / "wilde" / "jagd"
+
+    result = _deserialize_path(value=value, root_path=root)
+
+    assert result == tmp_path / "baston/saphir.wav"
+
+
+@pytest.mark.parametrize("use_anchor", [True, False])
+def test_serialize_deserialize_round_trip(tmp_path: Path, use_anchor: bool) -> None:
+    project = tmp_path / "project"
+    remote = tmp_path / "remote"  # Emulates another partition
+    root = project / "processed" / "jsons"
+
+    inside = project / "data" / "audio" / "a1.wav"
+    outside = remote / "audio" / "b.wav"
+
+    context = path_anchor(anchor=project) if use_anchor else contextlib.nullcontext()
+
+    with context:
+        serialized_in = _serialize_path(value=inside, root_path=root)
+        serialized_out = _serialize_path(value=outside, root_path=root)
+
+    assert serialized_in == "../../data/audio/a1.wav"
+    assert serialized_out == (
+        outside.as_posix() if use_anchor else "../../../remote/audio/b.wav"
+    )
+
+    assert _deserialize_path(value=serialized_in, root_path=root) == inside.resolve()
+    assert _deserialize_path(value=serialized_out, root_path=root) == outside.resolve()
+
+
+@pytest.mark.parametrize("use_anchor", [True, False])
+def test_serialize_dictionary_paths(tmp_path: Path, use_anchor: bool) -> None:
+    project_path = tmp_path / "project"
+    root_path = project_path / "fun"
+
+    deserialized = {
+        "path": tmp_path / "outside_project" / "audio.wav",
+        "folder": project_path / "cool" / "audio.wav",
+        "json": root_path / "audio.wav",
+        "not_a_path": 16,
+        "nested_dictionary": {
+            "path": root_path / "audio.wav",
         },
     }
 
-    relative_to_user_folder = {
-        "path": str(Path("cool")),
-        "folder": str(Path("cool")),
-        "json": str(Path("cool")),
-        "ignored": str(tmp_path / "user" / "cool"),
-        "not_a_path": "hello",
-        "nested_dict": {
-            "path": str(Path("cool")),
-            "folder": str(Path("cool")),
-            "json": str(Path("cool")),
-            "ignored": str(tmp_path / "user" / "cool"),
-            "not_a_path": "hello",
+    serialized = {
+        "path": (tmp_path / "outside_project" / "audio.wav").as_posix(),
+        "folder": "../cool/audio.wav",  # Relative because in anchor
+        "json": "audio.wav",
+        "not_a_path": 16,
+        "nested_dictionary": {
+            "path": "audio.wav",
         },
     }
 
-    dict_copy = dict(dictionary)
-
-    # Absolute to relative
-    set_path_reference(
-        serialized_dict=dict_copy,
-        root_path=tmp_path / "user",
-        reference="relative",
+    input_copy = dict(deserialized)
+    context = (
+        path_anchor(anchor=project_path) if use_anchor else contextlib.nullcontext()
     )
-    assert dict_copy == relative_to_user_folder
 
-    # Relative to absolute
-    set_path_reference(
-        serialized_dict=dict_copy,
-        root_path=tmp_path / "user",
-        reference="absolute",
+    # Path outside project: absolute if we use project as anchor
+    # relative if we don't use anchors.
+    serialized["path"] = (
+        (tmp_path / "outside_project" / "audio.wav").as_posix()
+        if use_anchor
+        else "../../outside_project/audio.wav"
     )
-    assert dict_copy == dictionary
 
-    # Absolute to absolute
-    set_path_reference(
-        serialized_dict=dict_copy,
-        root_path=tmp_path / "user",
-        reference="absolute",
+    with context:
+        serialize_paths(
+            data=input_copy,
+            root_path=root_path,
+        )
+        assert input_copy == serialized
+
+
+def test_dictionary_paths_deserialization(tmp_path: Path) -> None:
+    input_dict = {
+        "path": r"C:/windows_like/absolute_path",
+        "folder": r"/posix/absolute_path",
+        "json": r"relative/path",
+        "not_a_path": 16,
+        "nested_dictionary": {
+            "path": r"relative/path",
+        },
+    }
+
+    deserialized_dict = {
+        "path": Path(r"C:/windows_like/absolute_path"),
+        "folder": Path(r"/posix/absolute_path"),
+        "json": tmp_path / "root_folder/relative/path",
+        "not_a_path": 16,
+        "nested_dictionary": {
+            "path": tmp_path / "root_folder/relative/path",
+        },
+    }
+
+    deserialize_paths(
+        data=input_dict,
+        root_path=tmp_path / "root_folder",
     )
-    assert dict_copy == dictionary
+
+    assert input_dict == deserialized_dict

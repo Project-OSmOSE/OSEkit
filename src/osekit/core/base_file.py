@@ -126,7 +126,7 @@ class BaseFile(Event, ABC):
 
         """
         return {
-            "path": str(self.path),
+            "path": self.path,
             "begin": self.begin.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED),
             "end": self.end.strftime(TIMESTAMP_FORMAT_EXPORTED_FILES_LOCALIZED),
         }

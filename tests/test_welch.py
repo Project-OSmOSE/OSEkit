@@ -11,6 +11,7 @@ from osekit.core.audio_dataset import AudioDataset
 from osekit.core.instrument import Instrument
 from osekit.core.spectro_data import SpectroData
 from osekit.core.spectro_dataset import SpectroDataset
+from tests.helpers.audio import MockedAudioData
 
 
 @pytest.mark.parametrize(
@@ -183,3 +184,27 @@ def test_welch_provided_pxs(
 
     assert savez["timestamps"] == list(pxs.columns)
     assert np.array_equal(savez["pxs"], pxs.to_numpy().T)
+
+
+def test_welch_targeted_channel(monkeypatch: pytest.MonkeyPatch) -> None:
+    ad = MockedAudioData(
+        mocked_value=np.array([[1.0, 2.0] for _ in range(100)]),
+    )
+
+    sd = SpectroData.from_audio_data(
+        data=ad,
+        fft=ShortTimeFFT(win=hamming(16), hop=16, fs=ad.sample_rate),
+    )
+
+    sd.audio_channel = 1
+
+    welch_input = []
+
+    def mocked_welch(x, *args, **kwargs) -> tuple:
+        welch_input.append(x)
+        return None, np.empty(shape=sd.shape)
+
+    monkeypatch.setattr("osekit.core.spectro_data.welch", mocked_welch)
+    sd.get_welch()
+
+    assert np.array_equal(welch_input[0], ad.get_value()[:, 1])

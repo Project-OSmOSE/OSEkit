@@ -21,7 +21,7 @@ from osekit.core import audio_file_manager as afm
 from osekit.core.audio_dataset import AudioDataset
 from osekit.core.base_dataset import BaseDataset
 from osekit.core.instrument import Instrument
-from osekit.core.json_serializer import deserialize_json, serialize_json
+from osekit.core.json_serializer import deserialize_json, path_anchor, serialize_json
 from osekit.core.ltas_dataset import LTASDataset
 from osekit.core.spectro_dataset import SpectroDataset
 from osekit.public.transform import OutputType, Transform
@@ -61,7 +61,7 @@ class Project:
     def __init__(  # noqa: PLR0913
         self,
         folder: Path,
-        strptime_format: str | list[str] | None,
+        strptime_format: str | list[str] | None = None,
         gps_coordinates: str | list | tuple = (0, 0),
         depth: float = 0.0,
         timezone: str | None = None,
@@ -219,6 +219,36 @@ class Project:
                 shutil.copyfile(file, destination)
 
         self.build()
+
+    def build_from_audio_dataset_json(
+        self,
+        audio_dataset_json: Path,
+    ) -> None:
+        """Build a ``Project`` directly from its original dataset.
+
+        The project will be built in the ``self.folder`` path and its original
+        audio dataset will be the one serialized in ``audio_dataset_json``.
+
+        Parameters
+        ----------
+        audio_dataset_json: Path
+            Path to the JSON serialized file of the original ``AudioDataset``.
+
+        """
+        self._create_logger()
+
+        ads = AudioDataset.from_json(file=audio_dataset_json)
+
+        self.outputs[ads.name] = {
+            "class": type(ads).__name__,
+            "transform": "original",
+            "dataset": ads,
+        }
+
+        for folder in self.SUBFOLDERS.values():
+            (self.folder / folder).mkdir(exist_ok=True, parents=True)
+
+        self.write_json()
 
     def _create_logger(self) -> None:
         if self.logger:
@@ -870,9 +900,9 @@ class Project:
                 name: {
                     "class": dataset["class"],
                     "transform": dataset["transform"],
-                    "json": str(dataset["dataset"])
+                    "json": dataset["dataset"]
                     if isinstance(dataset["dataset"], Path)
-                    else str(dataset["dataset"].folder / f"{name}.json"),
+                    else dataset["dataset"].folder / f"{name}.json",
                 }
                 for name, dataset in sorted(self.outputs.items(), key=lambda kv: kv[0])
             },
@@ -905,7 +935,7 @@ class Project:
             outputs[name] = {
                 "class": dataset["class"],
                 "transform": dataset["transform"],
-                "dataset": Path(dataset["json"]),
+                "dataset": dataset["json"],
             }
         return cls(
             folder=Path(),
@@ -938,7 +968,11 @@ class Project:
 
             serialize_json(folder / "project.json", dictionary)
 
-        _write()
+        with path_anchor(anchor=self.folder):
+            # Setting the path anchor to the project folder
+            # allows for serializing paths that are on different partitions
+            # (or simply outside the project folder) as absolute paths.
+            _write()
 
     @classmethod
     def from_json(cls, file: Path) -> Project:
