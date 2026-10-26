@@ -548,6 +548,69 @@ def test_localize(event: Event, timezone: str | None, expected: Event) -> None:
             ],
             id="no_duration_is_full_range",
         ),
+        pytest.param(
+            Timestamp("2020-01-01 00:00:00"),
+            Timestamp("2020-01-01 00:00:10"),
+            0.0,
+            Timedelta(seconds=5),
+            [
+                Event(
+                    begin=Timestamp("2020-01-01 00:00:00"),
+                    end=Timestamp("2020-01-01 00:00:05"),
+                ),
+                Event(
+                    begin=Timestamp("2020-01-01 00:00:05"),
+                    end=Timestamp("2020-01-01 00:00:10"),
+                ),
+            ],
+            id="end_timestamp_on_event_end",
+        ),
+        pytest.param(
+            Timestamp("2020-01-01 00:00:00"),
+            Timestamp("2020-01-01 00:00:08"),
+            0.0,
+            Timedelta(seconds=5),
+            [
+                Event(
+                    begin=Timestamp("2020-01-01 00:00:00"),
+                    end=Timestamp("2020-01-01 00:00:05"),
+                ),
+                Event(
+                    begin=Timestamp("2020-01-01 00:00:05"),
+                    end=Timestamp("2020-01-01 00:00:10"),
+                ),
+            ],
+            id="end_timestamp_within_event",
+        ),
+        pytest.param(
+            Timestamp("2020-01-01 00:00:00"),
+            Timestamp("2020-01-01 00:00:10"),
+            1 / 3,
+            Timedelta(seconds=3),
+            [
+                Event(
+                    begin=Timestamp("2020-01-01 00:00:00"),
+                    end=Timestamp("2020-01-01 00:00:03"),
+                ),
+                Event(
+                    begin=Timestamp("2020-01-01 00:00:02"),
+                    end=Timestamp("2020-01-01 00:00:05"),
+                ),
+                Event(
+                    begin=Timestamp("2020-01-01 00:00:04"),
+                    end=Timestamp("2020-01-01 00:00:07"),
+                ),
+                Event(
+                    begin=Timestamp("2020-01-01 00:00:06"),
+                    end=Timestamp("2020-01-01 00:00:09"),
+                ),
+                Event(
+                    begin=Timestamp("2020-01-01 00:00:08"),
+                    end=Timestamp("2020-01-01 00:00:11"),
+                ),
+            ],
+            id="overlapping_events",
+        ),
     ],
 )
 def test_generate(
