@@ -1,9 +1,11 @@
+import logging
 from contextlib import AbstractContextManager, nullcontext
 from pathlib import Path
 from typing import Any, Literal
 
 import numpy as np
 import pytest
+from _pytest.logging import LogCaptureFixture
 from matplotlib.axes import Axes
 from matplotlib.patches import Rectangle
 from pandas import DataFrame, Timedelta, Timestamp
@@ -235,10 +237,14 @@ def test_confidence_indicator_from_relative_level_string(
         assert ci.maximum_level == e.maximum_level
 
 
-def test_detections_from_csv() -> None:
-    detections = Detection.from_csv(
-        csv=Path(__file__).parent / "_static" / "aplose_result.csv",
-    )
+def test_detections_from_csv(caplog: LogCaptureFixture) -> None:
+    with caplog.at_level(logging.WARNING):
+        detections = Detection.from_csv(
+            csv=Path(__file__).parent / "_static" / "aplose_result.csv",
+        )
+
+    # Failed parsed line should be logged (weak comment at idx 10)
+    assert "[10]" in caplog.text
 
     minimal_detection = next(d for d in detections if d.label is None)
     detections = [d for d in detections if d is not minimal_detection]
@@ -336,6 +342,21 @@ def test_detections_from_csv() -> None:
     assert len(minimal_detection.verifications) == 0
 
 
+def test_detections_from_csv_raises_if_no_detection(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def mock_from_dict(*args, **kwargs) -> None:  # noqa: ANN002, ANN003
+        msg = r"Mock a TypeError while trying to parse a Detection object."
+        raise TypeError(msg)
+
+    monkeypatch.setattr(Detection, "from_dict", mock_from_dict)
+
+    with pytest.raises(ValueError, match="No valid Detection was found"):
+        Detection.from_csv(
+            csv=Path(__file__).parent / "_static/minimal_detector_result.csv",
+        )
+
+
 def test_detections_to_dict(tmp_path: Path) -> None:
     for result_file in ("aplose_result.csv", "minimal_detector_result.csv"):
         detections = Detection.from_csv(
@@ -391,6 +412,14 @@ def test_minimal_detector_result_file() -> None:
     )
 
     assert len(detections) == 2
+
+
+def test_retro_compatibility() -> None:
+    detections = Detection.from_csv(
+        csv=Path(__file__).parent / "_static/retro_compatibility_result.csv",
+    )
+
+    assert detections[0].label == "bird"
 
 
 def test_detections_from_csv_list() -> None:
