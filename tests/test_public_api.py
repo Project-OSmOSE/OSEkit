@@ -492,7 +492,7 @@ def test_reshape(
         pytest.param(
             Transform(
                 output_type=OutputType.AUDIO
-                | OutputType.SPECTRUM
+                | OutputType.STFT_MATRIX
                 | OutputType.SPECTROGRAM,
                 name="pingu",
                 begin=Timestamp("2024-01-01 12:00:00"),
@@ -576,11 +576,11 @@ def test_serialization(
             id="spectro_only",
         ),
         pytest.param(
-            OutputType.SPECTRUM,
+            OutputType.STFT_MATRIX,
             id="spectrum_only",
         ),
         pytest.param(
-            OutputType.SPECTRUM | OutputType.SPECTROGRAM,
+            OutputType.STFT_MATRIX | OutputType.SPECTROGRAM,
             id="both_spectral_flags",
         ),
     ],
@@ -615,7 +615,7 @@ def test_spectral_transform_error_if_no_provided_fft(output_type: OutputType) ->
         ),
         pytest.param(
             Transform(
-                output_type=OutputType.SPECTRUM,
+                output_type=OutputType.STFT_MATRIX,
                 name="cool",
                 fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
             ),
@@ -624,7 +624,7 @@ def test_spectral_transform_error_if_no_provided_fft(output_type: OutputType) ->
         ),
         pytest.param(
             Transform(
-                output_type=OutputType.SPECTRUM | OutputType.SPECTROGRAM,
+                output_type=OutputType.STFT_MATRIX | OutputType.SPECTROGRAM,
                 name="cool",
                 fft=ShortTimeFFT(hamming(1024), 1024, 48_000),
             ),
@@ -633,7 +633,7 @@ def test_spectral_transform_error_if_no_provided_fft(output_type: OutputType) ->
         ),
         pytest.param(
             Transform(
-                output_type=OutputType.SPECTRUM
+                output_type=OutputType.STFT_MATRIX
                 | OutputType.SPECTROGRAM
                 | OutputType.AUDIO,
                 name="cool",
@@ -943,7 +943,7 @@ def test_transform_validate_sample_rate(
                 end=None,
                 data_duration=None,
                 sample_rate=None,
-                normalization="zscore",
+                normalization=Normalization.ZSCORE,
                 subtype="DOUBLE",
             ),
             [
@@ -1124,7 +1124,7 @@ def test_edit_transform_before_run(
     project.build()
 
     transform = Transform(
-        output_type=OutputType.AUDIO | OutputType.SPECTRUM | OutputType.SPECTROGRAM,
+        output_type=OutputType.AUDIO | OutputType.STFT_MATRIX | OutputType.SPECTROGRAM,
         data_duration=project.origin_dataset.duration / 2,
         name="original_transform",
         sample_rate=24_000,
@@ -1313,7 +1313,7 @@ def test_delete_output(
     # Add another transform to check that it is not affected by the deletion
 
     transform_to_keep = Transform(
-        output_type=OutputType.AUDIO | OutputType.SPECTROGRAM | OutputType.SPECTRUM,
+        output_type=OutputType.AUDIO | OutputType.SPECTROGRAM | OutputType.STFT_MATRIX,
         data_duration=project.origin_dataset.duration / 2,
         name="transform_to_keep",
         sample_rate=24_000,
@@ -1430,7 +1430,7 @@ def test_rename_transform(
     transform = Transform(
         output_type=OutputType.AUDIO
         | OutputType.SPECTROGRAM
-        | OutputType.SPECTRUM
+        | OutputType.STFT_MATRIX
         | OutputType.WELCH,
         data_duration=project.origin_dataset.duration / 2,
         name=first_name,
