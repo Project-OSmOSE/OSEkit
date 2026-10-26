@@ -194,19 +194,19 @@ class Scale:
         sx_matrix: np.ndarray,
         original_scale: np.ndarray | list,
     ) -> np.ndarray:
-        """Rescale the given spectrum matrix according to the present scale.
+        """Rescale the given STFT matrix according to the present scale.
 
         Parameters
         ----------
         sx_matrix: np.ndarray
-            Spectrum matrix.
+            STFT matrix.
         original_scale: np.ndarray
-            Original frequency axis of the spectrum matrix.
+            Original frequency axis of the STFT matrix.
 
         Returns
         -------
         np.ndarray
-            Spectrum matrix mapped on the present scale.
+            STFT matrix mapped on the present scale.
 
         """
         if type(original_scale) is np.ndarray:

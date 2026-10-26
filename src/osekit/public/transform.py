@@ -20,7 +20,7 @@ class OutputType(Flag):
         to disk.
         The new ``AudioDataset`` will be linked to the reshaped audio files rather
         than to the original files.
-    ``SPECTRUM``:
+    ``STFT_MATRIX``:
         Will write the ``npz`` ``SpectroFiles`` to disk and link the ``SpectroDataset``
         to these files.
     ``SPECTROGRAM``:
@@ -39,13 +39,13 @@ class OutputType(Flag):
     True
     >>> OutputType.SPECTROGRAM in export
     True
-    >>> OutputType.SPECTRUM in export
+    >>> OutputType.STFT_MATRIX in export
     False
 
     """
 
     AUDIO = auto()
-    SPECTRUM = auto()
+    STFT_MATRIX = auto()
     SPECTROGRAM = auto()
     WELCH = auto()
 
@@ -129,10 +129,10 @@ class Transform:
             This parameter has no effect if ``Transform.AUDIO`` is not in transform.
         fft: ShortTimeFFT | None
             FFT to use for computing the spectra.
-            This parameter is mandatory if either ``Transform.SPECTRUM``
-            or ``Transform.SPECTROGRAM`` is in transform.
-            This parameter has no effect if neither ``Transform.SPECTRUM``
-            nor ``Transform.SPECTROGRAM`` is in the transform.
+            This parameter is mandatory if either ``OutputType.STFT_MATRIX``
+            or ``OutputType.SPECTROGRAM`` is in the transform output type.
+            This parameter has no effect if neither ``OutputType.STFT_MATRIX``
+            nor ``OutputType.SPECTROGRAM`` is in the transform output type.
         v_lim: tuple[float, float] | None
             Limits (in ``dB``) of the colormap used for plotting the spectrogram.
             Has no effect if ``Transform.SPECTROGRAM`` is not in transform.
@@ -177,7 +177,7 @@ class Transform:
         return any(
             flag in self.output_type
             for flag in (
-                OutputType.SPECTRUM,
+                OutputType.STFT_MATRIX,
                 OutputType.SPECTROGRAM,
                 OutputType.WELCH,
             )

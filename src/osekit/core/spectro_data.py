@@ -163,8 +163,8 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         """Data type used to represent the sx values.
 
         Should either be ``float`` or ``complex``.
-        If ``complex``, the phase info will be included in the computed spectrum.
-        If ``float``, only the absolute value of the spectrum will be kept.
+        If ``complex``, the phase info will be included in the computed STFT matrix.
+        If ``float``, only the absolute value of the STFT matrix will be kept.
 
         """
         return self._sx_dtype
@@ -256,9 +256,9 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         ]
 
     def get_value(self) -> np.ndarray:
-        """Return the Sx spectrum of the spectrogram.
+        """Return the Sx spectrogram matrix.
 
-        The Sx spectrum contains the absolute square of the STFT.
+        The Sx spectrogram matrix contains the absolute square of the STFT.
         """
         if not all(item.is_empty for item in self.items):
             return self._get_value_from_items(self.items)
@@ -473,7 +473,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         return ax
 
     def get_db_value(self, sx: np.ndarray | None = None) -> np.ndarray:
-        """Return the ``Sx`` spectrum of the spectrogram expressed in ``dB``.
+        """Return the ``Sx`` spectrogram matrix expressed in ``dB``.
 
         If the ``self.audio_data.instrument is not None``, the values are
         converted to ``dB SPL`` (re ``self.audio_data.instrument.P_REF``).
@@ -482,14 +482,14 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         Parameters
         ----------
         sx: np.ndarray
-            Sx values of the spectrum.
+            Sx values of the spectrogram.
             If not provided, sx values will be fetched thanks to the
             ``SpectroData.get_value()`` method.
 
         Returns
         -------
         np.ndarray
-            Sx values in decibel.
+            Sx spectrogram matrix with its values in decibel.
 
         """
         sx = sx if sx is not None else self.get_value()
@@ -505,12 +505,12 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         Parameters
         ----------
         sx: np.ndarray
-            Sx values of the spectrum.
+            Sx STFT values.
 
         Returns
         -------
         np.ndarray
-            Converted Sx values.
+            Sx STFT values converted to decibels.
 
         """
         if self.sx_dtype is complex:
@@ -638,7 +638,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
     def split(
         self,
         nb_subdata: int = 2,
-        **kwargs,  # noqa: ANN003
+        **kwargs,
     ) -> list[SpectroData]:
         """Split the spectro data object in the specified number of spectro subdata.
 
@@ -799,7 +799,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         files: list[SpectroFile],
         begin: Timestamp,
         end: Timestamp,
-        **kwargs,  # noqa: ANN003
+        **kwargs,
     ) -> SpectroData:
         """Deserialize the ``SpectroData``-specific parts of a Data dictionary.
 
@@ -837,7 +837,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         files: list[TFile],
         begin: Timestamp,
         end: Timestamp,
-        **kwargs,  # noqa: ANN003
+        **kwargs,
     ) -> SpectroData:
         return SpectroData.from_files(
             files=files,
@@ -856,7 +856,7 @@ class SpectroData(BaseData[SpectroItem, SpectroFile]):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         name: str | None = None,
-        **kwargs,  # noqa: ANN003
+        **kwargs,
     ) -> SpectroData:
         """Return a ``SpectroData`` object from a list of ``SpectroFiles``.
 

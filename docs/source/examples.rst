@@ -34,7 +34,7 @@ In the ``docs/source/_static/sample_audio/timestamped`` folder, files are just n
 
 .. topic:: :doc:`Compute/plot a spectrogram <example_spectrogram>`
 
-    | Compute the spectrum matrix and/or Power Spectral Density estimates of an ``AudioData``.
+    | Compute the STFT matrix and/or Power Spectral Density estimates of an ``AudioData``.
     | Export the matrices and/or plot a spectrogram.
 
 ===========
@@ -59,7 +59,7 @@ In the ``docs/source/_static/sample_audio/timestamped`` folder, files are just n
 
 .. topic:: :doc:`Work with multichannel audio files <example_multichannel>`
 
-    Work on multichannel audio, compute spectrums from specific channels...
+    Work on multichannel audio, compute STFTs from specific channels...
 
 ===========
 

@@ -26,7 +26,7 @@ Audio Data
 Design
 """"""
 
-The :class:`osekit.core.audio_data.AudioData` class represent a chunk of audio taken between two specific timestamps from one or more `AudioFile` instances.
+The :class:`osekit.core.audio_data.AudioData` class represent a chunk of audio taken between two specific timestamps from one or more ``AudioFile`` instances.
 
 This class offers means of easily resample the data and access it on-demand (with an optimized I/O workflow to minimize the file openings/closings).
 
@@ -46,7 +46,7 @@ Example for an ``AudioData`` representing the first 2 seconds of the ``foo/7189.
 
 This will lead to the following *data* <-> *file* structure (see the :ref:`Data and Files <data_files>` section):
 
-.. image:: _static/audio_data/ex1.svg
+.. image:: _static/audio_data/ex_1.svg
 
 If the ``AudioData`` begin and end timestamps cover multiple ``AudioFile``, the corresponding ``AudioItem``.
 
@@ -73,7 +73,7 @@ Let's create a single ``AudioData`` that covers the total duration of the 4 file
 
 This will create one ``AudioItem`` per file, plus one **empty** ``AudioItem`` for the gap:
 
-.. image:: _static/audio_data/ex2.svg
+.. image:: _static/audio_data/ex_2.svg
 
 We can check that with code:
 
@@ -249,20 +249,25 @@ an ``AudioDataset`` from a given folder containing audio files:
 .. code-block:: python
 
     from pathlib import Path
+
+    from pandas import Timedelta, Timestamp
+
     from osekit.core.audio_dataset import AudioDataset
     from osekit.core.instrument import Instrument
-    from pandas import Timestamp, Timedelta
+    from osekit.utils.audio import Normalization
 
     folder = Path(r"...")
-    ads = AudioDataset.from_folder
-    (
+    ads = AudioDataset.from_folder(
         folder=folder,
-        strptime_format="%y_%m_%d_%H_%M_%S", # To parse the files begin Timestamp
-        begin=Timestamp("2009-01-06 12:00:00"),
+        strptime_format=None,  # Will use first_file_begin to timestamp the files
+        first_file_begin=Timestamp("2009-01-06 10:00:00"),
+        begin=Timestamp(
+            "2009-01-06 12:00:00"
+        ),  # We can still specify the begin/end timestamps of the required dataset
         end=Timestamp("2009-01-06 14:00:00"),
         data_duration=Timedelta("10s"),
         instrument=Instrument(end_to_end_db=150),
-        normalization="dc_reject"
+        normalization=Normalization.DC_REJECT, # Rejects the DC component of the audio
     )
 
 The resulting ``AudioDataset`` will contain 10s-long ``AudioData`` ranging from ``2009-01-06 12:00:00`` to ``2009-01-06 14:00:00``.
@@ -285,21 +290,25 @@ Each next valid audio file will be considered to start immediately after the end
 .. code-block:: python
 
     from pathlib import Path
+
+    from pandas import Timedelta, Timestamp
+
     from osekit.core.audio_dataset import AudioDataset
     from osekit.core.instrument import Instrument
-    from pandas import Timestamp, Timedelta
+    from osekit.utils.audio import Normalization
 
     folder = Path(r"...")
-    ads = AudioDataset.from_folder
-    (
+    ads = AudioDataset.from_folder(
         folder=folder,
-        strptime_format=None # Will use first_file_begin to timestamp the files
+        strptime_format=None,  # Will use first_file_begin to timestamp the files
         first_file_begin=Timestamp("2009-01-06 10:00:00"),
-        begin=Timestamp("2009-01-06 12:00:00"), # We can still specify the begin/end timestamps of the required dataset
+        begin=Timestamp(
+            "2009-01-06 12:00:00"
+        ),  # We can still specify the begin/end timestamps of the required dataset
         end=Timestamp("2009-01-06 14:00:00"),
         data_duration=Timedelta("10s"),
         instrument=Instrument(end_to_end_db=150),
-        normalization="dc_reject"
+        normalization=Normalization.DC_REJECT, # Rejects the DC component of the audio
     )
 
 In the example above, the first valid file in the folder will be considered to start at ``2009-01-06 10:00:00``.
@@ -358,20 +367,20 @@ Once again, no audio has yet been fetched: everything happens only on-demand.
 NPZ matrices
 """"""""""""
 
-The ``SpectroData`` object can be used to compute the spectrum matrices of the ``AudioData`` with the :meth:`osekit.core.spectro_data.SpectroData.get_value` method.
+The ``SpectroData`` object can be used to compute the STFT matrices of the ``AudioData`` with the :meth:`osekit.core.spectro_data.SpectroData.get_value` method.
 
-The :attr:`osekit.core.spectro_data.SpectroData.sx_dtype` property can be set to either ``complex`` (default) or ``float`` to return either the spectrum matrices as complex numbers or absolute values, respectively.
+The :attr:`osekit.core.spectro_data.SpectroData.sx_dtype` property can be set to either ``complex`` (default) or ``float`` to return either the STFT matrices as complex numbers or absolute values, respectively.
 
-The spectrum matrices can be converted to decibels thanks to the :meth:`osekit.core.spectro_data.SpectroData.get_db_value` method.
-This method will convert the spectrum values either to dB SPL (re ``Instrument.P_REF``) if an :ref:`Instrument <instrument_calibration>` was provided to the ``AudioData`` or to dB FS otherwise.
+The STFT matrices can be converted to decibels thanks to the :meth:`osekit.core.spectro_data.SpectroData.get_db_value` method.
+This method will convert the STFT values either to dB SPL (re ``Instrument.P_REF``) if an :ref:`Instrument <instrument_calibration>` was provided to the ``AudioData`` or to dB FS otherwise.
 
-The spectrum matrices can then be exported to npz files thanks to the :meth:`osekit.core.spectro_data.SpectroData.write` method.
+The STFT matrices can then be exported to npz files thanks to the :meth:`osekit.core.spectro_data.SpectroData.write` method.
 
 .. code-block:: python
 
     sd = SpectroData.from_audio_data(data=ad, fft=sft)
 
-    sx_db = sd.get_db_value() # Use sd.get_value() if you want the complex spectrum
+    sx_db = sd.get_db_value() # Use sd.get_value() if you want the complex STFT matrix
 
     # If sx has already been computed, you can pass it as a parameter to avoid re-computing it.
     # Otherwise, it will just be computed from scratch.
@@ -450,21 +459,33 @@ The resulting figure presents the full-scale spectrogram at the top (from 0 to 7
 LTAS Data
 ^^^^^^^^^
 
-OSEkit provides the :class:`osekit.core.ltas_data.LTASData` class for computing and plotting LTAS (**L**\ ong-\ **T**\ erm **A**\ verage **S**\ pectrum).
+OSEkit provides the :class:`osekit.core.ltas_data.LTASData` class for computing and plotting long-term spectral averages.
 
-LTAS are suitable when a spectrum is computed over a very long time and that the spectrum matrix time dimension reach a really high value.
-In that case, time bins can be averaged to form a LTAS, which time resolution is lower than that of the original spectrum.
+When computing an STFT over a long audio recording, the resulting STFT matrix can contain a very large number of time bins. ``LTASData`` reduces this temporal resolution by averaging STFT time bins while preserving the spectral information along the frequency axis.
 
-In OSEkit, LTAS are computed recursively: the user specifies a target number of time bins in the spectrum matrix, noted ``n_bins``.
+The target number of time bins is specified with the ``n_bins`` parameter. OSEkit computes the result recursively so that the full STFT matrix never needs to be materialized when it would exceed this target size.
 
-The visualization below depicts the process: the LTAS is computed with a target ``n_bins = 3000``.
-Yellow rectangles depict the audio data (the x-axis being the time axis), and the number in the lower right
-corner depicts the number of time bins in the spectrum matrix for this audio data.
-The audio is recursively split in ``n_bins`` parts (it is split in 3 in the
-representation instead of 3000 for clarity purposes) until the number of time bins in the spectrum gets below ``n_bins``.
-Then, these spectrum parts are computed (hatched rectangles) and averaged across the time axis (filled rectangles).
+The algorithm works as follows:
 
-.. image:: _static/ltas/ltas.gif
+1. Compute the number of STFT time bins that would be produced for the current audio segment.
+2. If this number is greater than ``n_bins``, split the segment into ``n_bins`` equal-duration sub-segments and process each sub-segment recursively.
+3. Otherwise, compute the STFT of the segment and average it along the time axis, producing a single averaged spectrum.
+4. Use the averaged spectra returned by the recursive calls as the time bins of the parent segment.
+
+The illustration below shows the process for ``n_bins = 3000``. Yellow rectangles represent audio segments, and the number in the lower-right corner indicates the number of STFT time bins that would be produced for the corresponding segment.
+For readability, the illustration shows three sub-segments instead of the ``3000`` sub-segments used in the example.
+
+* The complete recording would produce ``1 500 700`` STFT time bins, which exceeds ``n_bins``.
+* The recording is therefore split into ``3000`` equal-duration segments.
+* The first segment would still produce ``4 137`` STFT time bins, so it is split again.
+* One of its sub-segments produces only ``60`` STFT time bins. Its STFT can therefore be computed directly.
+* The ``60`` time bins are averaged along the time axis, producing a single spectrum.
+* This spectrum is returned to the parent level and becomes one time bin of the resulting LTAS.
+* The process continues until all ``3000`` top-level segments have produced their averaged spectra.
+
+This recursive approach limits the number of STFT time bins held in memory at each computation step while allowing the computation to be distributed across independent audio segments.
+
+.. image:: _static/ltas/ltas.svg
    :width: 300px
    :align: center
 

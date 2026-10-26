@@ -2,137 +2,200 @@
 
 import json
 import os
+from collections.abc import Callable, Generator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from pathlib import Path, PurePosixPath, PureWindowsPath  # noqa: F401
-from typing import Literal
+from typing import Any
 
 from osekit.utils.path import is_absolute
 
+_anchor: ContextVar[Path | None] = ContextVar("anchor_path", default=None)
 
-def absolute_to_relative(
-    target_path: os.PathLike | str,
-    root_path: os.PathLike | str,
-) -> Path:
-    """Convert an absolute path in a relative path.
+_PATH_KEYS = {"path", "folder", "json"}
+
+
+@contextmanager
+def path_anchor(anchor: Path) -> Generator[None, None, None]:
+    """Set the anchor for serializing paths.
+
+    All paths that are within ``anchor`` will be serialized as relative paths.
+    All paths that are outside ``anchor`` will be serialized as absolute paths.
 
     Parameters
     ----------
-    target_path: os.PathLike | str
-        Absolute path to the target.
-    root_path: os.PathLike | str
-        Path relative to which the target should be expressed.
-
-    Returns
-    -------
-    Path:
-        Target path expressed relative to the root path.
+    anchor: Path
+        Path of the anchor.
 
     """
-    target_path, root_path = (
-        path.resolve() for path in map(Path, (target_path, root_path))
-    )
-    return Path(os.path.relpath(path=target_path, start=root_path))
+    token = _anchor.set(anchor)
+    try:
+        yield
+    finally:
+        _anchor.reset(token)
 
 
-def relative_to_absolute(
-    target_path: os.PathLike | str,
-    root_path: os.PathLike | str,
-) -> Path:
-    r"""Convert a relative path in an absolute path.
+def _serialize_path(value: Path, root_path: Path) -> str:
+    """Serialize a path into a string.
 
-    Parameters
-    ----------
-    target_path: os.PathLike | str
-        Relative path to the target.
-        If the target is absolute, the first folder in the root parents that appear
-        in the target parent will be considered as common.
-    root_path: os.PathLike | str
-        Path from which the target is expressed.
-
-    Returns
-    -------
-    Path:
-        Absolute path to the target.
-
-    >>> str(PureWindowsPath(relative_to_absolute(target_path=r'relative\target', root_path=r'C:\absolute\root')))
-    'C:\\absolute\\root\\relative\\target'
-    >>> str(PureWindowsPath(relative_to_absolute(target_path=r'D:\absolute\path\root\target', root_path=r'C:\absolute\root')))
-    'C:\\absolute\\path\\root\\target'
-    >>> str(PurePosixPath(relative_to_absolute(target_path=r'C:/user/cool/data/audio/fun.wav', root_path=r'/home/project/cool/processed/stuff')))
-    '/home/project/cool/data/audio/fun.wav'
-
-    """
-    target_path, root_path = map(PureWindowsPath, (target_path, root_path))
-    if is_absolute(target_path):
-        first_common_folder = next(
-            folder
-            for folder in root_path.parts
-            if (folder in target_path.parts and folder != root_path.anchor)
-        )
-        return Path(
-            PureWindowsPath(
-                str(root_path).split(first_common_folder)[0]
-                + first_common_folder
-                + str(target_path).split(first_common_folder, maxsplit=1)[1],
-            ),
-        )
-    return Path(root_path / target_path).resolve()
-
-
-def set_path_reference(
-    serialized_dict: dict,
-    root_path: Path,
-    reference: Literal["absolute", "relative"],
-) -> None:
-    """Recursively set all paths either relative to ``root_path`` or absolute from ``root_path``.
+    If the path is within the ``_anchor`` path, it will be serialized as relative
+    to ``root_path`` (provided this is possible).
+    Else, it will be serialized with its absolute path.
 
     Parameters
     ----------
-    serialized_dict: dict
-        Dictionary in which the path values must be modified.
+    value: Path
+        Path to serialize.
     root_path: Path
-        Root path:
-         - From which the relative files are expressed.
-         - From which the absolute files should be expressed as relative
-    reference: Literal["absolute","relative"]
-        How to express the file names:
-        ``"absolute"``: Files names are converted from
-        relative to ``root_path`` to absolute.
-        ``"relative"``: Files names are converted from
-        absolute to relative to ``root_path``.
+        Root path according to which paths are serialized as relative.
+
+    Returns
+    -------
+    str:
+        The serialized path.
 
     """
-    for key, value in serialized_dict.items():
+    if not isinstance(value, Path):
+        # Some folders can be None
+        return str(value)
+
+    anchor = _anchor.get()
+    if anchor is not None and not value.is_relative_to(anchor):
+        # Path is outside the project: we store it as an absolute path.
+        return value.as_posix()
+    try:
+        return Path(os.path.relpath(path=value, start=root_path)).as_posix()
+    except ValueError:
+        # Value is not expressible as relative to root
+        return value.as_posix()
+
+
+def _deserialize_path(value: str, root_path: Path | None = None) -> Path:
+    """Deserialize a string into a path.
+
+    Is the path is not absolute, it is considered to be relative to ``root_path``.
+
+    Parameters
+    ----------
+    value: str
+        The string representation of the path to deserialize.
+    root_path: Path|None
+        The path ``value`` is relative to, if ``value`` is not absolute.
+
+    Returns
+    -------
+    Path
+        The deserialized path corresponding to ``value``.
+
+    """
+    if is_absolute(path=value):
+        return Path(value)
+    if root_path is None:
+        msg = (
+            f"{value} is not an absolute serialized path.\n"
+            f"Please provide a Path as root_path."
+        )
+        raise ValueError(msg)
+    return (root_path / value).resolve()
+
+
+def serialize_paths(
+    data: dict[str, Any],
+    root_path: Path,
+) -> None:
+    """Serialize all paths in ``data``.
+
+    ``data`` is edited in-place.
+
+    Parameters
+    ----------
+    data: dict[str,Any]
+        Input dictionary.
+        Will be edited in-place.
+    root_path: Path
+        Path that serves as root for relative paths.
+
+    """
+    _transform_paths(
+        data=data,
+        root_path=root_path,
+        transform=_serialize_path,
+    )
+
+
+def deserialize_paths(
+    data: dict[str, Any],
+    root_path: Path,
+) -> None:
+    """Deserialize all paths in ``data`` to ``Path`` instances.
+
+    ``data`` is edited in-place.
+
+    Parameters
+    ----------
+    data: dict[str,Any]
+        Input dictionary.
+        Will be edited in-place.
+    root_path: Path
+        Path that serves as root for relative paths.
+
+    """
+    _transform_paths(
+        data=data,
+        root_path=root_path,
+        transform=_deserialize_path,
+    )
+
+
+def _transform_paths(
+    data: dict[str, Any],
+    root_path: Path,
+    transform: Callable[..., Path | str],
+) -> None:
+    """In-place transform of the paths in ``data``.
+
+    Each path (identified thanks to ``json_serializer._PATH_KEYS`` key names) will be transformed
+    according to the input ``transform``.
+
+    Parameters
+    ----------
+    data: dict[str, Any]
+        Input dictionary.
+        Will be edited in-place.
+    root_path: Path
+        Path that serves as root for relative paths.
+    transform: Callable[...,Path|str]
+        Transform to apply to the path values.
+
+    """
+    for key, value in data.items():
         if type(value) is dict:
-            set_path_reference(value, root_path, reference)
+            _transform_paths(data=value, root_path=root_path, transform=transform)
             continue
-        if key in ("path", "folder", "json"):
-            serialized_dict[key] = (
-                str(relative_to_absolute(target_path=value, root_path=root_path))
-                if reference == "absolute"
-                else str(absolute_to_relative(target_path=value, root_path=root_path))
-            )
+        if key in _PATH_KEYS:
+            data[key] = transform(value=value, root_path=root_path)
 
 
-def serialize_json(path: Path, serialized_dict: dict) -> None:
+def serialize_json(path: Path, data: dict) -> None:
     """Serialize a dictionary in a JSON file.
 
     Parameters
     ----------
     path: Path
         Path of the JSON file to be written.
-    serialized_dict: dict
+    data: dict
         Dictionary to be serialized.
 
     """
     if not (parent_folder := path.parent).exists():
         parent_folder.mkdir(parents=True)
-    set_path_reference(
-        serialized_dict=serialized_dict,
+
+    serialize_paths(
+        data=data,
         root_path=path.parent,
-        reference="relative",
     )
     with path.open("w") as file:
-        file.write(json.dumps(serialized_dict, sort_keys=True, indent=4))
+        file.write(json.dumps(data, sort_keys=True, indent=4))
 
 
 def deserialize_json(path: Path) -> dict:
@@ -151,9 +214,9 @@ def deserialize_json(path: Path) -> dict:
     """
     with path.open("r") as f:
         dictionary = json.loads(f.read())
-    set_path_reference(
-        serialized_dict=dictionary,
+
+    deserialize_paths(
+        data=dictionary,
         root_path=path.parent,
-        reference="absolute",
     )
     return dictionary

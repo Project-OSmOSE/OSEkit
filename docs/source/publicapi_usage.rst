@@ -121,10 +121,40 @@ not exist, it will be created before the files are moved:
         move_files=False, # Copy files rather than moving them
     )
 
+Building a project from a (distant) ``AudioDataset``
+""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+Alternatively, the :meth:`osekit.public.project.Project.build_from_audio_dataset_json` method allows for
+building a project from a :class:`osekit.core.audio_dataset.AudioDataset` JSON file.
+
+Such build can be used to separate the :meth:`osekit.public.project.Project` folder from its original
+audio dataset (which could then be stored in another disk or partition):
+
+.. code-block:: python
+
+    from pathlib import Path
+
+    from osekit.public.project import Project
+
+    project = Project(
+        folder=Path(r"C:\Users\berthoga\Documents\Datasets\detached"),
+    )
+
+    # The JSON can be written with the AudioDataset.write_json() method,
+    # see the Core API documentation for more info
+    ads_json_path = Path(
+        r"C:\Users\berthoga\Documents\Datasets\cool_dataset\data\audio\original\original.json"
+    )
+
+    project.build_from_audio_dataset_json(
+        audio_dataset_json=ads_json_path,
+    )
+
+
 Running an ``Transform``
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-In **OSEkit**, **Analyses** are run with the :meth:`osekit.public.project.Project.run` method to process and export spectrogram images, spectrum matrices and audio files from original audio files.
+In **OSEkit**, **Analyses** are run with the :meth:`osekit.public.project.Project.run` method to process and export spectrogram images, STFT matrices and audio files from original audio files.
 
 .. note::
 
@@ -145,8 +175,8 @@ The ``output_type`` parameter passed to the initializer is a :class:`osekit.publ
      - Output
    * - ``OutputType.AUDIO``
      - Reshaped audio files
-   * - ``OutputType.SPECTRUM``
-     - `STFT <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.ShortTimeFFT.stft.html#scipy.signal.ShortTimeFFT.stft>`_ NPZ spectrum files
+   * - ``OutputType.STFT_MATRIX``
+     - `STFT <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.ShortTimeFFT.stft.html#scipy.signal.ShortTimeFFT.stft>`_ NPZ STFT files
    * - ``OutputType.WELCH``
      - `Welch <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.welch.html>`_ NPZ files
    * - ``OutputType.SPECTROGRAM``
@@ -169,7 +199,7 @@ The remaining parameters of the transform (begin and end **Timestamps**, duratio
 
 .. note::
 
-   If the ``Transform`` contains spectral computations (either ``OutputType.SPECTRUM``, ``OutputType.SPECTROGRAM`` or ``OutputType.WELCH`` is in ``output_type``), a `scipy ShortTimeFFT instance <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.ShortTimeFFT.html#scipy.signal.ShortTimeFFT>`_ should be passed to the ``Transform`` initializer.
+   If the ``Transform`` contains spectral computations (either ``OutputType.STFT_MATRIX``, ``OutputType.SPECTROGRAM`` or ``OutputType.WELCH`` is in ``output_type``), a `scipy ShortTimeFFT instance <https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.ShortTimeFFT.html#scipy.signal.ShortTimeFFT>`_ should be passed to the ``Transform`` initializer.
 
 .. _editing_transform:
 
@@ -291,7 +321,7 @@ The ``cool_reshape`` folder has been created, containing the freshly created ``1
 Example: full transform
 """""""""""""""""""""""
 
-Let's now say we want to export audio, spectrum matrices and spectrograms with the following parameters:
+Let's now say we want to export audio, STFT matrices and spectrograms with the following parameters:
 
 .. list-table:: Example transform parameters
    :widths: 40 60
@@ -308,7 +338,7 @@ Let's now say we want to export audio, spectrum matrices and spectrograms with t
    * - Sample rate
      - ``48 kHz``
    * - Audio data normalization
-     - ``dc_reject`` (removes the audio DC component)
+     - ``DC_REJECT`` (see the :ref:`Normalization <normalization>` section for more detail)
    * - FFT
      - ``hamming window``, ``1024 points``, ``40% overlap``
 
@@ -330,21 +360,29 @@ Then we are all set for running the transform:
 
 .. code-block:: python
 
-    from osekit.public.transform import Transform, OutputType
     from pandas import Timedelta
 
+    from osekit.public.transform import OutputType, Transform
+    from osekit.utils.audio import Normalization
+
     transform = Transform(
-        output_type = OutputType.AUDIO | OutputType.SPECTRUM | OutputType.WELCH | OutputType.SPECTROGRAM, # Full transform : audio files, spectrum matrices and spectrograms will be exported.
-        begin=project.origin_dataset.begin + Timedelta(minutes=30), # 30m after the begin of the original dataset
-        end=project.origin_dataset.begin + Timedelta(hours=1.5), # 1h30 after the begin of the original dataset
-        data_duration=Timedelta("10s"), # Duration of the output data
-        sample_rate=48_000, # Sample rate of the output data
-        normalization="dc_reject",
-        name="full_transform", # You can name the transform, or keep the default name.
-        fft=sft, # The FFT parameters
+        output_type=OutputType.AUDIO
+        | OutputType.STFT_MATRIX
+        | OutputType.WELCH
+        | OutputType.SPECTROGRAM,  # Full transform : audio files, STFT matrices and spectrograms will be exported.
+        begin=project.origin_dataset.begin
+        + Timedelta(minutes=30),  # 30m after the begin of the original dataset
+        end=project.origin_dataset.begin
+        + Timedelta(hours=1.5),  # 1h30 after the begin of the original dataset
+        data_duration=Timedelta("10s"),  # Duration of the output data
+        sample_rate=48_000,  # Sample rate of the output data
+        normalization=Normalization.DC_REJECT, # Rejects the DC component of the audio
+        name="full_transform",  # You can name the transform, or keep the default name.
+        fft=sft,  # The FFT parameters
     )
 
-    project.run(transform=transform) # And that's it!
+    project.run(transform=transform)  # And that's it!
+
 
 Output 2
 """"""""

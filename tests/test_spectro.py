@@ -32,7 +32,7 @@ from osekit.core.spectro_dataset import SpectroDataset
 from osekit.core.spectro_file import SpectroFile
 from osekit.core.spectro_item import SpectroItem
 from osekit.utils.audio import Normalization, generate_sample_audio
-from tests.helpers.audio import MockedAudioData, MockedAudioFile
+from tests.helpers.audio import MockedAudioData
 from tests.helpers.dummy import DummyFile
 
 
