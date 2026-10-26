@@ -328,7 +328,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         *,
         link: bool,
     ) -> SpectroData:
-        """Save the data spectrum and spectrogram to disk."""
+        """Save the data STFT matrix and spectrogram to disk."""
         sx = data.get_value()
         data.write(folder=spectrum_folder, sx=sx, link=link)
         data.save_spectrogram(folder=spectrogram_folder, sx=sx, scale=self.scale)
@@ -524,7 +524,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         )
 
     @classmethod
-    def from_folder(  # noqa: PLR0913
+    def from_folder(
         cls,
         folder: Path,
         strptime_format: str | list[str] | None,
@@ -535,7 +535,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         overlap: float = 0.0,
         data_duration: Timedelta | None = None,
         name: str | None = None,
-        **kwargs,  # noqa: ANN003
+        **kwargs,
     ) -> Self:
         """Return a ``SpectroDataset`` from a folder containing the spectro files.
 
@@ -599,7 +599,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         )
 
     @classmethod
-    def from_files(  # noqa: PLR0913
+    def from_files(
         cls,
         files: list[SpectroFile],
         begin: Timestamp | None = None,
@@ -608,7 +608,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         mode: Literal["files", "timedelta_total", "timedelta_file"] = "timedelta_total",
         overlap: float = 0.0,
         data_duration: Timedelta | None = None,
-        **kwargs,  # noqa: ANN003
+        **kwargs,
     ) -> AudioDataset:
         """Return an ``SpectroDataset`` object from a list of ``SpectroFiles``.
 
@@ -692,7 +692,7 @@ class SpectroDataset(BaseDataset[SpectroData, SpectroFile]):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         name: str | None = None,
-        **kwargs,  # noqa: ANN003
+        **kwargs,
     ) -> SpectroData:
         """Return a ``SpectroData`` object from a list of ``SpectroFiles``.
 

@@ -249,20 +249,25 @@ an ``AudioDataset`` from a given folder containing audio files:
 .. code-block:: python
 
     from pathlib import Path
+
+    from pandas import Timedelta, Timestamp
+
     from osekit.core.audio_dataset import AudioDataset
     from osekit.core.instrument import Instrument
-    from pandas import Timestamp, Timedelta
+    from osekit.utils.audio import Normalization
 
     folder = Path(r"...")
-    ads = AudioDataset.from_folder
-    (
+    ads = AudioDataset.from_folder(
         folder=folder,
-        strptime_format="%y_%m_%d_%H_%M_%S", # To parse the files begin Timestamp
-        begin=Timestamp("2009-01-06 12:00:00"),
+        strptime_format=None,  # Will use first_file_begin to timestamp the files
+        first_file_begin=Timestamp("2009-01-06 10:00:00"),
+        begin=Timestamp(
+            "2009-01-06 12:00:00"
+        ),  # We can still specify the begin/end timestamps of the required dataset
         end=Timestamp("2009-01-06 14:00:00"),
         data_duration=Timedelta("10s"),
         instrument=Instrument(end_to_end_db=150),
-        normalization="dc_reject"
+        normalization=Normalization.DC_REJECT, # Rejects the DC component of the audio
     )
 
 The resulting ``AudioDataset`` will contain 10s-long ``AudioData`` ranging from ``2009-01-06 12:00:00`` to ``2009-01-06 14:00:00``.
@@ -285,21 +290,25 @@ Each next valid audio file will be considered to start immediately after the end
 .. code-block:: python
 
     from pathlib import Path
+
+    from pandas import Timedelta, Timestamp
+
     from osekit.core.audio_dataset import AudioDataset
     from osekit.core.instrument import Instrument
-    from pandas import Timestamp, Timedelta
+    from osekit.utils.audio import Normalization
 
     folder = Path(r"...")
-    ads = AudioDataset.from_folder
-    (
+    ads = AudioDataset.from_folder(
         folder=folder,
-        strptime_format=None # Will use first_file_begin to timestamp the files
+        strptime_format=None,  # Will use first_file_begin to timestamp the files
         first_file_begin=Timestamp("2009-01-06 10:00:00"),
-        begin=Timestamp("2009-01-06 12:00:00"), # We can still specify the begin/end timestamps of the required dataset
+        begin=Timestamp(
+            "2009-01-06 12:00:00"
+        ),  # We can still specify the begin/end timestamps of the required dataset
         end=Timestamp("2009-01-06 14:00:00"),
         data_duration=Timedelta("10s"),
         instrument=Instrument(end_to_end_db=150),
-        normalization="dc_reject"
+        normalization=Normalization.DC_REJECT, # Rejects the DC component of the audio
     )
 
 In the example above, the first valid file in the folder will be considered to start at ``2009-01-06 10:00:00``.
@@ -358,20 +367,20 @@ Once again, no audio has yet been fetched: everything happens only on-demand.
 NPZ matrices
 """"""""""""
 
-The ``SpectroData`` object can be used to compute the spectrum matrices of the ``AudioData`` with the :meth:`osekit.core.spectro_data.SpectroData.get_value` method.
+The ``SpectroData`` object can be used to compute the STFT matrices of the ``AudioData`` with the :meth:`osekit.core.spectro_data.SpectroData.get_value` method.
 
-The :attr:`osekit.core.spectro_data.SpectroData.sx_dtype` property can be set to either ``complex`` (default) or ``float`` to return either the spectrum matrices as complex numbers or absolute values, respectively.
+The :attr:`osekit.core.spectro_data.SpectroData.sx_dtype` property can be set to either ``complex`` (default) or ``float`` to return either the STFT matrices as complex numbers or absolute values, respectively.
 
-The spectrum matrices can be converted to decibels thanks to the :meth:`osekit.core.spectro_data.SpectroData.get_db_value` method.
-This method will convert the spectrum values either to dB SPL (re ``Instrument.P_REF``) if an :ref:`Instrument <instrument_calibration>` was provided to the ``AudioData`` or to dB FS otherwise.
+The STFT matrices can be converted to decibels thanks to the :meth:`osekit.core.spectro_data.SpectroData.get_db_value` method.
+This method will convert the STFT values either to dB SPL (re ``Instrument.P_REF``) if an :ref:`Instrument <instrument_calibration>` was provided to the ``AudioData`` or to dB FS otherwise.
 
-The spectrum matrices can then be exported to npz files thanks to the :meth:`osekit.core.spectro_data.SpectroData.write` method.
+The STFT matrices can then be exported to npz files thanks to the :meth:`osekit.core.spectro_data.SpectroData.write` method.
 
 .. code-block:: python
 
     sd = SpectroData.from_audio_data(data=ad, fft=sft)
 
-    sx_db = sd.get_db_value() # Use sd.get_value() if you want the complex spectrum
+    sx_db = sd.get_db_value() # Use sd.get_value() if you want the complex STFT matrix
 
     # If sx has already been computed, you can pass it as a parameter to avoid re-computing it.
     # Otherwise, it will just be computed from scratch.
@@ -452,7 +461,7 @@ LTAS Data
 
 OSEkit provides the :class:`osekit.core.ltas_data.LTASData` class for computing and plotting long-term spectral averages.
 
-When computing an STFT over a long audio recording, the resulting spectrum matrix can contain a very large number of time bins. ``LTASData`` reduces this temporal resolution by averaging STFT time bins while preserving the spectral information along the frequency axis.
+When computing an STFT over a long audio recording, the resulting STFT matrix can contain a very large number of time bins. ``LTASData`` reduces this temporal resolution by averaging STFT time bins while preserving the spectral information along the frequency axis.
 
 The target number of time bins is specified with the ``n_bins`` parameter. OSEkit computes the result recursively so that the full STFT matrix never needs to be materialized when it would exceed this target size.
 
