@@ -8,6 +8,8 @@ from dataclasses import dataclass, field
 from operator import attrgetter
 from typing import TYPE_CHECKING, TypeVar
 
+from pandas import date_range
+
 from osekit.utils.timestamp import localize_timestamp
 
 if TYPE_CHECKING:
@@ -237,6 +239,45 @@ class Event:
                 )
         filled_event_list.append(events[-1])
         return filled_event_list
+
+    @staticmethod
+    def generate(
+        begin: Timestamp,
+        end: Timestamp,
+        overlap: float = 0.0,
+        duration: Timedelta | None = None,
+    ) -> list[TEvent]:
+        r"""Generate a list of Events of given duration between two timestamps.
+
+        Parameters
+        ----------
+        begin: Timestamp
+            Beginning timestamp of the first event.
+        end: Timestamp
+            Timestamp after which no more event is returned.
+        overlap: float
+            Overlap between two successive events.
+            Expressed in percentage, must be in the ``[0., 1.[`` range.
+        duration: Timedelta|None
+            Duration of the returned events.
+            If ``None``, a single event is returned ranging from ``begin`` to ``end``.
+
+        Returns
+        -------
+        List[TEvent]
+            The list of events.
+
+        """
+        if not 0 <= overlap < 1:
+            msg = f"Overlap must be in the [0., 1.[ interval, got {overlap}"
+            raise ValueError(msg)
+
+        duration = duration or end - begin
+        hop = duration * (1 - overlap)
+
+        begins = date_range(begin, end, freq=hop, inclusive="left")
+
+        return [Event(begin=begin, end=begin + duration) for begin in begins]
 
 
 TEvent = TypeVar("TEvent", bound=Event)
