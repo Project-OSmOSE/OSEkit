@@ -273,6 +273,90 @@ class Event:
             The list of events.
 
         """
+        duration, hop = Event._validate_generate_parameters(
+            begin=begin,
+            end=end,
+            overlap=overlap,
+            duration=duration,
+        )
+
+        begins = date_range(begin, end, freq=hop, inclusive="left")
+
+        return [Event(begin=begin, end=begin + duration) for begin in begins]
+
+    @staticmethod
+    def generate_around(
+        begin: Timestamp,
+        end: Timestamp,
+        base_events: list[TEvent],
+        overlap: float = 0.0,
+        duration: Timedelta | None = None,
+    ) -> list[tuple[TEvent, list[TEvent]]]:
+        r"""Generate a list of Events of given duration between two timestamps.
+
+        This method restricts the generated events around the ``base_events`` list of
+        events in the following manner:
+
+        - Output events are of the given ``duration`` duration, ranging from ``begin`` to ``end``.
+        - If an output event should start at a ``Timestamp`` that isn't comprised in any event from ``base_events``, its start is moved to the start of the next event from ``base_events``.
+
+
+        Parameters
+        ----------
+        begin: Timestamp
+            Beginning timestamp of the first event.
+        end: Timestamp
+            Timestamp after which no more event is returned.
+        base_events: list[TEvent]
+            List of events that the output events are generated around.
+        overlap: float
+            Overlap between two successive events.
+            Expressed in percentage, must be in the ``[0., 1.[`` range.
+        duration: Timedelta|None
+            Duration of the returned events.
+            If ``None``, a single event is returned ranging from ``begin`` to ``end``.
+
+        Returns
+        -------
+        list[tuple[TEvent, list[TEvent]]]
+            A list of tuple containing the output events and the list of
+            events from ``base_events`` with which each event overlaps.
+
+            This is useful for e.g. directly accessing the files (base events) with
+            which each data (output events) should be linked.
+
+        """
+
+    @staticmethod
+    def _validate_generate_parameters(
+        begin: Timestamp,
+        end: Timestamp,
+        overlap: float = 0.0,
+        duration: Timedelta | None = None,
+    ) -> tuple[Timedelta, Timedelta]:
+        """Validate the parameters used for generating events.
+
+        Returns the parsed duration of the events and the hop between two
+        consecutive events.
+
+        Parameters
+        ----------
+        begin: Timestamp
+            Beginning timestamp of the first event.
+        end: Timestamp
+            Timestamp after which no more event is returned.
+        overlap: float
+            Overlap between two successive events.
+            Expressed in percentage, must be in the ``[0., 1.[`` range.
+        duration: Timedelta|None
+            Duration of the returned events.
+            If ``None``, a single event is returned ranging from ``begin`` to ``end``.
+
+        Returns
+        -------
+        tuple[Timedelta,Timedelta]
+            Duration of the events and hop between two consecutive events.
+        """
         if not 0 <= overlap < 1:
             msg = f"Overlap must be in the [0., 1.[ interval, got {overlap}"
             raise ValueError(msg)
@@ -280,9 +364,7 @@ class Event:
         duration = duration or end - begin
         hop = duration * (1 - overlap)
 
-        begins = date_range(begin, end, freq=hop, inclusive="left")
-
-        return [Event(begin=begin, end=begin + duration) for begin in begins]
+        return duration, hop
 
 
 TEvent = TypeVar("TEvent", bound=Event)
