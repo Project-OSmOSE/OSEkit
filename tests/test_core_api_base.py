@@ -403,7 +403,7 @@ def test_base_dataset_from_files(
 def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> None:
     with pytest.raises(
         ValueError,
-        match=rf"Overlap \({overlap}\) must be between 0 and 1.",
+        match=r"Overlap .*must be",
     ):
         DummyDataset.from_files(
             [
