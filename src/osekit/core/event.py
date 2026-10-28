@@ -143,6 +143,39 @@ class Event:
 
         return output
 
+    @staticmethod
+    def associate(
+        events: list[TEvent], base_events: list[TEvent]
+    ) -> dict[TEvent, list[TEvent]]:
+        """Associate events from a list with the overlapping events from another list.
+
+        Parameters
+        ----------
+        events: list[TEvent]
+            The events that should be associated with ``base_events``.
+        base_events: list[TEvent]
+            The events ``events`` should be associated with.
+
+        Returns
+        -------
+        dict[TEvent, list[TEvent]]:
+            A dictionary where the keys are the Events from the ``event`` list and
+            the values are every event from ``base_events`` this event overlaps
+            with.
+
+        """
+        sorted_base_events = sorted(base_events, key=attrgetter("begin", "end"))
+        base_begin_list = [event.begin for event in sorted_base_events]
+
+        output = {}
+
+        for event in events:
+            stop = bisect.bisect(a=base_begin_list, x=event.end)
+
+            output[event] = event.get_overlapping_events(output[:stop])
+
+        return output
+
     @classmethod
     def remove_overlaps(cls, events: list[TEvent]) -> list[TEvent]:
         """Resolve overlaps between events.
