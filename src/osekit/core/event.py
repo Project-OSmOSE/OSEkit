@@ -5,6 +5,7 @@ from __future__ import annotations
 import bisect
 import copy
 from dataclasses import dataclass, field
+from operator import attrgetter
 from typing import TYPE_CHECKING, TypeVar
 
 from osekit.utils.timestamp import localize_timestamp
@@ -40,7 +41,7 @@ class Event:
     @begin.setter
     def begin(self, value: Timestamp) -> None:
         if hasattr(self, "_end") and value > self._end:
-            msg = f"Invalid Event: `end` ({self._end}) must be greater than `begin` ({value})."  # noqa: E501
+            msg = f"Invalid Event: `end` ({self._end}) must be greater than `begin` ({value})."
             raise ValueError(msg)
         self._begin = value
 
@@ -52,7 +53,7 @@ class Event:
     @end.setter
     def end(self, value: Timestamp) -> None:
         if hasattr(self, "_begin") and value < self._begin:
-            msg = f"Invalid Event: `end` ({value}) must be greater than `begin` ({self._begin})."  # noqa: E501
+            msg = f"Invalid Event: `end` ({value}) must be greater than `begin` ({self._begin})."
             raise ValueError(msg)
         self._end = value
 
@@ -104,7 +105,7 @@ class Event:
         >>> Event(begin=Timestamp("2024-01-01 00:00:00"),end=Timestamp("2024-01-02 00:00:00")).overlaps(Event(begin=Timestamp("2024-01-02 00:00:00"),end=Timestamp("2024-01-02 12:00:00")))
         False
 
-        """  # noqa: E501
+        """
         return self.begin < other.end and self.end > other.begin
 
     def get_overlapping_events(self, events: list[TEvent]) -> list[TEvent]:
@@ -125,19 +126,13 @@ class Event:
 
         """
         output = []
-        start_index = bisect.bisect_left(
-            events,
-            self.begin,
-            key=lambda event: event.end,
-        )
-        for i in range(start_index, len(events)):
-            if events[i] is self:
-                continue
-            if self.overlaps(events[i]):
-                output.append(events[i])
-                continue
-            if events[i].begin >= self.end:
-                break
+        stop_index = bisect.bisect(a=events, x=self.end, key=attrgetter("begin"))
+
+        for i in range(stop_index):
+            event = events[i]
+            if event is not self and self.overlaps(event):
+                output.append(event)
+
         return output
 
     @classmethod
@@ -170,7 +165,7 @@ class Event:
         >>> events[0].end == events[1].begin
         True
 
-        """  # noqa: E501
+        """
         events = sorted(
             events,
             key=lambda event: (event.begin, -1 * event.duration),
@@ -199,7 +194,7 @@ class Event:
         cls,
         events: list[TEvent],
         filling_class: type[TEvent],
-        **kwargs,  # noqa: ANN003
+        **kwargs,
     ) -> list[TEvent]:
         """Return a list with empty events added in the gaps between items.
 
@@ -227,7 +222,7 @@ class Event:
         >>> [(event.begin.second, event.end.second) for event in events]
         [(0, 10), (10, 15), (15, 25)]
 
-        """  # noqa: E501
+        """
         events = sorted(
             [copy.copy(event) for event in events],
             key=lambda event: event.begin,
