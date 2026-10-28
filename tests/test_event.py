@@ -290,6 +290,37 @@ def test_fill_event_gaps(events: list[Event], expected: list[Event]) -> None:
             id="direct_following_is_not_overlapping",
         ),
         pytest.param(
+            Event(
+                begin=Timestamp("00:02:00"),
+                end=Timestamp("00:02:30"),
+            ),
+            [
+                Event(
+                    begin=Timestamp("00:00:00"),
+                    end=Timestamp("00:04:00"),
+                ),
+                Event(
+                    begin=Timestamp("00:01:00"),
+                    end=Timestamp("00:01:30"),
+                ),
+                Event(
+                    begin=Timestamp("00:02:00"),
+                    end=Timestamp("00:03:00"),
+                ),
+            ],
+            [
+                Event(
+                    begin=Timestamp("00:00:00"),
+                    end=Timestamp("00:04:00"),
+                ),
+                Event(
+                    begin=Timestamp("00:02:00"),
+                    end=Timestamp("00:03:00"),
+                ),
+            ],
+            id="unsorted-ends",
+        ),
+        pytest.param(
             Event(begin=Timestamp("00:00:10"), end=Timestamp("00:00:20")),
             [
                 Event(begin=Timestamp("00:00:00"), end=Timestamp("00:00:05")),

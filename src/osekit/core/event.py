@@ -5,6 +5,7 @@ from __future__ import annotations
 import bisect
 import copy
 from dataclasses import dataclass, field
+from operator import attrgetter
 from typing import TYPE_CHECKING, TypeVar
 
 from pandas import date_range
@@ -127,19 +128,13 @@ class Event:
 
         """
         output = []
-        start_index = bisect.bisect_left(
-            events,
-            self.begin,
-            key=lambda event: event.end,
-        )
-        for i in range(start_index, len(events)):
-            if events[i] is self:
-                continue
-            if self.overlaps(events[i]):
-                output.append(events[i])
-                continue
-            if events[i].begin >= self.end:
-                break
+        stop_index = bisect.bisect(a=events, x=self.end, key=attrgetter("begin"))
+
+        for i in range(stop_index):
+            event = events[i]
+            if event is not self and self.overlaps(event):
+                output.append(event)
+
         return output
 
     @classmethod
