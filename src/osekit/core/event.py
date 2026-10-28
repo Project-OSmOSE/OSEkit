@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import bisect
 import copy
+import os
 from dataclasses import dataclass, field
 from operator import attrgetter
 from typing import TYPE_CHECKING, TypeVar
 
 from pandas import date_range
+from tqdm import tqdm
 
 from osekit.utils.timestamp import localize_timestamp
 
@@ -67,6 +69,10 @@ class Event:
     def __repr__(self) -> str:
         """Overwrite repr."""
         return f"{self.begin} - {self.end}"
+
+    def __hash__(self) -> int:
+        """Overwrite hash."""
+        return hash((self.begin, self.end))
 
     def localize(self, timezone: str | None) -> None:
         """Localize the event begin and end in a timezone.
@@ -286,8 +292,8 @@ class Event:
         base_events: list[TEvent],
         overlap: float = 0.0,
         duration: Timedelta | None = None,
-    ) -> list[tuple[TEvent, list[TEvent]]]:
-        r"""Generate a list of Events of given duration between two timestamps.
+    ) -> dict[TEvent, list[TEvent]]:
+        r"""Generate Events of given duration between two timestamps.
 
         This method restricts the generated events around the ``base_events`` list of
         events in the following manner:
@@ -313,14 +319,63 @@ class Event:
 
         Returns
         -------
-        list[tuple[TEvent, list[TEvent]]]
-            A list of tuple containing the output events and the list of
-            events from ``base_events`` with which each event overlaps.
+        dict[TEvent, list[TEvent]]
+            A dictionary where the keys are the output events and the associated
+            values are the events from ``base_events`` with which each event overlaps.
 
             This is useful for e.g. directly accessing the files (base events) with
             which each data (output events) should be linked.
 
         """
+        duration, hop = Event._validate_generate_parameters(
+            begin=begin,
+            end=end,
+            overlap=overlap,
+            duration=duration,
+        )
+
+        base_events = sorted(base_events, key=attrgetter("begin", "end"))
+
+        # We can filter out the base events that are out of range
+        base_events = [
+            event
+            for event in base_events
+            if Event(begin=begin, end=end).overlaps(event)
+        ]
+
+        output = {}
+
+        # Events from previous base_events that might overlflow to the next one(s)
+        overflowing_events = []
+        for idx, base_event in tqdm(
+            enumerate(base_events),
+            disable=os.getenv("DISABLE_TQDM", "False").lower() in ("true", "1", "t"),
+        ):
+            # Jump to the base_event if the output event starts before it
+            begin = max(begin, base_event.begin)
+
+            # Remove overflowing events that doesn't overlap with this base event
+            overflowing_events = [
+                event for event in overflowing_events if event.overlaps(base_event)
+            ]
+
+            for overflowing_event in overflowing_events:
+                output[overflowing_event].append(base_event)
+
+            new_output_events = Event.generate(
+                begin=begin,
+                end=min(end, base_event.end),
+                overlap=overlap,
+                duration=duration,
+            )
+
+            output |= {event: [base_event] for event in new_output_events}
+            overflowing_events.extend(new_output_events)
+
+            if new_output_events:
+                begin = new_output_events[-1].end
+
+        return output
 
     @staticmethod
     def _validate_generate_parameters(
