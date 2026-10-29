@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import logging
 from typing import ContextManager
 
@@ -11,6 +12,7 @@ from osekit.utils.timestamp import (
     is_datetime_template_valid,
     last_window_end,
     localize_timestamp,
+    nb_windows_before_target,
     normalize_datetime,
     reformat_timestamp,
     strftime_osmose_format,
@@ -720,6 +722,70 @@ def test_last_window_end(
         )
         == expected
     )
+
+
+@pytest.mark.parametrize(
+    ("begin", "window_duration", "window_hop", "target", "expected"),
+    [
+        pytest.param(
+            Timestamp("00:10"),
+            Timedelta(minutes=10),
+            Timedelta(minutes=10),
+            Timestamp("00:00"),
+            pytest.raises(ValueError, match="Can't reach"),
+            id="target_before_begin_raises",
+        ),
+        pytest.param(
+            Timestamp("00:00"),
+            Timedelta(minutes=10),
+            Timedelta(minutes=10),
+            Timestamp("00:02"),
+            contextlib.nullcontext(0),
+            id="target_within_first_window",
+        ),
+        pytest.param(
+            Timestamp("00:00"),
+            Timedelta(minutes=10),
+            Timedelta(minutes=10),
+            Timestamp("00:25"),
+            contextlib.nullcontext(2),
+            id="target_within_third_window_no_overlap",
+        ),
+        pytest.param(
+            Timestamp("00:00"),
+            Timedelta(minutes=30),
+            Timedelta(minutes=10),
+            Timestamp("00:45"),
+            contextlib.nullcontext(2),
+            id="target_within_third_window_with_overlap",
+        ),
+        pytest.param(
+            Timestamp("00:00"),
+            Timedelta(minutes=30),
+            Timedelta(minutes=10),
+            Timestamp("00:40"),
+            contextlib.nullcontext(2),
+            id="window_ends_on_target",
+        ),
+    ],
+)
+def test_nb_windows_before_target(
+    begin: Timestamp,
+    window_duration: Timedelta,
+    window_hop: Timedelta,
+    target: Timestamp,
+    expected: contextlib.AbstractContextManager,
+) -> None:
+    with expected as e:
+        assert (
+            nb_windows_before_target(
+                begin=begin,
+                window_duration=window_duration,
+                window_hop=window_hop,
+                target=target,
+            )
+            == e
+        )
 
 
 @pytest.mark.parametrize(
