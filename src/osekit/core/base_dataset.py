@@ -466,6 +466,7 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
             base_events=files,
             overlap=overlap,
             duration=data_duration,
+            lock_to_base_events=True,
         )
 
         return [
