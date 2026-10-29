@@ -580,6 +580,22 @@ def test_localize(event: Event, timezone: str | None, expected: Event) -> None:
             id="no_duration_is_full_range",
         ),
         pytest.param(
+            Timestamp("01:00"),
+            Timestamp("00:00"),
+            0.0,
+            None,
+            [],
+            id="end_before_begin_returns_empty",
+        ),
+        pytest.param(
+            Timestamp("01:00"),
+            Timestamp("01:00"),
+            0.0,
+            None,
+            [],
+            id="end_at_begin_returns_empty",
+        ),
+        pytest.param(
             Timestamp("2020-01-01 00:00:00"),
             Timestamp("2020-01-01 00:00:10"),
             0.0,
@@ -684,14 +700,6 @@ def test_generate(
             "Overlap must be",
             id="exactly_one_overlap_raises",
         ),
-        pytest.param(
-            Timestamp("2020-01-01 00:00:10"),
-            Timestamp("2020-01-01 00:00:00"),
-            0.0,
-            None,
-            "Invalid Event",
-            id="begin_must_be_before_end",
-        ),
     ],
 )
 def test_generate_errors(
@@ -703,3 +711,93 @@ def test_generate_errors(
 ) -> None:
     with pytest.raises(ValueError, match=error_msg):
         Event.generate(begin=begin, end=end, overlap=overlap, duration=duration)
+
+
+@pytest.mark.parametrize(
+    ("begin", "end", "duration", "overlap", "base_events", "expected"),
+    [
+        pytest.param(
+            Timestamp("2020-01-01 00:00:00"),
+            Timestamp("2020-01-01 00:01:00"),
+            None,
+            0.0,
+            [
+                Event(
+                    begin=Timestamp("2020-01-01 00:00:00"),
+                    end=Timestamp("2020-01-01 00:01:00"),
+                )
+            ],
+            {
+                Event(
+                    begin=Timestamp("2020-01-01 00:00:00"),
+                    end=Timestamp("2020-01-01 00:01:00"),
+                ): [
+                    Event(
+                        begin=Timestamp("2020-01-01 00:00:00"),
+                        end=Timestamp("2020-01-01 00:01:00"),
+                    )
+                ]
+            },
+            id="generate_around_one_full_file",
+        ),
+        pytest.param(
+            Timestamp("2020-01-01 00:00:00"),
+            Timestamp("2020-01-01 00:01:30"),
+            Timedelta(minutes=1),
+            0.0,
+            [
+                Event(
+                    begin=Timestamp("2020-01-01 00:00:00"),
+                    end=Timestamp("2020-01-01 00:01:00"),
+                ),
+                Event(
+                    begin=Timestamp("2020-01-01 00:01:40"),
+                    end=Timestamp("2020-01-01 00:02:40"),
+                ),
+            ],
+            {
+                Event(
+                    begin=Timestamp("2020-01-01 00:00:00"),
+                    end=Timestamp("2020-01-01 00:01:00"),
+                ): [
+                    Event(
+                        begin=Timestamp("2020-01-01 00:00:00"),
+                        end=Timestamp("2020-01-01 00:01:00"),
+                    )
+                ],
+                Event(
+                    begin=Timestamp("2020-01-01 00:01:00"),
+                    end=Timestamp("2020-01-01 00:02:00"),
+                ): [
+                    Event(
+                        begin=Timestamp("2020-01-01 00:01:40"),
+                        end=Timestamp("2020-01-01 00:02:40"),
+                    )
+                ],
+            },
+            id="base_file_that_starts_after_end_is_included",
+        ),
+    ],
+)
+def test_generate_around(
+    begin: Timestamp,
+    end: Timestamp,
+    duration: Timedelta | None,
+    overlap: float,
+    base_events: list[Event],
+    expected: dict[Event, list[Event]],
+) -> None:
+    result = Event.generate_around(
+        begin=begin,
+        end=end,
+        duration=duration,
+        overlap=overlap,
+        base_events=base_events,
+    )
+
+    for r, e in zip(result.items(), expected.items(), strict=True):
+        result_event, result_base_events = r
+        expected_event, expected_base_events = e
+
+        assert result_event == expected_event
+        assert np.array_equal(result_base_events, expected_base_events)

@@ -12,7 +12,10 @@ from typing import TYPE_CHECKING, TypeVar
 from pandas import date_range
 from tqdm import tqdm
 
-from osekit.utils.timestamp import localize_timestamp
+from osekit.utils.timestamp import (
+    last_window_end,
+    localize_timestamp,
+)
 
 if TYPE_CHECKING:
     from pandas import Timedelta, Timestamp
@@ -307,6 +310,9 @@ class Event:
             The list of events.
 
         """
+        if end <= begin:
+            return []
+
         duration, hop = Event._validate_generate_parameters(
             begin=begin,
             end=end,
@@ -314,7 +320,13 @@ class Event:
             duration=duration,
         )
 
-        begins = date_range(begin, end, freq=hop, inclusive="left")
+        begins = date_range(begin, end, freq=hop, inclusive="both")
+
+        # Keep last event if it includes the end timestamp
+        # Drop it if it begins at the end timestamp
+        # (in that case it doesn't overlap with the end timestamp)
+        if begins[-1] == end:
+            begins = begins[:-1]
 
         return [Event(begin=begin, end=begin + duration) for begin in begins]
 
@@ -325,14 +337,13 @@ class Event:
         base_events: list[TEvent],
         overlap: float = 0.0,
         duration: Timedelta | None = None,
+        *,
+        lock_to_base_events: bool = False,
     ) -> dict[TEvent, list[TEvent]]:
         r"""Generate Events of given duration between two timestamps.
 
-        This method restricts the generated events around the ``base_events`` list of
-        events in the following manner:
-
-        - Output events are of the given ``duration`` duration, ranging from ``begin`` to ``end``.
-        - If an output event should start at a ``Timestamp`` that isn't comprised in any event from ``base_events``, its start is moved to the start of the next event from ``base_events``.
+        This method optimizes the generation of events around a ``base_events`` list,
+        that is when the generated events must be linked to the base events.
 
 
         Parameters
@@ -349,6 +360,11 @@ class Event:
         duration: Timedelta|None
             Duration of the returned events.
             If ``None``, a single event is returned ranging from ``begin`` to ``end``.
+        lock_to_base_events: bool
+            Output events are of the given ``duration`` duration, ranging from ``begin`` to ``end``.
+            If ``lock_to_base_events`` is ``True``, the ``begin`` timestamp of output events
+             that would start in-between base events is delayed to the ``begin`` of the next
+             base event.
 
         Returns
         -------
@@ -373,19 +389,36 @@ class Event:
         base_events = [
             event
             for event in base_events
-            if Event(begin=begin, end=end).overlaps(event)
+            if Event(
+                begin=begin,
+                end=last_window_end(
+                    begin=begin, end=end, window_duration=duration, window_hop=hop
+                ),
+            ).overlaps(event)
         ]
 
         output = {}
 
         # Events from previous base_events that might overlflow to the next one(s)
         overflowing_events = []
-        for idx, base_event in tqdm(
-            enumerate(base_events),
+        for base_event in tqdm(
+            base_events,
             disable=os.getenv("DISABLE_TQDM", "False").lower() in ("true", "1", "t"),
         ):
-            # Jump to the base_event if the output event starts before it
-            begin = max(begin, base_event.begin)
+            if lock_to_base_events:
+                # Jump to the base_event if the output event starts before it
+                begin = max(begin, base_event.begin)
+            else:
+                empty_events = Event.generate(
+                    begin=begin,
+                    end=base_event.begin,
+                    overlap=overlap,
+                    duration=duration,
+                )
+                output |= {event: [] for event in empty_events}
+                overflowing_events.extend(empty_events)
+                if empty_events:
+                    begin = empty_events[-1].end
 
             # Remove overflowing events that doesn't overlap with this base event
             overflowing_events = [
