@@ -398,6 +398,7 @@ class Event:
         ]
 
         output = {}
+        pointer = begin
 
         # Events from previous base_events that might overlflow to the next one(s)
         overflowing_events = []
@@ -407,10 +408,10 @@ class Event:
         ):
             if lock_to_base_events:
                 # Jump to the base_event if the output event starts before it
-                begin = max(begin, base_event.begin)
+                pointer = max(pointer, base_event.begin)
             else:
                 empty_events = Event.generate(
-                    begin=begin,
+                    begin=pointer,
                     end=base_event.begin,
                     overlap=overlap,
                     duration=duration,
@@ -418,7 +419,7 @@ class Event:
                 output |= {event: [] for event in empty_events}
                 overflowing_events.extend(empty_events)
                 if empty_events:
-                    begin = empty_events[-1].end
+                    pointer = empty_events[-1].begin + hop
 
             # Remove overflowing events that doesn't overlap with this base event
             overflowing_events = [
@@ -429,7 +430,7 @@ class Event:
                 output[overflowing_event].append(base_event)
 
             new_output_events = Event.generate(
-                begin=begin,
+                begin=pointer,
                 end=min(end, base_event.end),
                 overlap=overlap,
                 duration=duration,
@@ -439,7 +440,7 @@ class Event:
             overflowing_events.extend(new_output_events)
 
             if new_output_events:
-                begin = new_output_events[-1].end
+                pointer = new_output_events[-1].end
 
         return output
 
