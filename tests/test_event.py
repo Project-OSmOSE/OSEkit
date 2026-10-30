@@ -698,13 +698,22 @@ def test_generate_errors(
 
 
 @pytest.mark.parametrize(
-    ("begin", "end", "duration", "overlap", "base_events", "expected"),
+    (
+        "begin",
+        "end",
+        "duration",
+        "overlap",
+        "lock_to_base_events",
+        "base_events",
+        "expected",
+    ),
     [
         pytest.param(
             "00:00",
             "01:00",
             None,
             0.0,
+            False,
             [
                 ("00:00", "01:00"),
             ],
@@ -713,9 +722,82 @@ def test_generate_errors(
         ),
         pytest.param(
             "00:00",
+            "01:00",
+            None,
+            0.0,
+            False,
+            [
+                ("00:20", "00:40"),
+            ],
+            {("00:00", "01:00"): [("00:20", "00:40")]},
+            id="generate_oustide_range",
+        ),
+        pytest.param(
+            "00:00",
+            "01:00",
+            Timedelta(minutes=20),
+            0.0,
+            False,
+            [
+                ("00:25", "00:35"),
+            ],
+            {
+                ("00:00", "00:20"): [],
+                ("00:20", "00:40"): [
+                    ("00:25", "00:35"),
+                ],
+                ("00:40", "01:00"): [],
+            },
+            id="generate_multiple_events_oustide_range",
+        ),
+        pytest.param(
+            "00:00",
+            "01:00",
+            Timedelta(minutes=10),
+            0.0,
+            False,
+            [
+                ("00:05", "00:15"),
+                ("00:45", "00:55"),
+            ],
+            {
+                ("00:00", "00:10"): [("00:05", "00:15")],
+                ("00:10", "00:20"): [("00:05", "00:15")],
+                ("00:20", "00:30"): [],
+                ("00:30", "00:40"): [],
+                ("00:40", "00:50"): [("00:45", "00:55")],
+                ("00:50", "01:00"): [("00:45", "00:55")],
+            },
+            id="generate_with_gap_between_events",
+        ),
+        pytest.param(
+            "00:00",
+            "02:20",
+            Timedelta(minutes=30),
+            1 / 3,
+            False,
+            [
+                ("00:35", "00:42"),
+                ("00:45", "00:55"),
+                ("01:35", "01:45"),
+            ],
+            {
+                ("00:00", "00:30"): [],
+                ("00:20", "00:50"): [("00:35", "00:42"), ("00:45", "00:55")],
+                ("00:40", "01:10"): [("00:35", "00:42"), ("00:45", "00:55")],
+                ("01:00", "01:30"): [],
+                ("01:20", "01:50"): [("01:35", "01:45")],
+                ("01:40", "02:10"): [("01:35", "01:45")],
+                ("02:00", "02:30"): [],
+            },
+            id="generate_with_overlap",
+        ),
+        pytest.param(
+            "00:00",
             "01:30",
             Timedelta(hours=1),
             0.0,
+            False,
             [
                 ("00:00", "01:00"),
                 ("01:40", "02:40"),
@@ -733,6 +815,7 @@ def test_generate_around(
     end: str,
     duration: Timedelta | None,
     overlap: float,
+    lock_to_base_events: bool,
     base_events: list[tuple[str, str]],
     expected: dict[tuple[str, str], list[tuple[str, str]]],
 ) -> None:
@@ -749,6 +832,7 @@ def test_generate_around(
         duration=duration,
         overlap=overlap,
         base_events=base_events,
+        lock_to_base_events=lock_to_base_events,
     )
 
     for r, e in zip(result.items(), expected.items(), strict=True):
