@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from contextlib import nullcontext
 
+import numpy as np
 import pytest
 from pandas import Timedelta, Timestamp
 
@@ -560,3 +561,283 @@ def test_duration(event: Event, expected_duration: Timedelta) -> None:
 def test_localize(event: Event, timezone: str | None, expected: Event) -> None:
     event.localize(timezone)
     assert event == expected
+
+
+def tuple_to_event(value: tuple[str, str]) -> Event:
+    return Event(*map(Timestamp, value))
+
+
+def test_tuple_to_event() -> None:
+    assert tuple_to_event(value=("00:00", "01:00")) == Event(
+        begin=Timestamp("00:00"), end=Timestamp("01:00")
+    )
+
+
+@pytest.mark.parametrize(
+    ("begin", "end", "overlap", "duration", "expected"),
+    [
+        pytest.param(
+            "00:00",
+            "00:10",
+            0.0,
+            None,
+            [
+                ("00:00", "00:10"),
+            ],
+            id="no_duration_is_full_range",
+        ),
+        pytest.param(
+            "01:00",
+            "00:00",
+            0.0,
+            None,
+            [],
+            id="end_before_begin_returns_empty",
+        ),
+        pytest.param(
+            "01:00",
+            "01:00",
+            0.0,
+            None,
+            [],
+            id="end_at_begin_returns_empty",
+        ),
+        pytest.param(
+            "00:00",
+            "00:10",
+            0.0,
+            Timedelta(minutes=5),
+            [
+                ("00:00", "00:05"),
+                ("00:05", "00:10"),
+            ],
+            id="end_timestamp_on_event_end",
+        ),
+        pytest.param(
+            "00:00",
+            "00:08",
+            0.0,
+            Timedelta(minutes=5),
+            [
+                ("00:00", "00:05"),
+                ("00:05", "00:10"),
+            ],
+            id="end_timestamp_within_event",
+        ),
+        pytest.param(
+            "00:00",
+            "00:10",
+            1 / 3,
+            Timedelta(minutes=3),
+            [
+                ("00:00", "00:03"),
+                ("00:02", "00:05"),
+                ("00:04", "00:07"),
+                ("00:06", "00:09"),
+                ("00:08", "00:11"),
+            ],
+            id="overlapping_events",
+        ),
+    ],
+)
+def test_generate(
+    begin: str,
+    end: str,
+    overlap: float,
+    duration: Timedelta | None,
+    expected: list[tuple[str, str]],
+) -> None:
+    begin = Timestamp(begin)
+    end = Timestamp(end)
+    expected = list(map(tuple_to_event, expected))
+
+    assert np.array_equal(
+        Event.generate(begin=begin, end=end, overlap=overlap, duration=duration),
+        expected,
+    )
+
+
+@pytest.mark.parametrize(
+    ("begin", "end", "overlap", "duration", "error_msg"),
+    [
+        pytest.param(
+            Timestamp("00:00"),
+            Timestamp("00:10"),
+            -1,
+            None,
+            "Overlap must be",
+            id="negative_overlap_raises",
+        ),
+        pytest.param(
+            Timestamp("00:00"),
+            Timestamp("00:10"),
+            2,
+            None,
+            "Overlap must be",
+            id="higher_than_one_overlap_raises",
+        ),
+        pytest.param(
+            Timestamp("00:00"),
+            Timestamp("00:10"),
+            1,
+            None,
+            "Overlap must be",
+            id="exactly_one_overlap_raises",
+        ),
+    ],
+)
+def test_generate_errors(
+    begin: Timestamp,
+    end: Timestamp,
+    overlap: float,
+    duration: Timedelta | None,
+    error_msg: str,
+) -> None:
+    with pytest.raises(ValueError, match=error_msg):
+        Event.generate(begin=begin, end=end, overlap=overlap, duration=duration)
+
+
+@pytest.mark.parametrize(
+    (
+        "begin",
+        "end",
+        "duration",
+        "overlap",
+        "lock_to_base_events",
+        "base_events",
+        "expected",
+    ),
+    [
+        pytest.param(
+            "00:00",
+            "01:00",
+            None,
+            0.0,
+            False,
+            [
+                ("00:00", "01:00"),
+            ],
+            {("00:00", "01:00"): [("00:00", "01:00")]},
+            id="generate_around_one_full_file",
+        ),
+        pytest.param(
+            "00:00",
+            "01:00",
+            None,
+            0.0,
+            False,
+            [
+                ("00:20", "00:40"),
+            ],
+            {("00:00", "01:00"): [("00:20", "00:40")]},
+            id="generate_oustide_range",
+        ),
+        pytest.param(
+            "00:00",
+            "01:00",
+            Timedelta(minutes=20),
+            0.0,
+            False,
+            [
+                ("00:25", "00:35"),
+            ],
+            {
+                ("00:00", "00:20"): [],
+                ("00:20", "00:40"): [
+                    ("00:25", "00:35"),
+                ],
+                ("00:40", "01:00"): [],
+            },
+            id="generate_multiple_events_oustide_range",
+        ),
+        pytest.param(
+            "00:00",
+            "01:00",
+            Timedelta(minutes=10),
+            0.0,
+            False,
+            [
+                ("00:05", "00:15"),
+                ("00:45", "00:55"),
+            ],
+            {
+                ("00:00", "00:10"): [("00:05", "00:15")],
+                ("00:10", "00:20"): [("00:05", "00:15")],
+                ("00:20", "00:30"): [],
+                ("00:30", "00:40"): [],
+                ("00:40", "00:50"): [("00:45", "00:55")],
+                ("00:50", "01:00"): [("00:45", "00:55")],
+            },
+            id="generate_with_gap_between_events",
+        ),
+        pytest.param(
+            "00:00",
+            "02:20",
+            Timedelta(minutes=30),
+            1 / 3,
+            False,
+            [
+                ("00:35", "00:42"),
+                ("00:45", "00:55"),
+                ("01:35", "01:45"),
+            ],
+            {
+                ("00:00", "00:30"): [],
+                ("00:20", "00:50"): [("00:35", "00:42"), ("00:45", "00:55")],
+                ("00:40", "01:10"): [("00:35", "00:42"), ("00:45", "00:55")],
+                ("01:00", "01:30"): [],
+                ("01:20", "01:50"): [("01:35", "01:45")],
+                ("01:40", "02:10"): [("01:35", "01:45")],
+                ("02:00", "02:30"): [],
+            },
+            id="generate_with_overlap",
+        ),
+        pytest.param(
+            "00:00",
+            "01:30",
+            Timedelta(hours=1),
+            0.0,
+            False,
+            [
+                ("00:00", "01:00"),
+                ("01:40", "02:40"),
+            ],
+            {
+                ("00:00", "01:00"): [("00:00", "01:00")],
+                ("01:00", "02:00"): [("01:40", "02:40")],
+            },
+            id="base_file_that_starts_after_end_is_included",
+        ),
+    ],
+)
+def test_generate_around(
+    begin: str,
+    end: str,
+    duration: Timedelta | None,
+    overlap: float,
+    lock_to_base_events: bool,
+    base_events: list[tuple[str, str]],
+    expected: dict[tuple[str, str], list[tuple[str, str]]],
+) -> None:
+    begin, end = map(Timestamp, (begin, end))
+    base_events = list(map(tuple_to_event, base_events))
+    expected = {
+        tuple_to_event(key): list(map(tuple_to_event, value))
+        for key, value in expected.items()
+    }
+
+    result = Event.generate_around(
+        begin=begin,
+        end=end,
+        duration=duration,
+        overlap=overlap,
+        base_events=base_events,
+        lock_to_base_events=lock_to_base_events,
+    )
+
+    for r, e in zip(result.items(), expected.items(), strict=True):
+        result_event, result_base_events = r
+        expected_event, expected_base_events = e
+
+        assert result_event == expected_event
+        assert np.array_equal(result_base_events, expected_base_events)
