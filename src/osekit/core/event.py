@@ -440,7 +440,7 @@ class Event:
             overflowing_events.extend(new_output_events)
 
             if new_output_events:
-                pointer = new_output_events[-1].end
+                pointer = new_output_events[-1].begin + hop
 
         return output
 
