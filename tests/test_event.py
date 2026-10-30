@@ -577,106 +577,80 @@ def test_tuple_to_event() -> None:
     ("begin", "end", "overlap", "duration", "expected"),
     [
         pytest.param(
-            Timestamp("2020-01-01 00:00:00"),
-            Timestamp("2020-01-01 00:00:10"),
+            "00:00",
+            "00:10",
             0.0,
             None,
             [
-                Event(
-                    begin=Timestamp("2020-01-01 00:00:00"),
-                    end=Timestamp("2020-01-01 00:00:10"),
-                ),
+                ("00:00", "00:10"),
             ],
             id="no_duration_is_full_range",
         ),
         pytest.param(
-            Timestamp("01:00"),
-            Timestamp("00:00"),
+            "01:00",
+            "00:00",
             0.0,
             None,
             [],
             id="end_before_begin_returns_empty",
         ),
         pytest.param(
-            Timestamp("01:00"),
-            Timestamp("01:00"),
+            "01:00",
+            "01:00",
             0.0,
             None,
             [],
             id="end_at_begin_returns_empty",
         ),
         pytest.param(
-            Timestamp("2020-01-01 00:00:00"),
-            Timestamp("2020-01-01 00:00:10"),
+            "00:00",
+            "00:10",
             0.0,
-            Timedelta(seconds=5),
+            Timedelta(minutes=5),
             [
-                Event(
-                    begin=Timestamp("2020-01-01 00:00:00"),
-                    end=Timestamp("2020-01-01 00:00:05"),
-                ),
-                Event(
-                    begin=Timestamp("2020-01-01 00:00:05"),
-                    end=Timestamp("2020-01-01 00:00:10"),
-                ),
+                ("00:00", "00:05"),
+                ("00:05", "00:10"),
             ],
             id="end_timestamp_on_event_end",
         ),
         pytest.param(
-            Timestamp("2020-01-01 00:00:00"),
-            Timestamp("2020-01-01 00:00:08"),
+            "00:00",
+            "00:08",
             0.0,
-            Timedelta(seconds=5),
+            Timedelta(minutes=5),
             [
-                Event(
-                    begin=Timestamp("2020-01-01 00:00:00"),
-                    end=Timestamp("2020-01-01 00:00:05"),
-                ),
-                Event(
-                    begin=Timestamp("2020-01-01 00:00:05"),
-                    end=Timestamp("2020-01-01 00:00:10"),
-                ),
+                ("00:00", "00:05"),
+                ("00:05", "00:10"),
             ],
             id="end_timestamp_within_event",
         ),
         pytest.param(
-            Timestamp("2020-01-01 00:00:00"),
-            Timestamp("2020-01-01 00:00:10"),
+            "00:00",
+            "00:10",
             1 / 3,
-            Timedelta(seconds=3),
+            Timedelta(minutes=3),
             [
-                Event(
-                    begin=Timestamp("2020-01-01 00:00:00"),
-                    end=Timestamp("2020-01-01 00:00:03"),
-                ),
-                Event(
-                    begin=Timestamp("2020-01-01 00:00:02"),
-                    end=Timestamp("2020-01-01 00:00:05"),
-                ),
-                Event(
-                    begin=Timestamp("2020-01-01 00:00:04"),
-                    end=Timestamp("2020-01-01 00:00:07"),
-                ),
-                Event(
-                    begin=Timestamp("2020-01-01 00:00:06"),
-                    end=Timestamp("2020-01-01 00:00:09"),
-                ),
-                Event(
-                    begin=Timestamp("2020-01-01 00:00:08"),
-                    end=Timestamp("2020-01-01 00:00:11"),
-                ),
+                ("00:00", "00:03"),
+                ("00:02", "00:05"),
+                ("00:04", "00:07"),
+                ("00:06", "00:09"),
+                ("00:08", "00:11"),
             ],
             id="overlapping_events",
         ),
     ],
 )
 def test_generate(
-    begin: Timestamp,
-    end: Timestamp,
+    begin: str,
+    end: str,
     overlap: float,
     duration: Timedelta | None,
-    expected: list[Event],
+    expected: list[tuple[str, str]],
 ) -> None:
+    begin = Timestamp(begin)
+    end = Timestamp(end)
+    expected = list(map(tuple_to_event, expected))
+
     assert np.array_equal(
         Event.generate(begin=begin, end=end, overlap=overlap, duration=duration),
         expected,
