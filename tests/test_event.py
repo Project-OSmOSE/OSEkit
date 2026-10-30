@@ -661,24 +661,24 @@ def test_generate(
     ("begin", "end", "overlap", "duration", "error_msg"),
     [
         pytest.param(
-            Timestamp("2020-01-01 00:00:00"),
-            Timestamp("2020-01-01 00:00:10"),
+            Timestamp("00:00"),
+            Timestamp("00:10"),
             -1,
             None,
             "Overlap must be",
             id="negative_overlap_raises",
         ),
         pytest.param(
-            Timestamp("2020-01-01 00:00:00"),
-            Timestamp("2020-01-01 00:00:10"),
+            Timestamp("00:00"),
+            Timestamp("00:10"),
             2,
             None,
             "Overlap must be",
             id="higher_than_one_overlap_raises",
         ),
         pytest.param(
-            Timestamp("2020-01-01 00:00:00"),
-            Timestamp("2020-01-01 00:00:10"),
+            Timestamp("00:00"),
+            Timestamp("00:10"),
             1,
             None,
             "Overlap must be",
@@ -701,76 +701,48 @@ def test_generate_errors(
     ("begin", "end", "duration", "overlap", "base_events", "expected"),
     [
         pytest.param(
-            Timestamp("2020-01-01 00:00:00"),
-            Timestamp("2020-01-01 00:01:00"),
+            "00:00",
+            "01:00",
             None,
             0.0,
             [
-                Event(
-                    begin=Timestamp("2020-01-01 00:00:00"),
-                    end=Timestamp("2020-01-01 00:01:00"),
-                )
+                ("00:00", "01:00"),
             ],
-            {
-                Event(
-                    begin=Timestamp("2020-01-01 00:00:00"),
-                    end=Timestamp("2020-01-01 00:01:00"),
-                ): [
-                    Event(
-                        begin=Timestamp("2020-01-01 00:00:00"),
-                        end=Timestamp("2020-01-01 00:01:00"),
-                    )
-                ]
-            },
+            {("00:00", "01:00"): [("00:00", "01:00")]},
             id="generate_around_one_full_file",
         ),
         pytest.param(
-            Timestamp("2020-01-01 00:00:00"),
-            Timestamp("2020-01-01 00:01:30"),
-            Timedelta(minutes=1),
+            "00:00",
+            "01:30",
+            Timedelta(hours=1),
             0.0,
             [
-                Event(
-                    begin=Timestamp("2020-01-01 00:00:00"),
-                    end=Timestamp("2020-01-01 00:01:00"),
-                ),
-                Event(
-                    begin=Timestamp("2020-01-01 00:01:40"),
-                    end=Timestamp("2020-01-01 00:02:40"),
-                ),
+                ("00:00", "01:00"),
+                ("01:40", "02:40"),
             ],
             {
-                Event(
-                    begin=Timestamp("2020-01-01 00:00:00"),
-                    end=Timestamp("2020-01-01 00:01:00"),
-                ): [
-                    Event(
-                        begin=Timestamp("2020-01-01 00:00:00"),
-                        end=Timestamp("2020-01-01 00:01:00"),
-                    )
-                ],
-                Event(
-                    begin=Timestamp("2020-01-01 00:01:00"),
-                    end=Timestamp("2020-01-01 00:02:00"),
-                ): [
-                    Event(
-                        begin=Timestamp("2020-01-01 00:01:40"),
-                        end=Timestamp("2020-01-01 00:02:40"),
-                    )
-                ],
+                ("00:00", "01:00"): [("00:00", "01:00")],
+                ("01:00", "02:00"): [("01:40", "02:40")],
             },
             id="base_file_that_starts_after_end_is_included",
         ),
     ],
 )
 def test_generate_around(
-    begin: Timestamp,
-    end: Timestamp,
+    begin: str,
+    end: str,
     duration: Timedelta | None,
     overlap: float,
-    base_events: list[Event],
-    expected: dict[Event, list[Event]],
+    base_events: list[tuple[str, str]],
+    expected: dict[tuple[str, str], list[tuple[str, str]]],
 ) -> None:
+    begin, end = map(Timestamp, (begin, end))
+    base_events = list(map(tuple_to_event, base_events))
+    expected = {
+        tuple_to_event(key): list(map(tuple_to_event, value))
+        for key, value in expected.items()
+    }
+
     result = Event.generate_around(
         begin=begin,
         end=end,
