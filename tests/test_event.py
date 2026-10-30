@@ -563,6 +563,16 @@ def test_localize(event: Event, timezone: str | None, expected: Event) -> None:
     assert event == expected
 
 
+def tuple_to_event(value: tuple[str, str]) -> Event:
+    return Event(*map(Timestamp, value))
+
+
+def test_tuple_to_event() -> None:
+    assert tuple_to_event(value=("00:00", "01:00")) == Event(
+        begin=Timestamp("00:00"), end=Timestamp("01:00")
+    )
+
+
 @pytest.mark.parametrize(
     ("begin", "end", "overlap", "duration", "expected"),
     [
