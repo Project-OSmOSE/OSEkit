@@ -376,7 +376,7 @@ class Event:
             which each data (output events) should be linked.
 
         """
-        duration, hop = Event._validate_generate_parameters(
+        validated_duration, hop = Event._validate_generate_parameters(
             begin=begin,
             end=end,
             overlap=overlap,
@@ -389,7 +389,7 @@ class Event:
         base_event_range = Event(
             begin=begin,
             end=last_window_end(
-                begin=begin, end=end, window_duration=duration, window_hop=hop
+                begin=begin, end=end, window_duration=validated_duration, window_hop=hop
             ),
         )
 
@@ -399,6 +399,10 @@ class Event:
 
         output = {}
         pointer = begin
+
+        # Recompute duration if begin is delayed and duration was one whole Event
+        if lock_to_base_events and duration is None:
+            validated_duration = end - max(pointer, base_events[0].begin)
 
         # Events from previous base_events that might overlflow to the next one(s)
         overflowing_events = []
@@ -414,7 +418,7 @@ class Event:
                     begin=pointer,
                     end=base_event.begin,
                     overlap=overlap,
-                    duration=duration,
+                    duration=validated_duration,
                 )
                 output |= {event: [] for event in empty_events}
                 overflowing_events.extend(empty_events)
@@ -433,7 +437,7 @@ class Event:
                 begin=pointer,
                 end=min(end, base_event.end),
                 overlap=overlap,
-                duration=duration,
+                duration=validated_duration,
             )
 
             output |= {event: [base_event] for event in new_output_events}
@@ -447,7 +451,7 @@ class Event:
             output |= {
                 event: []
                 for event in Event.generate(
-                    begin=pointer, end=end, overlap=overlap, duration=duration
+                    begin=pointer, end=end, overlap=overlap, duration=validated_duration
                 )
             }
 
@@ -482,6 +486,7 @@ class Event:
         -------
         tuple[Timedelta,Timedelta]
             Duration of the events and hop between two consecutive events.
+
         """
         if not 0 <= overlap < 1:
             msg = f"Overlap must be in the [0., 1.[ interval, got {overlap}"
