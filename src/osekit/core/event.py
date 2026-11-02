@@ -386,15 +386,15 @@ class Event:
         base_events = sorted(base_events, key=attrgetter("begin", "end"))
 
         # We can filter out the base events that are out of range
+        base_event_range = Event(
+            begin=begin,
+            end=last_window_end(
+                begin=begin, end=end, window_duration=duration, window_hop=hop
+            ),
+        )
+
         base_events = [
-            event
-            for event in base_events
-            if Event(
-                begin=begin,
-                end=last_window_end(
-                    begin=begin, end=end, window_duration=duration, window_hop=hop
-                ),
-            ).overlaps(event)
+            event for event in base_events if event.overlaps(base_event_range)
         ]
 
         output = {}
@@ -441,6 +441,15 @@ class Event:
 
             if new_output_events:
                 pointer = new_output_events[-1].begin + hop
+
+        if not lock_to_base_events:
+            # Add eventual empty items if end > last base_event
+            output |= {
+                event: []
+                for event in Event.generate(
+                    begin=pointer, end=end, overlap=overlap, duration=duration
+                )
+            }
 
         return output
 
