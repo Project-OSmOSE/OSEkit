@@ -192,7 +192,7 @@ class BaseData[TItem: BaseItem, TFile: BaseFile](Event, ABC):
     def from_dict(
         cls,
         dictionary: dict,
-        **kwargs,  # noqa: ANN003
+        **kwargs,
     ) -> BaseData:
         """Deserialize a ``BaseData`` from a dictionary.
 
@@ -245,7 +245,7 @@ class BaseData[TItem: BaseItem, TFile: BaseFile](Event, ABC):
         files: list[TFile],
         begin: Timestamp,
         end: Timestamp,
-        **kwargs,  # noqa: ANN003
+        **kwargs,
     ) -> Self: ...
 
     @property
@@ -256,7 +256,7 @@ class BaseData[TItem: BaseItem, TFile: BaseFile](Event, ABC):
     def split(
         self,
         nb_subdata: int = 2,
-        **kwargs,  # noqa: ANN003
+        **kwargs,
     ) -> list[Self]:
         """Split the data object in the specified number of subdata.
 
@@ -286,7 +286,7 @@ class BaseData[TItem: BaseItem, TFile: BaseFile](Event, ABC):
         files: list[TFile],
         begin: Timestamp,
         end: Timestamp,
-        **kwargs,  # noqa: ANN003
+        **kwargs,
     ) -> Self:
         """Make a Data object after a ``.split()`` call."""
         ...
@@ -298,7 +298,7 @@ class BaseData[TItem: BaseItem, TFile: BaseFile](Event, ABC):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         name: str | None = None,
-        **kwargs,  # noqa: ANN003
+        **kwargs,
     ) -> Self:
         """Return a Data object from a list of Files.
 
@@ -367,9 +367,9 @@ class BaseData[TItem: BaseItem, TFile: BaseFile](Event, ABC):
         ]
         if not items:
             items.append(cls._make_item(begin=begin, end=end))
-        if (first_item := sorted(items, key=lambda item: item.begin)[0]).begin > begin:
-            items.append(cls._make_item(begin=begin, end=first_item.begin))
-        if (last_item := sorted(items, key=lambda item: item.end)[-1]).end < end:
-            items.append(cls._make_item(begin=last_item.end, end=end))
+        if (min_begin := min(item.begin for item in items)) > begin:
+            items.append(cls._make_item(begin=begin, end=min_begin))
+        if (max_end := max(item.end for item in items)) < end:
+            items.append(cls._make_item(begin=max_end, end=end))
         items = Event.remove_overlaps(items)
         return Event.fill_gaps(items, cls.item_cls)
