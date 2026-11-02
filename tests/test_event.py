@@ -808,6 +808,94 @@ def test_generate_errors(
             },
             id="base_file_that_starts_after_end_is_included",
         ),
+        pytest.param(
+            "00:00",
+            "01:00",
+            None,
+            0.0,
+            True,
+            [
+                ("00:00", "01:00"),
+            ],
+            {("00:00", "01:00"): [("00:00", "01:00")]},
+            id="generate_around_one_full_file_locked",
+        ),
+        pytest.param(
+            "00:00",
+            "01:00",
+            None,
+            0.0,
+            True,
+            [
+                ("00:20", "00:40"),
+            ],
+            {("00:20", "01:00"): [("00:20", "00:40")]},
+            id="generate_oustide_range_locked",
+        ),
+        pytest.param(
+            "00:00",
+            "01:00",
+            Timedelta(minutes=20),
+            0.0,
+            True,
+            [
+                ("00:25", "00:35"),
+            ],
+            {
+                ("00:25", "00:45"): [("00:25", "00:35")],
+            },
+            id="generate_multiple_events_oustide_range_locked",
+        ),
+        pytest.param(
+            "00:00",
+            "01:00",
+            Timedelta(minutes=10),
+            0.0,
+            True,
+            [
+                ("00:05", "00:20"),
+                ("00:45", "00:55"),
+            ],
+            {
+                ("00:05", "00:15"): [("00:05", "00:20")],
+                ("00:15", "00:25"): [("00:05", "00:20")],
+                ("00:45", "00:55"): [("00:45", "00:55")],
+            },
+            id="generate_with_gap_between_events_locked",
+        ),
+        pytest.param(
+            "00:00",
+            "02:20",
+            Timedelta(minutes=30),
+            2 / 3,
+            True,
+            [
+                ("00:35", "00:42"),
+                ("00:45", "00:55"),
+                ("01:35", "01:45"),
+            ],
+            {
+                ("00:35", "01:05"): [("00:35", "00:42"), ("00:45", "00:55")],
+                ("00:45", "01:15"): [("00:45", "00:55")],
+                ("01:35", "02:05"): [("01:35", "01:45")],
+            },
+            id="generate_with_overlap_locked",
+        ),
+        pytest.param(
+            "00:00",
+            "01:30",
+            Timedelta(hours=1),
+            0.0,
+            True,
+            [
+                ("00:00", "01:00"),
+                ("01:40", "02:40"),
+            ],
+            {
+                ("00:00", "01:00"): [("00:00", "01:00")],
+            },
+            id="base_file_that_starts_after_end_is_excluded_locked",
+        ),
     ],
 )
 def test_generate_around(
