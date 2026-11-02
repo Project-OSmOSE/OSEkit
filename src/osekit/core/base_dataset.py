@@ -11,7 +11,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, Self, TypeVar
 
-from pandas import Timedelta, Timestamp, date_range
+from pandas import Timedelta, Timestamp
 from soundfile import LibsndfileError
 from tqdm import tqdm
 
@@ -414,41 +414,24 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
         overlap: float = 0,
         **kwargs,
     ) -> list[TData]:
-        if not 0 <= overlap < 1:
-            msg = f"Overlap ({overlap}) must be between 0 and 1."
-            raise ValueError(msg)
+        data_events = Event.generate_around(
+            begin=begin,
+            end=end,
+            base_events=files,
+            overlap=overlap,
+            duration=data_duration,
+            lock_to_base_events=False,
+        )
 
-        active_file_index = 0
-        output = []
-        files = sorted(files, key=lambda f: f.begin)
-        freq = data_duration * (1 - overlap)
-
-        for data_begin in tqdm(
-            date_range(begin, end, freq=freq, inclusive="left"),
-            disable=os.getenv("DISABLE_TQDM", "False").lower() in ("true", "1", "t"),
-        ):
-            data_end = Timestamp(data_begin + data_duration)
-            while (
-                active_file_index < len(files)
-                and files[active_file_index].end < data_begin
-            ):
-                active_file_index += 1
-            last_active_file_index = active_file_index
-            while (
-                last_active_file_index < len(files)
-                and files[last_active_file_index].begin < data_end
-            ):
-                last_active_file_index += 1
-            output.append(
-                cls._data_from_files(
-                    files[active_file_index:last_active_file_index],
-                    data_begin,
-                    data_end,
-                    **kwargs,
-                ),
+        return [
+            cls._data_from_files(
+                files=base_files,
+                begin=event.begin,
+                end=event.end,
+                **kwargs,
             )
-
-        return output
+            for event, base_files in data_events.items()
+        ]
 
     @classmethod
     def _get_data_from_files_timedelta_file(
