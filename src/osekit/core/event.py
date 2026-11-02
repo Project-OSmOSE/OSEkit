@@ -310,6 +310,11 @@ class Event:
             The list of events.
 
         """
+        if begin.utcoffset() != end.utcoffset():
+            msg = "Begin and end timestamps must have the same USC offset."
+            raise ValueError(msg)
+        begin = localize_timestamp(timestamp=begin, timezone=end.tz)
+
         if end <= begin:
             return []
 
