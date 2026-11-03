@@ -11,6 +11,7 @@ from pandas import Timedelta, Timestamp, date_range
 from osekit.config import TIMESTAMP_FORMATS_EXPORTED_FILES
 from osekit.core.event import Event
 from tests.helpers.dummy import DummyData, DummyDataset, DummyFile
+from tests.test_event import tuple_to_event
 
 
 @pytest.fixture
@@ -2742,3 +2743,19 @@ def test_duplicate_data_error(
 
     with expected_error_names_export:
         ds.write(Path(r"bar"), first=first, last=last)
+
+
+def tuple_to_dummy_file(time_tuple: tuple[str, str], path: str) -> DummyFile:
+    file_event = tuple_to_event(value=time_tuple)
+    return DummyFile(begin=file_event.begin, end=file_event.end, path=path)
+
+
+def test_tuple_to_dummy_file() -> None:
+    time_tuple = "00:10", "00:20"
+    path = "cool"
+
+    expected = DummyFile(
+        path=path, begin=Timestamp(time_tuple[0]), end=Timestamp(time_tuple[1])
+    )
+
+    assert tuple_to_dummy_file(time_tuple=time_tuple, path=path) == expected
