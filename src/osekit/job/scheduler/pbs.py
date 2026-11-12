@@ -36,8 +36,13 @@ class Pbs(Scheduler):
 
     SUBMIT_CMD: typing.ClassVar = "qsub"
 
-    def __init__(self, queue: Literal["omp", "mpi"] = "omp") -> None:
+    def __init__(
+        self,
+        queue: Literal["omp", "mpi"] = "omp",
+        cmd_prefix: list[str] | None = None,
+    ) -> None:
         """Initialize the PBS scheduler."""
+        super().__init__(cmd_prefix=cmd_prefix)
         self.queue = queue
 
     @property
@@ -97,8 +102,7 @@ class Pbs(Scheduler):
         """Parse the output of the submit command."""
         return submit_output.split(".", maxsplit=1)[0].strip()
 
-    @staticmethod
-    def _get_info(job: Job) -> str:
+    def _get_info(self, job: Job) -> str:
         """Request information about a job.
 
         Parameters
@@ -112,13 +116,9 @@ class Pbs(Scheduler):
             The information string, as returned by the ``qstat -f`` command.
 
         """
+        cmd = ["qstat", "-f", str(job.job_id)]
         try:
-            request = subprocess.run(
-                ["qstat", "-f", str(job.job_id)],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
+            request = self.run_subprocess(cmd=cmd)
             if request.stdout:
                 return request.stdout
 

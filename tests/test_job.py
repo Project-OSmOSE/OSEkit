@@ -12,6 +12,7 @@ from osekit.job.config import JobConfig
 from osekit.job.job import Job, JobStatus
 from osekit.job.scheduler.pbs import Pbs
 from osekit.job.scheduler.scheduler import Scheduler
+from osekit.job.scheduler.slurm import Slurm
 
 
 def test_properties() -> None:
@@ -77,6 +78,39 @@ def test_pbs_build_job_specifications() -> None:
         "#PBS -l walltime=02:00:00",
         f"#PBS -o {Path('cool/folder') / 'cool_job.out'}",
         f"#PBS -e {Path('cool/folder') / 'cool_job.err'}",
+    ):
+        assert expected_specification in specifications
+
+
+def test_slurm_build_job_specifications() -> None:
+    job = Job(
+        script_path=Path(),
+        config=JobConfig(
+            nb_nodes=2,
+            ncpus=3,
+            ngpus=1,
+            mem="16gb",
+            walltime=Timedelta(hours=2),
+            venv_name="cool_env",
+        ),
+        output_folder=Path(r"cool/folder"),
+        name="cool_job",
+    )
+
+    specifications = (
+        Slurm(partition="gpu")._build_job_specification(job=job).splitlines()
+    )
+
+    for expected_specification in (
+        "#SBATCH --job-name=cool_job",
+        "#SBATCH --partition=gpu",
+        "#SBATCH --nodes=2",
+        "#SBATCH --cpus-per-task=3",
+        "#SBATCH --mem=16gb",
+        "#SBATCH --gpus=1",
+        "#SBATCH --time=02:00:00",
+        f"#SBATCH --output={Path('cool/folder') / 'cool_job.out'}",
+        f"#SBATCH --error={Path('cool/folder') / 'cool_job.err'}",
     ):
         assert expected_specification in specifications
 
@@ -263,9 +297,129 @@ def test_pbs_update_info_parse_stdout(monkeypatch: pytest.MonkeyPatch) -> None:
     }
 
 
+def test_slurm_update_info_parse_stdout(monkeypatch: pytest.MonkeyPatch) -> None:
+    job = Job(script_path=Path("fontaines.py"), name="SwissArmyMan")
+    job.job_id = "7137005"
+
+    class Dummy:
+        stdout = (
+            Path(__file__).parent
+            / "_static/job_status_request_results/slurm_squeue.txt"
+        ).read_text()
+        stderr = ""
+
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        lambda *args, **kwargs: Dummy(),
+    )
+    scheduler = Slurm()
+    scheduler.update_info(job=job)
+    assert job.job_id == "7137005"
+    assert job.name == "SwissArmyMan"
+    assert job.status == JobStatus.RUNNING
+    assert job.info == {
+        "user": "daniels",
+        "time": "10:37",
+        "partition": "jetski",
+        "node_list": "compute-114-9",
+    }
+
+
+def test_slurm_get_info_completed_job(monkeypatch: pytest.MonkeyPatch) -> None:
+    job = Job(script_path=Path("fontaines.py"), name="SwissArmyMan")
+    job.job_id = "7137005"
+
+    class EmptyRequest:
+        def __init__(self) -> None:
+            self.stdout = ""
+            self.stderr = ""
+
+    class DummySacctRequest:
+        def __init__(self) -> None:
+            self.stdout = (
+                Path(__file__).parent
+                / "_static/job_status_request_results/slurm_sacct.txt"
+            ).read_text()
+            self.stderr = ""
+
+    def mock_run(*args, **kwargs) -> EmptyRequest | DummySacctRequest:
+        cmd = args[0][0]
+        return EmptyRequest() if "squeue" in cmd else DummySacctRequest()
+
+    monkeypatch.setattr(subprocess, "run", mock_run)
+
+    scheduler = Slurm()
+    scheduler.update_info(job=job)
+    assert job.job_id == "7137005"
+    assert job.name == "SwissArmyMan"
+    assert job.status == JobStatus.COMPLETED
+    assert job.info == {
+        "user": "daniels",
+        "time": "10:37",
+        "partition": "jetski",
+        "node_list": "compute-114-9 (Dependency)",
+    }
+
+
+def test_slurm_get_info_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    job = Job(script_path=Path("fontaines.py"), name="SwissArmyMan")
+    job.job_id = "7137005"
+
+    class EmptyRequest:
+        def __init__(self) -> None:
+            self.stdout = ""
+            self.stderr = ""
+
+    class DummySacctRequestError:
+        def __init__(self) -> None:
+            self.stdout = ""
+            self.stderr = "timeout"
+
+    def mock_run(*args, **kwargs) -> EmptyRequest | DummySacctRequestError:
+        cmd = args[0][0]
+        return EmptyRequest() if "squeue" in cmd else DummySacctRequestError()
+
+    monkeypatch.setattr(subprocess, "run", mock_run)
+
+    scheduler = Slurm()
+    with pytest.raises(ValueError, match=r"7137005.*timeout"):
+        scheduler.update_info(job=job)
+
+
+def test_slurm_get_info_no_output(monkeypatch: pytest.MonkeyPatch) -> None:
+    job = Job(script_path=Path("fontaines.py"), name="SwissArmyMan")
+    job.job_id = "7137005"
+    job.status = JobStatus.PREPARED
+
+    class EmptyRequest:
+        def __init__(self) -> None:
+            self.stdout = ""
+            self.stderr = ""
+
+    class DummySacctRequest:
+        def __init__(self) -> None:
+            self.stdout = ""
+            self.stderr = ""
+
+    def mock_run(*args, **kwargs) -> EmptyRequest | DummySacctRequest:
+        cmd = args[0][0]
+        return EmptyRequest() if "squeue" in cmd else DummySacctRequest()
+
+    monkeypatch.setattr(subprocess, "run", mock_run)
+
+    scheduler = Slurm()
+    scheduler.update_info(job=job)  # Shouldn't raise
+    # Information should not have changed
+    assert job.job_id == "7137005"
+    assert job.status == JobStatus.PREPARED
+    assert job.info == {}
+
+
 def test_pbs_update_info_unknown_job_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     job = Job(Path("pompom.py"))
     job.job_id = "17112014"
+    job.status = JobStatus.RUNNING
 
     class Dummy:
         stdout = ""
@@ -280,6 +434,10 @@ def test_pbs_update_info_unknown_job_raises(monkeypatch: pytest.MonkeyPatch) -> 
     scheduler = Pbs()
     with pytest.raises(ValueError, match="Unknown Job Id 17112014"):
         scheduler.update_info(job=job)
+
+    # No qstat output shouldn't do anything
+    assert job.job_id == "17112014"
+    assert job.status == JobStatus.RUNNING
 
 
 def test_pbs_update_info_without_qstat_output(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -524,6 +682,25 @@ def test_pbs_validate_dependency_type() -> None:
         assert e.match(supported)
 
 
+def id_to_job(job_id: str | list[str]) -> Job | list[Job]:
+    """Convert a Job ID ``job_id`` to a Job object with an ID of ``job_id``
+
+    If ``job_id`` is a list, converts the list of job_ids to a list of jobs
+    with the given IDs."""
+    if isinstance(job_id, str):
+        job = Job(Path())
+        job._id = job_id
+        job.status = JobStatus.QUEUED
+        return job
+    output = []
+    for j_id in job_id:
+        job = Job(Path())
+        job._id = j_id
+        job.status = JobStatus.QUEUED
+        output.append(job)
+    return output
+
+
 @pytest.mark.parametrize(
     ("dependencies", "expected"),
     [
@@ -557,26 +734,68 @@ def test_pbs_build_dependencies_string(
     assert Pbs()._build_dependency_string(dependencies=dependencies) == expected
 
     # %% Dependencies string from Job instances
-    def id_to_job(job_id: str | list[str]) -> Job | list[Job]:
-        """Convert a Job ID ``job_id`` to a Job object with an ID of ``job_id``
-
-        If ``job_id`` is a list, converts the list of job_ids to a list of jobs
-        with the given IDs."""
-        if isinstance(job_id, str):
-            job = Job(Path())
-            job._id = job_id
-            job.status = JobStatus.QUEUED
-            return job
-        output = []
-        for j_id in job_id:
-            job = Job(Path())
-            job._id = j_id
-            job.status = JobStatus.QUEUED
-            output.append(job)
-        return output
-
     dependencies = {key: id_to_job(value) for key, value in dependencies.items()}
     assert Pbs()._build_dependency_string(dependencies=dependencies) == expected
+
+
+@pytest.mark.parametrize(
+    ("dependencies", "instructions_or", "expected"),
+    [
+        pytest.param(
+            {"afterok": "1234567"},
+            False,
+            "-d afterok:1234567",
+            id="one_type_one_job",
+        ),
+        pytest.param(
+            {"afterok": ["1234567", "2345678"]},
+            False,
+            "-d afterok:1234567:2345678",
+            id="one_type_multiple_jobs",
+        ),
+        pytest.param(
+            {"afterok": "1234567", "afterany": "2345678"},
+            False,
+            "-d afterok:1234567,afterany:2345678",
+            id="multiple_types_one_job",
+        ),
+        pytest.param(
+            {"afterok": ["1234567", "2345678"], "afterany": ["3456789", "4567890"]},
+            False,
+            "-d afterok:1234567:2345678,afterany:3456789:4567890",
+            id="multiple_types_multiple_jobs",
+        ),
+        pytest.param(
+            {"afterok": ["1234567", "2345678"], "afterany": ["3456789", "4567890"]},
+            True,
+            "-d afterok:1234567:2345678?afterany:3456789:4567890",
+            id="logical_or",
+        ),
+    ],
+)
+def test_slurm_build_dependencies_string(
+    dependencies: dict[str, str | list[str]],
+    instructions_or: bool,
+    expected: str,
+) -> None:
+    # %% Dependencies string from job IDs
+    assert (
+        Slurm()._build_dependency_string(
+            dependencies=dependencies,
+            instructions_or=instructions_or,
+        )
+        == expected
+    )
+
+    # %% Dependencies string from Job instances
+    dependencies = {key: id_to_job(value) for key, value in dependencies.items()}
+    assert (
+        Slurm()._build_dependency_string(
+            dependencies=dependencies,
+            instructions_or=instructions_or,
+        )
+        == expected
+    )
 
 
 def test_submit_pbs_adds_dependency_flag(
@@ -678,7 +897,7 @@ def test_job_walltime(walltime: str | Timedelta) -> None:
         ),
     ],
 )
-def test_create_jobs(  # noqa: PLR0917
+def test_create_jobs(
     monkeypatch: pytest.MonkeyPatch,
     nb_tasks: int,
     script_path: Path,
@@ -737,3 +956,18 @@ def test_create_jobs(  # noqa: PLR0917
             ),
         ):
             assert job[0] == f"{job_name}_{idx}"
+
+
+def test_slurm_venv_str() -> None:
+    slurm = Slurm()
+    job = Job(script_path=Path(), config=JobConfig(venv_name="cool_venv"))
+    venv_commands = slurm._build_venv_string(job=job).splitlines()
+
+    assert venv_commands[0] == "module load conda"
+    assert venv_commands[1] == "conda activate cool_venv"
+
+
+def test_slurm_parse_job_id() -> None:
+    submit_output = "Submitted batch job 3647090\n"
+    job_id = "3647090"
+    assert Slurm()._parse_job_id(submit_output=submit_output) == job_id

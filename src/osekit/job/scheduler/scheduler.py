@@ -14,6 +14,56 @@ class Scheduler(ABC):
     SUBMIT_CMD: typing.ClassVar = ""
     INFO_CMD: typing.ClassVar = []
 
+    def __init__(self, cmd_prefix: list[str] | None = None) -> None:
+        """Initialize the scheduler.
+
+        Parameters
+        ----------
+        cmd_prefix: list[str]|None
+            Commands that are prefixed to commands run through
+            the ``Scheduler.run_subprocess()`` method.
+
+        """
+        self.cmd_prefix = cmd_prefix or []
+        self.shebang = "#!/bin/bash"
+
+    @property
+    def cmd_prefix(self) -> list[str]:
+        """Return the list of command prefixes.
+
+        These commands are prefixed to commands run through
+        the ``Scheduler.run_subprocess()`` method.
+
+        Returns
+        -------
+        list[str]
+            The prefix commands.
+
+        """
+        return self._cmd_prefix
+
+    @cmd_prefix.setter
+    def cmd_prefix(self, cmd_prefix: list[str]) -> None:
+        self._cmd_prefix = cmd_prefix
+
+    @property
+    def shebang(self) -> str:
+        """Return the shebang string of the scheduler job files.
+
+        Defaulted to ``"#!/bin/bash"``.
+
+        Returns
+        -------
+        str:
+            Shebang of the scheduler job files.
+
+        """
+        return self._shebang
+
+    @shebang.setter
+    def shebang(self, value: str) -> None:
+        self._shebang = value
+
     def write(self, job: Job, path: Path) -> None:
         """Write a job script to file.
 
@@ -25,13 +75,11 @@ class Scheduler(ABC):
             Path of the file in which the job script is written.
 
         """
-        preamble = "#!/bin/bash"
-
         request_str = self._build_job_specification(job=job)
         venv_str = self._build_venv_string(job=job)
         python_script = f"python {job.script_path} {job.get_arg_string()}"
 
-        script = f"{preamble}\n\n{request_str}\n\n{venv_str}\n\n{python_script}"
+        script = f"{self.shebang}\n\n{request_str}\n\n{venv_str}\n\n{python_script}"
 
         with path.open("w") as file:
             file.write(script)
@@ -90,18 +138,34 @@ class Scheduler(ABC):
         cmd.append(str(job.path))
 
         try:
-            request = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                check=False,
-            )
+            request = self.run_subprocess(cmd=cmd)
         except subprocess.CalledProcessError as e:
             msg = f"Submission failed with exit code {e.returncode}"
             raise RuntimeError(msg) from e
 
         job.job_id = self._parse_job_id(submit_output=request.stdout)
         self.update_status(job=job)
+
+    def run_subprocess(self, cmd: list[str]) -> subprocess.CompletedProcess[str]:
+        """Run a command through the subprocess package.
+
+        Parameters
+        ----------
+        cmd: list[str]
+            Command to run.
+
+        Returns
+        -------
+        subprocess.CompletedProcess[str]
+            Process output.
+
+        """
+        return subprocess.run(
+            self._cmd_prefix + cmd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
 
     @staticmethod
     @abstractmethod
@@ -127,9 +191,8 @@ class Scheduler(ABC):
 
         self._parse_info_str(job=job, info=info)
 
-    @staticmethod
     @abstractmethod
-    def _get_info(job: Job) -> str:
+    def _get_info(self, job: Job) -> str:
         """Request information about a job.
 
         Parameters
