@@ -304,6 +304,55 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
         return cls.from_dict(deserialize_json(file))
 
     @classmethod
+    def from_events(
+        cls,
+        events: dict[Event, list[TFile]] | list[Event],
+        files: list[TFile] | None = None,
+        name: str | None = None,
+        **kwargs: dict,
+    ) -> Self:
+        """Create a ``BaseDataset`` from ``Event``s.
+
+        Each ``Event`` from the ``events`` collection will be turned into a data of the dataset,
+        and will be linked to the ``File``s from the ``files`` list it overlaps with.
+
+        Parameters
+        ----------
+        events: dict[Event, list[TFile]] | list[Event]
+            ``Event``s from which the ``Data`` objects are created.
+            If it is a ``dict``, it should have the ``Event`` as key and all
+            files that overlap with that event as values.
+            If it is a ``list``, all files from the ``files`` list will be used
+            to create each ``Data`` object.
+        files: list[TFile] | None
+            If ``events`` is a list, the ``files`` list provides all the files
+            that are used for the creation of each ``event``.
+            This parameter isn't needed if ``events`` is a ``dict``.
+        name: str|None
+            Name of the dataset.
+        kwargs: dict
+            Additional keyword arguments passed to the ``cls._data_from_files()`` method.
+
+        Returns
+        -------
+        Self:
+            The created dataset object.
+
+        """
+        if isinstance(events, list):
+            if files is None:
+                msg = "The `files` parameter must be provided if `events` is a list."
+                raise ValueError(msg)
+            events = Event.associate(events=events, base_events=files)
+
+        data = [
+            cls._data_from_files(files=value, begin=key.begin, end=key.end, **kwargs)
+            for key, value in events.items()
+        ]
+
+        return cls(data=data, name=name)
+
+    @classmethod
     def from_files(
         cls,
         files: list[TFile],
@@ -365,31 +414,28 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
             begin = min(file.begin for file in files)
         if not end:
             end = max(file.end for file in files)
-        if data_duration:
-            data_base = (
-                cls._get_data_from_files_timedelta_total(
-                    begin=begin,
-                    end=end,
-                    data_duration=data_duration,
-                    files=files,
-                    overlap=overlap,
+
+        data_events = Event.generate_around(
+            begin=begin,
+            end=end,
+            base_events=files,
+            overlap=overlap,
+            duration=data_duration,
+            lock_to_base_events=mode == "timedelta_file",
+        )
+
+        return cls(
+            [
+                cls._data_from_files(
+                    files=base_files,
+                    begin=event.begin,
+                    end=event.end,
                     **kwargs,
                 )
-                if mode == "timedelta_total"
-                else cls._get_data_from_files_timedelta_file(
-                    begin=begin,
-                    end=end,
-                    data_duration=data_duration,
-                    files=files,
-                    overlap=overlap,
-                    **kwargs,
-                )
-            )
-        else:
-            data_base = [
-                cls._data_from_files(files=files, begin=begin, end=end, **kwargs),
-            ]
-        return cls(data_base, name=name)
+                for event, base_files in data_events.items()
+            ],
+            name=name,
+        )
 
     @classmethod
     @abstractmethod
