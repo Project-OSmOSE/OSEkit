@@ -419,6 +419,7 @@ def test_slurm_get_info_no_output(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_pbs_update_info_unknown_job_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     job = Job(Path("pompom.py"))
     job.job_id = "17112014"
+    job.status = JobStatus.RUNNING
 
     class Dummy:
         stdout = ""
@@ -433,6 +434,10 @@ def test_pbs_update_info_unknown_job_raises(monkeypatch: pytest.MonkeyPatch) -> 
     scheduler = Pbs()
     with pytest.raises(ValueError, match="Unknown Job Id 17112014"):
         scheduler.update_info(job=job)
+
+    # No qstat output shouldn't do anything
+    assert job.job_id == "17112014"
+    assert job.status == JobStatus.RUNNING
 
 
 def test_pbs_update_info_without_qstat_output(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -892,7 +897,7 @@ def test_job_walltime(walltime: str | Timedelta) -> None:
         ),
     ],
 )
-def test_create_jobs(  # noqa: PLR0917
+def test_create_jobs(
     monkeypatch: pytest.MonkeyPatch,
     nb_tasks: int,
     script_path: Path,
