@@ -2789,6 +2789,39 @@ def test_tuple_to_dummy_file() -> None:
             ],
             id="events_dict",
         ),
+        pytest.param(
+            [
+                ("00:10", "00:20"),
+                ("00:20", "00:25"),
+                ("00:25", "00:40"),
+                ("00:40", "00:50"),
+            ],
+            [
+                (("00:00", "00:30"), "cool_file"),
+                (("00:35", "00:45"), "fun_file"),
+            ],
+            None,
+            [
+                (("00:10", "00:20"), {"cool_file"}),
+                (("00:20", "00:25"), {"cool_file"}),
+                (("00:25", "00:40"), {"cool_file", "fun_file"}),
+                (("00:40", "00:50"), {"fun_file"}),  # cool_file is out of range
+            ],
+            id="events_list",
+        ),
+        pytest.param(
+            [
+                ("00:10", "00:20"),
+            ],
+            [
+                (("00:00", "00:30"), "cool_file"),
+            ],
+            "cool_dataset_name",
+            [
+                (("00:10", "00:20"), {"cool_file"}),
+            ],
+            id="named_dataset",
+        ),
     ],
 )
 def test_dataset_from_events(
@@ -2822,3 +2855,6 @@ def test_dataset_from_events(
         assert data.begin == event.begin
         assert data.end == event.end
         assert np.array_equal(files_list, {str(file.path) for file in data.files})
+
+    if name:
+        assert dataset.name == name
