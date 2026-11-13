@@ -175,7 +175,7 @@ class Event:
         for event in events:
             stop = bisect.bisect(a=base_begin_list, x=event.end)
 
-            output[event] = event.get_overlapping_events(output[:stop])
+            output[event] = event.get_overlapping_events(sorted_base_events[:stop])
 
         return output
 
