@@ -2792,6 +2792,7 @@ def test_tuple_to_dummy_file() -> None:
         pytest.param(
             [
                 ("00:10", "00:20"),
+                ("00:12", "00:18"),
                 ("00:20", "00:25"),
                 ("00:25", "00:40"),
                 ("00:40", "00:50"),
@@ -2803,6 +2804,7 @@ def test_tuple_to_dummy_file() -> None:
             None,
             [
                 (("00:10", "00:20"), {"cool_file"}),
+                (("00:12", "00:18"), {"cool_file"}),
                 (("00:20", "00:25"), {"cool_file"}),
                 (("00:25", "00:40"), {"cool_file", "fun_file"}),
                 (("00:40", "00:50"), {"fun_file"}),  # cool_file is out of range
