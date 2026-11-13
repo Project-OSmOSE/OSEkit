@@ -11,6 +11,7 @@ from pandas import Timedelta, Timestamp, date_range
 from osekit.config import TIMESTAMP_FORMATS_EXPORTED_FILES
 from osekit.core.event import Event
 from tests.helpers.dummy import DummyData, DummyDataset, DummyFile
+from tests.test_event import tuple_to_event
 
 
 @pytest.fixture
@@ -403,7 +404,7 @@ def test_base_dataset_from_files(
 def test_base_dataset_from_files_overlap_errors(overlap: float, mode: str) -> None:
     with pytest.raises(
         ValueError,
-        match=rf"Overlap \({overlap}\) must be between 0 and 1.",
+        match=r"Overlap .*must be",
     ):
         DummyDataset.from_files(
             [
@@ -2742,3 +2743,120 @@ def test_duplicate_data_error(
 
     with expected_error_names_export:
         ds.write(Path(r"bar"), first=first, last=last)
+
+
+def tuple_to_dummy_file(file_tuple: tuple[tuple[str, str], str]) -> DummyFile:
+    time_tuple, path = file_tuple
+    file_event = tuple_to_event(value=time_tuple)
+    return DummyFile(begin=file_event.begin, end=file_event.end, path=path)
+
+
+def test_tuple_to_dummy_file() -> None:
+    file_tuple = ("00:10", "00:20"), "cool"
+
+    expected = DummyFile(
+        path=file_tuple[1],
+        begin=Timestamp(file_tuple[0][0]),
+        end=Timestamp(file_tuple[0][1]),
+    )
+
+    assert tuple_to_dummy_file(file_tuple=file_tuple) == expected
+
+
+@pytest.mark.parametrize(
+    ("events", "files", "name", "expected"),
+    [
+        pytest.param(
+            {
+                ("00:10", "00:20"): [(("00:00", "00:30"), "cool_file")],
+                ("00:20", "00:25"): [(("00:00", "00:30"), "cool_file")],
+                ("00:25", "00:40"): [
+                    (("00:00", "00:30"), "cool_file"),
+                    (("00:35", "00:45"), "fun_file"),
+                ],
+                ("00:40", "00:50"): [
+                    (("00:00", "00:30"), "cool_file"),
+                    (("00:35", "00:45"), "fun_file"),
+                ],
+            },
+            None,
+            None,
+            [
+                (("00:10", "00:20"), {"cool_file"}),
+                (("00:20", "00:25"), {"cool_file"}),
+                (("00:25", "00:40"), {"cool_file", "fun_file"}),
+                (("00:40", "00:50"), {"fun_file"}),  # cool_file is out of range
+            ],
+            id="events_dict",
+        ),
+        pytest.param(
+            [
+                ("00:10", "00:20"),
+                ("00:12", "00:18"),
+                ("00:20", "00:25"),
+                ("00:25", "00:40"),
+                ("00:40", "00:50"),
+            ],
+            [
+                (("00:00", "00:30"), "cool_file"),
+                (("00:35", "00:45"), "fun_file"),
+            ],
+            None,
+            [
+                (("00:10", "00:20"), {"cool_file"}),
+                (("00:12", "00:18"), {"cool_file"}),
+                (("00:20", "00:25"), {"cool_file"}),
+                (("00:25", "00:40"), {"cool_file", "fun_file"}),
+                (("00:40", "00:50"), {"fun_file"}),  # cool_file is out of range
+            ],
+            id="events_list",
+        ),
+        pytest.param(
+            [
+                ("00:10", "00:20"),
+            ],
+            [
+                (("00:00", "00:30"), "cool_file"),
+            ],
+            "cool_dataset_name",
+            [
+                (("00:10", "00:20"), {"cool_file"}),
+            ],
+            id="named_dataset",
+        ),
+    ],
+)
+def test_dataset_from_events(
+    events: dict[tuple[str, str], list[tuple[tuple[str, str], str]]]
+    | list[tuple[str, str]],
+    files: list[tuple[tuple[str, str], str]] | None,  # ((begin,end),path)
+    name: str | None,
+    expected: list[tuple[tuple[str, str], set[str]]],  # Begin/end, list of files paths
+) -> None:
+    if isinstance(events, list):
+        events = list(map(tuple_to_event, events))
+    elif isinstance(events, dict):
+        events = {
+            tuple_to_event(event): list(map(tuple_to_dummy_file, files))
+            for event, files in events.items()
+        }
+
+    if isinstance(files, list):
+        files = list(map(tuple_to_dummy_file, files))
+
+    dataset = DummyDataset.from_events(
+        events=events,
+        files=files,
+        name=name,
+    )
+
+    for data, expected in zip(dataset.data, expected, strict=True):
+        event_tuple, files_list = expected
+        event = tuple_to_event(event_tuple)
+
+        assert data.begin == event.begin
+        assert data.end == event.end
+        assert np.array_equal(files_list, {str(file.path) for file in data.files})
+
+    if name:
+        assert dataset.name == name

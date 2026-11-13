@@ -8,11 +8,10 @@ from __future__ import annotations
 
 import os
 from abc import ABC, abstractmethod
-from bisect import bisect
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, Self, TypeVar
 
-from pandas import Timedelta, Timestamp, date_range
+from pandas import Timedelta, Timestamp
 from soundfile import LibsndfileError
 from tqdm import tqdm
 
@@ -22,7 +21,6 @@ from osekit.core.base_data import BaseData
 from osekit.core.base_file import BaseFile
 from osekit.core.event import Event
 from osekit.core.json_serializer import deserialize_json, serialize_json
-from osekit.utils.timestamp import last_window_end
 
 if TYPE_CHECKING:
     import pytz
@@ -306,7 +304,56 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
         return cls.from_dict(deserialize_json(file))
 
     @classmethod
-    def from_files(  # noqa: PLR0913
+    def from_events(
+        cls,
+        events: dict[Event, list[TFile]] | list[Event],
+        files: list[TFile] | None = None,
+        name: str | None = None,
+        **kwargs: dict,
+    ) -> Self:
+        """Create a ``BaseDataset`` from ``Event``s.
+
+        Each ``Event`` from the ``events`` collection will be turned into a data of the dataset,
+        and will be linked to the ``File``s from the ``files`` list it overlaps with.
+
+        Parameters
+        ----------
+        events: dict[Event, list[TFile]] | list[Event]
+            ``Event``s from which the ``Data`` objects are created.
+            If it is a ``dict``, it should have the ``Event`` as key and all
+            files that overlap with that event as values.
+            If it is a ``list``, all files from the ``files`` list will be used
+            to create each ``Data`` object.
+        files: list[TFile] | None
+            If ``events`` is a list, the ``files`` list provides all the files
+            that are used for the creation of each ``event``.
+            This parameter isn't needed if ``events`` is a ``dict``.
+        name: str|None
+            Name of the dataset.
+        kwargs: dict
+            Additional keyword arguments passed to the ``cls._data_from_files()`` method.
+
+        Returns
+        -------
+        Self:
+            The created dataset object.
+
+        """
+        if isinstance(events, list):
+            if files is None:
+                msg = "The `files` parameter must be provided if `events` is a list."
+                raise ValueError(msg)
+            events = Event.associate(events=events, base_events=files)
+
+        data = [
+            cls._data_from_files(files=value, begin=key.begin, end=key.end, **kwargs)
+            for key, value in events.items()
+        ]
+
+        return cls(data=data, name=name)
+
+    @classmethod
+    def from_files(
         cls,
         files: list[TFile],
         begin: Timestamp | None = None,
@@ -315,7 +362,7 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
         data_duration: Timedelta | None = None,
         overlap: float = 0.0,
         name: str | None = None,
-        **kwargs,  # noqa: ANN003
+        **kwargs,
     ) -> Self:
         """Return a Dataset object from a list of Files.
 
@@ -367,31 +414,28 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
             begin = min(file.begin for file in files)
         if not end:
             end = max(file.end for file in files)
-        if data_duration:
-            data_base = (
-                cls._get_data_from_files_timedelta_total(
-                    begin=begin,
-                    end=end,
-                    data_duration=data_duration,
-                    files=files,
-                    overlap=overlap,
+
+        data_events = Event.generate_around(
+            begin=begin,
+            end=end,
+            base_events=files,
+            overlap=overlap,
+            duration=data_duration,
+            lock_to_base_events=mode == "timedelta_file",
+        )
+
+        return cls(
+            [
+                cls._data_from_files(
+                    files=base_files,
+                    begin=event.begin,
+                    end=event.end,
                     **kwargs,
                 )
-                if mode == "timedelta_total"
-                else cls._get_data_from_files_timedelta_file(
-                    begin=begin,
-                    end=end,
-                    data_duration=data_duration,
-                    files=files,
-                    overlap=overlap,
-                    **kwargs,
-                )
-            )
-        else:
-            data_base = [
-                cls._data_from_files(files=files, begin=begin, end=end, **kwargs),
-            ]
-        return cls(data_base, name=name)
+                for event, base_files in data_events.items()
+            ],
+            name=name,
+        )
 
     @classmethod
     @abstractmethod
@@ -401,7 +445,7 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         name: str | None = None,
-        **kwargs,  # noqa: ANN003
+        **kwargs,
     ) -> TData:
         """Return a base Dataset object between two timestamps from a list of Files."""
         ...
@@ -414,43 +458,26 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
         data_duration: Timedelta,
         files: list[TFile],
         overlap: float = 0,
-        **kwargs,  # noqa: ANN003
+        **kwargs,
     ) -> list[TData]:
-        if not 0 <= overlap < 1:
-            msg = f"Overlap ({overlap}) must be between 0 and 1."
-            raise ValueError(msg)
+        data_events = Event.generate_around(
+            begin=begin,
+            end=end,
+            base_events=files,
+            overlap=overlap,
+            duration=data_duration,
+            lock_to_base_events=False,
+        )
 
-        active_file_index = 0
-        output = []
-        files = sorted(files, key=lambda f: f.begin)
-        freq = data_duration * (1 - overlap)
-
-        for data_begin in tqdm(
-            date_range(begin, end, freq=freq, inclusive="left"),
-            disable=os.getenv("DISABLE_TQDM", "False").lower() in ("true", "1", "t"),
-        ):
-            data_end = Timestamp(data_begin + data_duration)
-            while (
-                active_file_index < len(files)
-                and files[active_file_index].end < data_begin
-            ):
-                active_file_index += 1
-            last_active_file_index = active_file_index
-            while (
-                last_active_file_index < len(files)
-                and files[last_active_file_index].begin < data_end
-            ):
-                last_active_file_index += 1
-            output.append(
-                cls._data_from_files(
-                    files[active_file_index:last_active_file_index],
-                    data_begin,
-                    data_end,
-                    **kwargs,
-                ),
+        return [
+            cls._data_from_files(
+                files=base_files,
+                begin=event.begin,
+                end=event.end,
+                **kwargs,
             )
-
-        return output
+            for event, base_files in data_events.items()
+        ]
 
     @classmethod
     def _get_data_from_files_timedelta_file(
@@ -462,61 +489,27 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
         overlap: float = 0,
         **kwargs,
     ) -> list[TData]:
-        if not 0 <= overlap < 1:
-            msg = f"Overlap ({overlap}) must be between 0 and 1."
-            raise ValueError(msg)
+        data_events = Event.generate_around(
+            begin=begin,
+            end=end,
+            base_events=files,
+            overlap=overlap,
+            duration=data_duration,
+            lock_to_base_events=True,
+        )
 
-        files = sorted(files, key=lambda file: file.begin)
-        first = max(0, bisect(files, begin, key=lambda f: f.begin) - 1)
-        last = bisect(files, end, key=lambda f: f.begin)
-
-        data_hop = data_duration * (1 - overlap)
-
-        output = []
-        files_chunk = []
-        for idx, file in tqdm(
-            enumerate(files[first:last]),
-            disable=os.getenv("DISABLE_TQDM", "False").lower() in ("true", "1", "t"),
-        ):
-            if file in files_chunk:
-                continue
-            files_chunk = [file]
-
-            next_jump = None
-            for next_file in files[idx + 1 :]:
-                upper_data_limit = last_window_end(
-                    begin=begin,
-                    end=files_chunk[-1].end,
-                    window_hop=data_hop,
-                    window_duration=data_duration,
-                )
-                if upper_data_limit < next_file.begin:
-                    next_jump = next_file
-                    break
-                files_chunk.append(next_file)
-
-            output.extend(
-                cls._data_from_files(
-                    files,
-                    data_begin,
-                    data_begin + data_duration,
-                    **kwargs,
-                )
-                for data_begin in date_range(
-                    begin,
-                    min(files_chunk[-1].end, end),
-                    freq=data_hop,
-                    inclusive="left",
-                )
+        return [
+            cls._data_from_files(
+                files=base_files,
+                begin=event.begin,
+                end=event.end,
+                **kwargs,
             )
-
-            if next_jump:
-                begin = next_jump.begin
-
-        return output
+            for event, base_files in data_events.items()
+        ]
 
     @classmethod
-    def from_folder(  # noqa: PLR0913
+    def from_folder(
         cls: type[Self],
         folder: Path,
         strptime_format: str | list[str] | None,
@@ -528,7 +521,7 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
         data_duration: Timedelta | None = None,
         first_file_begin: Timestamp | None = None,
         name: str | None = None,
-        **kwargs,  # noqa: ANN003
+        **kwargs,
     ) -> Self:
         """Return a Dataset from a folder containing the base files.
 
