@@ -17,6 +17,8 @@ Job Scheduler
 
 .. automodule:: osekit.job.scheduler.pbs
     :members: Pbs
+.. automodule:: osekit.job.scheduler.slurm
+    :members: Slurm
 
 Job Builder
 -----------
