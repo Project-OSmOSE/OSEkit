@@ -1901,3 +1901,28 @@ def test_get_json_paths(
         )
         == expected
     )
+
+
+def test_build_from_audio_dataset_json(
+    tmp_path: Path, audio_files: tuple[list[AudioFile], pytest.FixtureRequest]
+) -> None:
+    audio_files, _ = audio_files
+
+    project_folder = tmp_path / "project"
+
+    original_audio = AudioDataset.from_files(
+        files=audio_files, mode="timedelta_file", name="cool_ads"
+    )
+    original_audio.write_json(folder=tmp_path)
+
+    project = Project(
+        folder=project_folder,
+    )
+
+    project.build_from_audio_dataset_json(
+        audio_dataset_json=tmp_path / f"{original_audio.name}.json"
+    )
+
+    project_original_audio = project.origin_dataset
+
+    assert np.array_equal(project_original_audio.data, original_audio.data)
