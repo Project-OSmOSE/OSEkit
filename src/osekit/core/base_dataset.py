@@ -306,7 +306,7 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
     @classmethod
     def from_events(
         cls,
-        events: dict[Event, list[TFile]] | list[Event],
+        events: list[tuple[Event, list[TFile]]] | list[Event],
         files: list[TFile] | None = None,
         name: str | None = None,
         **kwargs: dict,
@@ -318,11 +318,11 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
 
         Parameters
         ----------
-        events: dict[Event, list[TFile]] | list[Event]
+        events: list[tuple[Event, list[TFile]]]
             ``Event``s from which the ``Data`` objects are created.
-            If it is a ``dict``, it should have the ``Event`` as key and all
-            files that overlap with that event as values.
-            If it is a ``list``, all files from the ``files`` list will be used
+            If it is a ``list[tuple[Event, list[TFile]]]``, the list of ``TFile`` in
+            each tuple represent the files that overlap with that event in that tuple.
+            If it is a ``list[Event]``, all files from the ``files`` list will be used
             to create each ``Data`` object.
         files: list[TFile] | None
             If ``events`` is a list, the ``files`` list provides all the files
@@ -339,15 +339,20 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
             The created dataset object.
 
         """
-        if isinstance(events, list):
+        if isinstance(events[0], Event):
             if files is None:
-                msg = "The `files` parameter must be provided if `events` is a list."
+                msg = (
+                    "The `files` parameter must be provided "
+                    "if `events` is a list of events."
+                )
                 raise ValueError(msg)
             events = Event.associate(events=events, base_events=files)
 
         data = [
-            cls._data_from_files(files=value, begin=key.begin, end=key.end, **kwargs)
-            for key, value in events.items()
+            cls._data_from_files(
+                files=files, begin=event.begin, end=event.end, **kwargs
+            )
+            for event, files in events
         ]
 
         return cls(data=data, name=name)
@@ -432,7 +437,7 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
                     end=event.end,
                     **kwargs,
                 )
-                for event, base_files in data_events.items()
+                for event, base_files in data_events
             ],
             name=name,
         )

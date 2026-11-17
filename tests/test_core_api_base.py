@@ -2836,10 +2836,10 @@ def test_dataset_from_events(
     if isinstance(events, list):
         events = list(map(tuple_to_event, events))
     elif isinstance(events, dict):
-        events = {
-            tuple_to_event(event): list(map(tuple_to_dummy_file, files))
+        events = [
+            (tuple_to_event(event), list(map(tuple_to_dummy_file, files)))
             for event, files in events.items()
-        }
+        ]
 
     if isinstance(files, list):
         files = list(map(tuple_to_dummy_file, files))
