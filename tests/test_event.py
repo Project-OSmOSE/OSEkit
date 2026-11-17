@@ -909,10 +909,10 @@ def test_generate_around(
 ) -> None:
     begin, end = map(Timestamp, (begin, end))
     base_events = list(map(tuple_to_event, base_events))
-    expected = {
-        tuple_to_event(key): list(map(tuple_to_event, value))
+    expected = [
+        (tuple_to_event(key), list(map(tuple_to_event, value)))
         for key, value in expected.items()
-    }
+    ]
 
     result = Event.generate_around(
         begin=begin,
@@ -923,7 +923,7 @@ def test_generate_around(
         lock_to_base_events=lock_to_base_events,
     )
 
-    for r, e in zip(result.items(), expected.items(), strict=True):
+    for r, e in zip(result, expected, strict=True):
         result_event, result_base_events = r
         expected_event, expected_base_events = e
 

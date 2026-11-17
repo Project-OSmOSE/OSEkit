@@ -69,13 +69,14 @@ class Event:
         """Duration of the event."""
         return self.end - self.begin
 
+    @property
+    def key(self) -> int:
+        """Hashed key used for storing events in hashmaps."""
+        return hash((self.begin, self.end))
+
     def __repr__(self) -> str:
         """Overwrite repr."""
         return f"{self.begin} - {self.end}"
-
-    def __hash__(self) -> int:
-        """Overwrite hash."""
-        return hash((self.begin, self.end))
 
     def localize(self, timezone: str | None) -> None:
         """Localize the event begin and end in a timezone.
@@ -344,7 +345,7 @@ class Event:
         duration: Timedelta | None = None,
         *,
         lock_to_base_events: bool = False,
-    ) -> dict[TEvent, list[TEvent]]:
+    ) -> list[tuple[TEvent, list[TEvent]]]:
         r"""Generate Events of given duration between two timestamps.
 
         This method optimizes the generation of events around a ``base_events`` list,
@@ -373,8 +374,8 @@ class Event:
 
         Returns
         -------
-        dict[TEvent, list[TEvent]]
-            A dictionary where the keys are the output events and the associated
+        list[tuple[TEvent, list[TEvent]]]
+            A list of tuple containing the output events and the associated
             values are the events from ``base_events`` with which each event overlaps.
 
             This is useful for e.g. directly accessing the files (base events) with
@@ -402,7 +403,10 @@ class Event:
             event for event in base_events if event.overlaps(base_event_range)
         ]
 
-        output = {}
+        # Using a list of events for outputing the created events
+        # and a dict of [Event.key, list[TEvent]] for the links
+        output_events = []
+        output_links = {}
         pointer = begin
 
         # Recompute duration if begin is delayed and duration was one whole Event
@@ -425,7 +429,9 @@ class Event:
                     overlap=overlap,
                     duration=validated_duration,
                 )
-                output |= {event: [] for event in empty_events}
+                output_links |= {event.key: [] for event in empty_events}
+                output_events += empty_events
+
                 overflowing_events.extend(empty_events)
                 if empty_events:
                     pointer = empty_events[-1].begin + hop
@@ -436,7 +442,7 @@ class Event:
             ]
 
             for overflowing_event in overflowing_events:
-                output[overflowing_event].append(base_event)
+                output_links[overflowing_event.key].append(base_event)
 
             new_output_events = Event.generate(
                 begin=pointer,
@@ -445,7 +451,8 @@ class Event:
                 duration=validated_duration,
             )
 
-            output |= {event: [base_event] for event in new_output_events}
+            output_links |= {event.key: [base_event] for event in new_output_events}
+            output_events += new_output_events
             overflowing_events.extend(new_output_events)
 
             if new_output_events:
@@ -453,14 +460,16 @@ class Event:
 
         if not lock_to_base_events:
             # Add eventual empty items if end > last base_event
-            output |= {
-                event: []
-                for event in Event.generate(
-                    begin=pointer, end=end, overlap=overlap, duration=validated_duration
-                )
-            }
+            trailing_events = Event.generate(
+                begin=pointer,
+                end=end,
+                overlap=overlap,
+                duration=validated_duration,
+            )
+            output_links |= {event.key: [] for event in trailing_events}
+            output_events += trailing_events
 
-        return output
+        return [(event, output_links[event.key]) for event in output_events]
 
     @staticmethod
     def _validate_generate_parameters(
