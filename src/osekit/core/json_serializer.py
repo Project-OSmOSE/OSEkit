@@ -8,7 +8,7 @@ from contextvars import ContextVar
 from pathlib import Path, PurePosixPath, PureWindowsPath  # noqa: F401
 from typing import Any
 
-from osekit.utils.path import is_absolute, format_relative_path_to_posix
+from osekit.utils.path import format_path_to_posix, is_absolute
 
 _anchor: ContextVar[Path | None] = ContextVar("anchor_path", default=None)
 
@@ -88,6 +88,8 @@ def _deserialize_path(value: str, root_path: Path | None = None) -> Path:
         The deserialized path corresponding to ``value``.
 
     """
+    value = format_path_to_posix(path_str=value)
+
     if is_absolute(path=value):
         return Path(value)
     if root_path is None:
@@ -96,8 +98,6 @@ def _deserialize_path(value: str, root_path: Path | None = None) -> Path:
             f"Please provide a Path as root_path."
         )
         raise ValueError(msg)
-
-    value = format_relative_path_to_posix(path_str=value)
 
     return (root_path / value).resolve()
 
