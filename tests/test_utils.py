@@ -23,7 +23,7 @@ from osekit.utils.core import (
 from osekit.utils.deserialization import deserialize_spectro_or_ltas_dataset
 from osekit.utils.path import (
     ensure_within_base,
-    format_relative_path_to_posix,
+    format_path_to_posix,
     is_absolute,
     move_tree,
 )
@@ -190,8 +190,8 @@ def test_ensure_within_base(
         ),
     ],
 )
-def test_format_relative_path_to_posix(path_str: str, expected: str) -> None:
-    assert format_relative_path_to_posix(path_str=path_str) == expected
+def test_format_path_to_posix(path_str: str, expected: str) -> None:
+    assert format_path_to_posix(path_str=path_str) == expected
 
 
 @pytest.mark.parametrize(

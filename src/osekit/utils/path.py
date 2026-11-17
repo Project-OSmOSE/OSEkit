@@ -103,16 +103,16 @@ def ensure_within_base(path: Path, base: Path) -> Path:
     return resolved_path
 
 
-def format_relative_path_to_posix(path_str: str) -> str:
-    r"""Format a relative path string to a posix format.
+def format_path_to_posix(path_str: str) -> str:
+    r"""Format a path string to a posix format.
 
-    If the input path string is formated as a Windows relative path with backslashes,
+    If the input path string is formated as a Windows path with backslashes,
     the backslashes are replaced with a single slash.
 
     Parameters
     ----------
     path_str: str
-        The input relative path string.
+        The input path string.
 
     Returns
     -------
@@ -121,12 +121,16 @@ def format_relative_path_to_posix(path_str: str) -> str:
 
     Examples
     --------
-    >>> format_relative_path_to_posix(r"data/project")
+    >>> format_path_to_posix(r"data/project")
     'data/project'
-    >>> format_relative_path_to_posix(r"data\project")
+    >>> format_path_to_posix(r"data\project")
     'data/project'
-    >>> format_relative_path_to_posix(r"data\\project")
+    >>> format_path_to_posix(r"data\\project")
     'data/project'
+    >>> format_path_to_posix(r"/home/data/project")
+    '/home/data/project'
+    >>> format_path_to_posix(r"C:data\\project")
+    'C:data/project'
 
     """
     return PureWindowsPath(path_str).as_posix()
