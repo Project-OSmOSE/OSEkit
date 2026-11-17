@@ -188,6 +188,16 @@ def test_ensure_within_base(
             "avey/tare",
             id="relative_windows_double_backlash",
         ),
+        pytest.param(
+            r"C:avey\\tare",
+            "C:avey/tare",
+            id="absolute_windows_double_backlash",
+        ),
+        pytest.param(
+            r"/avey/tare",
+            "/avey/tare",
+            id="absolute_posix",
+        ),
     ],
 )
 def test_format_path_to_posix(path_str: str, expected: str) -> None:
