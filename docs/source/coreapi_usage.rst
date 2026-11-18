@@ -304,6 +304,8 @@ list of :class:`osekit.core.event.Event`:
     You can use the ``from_event()`` method for doing lots of funny stuff, like computing spectrograms on
     time regions defined by the output of an automatic detector.
 
+    (see the :doc:`Use APLOSE results <example_aplose_result>` notebook in the examples)
+
 Non-timestamped audio files
 """""""""""""""""""""""""""
 
