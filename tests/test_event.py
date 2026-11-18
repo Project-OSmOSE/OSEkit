@@ -684,6 +684,14 @@ def test_generate(
             "Overlap must be",
             id="exactly_one_overlap_raises",
         ),
+        pytest.param(
+            Timestamp("00:00+0100"),
+            Timestamp("00:10+0200"),
+            0.0,
+            None,
+            "same UTC offset",
+            id="mismatching_UTC_offsets",
+        ),
     ],
 )
 def test_generate_errors(

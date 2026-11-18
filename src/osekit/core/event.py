@@ -314,7 +314,7 @@ class Event:
 
         """
         if begin.utcoffset() != end.utcoffset():
-            msg = "Begin and end timestamps must have the same USC offset."
+            msg = "Begin and end timestamps must have the same UTC offset."
             raise ValueError(msg)
         begin = localize_timestamp(timestamp=begin, timezone=end.tz)
 
