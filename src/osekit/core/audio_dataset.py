@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, Literal, Self
 from osekit.core.audio_data import AudioData
 from osekit.core.audio_file import AudioFile
 from osekit.core.base_dataset import BaseDataset
-from osekit.core.json_serializer import deserialize_json
 from osekit.utils.audio import Butterworth, Normalization
 from osekit.utils.multiprocess import multiprocess
 
@@ -184,7 +183,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         return ads
 
     @classmethod
-    def from_folder(  # noqa: PLR0913
+    def from_folder(
         cls,
         folder: Path,
         strptime_format: str | list[str] | None,
@@ -199,7 +198,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         instrument: Instrument | None = None,
         normalization: Normalization = Normalization.RAW,
         butter: Butterworth | None = None,
-        **kwargs,  # noqa: ANN003
+        **kwargs,
     ) -> Self:
         """Return an ``AudioDataset`` from a folder containing the audio files.
 
@@ -280,7 +279,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         )
 
     @classmethod
-    def from_files(  # noqa: PLR0913
+    def from_files(
         cls,
         files: list[AudioFile],
         begin: Timestamp | None = None,
@@ -363,7 +362,7 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
         begin: Timestamp | None = None,
         end: Timestamp | None = None,
         name: str | None = None,
-        **kwargs,  # noqa: ANN003
+        **kwargs,
     ) -> AudioData:
         """Return an ``AudioData`` object from a list of ``AudioFiles``.
 
@@ -397,26 +396,3 @@ class AudioDataset(BaseDataset[AudioData, AudioFile]):
             name=name,
             **kwargs,
         )
-
-    @classmethod
-    def from_json(cls, file: Path) -> Self:
-        """Deserialize an ``AudioDataset`` from a JSON file.
-
-        Parameters
-        ----------
-        file: Path
-            Path to the serialized JSON file representing the ``AudioDataset``.
-
-        Returns
-        -------
-        AudioDataset
-            The deserialized ``AudioDataset``.
-
-        """
-        # I have to redefine this method (without overriding it)
-        # for the type hint to be correct.
-        # It seems to be due to BaseData being a Generic class, following which
-        # AudioData.from_json() is supposed to return a BaseData
-        # without this duplicate definition...
-        # I might look back at all this in the future
-        return cls.from_dict(deserialize_json(file))
