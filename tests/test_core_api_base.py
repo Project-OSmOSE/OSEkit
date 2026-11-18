@@ -2860,3 +2860,12 @@ def test_dataset_from_events(
 
     if name:
         assert dataset.name == name
+
+
+def test_dataset_from_events_error() -> None:
+    with pytest.raises(ValueError, match=r"files.*must be provided"):
+        (
+            DummyDataset.from_events(
+                events=[tuple_to_event(("00:00", "00:01"))],
+            ),
+        )
