@@ -278,6 +278,32 @@ This is the default behaviour, but other ways of computing the ``AudioData`` tim
 You don't have to worry about the shape of the original audio files: audio data will be fetched seamlessly in the corresponding
 file(s) whenever you need it.
 
+Instantiation from an event list
+""""""""""""""""""""""""""""""""
+
+Alternatively, the :meth:`osekit.core.base_dataset.BaseDataset.from_events` method can be used to instantiate an
+``AudioData`` within which the ``AudioData`` time bounds are  arbitrarily defined by a given
+list of :class:`osekit.core.event.Event`:
+
+.. code-block:: python
+
+    from osekit.core.audio_dataset import AudioDataset
+    from osekit.core.audio_file import AudioFile
+
+    from osekit.core.event import Event
+
+    events: list[Event] = [...]
+    audio_files: list[AudioFile] = [...]
+
+    ads = AudioDataset.from_events(events=events, files=audio_files)
+
+.. note::
+
+    In ``OSEkit``, lots of objects are ``Event`` instances!
+
+    You can use the ``from_event()`` method for doing lots of funny stuff, like computing spectrograms on
+    time regions defined by the output of an automatic detector.
+
 Non-timestamped audio files
 """""""""""""""""""""""""""
 
