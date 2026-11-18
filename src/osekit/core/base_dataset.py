@@ -456,64 +456,6 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
         ...
 
     @classmethod
-    def _get_data_from_files_timedelta_total(
-        cls,
-        begin: Timestamp,
-        end: Timestamp,
-        data_duration: Timedelta,
-        files: list[TFile],
-        overlap: float = 0,
-        **kwargs,
-    ) -> list[TData]:
-        data_events = Event.generate_around(
-            begin=begin,
-            end=end,
-            base_events=files,
-            overlap=overlap,
-            duration=data_duration,
-            lock_to_base_events=False,
-        )
-
-        return [
-            cls._data_from_files(
-                files=base_files,
-                begin=event.begin,
-                end=event.end,
-                **kwargs,
-            )
-            for event, base_files in data_events.items()
-        ]
-
-    @classmethod
-    def _get_data_from_files_timedelta_file(
-        cls,
-        begin: Timestamp,
-        end: Timestamp,
-        data_duration: Timedelta,
-        files: list[TFile],
-        overlap: float = 0,
-        **kwargs,
-    ) -> list[TData]:
-        data_events = Event.generate_around(
-            begin=begin,
-            end=end,
-            base_events=files,
-            overlap=overlap,
-            duration=data_duration,
-            lock_to_base_events=True,
-        )
-
-        return [
-            cls._data_from_files(
-                files=base_files,
-                begin=event.begin,
-                end=event.end,
-                **kwargs,
-            )
-            for event, base_files in data_events.items()
-        ]
-
-    @classmethod
     def from_folder(
         cls: type[Self],
         folder: Path,
