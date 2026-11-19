@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from contextlib import nullcontext, AbstractContextManager
+from contextlib import AbstractContextManager, nullcontext
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -21,7 +21,12 @@ from osekit.utils.core import (
     nb_files_per_batch,
 )
 from osekit.utils.deserialization import deserialize_spectro_or_ltas_dataset
-from osekit.utils.path import is_absolute, move_tree, ensure_within_base
+from osekit.utils.path import (
+    ensure_within_base,
+    format_path_to_posix,
+    is_absolute,
+    move_tree,
+)
 
 if TYPE_CHECKING:
     from _pytest.monkeypatch import MonkeyPatch
@@ -163,6 +168,40 @@ def test_ensure_within_base(
 ) -> None:
     with expected as e:
         assert ensure_within_base(path=path, base=base) == e
+
+
+@pytest.mark.parametrize(
+    ("path_str", "expected"),
+    [
+        pytest.param(
+            "avey/tare",
+            "avey/tare",
+            id="relative_posix",
+        ),
+        pytest.param(
+            r"avey\tare",
+            "avey/tare",
+            id="relative_windows_simple_backlash",
+        ),
+        pytest.param(
+            r"avey\\tare",
+            "avey/tare",
+            id="relative_windows_double_backlash",
+        ),
+        pytest.param(
+            r"C:avey\\tare",
+            "C:avey/tare",
+            id="absolute_windows_double_backlash",
+        ),
+        pytest.param(
+            r"/avey/tare",
+            "/avey/tare",
+            id="absolute_posix",
+        ),
+    ],
+)
+def test_format_path_to_posix(path_str: str, expected: str) -> None:
+    assert format_path_to_posix(path_str=path_str) == expected
 
 
 @pytest.mark.parametrize(
@@ -511,10 +550,10 @@ def test_normalization(
 
 
 def test_deserialize_spectro_or_ltas_dataset(monkeypatch: MonkeyPatch) -> None:
-    def sds_deserialization(*args, **kwargs) -> str:  # noqa: ANN002, ANN003
+    def sds_deserialization(*args, **kwargs) -> str:
         return "SpectroDataset"
 
-    def ltasds_deserialization(*args, **kwargs) -> str:  # noqa: ANN002, ANN003
+    def ltasds_deserialization(*args, **kwargs) -> str:
         return "LTASDataset"
 
     monkeypatch.setattr(SpectroDataset, "from_json", sds_deserialization)
@@ -522,7 +561,7 @@ def test_deserialize_spectro_or_ltas_dataset(monkeypatch: MonkeyPatch) -> None:
 
     assert deserialize_spectro_or_ltas_dataset(path=Path()) == "LTASDataset"
 
-    def raise_key_error(*args, **kwargs) -> None:  # noqa: ANN002, ANN003
+    def raise_key_error(*args, **kwargs) -> None:
         msg = "'nb_time_bins'"
         raise KeyError(msg)
 
