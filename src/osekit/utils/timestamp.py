@@ -276,7 +276,7 @@ def strptime_from_text(text: str, datetime_template: str | list[str]) -> Timesta
     >>> strptime_from_text('2016_06_13_14:12+0500.txt', ['%Y_%m_%d_%H:%M%z','%Y_%m_%d_%H:%M'])
     Timestamp('2016-06-13 14:12:00+0500', tz='UTC+05:00')
 
-    """  # noqa: E501
+    """
     if isinstance(datetime_template, str):
         datetime_template = [datetime_template]
 
@@ -324,3 +324,47 @@ def last_window_end(
     max_hops = math.ceil((end - begin).total_seconds() / window_hop.total_seconds()) - 1
     last_window_start = begin + window_hop * max_hops
     return last_window_start + window_duration
+
+
+def nb_windows_before_target(
+    begin: Timestamp,
+    window_duration: Timedelta,
+    window_hop: Timedelta,
+    target: Timestamp,
+) -> int:
+    """Compute the number of windows before reaching the target timestamp.
+
+    If this function returns ``n``, the ``(n+1)th`` window would include the
+    ``target`` timestamp.
+
+    Parameters
+    ----------
+    begin: Timestamp
+        Begin timestamp of the sequence
+    window_duration: Timedelta
+        Duration of the windows of the sequence.
+    window_hop: Timedelta
+        Hop between two consecutive windows of the sequence.
+    target: Timestamp
+        Target timestamp to stop the sequence.
+
+    Returns
+    -------
+    int:
+        The number of windows before the target timestamp is included
+        in a window.
+
+    """
+    if target < begin:
+        msg = f"Can't reach target {target} which is before begin {begin}."
+        raise ValueError(msg)
+
+    window_end = begin + window_duration
+
+    if target < window_end:
+        return 0
+
+    return (
+        math.floor((target - window_end).total_seconds() / window_hop.total_seconds())
+        + 1
+    )
