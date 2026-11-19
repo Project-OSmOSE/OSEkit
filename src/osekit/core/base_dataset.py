@@ -9,7 +9,7 @@ from __future__ import annotations
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, Self, TypeVar
+from typing import TYPE_CHECKING, Literal, Self, TypeVar, Any
 
 from pandas import Timedelta, Timestamp
 from soundfile import LibsndfileError
@@ -309,7 +309,7 @@ class BaseDataset[TData: BaseData, TFile: BaseFile](Event, ABC):
         events: list[tuple[Event, list[TFile]]] | list[Event],
         files: list[TFile] | None = None,
         name: str | None = None,
-        **kwargs: dict,
+        **kwargs: Any,
     ) -> Self:
         """Create a ``BaseDataset`` from ``Event``s.
 

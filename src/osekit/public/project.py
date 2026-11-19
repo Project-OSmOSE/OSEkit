@@ -20,6 +20,8 @@ from osekit.config import DPDEFAULT, resample_quality_settings
 from osekit.core import audio_file_manager as afm
 from osekit.core.audio_dataset import AudioDataset
 from osekit.core.base_dataset import BaseDataset
+from osekit.core.base_file import BaseFile
+from osekit.core.event import Event
 from osekit.core.instrument import Instrument
 from osekit.core.json_serializer import deserialize_json, path_anchor, serialize_json
 from osekit.core.ltas_dataset import LTASDataset
@@ -321,13 +323,20 @@ class Project:
         self.outputs = {}
         self.logger = None
 
-    def prepare_audio(self, transform: Transform) -> AudioDataset:
+    def prepare_audio(
+        self,
+        transform: Transform,
+        events: list[tuple[Event, list[BaseFile]]] | list[Event] | None = None,
+    ) -> AudioDataset:
         """Return an ``AudioDataset`` created from the transform parameters.
 
         Parameters
         ----------
         transform: Transform
             ``Transform`` for which to generate an ``AudioDataset`` object.
+        events: list[tuple[Event, list[BaseFile]]] | list[Event] | None
+            Optional events list. If provided, the ``AudioDataset`` will be created
+            with the ``AudioDataset.from_events()`` method on these events.
 
         Returns
         -------
@@ -341,17 +350,28 @@ class Project:
         """
         self.logger.info("Creating the audio data...")
 
-        ads = AudioDataset.from_files(
-            files=list(self.origin_files),
-            begin=transform.begin,
-            end=transform.end,
-            data_duration=transform.data_duration,
-            mode=transform.mode,
-            overlap=transform.overlap,
-            normalization=transform.normalization,
-            butter=transform.butter,
-            name=transform.name,
-            instrument=self.instrument,
+        ads = (
+            AudioDataset.from_files(
+                files=list(self.origin_files),
+                begin=transform.begin,
+                end=transform.end,
+                data_duration=transform.data_duration,
+                mode=transform.mode,
+                overlap=transform.overlap,
+                normalization=transform.normalization,
+                butter=transform.butter,
+                name=transform.name,
+                instrument=self.instrument,
+            )
+            if not events
+            else AudioDataset.from_events(
+                events=events,
+                files=list(self.origin_files),
+                normalization=transform.normalization,
+                butter=transform.butter,
+                name=transform.name,
+                instrument=self.instrument,
+            )
         )
 
         if transform.sample_rate is not None:
