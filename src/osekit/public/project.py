@@ -58,7 +58,7 @@ class Project:
         "log": "log",
     }
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         folder: Path,
         strptime_format: str | list[str] | None = None,
@@ -131,7 +131,7 @@ class Project:
     @property
     def origin_dataset(self) -> AudioDataset:
         """Return the ``AudioDataset`` from which this ``Project`` has been built."""
-        return self.deserialize_output("original")
+        return self.get_output_by_transform_name("original")[0]
 
     @property
     def transforms(self) -> list[str]:
@@ -603,7 +603,7 @@ class Project:
 
         """
         # Import here to avoid circular imports since the script needs to import Project
-        from osekit.public import export_transform  # noqa: PLC0415
+        from osekit.public import export_transform
 
         spectrum_folder_path, spectrogram_folder_path, welch_folder_path = (
             (
@@ -991,7 +991,7 @@ class Project:
         """
         instance = cls.from_dict(deserialize_json(file))
         instance.folder = file.parent
-        instance._create_logger()  # noqa: SLF001
+        instance._create_logger()
         return instance
 
     def deserialize_output(
