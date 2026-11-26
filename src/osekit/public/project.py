@@ -24,6 +24,7 @@ from osekit.core.instrument import Instrument
 from osekit.core.json_serializer import deserialize_json, path_anchor, serialize_json
 from osekit.core.ltas_dataset import LTASDataset
 from osekit.core.spectro_dataset import SpectroDataset
+from osekit.exceptions import ExternalFilesError
 from osekit.public.transform import OutputType, Transform
 from osekit.utils.core import (
     get_umask,
@@ -172,17 +173,20 @@ class Project:
         afm.close()
         for folder in self.SUBFOLDERS.values():
             (self.folder / folder).mkdir(exist_ok=True)
-        move_tree(
-            source=self.folder,
-            destination=self.folder / self.SUBFOLDERS["other"],
-            excluded_paths={file.path for file in ads.files}
-            | {self.folder / folder for folder in self.SUBFOLDERS.values()},
-        )
+        self._move_other_files(excluded_files={file.path for file in ads.files})
         self._sort_dataset(ads)
         ads.write_json(ads.folder)
         self.write_json()
 
         self.logger.info("Build done!")
+
+    def _move_other_files(self, excluded_files: set[Path]) -> None:
+        move_tree(
+            source=self.folder,
+            destination=self.folder / self.SUBFOLDERS["other"],
+            excluded_paths=excluded_files
+            | {self.folder / folder for folder in self.SUBFOLDERS.values()},
+        )
 
     def build_from_files(
         self,
@@ -245,6 +249,8 @@ class Project:
             "dataset": ads,
         }
 
+        self._move_other_files(excluded_files={file.path for file in ads.files})
+
         for folder in self.SUBFOLDERS.values():
             (self.folder / folder).mkdir(exist_ok=True, parents=True)
 
@@ -287,6 +293,26 @@ class Project:
 
         files_to_remove = list(self.folder.iterdir())
 
+        self._check_for_misplaced_files(files_to_remove=files_to_remove)
+        self._check_for_external_original_files()
+
+        self.get_output("original").move_files(self.folder)
+
+        if self.folder / self.SUBFOLDERS["other"] in files_to_remove:
+            move_tree(self.folder / self.SUBFOLDERS["other"], self.folder)
+
+        self.logger.handlers.clear()
+
+        for file in files_to_remove:
+            if file.is_dir():
+                shutil.rmtree(file)
+            else:
+                file.unlink()
+
+        self.outputs = {}
+        self.logger = None
+
+    def _check_for_misplaced_files(self, files_to_remove: list[Path]) -> None:
         misplaced_files = []
         for file in files_to_remove:
             if file.name == "project.json":
@@ -305,21 +331,18 @@ class Project:
             msg += "\n".join(file.name for file in misplaced_files)
             raise RuntimeError(msg)
 
-        self.get_output("original").move_files(self.folder)
-
-        if self.folder / self.SUBFOLDERS["other"] in files_to_remove:
-            move_tree(self.folder / self.SUBFOLDERS["other"], self.folder)
-
-        self.logger.handlers.clear()
-
-        for file in files_to_remove:
-            if file.is_dir():
-                shutil.rmtree(file)
-            else:
-                file.unlink()
-
-        self.outputs = {}
-        self.logger = None
+    def _check_for_external_original_files(self) -> None:
+        external_original_files = [
+            file for file in self.origin_files if self.folder not in file.path.parents
+        ]
+        if external_original_files:
+            msg = (
+                f"The following original file(s) are located outside the project folder."
+                f"You might want to perform the reset manually to avoid any "
+                f"unwnated file moving."
+                f"{'\n'.join(str(file.path) for file in external_original_files)}"
+            )
+            raise ExternalFilesError(msg)
 
     def prepare_audio(self, transform: Transform) -> AudioDataset:
         """Return an ``AudioDataset`` created from the transform parameters.
