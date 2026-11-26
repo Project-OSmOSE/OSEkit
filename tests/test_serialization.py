@@ -1202,6 +1202,15 @@ def test_deserialize_relative_path(tmp_path: Path) -> None:
     assert result == tmp_path / "fun" / "baston" / "saphir.wav"
 
 
+def test_deserialize_relative_path_windows_backslash(tmp_path: Path) -> None:
+    value = r"baston\\saphir.wav"
+    root = tmp_path / "fun"
+
+    result = _deserialize_path(value=value, root_path=root)
+
+    assert result == tmp_path / "fun" / "baston" / "saphir.wav"
+
+
 def test_deserialize_relative_path_walk_up(tmp_path: Path) -> None:
     value = "../../baston/saphir.wav"
     root = tmp_path / "wilde" / "jagd"
