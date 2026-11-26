@@ -60,11 +60,14 @@ def _serialize_path(value: Path, root_path: Path) -> str:
         return str(value)
 
     anchor = _anchor.get()
-    if anchor is not None and not value.is_relative_to(anchor):
+    if anchor is not None and not value.resolve().is_relative_to(anchor.resolve()):
         # Path is outside the project: we store it as an absolute path.
         return value.as_posix()
     try:
-        return Path(os.path.relpath(path=value, start=root_path)).as_posix()
+        # Return value relative to the root_path
+        return Path(
+            os.path.relpath(path=value.resolve(), start=root_path.resolve())
+        ).as_posix()
     except ValueError:
         # Value is not expressible as relative to root
         return value.as_posix()

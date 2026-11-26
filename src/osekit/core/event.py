@@ -4,11 +4,18 @@ from __future__ import annotations
 
 import bisect
 import copy
+import os
 from dataclasses import dataclass, field
 from operator import attrgetter
 from typing import TYPE_CHECKING, TypeVar
 
-from osekit.utils.timestamp import localize_timestamp
+from pandas import date_range
+from tqdm import tqdm
+
+from osekit.utils.timestamp import (
+    last_window_end,
+    localize_timestamp,
+)
 
 if TYPE_CHECKING:
     from pandas import Timedelta, Timestamp
@@ -61,6 +68,11 @@ class Event:
     def duration(self) -> Timedelta:
         """Duration of the event."""
         return self.end - self.begin
+
+    @property
+    def key(self) -> int:
+        """Hashed key used for storing events in hashmaps."""
+        return hash((self.begin, self.end))
 
     def __repr__(self) -> str:
         """Overwrite repr."""
@@ -132,6 +144,41 @@ class Event:
             event = events[i]
             if event is not self and self.overlaps(event):
                 output.append(event)
+
+        return output
+
+    @staticmethod
+    def associate(
+        events: list[TEvent],
+        base_events: list[TEvent],
+    ) -> list[tuple[TEvent, list[TEvent]]]:
+        """Associate events from a list with the overlapping events from another list.
+
+        Parameters
+        ----------
+        events: list[TEvent]
+            The events that should be associated with ``base_events``.
+        base_events: list[TEvent]
+            The events ``events`` should be associated with.
+
+        Returns
+        -------
+        list[tuple[TEvent, list[TEvent]]]:
+            A list of tuples containing each Event from the ``event`` list and
+            a lis of all Event from ``base_events`` this event overlaps with.
+
+        """
+        sorted_base_events = sorted(base_events, key=attrgetter("begin", "end"))
+        base_begin_list = [event.begin for event in sorted_base_events]
+
+        output = []
+
+        for event in events:
+            stop = bisect.bisect(a=base_begin_list, x=event.end)
+
+            output.append(
+                (event, event.get_overlapping_events(sorted_base_events[:stop]))
+            )
 
         return output
 
@@ -237,6 +284,234 @@ class Event:
                 )
         filled_event_list.append(events[-1])
         return filled_event_list
+
+    @staticmethod
+    def generate(
+        begin: Timestamp,
+        end: Timestamp,
+        overlap: float = 0.0,
+        duration: Timedelta | None = None,
+    ) -> list[TEvent]:
+        r"""Generate a list of Events of given duration between two timestamps.
+
+        Parameters
+        ----------
+        begin: Timestamp
+            Beginning timestamp of the first event.
+        end: Timestamp
+            Timestamp after which no more event is returned.
+        overlap: float
+            Overlap between two successive events.
+            Expressed in percentage, must be in the ``[0., 1.[`` range.
+        duration: Timedelta|None
+            Duration of the returned events.
+            If ``None``, a single event is returned ranging from ``begin`` to ``end``.
+
+        Returns
+        -------
+        List[TEvent]
+            The list of events.
+
+        """
+        if begin.utcoffset() != end.utcoffset():
+            msg = "Begin and end timestamps must have the same UTC offset."
+            raise ValueError(msg)
+        begin = localize_timestamp(timestamp=begin, timezone=end.tz)
+
+        if end <= begin:
+            return []
+
+        duration, hop = Event._validate_generate_parameters(
+            begin=begin,
+            end=end,
+            overlap=overlap,
+            duration=duration,
+        )
+
+        begins = date_range(begin, end, freq=hop, inclusive="both")
+
+        # Keep last event if it includes the end timestamp
+        # Drop it if it begins at the end timestamp
+        # (in that case it doesn't overlap with the end timestamp)
+        if begins[-1] == end:
+            begins = begins[:-1]
+
+        return [Event(begin=begin, end=begin + duration) for begin in begins]
+
+    @staticmethod
+    def generate_around(
+        begin: Timestamp,
+        end: Timestamp,
+        base_events: list[TEvent],
+        overlap: float = 0.0,
+        duration: Timedelta | None = None,
+        *,
+        lock_to_base_events: bool = False,
+    ) -> list[tuple[TEvent, list[TEvent]]]:
+        r"""Generate Events of given duration between two timestamps.
+
+        This method optimizes the generation of events around a ``base_events`` list,
+        that is when the generated events must be linked to the base events.
+
+
+        Parameters
+        ----------
+        begin: Timestamp
+            Beginning timestamp of the first event.
+        end: Timestamp
+            Timestamp after which no more event is returned.
+        base_events: list[TEvent]
+            List of events that the output events are generated around.
+        overlap: float
+            Overlap between two successive events.
+            Expressed in percentage, must be in the ``[0., 1.[`` range.
+        duration: Timedelta|None
+            Duration of the returned events.
+            If ``None``, a single event is returned ranging from ``begin`` to ``end``.
+        lock_to_base_events: bool
+            Output events are of the given ``duration`` duration, ranging from ``begin`` to ``end``.
+            If ``lock_to_base_events`` is ``True``, the ``begin`` timestamp of output events
+             that would start in-between base events is delayed to the ``begin`` of the next
+             base event.
+
+        Returns
+        -------
+        list[tuple[TEvent, list[TEvent]]]
+            A list of tuple containing the output events and the associated
+            values are the events from ``base_events`` with which each event overlaps.
+
+            This is useful for e.g. directly accessing the files (base events) with
+            which each data (output events) should be linked.
+
+        """
+        validated_duration, hop = Event._validate_generate_parameters(
+            begin=begin,
+            end=end,
+            overlap=overlap,
+            duration=duration,
+        )
+
+        base_events = sorted(base_events, key=attrgetter("begin", "end"))
+
+        # We can filter out the base events that are out of range
+        base_event_range = Event(
+            begin=begin,
+            end=last_window_end(
+                begin=begin, end=end, window_duration=validated_duration, window_hop=hop
+            ),
+        )
+
+        base_events = [
+            event for event in base_events if event.overlaps(base_event_range)
+        ]
+
+        # Using a list of events for outputing the created events
+        # and a dict of [Event.key, list[TEvent]] for the links
+        output_events = []
+        output_links = {}
+        pointer = begin
+
+        # Recompute duration if begin is delayed and duration was one whole Event
+        if lock_to_base_events and duration is None:
+            validated_duration = end - max(pointer, base_events[0].begin)
+
+        # Events from previous base_events that might overlflow to the next one(s)
+        overflowing_events = []
+        for base_event in tqdm(
+            base_events,
+            disable=os.getenv("DISABLE_TQDM", "False").lower() in ("true", "1", "t"),
+        ):
+            if lock_to_base_events:
+                # Jump to the base_event if the output event starts before it
+                pointer = max(pointer, base_event.begin)
+            else:
+                empty_events = Event.generate(
+                    begin=pointer,
+                    end=base_event.begin,
+                    overlap=overlap,
+                    duration=validated_duration,
+                )
+                output_links |= {event.key: [] for event in empty_events}
+                output_events += empty_events
+
+                overflowing_events.extend(empty_events)
+                if empty_events:
+                    pointer = empty_events[-1].begin + hop
+
+            # Remove overflowing events that doesn't overlap with this base event
+            overflowing_events = [
+                event for event in overflowing_events if event.overlaps(base_event)
+            ]
+
+            for overflowing_event in overflowing_events:
+                output_links[overflowing_event.key].append(base_event)
+
+            new_output_events = Event.generate(
+                begin=pointer,
+                end=min(end, base_event.end),
+                overlap=overlap,
+                duration=validated_duration,
+            )
+
+            output_links |= {event.key: [base_event] for event in new_output_events}
+            output_events += new_output_events
+            overflowing_events.extend(new_output_events)
+
+            if new_output_events:
+                pointer = new_output_events[-1].begin + hop
+
+        if not lock_to_base_events:
+            # Add eventual empty items if end > last base_event
+            trailing_events = Event.generate(
+                begin=pointer,
+                end=end,
+                overlap=overlap,
+                duration=validated_duration,
+            )
+            output_links |= {event.key: [] for event in trailing_events}
+            output_events += trailing_events
+
+        return [(event, output_links[event.key]) for event in output_events]
+
+    @staticmethod
+    def _validate_generate_parameters(
+        begin: Timestamp,
+        end: Timestamp,
+        overlap: float = 0.0,
+        duration: Timedelta | None = None,
+    ) -> tuple[Timedelta, Timedelta]:
+        """Validate the parameters used for generating events.
+
+        Returns the parsed duration of the events and the hop between two
+        consecutive events.
+
+        Parameters
+        ----------
+        begin: Timestamp
+            Beginning timestamp of the first event.
+        end: Timestamp
+            Timestamp after which no more event is returned.
+        overlap: float
+            Overlap between two successive events.
+            Expressed in percentage, must be in the ``[0., 1.[`` range.
+        duration: Timedelta|None
+            Duration of the returned events.
+            If ``None``, a single event is returned ranging from ``begin`` to ``end``.
+
+        Returns
+        -------
+        tuple[Timedelta,Timedelta]
+            Duration of the events and hop between two consecutive events.
+
+        """
+        if not 0 <= overlap < 1:
+            msg = f"Overlap must be in the [0., 1.[ interval, got {overlap}"
+            raise ValueError(msg)
+
+        duration = duration or end - begin
+        hop = duration * (1 - overlap)
+
+        return duration, hop
 
 
 TEvent = TypeVar("TEvent", bound=Event)
