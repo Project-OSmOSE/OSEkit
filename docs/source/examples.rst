@@ -51,6 +51,12 @@ In the ``docs/source/_static/sample_audio/timestamped`` folder, files are just n
 
 ===========
 
+.. topic:: :doc:`Access audio data between arbitrary timestamps <example_from_events>`
+
+    Use an external set of start/stop timestamps to access our audio data.
+
+===========
+
 .. topic:: :doc:`Compute/plot a LTAS <example_multiple_spectrograms>`
 
     Compute, plot and export a **L**\ ong-\ **T**\ erm **A**\ verage **S**\ pectrum (**LTAS**).
@@ -76,6 +82,7 @@ In the ``docs/source/_static/sample_audio/timestamped`` folder, files are just n
     example_spectrogram
     example_multiple_spectrograms
     example_multiple_spectrograms_id
+    example_from_events
     example_ltas
     example_multichannel
     example_aplose_result
