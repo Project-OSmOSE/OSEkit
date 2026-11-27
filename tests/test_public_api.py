@@ -23,6 +23,7 @@ from osekit.core.frequency_scale import Scale, ScalePart
 from osekit.core.instrument import Instrument
 from osekit.core.ltas_dataset import LTASDataset
 from osekit.core.spectro_dataset import SpectroDataset
+from osekit.exceptions import ExternalFilesError
 from osekit.public.project import Project
 from osekit.public.transform import OutputType, Transform
 from osekit.utils.audio import Normalization
@@ -1901,3 +1902,67 @@ def test_get_json_paths(
         )
         == expected
     )
+
+
+def test_build_from_audio_dataset_json(
+    tmp_path: Path, audio_files: tuple[list[AudioFile], pytest.FixtureRequest]
+) -> None:
+    audio_files, _ = audio_files
+
+    project_folder = tmp_path / "project"
+
+    original_audio = AudioDataset.from_files(
+        files=audio_files, mode="timedelta_file", name="cool_ads"
+    )
+    original_audio.write_json(folder=tmp_path)
+
+    project = Project(
+        folder=project_folder,
+    )
+
+    project.build_from_audio_dataset_json(
+        audio_dataset_json=tmp_path / f"{original_audio.name}.json"
+    )
+
+    project_original_audio = project.origin_dataset
+
+    assert np.array_equal(project_original_audio.data, original_audio.data)
+
+
+def test_reset_project_built_from_audio_dataset_json(
+    tmp_path: Path, audio_files: tuple[list[AudioFile], pytest.FixtureRequest]
+) -> None:
+    audio_files, _ = audio_files
+
+    project_folder = tmp_path / "project"
+
+    # Some files that will be moved to the other folder
+    (project_folder / "fun").mkdir(parents=True, exist_ok=True)
+    (project_folder / "cool.jpg").touch()
+    (project_folder / "fun" / "cool.jpg").touch()
+
+    original_audio = AudioDataset.from_files(
+        files=audio_files, mode="timedelta_file", name="cool_ads"
+    )
+    original_audio.write_json(folder=tmp_path)
+
+    project = Project(
+        folder=project_folder,
+    )
+
+    project.build_from_audio_dataset_json(
+        audio_dataset_json=tmp_path / f"{original_audio.name}.json"
+    )
+
+    assert len(list((project_folder / "other").rglob("cool.jpg"))) == 2
+
+    files_before_reset = project_folder.rglob("*.*")
+
+    with pytest.raises(ExternalFilesError, match="located outside the project folder"):
+        project.reset()
+
+    assert np.array_equal(
+        sorted(files_before_reset), sorted(project.folder.rglob("*.*"))
+    )
+
+    assert all(file.path.exists() for file in original_audio.files)
